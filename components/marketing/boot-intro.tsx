@@ -60,8 +60,8 @@ export function BootIntro() {
       {/* faint scan sweep on entry */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 h-32 bg-gradient-to-b from-signal/15 to-transparent"
-        style={{ animation: "boot-scan 1.4s ease-in-out" }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-signal/15 to-transparent"
+        style={{ animation: "boot-scan 1.6s ease-out" }}
       />
 
       {/* Reticle: two converging rings + crosshair ticks + a core lock dot */}

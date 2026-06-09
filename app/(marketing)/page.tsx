@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, ShieldCheck, FileCheck2, CalendarClock, Crosshair } from "lucide-react"
+import { ArrowRight, ShieldCheck, FileCheck2, CalendarClock } from "lucide-react"
 import { brand } from "@/config/brand"
 import { SERVICE_PACKAGES } from "@/lib/stripe"
 import { Button } from "@/components/ui/button"
@@ -43,17 +43,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         <div className="relative mx-auto max-w-6xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <Reveal>
-            <div className="glass-premium mx-auto flex w-fit items-center gap-2 rounded-full px-3.5 py-1.5">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-signal/60 motion-reduce:hidden" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-signal" />
-              </span>
-              <Crosshair className="size-3.5 text-signal" />
-              <span className="engraved text-text-mid">NYC Concealed Carry Concierge</span>
-            </div>
-          </Reveal>
-          <Reveal delay={90}>
-            <h1 className="text-prestige mx-auto mt-7 max-w-4xl text-balance pb-1 font-display text-[2.5rem] font-semibold leading-[1.03] tracking-tight sm:text-6xl">
+            <h1 className="text-prestige mx-auto max-w-4xl text-balance pb-1 font-display text-[2.5rem] font-semibold leading-[1.03] tracking-tight sm:text-6xl">
               {brand.tagline}
             </h1>
           </Reveal>

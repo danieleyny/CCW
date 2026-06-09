@@ -242,11 +242,13 @@
   animation: marquee 34s linear infinite;
 }
 
-/* HUD boot sweep */
+/* HUD boot sweep — travels the full viewport top→bottom and fades out cleanly
+   (no abrupt mid-screen cut-off). */
 @keyframes boot-scan {
   0% { transform: translateY(-100%); opacity: 0; }
-  10% { opacity: 1; }
-  100% { transform: translateY(100%); opacity: 0; }
+  12% { opacity: 0.9; }
+  82% { opacity: 0.9; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 
 /* ── Boot reticle: concentric rings rotate inward and converge to a clean lock ─ */
