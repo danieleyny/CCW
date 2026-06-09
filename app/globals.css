@@ -53,6 +53,8 @@
   --color-brass-deep: var(--brass-deep);
   --color-signal: var(--signal);
   --color-signal-dim: var(--signal-dim);
+  --color-ice: var(--ice);
+  --color-ice-dim: var(--ice-dim);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
@@ -121,6 +123,43 @@
 /* Hairline top highlight on raised cards */
 .edge-highlight {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Premium frosted dark glass — layered surface tint, blur+saturate, hairline
+   border, and a soft inset top highlight. Built for panels/cards over the hero. */
+.glass-premium {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--surface-2) 78%, transparent),
+      color-mix(in oklab, var(--surface-1) 82%, transparent)
+    );
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--hairline);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 18px 50px -30px rgba(0, 0, 0, 0.8);
+}
+
+/* Metallic headline fill: brass → brass-bright → ice. Solid-color fallback for
+   browsers without background-clip:text (graceful degrade to brass-bright). */
+.text-prestige {
+  color: var(--brass-bright);
+}
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .text-prestige {
+    background: linear-gradient(
+      100deg,
+      var(--brass) 0%,
+      var(--brass-bright) 42%,
+      var(--ice) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
 }
 
 /* Faint brass edge + glow for prestige cards */
@@ -210,6 +249,44 @@
   100% { transform: translateY(100%); opacity: 0; }
 }
 
+/* ── Boot reticle: concentric rings rotate inward and converge to a clean lock ─ */
+@keyframes boot-ring-outer {
+  0% { transform: rotate(-90deg) scale(1.6); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+@keyframes boot-ring-inner {
+  0% { transform: rotate(90deg) scale(0.4); opacity: 0; }
+  45% { opacity: 1; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+@keyframes boot-core {
+  0%, 55% { transform: scale(0); opacity: 0; }
+  72% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes boot-tick {
+  0% { transform: scaleX(0); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+.boot-ring-outer { animation: boot-ring-outer 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.boot-ring-inner { animation: boot-ring-inner 0.9s cubic-bezier(0.22, 1, 0.36, 1) both 0.08s; }
+.boot-core { animation: boot-core 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Wordmark resolve — rise + fade in after the reticle locks. */
+@keyframes boot-word {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.boot-word { animation: boot-word 0.7s ease-out both 0.5s; }
+
+/* Iris-wipe reveal: overlay closes to a shrinking circle, then it's unmounted. */
+@keyframes boot-iris {
+  from { clip-path: circle(150% at 50% 50%); }
+  to { clip-path: circle(0% at 50% 50%); }
+}
+.boot-iris { animation: boot-iris 0.55s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+
 /* Target-hit ping (precision game) */
 @keyframes hud-ping {
   from { transform: translate(-50%, -50%) scale(0.6); opacity: 0.85; }
@@ -233,6 +310,37 @@
 .animate-aura-2 { animation: aura-2 26s ease-in-out infinite; }
 .animate-aura-3 { animation: aura-3 34s ease-in-out infinite; }
 
+/* Aurora gradient-mesh — slow hue/position drift for a richer ambient field.
+   GPU-friendly: transform + opacity only, low amplitude. Paired with the aura
+   pools above to build depth without busyness. */
+@keyframes aurora-mesh-a {
+  0%, 100% { transform: translate3d(-52%, -2%, 0) scale(1.05) rotate(0deg); opacity: 0.9; }
+  50% { transform: translate3d(-46%, 4%, 0) scale(1.18) rotate(8deg); opacity: 1; }
+}
+@keyframes aurora-mesh-b {
+  0%, 100% { transform: translate3d(4%, 2%, 0) scale(1.1) rotate(0deg); opacity: 0.75; }
+  50% { transform: translate3d(-4%, -5%, 0) scale(1.22) rotate(-10deg); opacity: 0.95; }
+}
+.animate-aurora-a { animation: aurora-mesh-a 38s ease-in-out infinite; }
+.animate-aurora-b { animation: aurora-mesh-b 44s ease-in-out infinite; }
+
+/* Slow starfield/dust drift (transform-only; the dots themselves are static
+   box-shadow/radial-gradient layers). */
+@keyframes star-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -120px, 0); }
+}
+.animate-star-drift { animation: star-drift 60s linear infinite; }
+
+/* A single whisper-quiet light sweep across the hero every ~12s. */
+@keyframes hero-sweep {
+  0% { transform: translateX(-130%) skewX(-12deg); opacity: 0; }
+  8% { opacity: 0.5; }
+  16% { opacity: 0; }
+  100% { transform: translateX(130%) skewX(-12deg); opacity: 0; }
+}
+.animate-hero-sweep { animation: hero-sweep 12s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .reticle-active,
   .reticle-ring,
@@ -240,7 +348,11 @@
   .animate-marquee,
   .animate-aura-1,
   .animate-aura-2,
-  .animate-aura-3 {
+  .animate-aura-3,
+  .animate-aurora-a,
+  .animate-aurora-b,
+  .animate-star-drift,
+  .animate-hero-sweep {
     animation: none !important;
   }
 }

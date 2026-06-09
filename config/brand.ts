@@ -41,10 +41,14 @@ export const brand = {
  * the source for the shadcn semantic tokens below.
  */
 export const palette = {
-  bg: "#0A0B0D",
-  "surface-1": "#111317",
-  "surface-2": "#171A1F",
-  "surface-3": "#1E2228",
+  // Near-true-black with a faint cool blue-violet undertone — reads colder and
+  // more "futuristic" than a neutral charcoal while staying obsidian-dark.
+  bg: "#07080B",
+  // Surfaces re-derived as subtle cool-grey steps (a hint of blue) so stacked
+  // panels read as layered glass rather than flat boxes.
+  "surface-1": "#0E1015",
+  "surface-2": "#14171D",
+  "surface-3": "#1C2027",
   hairline: "rgba(255,255,255,0.08)",
   "hairline-strong": "rgba(255,255,255,0.14)",
   "text-hi": "#F2F3F5",
@@ -53,7 +57,12 @@ export const palette = {
   brass: "#C9A24B",
   "brass-bright": "#E7C77A",
   "brass-deep": "#8E6F2E",
-  "brass-glow": "rgba(201,162,75,0.22)",
+  // Slightly richer brass glow so the prestige edge reads on dark glass.
+  "brass-glow": "rgba(201,162,75,0.28)",
+  // Cool premium counterweight to brass — a restrained platinum/ice highlight.
+  // This temperature contrast is what makes the palette read as futuristic-luxury.
+  ice: "#BFD8E6",
+  "ice-dim": "rgba(191,216,230,0.14)",
   signal: "#5FD0E0",
   "signal-dim": "rgba(95,208,224,0.16)",
   ok: "#4ADE80",
@@ -90,7 +99,7 @@ const shadcn: Record<string, string> = {
   "chart-3": palette["brass-bright"],
   "chart-4": palette["text-low"],
   "chart-5": palette["brass-deep"],
-  sidebar: "#0C0D10",
+  sidebar: "#0A0C10",
   "sidebar-foreground": palette["text-mid"],
   "sidebar-primary": palette.brass,
   "sidebar-primary-foreground": INK,

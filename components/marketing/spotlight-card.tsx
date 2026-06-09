@@ -14,6 +14,8 @@ export function SpotlightCard({
   const ref = useRef<HTMLDivElement>(null)
 
   function onMove(e: React.PointerEvent) {
+    // No-op on touch/pen — the spotlight is a fine-pointer affordance only.
+    if (e.pointerType !== "mouse") return
     const el = ref.current
     if (!el) return
     const r = el.getBoundingClientRect()
@@ -29,10 +31,10 @@ export function SpotlightCard({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover/spot:opacity-100"
+        className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 [@media(hover:hover)]:group-hover/spot:opacity-100"
         style={{
           background:
-            "radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgba(201,162,75,0.12), transparent 70%)",
+            "radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--brass) 16%, transparent), color-mix(in oklab, var(--ice) 8%, transparent) 45%, transparent 70%)",
         }}
       />
       {children}

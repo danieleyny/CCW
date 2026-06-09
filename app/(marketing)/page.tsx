@@ -43,13 +43,17 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         <div className="relative mx-auto max-w-6xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <Reveal>
-            <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-hairline bg-surface-1/60 px-3 py-1 backdrop-blur-sm">
+            <div className="glass-premium mx-auto flex w-fit items-center gap-2 rounded-full px-3.5 py-1.5">
+              <span className="relative flex size-1.5">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-signal/60 motion-reduce:hidden" />
+                <span className="relative inline-flex size-1.5 rounded-full bg-signal" />
+              </span>
               <Crosshair className="size-3.5 text-signal" />
               <span className="engraved text-text-mid">NYC Concealed Carry Concierge</span>
             </div>
           </Reveal>
           <Reveal delay={90}>
-            <h1 className="mx-auto mt-7 max-w-4xl text-balance font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
+            <h1 className="text-prestige mx-auto mt-7 max-w-4xl text-balance pb-1 font-display text-[2.5rem] font-semibold leading-[1.03] tracking-tight sm:text-6xl">
               {brand.tagline}
             </h1>
           </Reveal>
@@ -73,10 +77,10 @@ export default function Home() {
             </div>
           </Reveal>
           <Reveal delay={340}>
-            <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-3">
-              <HudStat value={1200} suffix="+" label="Clients guided" />
-              <HudStat value={6} label="Month avg" />
-              <HudStat value={98} suffix="%" label="On-time filing" />
+            <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-2.5 sm:gap-3">
+              <HudStat value={1200} suffix="+" label="Clients guided" className="glass-premium" />
+              <HudStat value={6} label="Month avg" className="glass-premium" />
+              <HudStat value={98} suffix="%" label="On-time filing" className="glass-premium" />
             </div>
           </Reveal>
         </div>
@@ -93,7 +97,7 @@ export default function Home() {
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 90}>
               <SpotlightCard>
-                <div className="edge-highlight h-full rounded-lg border border-hairline bg-card p-6">
+                <div className="glass-premium h-full rounded-lg p-6">
                   <f.icon className="size-5 text-brass" />
                   <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
                   <p className="mt-2 text-sm text-text-mid">{f.body}</p>
@@ -134,8 +138,8 @@ export default function Home() {
               <Reveal key={p.key} delay={i * 80}>
                 <SpotlightCard>
                   <div
-                    className={`h-full rounded-lg border bg-card p-6 ${
-                      featured ? "brass-edge" : "border-hairline edge-highlight"
+                    className={`glass-premium h-full rounded-lg p-6 ${
+                      featured ? "brass-edge" : ""
                     }`}
                   >
                     {featured && <div className="engraved mb-2 text-brass">Most chosen</div>}
@@ -164,6 +168,7 @@ export default function Home() {
       <section className="border-t border-hairline">
         <div className="relative mx-auto max-w-6xl overflow-hidden px-4 py-24 text-center sm:px-6">
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brass/8 blur-[120px]" />
+          <div className="pointer-events-none absolute left-1/2 top-1/3 h-48 w-[28rem] -translate-x-1/2 rounded-full bg-ice/[0.05] blur-[110px]" />
           <Reveal className="relative">
             <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">
               Find out if you qualify in two minutes

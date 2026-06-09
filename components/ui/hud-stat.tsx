@@ -43,7 +43,7 @@ export function HudStat({
   return (
     <div
       className={cn(
-        "relative border border-hairline bg-surface-1/60 px-5 py-6 text-center",
+        "relative rounded-md border border-hairline bg-surface-1/60 px-2 py-5 text-center sm:px-5 sm:py-6",
         className
       )}
     >
@@ -51,12 +51,12 @@ export function HudStat({
       <span aria-hidden className="absolute right-1 top-1 size-2 border-r border-t border-brass/50" />
       <span aria-hidden className="absolute bottom-1 left-1 size-2 border-b border-l border-brass/50" />
       <span aria-hidden className="absolute bottom-1 right-1 size-2 border-b border-r border-brass/50" />
-      <div className="font-display text-3xl font-semibold tracking-tight text-text-hi tabular-nums sm:text-4xl">
+      <div className="text-prestige font-display text-2xl font-semibold leading-none tracking-tight tabular-nums sm:text-4xl">
         {prefix}
         {display.toLocaleString("en-US")}
         {suffix}
       </div>
-      <div className="engraved mt-2">{label}</div>
+      <div className="engraved mt-2 text-[0.625rem] sm:text-[0.6875rem]">{label}</div>
     </div>
   )
 }
