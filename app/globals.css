@@ -1,0 +1,246 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * CARRY design system. Color tokens live in config/brand.ts and are injected as
+ * CSS variables by the root layout (<BrandStyle />). This file owns the Tailwind
+ * theme mapping, fonts, radii, base layer, and the signature utilities (glass,
+ * tech-grid, engraved labels, reticle motion). Dark-only.
+ */
+
+@theme inline {
+  /* shadcn semantic tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* CARRY brand utilities: bg-brass, text-signal, border-hairline, bg-surface-2 */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brass: var(--brass);
+  --color-brass-bright: var(--brass-bright);
+  --color-brass-deep: var(--brass-deep);
+  --color-signal: var(--signal);
+  --color-signal-dim: var(--signal-dim);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-text-hi: var(--text-hi);
+  --color-text-mid: var(--text-mid);
+  --color-text-low: var(--text-low);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  /* fonts */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
+
+  /* radii: machined, crisp (not friendly-rounded) */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.85);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0.3rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: var(--brass);
+    color: var(--brand-foreground);
+  }
+  /* Slim, dark scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* ── Signature utilities ─────────────────────────────────────────────────── */
+
+/* Frosted glass — sticky bars, sheets, mobile nav, key panels */
+.glass {
+  background: color-mix(in oklab, var(--surface-2) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  border: 1px solid var(--hairline);
+}
+
+/* Hairline top highlight on raised cards */
+.edge-highlight {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Faint brass edge + glow for prestige cards */
+.brass-edge {
+  border-color: color-mix(in oklab, var(--brass) 40%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--brass) 18%, transparent),
+    0 12px 40px -24px var(--brass-glow);
+}
+
+/* Blueprint / ballistic grid background */
+.tech-grid {
+  background-image:
+    linear-gradient(var(--hairline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Subtle film grain overlay (use on a positioned ::after host) */
+.noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Engraved / machined micro-label */
+.engraved {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--text-mid);
+  font-size: 0.6875rem;
+}
+
+/* Reticle "lock-on" for the active stage node */
+@keyframes reticle-lock {
+  0% { transform: scale(0.82); opacity: 0.5; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes reticle-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes reticle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--signal) 45%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+}
+.reticle-active {
+  animation: reticle-lock 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+    reticle-pulse 2.4s ease-out infinite 0.5s;
+}
+.reticle-ring {
+  animation: reticle-spin 9s linear infinite;
+}
+
+/* Shimmer skeleton */
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: shimmer 1.6s infinite;
+}
+
+/* Marquee (trust ticker) */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 34s linear infinite;
+}
+
+/* HUD boot sweep */
+@keyframes boot-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+/* Target-hit ping (precision game) */
+@keyframes hud-ping {
+  from { transform: translate(-50%, -50%) scale(0.6); opacity: 0.85; }
+  to { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+}
+
+/* Hero aurora — slow, low-amplitude ambient drift (elegant, not busy) */
+@keyframes aura-1 {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-47%, 4%) scale(1.08); }
+}
+@keyframes aura-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-6%, 5%) scale(1.1); }
+}
+@keyframes aura-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, -4%) scale(1.06); }
+}
+.animate-aura-1 { animation: aura-1 30s ease-in-out infinite; }
+.animate-aura-2 { animation: aura-2 26s ease-in-out infinite; }
+.animate-aura-3 { animation: aura-3 34s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reticle-active,
+  .reticle-ring,
+  .shimmer::after,
+  .animate-marquee,
+  .animate-aura-1,
+  .animate-aura-2,
+  .animate-aura-3 {
+    animation: none !important;
+  }
+}

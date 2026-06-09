@@ -1,0 +1,29 @@
+import { brand } from "@/config/brand"
+import { PageHero } from "@/components/marketing/page-hero"
+import { LeadForm } from "@/components/marketing/lead-form"
+
+export const metadata = {
+  title: "Contact",
+  description: "Get in touch with the CARRY concierge team about your NYC concealed carry license.",
+}
+
+export default function Contact() {
+  return (
+    <>
+      <PageHero
+        eyebrow="Contact"
+        title="Talk to a concierge"
+        subtitle="Tell us where you are in the process. We'll respond within one business day."
+      />
+      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <div className="mb-8 flex flex-col gap-1 font-mono text-sm text-text-mid">
+          <span>{brand.contact.email}</span>
+          <span>{brand.contact.phone}</span>
+        </div>
+        <div className="rounded-lg border border-hairline bg-card p-6">
+          <LeadForm source="contact" submitLabel="Send message" />
+        </div>
+      </section>
+    </>
+  )
+}
