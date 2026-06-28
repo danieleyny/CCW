@@ -9,6 +9,8 @@ import {
   CalendarDays,
   CreditCard,
   BarChart3,
+  ScrollText,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,6 +20,8 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/admin", label: "Today", icon: LayoutDashboard, exact: true },
   { href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/admin/cases", label: "Cases", icon: FolderOpen },
+  { href: "/admin/requirements", label: "Requirements", icon: ScrollText },
+  { href: "/admin/instructors", label: "Instructors", icon: GraduationCap },
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },

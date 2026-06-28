@@ -16,6 +16,9 @@ const TONES: Record<string, string> = {
   submitted: "bg-warn/12 text-warn border-warn/30",
   pending: "bg-warn/12 text-warn border-warn/30",
   rejected: "bg-danger/12 text-danger border-danger/30",
+  // requirements engine (case_req_status)
+  satisfied: "bg-ok/12 text-ok border-ok/30",
+  na: "bg-surface-3 text-text-low border-hairline",
   // payments
   paid: "bg-ok/12 text-ok border-ok/30",
   failed: "bg-danger/12 text-danger border-danger/30",

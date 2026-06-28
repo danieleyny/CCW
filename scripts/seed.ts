@@ -14,6 +14,11 @@ import { config as loadEnv } from "dotenv"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { CASE_STAGES, stageIndex, type CaseStageKey } from "../config/stages"
 import { CHECKLIST_TEMPLATE } from "../config/checklist-templates"
+import { materializeCaseRequirements } from "../lib/requirements/materialize"
+import type { IntakeAnswers } from "../lib/requirements/generate"
+import type { Database } from "../lib/supabase/types"
+import { BOROUGH_CENTROIDS } from "../lib/geo/nyc"
+import { createAndMatchOffer } from "../lib/marketplace/offers"
 
 loadEnv({ path: ".env.local" })
 
@@ -27,6 +32,8 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const db: SupabaseClient = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
+// Typed handle for the requirements helpers (which expect SupabaseClient<Database>).
+const tdb = db as unknown as SupabaseClient<Database>
 
 const PASSWORD = "Passw0rd!"
 const PNG_1x1 = Buffer.from(
@@ -71,7 +78,7 @@ async function reset() {
 async function createUser(
   email: string,
   fullName: string,
-  role: "admin" | "staff" | "client"
+  role: "admin" | "staff" | "client" | "instructor"
 ): Promise<string> {
   const user = await must(
     db.auth.admin
@@ -165,6 +172,55 @@ async function addDocument(
   }
 }
 
+// ── requirements engine (V2) ─────────────────────────────────────────────────
+function jurisdictionFor(track: string): string {
+  return track === "non_resident" ? "special_carry" : "nyc"
+}
+
+/**
+ * Generate the case's requirement instances from the live registry, then bind
+ * satisfied evidence: any approved document whose type matches a requirement's
+ * document_type flips that requirement to `satisfied` (the provable audit link).
+ * Sam Chen carries a demo arrest history so ARR-01 (Certificate of Disposition)
+ * spawns — exercising conditional generation.
+ */
+async function seedRequirements(caseId: string, name: string, track: string, here: number) {
+  const answers: IntakeAnswers = {
+    isCarry: true,
+    hasCohabitants: here >= stageIndex("document_collection"),
+    hasArrestHistory: name === "Sam Chen",
+    anyQuestionYes: name === "Sam Chen",
+  }
+  await materializeCaseRequirements(tdb, caseId, jurisdictionFor(track), answers)
+
+  // Binding queries use the untyped `db` client to sidestep supabase-js's
+  // embedded-select type parser (this script is type-checked by `next build`).
+  const { data: docs } = await db
+    .from("documents")
+    .select("id, type")
+    .eq("case_id", caseId)
+    .eq("status", "approved")
+  const byType = new Map<string, string>()
+  for (const doc of (docs ?? []) as { id: string; type: string }[]) {
+    if (!byType.has(doc.type)) byType.set(doc.type, doc.id)
+  }
+
+  const { data: crs } = await db
+    .from("case_requirements")
+    .select("id, status, requirement:requirements(document_type)")
+    .eq("case_id", caseId)
+  for (const cr of (crs ?? []) as Array<{ id: string; status: string; requirement: { document_type: string | null } | { document_type: string | null }[] | null }>) {
+    const req = Array.isArray(cr.requirement) ? cr.requirement[0] : cr.requirement
+    const dt = req?.document_type
+    if (cr.status === "pending" && dt && byType.has(dt)) {
+      await db
+        .from("case_requirements")
+        .update({ status: "satisfied", document_id: byType.get(dt)! })
+        .eq("id", cr.id)
+    }
+  }
+}
+
 // ── main ─────────────────────────────────────────────────────────────────────
 async function main() {
   await reset()
@@ -176,17 +232,73 @@ async function main() {
   const client2Id = await createUser("client2@carrypath.test", "Sam Chen", "client")
 
   console.log("• instructors…")
+  // Frank has a real instructor account and is verified; Lena is unverified
+  // (proves unverified instructors never appear to clients).
+  const frankId = await createUser("instructor@carrypath.test", "Frank DiMeo", "instructor")
+  const bk = BOROUGH_CENTROIDS.brooklyn
+  const mn = BOROUGH_CENTROIDS.manhattan
+  const qn = BOROUGH_CENTROIDS.queens
   const [inst1, inst2] = await must(
     db
       .from("instructors")
       .insert([
-        { name: "Frank DiMeo", email: "frank@range.example", phone: "(718) 555-0110" },
-        { name: "Lena Ortiz", email: "lena@range.example", phone: "(347) 555-0190" },
+        {
+          name: "Frank DiMeo",
+          email: "instructor@carrypath.test",
+          phone: "(718) 555-0110",
+          profile_id: frankId,
+          dcjs_id: "DAI-10293",
+          bio: "20-year range officer; NRA + DCJS certified. Patient with first-timers.",
+          verified: true,
+          verified_at: new Date().toISOString(),
+          service_radius_mi: 25,
+          lat: bk.lat,
+          lng: bk.lng,
+          price_18h_cents: 65000,
+          jurisdictions: ["nyc"],
+          rating_avg: 4.8,
+          rating_count: 24,
+        },
+        {
+          name: "Lena Ortiz",
+          email: "lena@range.example",
+          phone: "(347) 555-0190",
+          dcjs_id: "DAI-55821",
+          bio: "Competitive shooter; weekend classroom + range sessions.",
+          verified: false,
+          service_radius_mi: 20,
+          lat: qn.lat,
+          lng: qn.lng,
+          price_18h_cents: 60000,
+          jurisdictions: ["nyc"],
+          rating_avg: null,
+          rating_count: 0,
+        },
       ])
       .select("id")
       .then((r) => ({ data: r.data, error: r.error })),
     "instructors"
   )
+
+  // Frank's training venues (range + classroom)
+  const locs = await must(
+    db
+      .from("training_locations")
+      .insert([
+        { instructor_id: inst1.id, label: "Gowanus Indoor Range", address: "120 9th St, Brooklyn, NY 11215", is_range: true, lat: bk.lat, lng: bk.lng },
+        { instructor_id: inst1.id, label: "Midtown Classroom", address: "20 W 33rd St, New York, NY 10001", is_range: false, lat: mn.lat, lng: mn.lng },
+      ])
+      .select("id")
+      .then((r) => ({ data: r.data, error: r.error })),
+    "training_locations"
+  )
+
+  // Frank publishes some open availability (combined 18-hour course + a consult).
+  await db.from("availability_slots").insert([
+    { instructor_id: inst1.id, location_id: locs[0].id, type: "combined_18h", capacity: 4, starts_at: daysFromNow(7), ends_at: daysFromNow(7.25) },
+    { instructor_id: inst1.id, location_id: locs[1].id, type: "classroom_16h", capacity: 6, starts_at: daysFromNow(14), ends_at: daysFromNow(14.2) },
+    { instructor_id: inst1.id, location_id: locs[1].id, type: "consult", capacity: 1, starts_at: daysFromNow(3), ends_at: daysFromNow(3.05) },
+  ])
 
   const demo: Array<{
     name: string
@@ -290,6 +402,9 @@ async function main() {
       ])
     }
 
+    // Requirements engine: generate personalized case_requirements + bind evidence.
+    await seedRequirements(kase.id, d.name, d.track, here)
+
     // Training
     if (d.stage === "training_scheduled") {
       await db.from("training_sessions").insert({
@@ -352,12 +467,25 @@ async function main() {
     { case_id: null, title: "Order more printer toner", assignee: adminId, due_date: dateOnly(7), status: "open", priority: 3 },
   ])
 
+  // A live marketplace offer from Jordan (Manhattan) → matches verified Frank.
+  if (jordanCase?.id) {
+    console.log("• marketplace offer…")
+    await createAndMatchOffer(tdb, {
+      caseId: jordanCase.id,
+      type: "training",
+      jurisdiction: "nyc",
+      borough: "Manhattan",
+      needsNote: "Looking to finish my 18-hour course in the next few weeks.",
+    })
+  }
+
   console.log("\n✓ Seed complete.")
   console.log("  Logins (password: Passw0rd!):")
   console.log("    admin@carrypath.test   (admin)")
   console.log("    staff@carrypath.test   (staff)")
   console.log("    client1@carrypath.test (client — Jordan Rivera)")
   console.log("    client2@carrypath.test (client — Sam Chen)")
+  console.log("    instructor@carrypath.test (instructor — Frank DiMeo, verified)")
 }
 
 main()

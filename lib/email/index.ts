@@ -8,17 +8,27 @@ export const EMAIL_ENABLED = Boolean(process.env.RESEND_API_KEY)
 
 const FROM = process.env.EMAIL_FROM ?? `${brand.name} <onboarding@resend.dev>`
 
+export interface EmailAttachment {
+  filename: string
+  /** UTF-8 string content (e.g. an .ics body) — base64-encoded before sending. */
+  content: string
+  contentType?: string
+}
+
 export interface SendEmailInput {
   to: string
   subject: string
   html: string
   text?: string
+  attachments?: EmailAttachment[]
 }
 
 export async function sendEmail(input: SendEmailInput) {
   if (!EMAIL_ENABLED) {
     console.log(
-      `[email:noop] to=${input.to} subject="${input.subject}" (set RESEND_API_KEY to enable)`
+      `[email:noop] to=${input.to} subject="${input.subject}"` +
+        (input.attachments?.length ? ` +${input.attachments.length} attachment(s)` : "") +
+        " (set RESEND_API_KEY to enable)"
     )
     return { skipped: true as const }
   }
@@ -29,6 +39,11 @@ export async function sendEmail(input: SendEmailInput) {
     subject: input.subject,
     html: input.html,
     text: input.text,
+    attachments: input.attachments?.map((a) => ({
+      filename: a.filename,
+      content: Buffer.from(a.content, "utf-8").toString("base64"),
+      contentType: a.contentType,
+    })),
   })
   if (error) {
     console.error("[email] send failed:", error)

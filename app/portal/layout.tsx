@@ -4,6 +4,7 @@ import { signOut } from "@/app/auth/actions"
 import { brand } from "@/config/brand"
 import { Button } from "@/components/ui/button"
 import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
+import { NotificationBell } from "@/components/shared/notification-bell"
 
 export default async function PortalLayout({
   children,
@@ -22,7 +23,8 @@ export default async function PortalLayout({
             </span>
             {brand.logo.wordmark}
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <NotificationBell />
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {profile.full_name}
             </span>

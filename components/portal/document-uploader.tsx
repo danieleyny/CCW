@@ -6,11 +6,10 @@ import { Upload, ExternalLink, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
+import { validateFile } from "@/lib/files/validator"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import type { DocumentType } from "@/config/checklist-templates"
-
-const MAX_BYTES = 15 * 1024 * 1024 // 15 MB
 
 export interface CurrentDoc {
   status: string
@@ -42,8 +41,12 @@ export function DocumentUploader({
     const file = e.target.files?.[0]
     e.target.value = "" // allow re-selecting the same file
     if (!file) return
-    if (file.size > MAX_BYTES) {
-      toast.error("That file is over 15 MB. Please choose a smaller one.")
+
+    // FMT-01: enforce size + type and sanitize the filename (the NYPD portal
+    // silently rejects oversized files, wrong types, and "dirty" names).
+    const check = validateFile({ name: file.name, size: file.size })
+    if (!check.ok) {
+      toast.error(check.errors[0] ?? "That file can't be uploaded.")
       return
     }
 
@@ -51,15 +54,14 @@ export function DocumentUploader({
     try {
       const supabase = createClient()
       const documentId = crypto.randomUUID()
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_")
-      const path = `clients/${clientId}/${documentId}/${safeName}`
+      const path = `clients/${clientId}/${documentId}/${check.sanitizedName}`
 
       const { error: upErr } = await supabase.storage
         .from("documents")
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: true })
       if (upErr) throw upErr
 
-      await recordDocument({ documentId, caseId, type, path, fileName: file.name })
+      await recordDocument({ documentId, caseId, type, path, fileName: check.sanitizedName })
       toast.success(`Uploaded — ${label} is now pending review.`)
       router.refresh()
     } catch (err) {

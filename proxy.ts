@@ -39,7 +39,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
-  const isGated = path.startsWith("/admin") || path.startsWith("/portal")
+  const isGated =
+    path.startsWith("/admin") ||
+    path.startsWith("/portal") ||
+    path.startsWith("/instructor")
 
   if (!user && isGated) {
     const url = request.nextUrl.clone()

@@ -72,6 +72,26 @@ export default async function PortalHome() {
         </p>
       </div>
 
+      {/* Guided intake entry */}
+      <Link
+        href="/portal/intake"
+        className="flex items-center justify-between rounded-md border border-signal/30 bg-signal-dim px-4 py-3.5 text-signal transition-colors hover:border-signal/50"
+      >
+        <span className="text-sm font-medium">
+          Application intake — build your personalized document set
+        </span>
+        <ArrowRight className="size-4" />
+      </Link>
+
+      {/* Marketplace entry */}
+      <Link
+        href="/portal/marketplace"
+        className="flex items-center justify-between rounded-md border border-brass/30 bg-brass/8 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/50"
+      >
+        <span className="text-sm font-medium">Find a verified local instructor</span>
+        <ArrowRight className="size-4" />
+      </Link>
+
       {/* Reticle progress — centerpiece */}
       <Card className="brass-edge">
         <CardContent className="p-6">

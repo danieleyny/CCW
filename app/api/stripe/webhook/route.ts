@@ -44,6 +44,29 @@ export async function POST(request: NextRequest) {
           })
           .eq("id", paymentId)
       }
+      // Marketplace booking deposit (Connect) — reconcile by booking_id.
+      const bookingId = session.metadata?.booking_id
+      if (bookingId) {
+        await supabase
+          .from("payments")
+          .update({
+            status: "paid",
+            paid_at: new Date().toISOString(),
+            stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+          })
+          .eq("booking_id", bookingId)
+          .eq("status", "pending")
+      }
+      break
+    }
+    case "account.updated": {
+      // Connect account finished onboarding → enable payouts for that instructor.
+      const acct = event.data.object
+      const enabled = Boolean(acct.charges_enabled && acct.payouts_enabled)
+      await supabase
+        .from("instructors")
+        .update({ payouts_enabled: enabled })
+        .eq("stripe_connect_account_id", acct.id)
       break
     }
     case "payment_intent.succeeded": {
