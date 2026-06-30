@@ -92,6 +92,15 @@ export default async function PortalHome() {
         <ArrowRight className="size-4" />
       </Link>
 
+      {/* Prepared documents entry */}
+      <Link
+        href="/portal/forms"
+        className="flex items-center justify-between rounded-md border border-hairline bg-surface-2/40 px-4 py-3.5 text-text-mid transition-colors hover:text-foreground"
+      >
+        <span className="text-sm font-medium">Documents we prepared for you — download &amp; sign</span>
+        <ArrowRight className="size-4" />
+      </Link>
+
       {/* Reticle progress — centerpiece */}
       <Card className="brass-edge">
         <CardContent className="p-6">

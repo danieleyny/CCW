@@ -1,0 +1,34 @@
+import { type NextRequest } from "next/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
+
+/** Regenerate the cohabitant's affidavit PDF on demand. */
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
+  const admin = createAdminClient()
+
+  const { data: cohab } = await admin
+    .from("cohabitants")
+    .select("name, relationship, case_id")
+    .eq("token", token)
+    .maybeSingle()
+  if (!cohab) return new Response("Not found", { status: 404 })
+
+  const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", cohab.case_id).single()
+  const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
+
+  const pdf = await generateCohabitantAffidavitPdf({
+    applicantName: applicant,
+    cohabitantName: cohab.name ?? "Cohabitant",
+    relationship: cohab.relationship,
+    dateStr: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+  })
+
+  return new Response(Buffer.from(pdf), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": 'attachment; filename="cohabitant-affidavit.pdf"',
+      "Cache-Control": "no-store",
+    },
+  })
+}

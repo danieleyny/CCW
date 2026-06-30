@@ -191,6 +191,7 @@ const cohabitantSchema = z.object({
   caseId: z.string().uuid(),
   name: z.string().min(2, "Enter a name"),
   relationship: z.string().optional(),
+  contactEmail: z.string().email("Enter a valid email").or(z.literal("")).optional(),
 })
 
 export async function addCohabitant(_prev: CollectorState, formData: FormData): Promise<CollectorState> {
@@ -199,18 +200,46 @@ export async function addCohabitant(_prev: CollectorState, formData: FormData): 
     caseId: formData.get("caseId"),
     name: formData.get("name"),
     relationship: formData.get("relationship") ?? "",
+    contactEmail: formData.get("contactEmail") ?? "",
   })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
   const v = parsed.data
   const supabase = await createClient()
-  const { error } = await supabase.from("cohabitants").insert({
-    case_id: v.caseId,
-    name: v.name,
-    relationship: v.relationship || null,
-    affidavit_status: "not_started",
-  })
+  const { data: created, error } = await supabase
+    .from("cohabitants")
+    .insert({
+      case_id: v.caseId,
+      name: v.name,
+      relationship: v.relationship || null,
+      contact_email: v.contactEmail || null,
+      affidavit_status: "not_started",
+    })
+    .select("id")
+    .single()
   if (error) return { error: error.message }
-  await logActivity({ action: "cohabitant.added", caseId: v.caseId, entity: "cohabitant" })
+  await logActivity({ action: "cohabitant.added", caseId: v.caseId, entity: "cohabitant", entityId: created.id })
+
+  // Auto-invite the cohabitant to complete + notarize their affidavit in-system.
+  if (v.contactEmail) {
+    const admin = createAdminClient()
+    const token = newReferenceToken()
+    await admin.from("cohabitants").update({ token }).eq("id", created.id)
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+    const link = `${base}/c/${token}`
+    await sendEmail({
+      to: v.contactEmail,
+      subject: "Please complete a cohabitant affidavit — CARRY",
+      html: `<div style="font-family:sans-serif;line-height:1.5">
+        <p>Hi ${v.name},</p>
+        <p>You were listed as a household member on a NYC concealed-carry license application.
+        Please confirm and complete a short affidavit here — no account needed, and we'll build
+        a ready-to-notarize document for you:</p>
+        <p><a href="${link}">${link}</a></p>
+      </div>`,
+      text: `Complete your cohabitant affidavit: ${link}`,
+    })
+  }
+
   revalidatePath("/portal/people")
   return { ok: true }
 }

@@ -5,12 +5,25 @@ import { useRouter } from "next/navigation"
 import { Upload, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { recordReferenceUpload } from "@/app/portal/people/actions"
 import { validateFile } from "@/lib/files/validator"
 import { Button } from "@/components/ui/button"
 
-/** Applicant fallback: upload a notarized reference they collected directly. */
-export function ReferenceUpload({ referenceId, clientId }: { referenceId: string; clientId: string }) {
+/**
+ * Applicant fallback uploader for a notarized doc they collected directly.
+ * Uploads to Storage (client RLS), then calls the supplied server action to bind
+ * it. Reused for references and cohabitant affidavits.
+ */
+export function NotarizedUpload({
+  targetId,
+  clientId,
+  record,
+  label = "Upload notarized",
+}: {
+  targetId: string
+  clientId: string
+  record: (input: { targetId: string; path: string; fileName: string; documentId: string }) => Promise<void>
+  label?: string
+}) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -31,8 +44,8 @@ export function ReferenceUpload({ referenceId, clientId }: { referenceId: string
         .from("documents")
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: true })
       if (error) throw error
-      await recordReferenceUpload({ referenceId, path, fileName: check.sanitizedName, documentId })
-      toast.success("Notarized reference saved.")
+      await record({ targetId, path, fileName: check.sanitizedName, documentId })
+      toast.success("Notarized document saved.")
       router.refresh()
     } catch {
       toast.error("Upload failed. Try again.")
@@ -45,7 +58,7 @@ export function ReferenceUpload({ referenceId, clientId }: { referenceId: string
     <>
       <input ref={inputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onFile} />
       <Button size="sm" variant="ghost" disabled={busy} onClick={() => inputRef.current?.click()}>
-        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />} Upload notarized
+        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />} {label}
       </Button>
     </>
   )

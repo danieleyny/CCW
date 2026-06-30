@@ -185,6 +185,10 @@ export function CohabitantCollector({
             <Label htmlFor="cohab-rel">Relationship</Label>
             <Input id="cohab-rel" name="relationship" placeholder="e.g. Spouse, Roommate" />
           </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="cohab-email">Email (we&apos;ll send the affidavit link)</Label>
+            <Input id="cohab-email" name="contactEmail" type="email" placeholder="optional — enables self-serve" />
+          </div>
         </div>
         {state.error && <p className="text-sm text-destructive">{state.error}</p>}
         <Button type="submit" size="sm" disabled={pending}>

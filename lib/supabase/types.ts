@@ -767,29 +767,47 @@ export type Database = {
       cohabitants: {
         Row: {
           affidavit_status: Database["public"]["Enums"]["cohabitant_status"]
+          answers: Json
           case_id: string
+          contact_email: string | null
           created_at: string
+          document_id: string | null
           id: string
           name: string
+          notarized_at: string | null
+          notary_area: string | null
           relationship: string | null
+          token: string | null
           updated_at: string
         }
         Insert: {
           affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
+          answers?: Json
           case_id: string
+          contact_email?: string | null
           created_at?: string
+          document_id?: string | null
           id?: string
           name: string
+          notarized_at?: string | null
+          notary_area?: string | null
           relationship?: string | null
+          token?: string | null
           updated_at?: string
         }
         Update: {
           affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
+          answers?: Json
           case_id?: string
+          contact_email?: string | null
           created_at?: string
+          document_id?: string | null
           id?: string
           name?: string
+          notarized_at?: string | null
+          notary_area?: string | null
           relationship?: string | null
+          token?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -798,6 +816,13 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohabitants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]

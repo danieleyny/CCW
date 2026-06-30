@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
 import { newReferenceToken, recomputeReferenceRequirement } from "@/lib/references/process"
+import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
 
 /** Send (or re-send) a tokenized self-serve link to a character reference. */
 export async function sendReferenceRequest(formData: FormData) {
@@ -76,7 +77,7 @@ export async function sendReferenceRequest(formData: FormData) {
  * documents row, flip the reference + request to notarized, and recompute REF-01.
  */
 export async function recordReferenceUpload(input: {
-  referenceId: string
+  targetId: string
   path: string
   fileName: string
   documentId: string
@@ -86,7 +87,7 @@ export async function recordReferenceUpload(input: {
   const { data: ref } = await supabase
     .from("character_references")
     .select("id, case_id")
-    .eq("id", input.referenceId)
+    .eq("id", input.targetId)
     .maybeSingle()
   if (!ref) throw new Error("Reference not found")
 
@@ -107,5 +108,69 @@ export async function recordReferenceUpload(input: {
   await recomputeReferenceRequirement(admin, ref.case_id)
 
   await logActivity({ action: "reference.notarized", caseId: ref.case_id, entity: "reference", entityId: ref.id })
+  revalidatePath("/portal/people")
+}
+
+/** Applicant fallback: record a notarized cohabitant affidavit they collected directly. */
+export async function recordCohabitantUpload(input: {
+  targetId: string
+  path: string
+  fileName: string
+  documentId: string
+}) {
+  await requireRole(["client"])
+  const supabase = await createClient()
+  const { data: cohab } = await supabase.from("cohabitants").select("id, case_id").eq("id", input.targetId).maybeSingle()
+  if (!cohab) throw new Error("Cohabitant not found")
+
+  const { data: kase } = await supabase.from("cases").select("client_id").eq("id", cohab.case_id).single()
+  if (!kase) throw new Error("Case not found")
+  if (!input.path.startsWith(`clients/${kase.client_id}/`)) throw new Error("Invalid upload path")
+
+  const admin = createAdminClient()
+  await admin.from("documents").insert({
+    id: input.documentId, case_id: cohab.case_id, client_id: kase.client_id,
+    type: "cohabitant_affidavit", status: "pending", file_path: input.path, file_name: input.fileName, notarized: true,
+  })
+  await admin
+    .from("cohabitants")
+    .update({ affidavit_status: "notarized", notarized_at: new Date().toISOString(), document_id: input.documentId })
+    .eq("id", cohab.id)
+  await recomputeCohabitantRequirement(admin, cohab.case_id)
+
+  await logActivity({ action: "cohabitant.notarized", caseId: cohab.case_id, entity: "cohabitant", entityId: cohab.id })
+  revalidatePath("/portal/people")
+}
+
+/** Send (or re-send) a cohabitant their affidavit link. */
+export async function sendCohabitantRequest(formData: FormData) {
+  await requireRole(["client", "staff", "admin"])
+  const cohabitantId = String(formData.get("cohabitantId") ?? "")
+  const supabase = await createClient()
+  const { data: cohab } = await supabase
+    .from("cohabitants")
+    .select("id, case_id, name, contact_email, token")
+    .eq("id", cohabitantId)
+    .maybeSingle()
+  if (!cohab) throw new Error("Cohabitant not found")
+  if (!cohab.contact_email) throw new Error("Add an email for this cohabitant first")
+
+  const admin = createAdminClient()
+  let token = cohab.token
+  if (!token) {
+    token = newReferenceToken()
+    await admin.from("cohabitants").update({ token }).eq("id", cohab.id)
+  }
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  const link = `${base}/c/${token}`
+  await sendEmail({
+    to: cohab.contact_email,
+    subject: "Please complete a cohabitant affidavit — CARRY",
+    html: `<div style="font-family:sans-serif;line-height:1.5"><p>Hi ${cohab.name},</p>
+      <p>Please confirm and complete your cohabitant affidavit here — no account needed:</p>
+      <p><a href="${link}">${link}</a></p></div>`,
+    text: `Complete your cohabitant affidavit: ${link}`,
+  })
+  await logActivity({ action: "cohabitant.request_sent", caseId: cohab.case_id, entity: "cohabitant", entityId: cohab.id })
   revalidatePath("/portal/people")
 }

@@ -9,9 +9,14 @@ import {
 } from "@/components/portal/collectors"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { ReferenceUpload } from "@/components/portal/reference-upload"
+import { NotarizedUpload } from "@/components/portal/notarized-upload"
 import { CopyLinkButton } from "@/components/portal/copy-link-button"
-import { sendReferenceRequest } from "./actions"
+import {
+  sendReferenceRequest,
+  sendCohabitantRequest,
+  recordReferenceUpload,
+  recordCohabitantUpload,
+} from "./actions"
 
 export const metadata = { title: "References & household" }
 
@@ -34,7 +39,7 @@ export default async function PeoplePage() {
       .order("created_at"),
     supabase
       .from("cohabitants")
-      .select("id, name, relationship, affidavit_status")
+      .select("id, name, relationship, affidavit_status, contact_email, token")
       .eq("case_id", myCase.id)
       .order("created_at"),
     supabase
@@ -101,9 +106,9 @@ export default async function PeoplePage() {
                           {r.notarized && <CheckCircle2 className="size-3" />}
                           {label}
                         </span>
-                        {!r.notarized && req?.token && <CopyLinkButton token={req.token} />}
+                        {!r.notarized && req?.token && <CopyLinkButton token={req.token} basePath="/r/" />}
                         {!r.notarized && (
-                          <ReferenceUpload referenceId={r.id} clientId={myCase.client_id} />
+                          <NotarizedUpload targetId={r.id} clientId={myCase.client_id} record={recordReferenceUpload} />
                         )}
                         {!r.notarized && r.contact_email && (
                           <form action={sendReferenceRequest}>
@@ -122,8 +127,56 @@ export default async function PeoplePage() {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="household" className="mt-4">
+        <TabsContent value="household" className="mt-4 space-y-6">
           <CohabitantCollector caseId={myCase.id} cohabitants={(cohabs.data ?? []) as CohabitantRow[]} />
+
+          {(cohabs.data ?? []).length > 0 && (
+            <div>
+              <h2 className="engraved mb-2 text-text-low">Affidavits</h2>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Each adult gets a one-click link to confirm and notarize their affidavit — we build the
+                document for them. Or upload a notarized copy yourself.
+              </p>
+              <ul className="space-y-2">
+                {(cohabs.data ?? []).map((c) => {
+                  const st = c.affidavit_status
+                  const label = st === "notarized" ? "notarized" : st === "received" ? "confirmed" : c.token ? "invited" : "not invited"
+                  const tone = st === "notarized" ? "bg-ok/12 text-ok" : st === "received" ? "bg-signal-dim text-signal" : "bg-surface-2 text-text-mid"
+                  return (
+                    <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 text-sm">
+                      <span className="min-w-0">
+                        <span className="font-medium">{c.name}</span>
+                        {c.contact_email ? (
+                          <span className="text-text-low"> · {c.contact_email}</span>
+                        ) : (
+                          <span className="text-warn"> · add an email to invite</span>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${tone}`}>
+                          {st === "notarized" && <CheckCircle2 className="size-3" />}
+                          {label}
+                        </span>
+                        {st !== "notarized" && c.token && <CopyLinkButton token={c.token} basePath="/c/" />}
+                        {st !== "notarized" && (
+                          <NotarizedUpload targetId={c.id} clientId={myCase.client_id} record={recordCohabitantUpload} />
+                        )}
+                        {st !== "notarized" && c.contact_email && (
+                          <form action={sendCohabitantRequest}>
+                            <input type="hidden" name="cohabitantId" value={c.id} />
+                            <Button type="submit" size="sm" variant="outline">
+                              <Send className="size-3.5" />
+                              {c.token ? "Resend" : "Send link"}
+                            </Button>
+                          </form>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
