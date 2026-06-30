@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, FileDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { requireStaff } from "@/lib/auth"
 import { type CaseStageKey } from "@/config/stages"
@@ -152,7 +152,17 @@ export default async function CaseFilePage({
                 {kase.nypd_app_ref && ` · NYPD ${kase.nypd_app_ref}`}
               </div>
             </div>
-            <StageControl caseId={kase.id} stage={stage} status={kase.status} />
+            <div className="flex flex-col items-end gap-2">
+              <StageControl caseId={kase.id} stage={stage} status={kase.status} />
+              <a
+                href={`/admin/cases/${kase.id}/packet`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-xs font-medium text-text-mid transition-colors hover:text-foreground"
+              >
+                <FileDown className="size-3.5" /> Assemble packet
+              </a>
+            </div>
           </div>
 
           {/* Reticle progress */}
