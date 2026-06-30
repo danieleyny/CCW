@@ -11,7 +11,7 @@ import {
 } from "@/lib/forms/documents"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { getSignaturePng } from "@/lib/signatures"
-import type { WizardAnswers } from "@/lib/intake/answers"
+import { formatSocialAccounts, type WizardAnswers } from "@/lib/intake/answers"
 
 /** Generate a pre-filled applicant document on demand from their intake answers. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ key: string }> }) {
@@ -43,7 +43,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
       filename = "safe-storage-attestation.pdf"
       break
     case "social-media":
-      pdf = await socialMediaDisclosure(applicant, answers.socialHandles ?? "", dateStr, sig)
+      pdf = await socialMediaDisclosure(applicant, formatSocialAccounts(answers), dateStr, sig)
       filename = "social-media-disclosure.pdf"
       break
     case "arrest-narratives":

@@ -8,10 +8,12 @@ import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkle
 import {
   INTAKE_STEPS,
   QUESTIONNAIRE,
+  SOCIAL_PLATFORMS,
   eligibilityGate,
   type WizardAnswers,
   type ArrestEntry,
   type QuestionAnswer,
+  type SocialAccount,
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
 import {
@@ -290,14 +292,22 @@ function StepRail({ step }: { step: number }) {
 
 type StepProps = { a: WizardAnswers; patch: (p: Partial<WizardAnswers>) => void }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
       {children}
+      {hint && <Hint>{hint}</Hint>}
     </div>
   )
 }
+
+/** Short "why we collect this" note shown under a field. */
+function Hint({ children }: { children: React.ReactNode }) {
+  return <p className="text-[11px] leading-snug text-text-low">{children}</p>
+}
+
+const SELECT_CLASS = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
 
 function Check({
   label,
@@ -433,8 +443,11 @@ function StepHousehold({ a, patch }: StepProps) {
           <Plus className="size-4" /> Add cohabitant
         </Button>
       </div>
-      <Field label="Designated safeguard person (holds a key / secures firearms)">
-        <Input value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
+      <Field
+        label="Designated safeguard person (holds a key / secures firearms)"
+        hint="The trusted adult who can secure your firearm if you're unavailable. Often a spouse or family member — leave blank if not applicable."
+      >
+        <Input placeholder="Full name" value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
       </Field>
     </div>
   )
@@ -506,25 +519,77 @@ function StepDisclosures({ a, patch }: StepProps) {
 
 function StepHistory({ a, patch }: StepProps) {
   const refs = a.references ?? []
+  const social: SocialAccount[] = a.socialAccounts ?? []
+  // Default the training status from the older free-text fields if present.
+  const trainingStatus = a.trainingStatus ?? (a.trainingInstructor || a.trainingDate ? "completed" : undefined)
+  const completed = trainingStatus === "completed"
+
+  function updSocial(i: number, p: Partial<SocialAccount>) {
+    const copy = [...social]
+    copy[i] = { ...copy[i], ...p }
+    patch({ socialAccounts: copy })
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h2 className="text-lg font-semibold">Carry-specific &amp; history</h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Training instructor (DAI)">
-          <Input value={a.trainingInstructor ?? ""} onChange={(e) => patch({ trainingInstructor: e.target.value })} />
+
+      {/* Training */}
+      <div className="space-y-3">
+        <Field
+          label="Firearms-safety training (16hr classroom + 2hr live-fire)"
+          hint="NYC requires this CCIA-approved course. If you haven't taken it yet, we'll match you with a verified instructor and schedule it for you."
+        >
+          <select
+            value={trainingStatus ?? ""}
+            onChange={(e) => {
+              const v = (e.target.value || undefined) as WizardAnswers["trainingStatus"]
+              // Clearing to "planned" drops the completed-only details.
+              patch(v === "planned" ? { trainingStatus: v, trainingInstructor: "", trainingDate: "" } : { trainingStatus: v })
+            }}
+            className={SELECT_CLASS}
+          >
+            <option value="">Select…</option>
+            <option value="completed">I&apos;ve completed my training</option>
+            <option value="planned">Not yet — I&apos;ll need to complete it</option>
+          </select>
         </Field>
-        <Field label="Training completion date">
-          <Input type="date" value={a.trainingDate ?? ""} onChange={(e) => patch({ trainingDate: e.target.value })} />
-        </Field>
+
+        {completed && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Training instructor (DCJS-approved)" hint="The certified instructor who ran your course — listed on your training certificate.">
+              <Input
+                placeholder="e.g. John Smith / ABC Firearms Training"
+                value={a.trainingInstructor ?? ""}
+                onChange={(e) => patch({ trainingInstructor: e.target.value })}
+              />
+            </Field>
+            <Field label="Training completion date">
+              <Input type="date" value={a.trainingDate ?? ""} onChange={(e) => patch({ trainingDate: e.target.value })} />
+            </Field>
+          </div>
+        )}
+        {trainingStatus === "planned" && (
+          <p className="rounded-md border border-signal/30 bg-signal/5 p-3 text-xs text-text-mid">
+            No problem — this is marked <b>not yet complete</b>. It won&apos;t block your other documents, and we&apos;ll
+            help you book a course from the <b>Find a verified local instructor</b> step.
+          </p>
+        )}
       </div>
+
+      {/* References */}
       <div className="space-y-2">
         <Label className="text-xs">Character references (4 required)</Label>
+        <Hint>
+          NYC requires four people of good character who know you well. Add their email and we&apos;ll invite each one
+          to complete and notarize their reference for you — you don&apos;t have to chase paperwork.
+        </Hint>
         {refs.map((r, i) => (
           <div key={i} className="flex gap-2">
-            <Input placeholder="Name" value={r.name} onChange={(e) => {
+            <Input placeholder="Full name" value={r.name} onChange={(e) => {
               const copy = [...refs]; copy[i] = { ...copy[i], name: e.target.value }; patch({ references: copy })
             }} />
-            <Input placeholder="Email" value={r.email ?? ""} onChange={(e) => {
+            <Input placeholder="name@email.com" type="email" value={r.email ?? ""} onChange={(e) => {
               const copy = [...refs]; copy[i] = { ...copy[i], email: e.target.value }; patch({ references: copy })
             }} />
             <Button variant="ghost" size="icon" onClick={() => patch({ references: refs.filter((_, j) => j !== i) })}>
@@ -536,13 +601,52 @@ function StepHistory({ a, patch }: StepProps) {
           <Plus className="size-4" /> Add reference
         </Button>
       </div>
-      <Field label="Social-media handles (3 years)">
-        <Textarea rows={2} value={a.socialHandles ?? ""} onChange={(e) => patch({ socialHandles: e.target.value })} />
-      </Field>
+
+      {/* Social media */}
       <div className="space-y-2">
+        <Label className="text-xs">Social-media accounts (last 3 years)</Label>
+        <Hint>
+          The NYPD License Division reviews applicants&apos; public social media. Listing your accounts up front shows
+          good faith and avoids questions later. Add each account with its platform and username.
+        </Hint>
+        {(social.length ? social : [{ platform: "", handle: "" }]).map((s, i) => (
+          <div key={i} className="flex gap-2">
+            <select
+              value={s.platform}
+              onChange={(e) => updSocial(i, { platform: e.target.value })}
+              className={cn(SELECT_CLASS, "max-w-[44%]")}
+            >
+              <option value="">Platform…</option>
+              {SOCIAL_PLATFORMS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <Input
+              placeholder="@username"
+              value={s.handle}
+              onChange={(e) => updSocial(i, { handle: e.target.value })}
+            />
+            {social.length > 0 && (
+              <Button variant="ghost" size="icon" onClick={() => patch({ socialAccounts: social.filter((_, j) => j !== i) })}>
+                <Trash2 className="size-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => patch({ socialAccounts: [...social, { platform: "", handle: "" }] })}>
+            <Plus className="size-4" /> Add account
+          </Button>
+          <span className="text-[11px] text-text-low">No public accounts? Leave this empty.</span>
+        </div>
+      </div>
+
+      {/* Conditional extras */}
+      <div className="space-y-2 rounded-md border border-hairline p-3">
+        <p className="text-xs text-text-low">Check any that apply — each adds the right document automatically:</p>
         <Check label="I am a military veteran (adds DD-214)" checked={!!a.isVeteran} onChange={(v) => patch({ isVeteran: v })} />
         <Check label="I have legally changed my name (adds proof of name change)" checked={!!a.hasNameChange} onChange={(v) => patch({ hasNameChange: v })} />
-        <Check label="I hold another firearms license" checked={!!a.hasOtherLicense} onChange={(v) => patch({ hasOtherLicense: v })} />
+        <Check label="I hold another firearms license (adds a copy of that license)" checked={!!a.hasOtherLicense} onChange={(v) => patch({ hasOtherLicense: v })} />
       </div>
     </div>
   )

@@ -9,7 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { affirmationOfUnderstanding, socialMediaDisclosure } from "@/lib/forms/documents"
-import type { WizardAnswers } from "@/lib/intake/answers"
+import { formatSocialAccounts, type WizardAnswers } from "@/lib/intake/answers"
 
 /** Save the applicant's e-signature; downloaded forms then come pre-signed. */
 export async function saveApplicantSignature(base64: string): Promise<{ ok?: boolean; error?: string }> {
@@ -58,7 +58,7 @@ export async function fileSignedForm(key: string): Promise<{ ok?: boolean; error
   const pdf =
     key === "affirmation"
       ? await affirmationOfUnderstanding(applicant, dateStr, sig)
-      : await socialMediaDisclosure(applicant, answers.socialHandles ?? "", dateStr, sig)
+      : await socialMediaDisclosure(applicant, formatSocialAccounts(answers), dateStr, sig)
 
   const clientId = myCase.client_id
   const documentId = randomUUID()

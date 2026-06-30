@@ -34,6 +34,23 @@ export interface ReferenceEntry {
   name: string
   email?: string
 }
+export interface SocialAccount {
+  platform: string
+  handle: string
+}
+
+/** Platforms offered in the social-media disclosure dropdown. */
+export const SOCIAL_PLATFORMS = [
+  "Instagram",
+  "Facebook",
+  "X (Twitter)",
+  "TikTok",
+  "YouTube",
+  "LinkedIn",
+  "Snapchat",
+  "Reddit",
+  "Other",
+] as const
 
 export interface WizardAnswers {
   // Step 1 — eligibility pre-screen (hard gate)
@@ -58,13 +75,22 @@ export interface WizardAnswers {
   domesticIncidents?: DomesticEntry[]
   questionnaire?: QuestionAnswer[]
   // Step 5 — carry-specific & history
+  trainingStatus?: "completed" | "planned"
   trainingInstructor?: string
   trainingDate?: string
   references?: ReferenceEntry[]
-  socialHandles?: string
+  socialAccounts?: SocialAccount[]
+  socialHandles?: string // legacy free-text, kept for older sessions
   isVeteran?: boolean
   hasNameChange?: boolean
   hasOtherLicense?: boolean
+}
+
+/** One readable line per account for the social-media disclosure PDF. */
+export function formatSocialAccounts(a: WizardAnswers): string {
+  const rows = (a.socialAccounts ?? []).filter((s) => s.handle?.trim())
+  if (rows.length) return rows.map((s) => `${s.platform}: ${s.handle.trim()}`).join("\n")
+  return a.socialHandles ?? ""
 }
 
 export const INTAKE_STEPS = [

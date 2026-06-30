@@ -5,6 +5,7 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { ensureClientCaseForProfile } from "@/lib/onboarding"
+import { getSiteUrl } from "@/lib/site-url"
 
 export interface AuthFormState {
   error?: string
@@ -59,7 +60,11 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.fullName, role: "client" } },
+    options: {
+      data: { full_name: parsed.data.fullName, role: "client" },
+      // Where the confirmation email sends them back to — our live site, not localhost.
+      emailRedirectTo: `${getSiteUrl()}/auth/callback?next=/dashboard`,
+    },
   })
   if (error) return { error: error.message }
 
