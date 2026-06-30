@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useTransition, useRef } from "react"
-import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp } from "lucide-react"
-import { submitCohabitantAnswers, uploadNotarizedCohabitant } from "@/app/c/actions"
-import { notaryOptions } from "@/lib/references/notary"
+import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp, Video } from "lucide-react"
+import { submitCohabitantAnswers, uploadNotarizedCohabitant, saveCohabitantSignature } from "@/app/c/actions"
+import { notaryOptions, ronOptions } from "@/lib/references/notary"
+import { SignaturePad } from "@/components/sign/signature-pad"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-type Phase = "confirm" | "notarize" | "done"
+type Phase = "confirm" | "sign" | "notarize" | "done"
 
 export function CohabitantFlow({
   token,
@@ -38,6 +39,14 @@ export function CohabitantFlow({
     start(async () => {
       const res = await submitCohabitantAnswers(token, {}, area)
       if (res.error) setError(res.error)
+      else setPhase("sign")
+    })
+  }
+  function sign(b64: string) {
+    setError("")
+    start(async () => {
+      const res = await saveCohabitantSignature(token, b64)
+      if (res.error) setError(res.error)
       else setPhase("notarize")
     })
   }
@@ -65,8 +74,26 @@ export function CohabitantFlow({
     )
   }
 
+  if (phase === "sign") {
+    return (
+      <div className="mt-6 space-y-4">
+        <div className="rounded-lg border bg-card p-4 text-sm">
+          Add your signature and we&apos;ll place it on the affidavit for you. (You can also skip and sign by hand.)
+        </div>
+        <div className="max-w-md">
+          <SignaturePad onSave={sign} saving={pending} label="Sign &amp; continue" />
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setPhase("notarize")} disabled={pending}>
+          Skip — I&apos;ll sign by hand
+        </Button>
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    )
+  }
+
   if (phase === "notarize") {
     const opts = notaryOptions(area)
+    const ron = ronOptions()
     return (
       <div className="mt-6 space-y-5">
         <div className="rounded-lg border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
@@ -93,6 +120,24 @@ export function CohabitantFlow({
               <li key={o.label} className="text-sm">
                 <a href={o.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal underline">
                   <MapPin className="size-3.5" /> {o.label} <ExternalLink className="size-3" />
+                </a>
+                <span className="ml-1 text-xs text-text-low">— {o.note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-lg border border-signal/30 bg-signal/5 p-4">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Video className="size-4 text-signal" /> Prefer not to travel? Notarize online
+          </div>
+          <p className="mt-1 text-xs text-text-low">
+            New York allows Remote Online Notarization — notarize by live video in minutes. Upload the same PDF to any of these:
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {ron.map((o) => (
+              <li key={o.label} className="text-sm">
+                <a href={o.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal underline">
+                  {o.label} <ExternalLink className="size-3" />
                 </a>
                 <span className="ml-1 text-xs text-text-low">— {o.note}</span>
               </li>

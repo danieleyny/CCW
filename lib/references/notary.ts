@@ -19,3 +19,16 @@ export function notaryOptions(area: string): NotaryOption[] {
     { label: "Your bank or credit union", url: q(`bank notary near ${a}`), note: "Banks often notarize for free for account holders." },
   ]
 }
+
+/**
+ * Remote Online Notarization — New York permits notarizing by live video, so the
+ * whole thing can be done from home in minutes. These are public RON providers a
+ * signer can use directly today (no integration / key required).
+ */
+export function ronOptions(): NotaryOption[] {
+  return [
+    { label: "BlueNotary", url: "https://bluenotary.us/", note: "Upload the PDF, verify ID, and notarize by video — often a few dollars." },
+    { label: "Proof (formerly Notarize)", url: "https://www.proof.com/", note: "On-demand notaries by video, available 24/7." },
+    { label: "OneNotary", url: "https://onenotary.us/", note: "Live online notarization, typically under $25 a document." },
+  ]
+}

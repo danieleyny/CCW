@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { generateReferenceLetterPdf } from "@/lib/references/document"
+import { getSignaturePng } from "@/lib/signatures"
 import type { ReferenceAnswers } from "@/lib/references/questions"
 
 /** Regenerate the reference's letter PDF on demand from their stored answers. */
@@ -20,6 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     admin.from("cases").select("clients(full_name)").eq("id", req.case_id).single(),
   ])
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
+  const sig = await getSignaturePng(admin, req.case_id, `reference:${req.reference_id}`)
 
   const pdf = await generateReferenceLetterPdf({
     applicantName: applicant,
@@ -29,6 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     contactPhone: ref?.contact_phone,
     answers: (req.answers ?? {}) as ReferenceAnswers,
     dateStr: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+    signaturePng: sig,
   })
 
   return new Response(Buffer.from(pdf), {

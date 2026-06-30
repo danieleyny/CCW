@@ -28,6 +28,8 @@ export interface Ctx {
   spacer(n?: number): void
   pageBreak(): void
   signatureLine(label: string): void
+  /** Stamps the captured signature if one was provided; otherwise a blank line. */
+  signatureImage(label: string): void
   notaryBlock(personName: string): void
 }
 
@@ -35,10 +37,21 @@ function colorOf(c?: DrawOpts["color"]) {
   return c === "muted" ? MUTED : c === "brass" ? BRASS : INK
 }
 
-export async function buildPdf(draw: (c: Ctx) => void): Promise<Uint8Array> {
+export async function buildPdf(
+  draw: (c: Ctx) => void,
+  opts: { signaturePng?: Uint8Array } = {}
+): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  let sigImg: Awaited<ReturnType<typeof pdf.embedPng>> | null = null
+  if (opts.signaturePng) {
+    try {
+      sigImg = await pdf.embedPng(opts.signaturePng)
+    } catch {
+      sigImg = null
+    }
+  }
 
   const M = 56
   const W = 612 - M * 2
@@ -112,6 +125,20 @@ export async function buildPdf(draw: (c: Ctx) => void): Promise<Uint8Array> {
     signatureLine(label) {
       drawText(`X _______________________________________     Date: ________________`, M, { gap: 2 })
       drawText(label, M, { size: 9.5, color: "muted", gap: 14 })
+    },
+    signatureImage(label) {
+      if (!sigImg) {
+        this.signatureLine(label)
+        return
+      }
+      const h = 34
+      const w = Math.min((sigImg.width / sigImg.height) * h, 200)
+      ensure(h + 24)
+      page.drawImage(sigImg, { x: M, y: y - h, width: w, height: h })
+      y -= h + 2
+      page.drawLine({ start: { x: M, y }, end: { x: M + 240, y }, thickness: 0.7, color: HAIR })
+      y -= 12
+      drawText(`${label}     Date: ${new Date().toISOString().slice(0, 10)}`, M, { size: 9.5, color: "muted", gap: 14 })
     },
     notaryBlock(personName) {
       this.h2("Notary Acknowledgment")

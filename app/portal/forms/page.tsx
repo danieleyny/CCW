@@ -1,10 +1,11 @@
 import Link from "next/link"
-import { Download, FileText, ArrowRight } from "lucide-react"
+import { Download, ArrowRight } from "lucide-react"
 import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { FormsSigning, type FormDoc } from "@/components/portal/forms-signing"
 
 export const metadata = { title: "Your documents" }
 
@@ -28,14 +29,21 @@ export default async function FormsPage() {
   const hasArrests = (answers.arrests?.length ?? 0) > 0
   const hasCohabitants = (answers.cohabitants?.length ?? 0) > 0
 
-  const docs = [
-    { key: "affirmation", title: "Affirmation of Understanding", desc: "Acknowledges NYC carry rules and prohibited locations. Sign.", show: true, notarize: false },
-    { key: "safe-storage", title: "Safe-Storage Attestation", desc: "Confirms your approved safe and storage practice. Sign.", show: true, notarize: false },
-    { key: "social-media", title: "3-Year Social-Media Disclosure", desc: "Your accounts from the last three years (from intake). Sign.", show: true, notarize: false },
-    { key: "arrest-narratives", title: "Written Explanations", desc: "Formatted explanations for your disclosed matters. Sign.", show: hasArrests, notarize: false },
-    { key: "court-letters", title: "Certificate-of-Disposition Requests", desc: "Ready-to-mail letters to the court clerk, one per matter.", show: hasArrests, notarize: false },
-    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Sign and notarize.", show: !hasCohabitants, notarize: true },
-  ].filter((d) => d.show)
+  // Signature on file? Which signature-only forms are already filed?
+  const [{ data: sig }, { data: reqs }] = await Promise.all([
+    supabase.from("signatures").select("id").eq("case_id", myCase.id).eq("signer_key", "applicant").maybeSingle(),
+    supabase.from("case_requirements").select("req_code, status").eq("case_id", myCase.id).in("req_code", ["AFF-01", "SOC-01"]),
+  ])
+  const filedSet = new Set((reqs ?? []).filter((r) => r.status === "satisfied").map((r) => r.req_code))
+
+  const docs: FormDoc[] = [
+    { key: "affirmation", title: "Affirmation of Understanding", desc: "Acknowledges NYC carry rules and prohibited locations.", notarize: false, fileable: true, filed: filedSet.has("AFF-01") },
+    { key: "safe-storage", title: "Safe-Storage Attestation", desc: "Confirms your approved safe and storage practice.", notarize: false, fileable: false, filed: false },
+    { key: "social-media", title: "3-Year Social-Media Disclosure", desc: "Your accounts from the last three years (from intake).", notarize: false, fileable: true, filed: filedSet.has("SOC-01") },
+    { key: "arrest-narratives", title: "Written Explanations", desc: "Formatted explanations for your disclosed matters.", notarize: false, fileable: false, filed: false, show: hasArrests },
+    { key: "court-letters", title: "Certificate-of-Disposition Requests", desc: "Ready-to-mail letters to the court clerk, one per matter.", notarize: false, fileable: false, filed: false, show: hasArrests },
+    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed; notarize before filing.", notarize: true, fileable: false, filed: false, show: !hasCohabitants },
+  ].filter((d) => (d as { show?: boolean }).show !== false).map(({ ...d }) => d as FormDoc)
 
   return (
     <div className="space-y-6">
@@ -75,25 +83,7 @@ export default async function FormsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {docs.map((d) => (
-          <Card key={d.key}>
-            <CardContent className="flex h-full flex-col p-5">
-              <FileText className="size-5 text-signal" />
-              <h3 className="mt-2 text-sm font-semibold">{d.title}</h3>
-              <p className="mt-1 flex-1 text-xs text-muted-foreground">{d.desc}</p>
-              <div className="mt-3 flex items-center gap-2">
-                <Button asChild size="sm">
-                  <a href={`/portal/forms/${d.key}`} target="_blank" rel="noreferrer">
-                    <Download className="size-4" /> Download
-                  </a>
-                </Button>
-                {d.notarize && <span className="text-[10px] uppercase tracking-wide text-brass">notarize</span>}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <FormsSigning docs={docs} hasSignature={!!sig} />
 
       <p className="text-xs text-muted-foreground">
         Character references and cohabitant affidavits are handled on the{" "}

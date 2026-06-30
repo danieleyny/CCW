@@ -7,8 +7,10 @@ export interface ArrestEntry {
   narrative?: string
 }
 
+type Sig = Uint8Array | undefined
+
 /** AFF-01 — affirmation acknowledging NYC carry rules + sensitive locations. */
-export async function affirmationOfUnderstanding(applicantName: string, dateStr: string): Promise<Uint8Array> {
+export async function affirmationOfUnderstanding(applicantName: string, dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
   return buildPdf((c) => {
     c.heading("Affirmation of Understanding", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
@@ -19,12 +21,12 @@ export async function affirmationOfUnderstanding(applicantName: string, dateStr:
     c.bullet("I understand that my license may be suspended or revoked for violation of these rules or applicable law.")
     c.spacer(8)
     c.para("I make this affirmation knowingly and voluntarily, and the statements above are true.", { gap: 16 })
-    c.signatureLine(`Applicant: ${applicantName}`)
-  })
+    c.signatureImage(`Applicant: ${applicantName}`)
+  }, { signaturePng })
 }
 
 /** SAF-01 — safe-storage attestation. */
-export async function safeStorageAttestation(applicantName: string, dateStr: string): Promise<Uint8Array> {
+export async function safeStorageAttestation(applicantName: string, dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
   return buildPdf((c) => {
     c.heading("Safe-Storage Attestation", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
@@ -35,16 +37,13 @@ export async function safeStorageAttestation(applicantName: string, dateStr: str
         `and closed) are submitted with my application.`,
       { gap: 16 }
     )
-    c.signatureLine(`Applicant: ${applicantName}`)
-  })
+    c.signatureImage(`Applicant: ${applicantName}`)
+  }, { signaturePng })
 }
 
 /** SOC-01 — 3-year social-media disclosure, from collected handles. */
-export async function socialMediaDisclosure(applicantName: string, handles: string, dateStr: string): Promise<Uint8Array> {
-  const list = (handles || "")
-    .split(/[\n,]+/)
-    .map((h) => h.trim())
-    .filter(Boolean)
+export async function socialMediaDisclosure(applicantName: string, handles: string, dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
+  const list = (handles || "").split(/[\n,]+/).map((h) => h.trim()).filter(Boolean)
   return buildPdf((c) => {
     c.heading("Social-Media Disclosure (3 Years)", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
@@ -54,19 +53,17 @@ export async function socialMediaDisclosure(applicantName: string, handles: stri
     for (const h of list) c.bullet(h)
     c.spacer(8)
     c.para("I affirm the list above is complete and accurate to the best of my knowledge.", { gap: 16 })
-    c.signatureLine(`Applicant: ${applicantName}`)
-  })
+    c.signatureImage(`Applicant: ${applicantName}`)
+  }, { signaturePng })
 }
 
 /** ARR-01 — formatted written explanation for each disclosed arrest/summons. */
-export async function arrestNarratives(applicantName: string, arrests: ArrestEntry[], dateStr: string): Promise<Uint8Array> {
+export async function arrestNarratives(applicantName: string, arrests: ArrestEntry[], dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
   return buildPdf((c) => {
     c.heading("Disclosure — Written Explanations", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
     c.para(`Applicant: ${applicantName}`, { bold: true, gap: 10 })
-    if (arrests.length === 0) {
-      c.para("No arrests or summonses disclosed.", { color: "muted" })
-    }
+    if (arrests.length === 0) c.para("No arrests or summonses disclosed.", { color: "muted" })
     arrests.forEach((a, i) => {
       c.h2(`Item ${i + 1}`)
       c.para(
@@ -77,12 +74,12 @@ export async function arrestNarratives(applicantName: string, arrests: ArrestEnt
     })
     c.spacer(4)
     c.para("The explanations above are true and complete to the best of my knowledge.", { gap: 16 })
-    c.signatureLine(`Applicant: ${applicantName}`)
-  })
+    c.signatureImage(`Applicant: ${applicantName}`)
+  }, { signaturePng })
 }
 
 /** ARR-01 — one Certificate-of-Disposition request letter per disclosed arrest. */
-export async function certOfDispositionRequests(applicantName: string, arrests: ArrestEntry[], dateStr: string): Promise<Uint8Array> {
+export async function certOfDispositionRequests(applicantName: string, arrests: ArrestEntry[], dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
   const items = arrests.length ? arrests : [{} as ArrestEntry]
   return buildPdf((c) => {
     items.forEach((arrest, i) => {
@@ -100,8 +97,8 @@ export async function certOfDispositionRequests(applicantName: string, arrests: 
       c.para("Defendant / name on record: ____________________________________", { gap: 4 })
       c.para("Date of birth: ____________________     Docket / case number (if known): ____________________", { gap: 14 })
       c.para("Please mail the certificate to the address below, or advise of any required fee.", { gap: 18 })
-      c.signatureLine(`Applicant: ${applicantName}`)
+      c.signatureImage(`Applicant: ${applicantName}`)
       c.para("Mailing address: ____________________________________________________", { size: 10, color: "muted" })
     })
-  })
+  }, { signaturePng })
 }

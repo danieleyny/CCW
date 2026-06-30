@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useTransition, useRef } from "react"
-import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp } from "lucide-react"
-import { submitReferenceAnswers, uploadNotarizedReference } from "@/app/r/actions"
+import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp, Video } from "lucide-react"
+import { submitReferenceAnswers, uploadNotarizedReference, saveReferenceSignature } from "@/app/r/actions"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
-import { notaryOptions } from "@/lib/references/notary"
+import { notaryOptions, ronOptions } from "@/lib/references/notary"
+import { SignaturePad } from "@/components/sign/signature-pad"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
-type Phase = "answers" | "notarize" | "done"
+type Phase = "answers" | "sign" | "notarize" | "done"
 
 export function ReferenceFlow({
   token,
@@ -45,6 +46,15 @@ export function ReferenceFlow({
     start(async () => {
       const res = await submitReferenceAnswers(token, answers, area)
       if (res.error) setError(res.error)
+      else setPhase("sign")
+    })
+  }
+
+  function sign(b64: string) {
+    setError("")
+    start(async () => {
+      const res = await saveReferenceSignature(token, b64)
+      if (res.error) setError(res.error)
       else setPhase("notarize")
     })
   }
@@ -74,8 +84,26 @@ export function ReferenceFlow({
     )
   }
 
+  if (phase === "sign") {
+    return (
+      <div className="mt-6 space-y-4">
+        <div className="rounded-lg border bg-card p-4 text-sm">
+          Add your signature and we&apos;ll place it on your reference letter. (You can also skip and sign by hand.)
+        </div>
+        <div className="max-w-md">
+          <SignaturePad onSave={sign} saving={pending} label="Sign &amp; continue" />
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setPhase("notarize")} disabled={pending}>
+          Skip — I&apos;ll sign by hand
+        </Button>
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    )
+  }
+
   if (phase === "notarize") {
     const opts = notaryOptions(area)
+    const ron = ronOptions()
     return (
       <div className="mt-6 space-y-5">
         <div className="rounded-lg border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
@@ -107,6 +135,25 @@ export function ReferenceFlow({
               <li key={o.label} className="text-sm">
                 <a href={o.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal underline">
                   <MapPin className="size-3.5" /> {o.label} <ExternalLink className="size-3" />
+                </a>
+                <span className="ml-1 text-xs text-text-low">— {o.note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-lg border border-signal/30 bg-signal/5 p-4">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Video className="size-4 text-signal" /> Prefer not to travel? Notarize online
+          </div>
+          <p className="mt-1 text-xs text-text-low">
+            New York allows Remote Online Notarization — notarize by live video in minutes. Upload the same PDF to any of these:
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {ron.map((o) => (
+              <li key={o.label} className="text-sm">
+                <a href={o.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal underline">
+                  {o.label} <ExternalLink className="size-3" />
                 </a>
                 <span className="ml-1 text-xs text-text-low">— {o.note}</span>
               </li>

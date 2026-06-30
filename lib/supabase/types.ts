@@ -1616,6 +1616,41 @@ export type Database = {
           },
         ]
       }
+      signatures: {
+        Row: {
+          case_id: string
+          created_at: string
+          id: string
+          png_base64: string
+          signer_key: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          id?: string
+          png_base64: string
+          signer_key: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          id?: string
+          png_base64?: string
+          signer_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null

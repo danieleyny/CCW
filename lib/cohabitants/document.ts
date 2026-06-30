@@ -6,6 +6,7 @@ export interface CohabitantAffidavitInput {
   relationship?: string | null
   liveAlone?: boolean
   dateStr: string
+  signaturePng?: Uint8Array
 }
 
 /** Pre-filled cohabitant affidavit (or "sole occupant" statement), notary-ready. */
@@ -20,7 +21,7 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
           `secured in an approved safe or lock-box.`,
         { gap: 16 }
       )
-      c.signatureLine(`Applicant: ${input.applicantName}`)
+      c.signatureImage(`Applicant: ${input.applicantName}`)
       c.notaryBlock(input.applicantName)
       return
     }
@@ -39,7 +40,7 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
         `licensed. The statements herein are true to the best of my knowledge.`,
       { gap: 16 }
     )
-    c.signatureLine(`Cohabitant: ${input.cohabitantName}`)
+    c.signatureImage(`Cohabitant: ${input.cohabitantName}`)
     c.notaryBlock(input.cohabitantName)
-  })
+  }, { signaturePng: input.signaturePng })
 }

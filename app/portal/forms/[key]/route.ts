@@ -10,6 +10,7 @@ import {
   certOfDispositionRequests,
 } from "@/lib/forms/documents"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
+import { getSignaturePng } from "@/lib/signatures"
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 /** Generate a pre-filled applicant document on demand from their intake answers. */
@@ -28,32 +29,33 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
     .maybeSingle()
   const answers = (session?.answers ?? {}) as WizardAnswers
   const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+  const sig = await getSignaturePng(supabase, myCase.id, "applicant")
 
   let pdf: Uint8Array
   let filename: string
   switch (key) {
     case "affirmation":
-      pdf = await affirmationOfUnderstanding(applicant, dateStr)
+      pdf = await affirmationOfUnderstanding(applicant, dateStr, sig)
       filename = "affirmation-of-understanding.pdf"
       break
     case "safe-storage":
-      pdf = await safeStorageAttestation(applicant, dateStr)
+      pdf = await safeStorageAttestation(applicant, dateStr, sig)
       filename = "safe-storage-attestation.pdf"
       break
     case "social-media":
-      pdf = await socialMediaDisclosure(applicant, answers.socialHandles ?? "", dateStr)
+      pdf = await socialMediaDisclosure(applicant, answers.socialHandles ?? "", dateStr, sig)
       filename = "social-media-disclosure.pdf"
       break
     case "arrest-narratives":
-      pdf = await arrestNarratives(applicant, answers.arrests ?? [], dateStr)
+      pdf = await arrestNarratives(applicant, answers.arrests ?? [], dateStr, sig)
       filename = "disclosure-explanations.pdf"
       break
     case "court-letters":
-      pdf = await certOfDispositionRequests(applicant, answers.arrests ?? [], dateStr)
+      pdf = await certOfDispositionRequests(applicant, answers.arrests ?? [], dateStr, sig)
       filename = "cert-of-disposition-requests.pdf"
       break
     case "sole-occupancy":
-      pdf = await generateCohabitantAffidavitPdf({ applicantName: applicant, cohabitantName: applicant, liveAlone: true, dateStr })
+      pdf = await generateCohabitantAffidavitPdf({ applicantName: applicant, cohabitantName: applicant, liveAlone: true, dateStr, signaturePng: sig })
       filename = "sole-occupancy-statement.pdf"
       break
     default:

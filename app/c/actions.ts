@@ -5,6 +5,20 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { validateFile } from "@/lib/files/validator"
 import { notifyCaseParties } from "@/lib/notify"
 import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
+import { isReasonableSignature } from "@/lib/signatures"
+
+/** Capture the cohabitant's e-signature; the affidavit PDF then comes pre-signed. */
+export async function saveCohabitantSignature(token: string, base64: string): Promise<{ ok?: boolean; error?: string }> {
+  if (!isReasonableSignature(base64)) return { error: "Please draw or type your signature first." }
+  const admin = createAdminClient()
+  const { data: cohab } = await admin.from("cohabitants").select("id, case_id").eq("token", token).maybeSingle()
+  if (!cohab) return { error: "This link is invalid or has expired." }
+  const { error } = await admin
+    .from("signatures")
+    .upsert({ case_id: cohab.case_id, signer_key: `cohabitant:${cohab.id}`, png_base64: base64 }, { onConflict: "case_id,signer_key" })
+  if (error) return { error: error.message }
+  return { ok: true }
+}
 
 /** Step 1 — the cohabitant confirms + attests; we mark the affidavit "received". */
 export async function submitCohabitantAnswers(

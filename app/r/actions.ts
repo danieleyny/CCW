@@ -6,8 +6,22 @@ import { sendEmail } from "@/lib/email"
 import { validateFile } from "@/lib/files/validator"
 import { recomputeReferenceRequirement } from "@/lib/references/process"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
+import { isReasonableSignature } from "@/lib/signatures"
 
 type Admin = ReturnType<typeof createAdminClient>
+
+/** Capture the reference's e-signature; their letter PDF then comes pre-signed. */
+export async function saveReferenceSignature(token: string, base64: string): Promise<{ ok?: boolean; error?: string }> {
+  if (!isReasonableSignature(base64)) return { error: "Please draw or type your signature first." }
+  const admin = createAdminClient()
+  const { data: req } = await admin.from("reference_requests").select("reference_id, case_id").eq("token", token).maybeSingle()
+  if (!req) return { error: "This link is invalid or has expired." }
+  const { error } = await admin
+    .from("signatures")
+    .upsert({ case_id: req.case_id, signer_key: `reference:${req.reference_id}`, png_base64: base64 }, { onConflict: "case_id,signer_key" })
+  if (error) return { error: error.message }
+  return { ok: true }
+}
 
 /** Notify the applicant (in-app + email) and the engaged instructor (in-app, no PII). */
 async function notifyParties(
