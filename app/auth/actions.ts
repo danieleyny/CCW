@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { ensureClientCaseForProfile } from "@/lib/onboarding"
 
 export interface AuthFormState {
   error?: string
@@ -54,12 +56,28 @@ export async function signUp(
 
   const supabase = await createClient()
   // New users default to the `client` role (handle_new_user trigger).
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: { data: { full_name: parsed.data.fullName, role: "client" } },
   })
   if (error) return { error: error.message }
+
+  // Open their case immediately so they land in a ready portal — no manual
+  // handoff. Non-fatal if it fails: the portal falls back to the "concierge
+  // will reach out" state and staff can open the case.
+  if (data.user) {
+    try {
+      const admin = createAdminClient()
+      await ensureClientCaseForProfile(admin, {
+        profileId: data.user.id,
+        email: parsed.data.email,
+        fullName: parsed.data.fullName,
+      })
+    } catch (e) {
+      console.error("signup auto-provision failed", e)
+    }
+  }
 
   redirect("/dashboard")
 }
