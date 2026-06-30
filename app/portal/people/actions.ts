@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
-import { newReferenceToken } from "@/lib/references/process"
+import { newReferenceToken, recomputeReferenceRequirement } from "@/lib/references/process"
 
 /** Send (or re-send) a tokenized self-serve link to a character reference. */
 export async function sendReferenceRequest(formData: FormData) {
@@ -67,5 +67,45 @@ export async function sendReferenceRequest(formData: FormData) {
     entity: "reference",
     entityId: referenceId,
   })
+  revalidatePath("/portal/people")
+}
+
+/**
+ * Applicant fallback: record a notarized reference doc they collected directly.
+ * The file is already uploaded to Storage by the browser (client RLS). We bind a
+ * documents row, flip the reference + request to notarized, and recompute REF-01.
+ */
+export async function recordReferenceUpload(input: {
+  referenceId: string
+  path: string
+  fileName: string
+  documentId: string
+}) {
+  await requireRole(["client"])
+  const supabase = await createClient()
+  const { data: ref } = await supabase
+    .from("character_references")
+    .select("id, case_id")
+    .eq("id", input.referenceId)
+    .maybeSingle()
+  if (!ref) throw new Error("Reference not found")
+
+  const { data: kase } = await supabase.from("cases").select("client_id").eq("id", ref.case_id).single()
+  if (!kase) throw new Error("Case not found")
+  if (!input.path.startsWith(`clients/${kase.client_id}/`)) throw new Error("Invalid upload path")
+
+  const admin = createAdminClient()
+  await admin.from("documents").insert({
+    id: input.documentId, case_id: ref.case_id, client_id: kase.client_id,
+    type: "reference_letter", status: "pending", file_path: input.path, file_name: input.fileName, notarized: true,
+  })
+  await admin.from("character_references").update({ notarized: true, received: true }).eq("id", ref.id)
+  await admin
+    .from("reference_requests")
+    .update({ status: "notarized", notarized_at: new Date().toISOString(), document_id: input.documentId })
+    .eq("reference_id", ref.id)
+  await recomputeReferenceRequirement(admin, ref.case_id)
+
+  await logActivity({ action: "reference.notarized", caseId: ref.case_id, entity: "reference", entityId: ref.id })
   revalidatePath("/portal/people")
 }

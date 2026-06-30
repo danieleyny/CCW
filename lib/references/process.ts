@@ -21,21 +21,23 @@ export const REFERENCES_REQUIRED = 4
  * each reference comes in). Never touches a manually rejected/na row.
  */
 export async function recomputeReferenceRequirement(admin: DB, caseId: string) {
-  const { count } = await admin
-    .from("character_references")
-    .select("id", { count: "exact", head: true })
-    .eq("case_id", caseId)
-    .eq("received", true)
-  const received = count ?? 0
+  const [{ count: receivedCount }, { count: notarizedCount }] = await Promise.all([
+    admin.from("character_references").select("id", { count: "exact", head: true }).eq("case_id", caseId).eq("received", true),
+    admin.from("character_references").select("id", { count: "exact", head: true }).eq("case_id", caseId).eq("notarized", true),
+  ])
+  const received = receivedCount ?? 0
+  const notarized = notarizedCount ?? 0
   const status: Database["public"]["Enums"]["case_req_status"] =
     received >= REFERENCES_REQUIRED ? "satisfied" : "pending"
 
+  // notes is the ONLY reference signal an engaged instructor can read (they can't
+  // see character_references) — keep it an aggregate, never a name.
   await admin
     .from("case_requirements")
-    .update({ status, notes: `${received}/${REFERENCES_REQUIRED} references received` })
+    .update({ status, notes: `${received}/${REFERENCES_REQUIRED} received · ${notarized} notarized` })
     .eq("case_id", caseId)
     .eq("req_code", "REF-01")
     .in("status", ["pending", "satisfied"])
 
-  return { received, required: REFERENCES_REQUIRED, status }
+  return { received, notarized, required: REFERENCES_REQUIRED, status }
 }

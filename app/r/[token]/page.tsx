@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { brand } from "@/config/brand"
-import { ReferenceForm } from "@/components/public/reference-form"
+import { ReferenceFlow } from "@/components/public/reference-flow"
 
 export const metadata = { title: "Character reference — CARRY" }
 
@@ -35,27 +35,23 @@ export default async function ReferencePage({
   ])
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
 
-  // Mark opened (idempotent).
   if (req.status === "pending" || req.status === "sent") {
-    await admin
-      .from("reference_requests")
-      .update({ status: "opened", opened_at: new Date().toISOString() })
-      .eq("id", req.id)
+    await admin.from("reference_requests").update({ status: "opened", opened_at: new Date().toISOString() }).eq("id", req.id)
   }
-  const done = req.status === "submitted" || req.status === "notarized"
 
   return (
     <Shell>
       <h1 className="text-xl font-semibold tracking-tight">Character reference</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        A quick confirmation for {applicant}&apos;s NYC carry-license application. No account needed.
+        A quick, guided confirmation for {applicant}&apos;s NYC carry-license application — no account
+        needed. We&apos;ll build a notarization-ready letter from your answers.
       </p>
-      <ReferenceForm
+      <ReferenceFlow
         token={token}
         referenceName={ref?.name ?? ""}
         relationship={ref?.relationship ?? null}
         applicant={applicant}
-        alreadyDone={done}
+        initialStatus={req.status}
       />
     </Shell>
   )

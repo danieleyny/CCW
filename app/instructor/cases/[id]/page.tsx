@@ -97,11 +97,14 @@ export default async function InstructorCaseDetail({
         <ul className="divide-y rounded-lg border bg-card">
           {applicable.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-3 p-3">
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
-                  {r.req_code}
-                </span>
-                <span className="text-sm">{r.requirement?.title ?? r.req_code}</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
+                    {r.req_code}
+                  </span>
+                  <span className="text-sm">{r.requirement?.title ?? r.req_code}</span>
+                </div>
+                {r.notes && <p className="mt-0.5 text-xs text-text-low">{r.notes}</p>}
               </div>
               <StatusBadge status={r.status} />
             </li>

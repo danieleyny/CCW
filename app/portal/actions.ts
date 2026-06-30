@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
+import { sendEmail } from "@/lib/email"
+import { newReferenceToken } from "@/lib/references/process"
 import type { DocumentType } from "@/config/checklist-templates"
 
 const ALLOWED_CLIENT_STATUSES = ["not_started", "in_progress", "submitted"] as const
@@ -131,17 +134,46 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
     .eq("case_id", v.caseId)
   if ((count ?? 0) >= 4) return { error: "You already have 4 references." }
 
-  const { error } = await supabase.from("character_references").insert({
-    case_id: v.caseId,
-    name: v.name,
-    relationship: v.relationship || null,
-    is_family: v.isFamily === "on",
-    contact_email: v.contactEmail || null,
-    contact_phone: v.contactPhone || null,
-    received: true,
-  })
+  const { data: created, error } = await supabase
+    .from("character_references")
+    .insert({
+      case_id: v.caseId,
+      name: v.name,
+      relationship: v.relationship || null,
+      is_family: v.isFamily === "on",
+      contact_email: v.contactEmail || null,
+      contact_phone: v.contactPhone || null,
+      received: false,
+    })
+    .select("id")
+    .single()
   if (error) return { error: error.message }
-  await logActivity({ action: "reference.added", caseId: v.caseId, entity: "character_reference" })
+  await logActivity({ action: "reference.added", caseId: v.caseId, entity: "character_reference", entityId: created.id })
+
+  // Auto-invite: if we have an email, create the tokenized request and send it
+  // immediately so the reference can self-serve without the applicant chasing them.
+  if (v.contactEmail) {
+    const admin = createAdminClient()
+    const token = newReferenceToken()
+    await admin.from("reference_requests").insert({
+      reference_id: created.id, case_id: v.caseId, token, status: "sent", sent_at: new Date().toISOString(),
+    })
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+    const link = `${base}/r/${token}`
+    await sendEmail({
+      to: v.contactEmail,
+      subject: "You've been listed as a character reference — CARRY",
+      html: `<div style="font-family:sans-serif;line-height:1.5">
+        <p>Hi ${v.name},</p>
+        <p>${"An applicant"} listed you as a character reference for their NYC concealed-carry
+        license. Please confirm and complete it here — it takes a minute, no account needed,
+        and we'll build a ready-to-notarize letter for you:</p>
+        <p><a href="${link}">${link}</a></p>
+      </div>`,
+      text: `Complete your character reference: ${link}`,
+    })
+  }
+
   revalidatePath("/portal/people")
   return { ok: true }
 }

@@ -9,6 +9,8 @@ import {
 } from "@/components/portal/collectors"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { ReferenceUpload } from "@/components/portal/reference-upload"
+import { CopyLinkButton } from "@/components/portal/copy-link-button"
 import { sendReferenceRequest } from "./actions"
 
 export const metadata = { title: "References & household" }
@@ -37,10 +39,10 @@ export default async function PeoplePage() {
       .order("created_at"),
     supabase
       .from("reference_requests")
-      .select("reference_id, status")
+      .select("reference_id, status, token")
       .eq("case_id", myCase.id),
   ])
-  const reqStatus = new Map((reqs.data ?? []).map((r) => [r.reference_id, r.status]))
+  const reqByRef = new Map((reqs.data ?? []).map((r) => [r.reference_id, r]))
 
   return (
     <div>
@@ -68,7 +70,22 @@ export default async function PeoplePage() {
               </p>
               <ul className="space-y-2">
                 {(refs.data ?? []).map((r) => {
-                  const status = r.received ? "submitted" : reqStatus.get(r.id)
+                  const req = reqByRef.get(r.id)
+                  const reqSt = req?.status
+                  const label = r.notarized
+                    ? "notarized"
+                    : r.received
+                      ? "responded"
+                      : reqSt === "opened"
+                        ? "opened link"
+                        : reqSt
+                          ? "invited"
+                          : "not invited"
+                  const tone = r.notarized
+                    ? "bg-ok/12 text-ok"
+                    : r.received
+                      ? "bg-signal-dim text-signal"
+                      : "bg-surface-2 text-text-mid"
                   return (
                     <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 text-sm">
                       <span className="min-w-0">
@@ -76,23 +93,24 @@ export default async function PeoplePage() {
                         {r.contact_email ? (
                           <span className="text-text-low"> · {r.contact_email}</span>
                         ) : (
-                          <span className="text-warn"> · add an email to send</span>
+                          <span className="text-warn"> · add an email to invite</span>
                         )}
                       </span>
                       <div className="flex items-center gap-2">
-                        {r.received ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-ok">
-                            <CheckCircle2 className="size-3.5" /> received
-                          </span>
-                        ) : status ? (
-                          <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-mid">{status}</span>
-                        ) : null}
-                        {!r.received && (
+                        <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${tone}`}>
+                          {r.notarized && <CheckCircle2 className="size-3" />}
+                          {label}
+                        </span>
+                        {!r.notarized && req?.token && <CopyLinkButton token={req.token} />}
+                        {!r.notarized && (
+                          <ReferenceUpload referenceId={r.id} clientId={myCase.client_id} />
+                        )}
+                        {!r.notarized && r.contact_email && (
                           <form action={sendReferenceRequest}>
                             <input type="hidden" name="referenceId" value={r.id} />
-                            <Button type="submit" size="sm" variant="outline" disabled={!r.contact_email}>
+                            <Button type="submit" size="sm" variant="outline">
                               <Send className="size-3.5" />
-                              {status ? "Resend" : "Send link"}
+                              {reqSt ? "Resend" : "Send link"}
                             </Button>
                           </form>
                         )}

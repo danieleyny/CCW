@@ -1423,9 +1423,14 @@ export type Database = {
       }
       reference_requests: {
         Row: {
+          answered_at: string | null
+          answers: Json
           case_id: string
           created_at: string
+          document_id: string | null
           id: string
+          notarized_at: string | null
+          notary_area: string | null
           opened_at: string | null
           reference_id: string
           sent_at: string | null
@@ -1435,9 +1440,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          answered_at?: string | null
+          answers?: Json
           case_id: string
           created_at?: string
+          document_id?: string | null
           id?: string
+          notarized_at?: string | null
+          notary_area?: string | null
           opened_at?: string | null
           reference_id: string
           sent_at?: string | null
@@ -1447,9 +1457,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          answered_at?: string | null
+          answers?: Json
           case_id?: string
           created_at?: string
+          document_id?: string | null
           id?: string
+          notarized_at?: string | null
+          notary_area?: string | null
           opened_at?: string | null
           reference_id?: string
           sent_at?: string | null
@@ -1464,6 +1479,13 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {
