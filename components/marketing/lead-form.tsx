@@ -1,13 +1,17 @@
 "use client"
 
-import { useActionState } from "react"
-import { CheckCircle2 } from "lucide-react"
+import { useActionState, useEffect, useState } from "react"
+import Link from "next/link"
+import { CheckCircle2, ArrowRight } from "lucide-react"
 import { captureLead, type LeadState } from "@/app/(marketing)/actions"
 import { BOROUGHS } from "@/config/stages"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+
+/** sessionStorage key the sign-up form reads to pre-fill name + email. */
+export const SIGNUP_PREFILL_KEY = "carry_signup_prefill"
 
 export function LeadForm({
   source,
@@ -17,6 +21,7 @@ export function LeadForm({
   submitLabel = "Submit",
   successTitle = "Thank you.",
   successBody = "Your CARRY concierge will reach out within one business day.",
+  accountCta = false,
   hidden,
 }: {
   source: string
@@ -26,11 +31,49 @@ export function LeadForm({
   submitLabel?: string
   successTitle?: string
   successBody?: string
+  /** When true, the success state pushes the visitor straight into account creation. */
+  accountCta?: boolean
   hidden?: Record<string, string>
 }) {
   const [state, action, pending] = useActionState<LeadState, FormData>(captureLead, {})
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+
+  // On success, stash name + email so /auth/sign-up comes pre-filled and the new
+  // account adopts the lead just captured (no PII in the URL).
+  useEffect(() => {
+    if (state.ok && accountCta && typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem(SIGNUP_PREFILL_KEY, JSON.stringify({ name, email }))
+      } catch {
+        // sessionStorage unavailable — sign-up just starts blank
+      }
+    }
+  }, [state.ok, accountCta, name, email])
 
   if (state.ok) {
+    if (accountCta) {
+      return (
+        <div className="rounded-lg border border-ok/30 bg-ok/8 p-8 text-center">
+          <CheckCircle2 className="mx-auto size-8 text-ok" />
+          <h3 className="mt-3 font-display text-lg font-semibold">{successTitle}</h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-text-mid">
+            Create your free account to start now — schedule training, prepare your documents, and
+            track every step. We&apos;ve saved your answers.
+          </p>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <Button asChild size="lg">
+              <Link href="/auth/sign-up">
+                Create your account &amp; get started <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+            <p className="text-xs text-text-low">
+              Prefer to talk first? {successBody}
+            </p>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="rounded-lg border border-ok/30 bg-ok/8 p-8 text-center">
         <CheckCircle2 className="mx-auto size-8 text-ok" />
@@ -50,11 +93,11 @@ export function LeadForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="lead-name">Full name</Label>
-          <Input id="lead-name" name="name" required />
+          <Input id="lead-name" name="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lead-email">Email</Label>
-          <Input id="lead-email" name="email" type="email" required />
+          <Input id="lead-email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lead-phone">Phone</Label>

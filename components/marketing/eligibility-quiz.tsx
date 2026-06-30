@@ -193,8 +193,9 @@ function Result({
             source="eligibility_quiz"
             showBorough={false}
             submitLabel={status === "review" ? "Request a confidential review" : "Claim your spot"}
-            successTitle={status === "review" ? "We'll be in touch." : "You're on the list."}
-            successBody="Your CARRY concierge will reach out within one business day with next steps."
+            successTitle={status === "review" ? "Let's get started." : "You're all set."}
+            successBody="your CARRY concierge can reach out within one business day."
+            accountCta
             hidden={{ track, eligibility: eligibilityJson }}
           />
         </div>

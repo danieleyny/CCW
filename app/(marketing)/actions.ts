@@ -55,27 +55,49 @@ export async function captureLead(
     }
   }
 
-  const { data: client, error: clientErr } = await admin
+  // Reuse an unclaimed lead with the same email so re-submitting the quiz (or
+  // coming back later) doesn't pile up duplicate records.
+  const { data: existing } = await admin
     .from("clients")
-    .insert({
-      full_name: v.name,
-      email: v.email,
-      phone: v.phone || null,
-      borough: v.borough || null,
-      track: v.track,
-      current_stage: "lead",
-      lead_source: v.source,
-      eligibility: eligibility as never,
-    })
     .select("id")
-    .single()
-  if (clientErr) return { error: clientErr.message }
+    .ilike("email", v.email)
+    .is("profile_id", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-  const { data: kase } = await admin
+  const clientFields = {
+    full_name: v.name,
+    email: v.email,
+    phone: v.phone || null,
+    borough: v.borough || null,
+    track: v.track,
+    current_stage: "lead" as const,
+    lead_source: v.source,
+    eligibility: eligibility as never,
+  }
+
+  let client: { id: string }
+  if (existing?.id) {
+    const { data, error } = await admin.from("clients").update(clientFields).eq("id", existing.id).select("id").single()
+    if (error || !data) return { error: error?.message ?? "Could not save your details" }
+    client = data
+  } else {
+    const { data, error } = await admin.from("clients").insert(clientFields).select("id").single()
+    if (error || !data) return { error: error.message }
+    client = data
+  }
+
+  // Reuse the lead's existing case if it already has one.
+  const { data: existingCase } = await admin
     .from("cases")
-    .insert({ client_id: client.id, stage: "lead", status: "active" })
     .select("id")
-    .single()
+    .eq("client_id", client.id)
+    .limit(1)
+    .maybeSingle()
+  const kase =
+    existingCase ??
+    (await admin.from("cases").insert({ client_id: client.id, stage: "lead", status: "active" }).select("id").single()).data
 
   await admin.from("tasks").insert({
     case_id: kase?.id ?? null,
