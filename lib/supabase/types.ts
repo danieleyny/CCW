@@ -3200,6 +3200,7 @@ export type Database = {
         | "leo_property_receipt"
         | "leo_cert_of_service"
         | "oos_background_form"
+        | "applicant_photo"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -3445,6 +3446,7 @@ export const Constants = {
         "leo_property_receipt",
         "leo_cert_of_service",
         "oos_background_form",
+        "applicant_photo",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

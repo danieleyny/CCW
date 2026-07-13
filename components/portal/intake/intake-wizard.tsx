@@ -312,10 +312,11 @@ export function IntakeWizard({
 // ── Step rail ────────────────────────────────────────────────────────────────
 function StepRail({ step }: { step: number }) {
   return (
-    <ol className="flex flex-wrap gap-1.5 text-xs">
+    <ol className="flex flex-wrap gap-1.5 text-xs" aria-label="Intake progress">
       {INTAKE_STEPS.map((s) => (
         <li
           key={s.n}
+          aria-current={s.n === step ? "step" : undefined}
           className={cn(
             "rounded-md border px-2.5 py-1",
             s.n === step
@@ -383,6 +384,7 @@ function StepEligibility({ a, patch, reasons }: StepProps & { reasons: string[] 
         </Field>
         <Field label="Residence">
           <select
+            aria-label="Residence"
             value={a.residence ?? ""}
             onChange={(e) => patch({ residence: e.target.value as WizardAnswers["residence"] })}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -398,6 +400,7 @@ function StepEligibility({ a, patch, reasons }: StepProps & { reasons: string[] 
         hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
       >
         <select
+          aria-label="License type"
           value={a.licenseType ?? "carry"}
           onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
           className={SELECT_CLASS}
@@ -439,6 +442,7 @@ function StepIdentity({ a, patch }: StepProps) {
         </Field>
         <Field label="Citizenship status">
           <select
+            aria-label="Citizenship status"
             value={a.citizenship ?? ""}
             onChange={(e) => patch({ citizenship: e.target.value as WizardAnswers["citizenship"] })}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -596,6 +600,7 @@ function StepHistory({ a, patch }: StepProps) {
           hint="NYC requires this CCIA-approved course. If you haven't taken it yet, we'll match you with a verified instructor and schedule it for you."
         >
           <select
+            aria-label="Training status"
             value={trainingStatus ?? ""}
             onChange={(e) => {
               const v = (e.target.value || undefined) as WizardAnswers["trainingStatus"]
@@ -667,6 +672,7 @@ function StepHistory({ a, patch }: StepProps) {
         {(social.length ? social : [{ platform: "", handle: "" }]).map((s, i) => (
           <div key={i} className="flex gap-2">
             <select
+              aria-label="Social platform"
               value={s.platform}
               onChange={(e) => updSocial(i, { platform: e.target.value })}
               className={cn(SELECT_CLASS, "max-w-[44%]")}

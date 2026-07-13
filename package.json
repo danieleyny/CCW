@@ -9,7 +9,8 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > lib/supabase/types.ts"
+    "db:types": "supabase gen types typescript --local > lib/supabase/types.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -50,6 +51,7 @@
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

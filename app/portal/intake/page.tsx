@@ -21,6 +21,26 @@ export default async function IntakePage() {
   const session = await ensureIntakeSession(myCase.id)
   const completed = !!session.completed_at
 
+  // V3-P4.4 — carry the eligibility-quiz answers into intake: a brand-new
+  // session prefills residence + training status from what the lead already
+  // told us, so nobody answers the same question twice.
+  let initialAnswers = (session.answers ?? {}) as WizardAnswers
+  if (!completed && Object.keys(initialAnswers).length === 0) {
+    const supabase0 = await createClient()
+    const { data: clientRow } = await supabase0
+      .from("clients")
+      .select("eligibility")
+      .eq("id", myCase.client_id)
+      .single()
+    const quiz = (clientRow?.eligibility ?? {}) as Record<string, string>
+    const prefill: WizardAnswers = {}
+    if (quiz.location === "non_resident") prefill.residence = "non_resident"
+    else if (quiz.location) prefill.residence = "nyc"
+    if (quiz.training === "done") prefill.trainingStatus = "completed"
+    else if (quiz.training) prefill.trainingStatus = "planned"
+    initialAnswers = prefill
+  }
+
   let disclosures: { id: string; type: string; narrative: string; question_no: number | null }[] = []
   let guard = null
   if (completed) {
@@ -48,7 +68,7 @@ export default async function IntakePage() {
       <IntakeWizard
         caseId={myCase.id}
         isRenewal={!!myCase.is_renewal}
-        initialAnswers={(session.answers ?? {}) as WizardAnswers}
+        initialAnswers={initialAnswers}
         initialStep={session.current_step ?? 1}
         completed={completed}
         disclosures={disclosures}

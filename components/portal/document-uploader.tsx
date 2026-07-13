@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
 import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
+import { normalizeApplicantPhoto } from "@/lib/files/photo-spec"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import type { DocumentType } from "@/lib/doc-types"
@@ -26,6 +27,7 @@ export function DocumentUploader({
   label,
   description,
   current,
+  photoSpec = false,
 }: {
   caseId: string
   clientId: string
@@ -33,6 +35,8 @@ export function DocumentUploader({
   label: string
   description?: string
   current: CurrentDoc | null
+  /** V3-P4.2 — validate against the NYPD photo spec (square, 600–1200px). */
+  photoSpec?: boolean
 }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -43,9 +47,22 @@ export function DocumentUploader({
     e.target.value = "" // allow re-selecting the same file
     if (!file) return
 
-    // V3-P0.5 — downscale/re-encode phone photos (incl. HEIC→JPEG) before the
-    // size check, so a 12 MB safe photo becomes a compliant ~2 MB JPEG.
-    file = await compressImageFile(file)
+    if (photoSpec) {
+      // V3-P4.2 — the NYPD photo spec, enforced mechanically: square photos
+      // that are merely oversized get auto-downscaled to 1200×1200; anything
+      // unfixable is rejected with the exact reason.
+      const spec = await normalizeApplicantPhoto(file)
+      if (!spec.ok || !spec.file) {
+        toast.error(spec.issues[0] ?? "That photo doesn't meet the NYPD spec.", { duration: 9000 })
+        return
+      }
+      file = spec.file
+      if ((spec.width ?? 0) > 1200) toast.info("Photo auto-resized to the NYPD 1200×1200 maximum.")
+    } else {
+      // V3-P0.5 — downscale/re-encode phone photos (incl. HEIC→JPEG) before the
+      // size check, so a 12 MB safe photo becomes a compliant ~2 MB JPEG.
+      file = await compressImageFile(file)
+    }
 
     // FMT-01: enforce size + type and sanitize the filename (the NYPD portal
     // silently rejects oversized files, wrong types, and "dirty" names).

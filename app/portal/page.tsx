@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { WelcomeCard } from "@/components/portal/welcome-card"
 
 export const metadata = { title: "Your application" }
 
@@ -71,6 +72,11 @@ export default async function PortalHome() {
           Tracking your NYC concealed carry application, end to end.
         </p>
       </div>
+
+      {/* V3-P4.4 — first-visit orientation (dismissible, early stages only) */}
+      {!isLicensed && !isDenied && ["lead", "eligibility_screened", "signed_up_paid"].includes(stage) && (
+        <WelcomeCard firstName={myCase.client.full_name.split(" ")[0]} />
+      )}
 
       {/* V3-P3.3 — denial: the appeal window is the only thing that matters */}
       {isDenied && (

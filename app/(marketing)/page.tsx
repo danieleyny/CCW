@@ -12,7 +12,6 @@ import { Magnetic } from "@/components/marketing/magnetic"
 import { SpotlightCard } from "@/components/marketing/spotlight-card"
 import { Ticker } from "@/components/marketing/ticker"
 import { JourneyScroll } from "@/components/marketing/journey-scroll"
-import { PrecisionTest } from "@/components/marketing/precision-test"
 import { JsonLd, serviceSchema } from "@/components/marketing/json-ld"
 
 const FEATURES = [
@@ -105,9 +104,6 @@ export default async function Home() {
 
       {/* Scroll-driven journey */}
       <JourneyScroll />
-
-      {/* Precision mini-game */}
-      <PrecisionTest />
 
       {/* Pricing teaser */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">

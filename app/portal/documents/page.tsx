@@ -6,7 +6,14 @@ import type { DocumentType } from "@/lib/doc-types"
 export const metadata = { title: "Documents" }
 
 // Curated list of uploadable documents shown in the portal (journey order).
-const DOC_TYPES: { type: DocumentType; label: string; description: string }[] = [
+const DOC_TYPES: { type: DocumentType; label: string; description: string; photoSpec?: boolean }[] = [
+  {
+    type: "applicant_photo",
+    label: "Application photo",
+    description:
+      "Color, chest-up, facing the camera, taken within the last 30 days, nothing obscuring your face. Must be square, 600×600–1200×1200 px — we check the dimensions automatically and resize oversized square photos for you.",
+    photoSpec: true,
+  },
   { type: "id", label: "Government photo ID", description: "Driver license, non-driver ID, or passport." },
   { type: "proof_residence", label: "Proof of residence / business", description: "A recent utility bill, lease, or similar." },
   { type: "training_cert", label: "Training completion certificate", description: "Your 16-hour + 2-hour course completion." },
@@ -79,6 +86,7 @@ export default async function DocumentsPage() {
             label={d.label}
             description={d.description}
             current={current.get(d.type) ?? null}
+            photoSpec={d.photoSpec}
           />
         ))}
       </div>

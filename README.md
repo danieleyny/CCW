@@ -1,95 +1,43 @@
-# CarryPath
+# CARRY
 
-A production web app for a NYC concealed-carry-weapon (CCW) license-assistance service. One Next.js app, three surfaces:
+A production platform for a NYC concealed-carry license-assistance service: it turns the NYPD's deliberately demanding, ~6-month application process into a guided, evidence-assembling workflow — for the applicant *and* for the consultant running dozens of cases at once.
 
-- **Public marketing site** (SSR/SEO) — landing, the 13-step journey, packages, disclaimer.
-- **Client portal** (mobile-first) — progress timeline + checklist (full uploads/messaging/payments in a later phase).
-- **Admin dashboard** — pipeline (kanban), case files, checklist engine, document review, task queue, manual client creation, audit log.
+**The controlling insight:** NYC carry is not a form you submit — it's an investigation you assemble evidence for. The two levers the product is built around: **long-lead parallelism** (training expires 6 months after completion — start it on day one) and **disclosure discipline** (false statements and lack of candor are the dominant denial grounds, not the underlying conduct).
 
-> **Brand is a placeholder.** All brand values (name, logo slot, colors, fonts, contact, disclaimer) live in `config/brand.ts`. Swap them there — no component changes needed.
+**The legal frame:** consulting firms cannot represent applicants before the License Division, cannot expedite, and are not endorsed by NYPD. The product is therefore built so the **applicant always reviews and submits their own application**, disclosures are candor-maximizing by design, anything advisory routes to a NY-licensed attorney, and every registry rule carries provenance awaiting attorney sign-off (`/admin/legal`).
+
+## Surfaces
+
+| Surface | Path | What it does |
+|---|---|---|
+| Marketing | `app/(marketing)` | Landing, eligibility quiz (feeds intake), DB-driven pricing, guides, standing disclaimer |
+| Client portal | `app/portal` | Intake interview → personalized checklist from the versioned requirements engine; documents (HEIC-safe uploads, NYPD photo-spec validation); e-signatures; self-serve enrollment; instructor marketplace + booking; references & household outreach; assembled filing packet; post-issuance license hub (30-day/90-day/72-hour clocks, §5-24 reporting); appeal seam |
+| Consultant admin | `app/admin` | Pipeline with stall signals, case files (requirements, disclosures review, documents, people w/ token status, training & scheduling, internal notes, tasks, messages w/ templates, activity), unified inbox, **CP-5 pre-filing QA gate** (a case physically cannot be filed incomplete), legal-verification register, reports |
+| Instructor | `app/instructor` | Self-registration → admin verification → redacted offer feed (privacy firewall: never sees disclosures or pre-accept PII) → availability, bookings, ICS invites, Connect payouts (flag-gated) |
+| Public token flows | `app/r/[token]`, `app/c/[token]` | No-login reference letters and cohabitant affidavits: questionnaire → generated PDF → e-sign → notarize (in person or RON) → upload. Tokens expire in 30 days and are revocable |
 
 ## Stack
 
-- **Next.js 16** (App Router, TypeScript, RSC) — note: middleware is now `proxy.ts`.
-- **Tailwind v4 + shadcn/ui** (the brand palette is injected from `config/brand.ts`).
-- **Supabase** — Postgres, Auth (roles), Storage, Row-Level Security.
-- **Stripe / Resend / Twilio** — scaffolded behind env flags; the app runs without keys.
+Next.js 16 (App Router, `proxy.ts`) · React 19 · Supabase (Postgres + RLS + Auth + Storage + PostGIS) · Tailwind v4 · bespoke shadcn-derived UI (`config/brand.ts` tokens) · Stripe (flag-gated) · Resend (flag-gated) · pdf-lib · pnpm · Vercel (+ daily cron).
 
-## Prerequisites
-
-- Node 20+ and `pnpm`
-- [Supabase CLI](https://supabase.com/docs/guides/cli) and Docker (for local dev)
-
-## Local setup
+## Running it
 
 ```bash
 pnpm install
-
-# 1. Start the local Supabase stack (Postgres + Auth + Storage in Docker).
-#    Applies all migrations in supabase/migrations automatically.
-supabase start
-
-# 2. Point the app at the local stack. The defaults in .env.local already match
-#    `supabase start`; if your keys differ, read them with:
-supabase status -o env
-
-# 3. Seed demo data (users, clients, cases across all stages).
-pnpm seed
-
-# 4. Run the app.
-pnpm dev   # http://localhost:3000
+supabase start          # local stack
+pnpm db:reset && pnpm seed && pnpm db:types
+pnpm dev
 ```
 
-### Demo logins (password: `Passw0rd!`)
+Demo logins (local seed, password `Passw0rd!`): `admin@carrypath.test`, `staff@carrypath.test`, `client1@carrypath.test`, `client2@carrypath.test`, `instructor@carrypath.test`.
 
-| Email | Role | Notes |
-|---|---|---|
-| `admin@carrypath.test` | admin | sees everything |
-| `staff@carrypath.test` | staff | sees assigned cases |
-| `client1@carrypath.test` | client | Jordan Rivera (document collection) |
-| `client2@carrypath.test` | client | Sam Chen (under investigation) |
+Checks: `pnpm test` (vitest units: rule engine, validators, license math, intake schema) · `pnpm tsx scripts/verify-v3p0.ts` … `verify-v3p3.ts` + `verify-p9.ts` (live harnesses incl. the RLS matrix, run after a reset+seed) · `pnpm lint` · `pnpm build`.
 
-After login you're routed by role: admin/staff → `/admin`, client → `/portal`.
+## Going fully live — the switches
 
-## Database
+- `STRIPE_ENABLED=true` + Stripe keys → real card checkout (until then, "Request invoice" records intent + tasks staff).
+- `RESEND_API_KEY` → outbound email (until then, emails log; applicants share links via Copy-link buttons).
+- Attorney sign-off of the requirements registry in `/admin/legal` (nothing is presumed verified).
+- Real business contact details in `config/brand.ts`.
 
-- Schema, RLS, and Storage policies live in `supabase/migrations`.
-- RLS model: **clients** see only their own case/docs/messages; **staff** see assigned cases; **admin** sees all. The `service_role` key (seed, Stripe webhook) bypasses RLS.
-- Regenerate TypeScript types after a schema change: `pnpm db:types`.
-- Reset + replay migrations: `pnpm db:reset` (then `pnpm seed`).
-
-## Enabling Stripe (later)
-
-Payments are gated by a flag so the app runs without Stripe. To turn on:
-
-1. Set `STRIPE_ENABLED=true` and add `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in `.env.local`.
-2. Point a Stripe webhook at `POST /api/stripe/webhook`.
-
-See `lib/stripe`. Email (Resend) is similar: add `RESEND_API_KEY` and transactional email turns on; until then it logs to the console.
-
-## Deploy (Vercel + hosted Supabase)
-
-1. **Create a new Supabase organization + project** in the dashboard (the CLI can't create orgs). Keep it separate from any other projects on your account.
-2. Link and push the schema:
-   ```bash
-   supabase link --project-ref <ref>
-   supabase db push
-   ```
-3. In Vercel, import the repo and set env vars from `.env.example` using the **hosted** project's URL + keys.
-4. Set `NEXT_PUBLIC_SITE_URL` to your production URL. Deploy.
-
-## Project structure
-
-```
-app/            marketing (/), portal (/portal), admin (/admin), auth, api
-components/     ui (shadcn), admin (pipeline, case file, …), shared
-config/         brand.ts, stages.ts, checklist-templates.ts
-lib/            supabase clients, auth, activity log, email/stripe adapters
-supabase/       migrations + config
-scripts/        seed.ts
-proxy.ts        session refresh + optimistic route guards (Next 16 "middleware")
-```
-
-## Compliance note
-
-CarryPath **assists with and guides** the application; it does not issue licenses and cannot guarantee approval (the NYPD retains investigative discretion). This app stores sensitive PII — RLS, least-privilege access, and an immutable `activity_log` are enforced throughout.
+Deep agent/contributor context: **AGENTS.md**. V3 evidence base: `CCW_V3_AUDIT.md` + `CCW_V3_BUILD_PROMPT.md`. Historical plans: `docs/archive/`.
