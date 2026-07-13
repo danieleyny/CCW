@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { ArrowRight, ShieldCheck, FileCheck2, CalendarClock } from "lucide-react"
 import { brand } from "@/config/brand"
-import { SERVICE_PACKAGES } from "@/lib/stripe"
+import { createClient } from "@/lib/supabase/server"
+import { getActivePackages } from "@/lib/packages"
 import { Button } from "@/components/ui/button"
 import { HudStat } from "@/components/ui/hud-stat"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -32,7 +33,8 @@ const FEATURES = [
   },
 ]
 
-export default function Home() {
+export default async function Home() {
+  const packages = await getActivePackages(await createClient())
   return (
     <>
       <JsonLd data={serviceSchema} />
@@ -125,8 +127,8 @@ export default function Home() {
           </div>
         </Reveal>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {SERVICE_PACKAGES.map((p, i) => {
-            const featured = "featured" in p && p.featured
+          {packages.map((p, i) => {
+            const featured = p.featured
             return (
               <Reveal key={p.key} delay={i * 80}>
                 <SpotlightCard>
@@ -147,7 +149,9 @@ export default function Home() {
                       size="sm"
                       className="mt-5 w-full"
                     >
-                      <Link href="/eligibility">Get started</Link>
+                      <Link href={`/portal/enroll?package=${p.key}`}>
+                        {p.priceCents > 0 ? "Buy now" : "Talk to us"}
+                      </Link>
                     </Button>
                   </div>
                 </SpotlightCard>

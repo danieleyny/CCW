@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Check } from "lucide-react"
-import { SERVICE_PACKAGES } from "@/lib/stripe"
+import { createClient } from "@/lib/supabase/server"
+import { getActivePackages } from "@/lib/packages"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 
@@ -24,7 +25,9 @@ const FEATURES: Record<string, string[]> = {
   renewal: ["Discounted 3-year renewal", "Document refresh", "Re-filing support"],
 }
 
-export default function Pricing() {
+export default async function Pricing() {
+  // V3-P3.1 — pricing comes from the DB; a price change is a data edit.
+  const packages = await getActivePackages(await createClient())
   return (
     <>
       <PageHero
@@ -35,8 +38,8 @@ export default function Pricing() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-4">
-          {SERVICE_PACKAGES.map((p) => {
-            const featured = "featured" in p && p.featured
+          {packages.map((p) => {
+            const featured = p.featured
             return (
               <div
                 key={p.key}
@@ -57,7 +60,9 @@ export default function Pricing() {
                   ))}
                 </ul>
                 <Button asChild variant={featured ? "default" : "outline"} className="mt-6 w-full">
-                  <Link href="/eligibility">Get started</Link>
+                  <Link href={`/portal/enroll?package=${p.key}`}>
+                    {p.priceCents > 0 ? "Buy now" : "Talk to us"}
+                  </Link>
                 </Button>
               </div>
             )

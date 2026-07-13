@@ -279,6 +279,108 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }))
   }
 
+  // ── V3-P3.2 Rule: purchase authorization expiring (≤7 days, unused) ───────
+  const { data: expAuths } = await admin
+    .from("purchase_authorizations")
+    .select("id, case_id, expires_on")
+    .is("acquired_on", null)
+    .gte("expires_on", now.toISOString().slice(0, 10))
+    .lte("expires_on", new Date(now.getTime() + 7 * DAY).toISOString().slice(0, 10))
+  const authContacts = await caseContacts(admin, (expAuths ?? []).map((a) => a.case_id))
+  for (const a of expAuths ?? []) {
+    const c = authContacts.get(a.case_id)
+    if (!c) continue
+    push(await fireOnce(admin, {
+      ruleKey: "purchase_auth_expiring",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: a.id,
+      caseId: a.case_id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "reminder",
+      title: "Your purchase authorization expires soon",
+      body: `Your authorization is valid through ${a.expires_on} (30-day limit). If you plan to purchase, do it before it lapses.`,
+      link: "/portal/license",
+    }))
+  }
+
+  // ── V3-P3.2 Rule: 72-hour inspection due/overdue ──────────────────────────
+  const { data: inspections } = await admin
+    .from("purchase_authorizations")
+    .select("id, case_id, inspection_due")
+    .not("acquired_on", "is", null)
+    .is("inspected_on", null)
+    .lte("inspection_due", new Date(now.getTime() + DAY).toISOString())
+  const inspContacts = await caseContacts(admin, (inspections ?? []).map((a) => a.case_id))
+  for (const a of inspections ?? []) {
+    const c = inspContacts.get(a.case_id)
+    if (!c || !a.inspection_due) continue
+    const overdue = new Date(a.inspection_due).getTime() < now.getTime()
+    push(await fireOnce(admin, {
+      ruleKey: "inspection_due",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: `${a.id}:${overdue ? "overdue" : "24h"}`,
+      caseId: a.case_id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "action_required",
+      title: overdue ? "Handgun inspection is OVERDUE" : "Handgun inspection due within 24 hours",
+      body: "A purchased handgun must be presented for inspection within 72 hours of acquisition. This is a hard deadline — don't miss it.",
+      link: "/portal/license",
+    }))
+  }
+
+  // ── V3-P3.2 Rule: renewal runway opens at T-9 months ──────────────────────
+  const { data: expiringLicenses } = await admin
+    .from("cases")
+    .select("id, license_expires_on")
+    .eq("stage", "licensed")
+    .not("license_expires_on", "is", null)
+    .lte("license_expires_on", new Date(now.getTime() + 270 * DAY).toISOString().slice(0, 10))
+    .gte("license_expires_on", now.toISOString().slice(0, 10))
+  const runwayContacts = await caseContacts(admin, (expiringLicenses ?? []).map((k) => k.id))
+  for (const k of expiringLicenses ?? []) {
+    const c = runwayContacts.get(k.id)
+    if (!c) continue
+    push(await fireOnce(admin, {
+      ruleKey: "renewal_runway",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: `${k.id}:9mo`,
+      caseId: k.id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "reminder",
+      title: "Your renewal runway is open",
+      body: `Your license expires ${k.license_expires_on}. NYPD mails renewal instructions — you can't submit early, but your refreshed 2-hour live-fire cert must be dated within 6 months of the renewal. Plan it now; no character references needed.`,
+      link: "/portal/license",
+    }))
+  }
+
+  // ── V3-P3.2 Rule: Special Carry county-license dependency (≤60 days) ──────
+  const { data: countyExpiring } = await admin
+    .from("cases")
+    .select("id, county_license_expires_on")
+    .not("county_license_expires_on", "is", null)
+    .lte("county_license_expires_on", new Date(now.getTime() + 60 * DAY).toISOString().slice(0, 10))
+    .gte("county_license_expires_on", now.toISOString().slice(0, 10))
+  const countyContacts = await caseContacts(admin, (countyExpiring ?? []).map((k) => k.id))
+  for (const k of countyExpiring ?? []) {
+    const c = countyContacts.get(k.id)
+    if (!c) continue
+    push(await fireOnce(admin, {
+      ruleKey: "county_license_expiring",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: `${k.id}:${k.county_license_expires_on}`,
+      caseId: k.id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "action_required",
+      title: "Your county license expires soon — Special Carry depends on it",
+      body: `Your underlying county license expires ${k.county_license_expires_on}. If it lapses, your Special Carry voids automatically. Renew the county license first.`,
+      link: "/portal/license",
+    }))
+  }
+
   // ── Rule: a new offer is waiting in an instructor's feed ──────────────────
   const { data: matches } = await admin
     .from("offer_matches")

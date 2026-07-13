@@ -585,6 +585,7 @@ export type Database = {
         Row: {
           client_id: string
           closed_at: string | null
+          county_license_expires_on: string | null
           created_at: string
           id: string
           is_renewal: boolean
@@ -604,6 +605,7 @@ export type Database = {
         Insert: {
           client_id: string
           closed_at?: string | null
+          county_license_expires_on?: string | null
           created_at?: string
           id?: string
           is_renewal?: boolean
@@ -623,6 +625,7 @@ export type Database = {
         Update: {
           client_id?: string
           closed_at?: string | null
+          county_license_expires_on?: string | null
           created_at?: string
           id?: string
           is_renewal?: boolean
@@ -1294,6 +1297,64 @@ export type Database = {
         }
         Relationships: []
       }
+      license_reports: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          case_id: string
+          client_id: string
+          created_at: string
+          details: string
+          id: string
+          kind: string
+          reported_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id: string
+          client_id: string
+          created_at?: string
+          details: string
+          id?: string
+          kind: string
+          reported_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id?: string
+          client_id?: string
+          created_at?: string
+          details?: string
+          id?: string
+          kind?: string
+          reported_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_reports_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
@@ -1452,10 +1513,12 @@ export type Database = {
           engagement_id: string | null
           id: string
           invoice_url: string | null
+          package_key: string | null
           paid_at: string | null
           status: Database["public"]["Enums"]["payment_status"]
           stripe_connect_account: string | null
           stripe_payment_intent: string | null
+          stripe_session_id: string | null
           type: Database["public"]["Enums"]["payment_type"]
           updated_at: string
         }
@@ -1471,10 +1534,12 @@ export type Database = {
           engagement_id?: string | null
           id?: string
           invoice_url?: string | null
+          package_key?: string | null
           paid_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_connect_account?: string | null
           stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
           type?: Database["public"]["Enums"]["payment_type"]
           updated_at?: string
         }
@@ -1490,10 +1555,12 @@ export type Database = {
           engagement_id?: string | null
           id?: string
           invoice_url?: string | null
+          package_key?: string | null
           paid_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_connect_account?: string | null
           stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
           type?: Database["public"]["Enums"]["payment_type"]
           updated_at?: string
         }
@@ -1557,6 +1624,63 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      purchase_authorizations: {
+        Row: {
+          acquired_on: string | null
+          authorized_on: string
+          case_id: string
+          client_id: string
+          created_at: string
+          expires_on: string
+          handgun_desc: string | null
+          id: string
+          inspected_on: string | null
+          inspection_due: string | null
+          updated_at: string
+        }
+        Insert: {
+          acquired_on?: string | null
+          authorized_on: string
+          case_id: string
+          client_id: string
+          created_at?: string
+          expires_on: string
+          handgun_desc?: string | null
+          id?: string
+          inspected_on?: string | null
+          inspection_due?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acquired_on?: string | null
+          authorized_on?: string
+          case_id?: string
+          client_id?: string
+          created_at?: string
+          expires_on?: string
+          handgun_desc?: string | null
+          id?: string
+          inspected_on?: string | null
+          inspection_due?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_authorizations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_authorizations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reference_requests: {
         Row: {
@@ -1755,6 +1879,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_packages: {
+        Row: {
+          active: boolean
+          blurb: string
+          created_at: string
+          deposit_cents: number
+          featured: boolean
+          id: string
+          key: string
+          name: string
+          price_cents: number
+          price_label: string | null
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          blurb: string
+          created_at?: string
+          deposit_cents?: number
+          featured?: boolean
+          id?: string
+          key: string
+          name: string
+          price_cents?: number
+          price_label?: string | null
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          blurb?: string
+          created_at?: string
+          deposit_cents?: number
+          featured?: boolean
+          id?: string
+          key?: string
+          name?: string
+          price_cents?: number
+          price_label?: string | null
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       signatures: {
         Row: {

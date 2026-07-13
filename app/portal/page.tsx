@@ -45,8 +45,13 @@ export default async function PortalHome() {
       .select("class_date")
       .eq("case_id", myCase.id)
       .order("class_date", { ascending: true }),
-    supabase.from("payments").select("amount_cents, status").eq("case_id", myCase.id),
+    supabase.from("payments").select("amount_cents, status, package_key").eq("case_id", myCase.id),
   ])
+
+  // V3-P3 — which lifecycle cards to show.
+  const hasPackage = (payments ?? []).some((p) => p.package_key)
+  const isLicensed = stage === "licensed"
+  const isDenied = myCase.status === "denied"
 
   // V3-P2.1 — to-dos come from the requirements engine (the one checklist).
   const outstanding = (reqs ?? []).filter((r) => r.status === "pending").length
@@ -66,6 +71,43 @@ export default async function PortalHome() {
           Tracking your NYC concealed carry application, end to end.
         </p>
       </div>
+
+      {/* V3-P3.3 — denial: the appeal window is the only thing that matters */}
+      {isDenied && (
+        <Link
+          href="/portal/appeal"
+          className="flex items-center justify-between rounded-md border border-danger/40 bg-danger/10 px-4 py-3.5 text-danger transition-colors hover:border-danger/60"
+        >
+          <span className="text-sm font-medium">
+            Your appeal window is open — 90 days, strict rules. Start here.
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
+
+      {/* V3-P3.2 — licensed: the 3-year lifecycle hub */}
+      {isLicensed && (
+        <Link
+          href="/portal/license"
+          className="flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
+        >
+          <span className="text-sm font-medium">
+            Your license — purchase authorizations, inspections, reporting duties &amp; renewal
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
+
+      {/* V3-P3.1 — no package yet: close the enrollment loop */}
+      {!hasPackage && !isLicensed && !isDenied && (
+        <Link
+          href="/portal/enroll"
+          className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
+        >
+          <span className="text-sm font-medium">Choose your package — start your engagement</span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
 
       {/* Guided intake entry */}
       <Link
