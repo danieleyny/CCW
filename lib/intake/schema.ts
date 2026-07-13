@@ -62,6 +62,7 @@ export const wizardAnswersSchema = z
     // Step 1 — eligibility pre-screen
     dob: isoDay.optional(),
     residence: z.enum(["nyc", "non_resident"]).optional(),
+    licenseType: z.enum(["carry", "premises"]).optional(),
     borough: z.string().max(40).optional(),
     prohibitorFelony: z.boolean().optional(),
     prohibitorMentalHealth: z.boolean().optional(),
@@ -88,6 +89,7 @@ export const wizardAnswersSchema = z
     socialAccounts: z.array(socialSchema).max(30).optional(),
     socialHandles: z.string().max(2000).optional(), // legacy free-text
     isVeteran: z.boolean().optional(),
+    isRetiredLeo: z.boolean().optional(),
     hasNameChange: z.boolean().optional(),
     hasOtherLicense: z.boolean().optional(),
   })
@@ -98,19 +100,36 @@ export type ParsedWizardAnswers = z.infer<typeof wizardAnswersSchema>
 export const REQUIRED_REFERENCES = 4
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-/** Step-5 rules: the 4-reference count, valid emails, training-date coherence. */
-export function historyStepIssues(a: WizardAnswers): string[] {
+export interface CompletionOpts {
+  /** From cases.is_renewal — renewals are exempt from references (38 RCNY §5-05(c)). */
+  isRenewal?: boolean
+}
+
+/**
+ * Track- and renewal-aware reference count: carry/special = 4 (≥2 non-family),
+ * premises = 2 (non-family), renewals = 0 (exempt, §5-05(c)).
+ */
+export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}): number {
+  if (opts.isRenewal) return 0
+  if (a.licenseType === "premises") return 2
+  return REQUIRED_REFERENCES
+}
+
+/** Step-5 rules: track-aware reference count, valid emails, training-date coherence. */
+export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   const issues: string[] = []
 
-  // NYC carry + Special Carry both need 4 references (≥2 non-family — tracked
-  // via the notarized-letter flow; the count is enforced here).
+  const needed = requiredReferences(a, opts)
   const refs = (a.references ?? []).filter((r) => r.name?.trim())
-  if (refs.length < REQUIRED_REFERENCES) {
-    issues.push(`Four character references are required — you've listed ${refs.length}.`)
+  if (refs.length < needed) {
+    const word = needed === 4 ? "Four" : "Two"
+    issues.push(`${word} character references are required for your license type — you've listed ${refs.length}.`)
   }
-  for (const r of refs) {
-    if (!r.email?.trim() || !EMAIL_RE.test(r.email.trim())) {
-      issues.push(`Reference "${r.name.trim()}" needs a valid email so we can send their letter link.`)
+  if (needed > 0) {
+    for (const r of refs) {
+      if (!r.email?.trim() || !EMAIL_RE.test(r.email.trim())) {
+        issues.push(`Reference "${r.name.trim()}" needs a valid email so we can send their letter link.`)
+      }
     }
   }
 
@@ -147,10 +166,10 @@ export function eligibilityStepIssues(a: WizardAnswers): string[] {
  * empty array = good to generate. (Disclosure narratives may still be finished
  * at the review step — the submission guard blocks filing until they exist.)
  */
-export function completionIssues(a: WizardAnswers): string[] {
+export function completionIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   return [
     ...eligibilityStepIssues(a).map((m) => `${m} (step 1)`),
     ...disclosureStepIssues(a).map((m) => `${m} (step 4)`),
-    ...historyStepIssues(a).map((m) => `${m} (step 5)`),
+    ...historyStepIssues(a, opts).map((m) => `${m} (step 5)`),
   ]
 }

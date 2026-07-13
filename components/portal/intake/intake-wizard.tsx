@@ -41,6 +41,7 @@ interface Disclosure {
 
 export function IntakeWizard({
   caseId,
+  isRenewal = false,
   initialAnswers,
   initialStep,
   completed,
@@ -48,6 +49,7 @@ export function IntakeWizard({
   guard,
 }: {
   caseId: string
+  isRenewal?: boolean
   initialAnswers: WizardAnswers
   initialStep: number
   completed: boolean
@@ -71,7 +73,7 @@ export function IntakeWizard({
   function issuesForStep(n: number): string[] {
     if (n === 1) return eligibilityStepIssues(a)
     if (n === 4) return disclosureStepIssues(a)
-    if (n === 5) return historyStepIssues(a)
+    if (n === 5) return historyStepIssues(a, { isRenewal })
     return []
   }
 
@@ -391,6 +393,19 @@ function StepEligibility({ a, patch, reasons }: StepProps & { reasons: string[] 
           </select>
         </Field>
       </div>
+      <Field
+        label="License type"
+        hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
+      >
+        <select
+          value={a.licenseType ?? "carry"}
+          onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
+          className={SELECT_CLASS}
+        >
+          <option value="carry">Concealed carry</option>
+          <option value="premises">Premises — business</option>
+        </select>
+      </Field>
       <div className="space-y-2 rounded-md border border-hairline p-3">
         <p className="text-xs text-text-low">Check any that apply (these route to attorney review):</p>
         <Check label="Felony or serious-offense conviction" checked={!!a.prohibitorFelony} onChange={(v) => patch({ prohibitorFelony: v })} />
@@ -685,6 +700,11 @@ function StepHistory({ a, patch }: StepProps) {
       <div className="space-y-2 rounded-md border border-hairline p-3">
         <p className="text-xs text-text-low">Check any that apply — each adds the right document automatically:</p>
         <Check label="I am a military veteran (adds DD-214)" checked={!!a.isVeteran} onChange={(v) => patch({ isVeteran: v })} />
+        <Check
+          label="I am retired law enforcement (adds the Good Guy letter set; application fee waived)"
+          checked={!!a.isRetiredLeo}
+          onChange={(v) => patch({ isRetiredLeo: v })}
+        />
         <Check label="I have legally changed my name (adds proof of name change)" checked={!!a.hasNameChange} onChange={(v) => patch({ hasNameChange: v })} />
         <Check label="I hold another firearms license (adds a copy of that license)" checked={!!a.hasOtherLicense} onChange={(v) => patch({ hasOtherLicense: v })} />
       </div>

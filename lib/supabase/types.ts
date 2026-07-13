@@ -549,6 +549,8 @@ export type Database = {
           stage: Database["public"]["Enums"]["case_stage"]
           status: Database["public"]["Enums"]["case_status"]
           target_file_date: string | null
+          training_completed_on: string | null
+          training_expires_on: string | null
           updated_at: string
         }
         Insert: {
@@ -563,6 +565,8 @@ export type Database = {
           stage?: Database["public"]["Enums"]["case_stage"]
           status?: Database["public"]["Enums"]["case_status"]
           target_file_date?: string | null
+          training_completed_on?: string | null
+          training_expires_on?: string | null
           updated_at?: string
         }
         Update: {
@@ -577,6 +581,8 @@ export type Database = {
           stage?: Database["public"]["Enums"]["case_stage"]
           status?: Database["public"]["Enums"]["case_status"]
           target_file_date?: string | null
+          training_completed_on?: string | null
+          training_expires_on?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1033,6 +1039,45 @@ export type Database = {
             referencedColumns: ["offer_id"]
           },
         ]
+      }
+      fees: {
+        Row: {
+          active: boolean
+          amount_cents: number
+          authority: string | null
+          created_at: string
+          id: string
+          key: string
+          label: string
+          notes: string | null
+          payee: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount_cents: number
+          authority?: string | null
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          notes?: string | null
+          payee: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount_cents?: number
+          authority?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          notes?: string | null
+          payee?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       instructors: {
         Row: {
@@ -1572,6 +1617,7 @@ export type Database = {
       requirements: {
         Row: {
           authority: string | null
+          blocking: boolean
           created_at: string
           description: string | null
           document_type: Database["public"]["Enums"]["document_type"] | null
@@ -1579,15 +1625,20 @@ export type Database = {
           effective_to: string | null
           id: string
           jurisdiction_id: string
+          needs_legal_review: boolean
           req_code: string
           severity: Database["public"]["Enums"]["requirement_sev"]
+          source_url: string | null
           title: string
           trigger_cond: string
           updated_at: string
           validation_rule: Json
+          verified_by: string | null
+          verified_on: string | null
         }
         Insert: {
           authority?: string | null
+          blocking?: boolean
           created_at?: string
           description?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
@@ -1595,15 +1646,20 @@ export type Database = {
           effective_to?: string | null
           id?: string
           jurisdiction_id: string
+          needs_legal_review?: boolean
           req_code: string
           severity?: Database["public"]["Enums"]["requirement_sev"]
+          source_url?: string | null
           title: string
           trigger_cond?: string
           updated_at?: string
           validation_rule?: Json
+          verified_by?: string | null
+          verified_on?: string | null
         }
         Update: {
           authority?: string | null
+          blocking?: boolean
           created_at?: string
           description?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
@@ -1611,12 +1667,16 @@ export type Database = {
           effective_to?: string | null
           id?: string
           jurisdiction_id?: string
+          needs_legal_review?: boolean
           req_code?: string
           severity?: Database["public"]["Enums"]["requirement_sev"]
+          source_url?: string | null
           title?: string
           trigger_cond?: string
           updated_at?: string
           validation_rule?: Json
+          verified_by?: string | null
+          verified_on?: string | null
         }
         Relationships: [
           {
@@ -1624,6 +1684,13 @@ export type Database = {
             columns: ["jurisdiction_id"]
             isOneToOne: false
             referencedRelation: "jurisdiction_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirements_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2899,6 +2966,10 @@ export type Database = {
         | "other_license"
         | "affirmation_understanding"
         | "safeguard_ack"
+        | "leo_good_guy_letter"
+        | "leo_property_receipt"
+        | "leo_cert_of_service"
+        | "oos_background_form"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -3140,6 +3211,10 @@ export const Constants = {
         "other_license",
         "affirmation_understanding",
         "safeguard_ack",
+        "leo_good_guy_letter",
+        "leo_property_receipt",
+        "leo_cert_of_service",
+        "oos_background_form",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

@@ -12,7 +12,7 @@ export async function getMyCase() {
   const { data } = await supabase
     .from("cases")
     .select(
-      "id, stage, status, nypd_app_ref, target_file_date, license_expires_on, client_id, clients(id, full_name, email, phone, borough, track)"
+      "id, stage, status, nypd_app_ref, target_file_date, license_expires_on, is_renewal, client_id, clients(id, full_name, email, phone, borough, track)"
     )
     .order("created_at", { ascending: false })
     .limit(1)

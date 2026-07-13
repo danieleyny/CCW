@@ -47,6 +47,7 @@ export default async function IntakePage() {
       </div>
       <IntakeWizard
         caseId={myCase.id}
+        isRenewal={!!myCase.is_renewal}
         initialAnswers={(session.answers ?? {}) as WizardAnswers}
         initialStep={session.current_step ?? 1}
         completed={completed}

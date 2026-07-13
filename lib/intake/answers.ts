@@ -56,6 +56,7 @@ export interface WizardAnswers {
   // Step 1 — eligibility pre-screen (hard gate)
   dob?: string
   residence?: "nyc" | "non_resident"
+  licenseType?: "carry" | "premises" // default carry
   borough?: string
   prohibitorFelony?: boolean
   prohibitorMentalHealth?: boolean
@@ -82,6 +83,7 @@ export interface WizardAnswers {
   socialAccounts?: SocialAccount[]
   socialHandles?: string // legacy free-text, kept for older sessions
   isVeteran?: boolean
+  isRetiredLeo?: boolean
   hasNameChange?: boolean
   hasOtherLicense?: boolean
 }
@@ -144,10 +146,21 @@ export function eligibilityGate(a: WizardAnswers): EligibilityResult {
   }
 }
 
-/** Map wizard answers into the requirements generator's answer shape. */
-export function toGeneratorAnswers(a: WizardAnswers): GeneratorAnswers {
+/**
+ * Map wizard answers into the requirements generator's answer shape.
+ * `isRenewal` comes from the CASE (cases.is_renewal), not the wizard — the
+ * caller passes it in.
+ */
+export function toGeneratorAnswers(
+  a: WizardAnswers,
+  opts: { isRenewal?: boolean } = {}
+): GeneratorAnswers {
+  const premises = a.licenseType === "premises"
   return {
-    isCarry: true,
+    isCarry: !premises,
+    isPremises: premises,
+    isRenewal: !!opts.isRenewal,
+    isRetiredLeo: !!a.isRetiredLeo,
     hasCohabitants: (a.cohabitants?.length ?? 0) > 0,
     hasArrestHistory: (a.arrests?.length ?? 0) > 0,
     hasOopHistory: (a.ordersOfProtection?.length ?? 0) > 0,

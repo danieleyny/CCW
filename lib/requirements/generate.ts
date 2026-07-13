@@ -9,6 +9,11 @@
 export type TriggerCond =
   | "always"
   | "carry_only"
+  | "carry_not_renewal"
+  | "premises_only"
+  | "premises_not_renewal"
+  | "if_renewal"
+  | "if_retired_leo"
   | "if_cohabitants"
   | "if_arrest_hx"
   | "if_oop_hx"
@@ -21,11 +26,17 @@ export type TriggerCond =
 /**
  * Minimum truthful answer set that drives generation. Disclosures default to
  * false (a conditional requirement only spawns on an explicit "yes"); `isCarry`
- * defaults to true since the product is a carry-license assistant. Populated by
- * the intake wizard in Phase 2; Phase 1 uses sensible defaults.
+ * defaults to true since the product is a carry-license assistant.
+ *
+ * V3-P1 — track- and renewal-awareness: `isPremises` (premises-business
+ * license), `isRenewal` (from cases.is_renewal — references exempt, training
+ * becomes a 2-hr refresher), `isRetiredLeo` (separate docs, fee waived).
  */
 export interface IntakeAnswers {
   isCarry?: boolean
+  isPremises?: boolean
+  isRenewal?: boolean
+  isRetiredLeo?: boolean
   hasCohabitants?: boolean
   hasArrestHistory?: boolean
   hasOopHistory?: boolean
@@ -42,7 +53,17 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
     case "always":
       return true
     case "carry_only":
-      return a.isCarry !== false // default: carry
+      return a.isCarry !== false && !a.isPremises // default: carry
+    case "carry_not_renewal":
+      return a.isCarry !== false && !a.isPremises && !a.isRenewal
+    case "premises_only":
+      return !!a.isPremises
+    case "premises_not_renewal":
+      return !!a.isPremises && !a.isRenewal
+    case "if_renewal":
+      return !!a.isRenewal
+    case "if_retired_leo":
+      return !!a.isRetiredLeo
     case "if_cohabitants":
       return !!a.hasCohabitants
     case "if_arrest_hx":

@@ -90,12 +90,64 @@ export async function processIntake(
   }
 
   // ── Generate case_requirements (conditional rules fire here) ───────────────
+  // V3-P1 — renewal comes from the case, not the wizard.
+  const { data: kase } = await admin.from("cases").select("is_renewal").eq("id", caseId).maybeSingle()
+  const isRenewal = !!kase?.is_renewal
   const result = await materializeCaseRequirements(
     admin,
     caseId,
     jurisdictionKey,
-    toGeneratorAnswers(answers)
+    toGeneratorAnswers(answers, { isRenewal })
   )
+
+  // ── V3-P1: training is a decaying asset (≤6 months before submission) ──────
+  if (answers.trainingStatus === "completed" && answers.trainingDate) {
+    const completed = new Date(`${answers.trainingDate}T00:00:00Z`)
+    const expires = new Date(completed)
+    expires.setUTCMonth(expires.getUTCMonth() + 6)
+    const expiresStr = expires.toISOString().slice(0, 10)
+    await admin
+      .from("cases")
+      .update({ training_completed_on: answers.trainingDate, training_expires_on: expiresStr })
+      .eq("id", caseId)
+    const expired = expires.getTime() < Date.now()
+    await admin
+      .from("case_requirements")
+      .update({
+        notes: expired
+          ? `Training completed ${answers.trainingDate} — EXPIRED ${expiresStr}. It must be ≤6 months old at submission; a refresher is needed.`
+          : `Training completed ${answers.trainingDate} — valid for submission until ${expiresStr}.`,
+      })
+      .eq("case_id", caseId)
+      .in("req_code", ["TRN-01", "RNW-01"])
+  } else {
+    await admin
+      .from("cases")
+      .update({ training_completed_on: null, training_expires_on: null })
+      .eq("id", caseId)
+  }
+
+  // ── V3-P1: surface the current fee schedule on FEE-01 (config-driven) ──────
+  const { data: fees } = await admin.from("fees").select("key, amount_cents").eq("active", true)
+  if (fees?.length) {
+    const amt = (k: string) => {
+      const f = fees.find((x) => x.key === k)
+      return f ? `$${(f.amount_cents / 100).toFixed(2).replace(/\.00$/, "")}` : null
+    }
+    const app = amt("nypd_application")
+    const prints = amt("dcjs_fingerprint")
+    if (app && prints) {
+      await admin
+        .from("case_requirements")
+        .update({
+          notes: answers.isRetiredLeo
+            ? `Application fee WAIVED (retired law enforcement); ${prints} DCJS fingerprint fee still owed. Non-refundable; no cash or personal checks.`
+            : `Currently ${app} (NYPD application) + ${prints} (DCJS fingerprints, paid separately). Non-refundable; no cash or personal checks.`,
+        })
+        .eq("case_id", caseId)
+        .eq("req_code", "FEE-01")
+    }
+  }
 
   // ── Bind each spawned requirement to a representative disclosure ───────────
   const repByCode = new Map<string, string>()

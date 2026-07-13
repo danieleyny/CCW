@@ -46,11 +46,10 @@ export default async function RequirementsAdminPage({
         description="The versioned, authority-cited compliance registry. A rule change is a dated data edit — retire a version and add a new one; future cases pick up the change while existing cases keep their prior version."
       />
       <div className="rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-xs text-warn">
-        ⚠ Verify-live: these citations and rules are a best-effort starting registry.
-        Confirm each against the live NYPD License Division portal and a NY firearms
-        attorney before client-facing filing use.{" "}
-        <Link href="/admin/verify-live" className="font-medium underline">
-          Open the pre-filing checklist →
+        ⚠ These citations were corrected against NYPD&apos;s checklist, 38 RCNY, and DCJS standards
+        (July 2026) but still require attorney sign-off before client-facing filing use.{" "}
+        <Link href="/admin/legal" className="font-medium underline">
+          Open the legal-verification register →
         </Link>
       </div>
       <RequirementsRegistry
