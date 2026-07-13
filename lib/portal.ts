@@ -9,11 +9,24 @@ import { createClient } from "@/lib/supabase/server"
  */
 export async function getMyCase() {
   const supabase = await createClient()
+
+  // A4e — bind to THIS login's applicant record explicitly, not RLS alone: a
+  // shared device or a future multi-client account must never surface someone
+  // else's case just because it sorted first.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data: mine } = await supabase.from("clients").select("id").eq("profile_id", user.id)
+  const clientIds = (mine ?? []).map((c) => c.id)
+  if (clientIds.length === 0) return null
+
   const { data } = await supabase
     .from("cases")
     .select(
       "id, stage, status, nypd_app_ref, target_file_date, license_expires_on, is_renewal, client_id, clients(id, full_name, email, phone, borough, track)"
     )
+    .in("client_id", clientIds)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()

@@ -11,6 +11,8 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { requiredReferences } from "@/lib/intake/schema"
 import type { WizardAnswers } from "@/lib/intake/answers"
+import { readImageDimensions } from "@/lib/files/image-dimensions"
+import { PHOTO_MIN_PX, PHOTO_MAX_PX, PHOTO_ASPECT_TOLERANCE } from "@/lib/files/photo-spec"
 
 type DB = SupabaseClient<Database>
 
@@ -23,6 +25,7 @@ export interface GateBlocker {
     | "training_missing"
     | "training_expired"
     | "references_short"
+    | "photo_spec"
     | "sign_off_missing"
   detail: string
 }
@@ -38,11 +41,11 @@ export interface GateResult {
 export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<GateResult> {
   const blockers: GateBlocker[] = []
 
-  const [{ data: kase }, { data: reqs }, { data: disclosures }, { data: session }, { data: refs }] =
+  const [{ data: kase }, { data: reqs }, { data: disclosures }, { data: session }, { data: refs }, { data: photoDocs }] =
     await Promise.all([
       db
         .from("cases")
-        .select("is_renewal, training_expires_on, qa_signed_off_by, clients(track)")
+        .select("is_renewal, training_expires_on, qa_signed_off_by")
         .eq("id", caseId)
         .single(),
       db
@@ -52,13 +55,23 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
       db.from("disclosures").select("id, type, narrative").eq("case_id", caseId),
       db.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
       db.from("character_references").select("id, notarized").eq("case_id", caseId),
+      db
+        .from("documents")
+        .select("file_path, file_name, status")
+        .eq("case_id", caseId)
+        .eq("type", "applicant_photo")
+        .neq("status", "rejected")
+        .not("file_path", "is", null)
+        .order("created_at", { ascending: false }),
     ])
   if (!kase) return { ok: false, blockers: [{ kind: "blocking_requirements", detail: "Case not found." }], readyForSignOff: false }
 
   // 1. Every BLOCKING requirement satisfied (advisory rows can never block).
+  //    `pending` AND `rejected` both count as open — a rejected blocking doc is
+  //    still a gap; only `satisfied` (and legitimately-inapplicable `na`) clears.
   const openBlocking = (reqs ?? []).filter((r) => {
     const req = r.requirements as unknown as { blocking: boolean; title: string } | null
-    return req?.blocking && r.status === "pending"
+    return req?.blocking && (r.status === "pending" || r.status === "rejected")
   })
   if (openBlocking.length > 0) {
     const codes = openBlocking.map((r) => r.req_code).sort()
@@ -107,9 +120,41 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
     })
   }
 
+  // 5. If IDN-04 (photo) applies and a photo is on file, it must independently
+  //    meet the NYPD spec server-side — the browser validator can be bypassed
+  //    (curl straight to storage), so we re-check the actual bytes here.
+  const photoApplicable = (reqs ?? []).some((r) => r.req_code === "IDN-04" && r.status !== "na")
+  const photo = (photoDocs ?? [])[0]
+  if (photoApplicable && photo?.file_path) {
+    const { data: blob } = await db.storage.from("documents").download(photo.file_path)
+    if (blob) {
+      const dims = readImageDimensions(new Uint8Array(await blob.arrayBuffer()))
+      if (!dims) {
+        blockers.push({
+          kind: "photo_spec",
+          detail: "The application photo isn't a readable JPG or PNG — re-upload a standard image.",
+        })
+      } else {
+        const aspectOff = Math.abs(dims.width - dims.height) / Math.max(dims.width, dims.height)
+        const side = Math.min(dims.width, dims.height)
+        if (aspectOff > PHOTO_ASPECT_TOLERANCE) {
+          blockers.push({
+            kind: "photo_spec",
+            detail: `The application photo must be square — it is ${dims.width}×${dims.height} (38 RCNY §5-05(b)(1)).`,
+          })
+        } else if (side < PHOTO_MIN_PX || Math.max(dims.width, dims.height) > PHOTO_MAX_PX) {
+          blockers.push({
+            kind: "photo_spec",
+            detail: `The application photo must be ${PHOTO_MIN_PX}–${PHOTO_MAX_PX}px per side — it is ${dims.width}×${dims.height}.`,
+          })
+        }
+      }
+    }
+  }
+
   const readyForSignOff = blockers.length === 0
 
-  // 5. A named human signed off — recorded, auditable.
+  // 6. A named human signed off — recorded, auditable.
   if (!kase.qa_signed_off_by) {
     blockers.push({
       kind: "sign_off_missing",

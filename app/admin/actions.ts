@@ -8,9 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { notifyClient } from "@/lib/email"
-import { STAGE_KEYS, stageMeta, type CaseStageKey } from "@/config/stages"
+import { STAGE_KEYS, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
-import { evaluatePreFilingGate, GATED_STAGES } from "@/lib/qa-gate"
+import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import {
   BOROUGHS,
   CLIENT_TRACKS,
@@ -20,11 +20,12 @@ import {
 export type StageChangeResult = { ok: true } | { ok: false; blockers: string[] }
 
 /**
- * V3-P2.4 — the CP-5 gate lives HERE, server-side: a case cannot be dragged
- * into application_assembled/filed until every blocking requirement is
- * satisfied, every disclosure is narrated, training is current, the reference
- * count is met, and a named staff member has signed off. Failing returns the
- * specific blocker list, never a generic error.
+ * V3-P2.4 / V4-A1 — the CP-5 gate lives HERE, server-side: a case cannot be
+ * dragged into application_assembled OR ANY LATER STAGE until every blocking
+ * requirement is satisfied, every disclosure is narrated, training is current,
+ * the reference count is met, the application photo meets spec, and a named
+ * staff member has signed off. Failing returns the specific blocker list,
+ * never a generic error.
  */
 export async function setCaseStage(caseId: string, stage: CaseStageKey): Promise<StageChangeResult> {
   await requireStaff()
@@ -32,7 +33,10 @@ export async function setCaseStage(caseId: string, stage: CaseStageKey): Promise
 
   const supabase = await createClient()
 
-  if ((GATED_STAGES as readonly string[]).includes(stage)) {
+  // Gate every stage AT OR PAST application_assembled (index 7) — not just the
+  // two named stages. Stages after `filed` (fingerprinting, decision, licensed)
+  // must not be a back door around the CP-5 checks.
+  if (stageIndex(stage) >= stageIndex("application_assembled")) {
     const gate = await evaluatePreFilingGate(supabase, caseId)
     if (!gate.ok) {
       await logActivity({
@@ -104,6 +108,86 @@ export async function signPreFilingQa(caseId: string): Promise<StageChangeResult
     detail: { by: profile.full_name },
   })
   revalidatePath(`/admin/cases/${caseId}`)
+  return { ok: true }
+}
+
+/**
+ * V4-A2 — record a license as issued. This is the write that was missing:
+ * nothing set license_expires_on / county_license_expires_on, so the whole
+ * post-issuance lifecycle (portal license card, renewal-runway + county-watcher
+ * reminders) read columns nobody filled. Populates all of them + issued-on.
+ */
+const recordLicenseSchema = z
+  .object({
+    caseId: z.string().uuid(),
+    licenseType: z.string().trim().min(1, "License type is required.").max(120),
+    issuedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Issue date is required."),
+    expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expiry date is required."),
+    countyLicenseExpiresOn: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine((v) => v.expiresOn > v.issuedOn, {
+    message: "Expiry must be after the issue date.",
+    path: ["expiresOn"],
+  })
+
+export async function recordLicenseIssued(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireStaff()
+  const parsed = recordLicenseSchema.safeParse({
+    caseId: formData.get("caseId"),
+    licenseType: formData.get("licenseType"),
+    issuedOn: formData.get("issuedOn"),
+    expiresOn: formData.get("expiresOn"),
+    countyLicenseExpiresOn: formData.get("countyLicenseExpiresOn") ?? "",
+  })
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the license details." }
+  }
+  const { caseId, licenseType, issuedOn, expiresOn, countyLicenseExpiresOn } = parsed.data
+
+  const supabase = await createClient()
+  const { data: kase, error } = await supabase
+    .from("cases")
+    .update({
+      license_issued_on: issuedOn,
+      license_expires_on: expiresOn,
+      county_license_expires_on: countyLicenseExpiresOn || null,
+      stage: "licensed",
+      status: "active",
+      stage_entered_at: new Date().toISOString(),
+    })
+    .eq("id", caseId)
+    .select("id, client_id, clients(full_name, email)")
+    .single()
+  if (error) throw error
+
+  // license_type lives on the client record (the applicant, not the case).
+  await supabase.from("clients").update({ license_type: licenseType }).eq("id", kase.client_id)
+
+  await logActivity({
+    action: "case.license_issued",
+    caseId,
+    clientId: kase.client_id,
+    entity: "case",
+    entityId: caseId,
+    detail: { licenseType, issuedOn, expiresOn, countyLicenseExpiresOn: countyLicenseExpiresOn || null },
+  })
+
+  const client = kase.clients as unknown as { full_name: string; email: string | null }
+  await notifyClient({
+    to: client?.email,
+    subject: "Your carry license has been issued",
+    body: `Hi ${client?.full_name ?? ""}, your ${licenseType} license is recorded as issued ${issuedOn} and valid through ${expiresOn}. Your portal now shows your license details, purchase-authorization clock, and renewal runway.`,
+  })
+
+  revalidatePath(`/admin/cases/${caseId}`)
+  revalidatePath("/portal/license")
+  revalidatePath("/portal")
   return { ok: true }
 }
 
@@ -347,9 +431,28 @@ export async function setCaseRequirementStatus(
   caseReqId: string,
   caseId: string,
   status: "pending" | "satisfied" | "na" | "rejected"
-) {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const { userId } = await requireStaff()
   const supabase = await createClient()
+
+  // A blocking requirement is a legal must-have — a staffer can never mark one
+  // N/A to skip it past the CP-5 gate. (The DB trigger enforces this too; this
+  // is the clean, user-facing refusal.)
+  if (status === "na") {
+    const { data: row } = await supabase
+      .from("case_requirements")
+      .select("req_code, requirements!inner(blocking)")
+      .eq("id", caseReqId)
+      .single()
+    const blocking = (row?.requirements as unknown as { blocking: boolean } | null)?.blocking
+    if (blocking) {
+      return {
+        ok: false,
+        error: `${row?.req_code ?? "This requirement"} is legally required — it can't be marked N/A.`,
+      }
+    }
+  }
+
   const { error } = await supabase
     .from("case_requirements")
     .update({ status, reviewer: userId })
@@ -364,6 +467,7 @@ export async function setCaseRequirementStatus(
   })
   revalidatePath(`/admin/cases/${caseId}`)
   revalidatePath("/portal/checklist")
+  return { ok: true }
 }
 
 /** Bulk-approve every pending requirement that already has evidence bound. */

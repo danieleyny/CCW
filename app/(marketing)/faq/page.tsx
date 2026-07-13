@@ -1,19 +1,21 @@
 import { PageHero } from "@/components/marketing/page-hero"
 import { JsonLd, faqSchema } from "@/components/marketing/json-ld"
+import { createClient } from "@/lib/supabase/server"
+import { getFees, type Fees } from "@/lib/fees"
 
 export const metadata = {
   title: "FAQ",
   description: "Common questions about getting a NYC concealed carry license with CARRY.",
 }
 
-const FAQS = [
+const buildFaqs = (fees: Fees) => [
   {
     q: "How long does the NYC concealed carry process take?",
     a: "Roughly six months from a complete submission to the decision letter. The NYPD conducts an in-person interview, fingerprinting, an FBI background check, and a good-moral-character investigation.",
   },
   {
     q: "What are the fees?",
-    a: "The NYPD charges approximately a $340 handgun license fee plus a separate fingerprinting fee, paid directly to the NYPD. CARRY's service fees are separate and depend on your chosen membership tier.",
+    a: `The NYPD charges a ${fees.applicationFee} handgun license fee plus the ${fees.fingerprintFee} DCJS fingerprinting fee, paid directly to the government. CARRY's service fees are separate and depend on your chosen membership tier.`,
   },
   {
     q: "What training is required?",
@@ -33,7 +35,9 @@ const FAQS = [
   },
 ]
 
-export default function Faq() {
+export default async function Faq() {
+  const fees = await getFees(await createClient())
+  const FAQS = buildFaqs(fees)
   return (
     <>
       <JsonLd data={faqSchema(FAQS)} />

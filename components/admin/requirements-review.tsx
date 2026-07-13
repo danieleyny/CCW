@@ -33,13 +33,17 @@ export function RequirementsReview({ caseId, rows }: { caseId: string; rows: Cas
   const [pending, start] = useTransition()
 
   const visible = blockingOnly ? rows.filter((r) => r.blocking && r.status !== "na") : rows
-  const openBlocking = rows.filter((r) => r.blocking && r.status === "pending").length
+  const openBlocking = rows.filter((r) => r.blocking && (r.status === "pending" || r.status === "rejected")).length
   const withEvidence = rows.filter((r) => r.status === "pending" && r.documentId).length
 
   function setStatus(row: CaseReqRow, status: "pending" | "satisfied" | "na") {
     start(async () => {
       try {
-        await setCaseRequirementStatus(row.id, caseId, status)
+        const res = await setCaseRequirementStatus(row.id, caseId, status)
+        if (res && !res.ok) {
+          toast.error(res.error)
+          return
+        }
         toast.success(`${row.reqCode} → ${status}`)
       } catch {
         toast.error("Couldn't update the requirement.")
@@ -104,9 +108,12 @@ export function RequirementsReview({ caseId, rows }: { caseId: string; rows: Cas
                   <Button size="sm" variant="outline" disabled={pending} onClick={() => setStatus(r, "satisfied")}>
                     <CheckCircle2 className="size-3.5" /> Satisfy
                   </Button>
-                  <Button size="sm" variant="ghost" disabled={pending} onClick={() => setStatus(r, "na")}>
-                    <Ban className="size-3.5" /> N/A
-                  </Button>
+                  {/* A blocking (legally required) row can never be waived to N/A. */}
+                  {!r.blocking && (
+                    <Button size="sm" variant="ghost" disabled={pending} onClick={() => setStatus(r, "na")}>
+                      <Ban className="size-3.5" /> N/A
+                    </Button>
+                  )}
                 </>
               )}
               {(r.status === "satisfied" || r.status === "na") && (

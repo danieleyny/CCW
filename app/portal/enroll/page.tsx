@@ -2,6 +2,7 @@ import { CheckCircle2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { getActivePackages } from "@/lib/packages"
+import { getFees } from "@/lib/fees"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { EnrollButtons } from "@/components/portal/enroll-buttons"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,6 +23,7 @@ export default async function EnrollPage({
   const myCase = await getMyCase()
   const supabase = await createClient()
   const packages = await getActivePackages(supabase)
+  const fees = await getFees(supabase)
 
   // Already paid for a package? Show that instead of selling again.
   const { data: paid } = myCase
@@ -40,8 +42,8 @@ export default async function EnrollPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Choose your package</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Service fees only — the NYPD&apos;s $340 application fee and the $88.25 DCJS fingerprint fee
-          are paid separately at filing and are never collected by us.
+          Service fees only — the NYPD&apos;s {fees.applicationFee} application fee and the {fees.fingerprintFee} DCJS
+          fingerprint fee are paid separately at filing and are never collected by us.
         </p>
       </div>
 

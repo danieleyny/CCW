@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Check } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getActivePackages } from "@/lib/packages"
+import { getFees } from "@/lib/fees"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 
@@ -27,7 +28,9 @@ const FEATURES: Record<string, string[]> = {
 
 export default async function Pricing() {
   // V3-P3.1 — pricing comes from the DB; a price change is a data edit.
-  const packages = await getActivePackages(await createClient())
+  const supabase = await createClient()
+  const packages = await getActivePackages(supabase)
+  const fees = await getFees(supabase)
   return (
     <>
       <PageHero
@@ -70,7 +73,7 @@ export default async function Pricing() {
         </div>
 
         <p className="mt-8 text-center font-mono text-xs text-text-low">
-          Service fees only. NYPD charges a separate ~$340 license fee + fingerprinting fee.
+          Service fees only. NYPD charges a separate {fees.applicationFee} license fee + {fees.fingerprintFee} fingerprinting fee.
         </p>
       </section>
     </>

@@ -138,8 +138,10 @@ async function main() {
 
   const actionsSrc = readFileSync("app/admin/actions.ts", "utf8")
   check(
-    actionsSrc.includes("GATED_STAGES") && actionsSrc.includes("evaluatePreFilingGate"),
-    "setCaseStage enforces the gate server-side (2.4)"
+    // V4-A1a — the gate now fires whenever the target stage is at or past
+    // application_assembled (index compare), not just the two named stages.
+    actionsSrc.includes('stageIndex("application_assembled")') && actionsSrc.includes("evaluatePreFilingGate"),
+    "setCaseStage enforces the gate server-side, gated on stage index (2.4)"
   )
 
   // ── 2.6 reminder rules fire once ───────────────────────────────────────────

@@ -11,7 +11,8 @@
 
 export const PHOTO_MIN_PX = 600
 export const PHOTO_MAX_PX = 1200
-const ASPECT_TOLERANCE = 0.02 // 2% off square is fine
+export const PHOTO_ASPECT_TOLERANCE = 0.02 // 2% off square is fine
+const ASPECT_TOLERANCE = PHOTO_ASPECT_TOLERANCE
 
 export interface PhotoSpecResult {
   ok: boolean

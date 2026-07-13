@@ -356,6 +356,66 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }))
   }
 
+  // ── V4-A4d Rule: training decays — warn before it lapses (T-60 / T-30) ────
+  // Live-fire training must be ≤6 months old at submission. A case that hasn't
+  // filed yet and whose cert will lapse inside 60 days is about to need a
+  // refresher; nudge the applicant AND their consultant so it doesn't stall.
+  const PRE_FILING: Database["public"]["Enums"]["case_stage"][] = [
+    "lead",
+    "eligibility_screened",
+    "signed_up_paid",
+    "training_scheduled",
+    "training_complete",
+    "document_collection",
+    "notarization",
+  ]
+  const { data: trainingExpiring } = await admin
+    .from("cases")
+    .select("id, training_expires_on, stage, clients(assigned_staff)")
+    .eq("status", "active")
+    .not("training_expires_on", "is", null)
+    .in("stage", PRE_FILING)
+    .lte("training_expires_on", new Date(now.getTime() + 60 * DAY).toISOString().slice(0, 10))
+    .gte("training_expires_on", now.toISOString().slice(0, 10))
+  const trainContacts = await caseContacts(admin, (trainingExpiring ?? []).map((k) => k.id))
+  for (const k of trainingExpiring ?? []) {
+    const daysLeft = Math.ceil(
+      (new Date(`${k.training_expires_on}T00:00:00Z`).getTime() - now.getTime()) / DAY
+    )
+    const bucket = daysLeft <= 30 ? "30" : "60"
+    const c = trainContacts.get(k.id)
+    const title = "Your live-fire training is close to expiring"
+    const body = `Your training certificate expires ${k.training_expires_on} (~${Math.max(daysLeft, 0)} days). It must be dated within 6 months of when you submit, so schedule a refresher if you won't file before then.`
+    if (c && (c.profileId || c.email)) {
+      push(await fireOnce(admin, {
+        ruleKey: "training_expiring",
+        target: c.profileId ?? c.email ?? c.clientId,
+        windowKey: `${k.id}:${bucket}`,
+        caseId: k.id,
+        recipient: c.profileId,
+        email: c.email,
+        kind: "action_required",
+        title,
+        body,
+        link: "/portal/checklist",
+      }))
+    }
+    const staffId = (k.clients as unknown as { assigned_staff: string | null } | null)?.assigned_staff
+    if (staffId) {
+      push(await fireOnce(admin, {
+        ruleKey: "training_expiring",
+        target: staffId,
+        windowKey: `${k.id}:${bucket}`,
+        caseId: k.id,
+        recipient: staffId,
+        kind: "action_required",
+        title: "A case's training is close to expiring",
+        body: `Training on this case expires ${k.training_expires_on} (~${Math.max(daysLeft, 0)} days). If it won't file before then, a refresher is needed to keep the cert ≤6 months at submission.`,
+        link: `/admin/cases/${k.id}`,
+      }))
+    }
+  }
+
   // ── V3-P3.2 Rule: Special Carry county-license dependency (≤60 days) ──────
   const { data: countyExpiring } = await admin
     .from("cases")

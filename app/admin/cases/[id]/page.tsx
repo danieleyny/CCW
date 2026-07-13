@@ -3,14 +3,16 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, FileDown, Send, Ban, Clock, GraduationCap, CalendarDays, MessageSquare } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { requireStaff } from "@/lib/auth"
-import { type CaseStageKey } from "@/config/stages"
-import { MESSAGE_TEMPLATES } from "@/config/message-templates"
+import { type CaseStageKey, stageIndex } from "@/config/stages"
+import { buildMessageTemplates } from "@/config/message-templates"
+import { getFees } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 import { money, formatDate, formatDateTime, daysSince, daysUntil } from "@/lib/format"
 import { StageControl } from "@/components/admin/stage-control"
 import { DocumentReview, type DocRow } from "@/components/admin/document-review"
 import { RequirementsReview, type CaseReqRow } from "@/components/admin/requirements-review"
+import { RecordLicenseControl } from "@/components/admin/record-license-control"
 import { DisclosureReview, type DisclosureRow } from "@/components/admin/disclosure-review"
 import { CaseNotes, type NoteRow } from "@/components/admin/case-notes"
 import { CaseTasks, type CaseTaskRow, type StaffOption } from "@/components/admin/case-tasks"
@@ -64,6 +66,7 @@ export default async function CaseFilePage({
     borough: string | null
     track: string
     assigned_staff: string | null
+    license_type: string | null
   }
 
   const [
@@ -243,6 +246,14 @@ export default async function CaseFilePage({
               >
                 <FileDown className="size-3.5" /> Assemble packet
               </a>
+              {stageIndex(stage) >= stageIndex("filed") && (
+                <RecordLicenseControl
+                  caseId={kase.id}
+                  isSpecialCarry={client.track === "non_resident"}
+                  defaultLicenseType={client.license_type}
+                  issued={!!kase.license_expires_on}
+                />
+              )}
             </div>
           </div>
 
@@ -553,7 +564,7 @@ export default async function CaseFilePage({
                 messages={messages}
                 send={postMessage}
                 placeholder="Write a message to the client…"
-                templates={MESSAGE_TEMPLATES}
+                templates={buildMessageTemplates(await getFees(supabase))}
               />
             </CardContent>
           </Card>

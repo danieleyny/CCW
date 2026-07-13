@@ -91,8 +91,15 @@ export async function processIntake(
 
   // ── Generate case_requirements (conditional rules fire here) ───────────────
   // V3-P1 — renewal comes from the case, not the wizard.
-  const { data: kase } = await admin.from("cases").select("is_renewal").eq("id", caseId).maybeSingle()
+  const { data: kase } = await admin.from("cases").select("is_renewal, client_id").eq("id", caseId).maybeSingle()
   const isRenewal = !!kase?.is_renewal
+
+  // A4a — record the applicant's track on the client so every admin display and
+  // the license-type logic reflects the path they actually chose in intake
+  // (previously stuck at the signup default even for premises / retired-LEO).
+  if (kase?.client_id) {
+    await admin.from("clients").update({ track: trackFromAnswers(answers, jurisdictionKey) }).eq("id", kase.client_id)
+  }
   const result = await materializeCaseRequirements(
     admin,
     caseId,
@@ -169,6 +176,16 @@ export async function processIntake(
     disclosures: discRows.length,
     applicable: result.applicable,
   }
+}
+
+type ClientTrack = Database["public"]["Enums"]["client_track"]
+
+/** Map the interview answers to the applicant's client track (display + logic). */
+function trackFromAnswers(a: WizardAnswers, jurisdictionKey: string): ClientTrack {
+  if (a.isRetiredLeo) return "retired_leo"
+  if (a.licenseType === "premises") return "premises_business"
+  if (jurisdictionKey === "special_carry" || a.residence === "non_resident") return "non_resident"
+  return "resident"
 }
 
 export interface SubmissionGuard {

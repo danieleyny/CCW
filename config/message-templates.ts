@@ -3,8 +3,14 @@
  * message box for editing before send (never auto-sent). Keep candor-
  * maximizing and expectation-safe: no outcome promises, no timeline
  * guarantees, no legal advice.
+ *
+ * V4-A4f — fee amounts come from the `fees` table via getFees(), so a fee
+ * change never leaves a stale number in a canned message.
  */
-export const MESSAGE_TEMPLATES: { label: string; body: string }[] = [
+import type { Fees } from "@/lib/fees"
+
+export function buildMessageTemplates(fees: Fees): { label: string; body: string }[] {
+  return [
   {
     label: "Welcome / kickoff",
     body: "Welcome aboard! Your portal is live — start with the Application intake so we can build your personalized checklist, and book your safety training early: it's the longest-lead item and must be recent when we assemble your application.",
@@ -43,7 +49,7 @@ export const MESSAGE_TEMPLATES: { label: string; body: string }[] = [
   },
   {
     label: "Fingerprints reminder",
-    body: "Don't forget the fingerprint appointment — the DCJS fee (currently $88.25) is paid separately from the NYPD application fee. Bring your confirmation and photo ID.",
+    body: `Don't forget the fingerprint appointment — the DCJS fee (currently ${fees.fingerprintFee}) is paid separately from the NYPD application fee. Bring your confirmation and photo ID.`,
   },
   {
     label: "Interview prep",
@@ -55,7 +61,7 @@ export const MESSAGE_TEMPLATES: { label: string; body: string }[] = [
   },
   {
     label: "Fee reminder",
-    body: "A reminder on fees: the NYPD application fee (currently $340) is due at filing, plus the DCJS fingerprint fee (currently $88.25) paid separately. Neither is refundable, and cash/personal checks aren't accepted.",
+    body: `A reminder on fees: the NYPD application fee (currently ${fees.applicationFee}) is due at filing, plus the DCJS fingerprint fee (currently ${fees.fingerprintFee}) paid separately. Neither is refundable, and cash/personal checks aren't accepted.`,
   },
   {
     label: "Renewal runway",
@@ -65,4 +71,5 @@ export const MESSAGE_TEMPLATES: { label: string; body: string }[] = [
     label: "Address/status change duty",
     body: "A reminder that license holders must promptly report changes — address, email, any arrest or summons, or becoming subject to an order of protection. If anything has changed, tell us and we'll walk you through the reporting step.",
   },
-]
+  ]
+}

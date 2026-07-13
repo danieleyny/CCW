@@ -17,6 +17,9 @@ export const brand = {
     "CARRY is a private licensing concierge that guides New Yorkers through the full NYC concealed-carry-weapon process — training, documents, and filing — from first inquiry to licensed.",
   domain: "carry.example",
   url: "https://carry.example",
+  // ⚠️ PLACEHOLDER — replace all of the following with real business details
+  // before launch. These render publicly (marketing footer, contact block,
+  // metadata) and must not ship as-is.
   contact: {
     email: "concierge@carry.example",
     phone: "(212) 555-0142",

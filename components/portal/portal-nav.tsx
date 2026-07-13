@@ -8,6 +8,8 @@ import {
   Upload,
   Users,
   MessageCircle,
+  BadgeCheck,
+  Scale,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,6 +20,8 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/portal/documents", label: "Documents", icon: Upload },
   { href: "/portal/people", label: "People", icon: Users },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle },
+  { href: "/portal/license", label: "License", icon: BadgeCheck },
+  { href: "/portal/appeal", label: "Appeal", icon: Scale },
 ]
 
 function useActive() {

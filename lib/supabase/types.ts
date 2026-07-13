@@ -590,6 +590,7 @@ export type Database = {
           id: string
           is_renewal: boolean
           license_expires_on: string | null
+          license_issued_on: string | null
           nypd_app_ref: string | null
           opened_at: string
           qa_signed_off_at: string | null
@@ -610,6 +611,7 @@ export type Database = {
           id?: string
           is_renewal?: boolean
           license_expires_on?: string | null
+          license_issued_on?: string | null
           nypd_app_ref?: string | null
           opened_at?: string
           qa_signed_off_at?: string | null
@@ -630,6 +632,7 @@ export type Database = {
           id?: string
           is_renewal?: boolean
           license_expires_on?: string | null
+          license_issued_on?: string | null
           nypd_app_ref?: string | null
           opened_at?: string
           qa_signed_off_at?: string | null
@@ -3169,7 +3172,12 @@ export type Database = {
         | "submitted"
         | "approved"
         | "rejected"
-      client_track: "resident" | "business" | "non_resident"
+      client_track:
+        | "resident"
+        | "business"
+        | "non_resident"
+        | "retired_leo"
+        | "premises_business"
       cohabitant_status: "not_started" | "received" | "notarized"
       disclosure_type:
         | "arrest"
@@ -3414,7 +3422,13 @@ export const Constants = {
         "approved",
         "rejected",
       ],
-      client_track: ["resident", "business", "non_resident"],
+      client_track: [
+        "resident",
+        "business",
+        "non_resident",
+        "retired_leo",
+        "premises_business",
+      ],
       cohabitant_status: ["not_started", "received", "notarized"],
       disclosure_type: [
         "arrest",
