@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
 import { brand } from "@/config/brand"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
+import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 
 export type LeadState = { ok?: boolean; error?: string }
 
@@ -110,6 +111,13 @@ export async function captureLead(
   const kase =
     existingCase ??
     (await admin.from("cases").insert({ client_id: client.id, stage: "lead", status: "active" }).select("id").single()).data
+
+  // V3-P2.1 — baseline checklist from the versioned registry, day one.
+  if (!existingCase && kase) {
+    await materializeCaseRequirements(admin, kase.id, v.track === "non_resident" ? "special_carry" : "nyc", {
+      isCarry: true,
+    })
+  }
 
   await admin.from("tasks").insert({
     case_id: kase?.id ?? null,

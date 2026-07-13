@@ -77,6 +77,7 @@ export async function sendReferenceRequest(formData: FormData) {
     entityId: referenceId,
   })
   revalidatePath("/portal/people")
+  revalidatePath("/admin/cases", "layout")
 }
 
 /**
@@ -117,6 +118,7 @@ export async function recordReferenceUpload(input: {
 
   await logActivity({ action: "reference.notarized", caseId: ref.case_id, entity: "reference", entityId: ref.id })
   revalidatePath("/portal/people")
+  revalidatePath("/admin/cases", "layout")
 }
 
 /** Applicant fallback: record a notarized cohabitant affidavit they collected directly. */
@@ -148,6 +150,7 @@ export async function recordCohabitantUpload(input: {
 
   await logActivity({ action: "cohabitant.notarized", caseId: cohab.case_id, entity: "cohabitant", entityId: cohab.id })
   revalidatePath("/portal/people")
+  revalidatePath("/admin/cases", "layout")
 }
 
 /** Send (or re-send) a cohabitant their affidavit link. */
@@ -182,6 +185,7 @@ export async function sendCohabitantRequest(formData: FormData) {
   })
   await logActivity({ action: "cohabitant.request_sent", caseId: cohab.case_id, entity: "cohabitant", entityId: cohab.id })
   revalidatePath("/portal/people")
+  revalidatePath("/admin/cases", "layout")
 }
 
 /** V3-P0.4 — kill a reference link immediately (rotated on the next resend). */
@@ -206,6 +210,7 @@ export async function revokeReferenceLink(formData: FormData) {
 
   await logActivity({ action: "reference.link_revoked", caseId: ref.case_id, entity: "reference", entityId: referenceId })
   revalidatePath("/portal/people")
+  revalidatePath("/admin/cases", "layout")
 }
 
 /** V3-P0.4 — kill a cohabitant affidavit link immediately. */
@@ -229,4 +234,5 @@ export async function revokeCohabitantLink(formData: FormData) {
 
   await logActivity({ action: "cohabitant.link_revoked", caseId: cohab.case_id, entity: "cohabitant", entityId: cohab.id })
   revalidatePath("/portal/people")
+  revalidatePath("/admin/cases", "layout")
 }

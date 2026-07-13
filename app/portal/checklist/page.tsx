@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { getCaseRequirements } from "@/lib/requirements"
-import { stageIndex, type CaseStageKey } from "@/config/stages"
-import { ClientChecklist, type ClientChecklistItem } from "@/components/portal/client-checklist"
 import {
   RequirementsChecklist,
   type ReqChecklistItem,
@@ -16,47 +14,28 @@ export default async function ChecklistPage() {
 
   const supabase = await createClient()
 
-  // Primary source of truth: the DB requirements engine (case_requirements).
+  // V3-P2.1 — ONE source of truth: the versioned requirements engine. Every
+  // case has case_requirements (materialized at creation and after intake);
+  // the V1 checklist_items fallback is gone.
   const reqRows = await getCaseRequirements(supabase, myCase.id)
 
-  if (reqRows.length > 0) {
-    const items: ReqChecklistItem[] = reqRows.map((row) => {
-      const req = row.requirement
-      return {
-        id: row.id,
-        reqCode: row.req_code,
-        status: row.status,
-        title: req?.title ?? row.req_code,
-        description: req?.description ?? null,
-        authority: req?.authority ?? null,
-        severity: req?.severity ?? "high",
-        documentType: req?.document_type ?? null,
-      }
-    })
-    return (
-      <div>
-        <Header />
-        <RequirementsChecklist items={items} />
-      </div>
-    )
-  }
-
-  // Fallback (v1): cases without generated requirements still use checklist_items.
-  const here = stageIndex(myCase.stage as CaseStageKey)
-  const { data } = await supabase
-    .from("checklist_items")
-    .select("id, title, description, status, document_type, stage, owner")
-    .eq("case_id", myCase.id)
-    .eq("owner", "client")
-
-  const items = (data ?? []).filter(
-    (i) => stageIndex(i.stage as CaseStageKey) <= here
-  ) as ClientChecklistItem[]
-
+  const items: ReqChecklistItem[] = reqRows.map((row) => {
+    const req = row.requirement
+    return {
+      id: row.id,
+      reqCode: row.req_code,
+      status: row.status,
+      title: req?.title ?? row.req_code,
+      description: req?.description ?? null,
+      authority: req?.authority ?? null,
+      severity: req?.severity ?? "high",
+      documentType: req?.document_type ?? null,
+    }
+  })
   return (
     <div>
       <Header />
-      <ClientChecklist caseId={myCase.id} items={items} />
+      <RequirementsChecklist items={items} />
     </div>
   )
 }

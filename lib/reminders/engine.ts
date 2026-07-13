@@ -7,6 +7,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
+import { evaluatePreFilingGate } from "@/lib/qa-gate"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -158,6 +159,123 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       title: "Your training session is confirmed",
       body: "Your instructor confirmed your session. Check your calendar invite.",
       link: "/portal/marketplace",
+    }))
+  }
+
+  // ── V3-P2.6 Rule: booking starts in 24h / 2h → remind the client ──────────
+  const { data: upcoming } = await admin
+    .from("bookings")
+    .select("id, case_id, starts_at, type")
+    .eq("status", "confirmed")
+    .gte("starts_at", now.toISOString())
+    .lte("starts_at", new Date(now.getTime() + DAY).toISOString())
+  const upcomingContacts = await caseContacts(admin, (upcoming ?? []).map((b) => b.case_id))
+  for (const b of upcoming ?? []) {
+    const hoursOut = (new Date(b.starts_at).getTime() - now.getTime()) / 3600000
+    const bucket = hoursOut <= 2 ? "2h" : "24h"
+    const c = upcomingContacts.get(b.case_id)
+    if (!c) continue
+    push(await fireOnce(admin, {
+      ruleKey: `booking_${bucket}`,
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: `${b.id}:${bucket}`,
+      caseId: b.case_id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "booking",
+      title: bucket === "2h" ? "Your training session starts soon" : "Training session tomorrow",
+      body: `Your ${b.type.replace(/_/g, " ")} session starts ${bucket === "2h" ? "in about 2 hours" : "within 24 hours"}. Bring photo ID.`,
+      link: "/portal/marketplace",
+    }))
+  }
+
+  // ── V3-P2.6 Rule: case stalled past the stage SLA → nudge the OWNER ───────
+  const STALL_DAYS = 14
+  const TERMINAL = ["licensed", "decision"]
+  const { data: stalled } = await admin
+    .from("cases")
+    .select("id, stage, stage_entered_at, clients(assigned_staff)")
+    .eq("status", "active")
+    .lte("stage_entered_at", new Date(now.getTime() - STALL_DAYS * DAY).toISOString())
+  for (const k of stalled ?? []) {
+    if (TERMINAL.includes(k.stage)) continue
+    const staffId = (k.clients as unknown as { assigned_staff: string | null } | null)?.assigned_staff
+    if (!staffId) continue
+    push(await fireOnce(admin, {
+      ruleKey: "stage_stalled",
+      target: staffId,
+      windowKey: `${k.id}:${k.stage}`, // once per stage entry
+      caseId: k.id,
+      recipient: staffId,
+      kind: "action_required",
+      title: "A case has stalled",
+      body: `A case has sat in "${k.stage.replace(/_/g, " ")}" for ${STALL_DAYS}+ days with no stage change.`,
+      link: `/admin/cases/${k.id}`,
+    }))
+  }
+
+  // ── V3-P2.6 Rule: long-lead nudge (day 3 / day 7) — the primary lever ─────
+  // Training is the long pole and it EXPIRES; if it hasn't started in week one
+  // the case is already late.
+  const { data: youngCases } = await admin
+    .from("cases")
+    .select("id, opened_at")
+    .eq("status", "active")
+    .lte("opened_at", new Date(now.getTime() - 3 * DAY).toISOString())
+    .gte("opened_at", new Date(now.getTime() - 30 * DAY).toISOString())
+  const youngIds = (youngCases ?? []).map((c) => c.id)
+  const { data: trnPending } = youngIds.length
+    ? await admin
+        .from("case_requirements")
+        .select("case_id, req_code")
+        .in("case_id", youngIds)
+        .in("req_code", ["TRN-01", "RNW-01"])
+        .eq("status", "pending")
+    : { data: [] as { case_id: string; req_code: string }[] }
+  const trnPendingSet = new Set((trnPending ?? []).map((r) => r.case_id))
+  const nudgeContacts = await caseContacts(admin, [...trnPendingSet])
+  for (const k of youngCases ?? []) {
+    if (!trnPendingSet.has(k.id)) continue
+    const days = (now.getTime() - new Date(k.opened_at).getTime()) / DAY
+    const bucket = days >= 7 ? "7d" : "3d"
+    const c = nudgeContacts.get(k.id)
+    if (!c) continue
+    push(await fireOnce(admin, {
+      ruleKey: "long_lead_nudge",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: `${k.id}:${bucket}`,
+      caseId: k.id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "reminder",
+      title: "Book your safety training now — it's the longest step",
+      body: "The 16+2-hour course is the longest-lead item, and the certificate must be recent when you file. Booking it this week keeps everything on schedule.",
+      link: "/portal/marketplace",
+    }))
+  }
+
+  // ── V3-P2.6 Rule: pre-filing QA gate cleared → tell the consultant ────────
+  const { data: nearFiling } = await admin
+    .from("cases")
+    .select("id, qa_signed_off_by, clients(assigned_staff)")
+    .eq("status", "active")
+    .in("stage", ["document_collection", "notarization"])
+  for (const k of nearFiling ?? []) {
+    if (k.qa_signed_off_by) continue
+    const staffId = (k.clients as unknown as { assigned_staff: string | null } | null)?.assigned_staff
+    if (!staffId) continue
+    const gate = await evaluatePreFilingGate(admin, k.id)
+    if (!gate.readyForSignOff) continue
+    push(await fireOnce(admin, {
+      ruleKey: "qa_ready",
+      target: staffId,
+      windowKey: k.id, // once per case
+      caseId: k.id,
+      recipient: staffId,
+      kind: "action_required",
+      title: "A case is ready for pre-filing QA sign-off",
+      body: "Every gate check passes — review and sign off so the case can be assembled.",
+      link: `/admin/cases/${k.id}`,
     }))
   }
 

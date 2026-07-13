@@ -8,9 +8,7 @@ import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
 import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
-import type { DocumentType } from "@/config/checklist-templates"
-
-const ALLOWED_CLIENT_STATUSES = ["not_started", "in_progress", "submitted"] as const
+import type { DocumentType } from "@/lib/doc-types"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -61,13 +59,18 @@ export async function recordDocument(input: {
   })
   if (error) throw error
 
-  // Mark the matching checklist item submitted (best effort).
-  await supabase
-    .from("checklist_items")
-    .update({ status: "submitted" })
+  // V3-P2.1 — bind the upload to its matching requirement(s) so the consultant
+  // sees the evidence attached. Status stays pending until staff review
+  // approves it (satisfaction is a review decision, not an upload event).
+  const { data: matchingReqs } = await supabase
+    .from("case_requirements")
+    .select("id, requirements!inner(document_type)")
     .eq("case_id", input.caseId)
-    .eq("document_type", input.type)
-    .neq("status", "approved")
+    .eq("requirements.document_type", input.type)
+    .neq("status", "satisfied")
+  for (const r of matchingReqs ?? []) {
+    await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
+  }
 
   await logActivity({
     action: "document.uploaded",
@@ -79,25 +82,6 @@ export async function recordDocument(input: {
   })
 
   revalidatePath("/portal/documents")
-  revalidatePath("/portal/checklist")
-  revalidatePath("/portal")
-}
-
-// ── Checklist (client-owned items only) ───────────────────────────────────────
-export async function updateMyChecklistItem(itemId: string, status: string, caseId: string) {
-  await requireRole(["client"])
-  if (!ALLOWED_CLIENT_STATUSES.includes(status as never)) {
-    throw new Error("Not allowed")
-  }
-  const supabase = await createClient()
-  // RLS only permits updating owner='client' items on a visible case.
-  const { error } = await supabase
-    .from("checklist_items")
-    .update({ status: status as never })
-    .eq("id", itemId)
-    .eq("owner", "client")
-  if (error) throw error
-  await logActivity({ action: "checklist.client_updated", caseId, entity: "checklist_item", entityId: itemId, detail: { status } })
   revalidatePath("/portal/checklist")
   revalidatePath("/portal")
 }

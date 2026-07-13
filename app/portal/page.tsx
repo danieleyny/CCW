@@ -38,12 +38,8 @@ export default async function PortalHome() {
   const here = stageIndex(stage)
   const next = nextStage(stage)
 
-  const [{ data: checklist }, { data: training }, { data: payments }] = await Promise.all([
-    supabase
-      .from("checklist_items")
-      .select("status, owner, stage")
-      .eq("case_id", myCase.id)
-      .eq("owner", "client"),
+  const [{ data: reqs }, { data: training }, { data: payments }] = await Promise.all([
+    supabase.from("case_requirements").select("status").eq("case_id", myCase.id),
     supabase
       .from("training_sessions")
       .select("class_date")
@@ -52,9 +48,8 @@ export default async function PortalHome() {
     supabase.from("payments").select("amount_cents, status").eq("case_id", myCase.id),
   ])
 
-  const outstanding = (checklist ?? []).filter(
-    (i) => stageIndex(i.stage as CaseStageKey) <= here && !["approved", "submitted"].includes(i.status)
-  ).length
+  // V3-P2.1 — to-dos come from the requirements engine (the one checklist).
+  const outstanding = (reqs ?? []).filter((r) => r.status === "pending").length
   const nextTraining = (training ?? []).find((t) => t.class_date)
   const paidCents = (payments ?? [])
     .filter((p) => p.status === "paid")

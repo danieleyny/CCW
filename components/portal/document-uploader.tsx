@@ -10,7 +10,7 @@ import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
-import type { DocumentType } from "@/config/checklist-templates"
+import type { DocumentType } from "@/lib/doc-types"
 
 export interface CurrentDoc {
   status: string

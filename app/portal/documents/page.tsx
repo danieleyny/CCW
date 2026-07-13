@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
-import type { DocumentType } from "@/config/checklist-templates"
+import type { DocumentType } from "@/lib/doc-types"
 
 export const metadata = { title: "Documents" }
 

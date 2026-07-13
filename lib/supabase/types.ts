@@ -335,6 +335,51 @@ export type Database = {
           },
         ]
       }
+      case_notes: {
+        Row: {
+          author: string | null
+          body: string
+          case_id: string
+          created_at: string
+          id: string
+          pinned: boolean
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          body: string
+          case_id: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          body?: string
+          case_id?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_notes_author_fkey"
+            columns: ["author"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_notes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_offers: {
         Row: {
           accepted_engagement_id: string | null
@@ -546,7 +591,10 @@ export type Database = {
           license_expires_on: string | null
           nypd_app_ref: string | null
           opened_at: string
+          qa_signed_off_at: string | null
+          qa_signed_off_by: string | null
           stage: Database["public"]["Enums"]["case_stage"]
+          stage_entered_at: string
           status: Database["public"]["Enums"]["case_status"]
           target_file_date: string | null
           training_completed_on: string | null
@@ -562,7 +610,10 @@ export type Database = {
           license_expires_on?: string | null
           nypd_app_ref?: string | null
           opened_at?: string
+          qa_signed_off_at?: string | null
+          qa_signed_off_by?: string | null
           stage?: Database["public"]["Enums"]["case_stage"]
+          stage_entered_at?: string
           status?: Database["public"]["Enums"]["case_status"]
           target_file_date?: string | null
           training_completed_on?: string | null
@@ -578,7 +629,10 @@ export type Database = {
           license_expires_on?: string | null
           nypd_app_ref?: string | null
           opened_at?: string
+          qa_signed_off_at?: string | null
+          qa_signed_off_by?: string | null
           stage?: Database["public"]["Enums"]["case_stage"]
+          stage_entered_at?: string
           status?: Database["public"]["Enums"]["case_status"]
           target_file_date?: string | null
           training_completed_on?: string | null
@@ -591,6 +645,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cases_qa_signed_off_by_fkey"
+            columns: ["qa_signed_off_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

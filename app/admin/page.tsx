@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { FileWarning, Users, Flag, ClipboardList } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { requireStaff } from "@/lib/auth"
 import { PageHeader } from "@/components/shared/page-header"
 import { TaskList, type TaskRow } from "@/components/admin/task-list"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +9,15 @@ import { formatDate } from "@/lib/format"
 
 export const metadata = { title: "Today" }
 
-export default async function TodayPage() {
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>
+}) {
+  const { userId } = await requireStaff()
+  const sp = await searchParams
+  // V3-P2.3 — "My queue": the cross-case task list, filterable to me.
+  const mine = sp.queue !== "all"
   const supabase = await createClient()
 
   const [
@@ -23,12 +32,16 @@ export default async function TodayPage() {
     supabase.from("cases").select("id", { count: "exact", head: true }).eq("stage", "lead"),
     supabase.from("cases").select("id", { count: "exact", head: true }).eq("status", "blocked"),
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase
-      .from("tasks")
-      .select("id, title, description, due_date, priority, status, case_id, cases(client_id, clients(full_name))")
-      .eq("status", "open")
-      .order("priority", { ascending: true })
-      .order("due_date", { ascending: true, nullsFirst: false }),
+    (() => {
+      let q = supabase
+        .from("tasks")
+        .select("id, title, description, due_date, priority, status, case_id, cases(client_id, clients(full_name))")
+        .eq("status", "open")
+        .order("priority", { ascending: true })
+        .order("due_date", { ascending: true, nullsFirst: false })
+      if (mine) q = q.eq("assignee", userId)
+      return q
+    })(),
     supabase
       .from("documents")
       .select("id, type, created_at, case_id, clients(full_name)")
@@ -83,7 +96,15 @@ export default async function TodayPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <h3 className="engraved mb-3">Task queue</h3>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="engraved">{mine ? "My queue" : "All open tasks"}</h3>
+            <Link
+              href={mine ? "/admin?queue=all" : "/admin"}
+              className="text-xs text-signal underline"
+            >
+              {mine ? "Show everyone's" : "Show mine"}
+            </Link>
+          </div>
           <TaskList tasks={tasks} />
         </div>
 

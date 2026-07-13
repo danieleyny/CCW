@@ -13,7 +13,6 @@
 import { config as loadEnv } from "dotenv"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { CASE_STAGES, stageIndex, type CaseStageKey } from "../config/stages"
-import { CHECKLIST_TEMPLATE } from "../config/checklist-templates"
 import { materializeCaseRequirements } from "../lib/requirements/materialize"
 import type { IntakeAnswers } from "../lib/requirements/generate"
 import type { Database } from "../lib/supabase/types"
@@ -95,29 +94,8 @@ async function createUser(
   return user.id
 }
 
-// ── checklist ────────────────────────────────────────────────────────────────
-async function seedChecklist(caseId: string, stage: CaseStageKey) {
-  const here = stageIndex(stage)
-  const rows = CHECKLIST_TEMPLATE.map((t) => {
-    const itemStage = stageIndex(t.stageKey)
-    let status: string
-    if (itemStage < here) status = "approved"
-    else if (itemStage === here) status = t.owner === "client" ? "submitted" : "in_progress"
-    else status = "not_started"
-    return {
-      case_id: caseId,
-      template_key: t.key,
-      stage: t.stageKey,
-      title: t.title,
-      description: t.description ?? null,
-      required: t.required,
-      owner: t.owner,
-      status,
-      document_type: t.documentType ?? null,
-    }
-  })
-  await must(db.from("checklist_items").insert(rows).select("id").then((r) => ({ data: r.data, error: r.error })), "checklist")
-}
+// V3-P2.1 — the V1 checklist_items seeding is gone; case_requirements (seeded
+// via materializeCaseRequirements below) is the one checklist.
 
 async function seedCaseStages(caseId: string, stage: CaseStageKey) {
   const here = stageIndex(stage)
@@ -361,7 +339,6 @@ async function main() {
       "case"
     )
 
-    await seedChecklist(kase.id, d.stage)
     await seedCaseStages(kase.id, d.stage)
 
     // Documents (for clients at/after document collection)

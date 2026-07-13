@@ -27,6 +27,9 @@ export interface PipelineCase {
   clientName: string
   borough: string | null
   isRenewal: boolean
+  /** V3-P2.5 — stall signal on the card. */
+  daysInStage: number
+  blockingCount: number
 }
 
 function Card({ c }: { c: PipelineCase }) {
@@ -41,7 +44,8 @@ function Card({ c }: { c: PipelineCase }) {
       {...attributes}
       className={cn(
         "cursor-grab touch-none rounded-md border border-hairline border-l-2 bg-card p-3 transition-colors hover:border-hairline-strong active:cursor-grabbing",
-        c.status === "blocked" ? "border-l-danger" : "border-l-brass/40",
+        // Stall SLA: red edge past 14 days in stage (blocked status also reads red).
+        c.status === "blocked" || c.daysInStage > 14 ? "border-l-danger" : "border-l-brass/40",
         isDragging && "opacity-40"
       )}
     >
@@ -53,7 +57,13 @@ function Card({ c }: { c: PipelineCase }) {
           </span>
         )}
       </div>
-      <div className="engraved mt-1.5">{c.borough ?? "—"}</div>
+      <div className="engraved mt-1.5">
+        {c.borough ?? "—"} ·{" "}
+        <span className={cn(c.daysInStage > 14 ? "text-danger" : c.daysInStage > 7 ? "text-warn" : "")}>
+          {c.daysInStage}d
+        </span>
+        {c.blockingCount > 0 && <span className="text-warn"> · {c.blockingCount} blocking</span>}
+      </div>
       <div className="mt-2.5 flex items-center justify-between">
         <StatusBadge status={c.status} />
         <Link
@@ -125,7 +135,16 @@ export function PipelineBoard({ initialCases }: { initialCases: PipelineCase[] }
     const prev = cases
     setCases((cs) => cs.map((c) => (c.id === id ? { ...c, stage: target } : c)))
     try {
-      await setCaseStage(id, target)
+      const res = await setCaseStage(id, target)
+      if (!res.ok) {
+        // V3-P2.4 — the CP-5 gate refused the move: roll back + show why.
+        setCases(prev)
+        toast.error(`${current.clientName} can't enter that stage yet`, {
+          description: res.blockers.slice(0, 4).join(" · "),
+          duration: 9000,
+        })
+        return
+      }
       toast.success(`${current.clientName} → ${CASE_STAGES.find((s) => s.key === target)?.short}`)
     } catch {
       setCases(prev)

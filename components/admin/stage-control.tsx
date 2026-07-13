@@ -33,7 +33,15 @@ export function StageControl({
         onValueChange={(v) =>
           startTransition(async () => {
             try {
-              await setCaseStage(caseId, v as CaseStageKey)
+              const res = await setCaseStage(caseId, v as CaseStageKey)
+              if (!res.ok) {
+                // V3-P2.4 — the CP-5 gate refused: show the specific blockers.
+                toast.error("Blocked by the pre-filing QA gate", {
+                  description: res.blockers.slice(0, 4).join(" · "),
+                  duration: 9000,
+                })
+                return
+              }
               toast.success("Stage updated · client notified")
             } catch {
               toast.error("Couldn't update stage")

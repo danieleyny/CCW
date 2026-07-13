@@ -25,11 +25,14 @@ export function MessageThread({
   messages,
   send,
   placeholder = "Write a message…",
+  templates,
 }: {
   caseId: string
   messages: MessageRow[]
   send: (caseId: string, body: string) => Promise<void>
   placeholder?: string
+  /** V3-P2.5 — canned starters inserted for editing, never auto-sent. */
+  templates?: { label: string; body: string }[]
 }) {
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -84,6 +87,27 @@ export function MessageThread({
       </ul>
 
       <div className="flex flex-col gap-2">
+        {templates && templates.length > 0 && (
+          <select
+            aria-label="Insert a message template"
+            className="h-9 w-full max-w-xs rounded-md border border-input bg-background px-2 text-xs text-text-mid"
+            value=""
+            onChange={(e) => {
+              const t = templates.find((x) => x.label === e.target.value)
+              if (t) {
+                setValue((v) => (v.trim() ? `${v.trimEnd()}\n\n${t.body}` : t.body))
+                ref.current?.focus()
+              }
+            }}
+          >
+            <option value="">Insert a template…</option>
+            {templates.map((t) => (
+              <option key={t.label} value={t.label}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        )}
         <Textarea
           ref={ref}
           value={value}

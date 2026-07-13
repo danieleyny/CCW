@@ -52,3 +52,15 @@ export function isOverdue(due: string | null | undefined): boolean {
   if (!due) return false
   return new Date(due).getTime() < Date.now()
 }
+
+/** Whole days since a timestamp (null when unknown). */
+export function daysSince(iso: string | null | undefined): number | null {
+  if (!iso) return null
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+}
+
+/** Whole days until a date — negative when past. */
+export function daysUntil(iso: string | null | undefined): number | null {
+  if (!iso) return null
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
+}
