@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { notifyClient } from "@/lib/email"
+import { myInstructorId } from "@/lib/instructor"
 
 /** Accept an offer → engagement (via the security-definer RPC) → notify client. */
 export async function acceptOffer(formData: FormData) {
@@ -36,14 +37,14 @@ export async function acceptOffer(formData: FormData) {
 export async function declineOffer(formData: FormData) {
   await requireRole(["instructor"])
   const offerId = String(formData.get("offerId") ?? "")
-  const supabase = await createClient()
-  const { data: me } = await supabase.from("instructors").select("id").limit(1).maybeSingle()
-  if (me) {
+  const myId = await myInstructorId()
+  if (myId) {
+    const supabase = await createClient()
     await supabase
       .from("offer_matches")
       .update({ responded: "declined", responded_at: new Date().toISOString() })
       .eq("offer_id", offerId)
-      .eq("instructor_id", me.id)
+      .eq("instructor_id", myId)
   }
   revalidatePath("/instructor/feed")
 }

@@ -2,12 +2,13 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
-import { requireStaff } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 
 /** Verify / un-verify an instructor (gates whether clients can see them). */
 export async function setInstructorVerified(formData: FormData) {
-  await requireStaff()
+  // V3-P0.3 — verification is a trust/compliance decision; admin only.
+  await requireAdmin()
   const id = String(formData.get("id") ?? "")
   const verified = formData.get("verified") === "true"
 

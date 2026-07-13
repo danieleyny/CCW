@@ -1,10 +1,10 @@
+// V3-P0.7 — true, verifiable claims only (fabricated counters removed).
 const ITEMS = [
-  "1,200+ Clients guided",
-  "~6 Month avg timeline",
-  "98% On-time filing",
+  "~6 Month typical NYPD timeline",
   "DCJS-certified instructors",
   "13-stage guided process",
   "All five boroughs + Special Carry",
+  "You review & submit your own application",
 ]
 
 function Row() {

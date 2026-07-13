@@ -778,6 +778,8 @@ export type Database = {
           notary_area: string | null
           relationship: string | null
           token: string | null
+          token_expires_at: string | null
+          token_revoked_at: string | null
           updated_at: string
         }
         Insert: {
@@ -793,6 +795,8 @@ export type Database = {
           notary_area?: string | null
           relationship?: string | null
           token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -808,6 +812,8 @@ export type Database = {
           notary_area?: string | null
           relationship?: string | null
           token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1453,11 +1459,13 @@ export type Database = {
           case_id: string
           created_at: string
           document_id: string | null
+          expires_at: string
           id: string
           notarized_at: string | null
           notary_area: string | null
           opened_at: string | null
           reference_id: string
+          revoked_at: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["reference_req_status"]
           submitted_at: string | null
@@ -1470,11 +1478,13 @@ export type Database = {
           case_id: string
           created_at?: string
           document_id?: string | null
+          expires_at?: string
           id?: string
           notarized_at?: string | null
           notary_area?: string | null
           opened_at?: string | null
           reference_id: string
+          revoked_at?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["reference_req_status"]
           submitted_at?: string | null
@@ -1487,11 +1497,13 @@ export type Database = {
           case_id?: string
           created_at?: string
           document_id?: string | null
+          expires_at?: string
           id?: string
           notarized_at?: string | null
           notary_area?: string | null
           opened_at?: string | null
           reference_id?: string
+          revoked_at?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["reference_req_status"]
           submitted_at?: string | null

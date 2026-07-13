@@ -6,13 +6,24 @@ import { validateFile } from "@/lib/files/validator"
 import { notifyCaseParties } from "@/lib/notify"
 import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
 import { isReasonableSignature } from "@/lib/signatures"
+import { tokenActive } from "@/lib/references/process"
+import { rateLimit } from "@/lib/rate-limit"
+
+/** V3-P0.4 — map cohabitants' token_* columns onto the shared guard. */
+const cohabTokenActive = (c: { token_expires_at?: string | null; token_revoked_at?: string | null }) =>
+  tokenActive({ expires_at: c.token_expires_at, revoked_at: c.token_revoked_at })
 
 /** Capture the cohabitant's e-signature; the affidavit PDF then comes pre-signed. */
 export async function saveCohabitantSignature(token: string, base64: string): Promise<{ ok?: boolean; error?: string }> {
   if (!isReasonableSignature(base64)) return { error: "Please draw or type your signature first." }
+  if (!rateLimit(`c:${token}`)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
-  const { data: cohab } = await admin.from("cohabitants").select("id, case_id").eq("token", token).maybeSingle()
-  if (!cohab) return { error: "This link is invalid or has expired." }
+  const { data: cohab } = await admin
+    .from("cohabitants")
+    .select("id, case_id, token_expires_at, token_revoked_at")
+    .eq("token", token)
+    .maybeSingle()
+  if (!cohab || !cohabTokenActive(cohab)) return { error: "This link is invalid or has expired." }
   const { error } = await admin
     .from("signatures")
     .upsert({ case_id: cohab.case_id, signer_key: `cohabitant:${cohab.id}`, png_base64: base64 }, { onConflict: "case_id,signer_key" })
@@ -26,13 +37,14 @@ export async function submitCohabitantAnswers(
   answers: Record<string, string>,
   notaryArea: string
 ): Promise<{ ok?: boolean; error?: string; alreadyDone?: boolean }> {
+  if (!rateLimit(`c:${token}`)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
   const { data: cohab } = await admin
     .from("cohabitants")
-    .select("id, case_id, affidavit_status")
+    .select("id, case_id, affidavit_status, token_expires_at, token_revoked_at")
     .eq("token", token)
     .maybeSingle()
-  if (!cohab) return { error: "This link is invalid or has expired." }
+  if (!cohab || !cohabTokenActive(cohab)) return { error: "This link is invalid or has expired." }
   if (cohab.affidavit_status === "notarized") return { ok: true, alreadyDone: true }
 
   const firstTime = cohab.affidavit_status !== "received"
@@ -61,9 +73,14 @@ export async function uploadNotarizedCohabitant(
   const check = validateFile({ name: file.name, size: file.size })
   if (!check.ok) return { error: check.errors[0] ?? "That file can't be uploaded." }
 
+  if (!rateLimit(`c:${token}`, 10)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
-  const { data: cohab } = await admin.from("cohabitants").select("id, case_id").eq("token", token).maybeSingle()
-  if (!cohab) return { error: "This link is invalid or has expired." }
+  const { data: cohab } = await admin
+    .from("cohabitants")
+    .select("id, case_id, token_expires_at, token_revoked_at")
+    .eq("token", token)
+    .maybeSingle()
+  if (!cohab || !cohabTokenActive(cohab)) return { error: "This link is invalid or has expired." }
 
   const { data: kase } = await admin.from("cases").select("client_id").eq("id", cohab.case_id).single()
   if (!kase?.client_id) return { error: "Case not found." }

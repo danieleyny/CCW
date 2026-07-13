@@ -6,7 +6,10 @@
  */
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
-export const ALLOWED_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff"] as const
+// V3-P0.5 — heic/heif included: it's the iPhone camera default, and the gun-safe
+// photo is a REQUIRED document. The client-side compressor (lib/files/compress.ts)
+// converts to JPEG where the browser can decode; otherwise the original is kept.
+export const ALLOWED_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff", "heic", "heif"] as const
 export type AllowedExtension = (typeof ALLOWED_EXTENSIONS)[number]
 
 /**

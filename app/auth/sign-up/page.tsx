@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useActionState, useEffect, useRef } from "react"
 import { signUp, type AuthFormState } from "@/app/auth/actions"
 import { SIGNUP_PREFILL_KEY } from "@/components/marketing/lead-form"
+import { brand } from "@/config/brand"
 import {
   Card,
   CardContent,
@@ -93,6 +94,10 @@ export default function SignUpPage() {
           </p>
         </CardFooter>
       </form>
+      {/* V3-P0.7 — standing legal disclaimer, always visible at account creation. */}
+      <p className="border-t border-hairline px-6 py-4 text-[11px] leading-relaxed text-text-low">
+        {brand.disclaimer}
+      </p>
     </Card>
   )
 }

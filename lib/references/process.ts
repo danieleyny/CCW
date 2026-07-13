@@ -13,6 +13,23 @@ export function newReferenceToken(): string {
   return randomBytes(24).toString("base64url")
 }
 
+/** Public-link lifetime; rotated/extended on every resend. */
+export const TOKEN_TTL_DAYS = 30
+
+export function tokenExpiry(): string {
+  return new Date(Date.now() + TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
+}
+
+/**
+ * V3-P0.4 — a public token is usable only if not revoked and not expired.
+ * (A null expiry means legacy/pre-hardening; the migration backfills those.)
+ */
+export function tokenActive(t: { expires_at?: string | null; revoked_at?: string | null }): boolean {
+  if (t.revoked_at) return false
+  if (t.expires_at && new Date(t.expires_at).getTime() < Date.now()) return false
+  return true
+}
+
 export const REFERENCES_REQUIRED = 4
 
 /**

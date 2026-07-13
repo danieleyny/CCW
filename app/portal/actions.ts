@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
-import { newReferenceToken } from "@/lib/references/process"
+import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
 import type { DocumentType } from "@/config/checklist-templates"
 
 const ALLOWED_CLIENT_STATUSES = ["not_started", "in_progress", "submitted"] as const
@@ -157,6 +157,7 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
     const token = newReferenceToken()
     await admin.from("reference_requests").insert({
       reference_id: created.id, case_id: v.caseId, token, status: "sent", sent_at: new Date().toISOString(),
+      expires_at: tokenExpiry(),
     })
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
     const link = `${base}/r/${token}`
@@ -223,7 +224,7 @@ export async function addCohabitant(_prev: CollectorState, formData: FormData): 
   if (v.contactEmail) {
     const admin = createAdminClient()
     const token = newReferenceToken()
-    await admin.from("cohabitants").update({ token }).eq("id", created.id)
+    await admin.from("cohabitants").update({ token, token_expires_at: tokenExpiry() }).eq("id", created.id)
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
     const link = `${base}/c/${token}`
     await sendEmail({

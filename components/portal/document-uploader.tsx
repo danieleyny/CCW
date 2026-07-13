@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
 import { validateFile } from "@/lib/files/validator"
+import { compressImageFile } from "@/lib/files/compress"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import type { DocumentType } from "@/config/checklist-templates"
@@ -38,9 +39,13 @@ export function DocumentUploader({
   const [busy, setBusy] = useState(false)
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
+    let file = e.target.files?.[0]
     e.target.value = "" // allow re-selecting the same file
     if (!file) return
+
+    // V3-P0.5 — downscale/re-encode phone photos (incl. HEIC→JPEG) before the
+    // size check, so a 12 MB safe photo becomes a compliant ~2 MB JPEG.
+    file = await compressImageFile(file)
 
     // FMT-01: enforce size + type and sanitize the filename (the NYPD portal
     // silently rejects oversized files, wrong types, and "dirty" names).

@@ -1,4 +1,4 @@
-import { Send, CheckCircle2 } from "lucide-react"
+import { Send, CheckCircle2, Ban } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import {
@@ -16,6 +16,8 @@ import {
   sendCohabitantRequest,
   recordReferenceUpload,
   recordCohabitantUpload,
+  revokeReferenceLink,
+  revokeCohabitantLink,
 } from "./actions"
 
 export const metadata = { title: "References & household" }
@@ -119,6 +121,14 @@ export default async function PeoplePage() {
                             </Button>
                           </form>
                         )}
+                        {!r.notarized && req?.token && (
+                          <form action={revokeReferenceLink}>
+                            <input type="hidden" name="referenceId" value={r.id} />
+                            <Button type="submit" size="sm" variant="ghost" className="text-text-low">
+                              <Ban className="size-3.5" /> Revoke
+                            </Button>
+                          </form>
+                        )}
                       </div>
                     </li>
                   )
@@ -167,6 +177,14 @@ export default async function PeoplePage() {
                             <Button type="submit" size="sm" variant="outline">
                               <Send className="size-3.5" />
                               {c.token ? "Resend" : "Send link"}
+                            </Button>
+                          </form>
+                        )}
+                        {st !== "notarized" && c.token && (
+                          <form action={revokeCohabitantLink}>
+                            <input type="hidden" name="cohabitantId" value={c.id} />
+                            <Button type="submit" size="sm" variant="ghost" className="text-text-low">
+                              <Ban className="size-3.5" /> Revoke
                             </Button>
                           </form>
                         )}

@@ -6,6 +6,7 @@ import { Upload, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { validateFile } from "@/lib/files/validator"
+import { compressImageFile } from "@/lib/files/compress"
 import { Button } from "@/components/ui/button"
 
 /**
@@ -29,9 +30,10 @@ export function NotarizedUpload({
   const [busy, setBusy] = useState(false)
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
+    let file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
+    file = await compressImageFile(file) // HEIC→JPEG + downscale before the size check
     const check = validateFile({ name: file.name, size: file.size })
     if (!check.ok) return toast.error(check.errors[0] ?? "That file can't be uploaded.")
 

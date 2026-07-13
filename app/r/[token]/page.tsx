@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { brand } from "@/config/brand"
+import { tokenActive } from "@/lib/references/process"
 import { ReferenceFlow } from "@/components/public/reference-flow"
 
 export const metadata = { title: "Character reference — CARRY" }
@@ -14,11 +15,11 @@ export default async function ReferencePage({
 
   const { data: req } = await admin
     .from("reference_requests")
-    .select("id, status, reference_id, case_id")
+    .select("id, status, reference_id, case_id, expires_at, revoked_at")
     .eq("token", token)
     .maybeSingle()
 
-  if (!req) {
+  if (!req || !tokenActive(req)) {
     return (
       <Shell>
         <h1 className="text-xl font-semibold">This link isn&apos;t valid</h1>

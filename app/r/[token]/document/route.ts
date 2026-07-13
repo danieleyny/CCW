@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { generateReferenceLetterPdf } from "@/lib/references/document"
 import { getSignaturePng } from "@/lib/signatures"
+import { tokenActive } from "@/lib/references/process"
 import type { ReferenceAnswers } from "@/lib/references/questions"
 
 /** Regenerate the reference's letter PDF on demand from their stored answers. */
@@ -11,10 +12,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   const { data: req } = await admin
     .from("reference_requests")
-    .select("answers, reference_id, case_id")
+    .select("answers, reference_id, case_id, expires_at, revoked_at")
     .eq("token", token)
     .maybeSingle()
-  if (!req) return new Response("Not found", { status: 404 })
+  if (!req || !tokenActive(req)) return new Response("Not found", { status: 404 })
 
   const [{ data: ref }, { data: kase }] = await Promise.all([
     admin.from("character_references").select("name, relationship, contact_email, contact_phone").eq("id", req.reference_id).single(),

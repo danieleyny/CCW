@@ -9,7 +9,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   await requireStaff()
   const { id } = await params
 
-  // RLS visibility check (staff see assigned cases; admin all) before assembling.
+  // RLS visibility check (staff/admin see all cases per 20260713000100) before
+  // assembling. The service-role client below is justified: assembly must read
+  // Storage objects + cross-case rows that the user JWT can't stream directly.
   const supabase = await createClient()
   const { data: visible } = await supabase.from("cases").select("id").eq("id", id).maybeSingle()
   if (!visible) return new Response("Not found", { status: 404 })

@@ -1,18 +1,22 @@
 import { CreditCard, ShieldCheck, CircleSlash } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { STRIPE_ENABLED } from "@/lib/stripe"
+import { myInstructorId } from "@/lib/instructor"
 import { Card, CardContent } from "@/components/ui/card"
 import { PayoutButton } from "@/components/instructor/payout-button"
 
 export const metadata = { title: "Payouts" }
 
 export default async function PayoutsPage() {
+  const myId = await myInstructorId()
   const supabase = await createClient()
-  const { data: me } = await supabase
-    .from("instructors")
-    .select("id, payouts_enabled, stripe_connect_account_id")
-    .limit(1)
-    .maybeSingle()
+  const { data: me } = myId
+    ? await supabase
+        .from("instructors")
+        .select("id, payouts_enabled, stripe_connect_account_id")
+        .eq("id", myId)
+        .maybeSingle()
+    : { data: null }
 
   return (
     <div className="space-y-6">

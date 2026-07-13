@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { geocodeNyc, BOROUGHS } from "@/lib/geo/nyc"
+import { myInstructorId } from "@/lib/instructor"
 
 const boroughEnum = z.enum(BOROUGHS as unknown as [string, ...string[]])
 
@@ -76,11 +77,7 @@ export async function registerInstructor(
 }
 
 // ── Authed instructor: profile + locations ───────────────────────────────────
-async function myInstructorId(): Promise<string | null> {
-  const supabase = await createClient()
-  const { data } = await supabase.from("instructors").select("id").limit(1).maybeSingle()
-  return data?.id ?? null
-}
+// (identity comes from lib/instructor.ts myInstructorId — profile_id-bound)
 
 const profileSchema = z.object({
   bio: z.string().optional().or(z.literal("")),

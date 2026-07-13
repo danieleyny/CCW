@@ -6,7 +6,19 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { eligibilityGate, type WizardAnswers } from "@/lib/intake/answers"
+import { wizardAnswersSchema, completionIssues } from "@/lib/intake/schema"
 import { processIntake, evaluateSubmissionGuard, type SubmissionGuard } from "@/lib/intake/process"
+import type { Json } from "@/lib/supabase/types"
+
+/** V3-P0.6 — shape-validate at the boundary; nothing unparsed reaches jsonb. */
+function parseAnswers(raw: unknown): { answers?: WizardAnswers; error?: string } {
+  const parsed = wizardAnswersSchema.safeParse(raw)
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]
+    return { error: `Invalid intake data${issue ? ` (${issue.path.join(".")}: ${issue.message})` : ""}` }
+  }
+  return { answers: parsed.data as WizardAnswers }
+}
 
 /** Confirm the signed-in client owns this case; returns it or null (RLS-scoped). */
 async function ownedCase(caseId: string) {
@@ -42,10 +54,14 @@ export async function ensureIntakeSession(caseId: string) {
 /** Persist wizard progress (resumable). Client writes their own via RLS. */
 export async function saveIntakeStep(caseId: string, step: number, answers: WizardAnswers) {
   await requireRole(["client"])
+  const parsed = parseAnswers(answers)
+  if (parsed.error || !parsed.answers) throw new Error(parsed.error ?? "Invalid intake data")
+  if (!Number.isInteger(step) || step < 1 || step > 6) throw new Error("Invalid step")
+
   const supabase = await createClient()
   const { error } = await supabase
     .from("intake_sessions")
-    .update({ current_step: step, answers: answers as never })
+    .update({ current_step: step, answers: parsed.answers as unknown as Json })
     .eq("case_id", caseId)
   if (error) throw error
   revalidatePath("/portal/intake")
@@ -58,11 +74,15 @@ export async function saveIntakeStep(caseId: string, step: number, answers: Wiza
  */
 export async function completeIntake(
   caseId: string,
-  answers: WizardAnswers
-): Promise<{ guard: SubmissionGuard; blockedEligibility: boolean }> {
+  rawAnswers: WizardAnswers
+): Promise<{ guard: SubmissionGuard; blockedEligibility: boolean; validationErrors?: string[] }> {
   await requireRole(["client"])
   const kase = await ownedCase(caseId)
   if (!kase) throw new Error("Case not found")
+
+  const parsed = parseAnswers(rawAnswers)
+  if (parsed.error || !parsed.answers) throw new Error(parsed.error ?? "Invalid intake data")
+  const answers = parsed.answers
 
   const gate = eligibilityGate(answers)
   if (gate.blocked) {
@@ -70,7 +90,7 @@ export async function completeIntake(
     const supabase = await createClient()
     await supabase
       .from("intake_sessions")
-      .update({ current_step: 6, answers: answers as never })
+      .update({ current_step: 6, answers: answers as unknown as Json })
       .eq("case_id", caseId)
     await logActivity({
       action: "intake.attorney_review_required",
@@ -85,10 +105,26 @@ export async function completeIntake(
     }
   }
 
+  // V3-P0.6 — business rules (4 valid references, complete arrest rows, DOB).
+  // Save progress so nothing is lost, but do NOT generate until they pass.
+  const issues = completionIssues(answers)
+  if (issues.length > 0) {
+    const supabase = await createClient()
+    await supabase
+      .from("intake_sessions")
+      .update({ current_step: 6, answers: answers as unknown as Json })
+      .eq("case_id", caseId)
+    return {
+      blockedEligibility: false,
+      validationErrors: issues,
+      guard: { ok: false, blockers: [], emptyNarrativeCount: 0, pendingCount: 0 },
+    }
+  }
+
   const supabase = await createClient()
   await supabase
     .from("intake_sessions")
-    .update({ current_step: 6, answers: answers as never, completed_at: new Date().toISOString() })
+    .update({ current_step: 6, answers: answers as unknown as Json, completed_at: new Date().toISOString() })
     .eq("case_id", caseId)
 
   const admin = createAdminClient()
@@ -116,6 +152,7 @@ export async function updateDisclosureNarrative(
   narrative: string
 ): Promise<SubmissionGuard> {
   await requireRole(["client"])
+  if (typeof narrative !== "string" || narrative.length > 8000) throw new Error("Invalid narrative")
   const supabase = await createClient()
   const { error } = await supabase
     .from("disclosures")

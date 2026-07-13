@@ -5,6 +5,7 @@ import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp, Video } fr
 import { submitReferenceAnswers, uploadNotarizedReference, saveReferenceSignature } from "@/app/r/actions"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
 import { notaryOptions, ronOptions } from "@/lib/references/notary"
+import { compressImageFile } from "@/lib/files/compress"
 import { SignaturePad } from "@/components/sign/signature-pad"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,9 +64,10 @@ export function ReferenceFlow({
     setError("")
     const f = fileRef.current?.files?.[0]
     if (!f) return setError("Choose the notarized file to upload.")
-    const fd = new FormData()
-    fd.set("file", f)
     start(async () => {
+      const compressed = await compressImageFile(f) // HEIC→JPEG + downscale
+      const fd = new FormData()
+      fd.set("file", compressed)
       const res = await uploadNotarizedReference(token, fd)
       if (res.error) setError(res.error)
       else setPhase("done")

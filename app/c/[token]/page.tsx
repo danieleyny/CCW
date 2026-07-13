@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { brand } from "@/config/brand"
+import { tokenActive } from "@/lib/references/process"
 import { CohabitantFlow } from "@/components/public/cohabitant-flow"
 
 export const metadata = { title: "Cohabitant affidavit — CARRY" }
@@ -10,11 +11,11 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
 
   const { data: cohab } = await admin
     .from("cohabitants")
-    .select("id, name, relationship, affidavit_status, case_id")
+    .select("id, name, relationship, affidavit_status, case_id, token_expires_at, token_revoked_at")
     .eq("token", token)
     .maybeSingle()
 
-  if (!cohab) {
+  if (!cohab || !tokenActive({ expires_at: cohab.token_expires_at, revoked_at: cohab.token_revoked_at })) {
     return (
       <Shell>
         <h1 className="text-xl font-semibold">This link isn&apos;t valid</h1>

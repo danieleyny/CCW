@@ -3,12 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
-
-async function myInstructorId(): Promise<string | null> {
-  const supabase = await createClient()
-  const { data } = await supabase.from("instructors").select("id").limit(1).maybeSingle()
-  return data?.id ?? null
-}
+import { myInstructorId } from "@/lib/instructor"
 
 export async function addSlot(formData: FormData) {
   await requireRole(["instructor"])

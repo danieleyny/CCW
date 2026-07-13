@@ -66,11 +66,14 @@ export default function Home() {
               </Button>
             </div>
           </Reveal>
+          {/* V3-P0.7 — fabricated counters ("1200+ clients", "98% on-time")
+              removed. These three are structural facts of the product itself:
+              24 document types in the pipeline, 13 tracked stages, 5 boroughs. */}
           <Reveal delay={340}>
             <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-2.5 sm:gap-3">
-              <HudStat value={1200} suffix="+" label="Clients guided" className="glass-premium" />
-              <HudStat value={6} label="Month avg" className="glass-premium" />
-              <HudStat value={98} suffix="%" label="On-time filing" className="glass-premium" />
+              <HudStat value={24} label="Doc types tracked" className="glass-premium" />
+              <HudStat value={13} label="Stage pipeline" className="glass-premium" />
+              <HudStat value={5} label="Boroughs served" className="glass-premium" />
             </div>
           </Reveal>
         </div>

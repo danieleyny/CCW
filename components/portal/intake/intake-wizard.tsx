@@ -17,6 +17,11 @@ import {
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
 import {
+  eligibilityStepIssues,
+  disclosureStepIssues,
+  historyStepIssues,
+} from "@/lib/intake/schema"
+import {
   saveIntakeStep,
   completeIntake,
   updateDisclosureNarrative,
@@ -58,8 +63,17 @@ export function IntakeWizard({
   const [attorneyReview, setAttorneyReview] = useState(false)
   const [guardOverride, setGuardOverride] = useState<SubmissionGuard | null>(null)
   const [narrativeEdits, setNarrativeEdits] = useState<Record<string, string>>({})
+  const [stepErrors, setStepErrors] = useState<string[]>([])
 
   const patch = (p: Partial<WizardAnswers>) => setAnswers((s) => ({ ...s, ...p }))
+
+  // V3-P0.6 — inline per-step validation (mirrors the server-side rules).
+  function issuesForStep(n: number): string[] {
+    if (n === 1) return eligibilityStepIssues(a)
+    if (n === 4) return disclosureStepIssues(a)
+    if (n === 5) return historyStepIssues(a)
+    return []
+  }
 
   async function persist(next: number) {
     setSaving(true)
@@ -73,6 +87,12 @@ export function IntakeWizard({
   }
 
   async function next() {
+    const issues = issuesForStep(step)
+    if (issues.length > 0) {
+      setStepErrors(issues)
+      return
+    }
+    setStepErrors([])
     if (step === 1) {
       const gate = eligibilityGate(a)
       if (gate.blocked) {
@@ -86,6 +106,7 @@ export function IntakeWizard({
     setStep(n)
   }
   function back() {
+    setStepErrors([])
     setStep((s) => Math.max(s - 1, 1))
   }
 
@@ -97,6 +118,12 @@ export function IntakeWizard({
         setAttorneyReview(true)
         return
       }
+      if (res.validationErrors && res.validationErrors.length > 0) {
+        setStepErrors(res.validationErrors)
+        toast.error("A few answers need fixing before we can generate.")
+        return
+      }
+      setStepErrors([])
       setGuardOverride(res.guard)
       toast.success("Your personalized requirements were generated.")
       router.refresh()
@@ -247,6 +274,19 @@ export function IntakeWizard({
         {step === 5 && <StepHistory a={a} patch={patch} />}
         {step === 6 && <StepReview a={a} />}
       </div>
+
+      {stepErrors.length > 0 && (
+        <div role="alert" className="rounded-md border border-warn/30 bg-warn/10 p-3 text-sm text-warn">
+          <div className="flex items-center gap-2 font-medium">
+            <ShieldAlert className="size-4" /> Before you continue:
+          </div>
+          <ul className="mt-1 list-disc pl-6">
+            {stepErrors.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={back} disabled={step === 1 || saving || generating}>

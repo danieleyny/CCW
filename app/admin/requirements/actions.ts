@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { requireStaff } from "@/lib/auth"
+import { requireStaff, requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { materializeCaseRequirements, type IntakeAnswers } from "@/lib/requirements"
 
@@ -20,7 +20,8 @@ export async function retireRequirement(
   _prev: { error?: string; ok?: boolean },
   formData: FormData
 ): Promise<{ error?: string; ok?: boolean }> {
-  await requireStaff()
+  // V3-P0.3 — the registry is legal-compliance-bearing; admin only.
+  await requireAdmin()
   const parsed = z
     .object({ id: z.string().uuid(), effectiveTo: isoDate })
     .safeParse({
@@ -58,7 +59,8 @@ export async function addRequirementVersion(
   _prev: { error?: string; ok?: boolean },
   formData: FormData
 ): Promise<{ error?: string; ok?: boolean }> {
-  await requireStaff()
+  // V3-P0.3 — the registry is legal-compliance-bearing; admin only.
+  await requireAdmin()
   const parsed = z
     .object({
       sourceId: z.string().uuid(),

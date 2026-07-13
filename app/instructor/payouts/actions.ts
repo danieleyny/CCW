@@ -5,17 +5,20 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { createConnectAccount, createAccountLink } from "@/lib/stripe/connect"
+import { myInstructorId } from "@/lib/instructor"
 
 /** Begin (or resume) Stripe Connect Express onboarding for the instructor. */
 export async function startPayoutOnboarding(): Promise<{ error?: string }> {
   await requireRole(["instructor"])
   if (!STRIPE_ENABLED) return { error: "Payouts aren't enabled on this deployment yet." }
 
+  const myId = await myInstructorId()
+  if (!myId) return { error: "Instructor profile not found." }
   const supabase = await createClient()
   const { data: me } = await supabase
     .from("instructors")
     .select("id, email, stripe_connect_account_id")
-    .limit(1)
+    .eq("id", myId)
     .maybeSingle()
   if (!me) return { error: "Instructor profile not found." }
 

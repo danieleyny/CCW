@@ -1,9 +1,11 @@
 "use server"
 
 import { z } from "zod"
+import { headers } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
 import { brand } from "@/config/brand"
+import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 
 export type LeadState = { ok?: boolean; error?: string }
 
@@ -29,6 +31,16 @@ export async function captureLead(
   _prev: LeadState,
   formData: FormData
 ): Promise<LeadState> {
+  // V3-P0.5 — honeypot: real users never see or fill "company". Pretend success
+  // so bots don't learn they were filtered.
+  if (String(formData.get("company") ?? "").trim() !== "") return { ok: true }
+
+  // V3-P0.5 — per-IP brake on this unauthenticated, row-creating action.
+  const ip = clientIpFrom(await headers())
+  if (!rateLimit(`lead:${ip}`, 5)) {
+    return { error: "Too many submissions — please wait a minute and try again." }
+  }
+
   const parsed = leadSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),

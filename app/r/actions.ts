@@ -4,7 +4,8 @@ import { randomUUID } from "crypto"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
 import { validateFile } from "@/lib/files/validator"
-import { recomputeReferenceRequirement } from "@/lib/references/process"
+import { recomputeReferenceRequirement, tokenActive } from "@/lib/references/process"
+import { rateLimit } from "@/lib/rate-limit"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
 import { isReasonableSignature } from "@/lib/signatures"
 
@@ -13,9 +14,14 @@ type Admin = ReturnType<typeof createAdminClient>
 /** Capture the reference's e-signature; their letter PDF then comes pre-signed. */
 export async function saveReferenceSignature(token: string, base64: string): Promise<{ ok?: boolean; error?: string }> {
   if (!isReasonableSignature(base64)) return { error: "Please draw or type your signature first." }
+  if (!rateLimit(`r:${token}`)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
-  const { data: req } = await admin.from("reference_requests").select("reference_id, case_id").eq("token", token).maybeSingle()
-  if (!req) return { error: "This link is invalid or has expired." }
+  const { data: req } = await admin
+    .from("reference_requests")
+    .select("reference_id, case_id, expires_at, revoked_at")
+    .eq("token", token)
+    .maybeSingle()
+  if (!req || !tokenActive(req)) return { error: "This link is invalid or has expired." }
   const { error } = await admin
     .from("signatures")
     .upsert({ case_id: req.case_id, signer_key: `reference:${req.reference_id}`, png_base64: base64 }, { onConflict: "case_id,signer_key" })
@@ -72,13 +78,14 @@ export async function submitReferenceAnswers(
       return { error: "Please answer all required questions." }
     }
   }
+  if (!rateLimit(`r:${token}`)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
   const { data: req } = await admin
     .from("reference_requests")
-    .select("id, reference_id, case_id, status")
+    .select("id, reference_id, case_id, status, expires_at, revoked_at")
     .eq("token", token)
     .maybeSingle()
-  if (!req) return { error: "This link is invalid or has expired." }
+  if (!req || !tokenActive(req)) return { error: "This link is invalid or has expired." }
   if (req.status === "notarized") return { ok: true, alreadyDone: true }
 
   const firstTime = req.status !== "submitted"
@@ -116,13 +123,14 @@ export async function uploadNotarizedReference(
   const check = validateFile({ name: file.name, size: file.size })
   if (!check.ok) return { error: check.errors[0] ?? "That file can't be uploaded." }
 
+  if (!rateLimit(`r:${token}`, 10)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
   const { data: req } = await admin
     .from("reference_requests")
-    .select("id, reference_id, case_id, status")
+    .select("id, reference_id, case_id, status, expires_at, revoked_at")
     .eq("token", token)
     .maybeSingle()
-  if (!req) return { error: "This link is invalid or has expired." }
+  if (!req || !tokenActive(req)) return { error: "This link is invalid or has expired." }
 
   const { data: kase } = await admin.from("cases").select("client_id").eq("id", req.case_id).single()
   if (!kase?.client_id) return { error: "Case not found." }

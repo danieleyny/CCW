@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { getSignaturePng } from "@/lib/signatures"
+import { tokenActive } from "@/lib/references/process"
 
 /** Regenerate the cohabitant's affidavit PDF on demand. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -10,10 +11,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   const { data: cohab } = await admin
     .from("cohabitants")
-    .select("id, name, relationship, case_id")
+    .select("id, name, relationship, case_id, token_expires_at, token_revoked_at")
     .eq("token", token)
     .maybeSingle()
-  if (!cohab) return new Response("Not found", { status: 404 })
+  if (!cohab || !tokenActive({ expires_at: cohab.token_expires_at, revoked_at: cohab.token_revoked_at }))
+    return new Response("Not found", { status: 404 })
 
   const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", cohab.case_id).single()
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
