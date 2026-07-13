@@ -1,6 +1,7 @@
 import { requireStaff } from "@/lib/auth"
 import { Sidebar } from "@/components/admin/sidebar"
 import { Topbar } from "@/components/admin/topbar"
+import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 
 export default async function AdminLayout({
   children,
@@ -11,7 +12,8 @@ export default async function AdminLayout({
   const { profile } = await requireStaff()
 
   return (
-    <div className="flex min-h-svh">
+    <div className="dark flex min-h-svh bg-background text-foreground">
+      <DarkBackdrop />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar name={profile.full_name || "Staff"} role={profile.role} />

@@ -8,7 +8,7 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center px-4 py-12">
+    <div className="dark relative flex min-h-svh flex-col items-center justify-center bg-background px-4 py-12 text-foreground">
       <TechGrid glow="both" />
       <div className="relative w-full max-w-sm">
         <Link

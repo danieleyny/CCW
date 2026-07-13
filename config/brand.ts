@@ -43,10 +43,14 @@ export const brand = {
 } as const
 
 /**
- * Raw palette — exposed both as Tailwind utilities (via globals @theme) and as
- * the source for the shadcn semantic tokens below.
+ * Raw palettes — exposed as Tailwind utilities (via globals @theme) and as the
+ * source for the shadcn semantic tokens below. Two themes:
+ *   • paletteDark  — the obsidian/brass/signal instrument (the app: portal,
+ *     admin, instructor). This is the original CARRY register, unchanged.
+ *   • paletteLight — warm paper / brass / ink "my lawyer's office" (marketing).
+ * Continuity across the two is TYPE, RADIUS, and BRASS — not the background.
  */
-export const palette = {
+export const paletteDark = {
   // Near-true-black with a faint cool blue-violet undertone — reads colder and
   // more "futuristic" than a neutral charcoal while staying obsidian-dark.
   bg: "#07080B",
@@ -76,52 +80,96 @@ export const palette = {
   danger: "#F2555A",
 } as const
 
-const INK = "#0B0A07" // near-black ink for text on brass
+/**
+ * Warm-paper light theme (marketing). Bone-white paper, ink text, and a DEEPER
+ * brass for text/borders so it stays AA-legible on light; the fill brass matches
+ * the dark theme so the mark reads the same. Cool accents darkened for contrast.
+ */
+export const paletteLight = {
+  bg: "#FAF9F7",
+  "surface-1": "#FFFFFF",
+  "surface-2": "#F4F2EE",
+  "surface-3": "#EAE7E1",
+  hairline: "rgba(20,18,14,0.08)",
+  "hairline-strong": "rgba(20,18,14,0.14)",
+  "text-hi": "#14120E",
+  "text-mid": "#57534E",
+  "text-low": "#8A8580",
+  // Fill brass matches dark; "bright"/"deep" go DARKER (readable ink-brass on paper).
+  brass: "#C9A24B",
+  "brass-bright": "#8E6F2E",
+  "brass-deep": "#6E5423",
+  "brass-glow": "rgba(142,111,46,0.20)",
+  ice: "#5B7A88",
+  "ice-dim": "rgba(91,122,136,0.12)",
+  signal: "#0E7490",
+  "signal-dim": "rgba(14,116,144,0.10)",
+  ok: "#15803D",
+  warn: "#B45309",
+  danger: "#B91C1C",
+} as const
 
-/** shadcn/Radix semantic tokens mapped onto the obsidian system. */
-const shadcn: Record<string, string> = {
-  background: palette.bg,
-  foreground: palette["text-hi"],
-  card: palette["surface-1"],
-  "card-foreground": palette["text-hi"],
-  popover: palette["surface-2"],
-  "popover-foreground": palette["text-hi"],
-  primary: palette.brass,
-  "primary-foreground": INK,
-  secondary: palette["surface-2"],
-  "secondary-foreground": palette["text-hi"],
-  muted: palette["surface-2"],
-  "muted-foreground": palette["text-mid"],
-  accent: palette["surface-3"],
-  "accent-foreground": palette["text-hi"],
-  brand: palette.brass,
-  "brand-foreground": INK,
-  destructive: palette.danger,
-  border: palette.hairline,
-  input: palette["hairline-strong"],
-  ring: palette.signal,
-  "chart-1": palette.brass,
-  "chart-2": palette.signal,
-  "chart-3": palette["brass-bright"],
-  "chart-4": palette["text-low"],
-  "chart-5": palette["brass-deep"],
-  sidebar: "#0A0C10",
-  "sidebar-foreground": palette["text-mid"],
-  "sidebar-primary": palette.brass,
-  "sidebar-primary-foreground": INK,
-  "sidebar-accent": palette["surface-2"],
-  "sidebar-accent-foreground": palette["text-hi"],
-  "sidebar-border": palette.hairline,
-  "sidebar-ring": palette.signal,
+/** Back-compat alias — nothing imports the raw palette today, but keep it. */
+export const palette = paletteDark
+
+const INK = "#0B0A07" // near-black ink for text on brass (both themes)
+
+type Palette = Record<keyof typeof paletteDark, string>
+
+/** shadcn/Radix semantic tokens derived from a palette. */
+function shadcnFor(pal: Palette, sidebarBg: string): Record<string, string> {
+  return {
+    background: pal.bg,
+    foreground: pal["text-hi"],
+    card: pal["surface-1"],
+    "card-foreground": pal["text-hi"],
+    popover: pal["surface-2"],
+    "popover-foreground": pal["text-hi"],
+    primary: pal.brass,
+    "primary-foreground": INK,
+    secondary: pal["surface-2"],
+    "secondary-foreground": pal["text-hi"],
+    muted: pal["surface-2"],
+    "muted-foreground": pal["text-mid"],
+    accent: pal["surface-3"],
+    "accent-foreground": pal["text-hi"],
+    brand: pal.brass,
+    "brand-foreground": INK,
+    destructive: pal.danger,
+    border: pal.hairline,
+    input: pal["hairline-strong"],
+    ring: pal.signal,
+    "chart-1": pal.brass,
+    "chart-2": pal.signal,
+    "chart-3": pal["brass-bright"],
+    "chart-4": pal["text-low"],
+    "chart-5": pal["brass-deep"],
+    sidebar: sidebarBg,
+    "sidebar-foreground": pal["text-mid"],
+    "sidebar-primary": pal.brass,
+    "sidebar-primary-foreground": INK,
+    "sidebar-accent": pal["surface-2"],
+    "sidebar-accent-foreground": pal["text-hi"],
+    "sidebar-border": pal.hairline,
+    "sidebar-ring": pal.signal,
+  }
 }
 
-/** CSS the root layout injects so brand.ts drives the live (dark-only) theme. */
-export function brandCss(): string {
-  const all = { ...palette, ...shadcn }
-  const body = Object.entries(all)
+const varsFrom = (obj: Record<string, string>) =>
+  Object.entries(obj)
     .map(([k, v]) => `--${k}:${v};`)
     .join("")
-  return `:root{${body}}`
+
+/**
+ * CSS the root layout injects. Light tokens on :root (marketing default), dark
+ * tokens on `.dark` (the app route groups wrap their tree in it). CSS custom
+ * properties cascade, so a `.dark` wrapper re-themes its whole subtree with no
+ * runtime toggle and no flash.
+ */
+export function brandCss(): string {
+  const light = varsFrom({ ...paletteLight, ...shadcnFor(paletteLight, paletteLight["surface-1"]) })
+  const dark = varsFrom({ ...paletteDark, ...shadcnFor(paletteDark, "#0A0C10") })
+  return `:root{${light}} .dark{${dark}}`
 }
 
 export type Brand = typeof brand

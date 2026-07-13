@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Crosshair, ShieldCheck, ShieldAlert, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -63,18 +63,54 @@ const QUESTIONS: Question[] = [
   },
 ]
 
+const STORAGE_KEY = "carry_eligibility_quiz"
+
 export function EligibilityQuiz() {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [done, setDone] = useState(false)
 
+  // V4-B5 — restore in-progress answers after a refresh so nobody loses their
+  // place mid-quiz. Read once on mount (after hydration → no SSR mismatch).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const saved = JSON.parse(raw) as { step?: number; answers?: Record<string, Answer>; done?: boolean }
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (saved.answers) setAnswers(saved.answers)
+      if (typeof saved.step === "number") setStep(Math.min(saved.step, QUESTIONS.length - 1))
+      if (saved.done) setDone(true)
+      /* eslint-enable react-hooks/set-state-in-effect */
+    } catch {
+      // ignore malformed/blocked storage
+    }
+  }, [])
+
+  function persist(next: { step: number; answers: Record<string, Answer>; done: boolean }) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    } catch {
+      // storage may be unavailable (private mode) — persistence is best-effort
+    }
+  }
+
   const q = QUESTIONS[step]
 
   function choose(opt: Answer) {
     const next = { ...answers, [q.key]: opt }
+    const last = step >= QUESTIONS.length - 1
+    const nextStep = last ? step : step + 1
     setAnswers(next)
-    if (step < QUESTIONS.length - 1) setStep(step + 1)
-    else setDone(true)
+    if (last) setDone(true)
+    else setStep(nextStep)
+    persist({ step: nextStep, answers: next, done: last })
+  }
+
+  function goBack() {
+    const prev = step - 1
+    setStep(prev)
+    persist({ step: prev, answers, done: false })
   }
 
   if (done) {
@@ -137,7 +173,7 @@ export function EligibilityQuiz() {
       {step > 0 && (
         <button
           type="button"
-          onClick={() => setStep(step - 1)}
+          onClick={goBack}
           className="mt-6 inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-mid hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" /> Back

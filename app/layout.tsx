@@ -38,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} h-full antialiased`}
+      className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} h-full antialiased`}
     >
       <head>
         <BrandStyle />
@@ -51,13 +51,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {/* Global obsidian backdrop: faint blueprint grid + brass/cyan rim glows */}
-        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-          <div className="absolute inset-0 tech-grid opacity-30 [mask-image:radial-gradient(ellipse_at_top,black,transparent_75%)]" />
-          <div className="absolute -top-48 left-1/2 h-96 w-[64rem] -translate-x-1/2 rounded-full bg-brass/5 blur-[140px]" />
-          <div className="absolute bottom-0 right-0 h-80 w-96 rounded-full bg-signal/5 blur-[140px]" />
-          <div className="absolute bottom-1/3 -left-32 h-80 w-80 rounded-full bg-ice/[0.04] blur-[150px]" />
-        </div>
+        {/* The per-section backdrop lives in each route group's layout: marketing
+            renders <LightBackdrop />, the app groups render <DarkBackdrop /> inside
+            their `.dark` wrapper. */}
         <div id="main" className="contents">
           {children}
         </div>

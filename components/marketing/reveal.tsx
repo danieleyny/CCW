@@ -28,6 +28,13 @@ export function Reveal({
     }
     const el = ref.current
     if (!el) return
+
+    // Already on screen at mount (above the fold) → reveal now.
+    if (el.getBoundingClientRect().top < window.innerHeight) {
+      setShown(true)
+      return
+    }
+
     const io = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
@@ -38,7 +45,16 @@ export function Reveal({
       { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
     )
     io.observe(el)
-    return () => io.disconnect()
+    // Safety net: never let content stay hidden if the observer never fires
+    // (some engines/automation don't fire on programmatic scroll).
+    const fallback = setTimeout(() => {
+      setShown(true)
+      io.disconnect()
+    }, 2500)
+    return () => {
+      io.disconnect()
+      clearTimeout(fallback)
+    }
   }, [])
 
   return (

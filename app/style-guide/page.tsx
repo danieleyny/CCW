@@ -23,7 +23,7 @@ const ACCENTS = [
 
 export default function StyleGuide() {
   return (
-    <div className="relative mx-auto max-w-4xl px-5 py-12">
+    <div className="dark relative mx-auto min-h-svh max-w-4xl bg-background px-5 py-12 text-foreground">
       <TechGrid glow="both" />
       <div className="relative space-y-12">
         <header>

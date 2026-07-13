@@ -20,9 +20,12 @@ type DB = SupabaseClient<Database>
 
 /** Count rows visible to `c` in `table`, optionally scoped to a case. */
 async function count(c: DB, table: string, caseId?: string): Promise<number> {
-  let q = c.from(table).select("id", { count: "exact", head: true })
+  // Dynamic table name — step outside the generated table-literal typing.
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let q: any = (c as any).from(table).select("id", { count: "exact", head: true })
   if (caseId) q = q.eq("case_id", caseId)
   const { count } = await q
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   return count ?? 0
 }
 
