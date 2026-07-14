@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { brand } from "@/config/brand"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -21,9 +23,29 @@ const LINKS = [
 
 export function MarketingNav() {
   const [open, setOpen] = useState(false)
+  const isHome = usePathname() === "/"
+  const [scrolled, setScrolled] = useState(false)
+
+  // V5 — on the dark homepage the bar is transparent over the hero, then glass
+  // once you scroll past it. Every other route keeps the solid glass bar it has
+  // today (solid stays true, so nothing about those pages changes).
+  useEffect(() => {
+    if (!isHome) return
+    const onScroll = () => setScrolled(window.scrollY > 80)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [isHome])
+
+  const solid = !isHome || scrolled
 
   return (
-    <header className="glass-premium sticky top-0 z-30 rounded-none border-x-0 border-t-0">
+    <header
+      className={cn(
+        "sticky top-0 z-30 rounded-none border-x-0 border-t-0 transition-colors duration-300",
+        solid ? "glass-premium" : "border-transparent bg-transparent"
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
