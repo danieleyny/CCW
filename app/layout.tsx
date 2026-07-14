@@ -4,6 +4,7 @@ import "./globals.css";
 import { brand } from "@/config/brand";
 import { BrandStyle } from "@/config/brand-style";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 const fontSans = Geist({
   variable: "--font-sans",
@@ -58,6 +59,9 @@ export default function RootLayout({
           {children}
         </div>
         <Toaster richColors closeButton theme="dark" />
+        {/* GA4 — only on the real production deployment, so localhost + preview
+            traffic never pollutes the analytics. */}
+        {process.env.VERCEL_ENV === "production" && <GoogleAnalytics />}
       </body>
     </html>
   );
