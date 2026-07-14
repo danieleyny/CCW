@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import type { Json } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
-import { brand } from "@/config/brand"
+import { getSiteUrl } from "@/lib/site-url"
 import {
   SUBSCRIBE_OFFERS,
   allowedOrigins,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Confirmation email — no-ops safely without RESEND_API_KEY (ships dark).
-  const unsubUrl = `${brand.url}/api/unsubscribe?token=${encodeURIComponent(unsubToken(data.id))}`
+  const unsubUrl = `${getSiteUrl()}/api/unsubscribe?token=${encodeURIComponent(unsubToken(data.id))}`
   const { html, text } = offerEmail(v.offer, unsubUrl)
   await sendEmail({ to: v.email, subject: offerSubject(v.offer), html, text })
 

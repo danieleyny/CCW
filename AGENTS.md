@@ -47,5 +47,5 @@ NYPD's published position: consulting firms **cannot represent applicants**, **c
 
 - Stripe checkout is fully built but `STRIPE_ENABLED` is off in prod (invoice-request fallback carries revenue); Resend key unset (emails log to console; "Copy link" buttons cover outreach).
 - Every registry rule awaits attorney verification in `/admin/legal` before client-facing filing use.
-- `config/brand.ts` contact info is placeholder — needs real business details.
+- `config/brand.ts` contact email/phone are real (gunlicensenyc@gmail.com / (929) 352-5961); `domain`/`url` still read `carry.example` (runtime URL comes from `getSiteUrl()`/`NEXT_PUBLIC_SITE_URL`, so it's cosmetic — swap when a custom domain lands).
 - Historical docs live in `docs/archive/`; the V3 evidence base is `CCW_V3_AUDIT.md` + `CCW_V3_BUILD_PROMPT.md`.
