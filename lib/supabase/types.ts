@@ -1895,6 +1895,7 @@ export type Database = {
           name: string
           price_cents: number
           price_label: string | null
+          refile_promise: boolean
           sort: number
           updated_at: string
         }
@@ -1909,6 +1910,7 @@ export type Database = {
           name: string
           price_cents?: number
           price_label?: string | null
+          refile_promise?: boolean
           sort?: number
           updated_at?: string
         }
@@ -1923,6 +1925,7 @@ export type Database = {
           name?: string
           price_cents?: number
           price_label?: string | null
+          refile_promise?: boolean
           sort?: number
           updated_at?: string
         }
@@ -1984,6 +1987,42 @@ export type Database = {
           proj4text?: string | null
           srid?: number
           srtext?: string | null
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          jurisdiction: string | null
+          offer: string
+          payload: Json
+          source: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          jurisdiction?: string | null
+          offer: string
+          payload?: Json
+          source: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          jurisdiction?: string | null
+          offer?: string
+          payload?: Json
+          source?: string
+          unsubscribed_at?: string | null
         }
         Relationships: []
       }

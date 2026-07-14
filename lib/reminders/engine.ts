@@ -473,5 +473,43 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }))
   }
 
+  // ── V5b-A Rule: Law Watch — a registry rule change is a dated data edit, so a
+  // new `requirements` row whose effective_from just landed IS the change. Notify
+  // every law-watch subscriber for that jurisdiction, once per version (windowKey
+  // = the version date). No sales copy — that restraint is why people trust it.
+  const sinceDate = new Date(now.getTime() - DAY).toISOString().slice(0, 10)
+  const todayDate = now.toISOString().slice(0, 10)
+  const { data: changedReqs } = await admin
+    .from("requirements")
+    .select("req_code, effective_from, authority, source_url, jurisdiction_profiles(key)")
+    .gte("effective_from", sinceDate)
+    .lte("effective_from", todayDate)
+  if (changedReqs && changedReqs.length) {
+    const { data: watchers } = await admin
+      .from("subscribers")
+      .select("email, jurisdiction")
+      .eq("offer", "law-watch")
+      .is("unsubscribed_at", null)
+    for (const r of changedReqs) {
+      const jkey = (r.jurisdiction_profiles as unknown as { key: string } | null)?.key
+      const jur = jkey === "nyc" || jkey === "special_carry" ? "ny" : null
+      if (!jur) continue
+      for (const w of watchers ?? []) {
+        // A subscriber with no jurisdiction set wants the default (NY) feed.
+        if (w.jurisdiction && w.jurisdiction !== jur) continue
+        push(await fireOnce(admin, {
+          ruleKey: "law_watch",
+          target: w.email,
+          windowKey: `${r.req_code}:${r.effective_from}`,
+          email: w.email,
+          kind: "reminder",
+          title: `NYC carry requirement update — ${r.req_code}`,
+          body: `A requirement changed, effective ${r.effective_from}. Authority: ${r.authority ?? "—"}.${r.source_url ? ` Source: ${r.source_url}` : ""} Full details: concealedknowledge.com/updates`,
+          link: "https://concealedknowledge.com/updates",
+        }))
+      }
+    }
+  }
+
   return fired
 }

@@ -2,7 +2,7 @@
  * V3-P2.5 — the 15 things a consultant types every week. Inserted into the
  * message box for editing before send (never auto-sent). Keep candor-
  * maximizing and expectation-safe: no outcome promises, no timeline
- * guarantees, no legal advice.
+ * commitments, no legal advice.
  *
  * V4-A4f — fee amounts come from the `fees` table via getFees(), so a fee
  * change never leaves a stale number in a canned message.

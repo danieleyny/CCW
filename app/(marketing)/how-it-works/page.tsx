@@ -3,6 +3,7 @@ import { CASE_STAGES } from "@/config/stages"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { RequirementsWall } from "@/components/marketing/showcase/requirements-wall"
+import { RefilePromise } from "@/components/marketing/refile-promise"
 
 export const metadata = {
   title: "How it works",
@@ -40,6 +41,14 @@ export default function HowItWorks() {
           homepage, where it read as legalese homework). A motivated reader
           finds it and is impressed instead of exhausted. */}
       <RequirementsWall />
+
+      {/* V5b — the Refile Promise, at the QA-gate payoff: this is the gate said
+          out loud. Always beside brand.disclaimer. */}
+      <section className="border-t border-hairline">
+        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
+          <RefilePromise />
+        </div>
+      </section>
 
       <section className="border-t border-hairline">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">

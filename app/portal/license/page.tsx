@@ -1,4 +1,4 @@
-import { BadgeCheck } from "lucide-react"
+import { BadgeCheck, MapPin, ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { LicenseHub, type AuthRow, type ReportRow } from "@/components/portal/license-hub"
@@ -111,6 +111,29 @@ export default async function LicensePage() {
       </Card>
 
       <LicenseHub auths={auths} reports={reports} />
+
+      {/* V5b — reciprocity link-out. Concealed Knowledge owns the dataset; we
+          deep-link to it rather than duplicate a legal map across two repos. */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <div>
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold">
+              <MapPin className="size-4 text-brass" /> Where your license is honored
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Check reciprocity for your NY license, maintained by Concealed Knowledge.
+            </p>
+          </div>
+          <a
+            href="https://concealedknowledge.com/reciprocity?home=ny"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-hairline px-4 text-sm font-medium text-text-mid transition-colors hover:text-foreground"
+          >
+            View reciprocity <ExternalLink className="size-3.5" />
+          </a>
+        </CardContent>
+      </Card>
     </div>
   )
 }

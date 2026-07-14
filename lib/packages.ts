@@ -16,12 +16,13 @@ export interface ServicePackage {
   depositCents: number
   priceLabel: string
   featured: boolean
+  refilePromise: boolean
 }
 
 export async function getActivePackages(db: DB): Promise<ServicePackage[]> {
   const { data } = await db
     .from("service_packages")
-    .select("key, name, blurb, price_cents, deposit_cents, price_label, featured")
+    .select("key, name, blurb, price_cents, deposit_cents, price_label, featured, refile_promise")
     .eq("active", true)
     .order("sort", { ascending: true })
   return (data ?? []).map((p) => ({
@@ -32,6 +33,7 @@ export async function getActivePackages(db: DB): Promise<ServicePackage[]> {
     depositCents: p.deposit_cents,
     priceLabel: p.price_label ?? `$${(p.price_cents / 100).toLocaleString("en-US")}`,
     featured: p.featured,
+    refilePromise: p.refile_promise,
   }))
 }
 

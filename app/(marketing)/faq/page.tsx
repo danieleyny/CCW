@@ -26,8 +26,8 @@ const buildFaqs = (fees: Fees) => [
     a: "A government photo ID, four notarized character references, a notarized cohabitant affidavit for every adult in your home, a 3-year social media account list, proof of training, two photos of your gun safe (door open and closed), and proof of residence or business.",
   },
   {
-    q: "Do you guarantee approval?",
-    a: "No. CARRY assists with and guides your application — we do not issue licenses and cannot guarantee approval. The NYPD retains full investigative discretion.",
+    q: "Can you promise I'll be approved?",
+    a: "No. CARRY assists with and guides your application — we do not issue licenses and cannot promise a specific outcome. The NYPD retains full investigative discretion.",
   },
   {
     q: "I don't live in NYC. Can you still help?",

@@ -16,8 +16,9 @@ import {
 
 const LINKS = [
   { href: "/how-it-works", label: "How it works" },
+  { href: "/checklist", label: "Free checklist" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/blog", label: "Guides" },
+  { href: "/resources", label: "Resources" },
   { href: "/faq", label: "FAQ" },
 ]
 

@@ -15,9 +15,13 @@ import { cn } from "@/lib/utils"
 export function StickyCta({
   watchOutId,
   hideNearId,
+  href = "/eligibility",
+  label = "Check eligibility",
 }: {
   watchOutId: string
   hideNearId: string
+  href?: string
+  label?: string
 }) {
   const [show, setShow] = useState(false)
 
@@ -63,10 +67,10 @@ export function StickyCta({
       style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
     >
       <Link
-        href="/eligibility"
+        href={href}
         className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-brass px-4 font-semibold text-brand-foreground"
       >
-        Check eligibility <ArrowRight className="size-4" />
+        {label} <ArrowRight className="size-4" />
       </Link>
     </div>
   )

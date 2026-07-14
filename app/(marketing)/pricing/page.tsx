@@ -3,6 +3,9 @@ import { Check } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getActivePackages } from "@/lib/packages"
 import { getFees } from "@/lib/fees"
+import { getTrustStats } from "@/lib/stats"
+import { RefilePromise } from "@/components/marketing/refile-promise"
+import { TrustStats } from "@/components/marketing/trust-stats"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 
@@ -31,6 +34,7 @@ export default async function Pricing() {
   const supabase = await createClient()
   const packages = await getActivePackages(supabase)
   const fees = await getFees(supabase)
+  const stats = await getTrustStats()
   return (
     <>
       <PageHero
@@ -75,7 +79,14 @@ export default async function Pricing() {
         <p className="mt-8 text-center font-mono text-xs text-text-low">
           Service fees only. NYPD charges a separate {fees.applicationFee} license fee + {fees.fingerprintFee} fingerprinting fee.
         </p>
+
+        {/* V5b — The Refile Promise, a band under the packages. */}
+        <div className="mx-auto mt-12 max-w-2xl">
+          <RefilePromise />
+        </div>
       </section>
+
+      <TrustStats stats={stats} />
     </>
   )
 }

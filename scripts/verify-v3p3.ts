@@ -41,7 +41,8 @@ async function main() {
   // ── 3.1 packages in the DB ─────────────────────────────────────────────────
   const pkgs = await getActivePackages(admin)
   check(pkgs.length >= 4, `service_packages seeded (${pkgs.length}) (3.1)`)
-  check(pkgs.find((p) => p.key === "full_concierge")?.priceCents === 199900, "concierge $1,999 from DB (3.1)")
+  // V5 — concierge repriced $1,999 → $1,000 (migration …001400).
+  check(pkgs.find((p) => p.key === "full_concierge")?.priceCents === 100000, "concierge $1,000 from DB (3.1)")
   check(pkgs.find((p) => p.key === "non_resident")?.priceLabel === "Custom", "custom price label from DB (3.1)")
 
   // A STRANGER (anonymous) can read the pricing data.

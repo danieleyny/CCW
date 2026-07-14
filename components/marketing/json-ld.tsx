@@ -37,6 +37,22 @@ export const serviceSchema = {
     "Concierge guidance through the NYC concealed-carry-weapon licensing process: training, document preparation, notarization, and NYPD filing.",
 }
 
+/** V5b — the free anonymous checklist as a HowTo (high-intent SEO). */
+export const checklistHowToSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "How to prepare a NYC concealed carry license application",
+  description:
+    "The documents the NYPD License Division requires for a NYC concealed-carry (CCW) license — each tied to the rule it satisfies.",
+  totalTime: "P6M",
+  step: [
+    { "@type": "HowToStep", name: "Confirm eligibility", text: "Be 21+ and free of disqualifiers." },
+    { "@type": "HowToStep", name: "Complete 18-hour training", text: "16 classroom + 2 live-fire hours with a DCJS-approved instructor." },
+    { "@type": "HowToStep", name: "Gather documents", text: "References, cohabitant affidavits, proof of residence, photos, and disclosures." },
+    { "@type": "HowToStep", name: "File and interview", text: "Submit to the NYPD, get fingerprinted, and attend the interview." },
+  ],
+}
+
 export function faqSchema(faqs: { q: string; a: string }[]) {
   return {
     "@context": "https://schema.org",

@@ -14,6 +14,7 @@ import { Ticker } from "@/components/marketing/ticker"
 import { JourneyScroll } from "@/components/marketing/journey-scroll"
 import { StickyCta } from "@/components/marketing/sticky-cta"
 import { PricingReveal } from "@/components/marketing/pricing-reveal"
+import { RefilePromise } from "@/components/marketing/refile-promise"
 import { CaseFileShowcase } from "@/components/marketing/showcase/case-file-showcase"
 import { ConsultantShowcase } from "@/components/marketing/showcase/consultant-showcase"
 import { TheCount } from "@/components/marketing/showcase/the-count"
@@ -24,7 +25,7 @@ export default async function Home() {
   const concierge = packages.find((p) => p.key === "full_concierge") ?? packages.find((p) => p.featured)
 
   const REALITY: [string, string][] = [
-    ["~6 months", "Start to decision letter. No one can expedite it — us included."],
+    ["~6 months", "Start to decision letter. No one can rush it — us included."],
     [`${fees.applicationFee} + ${fees.fingerprintFee}`, "Government fees, paid directly to them."],
     ["18 hours", "Of training — and it expires six months after it's dated."],
     ["4 references", "Notarized. We send them the link."],
@@ -152,7 +153,10 @@ export default async function Home() {
 
       {/* ── TRUST BAND (slim furniture) ──────────────────────────────────── */}
       <section className="section-void pb-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <div className="mx-auto max-w-4xl space-y-4 px-4 sm:px-6">
+          <Reveal>
+            <RefilePromise withDisclaimer={false} />
+          </Reveal>
           <div className="rounded-xl border border-hairline bg-surface-1/40 p-5">
             <div className="flex items-center gap-2 text-brass-bright">
               <ShieldCheck className="size-4" />
@@ -162,7 +166,7 @@ export default async function Home() {
               <li>✓ A document-prep & case-management service.</li>
               <li>✕ Not attorneys; we don&apos;t represent you at the License Division.</li>
               <li>✓ Honest about timelines; attorney referral when you need one.</li>
-              <li>✕ Not NYPD-affiliated; we can&apos;t expedite or guarantee any outcome.</li>
+              <li>✕ Not NYPD-affiliated; we don&apos;t control the outcome or how long it takes.</li>
             </ul>
             <p className="mt-4 border-t border-hairline pt-3 text-xs leading-relaxed text-text-low">
               {brand.disclaimer}
