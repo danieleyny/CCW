@@ -15,8 +15,8 @@ export const brand = {
   tagline: "Concealed carry, handled with precision.",
   description:
     "CARRY is a private licensing concierge that guides New Yorkers through the full NYC concealed-carry-weapon process — training, documents, and filing — from first inquiry to licensed.",
-  domain: "carry.example",
-  url: "https://carry.example",
+  domain: "gunlicensenyc.com",
+  url: "https://gunlicensenyc.com",
   contact: {
     email: "gunlicensenyc@gmail.com",
     phone: "(929) 352-5961",
