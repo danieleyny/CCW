@@ -5,6 +5,7 @@ import type { Json } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { getSiteUrl } from "@/lib/site-url"
+import { notifyFormspree } from "@/lib/formspree"
 import {
   SUBSCRIBE_OFFERS,
   allowedOrigins,
@@ -88,6 +89,10 @@ export async function POST(req: NextRequest) {
   if (error || !data) {
     return NextResponse.json({ ok: false, error: "could not subscribe" }, { status: 500, headers })
   }
+
+  // Notify the business inbox of the new subscriber (source-labeled; carries
+  // `from` so CARRY's own captures are distinguishable from CK funnel posts).
+  await notifyFormspree(`subscribe:${v.offer}`, { email: v.email, offer: v.offer, from: v.from, jurisdiction: v.jurisdiction })
 
   // Confirmation email — no-ops safely without RESEND_API_KEY (ships dark).
   const unsubUrl = `${getSiteUrl()}/api/unsubscribe?token=${encodeURIComponent(unsubToken(data.id))}`

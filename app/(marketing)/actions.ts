@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
 import { brand } from "@/config/brand"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
+import { notifyFormspree } from "@/lib/formspree"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 
 export type LeadState = { ok?: boolean; error?: string }
@@ -147,7 +148,17 @@ export async function captureLead(
     detail: { source: v.source },
   })
 
-  // Stubbed staff notification (no-ops until RESEND_API_KEY is set).
+  // Email the submission to the business inbox. Formspree works today (no key);
+  // sendEmail stays as a second channel that lights up when RESEND_API_KEY is set.
+  await notifyFormspree(v.source, {
+    name: v.name,
+    email: v.email,
+    phone: v.phone,
+    borough: v.borough,
+    track: v.track,
+    message: v.message,
+    consult_time: v.consultAt,
+  })
   await sendEmail({
     to: brand.contact.email,
     subject: `New lead: ${v.name} (${v.source})`,
