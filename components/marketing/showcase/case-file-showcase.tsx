@@ -81,7 +81,7 @@ export function CaseFileShowcase({
       <ul className="mt-4 space-y-2">
         {ROWS.map((r) => (
           <li
-            key={r.code}
+            key={r.title}
             className="rounded-lg border border-hairline bg-surface-2/60 p-3"
           >
             <div className="flex items-start gap-2.5">
