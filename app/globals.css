@@ -329,54 +329,72 @@
   }
 }
 
-/* V7 — HERO "how it works" illustration. The FINAL (drawn/revealed) state is the
-   DEFAULT so no-JS and reduced-motion both render the completed diagram; the
-   pre-animation state only applies while data-inview="false". Spine draws via
-   scaleY, steps rise/fade staggered, the final token flips numeral→check. */
-.hiw-spine {
-  transform: scaleY(1);
-  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+/* V8 — HERO animated case card. All transform/opacity; the phase body remounts
+   per phase (React key) so these one-shot animations restart on entry. Under
+   reduced-motion the card is pinned to one static phase and all animation is
+   neutralised to its finished state. */
+@keyframes ca-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ca-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
-.hiw[data-inview="false"] .hiw-spine { transform: scaleY(0); }
+@keyframes ca-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes ca-scalex { to { transform: scaleX(1); } }
+@keyframes ca-flash { 0% { opacity: 0; } 18% { opacity: 0.95; } 100% { opacity: 0; } }
 
-.hiw-step {
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: calc(var(--i) * 180ms + 200ms);
-}
-.hiw[data-inview="false"] .hiw-step { opacity: 0; transform: translateY(8px); }
+.ca-body { animation: ca-fade 0.45s ease both; }
 
-/* Final token: numeral fades out, check fades in (after the steps land). */
-.hiw-num,
-.hiw-check {
-  transition: opacity 0.4s ease;
-  transition-delay: 860ms;
+/* staggered children (Eligibility criteria, Assemble checklist) */
+.ca-stagger > *,
+.ca-stagger-item {
+  animation: ca-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 170ms + 120ms);
 }
-.hiw-num { opacity: 0; }
-.hiw-check { opacity: 1; }
-.hiw[data-inview="false"] .hiw-num { opacity: 1; }
-.hiw[data-inview="false"] .hiw-check { opacity: 0; }
 
-.hiw[data-inview="true"] .hiw-token-final {
-  animation: hiw-glow 3.4s ease-in-out 1.1s infinite;
+/* Assemble progress bar fills to 71% (fill element is 71% wide, scales in) */
+.asm-bar-fill {
+  width: 71%;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: ca-scalex 1.15s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
-@keyframes hiw-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 162, 75, 0); }
-  50% { box-shadow: 0 0 0 4px var(--brass-glow); }
+
+/* File completion check pops */
+.ca-pop { animation: ca-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Train: muzzle flash pulses once, then 3 shots land grouped */
+.train-flash { animation: ca-flash 0.7s ease 0.35s both; }
+.train-shot {
+  opacity: 0;
+  animation: ca-pop 0.4s ease both;
+  animation-delay: calc(var(--i) * 260ms + 900ms);
 }
+
+/* Licensed: family rises in, badge pops after */
+.lic-fig {
+  animation: ca-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 180ms + 150ms);
+}
+.lic-badge { animation: ca-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.75s both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hiw-spine,
-  .hiw-step,
-  .hiw-num,
-  .hiw-check,
-  .hiw-token-final {
-    transition: none !important;
+  .ca-body,
+  .ca-stagger > *,
+  .ca-stagger-item,
+  .ca-pop,
+  .lic-fig,
+  .lic-badge {
     animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
-  .hiw[data-inview="false"] .hiw-spine { transform: scaleY(1); }
-  .hiw[data-inview="false"] .hiw-step { opacity: 1; transform: none; }
-  .hiw[data-inview="false"] .hiw-num { opacity: 0; }
-  .hiw[data-inview="false"] .hiw-check { opacity: 1; }
+  .asm-bar-fill { animation: none !important; transform: scaleX(1); }
+  .train-shot { animation: none !important; opacity: 1; }
+  .train-flash { animation: none !important; opacity: 0; }
 }
 
 /* V7 — CostCard proportion bar: each segment (already sized to its % width)
@@ -393,23 +411,28 @@
   .cost-seg { transition: none; transform: scaleX(1); }
 }
 
-/* Video-modal placeholder: a slow brass light sweep across the panel. */
-.tour-sweep {
-  background: linear-gradient(
-    115deg,
-    transparent 30%,
-    var(--brass-glow) 50%,
-    transparent 70%
-  );
-  background-size: 250% 100%;
-  animation: tour-sweep 6s ease-in-out infinite;
+/* V8 — Candor redaction reveal: each key word carries a ::after black bar that
+   wipes (scaleX 1→0, origin right) ONCE when the headline scrolls in, then rests
+   — never loops. A quiet brass underline stays as emphasis. Reduced-motion → no
+   bars at all (words shown un-redacted). */
+.candor-word {
+  position: relative;
+  display: inline-block;
+  border-bottom: 2px solid color-mix(in oklab, var(--brass) 55%, transparent);
 }
-@keyframes tour-sweep {
-  0% { background-position: 130% 0; }
-  100% { background-position: -30% 0; }
+.candor-word::after {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+  background: var(--bg);
+  transform: scaleX(1);
+  transform-origin: right;
+  transition: transform 0.55s cubic-bezier(0.7, 0, 0.25, 1);
+  transition-delay: calc(var(--i) * 240ms + 150ms);
 }
+.candor-h2[data-reveal="true"] .candor-word::after { transform: scaleX(0); }
 @media (prefers-reduced-motion: reduce) {
-  .tour-sweep { animation: none; opacity: 0.4; }
+  .candor-word::after { display: none; }
 }
 
 /* The one oversized display numeral moment (THE COUNT). Metallic prestige fill

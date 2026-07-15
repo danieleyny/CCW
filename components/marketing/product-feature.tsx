@@ -1,17 +1,14 @@
-import { Play } from "lucide-react"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { Reveal } from "@/components/marketing/reveal"
 import { MediaFrame } from "@/components/marketing/media-frame"
 import { AmbientVideo } from "@/components/marketing/ambient-video"
-import { VideoModal } from "@/components/marketing/video-modal"
 import { CaseFileShowcase } from "@/components/marketing/showcase/case-file-showcase"
 
 /**
- * V6/V7 — the "here's the actual tool" split, below the fold where detail is
- * welcome. Left: the claim, three numerals, and the "watch how it works" entry.
- * Right: the real (simplified) case file floating over an ambient NYC backdrop —
- * code-generated SkylineArt today, swapped for the muted night clip (Clip B) in
- * Task 2. The obsidian scrim keeps the product card legible over either.
+ * V6/V7/V8 — the "here's the actual tool" split, below the fold where detail is
+ * welcome. Left: the claim + three numerals. Right: the real (simplified) case
+ * file floating over an ambient NYC night clip, with an obsidian scrim for
+ * legibility. (V8 removed the dead "watch how it works" button — no tour exists.)
  */
 const NUMERALS: [string, string][] = [
   ["24", "documents tracked"],
@@ -42,17 +39,6 @@ export function ProductFeature() {
               </div>
             ))}
           </dl>
-          <VideoModal>
-            <button
-              type="button"
-              className="group mt-8 inline-flex items-center gap-3 rounded-full border border-hairline-strong py-2 pl-2 pr-5 text-sm font-medium text-text-hi transition-colors hover:border-brass/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="flex size-9 items-center justify-center rounded-full bg-brass text-[color:var(--primary-foreground)] transition-transform group-hover:scale-105">
-                <Play className="ml-0.5 size-4 fill-current" />
-              </span>
-              Watch how it works
-            </button>
-          </VideoModal>
         </Reveal>
 
         <Reveal delay={120} className="lg:order-last">
