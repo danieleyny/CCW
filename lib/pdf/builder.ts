@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 /**
  * Tiny shared document builder over pdf-lib — text wrapping, paging, and the
  * common blocks (heading, rule, signature line, notary acknowledgment) every
- * generated CARRY document needs. Keeps all generators consistent.
+ * generated Gun License NYC document needs. Keeps all generators consistent.
  */
 
 const INK = rgb(0.05, 0.06, 0.08)
@@ -94,7 +94,7 @@ export async function buildPdf(
 
   const ctx: Ctx = {
     heading(title, subtitle) {
-      page.drawText("CARRY", { x: M, y: y - 11, size: 11, font: bold, color: BRASS })
+      page.drawText("Gun License NYC", { x: M, y: y - 11, size: 11, font: bold, color: BRASS })
       y -= 16
       drawText(title, M, { size: 18, bold: true, gap: subtitle ? 4 : 10 })
       if (subtitle) drawText(subtitle, M, { size: 9.5, color: "muted", gap: 10 })

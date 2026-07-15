@@ -45,7 +45,7 @@ export default function SignUpPage() {
       <CardHeader>
         <CardTitle className="text-xl">Create your account</CardTitle>
         <CardDescription>
-          Start your NYC concealed carry application with CARRY.
+          Start your NYC concealed carry application with Gun License NYC.
         </CardDescription>
       </CardHeader>
       <form action={formAction}>

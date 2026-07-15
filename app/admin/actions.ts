@@ -71,7 +71,7 @@ export async function setCaseStage(caseId: string, stage: CaseStageKey): Promise
   const client = kase.clients as unknown as { full_name: string; email: string | null }
   await notifyClient({
     to: client?.email,
-    subject: `Your CARRY application moved to: ${stageMeta(stage).label}`,
+    subject: `Your Gun License NYC application moved to: ${stageMeta(stage).label}`,
     body: `Hi ${client?.full_name ?? ""}, your application is now at the "${stageMeta(stage).label}" stage. ${stageMeta(stage).clientHint}`,
   })
 

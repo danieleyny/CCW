@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { brand } from "@/config/brand"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { LogoMark } from "@/components/brand/logo"
 
 const COLS = [
   {
@@ -33,9 +34,7 @@ export function MarketingFooter() {
               href="/"
               className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground"
             >
-              <span className="flex size-8 items-center justify-center rounded-md bg-brass text-sm font-bold text-brand-foreground">
-                {brand.logo.mark}
-              </span>
+              <LogoMark className="size-8 text-brass" />
               {brand.logo.wordmark}
             </Link>
             <p className="mt-4 max-w-sm text-sm text-text-mid">{brand.tagline}</p>

@@ -1,17 +1,17 @@
 import Link from "next/link"
-import { brand } from "@/config/brand"
+import { LogoLockup } from "@/components/brand/logo"
 import { InstructorSignupForm } from "@/components/instructor/signup-form"
 
-export const metadata = { title: "Become a CARRY instructor" }
+export const metadata = { title: "Become a Gun License NYC instructor" }
 
 export default function InstructorSignupPage() {
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-10">
-      <Link href="/" className="font-display text-lg font-semibold">
-        {brand.logo.mark} {brand.logo.wordmark}
+      <Link href="/">
+        <LogoLockup className="text-lg" />
       </Link>
       <div className="mt-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Teach with CARRY</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Teach with Gun License NYC</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Join the verified instructor network. Get matched with local applicants
           who need their 18-hour training — you set your area, pricing, and schedule.

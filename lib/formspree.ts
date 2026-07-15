@@ -50,7 +50,7 @@ export async function notifyFormspree(
       // Strip null/empty so the email stays clean. `_subject` sets the subject;
       // Formspree uses an `email` field as the reply-to automatically.
       body: JSON.stringify({
-        _subject: `CARRY — new ${label}`,
+        _subject: `Gun License NYC — new ${label}`,
         source,
         ...Object.fromEntries(
           Object.entries(fields).filter(([, val]) => val !== null && val !== undefined && val !== "")

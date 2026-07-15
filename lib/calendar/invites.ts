@@ -47,7 +47,7 @@ export async function sendBookingInvites(bookingId: string) {
 
   const when = new Date(b.starts_at).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" })
   const body = `<div style="font-family:sans-serif;line-height:1.5">
-    <p>Your CARRY <b>${typeLabel}</b> is confirmed.</p>
+    <p>Your Gun License NYC <b>${typeLabel}</b> is confirmed.</p>
     <p><b>When:</b> ${when}</p>
     ${locationStr ? `<p><b>Where:</b> ${locationStr}${address ? ` — <a href="${mapLink(address)}">open map</a>` : ""}</p>` : ""}
     <p>A calendar invite is attached. Bring a photo ID and eye/ear protection.</p>
@@ -56,7 +56,7 @@ export async function sendBookingInvites(bookingId: string) {
 
   let sent = 0
   if (client?.email) {
-    await sendEmail({ to: client.email, subject: "Your CARRY training is confirmed", html: body, attachments })
+    await sendEmail({ to: client.email, subject: "Your Gun License NYC training is confirmed", html: body, attachments })
     sent++
   }
   if (instr?.email) {

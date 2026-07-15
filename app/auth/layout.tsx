@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { brand } from "@/config/brand"
+import { LogoMark } from "@/components/brand/logo"
 import { TechGrid } from "@/components/shared/tech-grid"
 
 export default function AuthLayout({
@@ -15,9 +16,7 @@ export default function AuthLayout({
           href="/"
           className="mb-8 flex items-center justify-center gap-2 font-display text-2xl font-semibold tracking-tight text-foreground"
         >
-          <span className="flex size-9 items-center justify-center rounded-md bg-brass text-base font-bold text-brand-foreground">
-            {brand.logo.mark}
-          </span>
+          <LogoMark className="size-9 text-brass" />
           {brand.logo.wordmark}
         </Link>
         {children}

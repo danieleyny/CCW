@@ -59,13 +59,13 @@ export async function sendReferenceRequest(formData: FormData) {
   const link = `${base}/r/${token}`
   await sendEmail({
     to: ref.contact_email,
-    subject: "Character reference request — CARRY",
+    subject: "Character reference request — Gun License NYC",
     html: `<div style="font-family:sans-serif;line-height:1.5">
       <p>Hi ${ref.name},</p>
       <p>An applicant listed you as a character reference for their NYC concealed-carry
       license. Please confirm and attest below — it takes a minute, no account needed:</p>
       <p><a href="${link}">${link}</a></p>
-      <p style="color:#666;font-size:12px">— ${"CARRY"}</p>
+      <p style="color:#666;font-size:12px">— ${"Gun License NYC"}</p>
     </div>`,
     text: `Confirm your character reference: ${link}`,
   })
@@ -177,7 +177,7 @@ export async function sendCohabitantRequest(formData: FormData) {
   const link = `${base}/c/${token}`
   await sendEmail({
     to: cohab.contact_email,
-    subject: "Please complete a cohabitant affidavit — CARRY",
+    subject: "Please complete a cohabitant affidavit — Gun License NYC",
     html: `<div style="font-family:sans-serif;line-height:1.5"><p>Hi ${cohab.name},</p>
       <p>Please confirm and complete your cohabitant affidavit here — no account needed:</p>
       <p><a href="${link}">${link}</a></p></div>`,

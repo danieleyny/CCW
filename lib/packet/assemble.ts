@@ -142,7 +142,7 @@ export async function assemblePacket(admin: DB, caseId: string): Promise<{ pdf: 
 
   const cover = master.addPage([612, 792])
   let y = 792 - M
-  cover.drawText("CARRY", { x: M, y: y - 11, size: 11, font: bold, color: BRASS })
+  cover.drawText("Gun License NYC", { x: M, y: y - 11, size: 11, font: bold, color: BRASS })
   y -= 30
   cover.drawText("Application Packet", { x: M, y: y - 22, size: 22, font: bold, color: INK })
   y -= 34

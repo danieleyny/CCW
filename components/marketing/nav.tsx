@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { brand } from "@/config/brand"
 import { cn } from "@/lib/utils"
+import { LogoMark } from "@/components/brand/logo"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -52,9 +53,7 @@ export function MarketingNav() {
           href="/"
           className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground"
         >
-          <span className="relative flex size-8 items-center justify-center rounded-full bg-brass text-sm font-bold text-brand-foreground ring-1 ring-inset ring-signal/30">
-            {brand.logo.mark}
-          </span>
+          <LogoMark className="size-8 text-brass" />
           {brand.logo.wordmark}
         </Link>
 

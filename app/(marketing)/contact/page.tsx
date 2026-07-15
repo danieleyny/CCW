@@ -4,7 +4,7 @@ import { LeadForm } from "@/components/marketing/lead-form"
 
 export const metadata = {
   title: "Contact",
-  description: "Get in touch with the CARRY concierge team about your NYC concealed carry license.",
+  description: "Get in touch with the Gun License NYC concierge team about your NYC concealed carry license.",
 }
 
 export default function Contact() {

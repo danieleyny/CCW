@@ -1,9 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { brand } from "@/config/brand"
+import { LogoLockup } from "@/components/brand/logo"
 import { tokenActive } from "@/lib/references/process"
 import { CohabitantFlow } from "@/components/public/cohabitant-flow"
 
-export const metadata = { title: "Cohabitant affidavit — CARRY" }
+export const metadata = { title: "Cohabitant affidavit — Gun License NYC" }
 
 export default async function CohabitantPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -50,9 +50,7 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
-      <div className="mb-6 font-display text-lg font-semibold tracking-tight">
-        {brand.logo.mark} {brand.logo.wordmark}
-      </div>
+      <LogoLockup className="mb-6 text-lg" />
       {children}
     </div>
   )

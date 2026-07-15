@@ -5,7 +5,7 @@ import { getFees, type Fees } from "@/lib/fees"
 
 export const metadata = {
   title: "FAQ",
-  description: "Common questions about getting a NYC concealed carry license with CARRY.",
+  description: "Common questions about getting a NYC concealed carry license with Gun License NYC.",
 }
 
 const buildFaqs = (fees: Fees) => [
@@ -15,7 +15,7 @@ const buildFaqs = (fees: Fees) => [
   },
   {
     q: "What are the fees?",
-    a: `The NYPD charges a ${fees.applicationFee} handgun license fee plus the ${fees.fingerprintFee} DCJS fingerprinting fee, paid directly to the government. CARRY's service fees are separate and depend on your chosen membership tier.`,
+    a: `The NYPD charges a ${fees.applicationFee} handgun license fee plus the ${fees.fingerprintFee} DCJS fingerprinting fee, paid directly to the government. Gun License NYC's service fees are separate and depend on your chosen membership tier.`,
   },
   {
     q: "What training is required?",
@@ -27,7 +27,7 @@ const buildFaqs = (fees: Fees) => [
   },
   {
     q: "Can you promise I'll be approved?",
-    a: "No. CARRY assists with and guides your application — we do not issue licenses and cannot promise a specific outcome. The NYPD retains full investigative discretion.",
+    a: "No. Gun License NYC assists with and guides your application — we do not issue licenses and cannot promise a specific outcome. The NYPD retains full investigative discretion.",
   },
   {
     q: "I don't live in NYC. Can you still help?",

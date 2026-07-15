@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Notify the business inbox of the new subscriber (source-labeled; carries
-  // `from` so CARRY's own captures are distinguishable from CK funnel posts).
+  // `from` so Gun License NYC's own captures are distinguishable from CK funnel posts).
   await notifyFormspree(`subscribe:${v.offer}`, { email: v.email, offer: v.offer, from: v.from, jurisdiction: v.jurisdiction })
 
   // Confirmation email — no-ops safely without RESEND_API_KEY (ships dark).

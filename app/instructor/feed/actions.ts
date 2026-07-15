@@ -25,8 +25,8 @@ export async function acceptOffer(formData: FormData) {
     const client = kase?.clients as unknown as { full_name: string; email: string | null } | null
     await notifyClient({
       to: client?.email,
-      subject: "An instructor accepted your CARRY request",
-      body: `Hi ${client?.full_name ?? ""}, a verified instructor accepted your request. Open your CARRY portal to book a session.`,
+      subject: "An instructor accepted your Gun License NYC request",
+      body: `Hi ${client?.full_name ?? ""}, a verified instructor accepted your request. Open your Gun License NYC portal to book a session.`,
     })
   }
 

@@ -1,4 +1,5 @@
 import { CheckCircle2, CircleDashed, AlertTriangle } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 
 /**
@@ -30,9 +31,14 @@ const ROWS = [
   },
 ]
 
-export function CaseFileShowcase() {
+export function CaseFileShowcase({ tilt = false }: { tilt?: boolean }) {
   return (
-    <div className="dark relative w-full rounded-xl border border-hairline bg-surface-1 p-5 text-foreground shadow-[0_30px_80px_-40px_rgba(20,18,14,0.5)]">
+    <div
+      className={cn(
+        "dark relative w-full rounded-xl border border-hairline bg-surface-1 p-5 text-foreground shadow-[0_30px_80px_-40px_rgba(20,18,14,0.5)]",
+        tilt && "product-tilt"
+      )}
+    >
       <div className="flex items-center justify-between">
         <span className="engraved text-text-mid">Case file · NYC carry</span>
         <span className="rounded bg-signal-dim px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-signal">
@@ -42,9 +48,20 @@ export function CaseFileShowcase() {
 
       <ReticleProgress currentStage="document_collection" className="mt-4" />
 
+      {/* 17 of 24 requirements satisfied — the meter the mock leads with. */}
+      <div className="mt-4">
+        <div className="flex items-baseline justify-between">
+          <span className="engraved text-text-low">Requirements satisfied</span>
+          <span className="font-mono text-xs tabular-nums text-brass-bright">17 / 24</span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
+          <div className="h-full rounded-full bg-brass" style={{ width: `${(17 / 24) * 100}%` }} />
+        </div>
+      </div>
+
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <Vital value="1" label="needs a fix" tone="warn" />
-        <Vital value="46%" label="complete" tone="brass" />
+        <Vital value="71%" label="complete" tone="brass" />
         <Vital value="24" label="docs tracked" tone="mid" />
       </div>
 

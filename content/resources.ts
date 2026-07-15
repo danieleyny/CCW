@@ -46,7 +46,7 @@ export const resourceGroups: ResourceGroup[] = [
   },
   {
     title: "Fees (paid directly to the government)",
-    intro: "Neither is collected by CARRY; neither is refundable.",
+    intro: "Neither is collected by Gun License NYC; neither is refundable.",
     links: [
       {
         label: "NYPD handgun license application fee — $340",

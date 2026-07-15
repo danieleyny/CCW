@@ -1,9 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { brand } from "@/config/brand"
+import { LogoLockup } from "@/components/brand/logo"
 import { tokenActive } from "@/lib/references/process"
 import { ReferenceFlow } from "@/components/public/reference-flow"
 
-export const metadata = { title: "Character reference — CARRY" }
+export const metadata = { title: "Character reference — Gun License NYC" }
 
 export default async function ReferencePage({
   params,
@@ -61,9 +61,7 @@ export default async function ReferencePage({
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
-      <div className="mb-6 font-display text-lg font-semibold tracking-tight">
-        {brand.logo.mark} {brand.logo.wordmark}
-      </div>
+      <LogoLockup className="mb-6 text-lg" />
       {children}
     </div>
   )

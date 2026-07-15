@@ -26,7 +26,7 @@ export default async function PortalHome() {
         <CardContent className="p-8 text-center">
           <h2 className="text-lg font-semibold">Welcome.</h2>
           <p className="mt-2 text-sm text-text-mid">
-            Your case isn&apos;t set up yet. Your CARRY concierge will reach out shortly to get you
+            Your case isn&apos;t set up yet. Your Gun License NYC concierge will reach out shortly to get you
             started.
           </p>
         </CardContent>

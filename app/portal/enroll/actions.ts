@@ -84,7 +84,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
         price_data: {
           currency: "usd",
           unit_amount: amount,
-          product_data: { name: `CARRY — ${description}` },
+          product_data: { name: `Gun License NYC — ${description}` },
         },
       },
     ],

@@ -147,7 +147,7 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
     const link = `${base}/r/${token}`
     await sendEmail({
       to: v.contactEmail,
-      subject: "You've been listed as a character reference — CARRY",
+      subject: "You've been listed as a character reference — Gun License NYC",
       html: `<div style="font-family:sans-serif;line-height:1.5">
         <p>Hi ${v.name},</p>
         <p>${"An applicant"} listed you as a character reference for their NYC concealed-carry
@@ -213,7 +213,7 @@ export async function addCohabitant(_prev: CollectorState, formData: FormData): 
     const link = `${base}/c/${token}`
     await sendEmail({
       to: v.contactEmail,
-      subject: "Please complete a cohabitant affidavit — CARRY",
+      subject: "Please complete a cohabitant affidavit — Gun License NYC",
       html: `<div style="font-family:sans-serif;line-height:1.5">
         <p>Hi ${v.name},</p>
         <p>You were listed as a household member on a NYC concealed-carry license application.

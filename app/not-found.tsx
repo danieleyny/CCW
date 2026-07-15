@@ -12,7 +12,7 @@ export default function NotFound() {
         to resend it — those links expire after 30 days.
       </p>
       <Button asChild size="sm" className="mt-5">
-        <Link href="/">Back to CARRY</Link>
+        <Link href="/">Back to Gun License NYC</Link>
       </Button>
     </main>
   )

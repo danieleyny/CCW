@@ -35,7 +35,7 @@ function LoginForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">Sign in</CardTitle>
-        <CardDescription>Access your CARRY dashboard.</CardDescription>
+        <CardDescription>Access your Gun License NYC dashboard.</CardDescription>
       </CardHeader>
       <form action={formAction}>
         <CardContent className="space-y-4">

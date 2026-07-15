@@ -41,7 +41,7 @@ async function compute(): Promise<TrustStat[]> {
     out.push({
       value: assembled,
       label: "Packets assembled",
-      footnote: `CARRY cases that reached filing-ready assembly — all-time, from our own case records, as of ${asOf}.`,
+      footnote: `Gun License NYC cases that reached filing-ready assembly — all-time, from our own case records, as of ${asOf}.`,
     })
     // filedIncomplete rides the same denominator: only meaningful with real volume.
     out.push({

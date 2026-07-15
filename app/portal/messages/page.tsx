@@ -39,7 +39,7 @@ export default async function MessagesPage() {
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Messages</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Questions? Message your CARRY specialist any time.
+          Questions? Message your Gun License NYC specialist any time.
         </p>
       </div>
       <Card>

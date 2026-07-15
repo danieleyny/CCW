@@ -12,7 +12,7 @@ import { PageHero } from "@/components/marketing/page-hero"
 export const metadata = {
   title: "Pricing",
   description:
-    "CARRY membership tiers for NYC concealed carry assistance — Self-Guided, Full Concierge, Non-Resident / Special Carry, and Renewal.",
+    "Gun License NYC membership tiers for NYC concealed carry assistance — Self-Guided, Full Concierge, Non-Resident / Special Carry, and Renewal.",
 }
 
 const FEATURES: Record<string, string[]> = {

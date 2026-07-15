@@ -35,7 +35,7 @@ export function generateIcs(ev: IcsEvent): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//CARRY//Scheduling//EN",
+    "PRODID:-//Gun License NYC//Scheduling//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:REQUEST",
     "BEGIN:VEVENT",
@@ -46,7 +46,7 @@ export function generateIcs(ev: IcsEvent): string {
     `SUMMARY:${esc(ev.summary)}`,
     ev.description ? `DESCRIPTION:${esc(ev.description)}` : "",
     ev.location ? `LOCATION:${esc(ev.location)}` : "",
-    ev.organizerEmail ? `ORGANIZER;CN=${esc(ev.organizerName ?? "CARRY")}:mailto:${ev.organizerEmail}` : "",
+    ev.organizerEmail ? `ORGANIZER;CN=${esc(ev.organizerName ?? "Gun License NYC")}:mailto:${ev.organizerEmail}` : "",
     ev.attendeeEmail ? `ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:${ev.attendeeEmail}` : "",
     ev.url ? `URL:${ev.url}` : "",
     "STATUS:CONFIRMED",
@@ -86,13 +86,13 @@ export function buildBookingIcs(input: {
     uid,
     start: input.startsAt,
     end: input.endsAt,
-    summary: `CARRY training — ${typeLabel}`,
+    summary: `Gun License NYC training — ${typeLabel}`,
     description:
-      `Your CARRY ${typeLabel}.` +
+      `Your Gun License NYC ${typeLabel}.` +
       (input.address ? ` Map: ${mapLink(input.address)}.` : "") +
       " Bring a photo ID and eye/ear protection.",
     location: locationStr || undefined,
-    organizerName: "CARRY",
+    organizerName: "Gun License NYC",
     attendeeEmail: input.clientEmail ?? undefined,
   })
   return { ics, uid, locationStr, typeLabel }

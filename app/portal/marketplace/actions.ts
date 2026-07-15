@@ -152,7 +152,7 @@ export async function payBookingDeposit(
     bookingId: b.id,
     clientEmail: client?.email,
     baseUrl: base,
-    description: "CARRY training deposit",
+    description: "Gun License NYC training deposit",
   })
   if ("skipped" in checkout) return { skipped: true }
 

@@ -230,7 +230,7 @@ function Result({
             showBorough={false}
             submitLabel={status === "review" ? "Request a confidential review" : "Claim your spot"}
             successTitle={status === "review" ? "Let's get started." : "You're all set."}
-            successBody="your CARRY concierge can reach out within one business day."
+            successBody="your Gun License NYC concierge can reach out within one business day."
             accountCta
             hidden={{ track, eligibility: eligibilityJson }}
           />

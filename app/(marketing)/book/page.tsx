@@ -4,7 +4,7 @@ import { LeadForm } from "@/components/marketing/lead-form"
 export const metadata = {
   title: "Book a consultation",
   description:
-    "Book a free consultation with CARRY to map out your NYC concealed carry application.",
+    "Book a free consultation with Gun License NYC to map out your NYC concealed carry application.",
 }
 
 export default function Book() {

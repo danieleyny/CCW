@@ -1,5 +1,5 @@
 /**
- * CARRY brand configuration — THE single source of truth for brand identity and
+ * Gun License NYC brand configuration — THE single source of truth for brand identity and
  * the full color system. Aesthetic: dark-first "obsidian / brass / signal-cyan"
  * — luxury personal-protection concierge meets precision instrument / HUD.
  *
@@ -10,11 +10,12 @@
  */
 
 export const brand = {
-  name: "CARRY",
-  legalName: "CARRY Holdings LLC",
+  name: "Gun License NYC",
+  // NOTE: default entity name — replace with the real registered LLC if different.
+  legalName: "Gun License NYC",
   tagline: "Concealed carry, handled with precision.",
   description:
-    "CARRY is a private licensing concierge that guides New Yorkers through the full NYC concealed-carry-weapon process — training, documents, and filing — from first inquiry to licensed.",
+    "Gun License NYC is a private licensing concierge that guides New Yorkers through the full NYC concealed-carry-weapon process — training, documents, and filing — from first inquiry to licensed.",
   domain: "gunlicensenyc.com",
   url: "https://gunlicensenyc.com",
   contact: {
@@ -23,15 +24,15 @@ export const brand = {
     address: "New York, NY",
   },
   logo: {
-    // Reticle glyph as the mark; wordmark in the display typeface.
-    wordmark: "CARRY",
+    // SVG mark lives in components/brand/logo.tsx; wordmark in the display typeface.
+    wordmark: "Gun License NYC",
     mark: "◎",
   },
   // V3-P0.7 — the standing legal disclaimer. NYPD's published position: consulting
   // firms cannot represent applicants, cannot expedite, and are not endorsed; only
   // a NY-licensed attorney may represent an applicant before the License Division.
   disclaimer:
-    "CARRY is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. You review and submit your own application, and the NYPD retains full investigative discretion.",
+    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. You review and submit your own application, and the NYPD retains full investigative discretion.",
   fonts: {
     display: "var(--font-display)",
     sans: "var(--font-sans)",
@@ -43,7 +44,7 @@ export const brand = {
  * Raw palettes — exposed as Tailwind utilities (via globals @theme) and as the
  * source for the shadcn semantic tokens below. Two themes:
  *   • paletteDark  — the obsidian/brass/signal instrument (the app: portal,
- *     admin, instructor). This is the original CARRY register, unchanged.
+ *     admin, instructor). This is the original Gun License NYC register, unchanged.
  *   • paletteLight — warm paper / brass / ink "my lawyer's office" (marketing).
  * Continuity across the two is TYPE, RADIUS, and BRASS — not the background.
  */
@@ -170,3 +171,29 @@ export function brandCss(): string {
 }
 
 export type Brand = typeof brand
+
+/**
+ * External costs that are NOT paid to us and NOT in the DB — the applicant pays
+ * these directly to third parties (a DCJS instructor, a notary). Shown as
+ * labeled RANGES because providers set their own prices; surfaced in the home
+ * CostCard's all-in estimate. Government fees still come from getFees() (the
+ * `fees` table). We never collect or mark these up. Typical NYC ranges, 2026.
+ */
+export const externalCostEstimates = {
+  training: {
+    label: "18-hour firearms course",
+    note: "Paid to your DCJS-certified instructor",
+    lowCents: 35000,
+    highCents: 42500,
+  },
+  notary: {
+    label: "Notarization",
+    note: "References + affidavits · online, ~10 min each",
+    lowCents: 2500,
+    highCents: 10000,
+  },
+  sourceNote:
+    "Training and notary costs vary by provider, so we show ranges. Only the concierge fee is paid to us — the rest you pay directly, and we never mark it up.",
+} as const
+
+export type ExternalCostEstimates = typeof externalCostEstimates

@@ -146,7 +146,7 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
               showMessage={false}
               submitLabel="Have us run it"
               successTitle="On it."
-              successBody="Your CARRY concierge will reach out within one business day."
+              successBody="Your Gun License NYC concierge will reach out within one business day."
               accountCta
               hidden={{ track }}
             />

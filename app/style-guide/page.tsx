@@ -28,7 +28,7 @@ export default function StyleGuide() {
       <div className="relative space-y-12">
         <header>
           <SectionEyebrow>Design System</SectionEyebrow>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight">CARRY — Style Guide</h1>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight">Gun License NYC — Style Guide</h1>
           <p className="mt-2 text-text-mid">Obsidian · brass · signal-cyan · precision HUD.</p>
         </header>
 

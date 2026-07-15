@@ -42,7 +42,7 @@ export function allowedOrigins(): string[] {
 }
 
 const OFFER_COPY: Record<SubscribeOffer, { subject: string; line: string }> = {
-  "fit-report": { subject: "Your CARRY fit report", line: "Here's the report you requested." },
+  "fit-report": { subject: "Your Gun License NYC fit report", line: "Here's the report you requested." },
   "reciprocity-card": { subject: "Your reciprocity card", line: "Here's your reciprocity summary." },
   "law-watch": {
     subject: "You're on Law Watch",

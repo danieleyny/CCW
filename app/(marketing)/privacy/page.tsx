@@ -3,7 +3,7 @@ import { PageHero } from "@/components/marketing/page-hero"
 
 export const metadata = {
   title: "Privacy Policy",
-  description: "How CARRY collects, uses, and protects your personal information.",
+  description: "How Gun License NYC collects, uses, and protects your personal information.",
 }
 
 const SECTIONS = [

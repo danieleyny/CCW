@@ -33,7 +33,7 @@ export async function payPending(paymentId: string): Promise<CheckoutResult> {
       {
         price_data: {
           currency: "usd",
-          product_data: { name: payment.description ?? `CARRY ${payment.type}` },
+          product_data: { name: payment.description ?? `Gun License NYC ${payment.type}` },
           unit_amount: payment.amount_cents,
         },
         quantity: 1,

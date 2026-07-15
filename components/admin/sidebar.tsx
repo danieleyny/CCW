@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { brand } from "@/config/brand"
+import { LogoMark } from "@/components/brand/logo"
 
 const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] = [
   { href: "/admin", label: "Today", icon: LayoutDashboard, exact: true },
@@ -37,9 +38,7 @@ export function Sidebar() {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-hairline bg-sidebar text-sidebar-foreground md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-hairline px-5 font-display text-lg font-semibold tracking-tight text-foreground">
-        <span className="flex size-8 items-center justify-center rounded-md bg-brass text-sm font-bold text-brand-foreground">
-          {brand.logo.mark}
-        </span>
+        <LogoMark className="size-8 text-brass" />
         {brand.logo.wordmark}
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 px-3 py-4">

@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CARRY design system. Color tokens live in config/brand.ts and are injected as
+ * Gun License NYC design system. Color tokens live in config/brand.ts and are injected as
  * CSS variables by the root layout (<BrandStyle />). This file owns the Tailwind
  * theme mapping, fonts, radii, base layer, and the signature utilities (glass,
  * tech-grid, engraved labels, reticle motion). Dark-only.
@@ -45,7 +45,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* CARRY brand utilities: bg-brass, text-signal, border-hairline, bg-surface-2 */
+  /* Gun License NYC brand utilities: bg-brass, text-signal, border-hairline, bg-surface-2 */
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brass: var(--brass);
@@ -303,6 +303,49 @@
     transform: translate(0, var(--fy)) rotate(var(--fr));
     opacity: 0.9;
   }
+}
+
+/* ── V6 media + motion ───────────────────────────────────────────────────
+   A single entrance easing/duration scale reused across new sections, one
+   product-shot tilt for floating panels, and the tour-video placeholder sweep.
+   Every effect is transform/opacity only and freezes under reduced-motion. */
+
+/* Subtle perspective "product shot" tilt for MediaFrame / CaseFileShowcase.
+   md-and-up only (never on touch/portrait), settles flat on hover. */
+@media (min-width: 768px) {
+  .product-tilt {
+    transform: perspective(1600px) rotateY(-7deg) rotateX(2deg);
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .product-tilt:hover {
+    transform: perspective(1600px) rotateY(0deg) rotateX(0deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-tilt {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Video-modal placeholder: a slow brass light sweep across the panel. */
+.tour-sweep {
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    var(--brass-glow) 50%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  animation: tour-sweep 6s ease-in-out infinite;
+}
+@keyframes tour-sweep {
+  0% { background-position: 130% 0; }
+  100% { background-position: -30% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-sweep { animation: none; opacity: 0.4; }
 }
 
 /* The one oversized display numeral moment (THE COUNT). Metallic prestige fill
