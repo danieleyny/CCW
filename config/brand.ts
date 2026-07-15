@@ -182,7 +182,7 @@ export type Brand = typeof brand
 export const externalCostEstimates = {
   training: {
     label: "18-hour firearms course",
-    note: "Paid to your DCJS-certified instructor",
+    note: "Paid to your state-certified instructor",
     lowCents: 35000,
     highCents: 42500,
   },

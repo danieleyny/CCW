@@ -3,35 +3,48 @@ import { cn } from "@/lib/utils"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 
 /**
- * B2 — the hero's product view. The light marketing page shows the actual DARK
- * instrument (wrapped in `.dark`, so it renders in the app's own theme on
- * paper): a mid-journey case file with the real reticle rail, a vitals strip,
- * and three requirement rows carrying real citations — one that "needs a fix"
- * with a consultant note. Everything here is a real primitive, not a mockup.
+ * The product view — the actual DARK instrument shown on the marketing page
+ * (wrapped in `.dark`, so it renders in the app's own theme): a mid-journey case
+ * file with the reticle rail, a vitals strip, and three requirement rows.
+ *
+ * V7: `simplified` is the RETAIL variant used below the fold (in ProductFeature).
+ * It drops the internal codes (REF-01/AFF-01/TRN-01), relabels rows in plain
+ * English, and keeps AT MOST ONE citation as a quiet trust signal. The full
+ * citation-grade view lives on /how-it-works.
  */
 const ROWS = [
   {
     code: "REF-01",
     title: "Four notarized character references",
+    plain: "Character references — notarized",
     cite: "38 RCNY §5-03(a)(1)",
+    keepCite: true, // the single trust-signal citation kept in the simplified view
     status: "satisfied" as const,
   },
   {
     code: "AFF-01",
     title: "Cohabitant affidavit — every adult in the home",
+    plain: "A statement from everyone you live with",
     cite: "38 RCNY §5-02",
     status: "satisfied" as const,
   },
   {
     code: "TRN-01",
     title: "18-hour firearms safety course + live fire",
+    plain: "18-hour safety course — done in time",
     cite: "Penal Law §400.00(19)",
     status: "fix" as const,
-    note: "Cert dates 7 months ago — it must be within 6 months at filing. We booked a refresher.",
+    note: "Your course certificate is about to age out — it must be recent when you file. We booked a refresher.",
   },
 ]
 
-export function CaseFileShowcase({ tilt = false }: { tilt?: boolean }) {
+export function CaseFileShowcase({
+  tilt = false,
+  simplified = false,
+}: {
+  tilt?: boolean
+  simplified?: boolean
+}) {
   return (
     <div
       className={cn(
@@ -79,12 +92,16 @@ export function CaseFileShowcase({ tilt = false }: { tilt?: boolean }) {
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
-                    {r.code}
-                  </span>
-                  <span className="text-sm font-medium">{r.title}</span>
+                  {!simplified && (
+                    <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
+                      {r.code}
+                    </span>
+                  )}
+                  <span className="text-sm font-medium">{simplified ? r.plain : r.title}</span>
                 </div>
-                <div className="mt-0.5 font-mono text-[11px] text-text-low">{r.cite}</div>
+                {(!simplified || r.keepCite) && (
+                  <div className="mt-0.5 font-mono text-[11px] text-text-low">{r.cite}</div>
+                )}
                 {r.status === "fix" && (
                   <p className="mt-1.5 rounded border border-warn/25 bg-warn/10 px-2 py-1 text-[11px] leading-snug text-warn">
                     {r.note}
@@ -98,7 +115,9 @@ export function CaseFileShowcase({ tilt = false }: { tilt?: boolean }) {
 
       <div className="mt-3 flex items-center gap-2 text-[11px] text-text-low">
         <CircleDashed className="size-3.5" />
-        Every rule carries its citation. Nothing files until it&apos;s satisfied.
+        {simplified
+          ? "We track every requirement. Nothing files until it's ready."
+          : "Every rule carries its citation. Nothing files until it's satisfied."}
       </div>
     </div>
   )

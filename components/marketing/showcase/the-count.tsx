@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 
 /**
@@ -13,11 +13,11 @@ import { SectionEyebrow } from "@/components/shared/section-eyebrow"
  * it). Abstract cards — no legible text at rest. Reduced-motion → assembled.
  */
 const SAMPLE = [
-  { code: "REF-01", label: "Four notarized references", cite: "38 RCNY §5-03(a)(1)" },
-  { code: "TRN-01", label: "18-hour safety course", cite: "Penal Law §400.00(19)" },
-  { code: "AFF-01", label: "Cohabitant affidavit", cite: "38 RCNY §5-02" },
-  { code: "IDN-04", label: "Passport-style photo", cite: "38 RCNY §5-05(b)" },
-  { code: "ARR-01", label: "Disposition certificate", cite: "CPL Article 160" },
+  "Four notarized references",
+  "18-hour safety course",
+  "A statement from everyone at home",
+  "Passport-style photo",
+  "Proof any past record is resolved",
 ]
 
 // 14 abstract paper cards, deterministically scattered (index-derived so SSR and
@@ -87,25 +87,22 @@ export function TheCount() {
 
         {/* Copy + five chips */}
         <div>
-          <SectionEyebrow>The requirements engine</SectionEyebrow>
+          <SectionEyebrow>Everything you&apos;ll need</SectionEyebrow>
           <h2 className="mt-3 text-balance font-display text-3xl font-semibold tracking-tight sm:text-[2.6rem] sm:leading-[1.05]">
-            Twenty-four documents. Tracked to the citation.
+            Twenty-four documents. Every one accounted for.
           </h2>
           <p className="mt-4 max-w-md text-text-mid">
-            Miss one and the application bounces. We hold all of them — each tied to the rule it satisfies.
+            Miss one and the application bounces. We hold all of them, so you don&apos;t have to.
           </p>
 
           <ul className="mt-6 space-y-2">
-            {SAMPLE.map((s) => (
+            {SAMPLE.map((label) => (
               <li
-                key={s.code}
+                key={label}
                 className="flex items-center gap-3 rounded-lg border border-hairline bg-surface-1/60 px-3 py-2.5"
               >
-                <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
-                  {s.code}
-                </span>
-                <span className="flex-1 text-sm font-medium">{s.label}</span>
-                <span className="hidden font-mono text-[11px] text-text-low sm:inline">{s.cite}</span>
+                <Check className="size-4 shrink-0 text-brass" />
+                <span className="flex-1 text-sm font-medium">{label}</span>
               </li>
             ))}
           </ul>
@@ -114,7 +111,7 @@ export function TheCount() {
             href="/how-it-works"
             className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-signal hover:text-brass-bright"
           >
-            See all 24 requirements <ArrowRight className="size-4" />
+            See the full list <ArrowRight className="size-4" />
           </Link>
         </div>
       </div>

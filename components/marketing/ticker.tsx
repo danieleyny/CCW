@@ -1,9 +1,9 @@
 // V3-P0.7 — true, verifiable claims only (fabricated counters removed).
 const ITEMS = [
   "~6 Month typical NYPD timeline",
-  "DCJS-certified instructors",
-  "13-stage guided process",
-  "All five boroughs + Special Carry",
+  "State-certified instructors",
+  "Step-by-step guided process",
+  "All five boroughs",
   "You review & submit your own application",
 ]
 

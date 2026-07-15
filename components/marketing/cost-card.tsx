@@ -99,11 +99,11 @@ export function CostCard({
                 />
                 <Row
                   name="NYPD application fee"
-                  desc="Direct to NYPD · never collected by us"
+                  desc="Paid to the NYPD · never collected by us"
                   amount={fees.applicationFee}
                   muted
                 />
-                <Row name="DCJS fingerprint fee" desc="Direct to DCJS" amount={fees.fingerprintFee} muted />
+                <Row name="Fingerprinting" desc="Paid to the State" amount={fees.fingerprintFee} muted />
                 <Row
                   name={estimates.notary.label}
                   desc={estimates.notary.note}
@@ -111,6 +111,20 @@ export function CostCard({
                   muted
                 />
               </Group>
+
+              {/* Proportion bar — proves "only $1,000 is ours". Widths are derived
+                  from the SAME amounts as the rows above (range items use the low
+                  end, hence "estimated"); nothing here is a hardcoded width. */}
+              <CostBar
+                show={open}
+                segments={[
+                  { key: "ours", label: "Our service", cents: concierge.priceCents, cls: "bg-brass" },
+                  { key: "training", label: "Training", cents: estimates.training.lowCents, cls: "bg-ice" },
+                  { key: "nypd", label: "NYPD fee", cents: fees.applicationCents, cls: "bg-text-mid" },
+                  { key: "print", label: "Fingerprints", cents: fees.fingerprintCents, cls: "bg-text-low" },
+                  { key: "notary", label: "Notary", cents: estimates.notary.lowCents, cls: "bg-brass-deep" },
+                ]}
+              />
 
               <div className="flex items-baseline justify-between border-t border-hairline pt-4">
                 <span className="font-display text-sm font-semibold uppercase tracking-wide text-text-mid">
@@ -134,6 +148,43 @@ export function CostCard({
           Compare all packages →
         </Link>
       </div>
+    </div>
+  )
+}
+
+type Segment = { key: string; label: string; cents: number; cls: string }
+
+/**
+ * Horizontal stacked bar of where the money goes. Each segment's WIDTH is the
+ * token amount / total (derived, never hardcoded); the brass "Our service"
+ * segment is the visual hero. Segments scale in from the left, staggered, when
+ * the breakdown opens; reduced-motion renders them at full width instantly.
+ */
+function CostBar({ segments, show }: { segments: Segment[]; show: boolean }) {
+  const total = segments.reduce((sum, s) => sum + s.cents, 0)
+  return (
+    <div>
+      <div className="engraved mb-2 text-text-low">Where it goes · estimated</div>
+      <div
+        data-show={show}
+        className="cost-bar flex h-3 w-full overflow-hidden rounded-full bg-surface-3"
+      >
+        {segments.map((s, i) => (
+          <span
+            key={s.key}
+            className={cn("cost-seg block h-full", s.cls)}
+            style={{ width: `${(s.cents / total) * 100}%`, "--i": i } as React.CSSProperties}
+          />
+        ))}
+      </div>
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+        {segments.map((s) => (
+          <li key={s.key} className="flex items-center gap-1.5 text-[12px] text-text-mid">
+            <span className={cn("size-2.5 shrink-0 rounded-[3px]", s.cls)} aria-hidden />
+            {s.label} <span className="tabular-nums text-text-low">{usd(s.cents)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

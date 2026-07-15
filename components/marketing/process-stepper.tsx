@@ -2,7 +2,17 @@
 
 import { useRef, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  UserRound,
+  CalendarDays,
+  FolderCheck,
+  ClipboardCheck,
+  Handshake,
+  type LucideIcon,
+} from "lucide-react"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { cn } from "@/lib/utils"
 
@@ -14,38 +24,48 @@ import { cn } from "@/lib/utils"
  * one panel with a huge ghost numeral. Mobile: a scroll-snap carousel of cards.
  * Copy stays candor-safe — never promising speed or outcomes.
  */
-const PHASES = [
+const PHASES: {
+  title: string
+  short: string
+  blurb: string
+  icon: LucideIcon
+}[] = [
   {
     title: "Qualify & enroll",
     short: "Qualify",
+    icon: UserRound,
     blurb:
       "A two-minute eligibility check tells you exactly where you stand — no guesswork, no payment to start. Pick your package and we open your case.",
   },
   {
     title: "Train",
     short: "Train",
+    icon: CalendarDays,
     blurb:
       "Book your 18-hour firearms safety course early — it's the longest-lead item, and the certificate expires six months after it's dated. We track the clock for you.",
   },
   {
     title: "Assemble",
     short: "Assemble",
+    icon: FolderCheck,
     blurb:
-      "References, affidavits, disclosures, safe photos — we collect all 24 documents, tracked to their citation, and chase the people you'd otherwise have to chase yourself.",
+      "References, statements, disclosures, and safe photos — we gather all 24 documents and chase the people you'd otherwise have to chase yourself.",
   },
   {
     title: "Review & file",
     short: "Review",
+    icon: ClipboardCheck,
     blurb:
-      "A pre-filing QA gate checks every requirement is complete and correct. You review the finished packet, then you submit your own application — assembled in the order they read it.",
+      "We check that every requirement is complete and correct. You review the finished packet, then you submit your own application — assembled in the order they read it.",
   },
   {
     title: "Interview",
     short: "Interview",
+    icon: Handshake,
     blurb:
       "You sit for your own interview. We make sure what you filed and what you say line up, so nothing sends you back to the start of the line.",
   },
-] as const
+]
 
 const nn = (i: number) => String(i + 1).padStart(2, "0")
 
@@ -107,6 +127,7 @@ export function ProcessStepper() {
           >
             {PHASES.map((p, i) => {
               const active = i === idx
+              const Icon = p.icon
               return (
                 <button
                   key={p.title}
@@ -135,6 +156,12 @@ export function ProcessStepper() {
                   >
                     {nn(i)}
                   </span>
+                  <Icon
+                    className={cn(
+                      "size-4 shrink-0 transition-colors",
+                      active ? "text-brass" : "text-text-low"
+                    )}
+                  />
                   <span
                     className={cn(
                       "font-display text-sm font-semibold transition-colors",
@@ -199,18 +226,24 @@ export function ProcessStepper() {
 
         {/* ── Mobile: scroll-snap carousel ───────────────────────────────── */}
         <ol className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
-          {PHASES.map((p, i) => (
-            <li
-              key={p.title}
-              className="min-w-[82%] snap-center rounded-2xl border border-hairline bg-surface-1/60 p-6"
-            >
-              <div className="engraved text-brass">
-                Phase {nn(i)} / {nn(PHASES.length - 1)}
-              </div>
-              <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight">{p.title}</h3>
-              <p className="mt-3 text-text-mid">{p.blurb}</p>
-            </li>
-          ))}
+          {PHASES.map((p, i) => {
+            const Icon = p.icon
+            return (
+              <li
+                key={p.title}
+                className="min-w-[82%] snap-center rounded-2xl border border-hairline bg-surface-1/60 p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="engraved text-brass">
+                    Phase {nn(i)} / {nn(PHASES.length - 1)}
+                  </div>
+                  <Icon className="size-5 text-brass" />
+                </div>
+                <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight">{p.title}</h3>
+                <p className="mt-3 text-text-mid">{p.blurb}</p>
+              </li>
+            )
+          })}
         </ol>
 
         <Link

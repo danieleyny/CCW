@@ -329,6 +329,70 @@
   }
 }
 
+/* V7 — HERO "how it works" illustration. The FINAL (drawn/revealed) state is the
+   DEFAULT so no-JS and reduced-motion both render the completed diagram; the
+   pre-animation state only applies while data-inview="false". Spine draws via
+   scaleY, steps rise/fade staggered, the final token flips numeral→check. */
+.hiw-spine {
+  transform: scaleY(1);
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hiw[data-inview="false"] .hiw-spine { transform: scaleY(0); }
+
+.hiw-step {
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i) * 180ms + 200ms);
+}
+.hiw[data-inview="false"] .hiw-step { opacity: 0; transform: translateY(8px); }
+
+/* Final token: numeral fades out, check fades in (after the steps land). */
+.hiw-num,
+.hiw-check {
+  transition: opacity 0.4s ease;
+  transition-delay: 860ms;
+}
+.hiw-num { opacity: 0; }
+.hiw-check { opacity: 1; }
+.hiw[data-inview="false"] .hiw-num { opacity: 1; }
+.hiw[data-inview="false"] .hiw-check { opacity: 0; }
+
+.hiw[data-inview="true"] .hiw-token-final {
+  animation: hiw-glow 3.4s ease-in-out 1.1s infinite;
+}
+@keyframes hiw-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 162, 75, 0); }
+  50% { box-shadow: 0 0 0 4px var(--brass-glow); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hiw-spine,
+  .hiw-step,
+  .hiw-num,
+  .hiw-check,
+  .hiw-token-final {
+    transition: none !important;
+    animation: none !important;
+  }
+  .hiw[data-inview="false"] .hiw-spine { transform: scaleY(1); }
+  .hiw[data-inview="false"] .hiw-step { opacity: 1; transform: none; }
+  .hiw[data-inview="false"] .hiw-num { opacity: 0; }
+  .hiw[data-inview="false"] .hiw-check { opacity: 1; }
+}
+
+/* V7 — CostCard proportion bar: each segment (already sized to its % width)
+   scales in from the left, staggered, when the breakdown opens. Transform-only;
+   reduced-motion renders full width instantly. */
+.cost-seg {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i) * 90ms);
+}
+.cost-bar[data-show="true"] .cost-seg { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .cost-seg { transition: none; transform: scaleX(1); }
+}
+
 /* Video-modal placeholder: a slow brass light sweep across the panel. */
 .tour-sweep {
   background: linear-gradient(

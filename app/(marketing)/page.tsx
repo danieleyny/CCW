@@ -17,12 +17,13 @@ import { ProcessStepper } from "@/components/marketing/process-stepper"
 import { CostCard } from "@/components/marketing/cost-card"
 import { StickyCta } from "@/components/marketing/sticky-cta"
 import { RefilePromise } from "@/components/marketing/refile-promise"
-import { CaseFileShowcase } from "@/components/marketing/showcase/case-file-showcase"
+import { PlacemakingBand } from "@/components/marketing/placemaking-band"
+import { HowItWorksIllustration } from "@/components/marketing/showcase/how-it-works-illustration"
 import { TheCount } from "@/components/marketing/showcase/the-count"
 
 const TRUST: string[] = [
   "One tracked case",
-  "Every rule cited",
+  "Every step explained",
   "You file — that's the law",
 ]
 
@@ -93,11 +94,10 @@ export default async function Home() {
           </Reveal>
         </div>
 
-        {/* The product, peeking above the fold line and inviting the scroll. */}
-        <Reveal delay={200} className="relative z-10 mt-12 w-full max-w-md">
-          <div className="[mask-image:linear-gradient(to_bottom,black_72%,transparent)]">
-            <CaseFileShowcase tilt />
-          </div>
+        {/* Retail-first: a calm, plain-English "how it works in 3 steps" diagram —
+            no citations, no codes. The detailed tool lives below the fold. */}
+        <Reveal delay={200} className="relative z-10 mt-12 w-full">
+          <HowItWorksIllustration />
         </Reveal>
       </section>
 
@@ -109,6 +109,9 @@ export default async function Home() {
 
       {/* ── THE COUNT (centerpiece) ──────────────────────────────────────── */}
       <TheCount />
+
+      {/* ── PLACEMAKING (cinematic full-bleed beat) ──────────────────────── */}
+      <PlacemakingBand />
 
       {/* ── THE PROCESS (click-driven stepper) ───────────────────────────── */}
       <ProcessStepper />

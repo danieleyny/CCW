@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils"
 export function MediaFrame({
   children,
   className,
-  aspect = "16 / 10",
+  aspect,
 }: {
   children: React.ReactNode
   className?: string
+  /** Lock an aspect ratio (e.g. "16 / 10"); omit to size naturally to children. */
   aspect?: string
 }) {
   return (
@@ -21,7 +22,7 @@ export function MediaFrame({
         "relative overflow-hidden rounded-2xl border border-hairline bg-gradient-to-br from-surface-2 to-surface-1 shadow-[0_40px_90px_-50px_rgba(0,0,0,0.9)]",
         className
       )}
-      style={{ aspectRatio: aspect }}
+      style={aspect ? { aspectRatio: aspect } : undefined}
     >
       {children}
       <div
