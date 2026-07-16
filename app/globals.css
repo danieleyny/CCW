@@ -348,6 +348,19 @@
 
 .ca-body { animation: ca-fade 0.45s ease both; }
 
+/* Phase progress: the active track fills over the phase duration (--dur) so the
+   auto-advance is legible — you can see it's moving and how long is left. It
+   pauses in lockstep with the advance timer (hover / offscreen / tab hidden). */
+@keyframes ca-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ca-progress {
+  transform-origin: left;
+  animation: ca-progress var(--dur, 4200ms) linear both;
+}
+[data-paused="true"] .ca-progress { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ca-progress { animation: none; transform: scaleX(1); }
+}
+
 /* staggered children (Eligibility criteria, Assemble checklist) */
 .ca-stagger > *,
 .ca-stagger-item {

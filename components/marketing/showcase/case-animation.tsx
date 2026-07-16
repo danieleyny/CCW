@@ -39,8 +39,13 @@ export function CaseAnimation() {
   const offRef = useRef(false)
   const hidRef = useRef(false)
   const pausedRef = useRef(false)
+  // Mirrored into state as well: the ref drives the advance timer (no stale
+  // closure), the state drives `data-paused` so the progress bar can pause too.
+  const [paused, setPaused] = useState(false)
   const recompute = () => {
-    pausedRef.current = hoverRef.current || offRef.current || hidRef.current
+    const next = hoverRef.current || offRef.current || hidRef.current
+    pausedRef.current = next
+    setPaused(next)
   }
 
   useEffect(() => {
@@ -90,6 +95,7 @@ export function CaseAnimation() {
     <div
       ref={rootRef}
       aria-hidden
+      data-paused={paused}
       onPointerEnter={() => {
         hoverRef.current = true
         recompute()
@@ -119,17 +125,31 @@ export function CaseAnimation() {
       />
 
       <div className="glass-premium overflow-hidden rounded-2xl border border-hairline p-5 shadow-[0_40px_90px_-50px_rgba(0,0,0,0.9)]">
-        {/* top: phase dots + label chip */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+        {/* top: phase progress tracks + label chip. The active track fills over
+            the phase duration so it's obvious the card is advancing (and how
+            long is left); it pauses whenever the advance timer does. */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-1 items-center gap-1.5">
             {META.map((m, i) => (
               <span
                 key={m.n}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
-                  i === phase ? "w-5 bg-brass" : "w-1.5 bg-hairline-strong"
+                  "h-1 flex-1 overflow-hidden rounded-full bg-hairline-strong",
+                  i === phase && "bg-brass/20"
                 )}
-              />
+              >
+                {i < phase && <span className="block h-full w-full bg-brass" />}
+                {i === phase &&
+                  (reduced ? (
+                    <span className="block h-full w-full bg-brass" />
+                  ) : (
+                    <span
+                      key={phase}
+                      className="ca-progress block h-full w-full bg-brass"
+                      style={{ "--dur": `${ADVANCE_MS}ms` } as React.CSSProperties}
+                    />
+                  ))}
+              </span>
             ))}
           </div>
           <span className="rounded-full border border-hairline bg-surface-1/70 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-brass-bright">
