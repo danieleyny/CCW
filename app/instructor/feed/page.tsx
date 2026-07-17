@@ -1,6 +1,8 @@
 import { MapPin, Clock, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { getMyInstructor } from "@/lib/instructor"
+import { backfillMatchesForInstructor } from "@/lib/marketplace/offers"
 import { stageMeta, type CaseStageKey } from "@/config/stages"
 import { Button } from "@/components/ui/button"
 import { acceptOffer, declineOffer } from "./actions"
@@ -9,6 +11,19 @@ export const metadata = { title: "Case feed" }
 
 export default async function InstructorFeedPage() {
   const me = await getMyInstructor()
+
+  // Match this instructor to any open offers they now qualify for (they may have
+  // been verified, or the offer posted, after the last time matching ran). This
+  // is what makes the feed reflect reality instead of a creation-time snapshot.
+  // Service-role write = system-generated match rows, per the marketplace design.
+  if (me?.verified) {
+    try {
+      await backfillMatchesForInstructor(createAdminClient(), me.id)
+    } catch {
+      // Never let a backfill hiccup blank the feed; existing matches still show.
+    }
+  }
+
   const supabase = await createClient()
   const { data: feed } = await supabase
     .from("instructor_offer_feed")
