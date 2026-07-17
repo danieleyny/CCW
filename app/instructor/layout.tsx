@@ -9,7 +9,7 @@ import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 export default async function InstructorLayout({ children }: { children: React.ReactNode }) {
   await requireRole(["instructor"])
   return (
-    <div className="dark flex min-h-svh flex-col bg-muted/30 text-foreground">
+    <div className="dark flex min-h-svh flex-col bg-background text-foreground">
       <DarkBackdrop />
       <header className="border-b border-hairline bg-background">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
