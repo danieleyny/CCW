@@ -18,11 +18,26 @@ type Entry = { path: string; priority: number; changeFrequency: MetadataRoute.Si
 const ROUTES: Entry[] = [
   // The head term.
   { path: "", priority: 1.0, changeFrequency: "weekly", lastModified: REVIEWED },
-  // High-intent / money pages.
+  // High-intent / money pages — the queries that convert AND get quoted by AI.
+  { path: "/cost", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/timeline", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/requirements", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/how-it-works", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/checklist", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/pricing", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/eligibility", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/do-i-need-a-lawyer", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/non-resident-business", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/renewal", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/denied-appeal", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
+  // Entity clarity — a top page for AI to cite.
+  { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
+  // Borough / local intent.
+  { path: "/gun-license/manhattan", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/gun-license/brooklyn", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/gun-license/queens", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/gun-license/bronx", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/gun-license/staten-island", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
   // Supporting.
   { path: "/faq", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/resources", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },

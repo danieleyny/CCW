@@ -3,6 +3,10 @@ import { brand } from "@/config/brand"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { LogoMark } from "@/components/brand/logo"
 
+/**
+ * The footer is the hub of the hub-and-spoke: every new SEO page is reachable
+ * from here, so nothing is an orphan and everything sits <=2 clicks from home.
+ */
 const COLS = [
   {
     title: "Service",
@@ -11,6 +15,36 @@ const COLS = [
       { href: "/pricing", label: "Pricing" },
       { href: "/eligibility", label: "Eligibility quiz" },
       { href: "/book", label: "Book a consult" },
+      { href: "/about", label: "About us" },
+    ],
+  },
+  {
+    title: "Answers",
+    links: [
+      { href: "/cost", label: "What it costs" },
+      { href: "/timeline", label: "How long it takes" },
+      { href: "/requirements", label: "What's required" },
+      { href: "/checklist", label: "Free checklist" },
+      { href: "/do-i-need-a-lawyer", label: "Do I need a lawyer?" },
+    ],
+  },
+  {
+    title: "Situations",
+    links: [
+      { href: "/non-resident-business", label: "Non-residents & business" },
+      { href: "/renewal", label: "Renewal" },
+      { href: "/denied-appeal", label: "If you're denied" },
+      { href: "/resources", label: "Official sources" },
+    ],
+  },
+  {
+    title: "Boroughs",
+    links: [
+      { href: "/gun-license/manhattan", label: "Manhattan" },
+      { href: "/gun-license/brooklyn", label: "Brooklyn" },
+      { href: "/gun-license/queens", label: "Queens" },
+      { href: "/gun-license/bronx", label: "The Bronx" },
+      { href: "/gun-license/staten-island", label: "Staten Island" },
     ],
   },
   {
@@ -28,7 +62,7 @@ export function MarketingFooter() {
   return (
     <footer className="relative border-t border-hairline">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <div className="md:col-span-2">
             <Link
               href="/"
