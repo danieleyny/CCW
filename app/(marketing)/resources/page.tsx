@@ -1,13 +1,15 @@
 import { ExternalLink } from "lucide-react"
+import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { resourceGroups } from "@/content/resources"
 
-export const metadata = {
-  title: "NYC concealed carry resources",
+export const metadata = buildMetadata({
+  title: "NYC Gun License Official Sources",
   description:
-    "Official NYC concealed-carry sources — the NYPD License Division, fees, CCIA training, DCJS, recertification, and safe-storage rules. Every link verified and dated.",
-}
+    "Primary sources for NYC gun licensing — the NYPD License Division, fees, DCJS, CCIA training, recertification, and safe storage. Every link dated when verified.",
+  path: "/resources",
+})
 
 export default function ResourcesPage() {
   return (

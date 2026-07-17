@@ -1,30 +1,47 @@
 import type { MetadataRoute } from "next"
 import { getAllPosts } from "@/lib/blog"
-import { brand } from "@/config/brand"
+import { CANONICAL_ORIGIN } from "@/lib/seo"
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? brand.url
+/**
+ * Sitemap. Always emitted against the CANONICAL origin (never the deploy host),
+ * so a preview build can't advertise itself as the real site.
+ *
+ * `lastModified` is a hand-maintained review date per route rather than build
+ * time: stamping `new Date()` on every deploy would claim every page changed
+ * whenever anything shipped, which is both untrue and discounted by Google.
+ * Update the date when a page's CONTENT actually changes.
+ */
+const REVIEWED = "2026-07-16"
+
+type Entry = { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"]; lastModified: string }
+
+const ROUTES: Entry[] = [
+  // The head term.
+  { path: "", priority: 1.0, changeFrequency: "weekly", lastModified: REVIEWED },
+  // High-intent / money pages.
+  { path: "/how-it-works", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/checklist", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/pricing", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/eligibility", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  // Supporting.
+  { path: "/faq", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/resources", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/blog", priority: 0.6, changeFrequency: "weekly", lastModified: REVIEWED },
+  { path: "/contact", priority: 0.6, changeFrequency: "yearly", lastModified: REVIEWED },
+  { path: "/book", priority: 0.6, changeFrequency: "yearly", lastModified: REVIEWED },
+  { path: "/privacy", priority: 0.3, changeFrequency: "yearly", lastModified: REVIEWED },
+]
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = [
-    "",
-    "/how-it-works",
-    "/checklist",
-    "/pricing",
-    "/eligibility",
-    "/faq",
-    "/resources",
-    "/contact",
-    "/book",
-    "/blog",
-    "/privacy",
-  ].map((path) => ({
-    url: `${BASE}${path}`,
-    changeFrequency: "weekly" as const,
-    priority: path === "" ? 1 : 0.7,
+  const routes = ROUTES.map((r) => ({
+    url: `${CANONICAL_ORIGIN}${r.path}`,
+    lastModified: new Date(r.lastModified),
+    changeFrequency: r.changeFrequency,
+    priority: r.priority,
   }))
 
   const posts = getAllPosts().map((p) => ({
-    url: `${BASE}/blog/${p.slug}`,
+    url: `${CANONICAL_ORIGIN}/blog/${p.slug}`,
     lastModified: new Date(p.date),
     changeFrequency: "monthly" as const,
     priority: 0.6,

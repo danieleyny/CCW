@@ -1,11 +1,13 @@
+import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { LeadForm } from "@/components/marketing/lead-form"
 
-export const metadata = {
-  title: "Book a consultation",
+export const metadata = buildMetadata({
+  title: "Book a NYC Gun License Consult",
   description:
-    "Book a free consultation with Gun License NYC to map out your NYC concealed carry application.",
-}
+    "Book a free consultation and we'll map out your NYC gun license application — what you need, what it costs, and how long it realistically takes.",
+  path: "/book",
+})
 
 export default function Book() {
   return (

@@ -2,11 +2,14 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { JsonLd, faqSchema } from "@/components/marketing/json-ld"
 import { createClient } from "@/lib/supabase/server"
 import { getFees, type Fees } from "@/lib/fees"
+import { buildMetadata } from "@/lib/seo"
 
-export const metadata = {
-  title: "FAQ",
-  description: "Common questions about getting a NYC concealed carry license with Gun License NYC.",
-}
+export const metadata = buildMetadata({
+  title: "NYC Gun License FAQ",
+  description:
+    "Straight answers on NYC gun license cost, timeline, training hours, references, disclosures, and what happens at the interview.",
+  path: "/faq",
+})
 
 const buildFaqs = (fees: Fees) => [
   {

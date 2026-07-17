@@ -1,6 +1,6 @@
 import { MarketingNav } from "@/components/marketing/nav"
 import { MarketingFooter } from "@/components/marketing/footer"
-import { JsonLd, localBusinessSchema } from "@/components/marketing/json-ld"
+import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketing/json-ld"
 import { MarketingFrame } from "@/components/marketing/marketing-frame"
 
 /**
@@ -19,7 +19,15 @@ export default function MarketingLayout({
 }) {
   return (
     <>
-      <JsonLd data={localBusinessSchema} />
+      {/* One @graph across the marketing surface: the Organization anchor plus
+          the WebSite that references it by @id. Page-level schema (Service,
+          FAQPage, BreadcrumbList, HowTo) points back at these same @ids. */}
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [organizationSchema, websiteSchema],
+        }}
+      />
       <MarketingFrame nav={<MarketingNav />} footer={<MarketingFooter />}>
         {children}
       </MarketingFrame>

@@ -2,14 +2,16 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { getAllPosts } from "@/lib/blog"
 import { formatDate } from "@/lib/format"
+import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Badge } from "@/components/ui/badge"
 
-export const metadata = {
-  title: "Guides",
+export const metadata = buildMetadata({
+  title: "NYC Gun License Guides",
   description:
-    "In-depth guides to the NYC concealed carry process — requirements, documents, timelines, and how to avoid the common mistakes.",
-}
+    "In-depth guides to the NYC gun license process — requirements, documents, timelines, and the mistakes that send applications back to the start.",
+  path: "/blog",
+})
 
 export default function Blog() {
   const posts = getAllPosts()

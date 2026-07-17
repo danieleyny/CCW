@@ -1,12 +1,13 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { buildMetadata } from "@/lib/seo"
 import { createClient } from "@/lib/supabase/server"
 import { getActivePackages } from "@/lib/packages"
 import { getFees } from "@/lib/fees"
 import { brand, externalCostEstimates } from "@/config/brand"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
-import { JsonLd, serviceSchema } from "@/components/marketing/json-ld"
+import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import { HeroAura } from "@/components/marketing/hero-aura"
 import { Magnetic } from "@/components/marketing/magnetic"
 import { Reveal } from "@/components/marketing/reveal"
@@ -20,6 +21,18 @@ import { PlacemakingBand } from "@/components/marketing/placemaking-band"
 import { CandorReveal } from "@/components/marketing/candor-reveal"
 import { CaseAnimation } from "@/components/marketing/showcase/case-animation"
 import { TheCount } from "@/components/marketing/showcase/the-count"
+
+/**
+ * The home page owns the head term ("NYC gun license"). The root layout's title
+ * template appends " · Gun License NYC", so the bare title stays under 60 chars.
+ */
+export const metadata = buildMetadata({
+  title: "NYC Gun License Help — Concealed Carry, Handled",
+  description:
+    "Get a NYC gun license without the guesswork. We track all 24 documents, your 18-hour course, and every deadline as one case — you file your own application.",
+  path: "/",
+  ogTitle: "NYC gun license, handled — Gun License NYC",
+})
 
 const TRUST: string[] = [
   "One tracked case",
@@ -43,7 +56,9 @@ export default async function Home() {
 
   return (
     <>
-      <JsonLd data={serviceSchema} />
+      {/* Offers come from the live service_packages rows — a price change in
+          admin moves the structured data with it. */}
+      <JsonLd data={serviceSchemaWithOffers(packages)} />
 
       {/* ── HERO (copy left · animated case card right) ──────────────────── */}
       <section

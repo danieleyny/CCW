@@ -4,16 +4,18 @@ import { createClient } from "@/lib/supabase/server"
 import { getActivePackages } from "@/lib/packages"
 import { getFees } from "@/lib/fees"
 import { getTrustStats } from "@/lib/stats"
+import { buildMetadata } from "@/lib/seo"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 import { TrustStats } from "@/components/marketing/trust-stats"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 
-export const metadata = {
-  title: "Pricing",
+export const metadata = buildMetadata({
+  title: "NYC Gun License Service Pricing",
   description:
-    "Gun License NYC membership tiers for NYC concealed carry assistance — Self-Guided, Full Concierge, Non-Resident / Special Carry, and Renewal.",
-}
+    "What our NYC gun license help costs — Self-Guided, Full Concierge, Non-Resident / Special Carry, and Renewal. Government fees are paid directly, never marked up.",
+  path: "/pricing",
+})
 
 const FEATURES: Record<string, string[]> = {
   self_guided: ["Client portal access", "Full document checklist", "Filing guidance", "Email support"],

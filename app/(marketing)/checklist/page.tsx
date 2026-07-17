@@ -1,13 +1,15 @@
 import { createClient } from "@/lib/supabase/server"
 import { getPreviewRegistry } from "@/lib/requirements/preview"
+import { buildMetadata } from "@/lib/seo"
 import { ChecklistView } from "@/components/marketing/checklist-view"
 import { JsonLd, checklistHowToSchema } from "@/components/marketing/json-ld"
 
-export const metadata = {
-  title: "Free NYC concealed carry checklist",
+export const metadata = buildMetadata({
+  title: "Free NYC Gun License Checklist",
   description:
-    "The exact documents NYC requires for a concealed carry license — personalized to your situation, cited to the rule, and free with no account.",
-}
+    "Every document the NYPD License Division requires, personalized to your situation. Free, no account needed, and each item tied to the rule behind it.",
+  path: "/checklist",
+})
 
 /**
  * V5b Workstream B — the anonymous lead magnet. Reads the active requirements

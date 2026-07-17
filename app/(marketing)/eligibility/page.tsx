@@ -1,11 +1,13 @@
+import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { EligibilityQuiz } from "@/components/marketing/eligibility-quiz"
 
-export const metadata = {
-  title: "Eligibility Quiz",
+export const metadata = buildMetadata({
+  title: "NYC Gun License Eligibility Check",
   description:
-    "Find out in two minutes whether you likely qualify for a NYC concealed carry license.",
-}
+    "Find out in two minutes whether you likely qualify for a NYC gun license. No payment, no account — just an honest read on where you stand.",
+  path: "/eligibility",
+})
 
 export default function Eligibility() {
   return (

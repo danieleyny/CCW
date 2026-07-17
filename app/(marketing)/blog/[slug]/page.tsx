@@ -8,8 +8,8 @@ import { formatDate } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TechGrid } from "@/components/shared/tech-grid"
-import { JsonLd } from "@/components/marketing/json-ld"
-import { brand } from "@/config/brand"
+import { JsonLd, ID, breadcrumbSchema } from "@/components/marketing/json-ld"
+import { buildMetadata, canonical, ogImage } from "@/lib/seo"
 
 export function generateStaticParams() {
   return getAllPosts().map((p) => ({ slug: p.slug }))
@@ -23,11 +23,13 @@ export async function generateMetadata({
   const { slug } = await params
   const post = getPost(slug)
   if (!post) return {}
-  return {
+  return buildMetadata({
     title: post.meta.title,
     description: post.meta.description,
-    openGraph: { title: post.meta.title, description: post.meta.description, type: "article" },
-  }
+    path: `/blog/${slug}`,
+    type: "article",
+    ogTitle: post.meta.title,
+  })
 }
 
 // Styled MDX element map (no typography plugin — explicit tokens).
@@ -70,19 +72,33 @@ export default async function Article({
   const post = getPost(slug)
   if (!post) notFound()
 
+  // Author/publisher reference the Organization by @id rather than re-declaring
+  // it — and the publisher now resolves to a logo, which Google requires for
+  // Article rich results (the previous inline Organization had none).
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
+    "@id": `${canonical(`/blog/${slug}`)}#article`,
     headline: post.meta.title,
     description: post.meta.description,
     datePublished: post.meta.date,
-    author: { "@type": "Organization", name: brand.name },
-    publisher: { "@type": "Organization", name: brand.name },
+    dateModified: post.meta.date,
+    image: ogImage(post.meta.title),
+    mainEntityOfPage: canonical(`/blog/${slug}`),
+    author: { "@id": ID.organization },
+    publisher: { "@id": ID.organization },
+    isPartOf: { "@id": ID.website },
   }
+
+  const crumbs = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: "Guides", path: "/blog" },
+    { name: post.meta.title, path: `/blog/${slug}` },
+  ])
 
   return (
     <article>
-      <JsonLd data={articleSchema} />
+      <JsonLd data={{ "@context": "https://schema.org", "@graph": [articleSchema, crumbs] }} />
       <section className="relative overflow-hidden border-b border-hairline">
         <TechGrid glow="brass" />
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:px-6">

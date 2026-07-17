@@ -1,15 +1,17 @@
 import Link from "next/link"
 import { CASE_STAGES } from "@/config/stages"
+import { buildMetadata } from "@/lib/seo"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { RequirementsWall } from "@/components/marketing/showcase/requirements-wall"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 
-export const metadata = {
-  title: "How it works",
+export const metadata = buildMetadata({
+  title: "How to Get a Gun License in NYC",
   description:
-    "The NYC concealed carry process in 13 precise stages — eligibility, training, documents, notarization, filing, investigation, and licensure.",
-}
+    "The NYC gun license process end to end — eligibility, the 18-hour course, documents, notarization, filing, the investigation, and the interview.",
+  path: "/how-it-works",
+})
 
 export default function HowItWorks() {
   return (

@@ -1,11 +1,14 @@
 import { brand } from "@/config/brand"
+import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { LeadForm } from "@/components/marketing/lead-form"
 
-export const metadata = {
-  title: "Contact",
-  description: "Get in touch with the Gun License NYC concierge team about your NYC concealed carry license.",
-}
+export const metadata = buildMetadata({
+  title: "Contact Us — NYC Gun License Help",
+  description:
+    "Talk to the Gun License NYC team about your application. Call (929) 352-5961 or email gunlicensenyc@gmail.com — we answer real questions honestly.",
+  path: "/contact",
+})
 
 export default function Contact() {
   return (

@@ -1,10 +1,12 @@
 import { brand } from "@/config/brand"
+import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 
-export const metadata = {
+export const metadata = buildMetadata({
   title: "Privacy Policy",
   description: "How Gun License NYC collects, uses, and protects your personal information.",
-}
+  path: "/privacy",
+})
 
 const SECTIONS = [
   {
