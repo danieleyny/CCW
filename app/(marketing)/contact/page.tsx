@@ -15,8 +15,8 @@ export default function Contact() {
     <>
       <PageHero
         eyebrow="Contact"
-        title="Talk to a concierge"
-        subtitle="Tell us where you are in the process. We'll respond within one business day."
+        title="Not sure where to start?"
+        subtitle="Tell us your situation and we'll show you the path — no pressure, no commitment. We reply within one business day."
       />
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="mb-8 flex flex-col gap-1 font-mono text-sm text-text-mid">

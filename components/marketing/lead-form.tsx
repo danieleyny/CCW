@@ -20,7 +20,7 @@ export function LeadForm({
   datetime = false,
   submitLabel = "Submit",
   successTitle = "Thank you.",
-  successBody = "Your Gun License NYC concierge will reach out within one business day.",
+  successBody = "We'll reach out within one business day.",
   accountCta = false,
   hidden,
 }: {

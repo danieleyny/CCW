@@ -54,8 +54,8 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
           Every document NYC asks you for.
         </h1>
         <p className="mt-3 text-text-mid">
-          Personalized, provenance-cited, and yours with no account. This is the standard carry
-          checklist for your situation — your full one is refined during intake.
+          Free, personalized to your situation, and no account needed. This is the standard
+          checklist — we refine it to your exact case during intake.
         </p>
 
         {/* Track selector */}

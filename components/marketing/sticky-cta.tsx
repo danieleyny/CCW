@@ -16,7 +16,7 @@ export function StickyCta({
   watchOutId,
   hideNearId,
   href = "/eligibility",
-  label = "Check eligibility",
+  label = "Check your eligibility",
 }: {
   watchOutId: string
   hideNearId: string

@@ -20,6 +20,17 @@ const BANNED: [string, RegExp][] = [
   ["we file", /\bwe file\b/i],
   ["on your behalf", /on your behalf/i],
   ["endorsed by", /endorsed by/i],
+
+  // ── Implied-outcome claims (added during the retail-voice copy pass) ──
+  // The list above is all WORDS. Warming the voice introduced a different
+  // failure mode: sentences that promise the applicant's OUTCOME while using
+  // none of the banned words — "how we get you licensed", "we'll get your
+  // license". Those trip nothing above, which is exactly what makes them
+  // dangerous: we cannot deliver the outcome, only the readiness to file.
+  // Say "get you ready to file" instead.
+  ["get you licensed", /\bget(s|ting)? you (a )?licens(ed|e)\b/i],
+  ["get your license", /\bget(s|ting)? your licens[ce]\b/i],
+  ["get you approved", /\bget(s|ting)? you approved\b/i],
 ]
 
 function walk(dir: string, acc: string[] = []): string[] {

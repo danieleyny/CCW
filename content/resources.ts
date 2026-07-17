@@ -2,7 +2,13 @@
  * V5b Workstream D — NYC-first quick links. OFFICIAL sources only; every link
  * carries a lastVerified date. Reciprocity is a LINK-OUT to Concealed Knowledge
  * (they own the dataset); we do not rebuild the map here.
+ *
+ * Fee amounts are INTERPOLATED from the `fees` table via getFees(), never typed
+ * as literals: this is the page whose entire value is being accurate, and it
+ * used to hardcode "$340" / "$88.25" while every other surface read the DB — so
+ * a fee change silently left the sources page wrong.
  */
+import type { Fees } from "@/lib/fees"
 export interface ResourceLink {
   label: string
   href: string
@@ -18,7 +24,8 @@ export interface ResourceGroup {
 
 const V = "2026-07-14"
 
-export const resourceGroups: ResourceGroup[] = [
+export function buildResourceGroups(fees: Fees): ResourceGroup[] {
+  return [
   {
     title: "NYPD License Division",
     intro: "Where you submit and where the process is governed.",
@@ -49,13 +56,13 @@ export const resourceGroups: ResourceGroup[] = [
     intro: "Neither is collected by Gun License NYC; neither is refundable.",
     links: [
       {
-        label: "NYPD handgun license application fee — $340",
+        label: `NYPD handgun license application fee — ${fees.applicationFee}`,
         href: "https://www.nyc.gov/site/nypd/services/law-enforcement/pistol-license.page",
         lastVerified: V,
         external: true,
       },
       {
-        label: "NYS DCJS fingerprint fee — $88.25",
+        label: `NYS DCJS fingerprint fee — ${fees.fingerprintFee}`,
         href: "https://www.criminaljustice.ny.gov/ojis/fingerprinting.htm",
         lastVerified: V,
         external: true,
@@ -106,4 +113,5 @@ export const resourceGroups: ResourceGroup[] = [
       },
     ],
   },
-]
+  ]
+}

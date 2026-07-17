@@ -207,8 +207,8 @@ function Result({
     status === "ineligible"
       ? "NYC requires applicants to be at least 21 years old. Reach out when you're eligible and we'll be ready."
       : status === "review"
-        ? "Some answers need a closer look — that's exactly what our concierge is for. Share your details and we'll assess your path, confidentially."
-        : "Based on your answers, you're a strong candidate for a NYC concealed carry license. Claim your spot and we'll map your timeline."
+        ? "Some answers need a closer look — that's exactly what we're here for. Tell us a little more and we'll walk you through your options, confidentially."
+        : "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline."
 
   return (
     <div className="rounded-lg border bg-card p-6 sm:p-8 brass-edge">
@@ -228,9 +228,9 @@ function Result({
           <LeadForm
             source="eligibility_quiz"
             showBorough={false}
-            submitLabel={status === "review" ? "Request a confidential review" : "Claim your spot"}
+            submitLabel={status === "review" ? "Request a confidential review" : "Start my application"}
             successTitle={status === "review" ? "Let's get started." : "You're all set."}
-            successBody="your Gun License NYC concierge can reach out within one business day."
+            successBody="we can reach out within one business day."
             accountCta
             hidden={{ track, eligibility: eligibilityJson }}
           />

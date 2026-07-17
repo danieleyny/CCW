@@ -41,8 +41,8 @@ export default async function Pricing() {
     <>
       <PageHero
         eyebrow="Membership"
-        title="Choose your level of service"
-        subtitle="Deposit to start, balance on filing. Every tier is built around getting you through a deliberately demanding process without mistakes."
+        title="Pick how much you want us to handle"
+        subtitle="From guided support to fully done-for-you — every tier keeps your application complete and on schedule. Deposit to start, balance on filing."
       />
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

@@ -34,10 +34,15 @@ export const metadata = buildMetadata({
   ogTitle: "NYC gun license, handled — Gun License NYC",
 })
 
+/**
+ * Copy note: the third chip is load-bearing, not decoration. It discloses that
+ * the applicant files their own application — which NYPD's position requires us
+ * to be clear about. Warm the tone, never drop the fact.
+ */
 const TRUST: string[] = [
-  "One tracked case",
+  "One team, start to finish",
   "Every step explained",
-  "You file — that's the law",
+  "You file it — we make sure it's right",
 ]
 
 export default async function Home() {
@@ -79,8 +84,9 @@ export default async function Home() {
             </Reveal>
             <Reveal delay={170}>
               <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-text-mid lg:mx-0">
-                A NYC gun license is 24 documents and about six months — one missing page restarts it.
-                Gun License NYC runs it as a single tracked case.
+                Getting a gun license in New York City is slow, strict, and easy to get wrong. We make it
+                simple — one team tracking every document, deadline, and requirement from your first
+                question to the day you&apos;re licensed.
               </p>
             </Reveal>
             <Reveal delay={250}>
@@ -134,8 +140,11 @@ export default async function Home() {
           <Reveal>
             <SectionEyebrow>No surprises</SectionEyebrow>
             <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              Here&apos;s the real shape of it.
+              Here&apos;s exactly what it takes — no surprises.
             </h2>
+            <p className="mt-4 text-text-mid">
+              Knowing all of it up front is how this gets done right the first time.
+            </p>
           </Reveal>
           <dl className="mt-10 divide-y divide-hairline">
             {REALITY.map(([fact, clar]) => (
@@ -207,6 +216,10 @@ export default async function Home() {
               <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
                 One fee to us. Everything else, at cost.
               </h2>
+              <p className="mx-auto mt-4 max-w-xl text-text-mid">
+                No games with pricing — one fee to us, and everything else paid straight to the
+                government or your instructor.
+              </p>
             </div>
           </Reveal>
           <Reveal delay={120} className="mt-10">
@@ -239,8 +252,11 @@ export default async function Home() {
         <div className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
           <Reveal>
             <h2 className="mx-auto max-w-xl font-display text-3xl font-semibold tracking-tight sm:text-5xl">
-              Find out if you qualify. Two minutes.
+              See if you qualify.
             </h2>
+            <p className="mx-auto mt-4 max-w-md text-text-mid">
+              It takes two minutes, and there&apos;s no commitment.
+            </p>
             <Magnetic className="mt-8 inline-block">
               <Button asChild size="lg" className="min-h-12">
                 <Link href="/eligibility">

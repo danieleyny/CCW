@@ -108,12 +108,13 @@ export function ProcessStepper() {
     <section className="section-panel border-y border-hairline py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl">
-          <SectionEyebrow>The process</SectionEyebrow>
+          <SectionEyebrow>How we carry it</SectionEyebrow>
           <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Five phases, one tracked case.
+            Five phases. We carry the weight in each one.
           </h2>
           <p className="mt-4 text-text-mid">
-            Click through what actually happens — from the first eligibility check to the interview you sit yourself.
+            Here&apos;s what actually happens — and what we&apos;re doing at each step so you don&apos;t
+            have to.
           </p>
         </div>
 

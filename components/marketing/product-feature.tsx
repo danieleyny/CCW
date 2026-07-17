@@ -21,13 +21,13 @@ export function ProductFeature() {
     <section className="section-void py-20 sm:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
         <Reveal>
-          <SectionEyebrow>The instrument</SectionEyebrow>
+          <SectionEyebrow>What you actually get</SectionEyebrow>
           <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            One case. Every requirement, in one place.
+            You&apos;ll never wonder what&apos;s next.
           </h2>
           <p className="mt-4 max-w-md text-text-mid">
-            See exactly where you stand — what&apos;s done, what&apos;s next, and what still needs a hand.
-            No spreadsheets, no lost paperwork, no wondering whether a form is still good.
+            We keep the whole application organized and on schedule, so you always know what&apos;s done
+            and what&apos;s next — without chasing any of it yourself.
           </p>
           <dl className="mt-8 flex gap-8">
             {NUMERALS.map(([n, l]) => (

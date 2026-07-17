@@ -21,12 +21,7 @@ export function RefilePromise({
         <ShieldCheck className="size-5" />
         <h3 className="font-display text-lg font-semibold">{refilePromise.name}</h3>
       </div>
-      <p className="mt-3 text-text-mid">
-        If we assemble your filing packet and the License Division returns it as incomplete, we
-        reassemble it and you refile at no additional charge from us. Government fees are set by the City
-        and the State; we do not control them and cannot refund them. This is a promise about our work —
-        not about the outcome of your application. The NYPD retains full investigative discretion.
-      </p>
+      <p className="mt-3 text-text-mid">{refilePromise.body}</p>
       {withDisclaimer && (
         <p className="mt-4 border-t border-hairline pt-3 text-xs leading-relaxed text-text-low">
           {brand.disclaimer}

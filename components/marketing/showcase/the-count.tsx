@@ -88,8 +88,11 @@ export function TheCount() {
         {/* Copy + five chips */}
         <div>
           <SectionEyebrow>Everything you&apos;ll need</SectionEyebrow>
+          {/* Copy note: "we TRACK every one" — not "handle". Four references come
+              from other people, training from an instructor, dispositions from a
+              court. We chase and verify them; we don't produce them. */}
           <h2 className="mt-3 text-balance font-display text-3xl font-semibold tracking-tight sm:text-[2.6rem] sm:leading-[1.05]">
-            Twenty-four documents. Every one accounted for.
+            Twenty-four documents stand between you and your license. We track every one.
           </h2>
           <p className="mt-4 max-w-md text-text-mid">
             Miss one and the application bounces. We hold all of them, so you don&apos;t have to.

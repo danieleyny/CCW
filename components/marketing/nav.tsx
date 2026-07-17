@@ -74,14 +74,14 @@ export function MarketingNav() {
             <Link href="/auth/login">Sign in</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/eligibility">Check eligibility</Link>
+            <Link href="/eligibility">Check your eligibility</Link>
           </Button>
         </div>
 
         {/* Mobile */}
         <div className="flex items-center gap-2 md:hidden">
           <Button asChild size="sm">
-            <Link href="/eligibility">Start</Link>
+            <Link href="/eligibility">Check your eligibility</Link>
           </Button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

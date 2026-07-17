@@ -2,7 +2,9 @@ import { ExternalLink } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
-import { resourceGroups } from "@/content/resources"
+import { buildResourceGroups } from "@/content/resources"
+import { getFees } from "@/lib/fees"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Official Sources",
@@ -11,7 +13,10 @@ export const metadata = buildMetadata({
   path: "/resources",
 })
 
-export default function ResourcesPage() {
+export default async function ResourcesPage() {
+  const fees = await getFees(await createClient())
+  const resourceGroups = buildResourceGroups(fees)
+
   return (
     <>
       <PageHero

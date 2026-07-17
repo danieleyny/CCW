@@ -47,7 +47,7 @@ export default async function Faq() {
       <PageHero
         eyebrow="FAQ"
         title="Questions, answered"
-        subtitle="The essentials of getting a NYC concealed carry license."
+        subtitle="Straight answers to what people ask us most — no jargon, no sales pitch."
       />
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="space-y-3">

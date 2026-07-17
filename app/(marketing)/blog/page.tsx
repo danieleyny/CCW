@@ -18,9 +18,9 @@ export default function Blog() {
   return (
     <>
       <PageHero
-        eyebrow="Education"
-        title="NYC concealed carry, explained"
-        subtitle="Long-form guides to a confusing process — written to be precise, current, and genuinely useful."
+        eyebrow="Guides"
+        title="NYC gun licensing, explained"
+        subtitle="Plain-English guides to a confusing process — precise, current, and genuinely useful."
       />
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
         <div className="space-y-3">

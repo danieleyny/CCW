@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { CASE_STAGES } from "@/config/stages"
+import { JOURNEY } from "@/content/journey"
 import { buildMetadata } from "@/lib/seo"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
@@ -16,10 +17,13 @@ export const metadata = buildMetadata({
 export default function HowItWorks() {
   return (
     <>
+      {/* Copy note: this page renders content/journey.ts (the PUBLIC story), not
+          config/stages.ts (the internal pipeline vocabulary). Staff say "Lead /
+          Inquiry"; a nervous applicant should never have to. */}
       <PageHero
-        eyebrow="The Process"
-        title="Thirteen stages, executed end to end"
-        subtitle="NYC is among the most demanding jurisdictions in the country. Here's exactly how we move your application from inquiry to licensed."
+        eyebrow="How it works"
+        title="How we get you ready to file, step by step"
+        subtitle="New York's process is tough — which is exactly why having it handled matters. Here's the whole path, and what we do at each point so you don't have to."
       />
 
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
@@ -30,9 +34,9 @@ export default function HowItWorks() {
                 <span className="size-2 rounded-full bg-brass shadow-[0_0_8px_var(--brass-glow)]" />
               </span>
               <div className="rounded-lg border border-hairline bg-card p-5">
-                <div className="engraved text-brass">Stage {String(s.order).padStart(2, "0")}</div>
-                <div className="mt-1 font-display text-lg font-semibold">{s.label}</div>
-                <p className="mt-1 text-sm text-text-mid">{s.description}</p>
+                <div className="engraved text-brass">Step {String(s.order).padStart(2, "0")}</div>
+                <div className="mt-1 font-display text-lg font-semibold">{JOURNEY[s.key].label}</div>
+                <p className="mt-1 text-sm text-text-mid">{JOURNEY[s.key].description}</p>
               </div>
             </li>
           ))}
