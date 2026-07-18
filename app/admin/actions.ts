@@ -267,7 +267,15 @@ export async function reviewDocument(input: {
       .update(
         input.status === "approved"
           ? { status: "satisfied", document_id: input.documentId, reviewer: userId }
-          : { status: "pending", notes: input.notes ? `Rejected: ${input.notes}` : "Document rejected — awaiting re-upload." }
+          : {
+              // PRIVACY: case_requirements.notes is the one field an ENGAGED
+              // INSTRUCTOR can read. Never put reviewer prose here — a rejection
+              // reason can quote disclosure/arrest content. The detailed reason
+              // is already stored on documents.review_notes (instructor-invisible)
+              // and is what the applicant sees on their upload.
+              status: "pending",
+              notes: "Document rejected — awaiting re-upload.",
+            }
       )
       .eq("id", r.id)
   }
