@@ -2017,30 +2017,96 @@ export type Database = {
         }
         Relationships: []
       }
-      signatures: {
+      signature_events: {
         Row: {
           case_id: string
+          consent_text: string
           created_at: string
+          document_id: string | null
+          document_sha256: string
           id: string
-          png_base64: string
+          ip: string | null
+          req_code: string | null
+          signed_at: string
           signer_key: string
-          updated_at: string
+          user_agent: string | null
         }
         Insert: {
           case_id: string
+          consent_text: string
           created_at?: string
+          document_id?: string | null
+          document_sha256: string
           id?: string
-          png_base64: string
+          ip?: string | null
+          req_code?: string | null
+          signed_at?: string
           signer_key: string
-          updated_at?: string
+          user_agent?: string | null
         }
         Update: {
           case_id?: string
+          consent_text?: string
+          created_at?: string
+          document_id?: string | null
+          document_sha256?: string
+          id?: string
+          ip?: string | null
+          req_code?: string | null
+          signed_at?: string
+          signer_key?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signature_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signature_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signatures: {
+        Row: {
+          case_id: string
+          consent_text: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          png_base64: string
+          signer_key: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          case_id: string
+          consent_text?: string | null
           created_at?: string
           id?: string
+          ip?: string | null
+          png_base64: string
+          signer_key: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          case_id?: string
+          consent_text?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
           png_base64?: string
           signer_key?: string
           updated_at?: string
+          user_agent?: string | null
         }
         Relationships: [
           {

@@ -12,7 +12,9 @@ import {
   renderRequirementDocument,
   renderCompanionDocument,
   storeGeneratedDocument,
+  recordSignatureEvent,
 } from "@/lib/requirements/document-engine"
+import { headers } from "next/headers"
 
 type Result = { error?: string; ok?: boolean; documentId?: string }
 
@@ -81,6 +83,21 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
       reqCode,
       doc,
     })
+
+    // A signature was actually applied → log the signing act, bound to these
+    // exact bytes. Without this the PNG is just a reusable image with no record.
+    if (signaturePng) {
+      const h = await headers()
+      await recordSignatureEvent(admin, {
+        caseId: myCase.id,
+        signerKey: "applicant",
+        documentId,
+        reqCode,
+        bytes: doc.bytes,
+        ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+        userAgent: h.get("user-agent"),
+      })
+    }
 
     if (action.notarize) {
       await admin

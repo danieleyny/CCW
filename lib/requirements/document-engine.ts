@@ -14,6 +14,7 @@
  * WE DON'T FILE: the application worksheet is a copy-into-the-portal sheet. The
  * applicant submits their own application at licensing.nypdonline.org.
  */
+import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { buildPdf } from "@/lib/pdf/builder"
@@ -259,4 +260,39 @@ export async function storeGeneratedDocument(
 
   await admin.from("documents").update({ file_path: path }).eq("id", row.id)
   return row.id
+}
+
+/** The consent an applicant affirms when they apply their signature to a document. */
+export const SIGNING_CONSENT =
+  "I am signing this document electronically. I affirm the statements in it are true and complete to the best of my knowledge, and I agree my electronic signature has the same legal effect as a handwritten one."
+
+/**
+ * Record a signing act. The PNG in `signatures` is a reusable image, not a
+ * record — this binds a specific signer to the EXACT bytes they signed
+ * (SHA-256), with when, from where, and what they consented to. Append-only.
+ */
+export async function recordSignatureEvent(
+  admin: DB,
+  args: {
+    caseId: string
+    signerKey: string
+    documentId: string
+    reqCode: string
+    bytes: Uint8Array
+    ip?: string | null
+    userAgent?: string | null
+    consentText?: string
+  }
+): Promise<void> {
+  const sha256 = createHash("sha256").update(Buffer.from(args.bytes)).digest("hex")
+  await admin.from("signature_events").insert({
+    case_id: args.caseId,
+    signer_key: args.signerKey,
+    document_id: args.documentId,
+    req_code: args.reqCode,
+    document_sha256: sha256,
+    consent_text: args.consentText ?? SIGNING_CONSENT,
+    ip: args.ip ?? null,
+    user_agent: args.userAgent ?? null,
+  })
 }

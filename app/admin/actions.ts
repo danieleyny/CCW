@@ -438,7 +438,10 @@ export async function toggleNotePin(formData: FormData) {
 export async function setCaseRequirementStatus(
   caseReqId: string,
   caseId: string,
-  status: "pending" | "satisfied" | "na" | "rejected"
+  status: "pending" | "satisfied" | "na" | "rejected",
+  /** Deliberate staff override when satisfying a document-backed requirement
+   *  with no evidence bound. Recorded on the row and in the activity log. */
+  overrideReason?: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { userId } = await requireStaff()
   const supabase = await createClient()
@@ -461,9 +464,43 @@ export async function setCaseRequirementStatus(
     }
   }
 
+  // Satisfaction must rest on evidence. A document-backed requirement (the
+  // registry declares a document_type) can only be marked satisfied when
+  // something is bound to it — otherwise the checklist claims a document exists
+  // that nobody has. Staff keep an escape hatch, but it must be deliberate and
+  // it gets recorded. (A DB trigger enforces the same rule.)
+  let overrideNote: string | undefined
+  if (status === "satisfied") {
+    const { data: row } = await supabase
+      .from("case_requirements")
+      .select("req_code, document_id, reference_id, cohabitant_id, disclosure_id, requirements!inner(document_type)")
+      .eq("id", caseReqId)
+      .single()
+    const documentBacked = !!(row?.requirements as unknown as { document_type: string | null } | null)?.document_type
+    const hasEvidence =
+      !!row?.document_id || !!row?.reference_id || !!row?.cohabitant_id || !!row?.disclosure_id
+
+    if (documentBacked && !hasEvidence) {
+      if (!overrideReason?.trim()) {
+        return {
+          ok: false,
+          error: `${row?.req_code ?? "This requirement"} has no document bound to it. Approve the uploaded document, or record an override reason.`,
+        }
+      }
+      overrideNote = `OVERRIDE: ${overrideReason.trim()}`
+      await logActivity({
+        action: "requirement.satisfied_override",
+        caseId,
+        entity: "case_requirement",
+        entityId: caseReqId,
+        detail: { req_code: row?.req_code, reason: overrideReason.trim(), by: userId },
+      })
+    }
+  }
+
   const { error } = await supabase
     .from("case_requirements")
-    .update({ status, reviewer: userId })
+    .update({ status, reviewer: userId, ...(overrideNote ? { notes: overrideNote } : {}) })
     .eq("id", caseReqId)
   if (error) throw error
   await logActivity({
