@@ -7,13 +7,15 @@ export interface CohabitantAffidavitInput {
   liveAlone?: boolean
   dateStr: string
   signaturePng?: Uint8Array
+  /** Short case reference for the letterhead. */
+  caseRef?: string
 }
 
 /** Pre-filled cohabitant affidavit (or "sole occupant" statement), notary-ready. */
 export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitInput): Promise<Uint8Array> {
   return buildPdf((c) => {
     if (input.liveAlone) {
-      c.heading("Statement of Sole Occupancy", `NYC Concealed-Carry License Application · ${input.dateStr}`)
+      c.heading("Statement of Sole Occupancy", "NYC concealed-carry license application")
       c.rule()
       c.para(
         `I, ${input.applicantName}, affirm that I am the sole adult occupant of my residence and that ` +
@@ -21,11 +23,11 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
           `secured in an approved safe or lock-box.`,
         { gap: 16 }
       )
-      c.signatureImage(`Applicant: ${input.applicantName}`)
+      c.signatureImage("Applicant signature", input.applicantName)
       c.notaryBlock(input.applicantName)
       return
     }
-    c.heading("Cohabitant Affidavit", `NYC Concealed-Carry License Application · ${input.dateStr}`)
+    c.heading("Cohabitant Affidavit", "NYC concealed-carry license application")
     c.rule()
     c.para(`RE: Cohabitant affidavit for the application of ${input.applicantName}`, { bold: true, gap: 10 })
     c.para(
@@ -40,7 +42,14 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
         `licensed. The statements herein are true to the best of my knowledge.`,
       { gap: 16 }
     )
-    c.signatureImage(`Cohabitant: ${input.cohabitantName}`)
+    // Executed by the cohabitant — their name goes under the rule, not the
+    // applicant's, even though the letterhead is the applicant's case.
+    c.signatureImage("Cohabitant signature", input.cohabitantName)
     c.notaryBlock(input.cohabitantName)
-  }, { signaturePng: input.signaturePng })
+  }, {
+    signaturePng: input.signaturePng,
+    applicantName: input.applicantName,
+    caseRef: input.caseRef,
+    docTitle: input.liveAlone ? "Statement of Sole Occupancy" : "Cohabitant Affidavit",
+  })
 }

@@ -9,6 +9,7 @@ import { getMyCase } from "@/lib/portal"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
+import { toUserFacingError } from "@/lib/schema-health"
 import {
   renderRequirementDocument,
   renderCompanionDocument,
@@ -87,6 +88,7 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
       reqCode,
       applicantName: myCase.client.full_name,
       answers,
+      caseRef: myCase.id.slice(0, 8),
     })
     // Service role: server-derived provenance (path, generated flag) on a
     // staff-reviewed table; ownership was proven by getMyCase above.
@@ -133,7 +135,10 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
         .in("status", ["pending", "na"])
     }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not generate the document" }
+    // A database behind the deployed code surfaces here as a raw PostgREST
+    // "column not found in the schema cache" — our deployment mistake, told to
+    // the applicant as if they'd done something wrong. Translate it.
+    return { error: toUserFacingError(e, "Could not generate the document") }
   }
 
   await logActivity({
@@ -207,6 +212,7 @@ export async function signRequirementDocument(
       answers: (saved?.answers ?? {}) as Record<string, unknown>,
       signaturePng,
       signedAt,
+      caseRef: myCase.id.slice(0, 8),
     })
 
     const admin = createAdminClient()
@@ -250,7 +256,7 @@ export async function signRequirementDocument(
         .in("status", ["pending", "na"])
     }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not sign the document" }
+    return { error: toUserFacingError(e, "Could not sign the document") }
   }
 
   await logActivity({
@@ -288,6 +294,7 @@ export async function generateCompanionDocument(reqCode: string): Promise<Result
       reqCode,
       applicantName: myCase.client.full_name,
       answers: (saved?.answers ?? {}) as Record<string, unknown>,
+      caseRef: myCase.id.slice(0, 8),
     })
     const admin = createAdminClient()
     const documentId = await storeGeneratedDocument(admin, {
@@ -299,7 +306,7 @@ export async function generateCompanionDocument(reqCode: string): Promise<Result
     revalidatePath("/portal/checklist")
     return { ok: true, documentId }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not generate the letter" }
+    return { error: toUserFacingError(e, "Could not generate the letter") }
   }
 }
 

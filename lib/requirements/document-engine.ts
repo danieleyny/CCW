@@ -46,6 +46,8 @@ export interface RenderInput {
    * date — that was the Phase 3 bug.
    */
   signedAt?: Date
+  /** Short case reference for the letterhead. */
+  caseRef?: string
 }
 
 export interface RenderedDocument {
@@ -75,10 +77,7 @@ async function disclosureAddendum(name: string, a: Record<string, unknown>, sig:
 
   return buildPdf((c) => {
     c.heading("Handgun License Application — Addendum", "Written explanations (PD 643-041A style)")
-    c.para(PREPARED_BY, { size: 9, color: "muted" })
     c.rule()
-    c.para(`Applicant: ${name}`, { bold: true })
-    c.spacer()
     if (items.length === 0) {
       c.para("The applicant answered “no” to each disclosure question; no written explanation is required.")
     } else {
@@ -95,18 +94,14 @@ async function disclosureAddendum(name: string, a: Record<string, unknown>, sig:
     }
     c.rule()
     c.para("I affirm the statements above are true and complete to the best of my knowledge.", { size: 10 })
-    if (sig) c.signatureImage("Applicant signature")
-    else c.signatureLine("Applicant signature")
+    c.signatureImage("Applicant signature")
   }, { signaturePng: sig, ...sign })
 }
 
 async function protectionOrderStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Order of Protection — Written Statement")
-    c.para(PREPARED_BY, { size: 9, color: "muted" })
     c.rule()
-    c.para(`Applicant: ${name}`, { bold: true })
-    c.spacer()
     c.para(`Date issued: ${str(a.issuedOn) || "—"}`)
     c.para(`Issuing court: ${str(a.court) || "—"}`)
     c.para(`Current status: ${str(a.status) || "—"}`)
@@ -115,26 +110,21 @@ async function protectionOrderStatement(name: string, a: Record<string, unknown>
     c.para(str(a.explanation) || "(no explanation provided)")
     c.spacer()
     c.para("A copy of the order is submitted with this statement.", { size: 10, color: "muted" })
-    if (sig) c.signatureImage("Applicant signature")
-    else c.signatureLine("Applicant signature")
+    c.signatureImage("Applicant signature")
   }, { signaturePng: sig, ...sign })
 }
 
 async function domesticIncidentStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Domestic Incident Report — Written Disclosure")
-    c.para(PREPARED_BY, { size: 9, color: "muted" })
     c.rule()
-    c.para(`Applicant: ${name}`, { bold: true })
-    c.spacer()
     c.para(`Date: ${str(a.occurredOn) || "—"}`)
     c.para(`Agency: ${str(a.agency) || "—"}`)
     c.para(`Outcome: ${str(a.outcome) || "—"}`)
     c.spacer()
     c.h2("Circumstances")
     c.para(str(a.explanation) || "(no explanation provided)")
-    if (sig) c.signatureImage("Applicant signature")
-    else c.signatureLine("Applicant signature")
+    c.signatureImage("Applicant signature")
   }, { signaturePng: sig, ...sign })
 }
 
@@ -145,10 +135,7 @@ async function safeStorageStatement(name: string, a: Record<string, unknown>, si
     : "a locked gun safe"
   return buildPdf((c) => {
     c.heading("Safe Storage Statement")
-    c.para(PREPARED_BY, { size: 9, color: "muted" })
     c.rule()
-    c.para(`Applicant: ${name}`, { bold: true })
-    c.spacer()
     c.para(`Storage address: ${str(a.address) || "—"}`)
     c.para(`Method: ${kind}${str(a.safeguardName) ? ` (${str(a.safeguardName)})` : ""}`)
     c.spacer()
@@ -159,13 +146,12 @@ async function safeStorageStatement(name: string, a: Record<string, unknown>, si
       c.spacer()
       c.para("Other adults reside at this address; a cohabitant affidavit is provided for each.", { size: 10, color: "muted" })
     }
-    if (sig) c.signatureImage("Applicant signature")
-    else c.signatureLine("Applicant signature")
+    c.signatureImage("Applicant signature")
   }, { signaturePng: sig, ...sign })
 }
 
 /** Copy-into-the-portal worksheet. We prepare; the applicant files. */
-async function applicationWorksheet(name: string, a: Record<string, unknown>) {
+async function applicationWorksheet(name: string, a: Record<string, unknown>, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Application Worksheet", "Copy these answers into the NYPD online application")
     c.para(PREPARED_BY, { size: 9, color: "muted" })
@@ -175,11 +161,10 @@ async function applicationWorksheet(name: string, a: Record<string, unknown>) {
       { size: 10 }
     )
     c.spacer()
-    c.para(`Applicant: ${name}`, { bold: true })
     for (const [k, v] of Object.entries(a)) {
       if (typeof v === "string" && v.trim()) c.para(`${k}: ${v}`)
     }
-  })
+  }, sign)
 }
 
 const toArrests = (v: unknown): ArrestEntry[] =>
@@ -190,13 +175,32 @@ const toArrests = (v: unknown): ArrestEntry[] =>
     narrative: str(r.narrative),
   }))
 
+/** Letterhead / PDF-metadata title per requirement. */
+const TITLES: Record<string, string> = {
+  "AFF-01": "Affirmation of Understanding",
+  "SAF-01": "Safe Storage Statement",
+  "SOC-01": "Social Media List",
+  "DSC-01": "Handgun License Application — Addendum",
+  "QUE-01": "Handgun License Application — Addendum",
+  "ARR-01": "Arrest Statements",
+  "OOP-01": "Order of Protection Statement",
+  "DIR-01": "Domestic Incident Statement",
+  WORKSHEET: "Application Worksheet",
+}
+
 /** Route a requirement to its generator. */
 export async function renderRequirementDocument(input: RenderInput): Promise<RenderedDocument> {
   const { reqCode, applicantName: n, answers: a, signedAt } = input
   // A signature only counts when we know WHEN it was applied — an image with no
   // signing act behind it renders as a draft, not as a signed document.
   const sig = signedAt ? input.signaturePng : undefined
-  const sign: SignOpts = { signedAt, draft: !sig }
+  const sign: SignOpts = {
+    signedAt,
+    draft: !sig,
+    applicantName: n,
+    caseRef: input.caseRef,
+    docTitle: TITLES[reqCode] ?? "Prepared document",
+  }
   const dated = signedAt ? longDate(signedAt) : "Draft — unsigned"
 
   switch (reqCode) {
@@ -216,7 +220,7 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
     case "DIR-01":
       return { bytes: await domesticIncidentStatement(n, a, sig, sign), fileName: "domestic-incident-statement.pdf", documentType: "domestic_incident_statement", label: "Domestic incident statement" }
     case "WORKSHEET":
-      return { bytes: await applicationWorksheet(n, a), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
+      return { bytes: await applicationWorksheet(n, a, sign), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
     default:
       throw new Error(`No generator for ${reqCode}`)
   }
@@ -227,7 +231,17 @@ export async function renderCompanionDocument(input: RenderInput): Promise<Rende
   const today = new Date().toLocaleDateString("en-US", { dateStyle: "long" })
   if (input.reqCode === "ARR-01") {
     return {
-      bytes: await certOfDispositionRequests(input.applicantName, toArrests(input.answers.arrests), today, input.signaturePng),
+      bytes: await certOfDispositionRequests(
+        input.applicantName,
+        toArrests(input.answers.arrests),
+        today,
+        undefined,
+        {
+          applicantName: input.applicantName,
+          caseRef: input.caseRef,
+          docTitle: "Certificate of Disposition Requests",
+        }
+      ),
       fileName: "certificate-of-disposition-requests.pdf",
       documentType: "court_request_letter",
       label: "Court request letters",

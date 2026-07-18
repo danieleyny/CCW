@@ -6,7 +6,7 @@
  *
  * Runs against the live local registry (skips when Supabase isn't reachable).
  */
-import { describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { REQUIREMENT_ACTIONS, actionFor, isSignable } from "@/lib/requirements/actions"
 import { renderRequirementDocument } from "@/lib/requirements/document-engine"
 import { adminClient, supabaseReachable } from "./helpers/supabase"
@@ -74,6 +74,16 @@ describe("requirement → action map", () => {
    * completes it, so the two renderings must be visibly different documents.
    */
   describe("signing", () => {
+    // Text assertions need the Helvetica path: the brand font is embedded as a
+    // SUBSET, so its show-text operands are glyph ids rather than characters.
+    // Rendering with the fallback is also how we prove the fallback works.
+    beforeAll(() => {
+      process.env.PDF_FALLBACK_FONTS = "1"
+    })
+    afterAll(() => {
+      delete process.env.PDF_FALLBACK_FONTS
+    })
+
     // A 1x1 PNG stands in for a captured signature — the point of these tests is
     // the DRAFT/signed distinction, not what the ink looks like.
     const png = new Uint8Array(
@@ -104,7 +114,11 @@ describe("requirement → action map", () => {
       })
       const text = await pdfText(doc.bytes)
       expect(text).toContain("DRAFT")
-      expect(text).not.toContain("Signed: ")
+      // The execution rule is blank — the only date on a draft is the
+      // letterhead's "Prepared" date, which is not a signing date.
+      expect(text).toContain("Date signed")
+      expect(text).toContain("Prepared ")
+      expect(text.match(/Date signed/g)?.length).toBe(1)
     })
 
     it("a signed rendering prints the SIGNING date and drops the draft banner", async () => {
@@ -117,6 +131,7 @@ describe("requirement → action map", () => {
         signedAt,
       })
       const text = await pdfText(doc.bytes)
+      // The date printed over the "Date signed" rule is signedAt, to the day.
       expect(text).toContain("March 4, 2026")
       expect(text).not.toContain("DRAFT")
     })
