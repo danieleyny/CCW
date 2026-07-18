@@ -167,7 +167,10 @@ const varsFrom = (obj: Record<string, string>) =>
 export function brandCss(): string {
   const light = varsFrom({ ...paletteLight, ...shadcnFor(paletteLight, paletteLight["surface-1"]) })
   const dark = varsFrom({ ...paletteDark, ...shadcnFor(paletteDark, "#0A0C10") })
-  return `:root{${light}} .dark{${dark}}`
+  // `--app-bg-dark` is published on :root (not just .dark) so the DOCUMENT can be
+  // painted obsidian on app routes — otherwise overscroll/short pages reveal the
+  // light marketing paper behind the app shell. See globals.css `html:has(.dark)`.
+  return `:root{${light}--app-bg-dark:${paletteDark.bg};} .dark{${dark}}`
 }
 
 export type Brand = typeof brand

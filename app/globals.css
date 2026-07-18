@@ -99,6 +99,16 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  /* App routes wrap their tree in `.dark`, but <html>/<body> sit OUTSIDE it and
+     keep the light marketing paper. Overscroll (rubber-band) and pages shorter
+     than the shell then flash paper behind the obsidian app. Paint the document
+     obsidian whenever a dark app shell is mounted. */
+  html:has(.dark) {
+    background-color: var(--app-bg-dark);
+  }
+  html:has(.dark) body {
+    background-color: var(--app-bg-dark);
+  }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
