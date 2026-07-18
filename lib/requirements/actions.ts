@@ -43,6 +43,14 @@ interface ActionBase {
   optional?: boolean
   /** What an upload binds to (mirrors requirements.document_type). */
   documentType?: DocumentType
+  /**
+   * A control WE verify, not a task for the customer. Asking someone to
+   * "confirm" a thing the system already checks is busywork that also implies
+   * they're responsible for it — so these are hidden from the customer checklist
+   * and satisfied by the code that does the verifying. Admin/QA still sees them.
+   * The string is the note written when the system satisfies it.
+   */
+  systemVerified?: string
 }
 
 interface GenerateAction extends ActionBase {
@@ -89,16 +97,19 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   "ELG-01": {
     mode: "attest",
     actionLabel: "Confirm",
+    systemVerified: "System-verified from the date of birth given at intake.",
     help: "NYC carry licenses require the applicant to be at least 21. Confirmed from your intake date of birth.",
   },
   "ELG-02": {
     mode: "attest",
     actionLabel: "Confirm",
+    systemVerified: "System-verified from the address and residence answers given at intake.",
     help: "You must live in NYC or have your principal place of business here — that's what gives the NYPD License Division jurisdiction. Non-residents route to the Special Carry track.",
   },
   "ELG-03": {
     mode: "attest",
     actionLabel: "Confirm",
+    systemVerified: "System-verified from the eligibility answers given at intake (no disqualifier reported).",
     help: "No felony or serious-offense conviction, disqualifying mental-health adjudication, active order of protection, or unlawful drug use. Answered in your intake.",
   },
   "FEE-01": {
@@ -109,11 +120,13 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   "FMT-01": {
     mode: "attest",
     actionLabel: "Confirm",
+    systemVerified: "System-verified: every upload is checked for size, type, and filename before it is stored.",
     help: "Uploads must meet the NYPD portal's file limits. We check each file as you upload it.",
   },
   "OOS-02": {
     mode: "attest",
     actionLabel: "Confirm",
+    systemVerified: "System-verified from the out-of-state license answers given at intake.",
     help: "Disclose any firearms licenses you hold in other jurisdictions. Answered in your intake.",
   },
   "SPC-01": {

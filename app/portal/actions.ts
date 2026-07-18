@@ -9,6 +9,8 @@ import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
 import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
 import type { DocumentType } from "@/lib/doc-types"
+import { enforceUploadedFile } from "@/lib/files/enforce"
+import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -40,6 +42,14 @@ export async function recordDocument(input: {
     throw new Error("Invalid upload path")
   }
 
+  // FMT-01, server side — the client check is bypassable (see lib/files/enforce).
+  // Service role: reading storage metadata and removing a rejected object, both
+  // before we've decided this upload is legitimate enough to record.
+  const fileName = await enforceUploadedFile(createAdminClient(), {
+    path: input.path,
+    fileName: input.fileName,
+  })
+
   const { count } = await supabase
     .from("documents")
     .select("id", { count: "exact", head: true })
@@ -54,7 +64,7 @@ export async function recordDocument(input: {
     type: input.type,
     status: "pending",
     file_path: input.path,
-    file_name: input.fileName,
+    file_name: fileName,
     version,
   })
   if (error) throw error
@@ -71,6 +81,10 @@ export async function recordDocument(input: {
   for (const r of matchingReqs ?? []) {
     await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
   }
+
+  // FMT-01 is a control we run, not a box the customer ticks: the upload just
+  // passed the size/type/filename check, so the control is satisfied by evidence.
+  await satisfySystemRequirement(createAdminClient(), input.caseId, "FMT-01")
 
   await logActivity({
     action: "document.uploaded",

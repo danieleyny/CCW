@@ -9,6 +9,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
+import { runIntakeSystemChecks } from "@/lib/requirements/system-checks"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
 
@@ -170,6 +171,12 @@ export async function processIntake(
       .eq("case_id", caseId)
       .eq("req_code", reqCode)
   }
+
+  // ── System-verified controls ──────────────────────────────────────────────
+  // The eligibility items were already answered here — asking the applicant to
+  // "confirm" them again on the checklist is busywork. Satisfied ONLY where
+  // their own answers support it (see lib/requirements/system-checks).
+  await runIntakeSystemChecks(admin, caseId, answers)
 
   return {
     cohabitants: cohabRows.length,

@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
+import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { cn } from "@/lib/utils"
 
 export interface ReqChecklistItem {
@@ -44,8 +45,12 @@ export function RequirementsChecklist({
   /** Base64 PNG of the applicant's signature on file, if they've captured one. */
   signatureOnFile: string | null
 }) {
-  const applicable = items.filter((i) => i.status !== "na")
-  const notApplicable = items.filter((i) => i.status === "na")
+  // System controls (FMT-01, the intake-derived eligibility items) are things we
+  // verify, not tasks for the customer — showing them as "Confirm" buttons was
+  // asking someone to vouch for a machine check. Admin/QA still sees them.
+  const visible = items.filter((i) => !isSystemVerified(i.reqCode))
+  const applicable = visible.filter((i) => i.status !== "na")
+  const notApplicable = visible.filter((i) => i.status === "na")
 
   const satisfied = applicable.filter((i) => i.status === "satisfied").length
 
