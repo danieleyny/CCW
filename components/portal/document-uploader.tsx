@@ -24,6 +24,7 @@ export function DocumentUploader({
   caseId,
   clientId,
   type,
+  reqCode,
   label,
   description,
   current,
@@ -32,6 +33,9 @@ export function DocumentUploader({
   caseId: string
   clientId: string
   type: DocumentType
+  /** Which requirement this upload answers — IDN-01/02/03 all share one
+   *  document type, so type alone can't say which item was just satisfied. */
+  reqCode?: string
   label: string
   description?: string
   current: CurrentDoc | null
@@ -83,7 +87,7 @@ export function DocumentUploader({
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: true })
       if (upErr) throw upErr
 
-      await recordDocument({ documentId, caseId, type, path, fileName: check.sanitizedName })
+      await recordDocument({ documentId, caseId, type, reqCode, path, fileName: check.sanitizedName })
       toast.success(`Uploaded — ${label} is now pending review.`)
       router.refresh()
     } catch (err) {

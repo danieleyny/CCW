@@ -1,29 +1,19 @@
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
-import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
-import type { DocumentType } from "@/lib/doc-types"
+import { loadRequirementView } from "@/lib/portal/requirement-view"
+import { actionFor } from "@/lib/requirements/actions"
+import { isSystemVerified } from "@/lib/requirements/system-checks"
+import { DocumentLibrary, type LibraryEntry } from "@/components/portal/document-library"
 
 export const metadata = { title: "Documents" }
 
-// Curated list of uploadable documents shown in the portal (journey order).
-const DOC_TYPES: { type: DocumentType; label: string; description: string; photoSpec?: boolean }[] = [
-  {
-    type: "applicant_photo",
-    label: "Application photo",
-    description:
-      "Color, chest-up, facing the camera, taken within the last 30 days, nothing obscuring your face. Must be square, 600×600–1200×1200 px — we check the dimensions automatically and resize oversized square photos for you.",
-    photoSpec: true,
-  },
-  { type: "id", label: "Government photo ID", description: "Driver license, non-driver ID, or passport." },
-  { type: "proof_residence", label: "Proof of residence / business", description: "A recent utility bill, lease, or similar." },
-  { type: "training_cert", label: "Training completion certificate", description: "Your 16-hour + 2-hour course completion." },
-  { type: "safe_photo_closed", label: "Safe photo — door closed", description: "Color photo of your gun safe, whole safe visible, door closed." },
-  { type: "safe_photo_open", label: "Safe photo — door open", description: "Color photo of your gun safe, whole safe visible, door open." },
-  { type: "social_media_list", label: "Social media list (3 years)", description: "All current & former accounts for the past 3 years." },
-  { type: "reference_letter", label: "Notarized reference letters", description: "Upload your notarized character references." },
-  { type: "cohabitant_affidavit", label: "Notarized cohabitant affidavits", description: "One notarized affidavit per adult in your home." },
-]
-
+/**
+ * The full document library — still needed + completed — driven off the SAME
+ * requirement view as the checklist. It used to be a hardcoded list of nine
+ * upload slots keyed on document TYPE, which is why a generated addendum could
+ * surface under an upload slot it had nothing to do with, and why this page and
+ * the checklist could disagree about what was outstanding.
+ */
 export default async function DocumentsPage() {
   const myCase = await getMyCase()
   if (!myCase) {
@@ -35,61 +25,42 @@ export default async function DocumentsPage() {
   }
 
   const supabase = await createClient()
-  const { data: docs } = await supabase
-    .from("documents")
-    .select("type, status, review_notes, version, file_path")
-    .eq("case_id", myCase.id)
-    .order("version", { ascending: false })
+  const view = await loadRequirementView(supabase, myCase)
 
-  // Latest version per type.
-  type DocRow = NonNullable<typeof docs>[number]
-  const latest = new Map<string, DocRow>()
-  for (const d of docs ?? []) {
-    if (!latest.has(d.type)) latest.set(d.type, d)
-  }
+  const entries: LibraryEntry[] = view.items
+    // `na` doesn't apply to this case; system controls aren't the customer's job.
+    .filter((i) => i.status !== "na" && !isSystemVerified(i.reqCode))
+    .map((i) => ({
+      reqCode: i.reqCode,
+      title: actionFor(i.reqCode)?.customerTitle ?? i.title,
+      officialTitle: i.title,
+      status: i.status,
+      files: view.filesByReq[i.reqCode] ?? [],
+    }))
 
-  // Build current-doc views with signed URLs.
-  const current = new Map<string, CurrentDoc>()
-  await Promise.all(
-    [...latest.entries()].map(async ([type, d]) => {
-      let signedUrl: string | null = null
-      if (d.file_path) {
-        const { data } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 3600)
-        signedUrl = data?.signedUrl ?? null
-      }
-      current.set(type, {
-        status: d.status,
-        review_notes: d.review_notes,
-        version: d.version,
-        signedUrl,
-      })
-    })
-  )
+  const completed = entries.filter((e) => e.status === "satisfied")
+  const needed = entries.filter((e) => e.status !== "satisfied")
 
   return (
     <div>
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Snap a photo or upload a file for each item. We&apos;ll review and let you know if anything
-          needs a fix.
+          Every file for your application in one place — what we still need, and what we already
+          have. This is the same list as your checklist, organized by file rather than by step.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {DOC_TYPES.map((d) => (
-          <DocumentUploader
-            key={d.type}
-            caseId={myCase.id}
-            clientId={myCase.client.id}
-            type={d.type}
-            label={d.label}
-            description={d.description}
-            current={current.get(d.type) ?? null}
-            photoSpec={d.photoSpec}
-          />
-        ))}
-      </div>
+      <DocumentLibrary
+        needed={needed}
+        completed={completed}
+        loose={view.looseFiles}
+        caseId={myCase.id}
+        clientId={myCase.client.id}
+        prefills={view.prefills}
+        generated={view.generated}
+        signatureOnFile={view.signatureOnFile}
+      />
     </div>
   )
 }

@@ -28,6 +28,8 @@ export async function recordDocument(input: {
   documentId: string
   caseId: string
   type: DocumentType
+  /** The requirement this upload answers, when the UI knows it. */
+  reqCode?: string
   path: string
   fileName: string
 }) {
@@ -65,6 +67,7 @@ export async function recordDocument(input: {
     status: "pending",
     file_path: input.path,
     file_name: fileName,
+    req_code: input.reqCode ?? null,
     version,
   })
   if (error) throw error
@@ -72,12 +75,23 @@ export async function recordDocument(input: {
   // V3-P2.1 — bind the upload to its matching requirement(s) so the consultant
   // sees the evidence attached. Status stays pending until staff review
   // approves it (satisfaction is a review decision, not an upload event).
-  const { data: matchingReqs } = await supabase
-    .from("case_requirements")
-    .select("id, requirements!inner(document_type)")
-    .eq("case_id", input.caseId)
-    .eq("requirements.document_type", input.type)
-    .neq("status", "satisfied")
+  //
+  // Prefer the req_code the UI gave us: IDN-01/02/03 all declare document type
+  // "id", so binding by type alone attaches proof of citizenship to the photo-ID
+  // row and calls it evidence.
+  const { data: matchingReqs } = input.reqCode
+    ? await supabase
+        .from("case_requirements")
+        .select("id")
+        .eq("case_id", input.caseId)
+        .eq("req_code", input.reqCode)
+        .neq("status", "satisfied")
+    : await supabase
+        .from("case_requirements")
+        .select("id, requirements!inner(document_type)")
+        .eq("case_id", input.caseId)
+        .eq("requirements.document_type", input.type)
+        .neq("status", "satisfied")
   for (const r of matchingReqs ?? []) {
     await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
   }

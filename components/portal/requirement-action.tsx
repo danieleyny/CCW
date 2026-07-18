@@ -136,6 +136,7 @@ export function RequirementAction({
             caseId={caseId}
             clientId={clientId}
             type={action.documentType as DocumentType}
+            reqCode={reqCode}
             label="Upload the notarized copy"
             current={null}
           />
@@ -196,6 +197,7 @@ export function RequirementAction({
             caseId={caseId}
             clientId={clientId}
             type={action.documentType as DocumentType}
+            reqCode={reqCode}
             label={action.actionLabel}
             current={null}
             photoSpec={reqCode === "IDN-04"}
