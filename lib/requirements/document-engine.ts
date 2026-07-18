@@ -26,6 +26,7 @@ import {
   type ArrestEntry,
   type SignOpts,
 } from "@/lib/forms/documents"
+import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { brand } from "@/config/brand"
 import { SIGNING_CONSENT } from "@/lib/requirements/consent"
 
@@ -186,6 +187,7 @@ const TITLES: Record<string, string> = {
   "OOP-01": "Order of Protection Statement",
   "DIR-01": "Domestic Incident Statement",
   WORKSHEET: "Application Worksheet",
+  "COH-01": "Statement of Sole Occupancy",
 }
 
 /** Route a requirement to its generator. */
@@ -219,6 +221,31 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
       return { bytes: await protectionOrderStatement(n, a, sig, sign), fileName: "order-of-protection-statement.pdf", documentType: "order_of_protection_statement", label: "Order of protection statement" }
     case "DIR-01":
       return { bytes: await domesticIncidentStatement(n, a, sig, sign), fileName: "domestic-incident-statement.pdf", documentType: "domestic_incident_statement", label: "Domestic incident statement" }
+    case "COH-01": {
+      // Only the sole-occupancy case belongs here: it's the applicant's own
+      // statement. With household members there is no single document for them
+      // to sign — each adult signs their own through the token flow, which is
+      // what the roster mode handles.
+      if (!isYes(a.livesAlone)) {
+        throw new Error(
+          "Household affidavits are completed by each adult through their own private link, not generated here."
+        )
+      }
+      return {
+        bytes: await generateCohabitantAffidavitPdf({
+          applicantName: n,
+          cohabitantName: n,
+          liveAlone: true,
+          dateStr: dated,
+          caseRef: input.caseRef,
+          signaturePng: sig,
+          ...sign,
+        }),
+        fileName: "sole-occupancy-statement.pdf",
+        documentType: "cohabitant_affidavit",
+        label: "Sole-occupancy statement",
+      }
+    }
     case "WORKSHEET":
       return { bytes: await applicationWorksheet(n, a, sign), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
     default:

@@ -6,11 +6,17 @@
  * SIGNABLE in forms/actions, DOC_TYPES in documents/page). This is the single
  * source the checklist UI, the questionnaire engine, and the generators read.
  *
- * Three modes:
+ * Four modes:
  *   generate — we ask a short questionnaire and produce the finished document
  *   obtain   — an external document we can't produce; we give the steps + the
  *              official link (and a prepared request letter where one helps)
  *   attest   — already answered on-platform (intake) or a simple confirmation
+ *   roster   — the document is written and notarized by SOMEBODY ELSE (a
+ *              reference, a household member). We collect who they are, send
+ *              each of them a private link, and track the notarized copies
+ *              coming back. There is no single PDF for the applicant to sign,
+ *              which is exactly why routing these through the generator threw
+ *              "No generator for COH-01".
  *
  * GUARDRAILS BAKED IN:
  * - `sensitive: true` marks disclosure / affidavit / reference / arrest material.
@@ -28,7 +34,7 @@ import type { Database } from "@/lib/supabase/types"
 
 type DocumentType = Database["public"]["Enums"]["document_type"]
 
-export type RequirementMode = "generate" | "obtain" | "attest"
+export type RequirementMode = "generate" | "obtain" | "attest" | "roster"
 
 /**
  * Our own illustrations (components/portal/document-example) — deliberately NOT
@@ -104,7 +110,25 @@ interface AttestAction extends ActionBase {
   mode: "attest"
 }
 
-export type RequirementAction = GenerateAction | ObtainAction | AttestAction
+/**
+ * People-driven requirements. The applicant lists who; each person completes and
+ * notarizes their own document through a tokenized link (app/r/[token] for
+ * references, app/c/[token] for cohabitants). The requirement completes when the
+ * notarized copies are in — never on submitting the list.
+ */
+interface RosterAction extends ActionBase {
+  mode: "roster"
+  /** The questionnaire that collects the people. */
+  questionnaireId: string
+  /** Which roster this manages — picks the table, the token flow and the copy. */
+  roster: "references" | "cohabitants"
+  /** How many are required (references only; cohabitants is "every adult"). */
+  minimum?: number
+  /** Deep link to the page that manages invitations and notarized uploads. */
+  manageHref: string
+}
+
+export type RequirementAction = GenerateAction | ObtainAction | AttestAction | RosterAction
 
 const NYPD_REQUIRED_DOCS = "https://licensing.nypdonline.org/app-instruction/requireddocs"
 
@@ -182,46 +206,42 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     help: "The CCIA's social-media disclosure has been enjoined (Antonyuk v. James), so this is OPTIONAL. Some applicants still choose to provide it. Skip it with no effect on your application.",
   },
   "COH-01": {
-    mode: "generate",
-    actionLabel: "Complete & generate",
+    mode: "roster",
+    roster: "cohabitants",
+    actionLabel: "List your household",
+    customerTitle: "A notarized statement from every adult in your home",
     questionnaireId: "cohabitant-affidavit",
+    manageHref: "/portal/people?tab=household",
     documentType: "cohabitant_affidavit",
-    // Signed by the COHABITANT / REFERENCE, not the applicant — each signer
-    // signs their own copy through the tokenized outreach flow, then it's
-    // notarized and uploaded. There is nothing here for the applicant to sign.
-    signable: false,
     notarize: true,
     sensitive: true,
-    customerTitle: "A notarized statement from every adult in your home",
-    help: "A notarized affidavit from every household member 18 or older — or, if you live alone, a sole-occupancy statement. We prepare each one; each signer notarizes it and you upload the signed copy.",
+    help: "Every household member 18 or older signs a short affidavit acknowledging a licensed firearm in the home, and has it notarized. We send each of them a private link — nothing for you to chase by hand. If you live alone, we prepare a sole-occupancy statement for you to sign instead.",
   },
   "REF-01": {
-    mode: "generate",
+    mode: "roster",
+    roster: "references",
+    minimum: 4,
     actionLabel: "Invite your references",
+    customerTitle: "Four people who'll vouch for you",
     questionnaireId: "references",
+    manageHref: "/portal/people?tab=references",
     documentType: "reference_letter",
-    // Signed by the COHABITANT / REFERENCE, not the applicant — each signer
-    // signs their own copy through the tokenized outreach flow, then it's
-    // notarized and uploaded. There is nothing here for the applicant to sign.
-    signable: false,
     notarize: true,
     sensitive: true,
-    customerTitle: "Four people who'll vouch for you",
-    help: "Four character references, at least two not related to you. Each gets a private link to complete and notarize their letter. The requirement completes when the notarized letters are in.",
+    help: "Four character references, at least two not related to you. Each gets a private link to write and notarize their letter. The requirement completes when the notarized letters are in.",
   },
   "REF-02": {
-    mode: "generate",
+    mode: "roster",
+    roster: "references",
+    minimum: 2,
     actionLabel: "Invite your references",
+    customerTitle: "Two people who'll vouch for you",
     questionnaireId: "references",
+    manageHref: "/portal/people?tab=references",
     documentType: "reference_letter",
-    // Signed by the COHABITANT / REFERENCE, not the applicant — each signer
-    // signs their own copy through the tokenized outreach flow, then it's
-    // notarized and uploaded. There is nothing here for the applicant to sign.
-    signable: false,
     notarize: true,
     sensitive: true,
-    customerTitle: "Two people who'll vouch for you",
-    help: "Two non-family character references for a premises license. Each gets a private link to complete and notarize their letter.",
+    help: "Two non-family character references for a premises license. Each gets a private link to write and notarize their letter.",
   },
   "DSC-01": {
     mode: "generate",
@@ -470,13 +490,21 @@ export function actionFor(reqCode: string): RequirementAction | null {
 }
 
 /**
- * Does this requirement's document need the applicant's signature before it
- * counts? Generated documents do unless they explicitly opt out; nothing else
- * does (an upload is evidence the applicant obtained, not something they sign
- * here).
+ * Does this requirement produce a document the APPLICANT signs?
+ *
+ * Generated documents do unless they explicitly opt out. An upload doesn't — it's
+ * evidence they obtained, not something signed here. A references roster doesn't
+ * either: each reference signs their own letter.
+ *
+ * A cohabitants roster is the one that cuts both ways. With housemates, each of
+ * them signs their own affidavit. Living alone, it collapses to ONE document the
+ * applicant signs themselves — the sole-occupancy statement — so it follows the
+ * normal generate → sign → notarize path.
  */
 export function isSignable(action: RequirementAction | null): boolean {
-  return action?.mode === "generate" && action.signable !== false
+  if (!action) return false
+  if (action.mode === "generate") return action.signable !== false
+  return action.mode === "roster" && action.roster === "cohabitants"
 }
 
 /** Requirement codes whose documents must never reach an instructor. */

@@ -22,7 +22,16 @@ import {
 
 export const metadata = { title: "References & household" }
 
-export default async function PeoplePage() {
+export default async function PeoplePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
+  // The checklist deep-links straight to the roster it's asking about, so
+  // "Manage household" lands on household rather than making them find the tab.
+  const { tab } = await searchParams
+  const initialTab = tab === "household" ? "household" : "references"
+
   const myCase = await getMyCase()
   if (!myCase) {
     return (
@@ -60,7 +69,7 @@ export default async function PeoplePage() {
         </p>
       </div>
 
-      <Tabs defaultValue="references">
+      <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="references">References ({refs.data?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="household">Household ({cohabs.data?.length ?? 0})</TabsTrigger>

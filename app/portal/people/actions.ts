@@ -5,8 +5,8 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
-import { sendEmail } from "@/lib/email"
-import { newReferenceToken, tokenExpiry, recomputeReferenceRequirement } from "@/lib/references/process"
+import { recomputeReferenceRequirement } from "@/lib/references/process"
+import { inviteReference, inviteCohabitant } from "@/lib/outreach"
 import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
 
 /** Send (or re-send) a tokenized self-serve link to a character reference. */
@@ -14,61 +14,17 @@ export async function sendReferenceRequest(formData: FormData) {
   await requireRole(["client", "staff", "admin"])
   const referenceId = String(formData.get("referenceId") ?? "")
 
+  // Ownership check through RLS before the service-role helper touches anything.
   const supabase = await createClient()
   const { data: ref } = await supabase
     .from("character_references")
-    .select("id, case_id, name, contact_email")
+    .select("id, case_id, contact_email")
     .eq("id", referenceId)
     .maybeSingle()
   if (!ref) throw new Error("Reference not found")
   if (!ref.contact_email) throw new Error("Add an email for this reference first")
 
-  const admin = createAdminClient()
-  let token: string
-  const { data: existing } = await admin
-    .from("reference_requests")
-    .select("id, token, revoked_at")
-    .eq("reference_id", referenceId)
-    .maybeSingle()
-  if (existing) {
-    // V3-P0.4 — resend rotates a revoked token and always resets the 30-day window.
-    token = existing.revoked_at ? newReferenceToken() : existing.token
-    await admin
-      .from("reference_requests")
-      .update({
-        token,
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        expires_at: tokenExpiry(),
-        revoked_at: null,
-      })
-      .eq("id", existing.id)
-  } else {
-    token = newReferenceToken()
-    await admin.from("reference_requests").insert({
-      reference_id: referenceId,
-      case_id: ref.case_id,
-      token,
-      status: "sent",
-      sent_at: new Date().toISOString(),
-      expires_at: tokenExpiry(),
-    })
-  }
-
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  const link = `${base}/r/${token}`
-  await sendEmail({
-    to: ref.contact_email,
-    subject: "Character reference request — Gun License NYC",
-    html: `<div style="font-family:sans-serif;line-height:1.5">
-      <p>Hi ${ref.name},</p>
-      <p>An applicant listed you as a character reference for their NYC concealed-carry
-      license. Please confirm and attest below — it takes a minute, no account needed:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p style="color:#666;font-size:12px">— ${"Gun License NYC"}</p>
-    </div>`,
-    text: `Confirm your character reference: ${link}`,
-  })
+  await inviteReference(createAdminClient(), referenceId)
 
   await logActivity({
     action: "reference.request_sent",
@@ -157,32 +113,18 @@ export async function recordCohabitantUpload(input: {
 export async function sendCohabitantRequest(formData: FormData) {
   await requireRole(["client", "staff", "admin"])
   const cohabitantId = String(formData.get("cohabitantId") ?? "")
+
   const supabase = await createClient()
   const { data: cohab } = await supabase
     .from("cohabitants")
-    .select("id, case_id, name, contact_email, token, token_revoked_at")
+    .select("id, case_id, contact_email")
     .eq("id", cohabitantId)
     .maybeSingle()
   if (!cohab) throw new Error("Cohabitant not found")
   if (!cohab.contact_email) throw new Error("Add an email for this cohabitant first")
 
-  const admin = createAdminClient()
-  // V3-P0.4 — resend rotates a revoked token and always resets the 30-day window.
-  const token = !cohab.token || cohab.token_revoked_at ? newReferenceToken() : cohab.token
-  await admin
-    .from("cohabitants")
-    .update({ token, token_expires_at: tokenExpiry(), token_revoked_at: null })
-    .eq("id", cohab.id)
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  const link = `${base}/c/${token}`
-  await sendEmail({
-    to: cohab.contact_email,
-    subject: "Please complete a cohabitant affidavit — Gun License NYC",
-    html: `<div style="font-family:sans-serif;line-height:1.5"><p>Hi ${cohab.name},</p>
-      <p>Please confirm and complete your cohabitant affidavit here — no account needed:</p>
-      <p><a href="${link}">${link}</a></p></div>`,
-    text: `Complete your cohabitant affidavit: ${link}`,
-  })
+  await inviteCohabitant(createAdminClient(), cohabitantId)
+
   await logActivity({ action: "cohabitant.request_sent", caseId: cohab.case_id, entity: "cohabitant", entityId: cohab.id })
   revalidatePath("/portal/people")
   revalidatePath("/admin/cases", "layout")

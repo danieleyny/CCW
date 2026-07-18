@@ -9,6 +9,10 @@ export interface CohabitantAffidavitInput {
   signaturePng?: Uint8Array
   /** Short case reference for the letterhead. */
   caseRef?: string
+  /** Execution date — printed on the signature rule; absent ⇒ blank rule. */
+  signedAt?: Date
+  /** Unsigned copy: banner every page. */
+  draft?: boolean
 }
 
 /** Pre-filled cohabitant affidavit (or "sole occupant" statement), notary-ready. */
@@ -48,6 +52,8 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
     c.notaryBlock(input.cohabitantName)
   }, {
     signaturePng: input.signaturePng,
+    signedAt: input.signedAt,
+    draft: input.draft,
     applicantName: input.applicantName,
     caseRef: input.caseRef,
     docTitle: input.liveAlone ? "Statement of Sole Occupancy" : "Cohabitant Affidavit",

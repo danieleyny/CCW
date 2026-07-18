@@ -90,7 +90,9 @@ export function computeNextStep(args: {
         ? "See how to get it"
         : action?.mode === "generate"
           ? "Start it now"
-          : "Take a look",
+          : action?.mode === "roster"
+            ? "Invite them now"
+            : "Take a look",
     waiting: false,
     done,
     total,

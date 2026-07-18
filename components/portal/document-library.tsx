@@ -184,7 +184,9 @@ export function DocumentLibrary({
                     <p className="text-xs text-text-low">
                       {actionFor(e.reqCode)?.mode === "attest"
                         ? "Confirmed on platform — no file needed."
-                        : "Completed — no file attached."}
+                        : actionFor(e.reqCode)?.mode === "roster"
+                          ? "Completed — the notarized copies are recorded against each person."
+                          : "Completed — no file attached."}
                     </p>
                   )}
                 </li>

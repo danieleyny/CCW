@@ -10,6 +10,9 @@ import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { toUserFacingError } from "@/lib/schema-health"
+import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
+import { recomputeReferenceRequirement } from "@/lib/references/process"
+import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
 import {
   renderRequirementDocument,
   renderCompanionDocument,
@@ -21,6 +24,13 @@ import {
 import { headers } from "next/headers"
 
 type Result = { error?: string; ok?: boolean; documentId?: string; needsSignature?: boolean }
+
+export interface RosterResult extends Result {
+  /** Human-readable summary of what the submission actually did. */
+  summary?: string
+  /** People with no email — the applicant sends them the link themselves. */
+  needEmail?: string[]
+}
 
 /** Save (or update) a requirement's questionnaire answers. Client-owned via RLS. */
 export async function saveRequirementAnswers(
@@ -67,7 +77,10 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
   if (!myCase) return { error: "No case found" }
 
   const action = actionFor(reqCode)
-  if (!action || action.mode !== "generate") return { error: "That requirement isn't generated on-platform." }
+  // A cohabitants roster reaches here only for the sole-occupancy statement —
+  // the one document in that flow the applicant signs themselves.
+  const generates = action?.mode === "generate" || (action?.mode === "roster" && action.roster === "cohabitants")
+  if (!action || !generates) return { error: "That requirement isn't generated on-platform." }
   const signable = isSignable(action)
 
   const supabase = await createClient()
@@ -151,6 +164,106 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
   revalidatePath("/portal/checklist")
   revalidatePath("/portal/documents")
   return { ok: true, documentId, needsSignature: signable }
+}
+
+/**
+ * ROSTER requirements (COH-01, REF-01/02): the documents are written and
+ * notarized by other people, so "completing" this means naming them and getting
+ * each of them their own private link — not producing a PDF. Routing these
+ * through the generator is what produced "No generator for COH-01".
+ *
+ * The one exception is living alone: then COH-01 becomes the applicant's own
+ * sole-occupancy statement, which follows the normal generate → sign → notarize
+ * path.
+ *
+ * Submitting the list NEVER satisfies the requirement. Only notarized copies
+ * coming back do.
+ */
+export async function submitRequirementRoster(
+  reqCode: string,
+  answers: Record<string, unknown>
+): Promise<RosterResult> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found" }
+
+  const action = actionFor(reqCode)
+  if (action?.mode !== "roster") return { error: "That requirement isn't a list of people." }
+
+  // Keep the answers so re-opening the questionnaire shows what they entered.
+  const supabase = await createClient()
+  await supabase.from("requirement_answers").upsert(
+    { case_id: myCase.id, req_code: reqCode, answers: answers as never, completed_at: new Date().toISOString() },
+    { onConflict: "case_id,req_code" }
+  )
+
+  // Service role: creating people rows + minting capability tokens on tables the
+  // client may not arbitrarily write. Ownership proven by getMyCase above.
+  const admin = createAdminClient()
+
+  try {
+    if (action.roster === "cohabitants" && livesAlone(answers)) {
+      // Living alone → their OWN statement, signed then notarized. Any household
+      // rows from a previous answer that carry no evidence are cleared, so the
+      // case doesn't claim both "I live alone" and a roster of housemates.
+      await syncCohabitants(admin, myCase.id, [])
+      const gen = await generateRequirementDocument(reqCode)
+      if (gen.error) return gen
+      return {
+        ok: true,
+        documentId: gen.documentId,
+        needsSignature: gen.needsSignature,
+        summary: "We prepared your sole-occupancy statement. Sign it, then have it notarized and upload the signed copy.",
+      }
+    }
+
+    const people = peopleFromAnswers(answers, action.roster)
+    if (people.length === 0) {
+      return { error: "Add at least one person, or tell us you live alone." }
+    }
+
+    const sync =
+      action.roster === "references"
+        ? await syncReferences(admin, myCase.id, people)
+        : await syncCohabitants(admin, myCase.id, people)
+
+    // Recompute from evidence — never from the fact that a list was submitted.
+    if (action.roster === "references") await recomputeReferenceRequirement(admin, myCase.id)
+    else await recomputeCohabitantRequirement(admin, myCase.id)
+
+    await logActivity({
+      action: "requirement.roster_submitted",
+      caseId: myCase.id,
+      entity: "case_requirement",
+      detail: { req_code: reqCode, ...sync },
+    })
+    revalidatePath("/portal/checklist")
+    revalidatePath("/portal/documents")
+    revalidatePath("/portal/people")
+
+    const noun = action.roster === "references" ? "reference" : "household member"
+    const parts: string[] = []
+    if (sync.invited > 0) parts.push(`Sent ${sync.invited} private link${sync.invited === 1 ? "" : "s"} by email.`)
+    if (sync.needEmail.length > 0) {
+      parts.push(
+        `${sync.needEmail.length} ${noun}${sync.needEmail.length === 1 ? "" : "s"} (${sync.needEmail.join(", ")}) ${
+          sync.needEmail.length === 1 ? "has" : "have"
+        } no email — copy their link from References & household and send it yourself.`
+      )
+    }
+    if (sync.keptWithEvidence.length > 0) {
+      // "Evidence" here means received OR notarized — don't claim notarized when
+      // we only have a submitted letter.
+      parts.push(
+        `Kept ${sync.keptWithEvidence.join(", ")} — we already have their document on file, so removing them from the list wouldn't remove it.`
+      )
+    }
+    parts.push("This completes when the notarized copies come back.")
+
+    return { ok: true, summary: parts.join(" "), needEmail: sync.needEmail }
+  } catch (e) {
+    return { error: toUserFacingError(e, "Could not set up those invitations") }
+  }
 }
 
 /**

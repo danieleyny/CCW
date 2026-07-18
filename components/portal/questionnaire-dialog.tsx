@@ -4,7 +4,12 @@ import { useState, useTransition } from "react"
 import { Plus, Trash2, ShieldAlert, Scale } from "lucide-react"
 import { toast } from "sonner"
 import type { Field, Questionnaire } from "@/lib/requirements/questionnaires"
-import { saveRequirementAnswers, generateRequirementDocument } from "@/app/portal/requirements/actions"
+import {
+  saveRequirementAnswers,
+  generateRequirementDocument,
+  submitRequirementRoster,
+} from "@/app/portal/requirements/actions"
+import { actionFor } from "@/lib/requirements/actions"
 import { SignDocument } from "@/components/portal/sign-document"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -54,6 +59,24 @@ export function QuestionnaireDialog({
 
   function submit() {
     startTransition(async () => {
+      // ROSTER: these documents are written and notarized by other people. The
+      // submission creates them and sends each their private link — there is no
+      // PDF to generate, which is what used to dead-end here.
+      if (actionFor(reqCode)?.mode === "roster") {
+        const r = await submitRequirementRoster(reqCode, values)
+        if (r.error) {
+          toast.error(r.error)
+          return
+        }
+        if (r.needsSignature) {
+          setStep("sign")
+          return
+        }
+        toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
+        onOpenChange(false)
+        return
+      }
+
       const saved = await saveRequirementAnswers(reqCode, values)
       if (saved.error) {
         toast.error(saved.error)

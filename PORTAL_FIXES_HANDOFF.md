@@ -112,12 +112,14 @@ Passing: `verify-esign`, `verify-v3p0`, `verify-v3p1`, `verify-v3p3`,
 - **Deploy**: migration `20260718000900_document_signing.sql` is local-only.
   `supabase migration list --linked` for drift, then `supabase db push`, then
   re-run `repair-generated-doc-types.ts` against prod.
-- **Doc-engine leftovers** (unchanged from before): the `references` and
-  `cohabitant-affidavit` questionnaires collect answers but aren't wired into the
-  token-outreach flows, so COH-01/REF-01/REF-02 have **no generator** —
-  `renderRequirementDocument` throws for them. The checklist offers
-  "Complete & generate" on those rows and it will fail. **This is the biggest
-  remaining hole.**
+- ~~Doc-engine leftovers: COH-01/REF-01/REF-02 have no generator~~ **FIXED.**
+  They were never documents the applicant signs, so they're no longer `generate`
+  at all — they're a fourth mode, `roster`: the applicant names the people, each
+  person gets a tokenized link (`/r/…`, `/c/…`), and the requirement completes on
+  notarized copies coming back. Living alone collapses COH-01 to the applicant's
+  own sole-occupancy statement, which follows the normal generate → sign →
+  notarize path. `lib/requirements/roster.ts` syncs the people and never deletes
+  anyone whose document is already on file.
 - The application worksheet has a generator but no questionnaire;
   `court-request-letters` has no schema of its own.
 - `lib/pdf/acroform.ts` stays dormant — no official fillable template is bundled.

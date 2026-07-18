@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { ChevronDown, Download, ExternalLink, FileText, Check, Stamp, PenLine } from "lucide-react"
+import { ChevronDown, Download, ExternalLink, FileText, Check, Stamp, PenLine, Users } from "lucide-react"
 import { toast } from "sonner"
 import type { Database } from "@/lib/supabase/types"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
@@ -201,6 +201,106 @@ export function RequirementAction({
             label={action.actionLabel}
             current={null}
             photoSpec={reqCode === "IDN-04"}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // ── roster ────────────────────────────────────────────────────────────────
+  // Documents somebody ELSE writes and notarizes. The applicant names them; each
+  // person gets their own link. Nothing here is signed by the applicant, which
+  // is why this can't be a "generate".
+  if (action.mode === "roster") {
+    const q = questionnaireFor(action.questionnaireId)
+    // Living alone collapses this to ONE document the applicant signs themselves
+    // (the sole-occupancy statement), so that path shows the normal
+    // draft → sign → notarize controls instead of invitation copy.
+    const soleOccupancy = action.roster === "cohabitants" && !!generated
+    const needsSignature = soleOccupancy && !generated!.signedAt
+
+    return (
+      <div className="mt-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {q && (
+            <Button
+              size="sm"
+              variant={done || needsSignature ? "outline" : "default"}
+              onClick={() => setOpen(true)}
+            >
+              <Users className="mr-1.5 size-3.5" />
+              {soleOccupancy ? "Edit my answer" : action.actionLabel}
+            </Button>
+          )}
+          {needsSignature && !signing && (
+            <Button size="sm" onClick={() => setSigning(true)}>
+              <PenLine className="mr-1.5 size-3.5" /> Review &amp; sign
+            </Button>
+          )}
+          {generated?.url && (
+            <Button size="sm" variant="outline" asChild>
+              <a href={generated.url} target="_blank" rel="noreferrer">
+                <Download className="mr-1.5 size-3.5" />
+                {generated.signedAt ? "Download" : "Read the draft"}
+              </a>
+            </Button>
+          )}
+          {!soleOccupancy && (
+            <Button size="sm" variant="outline" asChild>
+              <a href={action.manageHref}>
+                <ExternalLink className="mr-1.5 size-3.5" />
+                {action.roster === "references" ? "Manage invitations" : "Manage household"}
+              </a>
+            </Button>
+          )}
+        </div>
+
+        {needsSignature && (
+          <p className="flex items-start gap-1.5 rounded-md border border-brass/30 bg-brass/10 p-2 text-xs text-brass">
+            <PenLine className="mt-0.5 size-3.5 shrink-0" />
+            Draft — unsigned. It doesn&apos;t count toward your application until you sign it, and
+            the date on it will be the date you sign.
+          </p>
+        )}
+
+        {needsSignature && signing && (
+          <SignDocument
+            reqCode={reqCode}
+            signatureOnFile={signatureOnFile}
+            onSigned={() => setSigning(false)}
+          />
+        )}
+
+        {!done && (
+          <p className="flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
+            <Stamp className="mt-0.5 size-3.5 shrink-0" />
+            {soleOccupancy
+              ? "Once it's signed, have it notarized and upload the signed copy — that's what completes this."
+              : action.roster === "references"
+                ? "Each reference writes and notarizes their own letter through a private link. This completes when the notarized letters are uploaded."
+                : "Each adult in your home signs and notarizes their own affidavit through a private link. This completes when the notarized copies are uploaded."}
+          </p>
+        )}
+
+        {soleOccupancy && !done && generated?.signedAt && action.documentType && (
+          <DocumentUploader
+            caseId={caseId}
+            clientId={clientId}
+            type={action.documentType as DocumentType}
+            reqCode={reqCode}
+            label="Upload the notarized copy"
+            current={null}
+          />
+        )}
+
+        {q && (
+          <QuestionnaireDialog
+            open={open}
+            onOpenChange={setOpen}
+            reqCode={reqCode}
+            questionnaire={q}
+            initial={prefill}
+            signatureOnFile={signatureOnFile}
           />
         )}
       </div>

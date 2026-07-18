@@ -97,10 +97,13 @@ describe("requirement → action map", () => {
       for (const code of ["AFF-01", "SAF-01", "SOC-01", "DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01"]) {
         expect(isSignable(actionFor(code)), `${code} must require a signature`).toBe(true)
       }
-      // Signed by the reference / cohabitant through the token flow, not here.
-      for (const code of ["COH-01", "REF-01", "REF-02"]) {
+      // Reference letters are signed by the reference through the token flow.
+      for (const code of ["REF-01", "REF-02"]) {
         expect(isSignable(actionFor(code)), `${code} must NOT be applicant-signed`).toBe(false)
       }
+      // COH-01 cuts both ways: housemates sign their own affidavits, but living
+      // alone collapses to the applicant's own sole-occupancy statement.
+      expect(isSignable(actionFor("COH-01"))).toBe(true)
       // An upload is evidence, not something signed on platform.
       expect(isSignable(actionFor("IDN-01"))).toBe(false)
     })
