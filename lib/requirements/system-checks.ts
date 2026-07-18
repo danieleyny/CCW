@@ -57,11 +57,11 @@ function ageFrom(dob: string | undefined): number | null {
   const d = new Date(`${dob}T00:00:00Z`)
   if (Number.isNaN(d.getTime())) return null
   const now = new Date()
-  let age = now.getUTCFullYear() - d.getUTCFullYear()
+  const years = now.getUTCFullYear() - d.getUTCFullYear()
   const beforeBirthday =
     now.getUTCMonth() < d.getUTCMonth() ||
     (now.getUTCMonth() === d.getUTCMonth() && now.getUTCDate() < d.getUTCDate())
-  return beforeBirthday ? age - 1 : age
+  return beforeBirthday ? years - 1 : years
 }
 
 /**
