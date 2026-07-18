@@ -29,6 +29,10 @@ export function InstructorSignupForm() {
           <Input id="password" name="password" type="password" required minLength={8} className="mt-auto" />
         </div>
         <div className="flex flex-col gap-1.5">
+          <Label htmlFor="phone" className="text-xs">Phone (optional)</Label>
+          <Input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" className="mt-auto" />
+        </div>
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="dcjsId" className="text-xs">DCJS instructor ID (optional)</Label>
           <Input id="dcjsId" name="dcjsId" placeholder="DAI-…" className="mt-auto" />
         </div>
@@ -49,6 +53,17 @@ export function InstructorSignupForm() {
           <Label htmlFor="radiusMi" className="text-xs">Service radius (miles)</Label>
           <Input id="radiusMi" name="radiusMi" type="number" min={1} max={100} defaultValue={25} className="mt-auto" />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="bio" className="text-xs">Short bio (optional — applicants read this)</Label>
+        <textarea
+          id="bio"
+          name="bio"
+          rows={3}
+          maxLength={1000}
+          placeholder="Years of experience, teaching style, what first-timers can expect…"
+          className="w-full rounded-md border border-hairline-strong bg-surface-3 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-text-low focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40"
+        />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="price18hDollars" className="text-xs">18-hr course price (USD, optional)</Label>

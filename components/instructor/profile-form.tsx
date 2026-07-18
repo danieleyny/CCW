@@ -11,16 +11,27 @@ import { Textarea } from "@/components/ui/textarea"
 export function InstructorProfileForm({
   initial,
 }: {
-  initial: { bio: string; dcjsId: string; borough: string; radiusMi: number; price18hDollars: string }
+  initial: {
+    bio: string
+    phone: string
+    dcjsId: string
+    borough: string
+    radiusMi: number
+    price18hDollars: string
+  }
 }) {
   const [state, action, pending] = useActionState(updateInstructorProfile, {})
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="bio" className="text-xs">Bio</Label>
+        <Label htmlFor="bio" className="text-xs">Bio <span className="text-text-low">(applicants read this when choosing)</span></Label>
         <Textarea id="bio" name="bio" rows={3} defaultValue={initial.bio} placeholder="Your experience, specialties, range affiliations…" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="phone" className="text-xs">Phone</Label>
+          <Input id="phone" name="phone" type="tel" defaultValue={initial.phone} placeholder="(555) 123-4567" />
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="dcjsId" className="text-xs">DCJS Duly-Authorized-Instructor ID</Label>
           <Input id="dcjsId" name="dcjsId" defaultValue={initial.dcjsId} placeholder="DAI-…" />

@@ -17,6 +17,8 @@ const registerSchema = z.object({
   name: z.string().min(2, "Enter your full name"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Use at least 8 characters"),
+  phone: z.string().max(30).optional().or(z.literal("")),
+  bio: z.string().max(1000).optional().or(z.literal("")),
   dcjsId: z.string().optional().or(z.literal("")),
   borough: boroughEnum,
   radiusMi: z.coerce.number().int().min(1).max(100).default(25),
@@ -33,6 +35,8 @@ export async function registerInstructor(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    phone: formData.get("phone") ?? "",
+    bio: formData.get("bio") ?? "",
     dcjsId: formData.get("dcjsId") ?? "",
     borough: formData.get("borough"),
     radiusMi: formData.get("radiusMi") ?? 25,
@@ -59,6 +63,8 @@ export async function registerInstructor(
     profile_id: created.user.id,
     name: input.name,
     email: input.email,
+    phone: input.phone || null,
+    bio: input.bio || null,
     dcjs_id: input.dcjsId || null,
     service_radius_mi: input.radiusMi,
     price_18h_cents: input.price18hCents ?? null,
@@ -81,6 +87,7 @@ export async function registerInstructor(
 
 const profileSchema = z.object({
   bio: z.string().optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
   dcjsId: z.string().optional().or(z.literal("")),
   borough: boroughEnum,
   radiusMi: z.coerce.number().int().min(1).max(100),
@@ -96,6 +103,7 @@ export async function updateInstructorProfile(
   await requireRole(["instructor"])
   const parsed = profileSchema.safeParse({
     bio: formData.get("bio") ?? "",
+    phone: formData.get("phone") ?? "",
     dcjsId: formData.get("dcjsId") ?? "",
     borough: formData.get("borough"),
     radiusMi: formData.get("radiusMi"),
@@ -113,6 +121,7 @@ export async function updateInstructorProfile(
     .from("instructors")
     .update({
       bio: input.bio || null,
+      phone: input.phone || null,
       dcjs_id: input.dcjsId || null,
       service_radius_mi: input.radiusMi,
       price_18h_cents: input.price18hDollars != null ? Math.round(input.price18hDollars * 100) : null,

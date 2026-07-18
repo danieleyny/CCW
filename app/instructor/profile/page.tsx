@@ -15,6 +15,14 @@ export default async function InstructorProfilePage() {
   if (!me) return <p className="text-sm text-text-mid">Profile not found.</p>
   const locations = await getMyTrainingLocations(me.id)
 
+  // Completeness: applicants choose among instructors, so a thin profile loses
+  // work. Surface exactly what's missing.
+  const missing: string[] = []
+  if (!me.bio) missing.push("a short bio")
+  if (!me.price_18h_cents) missing.push("your 18-hour course price")
+  if (!me.phone) missing.push("a phone number")
+  if (locations.length === 0) missing.push("at least one training location")
+
   return (
     <div className="space-y-6">
       <div>
@@ -24,11 +32,19 @@ export default async function InstructorProfilePage() {
         </p>
       </div>
 
+      {missing.length > 0 && (
+        <div className="rounded-md border border-brass/30 bg-brass/8 px-4 py-3 text-sm text-brass-bright">
+          <span className="font-medium">Complete your profile to win more work.</span> Applicants
+          compare instructors side by side — add {missing.join(", ")}.
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-5">
           <InstructorProfileForm
             initial={{
               bio: me.bio ?? "",
+              phone: me.phone ?? "",
               dcjsId: me.dcjs_id ?? "",
               borough: boroughFromLatLng(me.lat, me.lng) ?? "Manhattan",
               radiusMi: me.service_radius_mi,
