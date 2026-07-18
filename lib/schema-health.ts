@@ -23,6 +23,7 @@ export const REQUIRED_COLUMNS: { table: string; column: string; since: string }[
   { table: "requirement_answers", column: "answers", since: "20260718000500_document_engine" },
   { table: "signature_events", column: "document_sha256", since: "20260718000600_signing_audit_and_evidence" },
   { table: "signatures", column: "consent_text", since: "20260718000600_signing_audit_and_evidence" },
+  { table: "fees", column: "amount_cents", since: "fee schedule (V4-A4f)" },
 ]
 
 /** PGRST204 / PGRST202: the column or relation isn't in PostgREST's schema cache. */
