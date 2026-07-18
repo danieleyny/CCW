@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MarketplacePanel } from "@/components/portal/marketplace-panel"
+import { LocationPrompt } from "@/components/portal/location-prompt"
 import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
 import { cancelOffer } from "./actions"
 
@@ -91,6 +92,8 @@ export default async function MarketplacePage() {
           borough and what you need — never your identity — until you&apos;re matched.
         </p>
       </div>
+
+      <LocationPrompt zip={myCase.client.zip} borough={myCase.client.borough} />
 
       <MarketplacePanel hasOpenOffer={hasOpenOffer} />
 

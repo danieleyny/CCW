@@ -34,11 +34,38 @@ function normalizeBorough(b: string): string {
   return b.trim().toLowerCase().replace(/^the\s+/, "")
 }
 
-/** Resolve an NYC borough and/or ZIP to a cached centroid. */
+/**
+ * Map a NYC ZIP to its borough by prefix, so any in-city ZIP resolves to at
+ * least a borough centroid even when it isn't in the exact-centroid table.
+ * Ranges per USPS: SI 103xx, Bronx 104xx, Queens 110xx/111xx/113xx/114xx/116xx,
+ * Brooklyn 112xx, Manhattan 100xx/101xx/102xx.
+ */
+export function boroughFromZip(zip: string | null | undefined): string | null {
+  if (!zip) return null
+  const z = zip.trim().slice(0, 5)
+  if (!/^\d{5}$/.test(z)) return null
+  const p3 = z.slice(0, 3)
+  if (p3 === "103") return "Staten Island"
+  if (p3 === "104") return "Bronx"
+  if (["110", "111", "113", "114", "116"].includes(p3)) return "Queens"
+  if (p3 === "112") return "Brooklyn"
+  if (["100", "101", "102"].includes(p3)) return "Manhattan"
+  return null
+}
+
+/** Is this a plausible NYC ZIP (100xx–116xx)? */
+export function isNycZip(zip: string | null | undefined): boolean {
+  return boroughFromZip(zip) !== null
+}
+
+/** Resolve an NYC borough and/or ZIP to a cached centroid. ZIP wins (finer). */
 export function geocodeNyc(input: { borough?: string | null; zip?: string | null }): LatLng | null {
   if (input.zip) {
     const z = input.zip.trim().slice(0, 5)
     if (ZIP_CENTROIDS[z]) return ZIP_CENTROIDS[z]
+    // Not in the exact table — fall back to the ZIP's borough centroid.
+    const zb = boroughFromZip(z)
+    if (zb) return BOROUGH_CENTROIDS[normalizeBorough(zb)]
   }
   if (input.borough) {
     const c = BOROUGH_CENTROIDS[normalizeBorough(input.borough)]

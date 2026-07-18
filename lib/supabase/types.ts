@@ -780,13 +780,17 @@ export type Database = {
           eligibility: Json
           email: string | null
           full_name: string
+          home_geog: unknown
           id: string
+          lat: number | null
           lead_source: string | null
           license_type: string | null
+          lng: number | null
           phone: string | null
           profile_id: string | null
           track: Database["public"]["Enums"]["client_track"]
           updated_at: string
+          zip: string | null
         }
         Insert: {
           assigned_staff?: string | null
@@ -796,13 +800,17 @@ export type Database = {
           eligibility?: Json
           email?: string | null
           full_name: string
+          home_geog?: unknown
           id?: string
+          lat?: number | null
           lead_source?: string | null
           license_type?: string | null
+          lng?: number | null
           phone?: string | null
           profile_id?: string | null
           track?: Database["public"]["Enums"]["client_track"]
           updated_at?: string
+          zip?: string | null
         }
         Update: {
           assigned_staff?: string | null
@@ -812,13 +820,17 @@ export type Database = {
           eligibility?: Json
           email?: string | null
           full_name?: string
+          home_geog?: unknown
           id?: string
+          lat?: number | null
           lead_source?: string | null
           license_type?: string | null
+          lng?: number | null
           phone?: string | null
           profile_id?: string | null
           track?: Database["public"]["Enums"]["client_track"]
           updated_at?: string
+          zip?: string | null
         }
         Relationships: [
           {

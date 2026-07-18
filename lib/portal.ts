@@ -24,7 +24,7 @@ export async function getMyCase() {
   const { data } = await supabase
     .from("cases")
     .select(
-      "id, stage, status, nypd_app_ref, target_file_date, license_expires_on, is_renewal, client_id, clients(id, full_name, email, phone, borough, track)"
+      "id, stage, status, nypd_app_ref, target_file_date, license_expires_on, is_renewal, client_id, clients(id, full_name, email, phone, borough, zip, track)"
     )
     .in("client_id", clientIds)
     // Deterministic "current case": newest, tie-broken by id, so this and
@@ -41,6 +41,7 @@ export async function getMyCase() {
     email: string | null
     phone: string | null
     borough: string | null
+    zip: string | null
     track: string
   }
   return { ...data, client }

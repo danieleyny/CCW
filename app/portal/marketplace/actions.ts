@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
 import { createAndMatchOffer } from "@/lib/marketplace/offers"
+import { geocodeNyc, boroughFromZip, isNycZip } from "@/lib/geo/nyc"
+import { getMyCase } from "@/lib/portal"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { createBookingDepositCheckout, platformFeeCents } from "@/lib/stripe/connect"
 import type { Database } from "@/lib/supabase/types"
@@ -18,13 +20,17 @@ export async function createOffer(type: OfferType): Promise<{ matched: number }>
   const supabase = await createClient()
   const { data: kase } = await supabase
     .from("cases")
-    .select("id, clients(borough, track)")
+    .select("id, clients(borough, zip, track)")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
   if (!kase) throw new Error("No case found")
 
-  const client = kase.clients as unknown as { borough: string | null; track: string } | null
+  const client = kase.clients as unknown as {
+    borough: string | null
+    zip: string | null
+    track: string
+  } | null
   const jurisdiction: Jurisdiction = client?.track === "non_resident" ? "special_carry" : "nyc"
 
   const admin = createAdminClient()
@@ -33,6 +39,7 @@ export async function createOffer(type: OfferType): Promise<{ matched: number }>
     type,
     jurisdiction,
     borough: client?.borough,
+    zip: client?.zip, // ZIP wins — finer than borough for distance ranking
   })
 
   await logActivity({
@@ -44,6 +51,35 @@ export async function createOffer(type: OfferType): Promise<{ matched: number }>
   })
   revalidatePath("/portal/marketplace")
   return { matched: res.matched }
+}
+
+/**
+ * Save the applicant's ZIP so the marketplace can rank instructors by real
+ * distance. We geocode server-side and store the derived point + borough.
+ * Service-role write of server-derived values to the caller's OWN client row
+ * (verified via getMyCase); instructors never see the ZIP, only borough+distance.
+ */
+export async function saveClientLocation(formData: FormData): Promise<{ error?: string; ok?: boolean }> {
+  await requireRole(["client"])
+  const zip = String(formData.get("zip") ?? "").trim().slice(0, 5)
+  if (!/^\d{5}$/.test(zip)) return { error: "Enter a 5-digit ZIP code." }
+  if (!isNycZip(zip)) return { error: "That doesn't look like a NYC ZIP code." }
+
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found" }
+
+  const point = geocodeNyc({ zip })
+  const borough = boroughFromZip(zip)
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from("clients")
+    .update({ zip, lat: point?.lat ?? null, lng: point?.lng ?? null, borough })
+    .eq("id", myCase.client.id)
+  if (error) return { error: error.message }
+
+  revalidatePath("/portal/marketplace")
+  return { ok: true }
 }
 
 export async function cancelOffer(formData: FormData) {
