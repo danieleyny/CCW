@@ -4,6 +4,8 @@ import { useState } from "react"
 import { Download, FileText, Sparkles, Upload as UploadIcon } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
+import type { FeeReceipts } from "@/components/portal/fee-panel"
+import type { FeeSummary } from "@/lib/fees"
 import { actionFor } from "@/lib/requirements/actions"
 import { cn } from "@/lib/utils"
 
@@ -85,6 +87,8 @@ export function DocumentLibrary({
   prefills,
   generated,
   signatureOnFile,
+  feeSummary,
+  feeReceipts,
 }: {
   needed: LibraryEntry[]
   completed: LibraryEntry[]
@@ -95,6 +99,8 @@ export function DocumentLibrary({
   prefills: Record<string, Record<string, unknown>>
   generated: Record<string, GeneratedDoc>
   signatureOnFile: string | null
+  feeSummary: FeeSummary
+  feeReceipts: FeeReceipts
 }) {
   const [showCompleted, setShowCompleted] = useState(true)
 
@@ -142,6 +148,8 @@ export function DocumentLibrary({
                   prefill={prefills[e.reqCode] ?? {}}
                   generated={generated[e.reqCode] ?? null}
                   signatureOnFile={signatureOnFile}
+                  feeSummary={feeSummary}
+                  feeReceipts={feeReceipts}
                 />
               </li>
             ))}

@@ -13,6 +13,8 @@ import { toUserFacingError } from "@/lib/schema-health"
 import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
 import { recomputeReferenceRequirement } from "@/lib/references/process"
 import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
+import { computeFeeSummary } from "@/lib/fees"
+import { renderFeeSheet } from "@/lib/pdf/fee-sheet"
 import {
   renderRequirementDocument,
   renderCompanionDocument,
@@ -420,6 +422,144 @@ export async function generateCompanionDocument(reqCode: string): Promise<Result
     return { ok: true, documentId }
   } catch (e) {
     return { error: toUserFacingError(e, "Could not generate the letter") }
+  }
+}
+
+/**
+ * FEE-01: record that the applicant understands what they'll owe, to whom, and
+ * that it's non-refundable — and what payment method they intend to use.
+ *
+ * WE NEVER TAKE THESE FEES. This is an acknowledgement, not a payment step: the
+ * NYPD application fee is paid on the NYPD portal and the fingerprint fee to the
+ * vendor at the appointment. Recording what was acknowledged (and the amounts
+ * shown at the time) is what makes this meaningful for the audit trail later.
+ */
+export async function acknowledgeFees(
+  reqCode: string,
+  input: { method?: "card" | "money_order" }
+): Promise<Result> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found" }
+  const action = actionFor(reqCode)
+  if (action?.mode !== "attest" || action.panel !== "fees") {
+    return { error: "That requirement isn't the fee step." }
+  }
+
+  const supabase = await createClient()
+  const kase = await supabase.from("cases").select("is_renewal").eq("id", myCase.id).maybeSingle()
+  const intake = await supabase
+    .from("intake_sessions")
+    .select("answers")
+    .eq("case_id", myCase.id)
+    .maybeSingle()
+  const answers = (intake.data?.answers ?? {}) as { isRetiredLeo?: boolean }
+
+  // Snapshot the amounts they were actually shown — a later fee change must not
+  // rewrite what this person acknowledged.
+  const summary = await computeFeeSummary(supabase, {
+    isRetiredLeo: answers.isRetiredLeo,
+    isRenewal: kase.data?.is_renewal,
+  })
+
+  const acknowledgement = {
+    acknowledgedAt: new Date().toISOString(),
+    method: input.method ?? null,
+    understoodNonRefundable: true,
+    paidDirectlyToAgencies: true,
+    amountsShown: summary.items.map((i) => ({ key: i.key, amount: i.amount, payTo: i.payTo, waived: !!i.waived })),
+    totalShown: summary.total,
+  }
+
+  await supabase.from("requirement_answers").upsert(
+    { case_id: myCase.id, req_code: reqCode, answers: acknowledgement as never, completed_at: new Date().toISOString() },
+    { onConflict: "case_id,req_code" }
+  )
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from("case_requirements")
+    .update({
+      status: "satisfied",
+      notes: `Applicant confirmed fee readiness (${summary.total} owed directly to the agencies${
+        input.method ? `, paying by ${input.method === "card" ? "card" : "money order"}` : ""
+      }).`,
+    })
+    .eq("case_id", myCase.id)
+    .eq("req_code", reqCode)
+    .in("status", ["pending"])
+  if (error) return { error: error.message }
+
+  await logActivity({
+    action: "requirement.fees_acknowledged",
+    caseId: myCase.id,
+    entity: "case_requirement",
+    detail: { req_code: reqCode, method: input.method ?? null, total: summary.total },
+  })
+  revalidatePath("/portal/checklist")
+  revalidatePath("/portal/documents")
+  return { ok: true }
+}
+
+/**
+ * The printable "Your fees & how to pay them" sheet — the one to take to the
+ * fingerprint appointment, where the fee is due in person.
+ */
+export async function generateFeeSheet(): Promise<Result & { url?: string }> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found" }
+
+  const supabase = await createClient()
+  const [{ data: kase }, { data: intake }] = await Promise.all([
+    supabase.from("cases").select("is_renewal").eq("id", myCase.id).maybeSingle(),
+    supabase.from("intake_sessions").select("answers").eq("case_id", myCase.id).maybeSingle(),
+  ])
+  const answers = (intake?.answers ?? {}) as { isRetiredLeo?: boolean }
+
+  try {
+    const summary = await computeFeeSummary(supabase, {
+      isRetiredLeo: answers.isRetiredLeo,
+      isRenewal: kase?.is_renewal,
+    })
+    const bytes = await renderFeeSheet({
+      applicantName: myCase.client.full_name,
+      caseRef: myCase.id.slice(0, 8),
+      summary,
+    })
+
+    // Service role: server-derived provenance on a staff-reviewed table.
+    const admin = createAdminClient()
+    const documentId = await storeGeneratedDocument(admin, {
+      caseId: myCase.id,
+      clientId: myCase.client.id,
+      reqCode: "FEE-01",
+      doc: {
+        bytes,
+        fileName: "fee-sheet.pdf",
+        documentType: "fee_sheet",
+        label: "Your fees & how to pay them",
+      },
+    })
+
+    const { data: doc } = await admin.from("documents").select("file_path").eq("id", documentId).single()
+    let url: string | null = null
+    if (doc?.file_path) {
+      const { data } = await supabase.storage.from("documents").createSignedUrl(doc.file_path, 3600)
+      url = data?.signedUrl ?? null
+    }
+
+    await logActivity({
+      action: "requirement.fee_sheet_generated",
+      caseId: myCase.id,
+      entity: "document",
+      entityId: documentId,
+      detail: { total: summary.total },
+    })
+    revalidatePath("/portal/documents")
+    return { ok: true, documentId, url: url ?? undefined }
+  } catch (e) {
+    return { error: toUserFacingError(e, "Could not prepare your fee sheet") }
   }
 }
 

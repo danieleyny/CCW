@@ -6,6 +6,8 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { actionFor } from "@/lib/requirements/actions"
+import type { FeeSummary } from "@/lib/fees"
+import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { cn } from "@/lib/utils"
 
 export interface ReqChecklistItem {
@@ -47,6 +49,8 @@ export function RequirementsChecklist({
   prefills,
   generated,
   signatureOnFile,
+  feeSummary,
+  feeReceipts,
 }: {
   items: ReqChecklistItem[]
   caseId: string
@@ -57,6 +61,8 @@ export function RequirementsChecklist({
   generated: Record<string, GeneratedDoc>
   /** Base64 PNG of the applicant's signature on file, if they've captured one. */
   signatureOnFile: string | null
+  feeSummary: FeeSummary
+  feeReceipts: FeeReceipts
 }) {
   // System controls (FMT-01, the intake-derived eligibility items) are things we
   // verify, not tasks for the customer — showing them as "Confirm" buttons was
@@ -165,6 +171,8 @@ export function RequirementsChecklist({
               prefill={prefills[item.reqCode] ?? {}}
               generated={generated[item.reqCode] ?? null}
               signatureOnFile={signatureOnFile}
+              feeSummary={feeSummary}
+              feeReceipts={feeReceipts}
             />
           </li>
         ))}

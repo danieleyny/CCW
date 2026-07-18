@@ -108,6 +108,14 @@ interface ObtainAction extends ActionBase {
 
 interface AttestAction extends ActionBase {
   mode: "attest"
+  /**
+   * Some confirmations deserve more than a button. FEE-01 asked people to
+   * "Confirm" a paragraph about money they hadn't been shown — this opens a real
+   * panel (what's owed, to whom, when, how) and the confirmation then means
+   * something. The panel never collects the fees; we legally can't and must not
+   * appear to.
+   */
+  panel?: "fees"
 }
 
 /**
@@ -154,9 +162,10 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   },
   "FEE-01": {
     mode: "attest",
-    actionLabel: "Confirm",
-    customerTitle: "Be ready for the NYPD and fingerprint fees at filing",
-    help: "The application and fingerprinting fees are paid to the NYPD and the fingerprint vendor when you file — not to us. Confirm you're ready for them at filing.",
+    panel: "fees",
+    actionLabel: "See what you'll owe",
+    customerTitle: "Be ready for the NYPD and fingerprint fees",
+    help: "Two government fees, both paid by you directly: the application fee to the NYPD License Division on their portal, and the fingerprint fee to the DCJS-approved vendor at your appointment. Neither is ever paid to us. Retired law enforcement: your application fee is waived.",
   },
   "FMT-01": {
     mode: "attest",

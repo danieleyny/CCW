@@ -19,6 +19,8 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 import type { GeneratedDoc } from "@/components/portal/requirement-action"
 import type { ReqChecklistItem } from "@/components/portal/requirements-checklist"
 import type { LibraryFile } from "@/components/portal/document-library"
+import type { FeeReceipts } from "@/components/portal/fee-panel"
+import { computeFeeSummary, type FeeSummary } from "@/lib/fees"
 
 type DB = SupabaseClient<Database>
 
@@ -33,10 +35,14 @@ export interface RequirementView {
   /** Files that belong to no requirement — request letters, worksheets. */
   looseFiles: LibraryFile[]
   signatureOnFile: string | null
+  /** FEE-01's personalized breakdown — computed here so every surface agrees. */
+  feeSummary: FeeSummary
+  /** Whether they've filed each fee receipt (tracking only; never gates FEE-01). */
+  feeReceipts: FeeReceipts
 }
 
 export async function loadRequirementView(db: DB, myCase: MyCase): Promise<RequirementView> {
-  const [reqRows, { data: intake }, { data: savedAnswers }, { data: docs }, { data: sig }] =
+  const [reqRows, { data: intake }, { data: savedAnswers }, { data: docs }, { data: sig }, { data: kase }] =
     await Promise.all([
       getCaseRequirements(db, myCase.id),
       db.from("intake_sessions").select("completed_at, answers").eq("case_id", myCase.id).maybeSingle(),
@@ -52,6 +58,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
         .eq("case_id", myCase.id)
         .eq("signer_key", "applicant")
         .maybeSingle(),
+      db.from("cases").select("is_renewal").eq("id", myCase.id).maybeSingle(),
     ])
 
   // Questionnaire starting values: intake first, then anything already saved for
@@ -126,9 +133,22 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     documentType: row.requirement?.document_type ?? null,
   }))
 
+  // Fees are personalized (retired-LEO waiver, renewal wording) and every amount
+  // comes from the fee schedule, so an admin edit moves all of this at once.
+  const feeSummary = await computeFeeSummary(db, {
+    isRetiredLeo: intakeAnswers.isRetiredLeo,
+    isRenewal: kase?.is_renewal,
+  })
+  const feeReceipts: FeeReceipts = {
+    nypd: (docs ?? []).some((d) => d.type === "nypd_fee_receipt"),
+    fingerprint: (docs ?? []).some((d) => d.type === "fingerprint_fee_receipt"),
+  }
+
   return {
     items,
     intakeDone: !!intake?.completed_at,
+    feeSummary,
+    feeReceipts,
     prefills,
     generated,
     filesByReq,

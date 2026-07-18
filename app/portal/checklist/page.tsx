@@ -25,6 +25,8 @@ export default async function ChecklistPage() {
         prefills={view.prefills}
         generated={view.generated}
         signatureOnFile={view.signatureOnFile}
+        feeSummary={view.feeSummary}
+        feeReceipts={view.feeReceipts}
       />
     </div>
   )

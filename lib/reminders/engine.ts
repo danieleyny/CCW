@@ -7,6 +7,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
+import { computeFeeSummary } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 
 type DB = SupabaseClient<Database>
@@ -251,6 +252,71 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       title: "Book your safety training now — it's the longest step",
       body: "The 16+2-hour course is the longest-lead item, and the certificate must be recent when you file. Booking it this week keeps everything on schedule.",
       link: "/portal/marketplace",
+    }))
+  }
+
+  // ── Rule: fees are about to matter → tell them what to have ready ────────
+  // The money is the part that ambushes people at filing. Fire once per case
+  // when they reach document collection, with the amount they actually owe —
+  // read from the fee schedule, and reflecting the retired-LEO waiver.
+  const { data: feeStage } = await admin
+    .from("cases")
+    .select("id, is_renewal, stage")
+    .eq("status", "active")
+    .in("stage", ["document_collection", "notarization"])
+  const feeContacts = await caseContacts(admin, (feeStage ?? []).map((k) => k.id))
+  for (const k of feeStage ?? []) {
+    const c = feeContacts.get(k.id)
+    if (!c) continue
+    const { data: session } = await admin
+      .from("intake_sessions")
+      .select("answers")
+      .eq("case_id", k.id)
+      .maybeSingle()
+    const answers = (session?.answers ?? {}) as { isRetiredLeo?: boolean }
+    const summary = await computeFeeSummary(admin, {
+      isRetiredLeo: answers.isRetiredLeo,
+      isRenewal: k.is_renewal,
+    })
+    const [application, fingerprint] = summary.items
+    push(await fireOnce(admin, {
+      ruleKey: "fee_readiness",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: k.id, // once per case
+      caseId: k.id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "reminder",
+      title: "Have your filing fees ready",
+      body: application.waived
+        ? `Your NYPD application fee is waived as retired law enforcement. You'll still pay ${fingerprint.amount} to the fingerprint vendor at your appointment. Neither fee is paid to us.`
+        : `You'll pay ${application.amount} to the NYPD when you submit, and about ${fingerprint.amount} to the fingerprint vendor at your appointment — ${summary.total} in total, paid directly to them, never to us.`,
+      link: "/portal/checklist",
+    }))
+  }
+
+  // ── Rule: fingerprinting booked → the fee is due in person ───────────────
+  const { data: printing } = await admin
+    .from("cases")
+    .select("id, is_renewal")
+    .eq("status", "active")
+    .eq("stage", "fingerprinting_booked")
+  const printContacts = await caseContacts(admin, (printing ?? []).map((k) => k.id))
+  for (const k of printing ?? []) {
+    const c = printContacts.get(k.id)
+    if (!c) continue
+    const summary = await computeFeeSummary(admin, { isRenewal: k.is_renewal })
+    push(await fireOnce(admin, {
+      ruleKey: "fingerprint_fee_due",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: k.id,
+      caseId: k.id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "reminder",
+      title: "Bring your fingerprint fee and ID",
+      body: `The fingerprint fee (about ${summary.items[1].amount}) is paid to the vendor at your appointment — card, check, or money order payable to IDEMIA. Confirm the exact amount when you arrive, and bring your photo ID. Your fee sheet has the details.`,
+      link: "/portal/checklist",
     }))
   }
 

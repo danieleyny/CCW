@@ -20,9 +20,14 @@ const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const admin = createClient(URL, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
 const tadmin = admin as unknown as SupabaseClient<Database>
 
-// 1×1 transparent PNG — a valid image for embedPng.
-const PNG_1x1 =
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+// A signature fixture with REAL INK — a 120x40 PNG with a stroke in it.
+//
+// This used to be a 1x1 transparent pixel, which the builder now refuses to
+// stamp: scaling a single pixel to the signature box painted a solid block that
+// looked like a redaction sitting on the signature line. A fixture that isn't a
+// signature can't verify that signatures embed.
+const SIGNATURE_PNG =
+  "iVBORw0KGgoAAAANSUhEUgAAAHgAAAAoCAYAAAA16j4lAAAAUElEQVR4nO3RQQ3AIADAQBQsfPAvdRMBD9LdJVXQMQAAAAAAAGDbM9erezI4nsHxDI5ncDyD4xkcz+B4BsczOJ7B8QyOd3wwAAAAAAAAP/QBFwWarAik40wAAAAASUVORK5CYII="
 
 let failures = 0
 const check = (cond: boolean, msg: string) => {
@@ -47,8 +52,8 @@ async function main() {
 
   // — storage round-trip + uniqueness —
   await admin.from("signatures").delete().eq("case_id", caseId).eq("signer_key", "applicant")
-  await admin.from("signatures").upsert({ case_id: caseId, signer_key: "applicant", png_base64: PNG_1x1 }, { onConflict: "case_id,signer_key" })
-  await admin.from("signatures").upsert({ case_id: caseId, signer_key: "applicant", png_base64: PNG_1x1 }, { onConflict: "case_id,signer_key" })
+  await admin.from("signatures").upsert({ case_id: caseId, signer_key: "applicant", png_base64: SIGNATURE_PNG }, { onConflict: "case_id,signer_key" })
+  await admin.from("signatures").upsert({ case_id: caseId, signer_key: "applicant", png_base64: SIGNATURE_PNG }, { onConflict: "case_id,signer_key" })
   const { count: rows } = await admin.from("signatures").select("id", { count: "exact", head: true }).eq("case_id", caseId).eq("signer_key", "applicant")
   check(rows === 1, "upsert keeps one row per (case, signer_key)")
   const png = await getSignaturePng(tadmin, caseId, "applicant")

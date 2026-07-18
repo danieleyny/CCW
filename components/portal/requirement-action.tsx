@@ -11,6 +11,8 @@ import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
 import { DocumentUploader } from "@/components/portal/document-uploader"
+import { FeePanel, type FeeReceipts } from "@/components/portal/fee-panel"
+import type { FeeSummary } from "@/lib/fees"
 import { Button } from "@/components/ui/button"
 
 type DocumentType = Database["public"]["Enums"]["document_type"]
@@ -37,6 +39,8 @@ export function RequirementAction({
   prefill,
   generated,
   signatureOnFile,
+  feeSummary,
+  feeReceipts,
 }: {
   reqCode: string
   status: string
@@ -46,6 +50,9 @@ export function RequirementAction({
   generated?: GeneratedDoc | null
   /** Base64 PNG of the signature already on file for this case, if any. */
   signatureOnFile: string | null
+  /** Personalized fee breakdown — only needed by FEE-01. */
+  feeSummary?: FeeSummary | null
+  feeReceipts?: FeeReceipts | null
 }) {
   const [open, setOpen] = useState(false)
   const [signing, setSigning] = useState(false)
@@ -304,6 +311,22 @@ export function RequirementAction({
           />
         )}
       </div>
+    )
+  }
+
+  // ── attest: the fee-readiness panel ───────────────────────────────────────
+  // FEE-01 used to be a paragraph and a Confirm button, asking people to vouch
+  // for money they had never been shown. Now they see exactly what they owe.
+  if (action.mode === "attest" && action.panel === "fees" && feeSummary) {
+    return (
+      <FeePanel
+        reqCode={reqCode}
+        summary={feeSummary}
+        receipts={feeReceipts ?? { nypd: false, fingerprint: false }}
+        caseId={caseId}
+        clientId={clientId}
+        done={done}
+      />
     )
   }
 

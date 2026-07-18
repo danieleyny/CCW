@@ -3459,6 +3459,9 @@ export type Database = {
         | "driving_abstract"
         | "court_request_letter"
         | "business_documentation"
+        | "nypd_fee_receipt"
+        | "fingerprint_fee_receipt"
+        | "fee_sheet"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -3719,6 +3722,9 @@ export const Constants = {
         "driving_abstract",
         "court_request_letter",
         "business_documentation",
+        "nypd_fee_receipt",
+        "fingerprint_fee_receipt",
+        "fee_sheet",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [
