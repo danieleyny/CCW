@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import { ShieldCheck } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
@@ -15,6 +18,15 @@ export interface ReqChecklistItem {
   severity: string // critical | high | watch | long_lead
   documentType: string | null
 }
+
+type FilterKey = "all" | "todo" | "done" | "notarizing"
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "todo", label: "To do" },
+  { key: "done", label: "Completed" },
+  { key: "notarizing", label: "Needs notarization" },
+]
 
 const SEV_TONE: Record<string, string> = {
   critical: "text-danger",
@@ -55,6 +67,23 @@ export function RequirementsChecklist({
 
   const satisfied = applicable.filter((i) => i.status === "satisfied").length
 
+  const isDone = (i: ReqChecklistItem) => i.status === "satisfied"
+  // "Needs notarization" is a real waiting state, not a status: the document
+  // exists, and the only thing between it and done is a notary.
+  const groups: Record<FilterKey, ReqChecklistItem[]> = {
+    all: applicable,
+    todo: applicable.filter((i) => !isDone(i)),
+    done: applicable.filter(isDone),
+    notarizing: applicable.filter(
+      (i) => !isDone(i) && !!actionFor(i.reqCode)?.notarize && !!generated[i.reqCode]
+    ),
+  }
+
+  // Land on what's left. Someone opening their checklist wants the work, not a
+  // list they have to re-read to find the work in.
+  const [filter, setFilter] = useState<FilterKey>(() => (groups.todo.length ? "todo" : "all"))
+  const shown = groups[filter]
+
   if (applicable.length === 0 && notApplicable.length === 0) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
@@ -65,15 +94,42 @@ export function RequirementsChecklist({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <ShieldCheck className="size-4 text-ok" />
-        <span>
-          {satisfied} of {applicable.length} requirements satisfied
-        </span>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <ShieldCheck className="size-4 text-ok" />
+          <span>
+            {satisfied} of {applicable.length} requirements satisfied
+          </span>
+        </div>
+
+        <div role="group" aria-label="Filter your checklist" className="flex flex-wrap gap-2">
+          {FILTERS.map((f) => {
+            const count = groups[f.key].length
+            if (f.key === "notarizing" && count === 0) return null
+            const active = filter === f.key
+            return (
+              <button
+                key={f.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  "min-h-[36px] rounded-full border px-3 text-xs font-medium transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-signal/40 focus-visible:outline-none",
+                  active
+                    ? "border-brass/50 bg-brass/15 text-brass-bright"
+                    : "border-hairline text-text-mid hover:text-foreground"
+                )}
+              >
+                {f.label} <span className="tabular-nums opacity-70">{count}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <ul className="divide-y rounded-lg border bg-card">
-        {applicable.map((item) => (
+        {shown.map((item) => (
           <li key={item.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -113,6 +169,12 @@ export function RequirementsChecklist({
           </li>
         ))}
       </ul>
+
+      {shown.length === 0 && (
+        <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
+          {filter === "todo" ? "Nothing left to do here — every item is complete." : "Nothing in this view yet."}
+        </p>
+      )}
 
       {notApplicable.length > 0 && (
         <details className="rounded-lg border bg-card/50 px-4 py-3">
