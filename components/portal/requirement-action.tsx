@@ -7,7 +7,7 @@ import type { Database } from "@/lib/supabase/types"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
 import { questionnaireFor } from "@/lib/requirements/questionnaires"
 import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requirements/actions"
-import { QuestionnaireSheet } from "@/components/portal/questionnaire-sheet"
+import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
 import { DocumentUploader } from "@/components/portal/document-uploader"
@@ -142,7 +142,7 @@ export function RequirementAction({
         )}
 
         {q && (
-          <QuestionnaireSheet
+          <QuestionnaireDialog
             open={open}
             onOpenChange={setOpen}
             reqCode={reqCode}

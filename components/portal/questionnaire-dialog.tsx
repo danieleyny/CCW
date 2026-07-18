@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import type { Field, Questionnaire } from "@/lib/requirements/questionnaires"
 import { saveRequirementAnswers, generateRequirementDocument } from "@/app/portal/requirements/actions"
 import { SignDocument } from "@/components/portal/sign-document"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +19,7 @@ type Values = Record<string, unknown>
  * change, not a UI change. Handles text/date/select/textarea/checkbox, yes-no
  * with reveal-on-yes follow-ups, and repeatable groups.
  */
-export function QuestionnaireSheet({
+export function QuestionnaireDialog({
   open,
   onOpenChange,
   reqCode,
@@ -77,10 +77,12 @@ export function QuestionnaireSheet({
     const id = `${key}-${f.name}`
     if (f.type === "checkbox") {
       return (
-        <label key={id} className="flex items-start gap-2 text-sm">
+        // Touch target: on a phone the whole row is tappable and at least 44px
+        // tall — a 16px checkbox is a miss waiting to happen.
+        <label key={id} className="flex min-h-[44px] cursor-pointer items-start gap-2 py-1.5 text-sm">
           <input
             type="checkbox"
-            className="mt-1 size-4 shrink-0"
+            className="mt-0.5 size-5 shrink-0 max-sm:size-6"
             checked={value === true}
             onChange={(e) => onChange(e.target.checked)}
           />
@@ -96,8 +98,8 @@ export function QuestionnaireSheet({
           <Label className="text-sm">{f.label}</Label>
           {f.help && <p className="text-xs text-text-mid">{f.help}</p>}
           <div className="flex gap-2">
-            <Button type="button" size="sm" variant={yes ? "default" : "outline"} onClick={() => onChange("yes")}>Yes</Button>
-            <Button type="button" size="sm" variant={no ? "default" : "outline"} onClick={() => onChange("no")}>No</Button>
+            <Button type="button" size="sm" className="min-h-[44px] min-w-16" variant={yes ? "default" : "outline"} onClick={() => onChange("yes")}>Yes</Button>
+            <Button type="button" size="sm" className="min-h-[44px] min-w-16" variant={no ? "default" : "outline"} onClick={() => onChange("no")}>No</Button>
           </div>
           {yes && f.revealOnYes && (
             <div className="mt-2 space-y-3 border-l-2 border-brass/40 pl-3">
@@ -120,6 +122,7 @@ export function QuestionnaireSheet({
           <Textarea
             id={id}
             rows={4}
+            className="min-h-[96px]"
             maxLength={f.maxLength}
             placeholder={f.placeholder}
             value={String(value ?? "")}
@@ -130,7 +133,7 @@ export function QuestionnaireSheet({
             id={id}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
-            className="h-10 w-full rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40"
+            className="h-11 w-full rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40"
           >
             <option value="">Select…</option>
             {(f.options ?? []).map((o) => (
@@ -140,6 +143,7 @@ export function QuestionnaireSheet({
         ) : (
           <Input
             id={id}
+            className="h-11"
             type={f.type === "date" ? "date" : "text"}
             maxLength={f.maxLength}
             placeholder={f.placeholder}
@@ -152,14 +156,19 @@ export function QuestionnaireSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      {/* `dark` is required here: Radix portals mount at document.body, OUTSIDE the
-          app's .dark shell, so without it the drawer renders in the light
-          marketing palette while the app around it is obsidian. */}
-      <SheetContent side="right" className="dark w-full overflow-y-auto bg-background text-foreground sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>{questionnaire.title}</SheetTitle>
-        </SheetHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* CENTERED, not a right-hand drawer: this is the main task on the screen,
+          and a form pinned to one edge reads like a side panel you can ignore.
+          `dark` is required — Radix portals mount at document.body, OUTSIDE the
+          app's .dark shell, so without it the modal renders in the light
+          marketing palette while the app around it is obsidian.
+          On a phone it fills the screen; on desktop it caps at ~640px and
+          scrolls internally rather than pushing the page around. */}
+      <DialogContent className="dark flex max-h-[90dvh] w-full flex-col overflow-hidden bg-background p-0 text-foreground sm:max-w-2xl">
+        <DialogHeader className="border-b border-hairline px-4 py-3">
+          <DialogTitle>{questionnaire.title}</DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto">
 
         {step === "sign" ? (
           <div className="space-y-4 px-4 pb-8">
@@ -229,6 +238,7 @@ export function QuestionnaireSheet({
                 type="button"
                 size="sm"
                 variant="outline"
+                className="min-h-[44px]"
                 onClick={() => set(g.name, [...groupRows(g.name), {}])}
               >
                 <Plus className="mr-1 size-3.5" /> {g.addLabel}
@@ -247,12 +257,13 @@ export function QuestionnaireSheet({
             </div>
           )}
 
-          <Button onClick={submit} disabled={pending} className="w-full">
+          <Button onClick={submit} disabled={pending} className="min-h-[44px] w-full">
             {pending ? "Generating…" : questionnaire.submitLabel}
           </Button>
         </div>
         )}
-      </SheetContent>
-    </Sheet>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
