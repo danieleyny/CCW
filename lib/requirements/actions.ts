@@ -1,0 +1,369 @@
+/**
+ * THE requirement → action map: how a customer actually completes each item.
+ *
+ * Before this file the answer was spread across four hardcoded lists that didn't
+ * know about each other (forms/page.tsx display, the switch in forms/[key]/route,
+ * SIGNABLE in forms/actions, DOC_TYPES in documents/page). This is the single
+ * source the checklist UI, the questionnaire engine, and the generators read.
+ *
+ * Three modes:
+ *   generate — we ask a short questionnaire and produce the finished document
+ *   obtain   — an external document we can't produce; we give the steps + the
+ *              official link (and a prepared request letter where one helps)
+ *   attest   — already answered on-platform (intake) or a simple confirmation
+ *
+ * GUARDRAILS BAKED IN:
+ * - `sensitive: true` marks disclosure / affidavit / reference / arrest material.
+ *   Instructors must never see these documents. (RLS already hides `documents`
+ *   from instructors; this flag keeps UI and future surfaces honest.)
+ * - `notarize: true` means generation ALONE never satisfies the requirement —
+ *   the applicant must upload the notarized copy. See lib/requirements/completion.
+ * - Copy states facts and names the agency. No legal advice: questionnaires
+ *   collect FACTS, and anything asking "what does MY record mean" routes to the
+ *   attorney seam. Candor-maximizing throughout — we never hint at omitting.
+ * - We never file. Every "obtain" step ends with the applicant submitting their
+ *   own application at licensing.nypdonline.org.
+ */
+import type { Database } from "@/lib/supabase/types"
+
+type DocumentType = Database["public"]["Enums"]["document_type"]
+
+export type RequirementMode = "generate" | "obtain" | "attest"
+
+export interface RequirementAction {
+  mode: RequirementMode
+  /** Short, retail-voice label for the action button. */
+  actionLabel: string
+  /** Plain-English what this is and why it's needed. */
+  help: string
+  /** For `generate`: the questionnaire schema id (lib/requirements/questionnaires). */
+  questionnaireId?: string
+  /** For `obtain`: numbered steps, plain English. */
+  steps?: string[]
+  /** For `obtain`: the official source (agency site). */
+  sourceUrl?: string
+  sourceLabel?: string
+  /** A document we prepare that HELPS obtain the external one (e.g. a court request letter). */
+  companion?: { questionnaireId: string; label: string }
+  /** What an upload binds to (mirrors requirements.document_type). */
+  documentType?: DocumentType
+  /** Must be notarized → generation alone never satisfies. */
+  notarize?: boolean
+  /** Disclosure/affidavit/reference/arrest material — never visible to instructors. */
+  sensitive?: boolean
+  /** Rendered as optional; the requirement is non-blocking in the registry. */
+  optional?: boolean
+}
+
+const NYPD_REQUIRED_DOCS = "https://licensing.nypdonline.org/app-instruction/requireddocs"
+
+export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
+  // ── attest ────────────────────────────────────────────────────────────────
+  "ELG-01": {
+    mode: "attest",
+    actionLabel: "Confirm",
+    help: "NYC carry licenses require the applicant to be at least 21. Confirmed from your intake date of birth.",
+  },
+  "ELG-02": {
+    mode: "attest",
+    actionLabel: "Confirm",
+    help: "You must live in NYC or have your principal place of business here — that's what gives the NYPD License Division jurisdiction. Non-residents route to the Special Carry track.",
+  },
+  "ELG-03": {
+    mode: "attest",
+    actionLabel: "Confirm",
+    help: "No felony or serious-offense conviction, disqualifying mental-health adjudication, active order of protection, or unlawful drug use. Answered in your intake.",
+  },
+  "FEE-01": {
+    mode: "attest",
+    actionLabel: "Confirm",
+    help: "The application and fingerprinting fees are paid to the NYPD and the fingerprint vendor when you file — not to us. Confirm you're ready for them at filing.",
+  },
+  "FMT-01": {
+    mode: "attest",
+    actionLabel: "Confirm",
+    help: "Uploads must meet the NYPD portal's file limits. We check each file as you upload it.",
+  },
+  "OOS-02": {
+    mode: "attest",
+    actionLabel: "Confirm",
+    help: "Disclose any firearms licenses you hold in other jurisdictions. Answered in your intake.",
+  },
+  "SPC-01": {
+    mode: "attest",
+    actionLabel: "Acknowledge",
+    optional: true,
+    help: "A Special Carry license's validity depends on you also holding a license from your home county (38 RCNY §5-25). This is an advisory — nothing to upload.",
+  },
+
+  // ── generate ──────────────────────────────────────────────────────────────
+  "AFF-01": {
+    mode: "generate",
+    actionLabel: "Complete & generate",
+    questionnaireId: "affirmation",
+    documentType: "affirmation_understanding",
+    help: "A signed affirmation that you understand NYC's carry rules and where carrying is prohibited. We prepare it from your intake — you review and sign it here.",
+  },
+  "SAF-01": {
+    mode: "generate",
+    actionLabel: "Complete & generate",
+    questionnaireId: "safe-storage",
+    documentType: "safe_photo_closed",
+    help: "How you'll store the handgun safely at home. We prepare your safe-storage statement; you'll also add photos of your safe (open and closed).",
+  },
+  "SOC-01": {
+    mode: "generate",
+    actionLabel: "Complete & generate",
+    questionnaireId: "social-media",
+    documentType: "social_media_list",
+    optional: true,
+    help: "The CCIA's social-media disclosure has been enjoined (Antonyuk v. James), so this is OPTIONAL. Some applicants still choose to provide it. Skip it with no effect on your application.",
+  },
+  "COH-01": {
+    mode: "generate",
+    actionLabel: "Complete & generate",
+    questionnaireId: "cohabitant-affidavit",
+    documentType: "cohabitant_affidavit",
+    notarize: true,
+    sensitive: true,
+    help: "A notarized affidavit from every household member 18 or older — or, if you live alone, a sole-occupancy statement. We prepare each one; each signer notarizes it and you upload the signed copy.",
+  },
+  "REF-01": {
+    mode: "generate",
+    actionLabel: "Invite your references",
+    questionnaireId: "references",
+    documentType: "reference_letter",
+    notarize: true,
+    sensitive: true,
+    help: "Four character references, at least two not related to you. Each gets a private link to complete and notarize their letter. The requirement completes when the notarized letters are in.",
+  },
+  "REF-02": {
+    mode: "generate",
+    actionLabel: "Invite your references",
+    questionnaireId: "references",
+    documentType: "reference_letter",
+    notarize: true,
+    sensitive: true,
+    help: "Two non-family character references for a premises license. Each gets a private link to complete and notarize their letter.",
+  },
+  "DSC-01": {
+    mode: "generate",
+    actionLabel: "Complete disclosures",
+    questionnaireId: "disclosure-addendum",
+    sensitive: true,
+    help: "The NYPD application asks questions 10–28 about your history. Every 'yes' needs its own written explanation, submitted on the Handgun License Application Addendum (PD 643-041A). Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
+  },
+  "QUE-01": {
+    mode: "generate",
+    actionLabel: "Write your explanations",
+    questionnaireId: "disclosure-addendum",
+    sensitive: true,
+    help: "One written explanation for each 'yes' answer, in your own words. We turn them into the addendum.",
+  },
+  "ARR-01": {
+    mode: "generate",
+    actionLabel: "Write your statement",
+    questionnaireId: "arrest-statements",
+    documentType: "certificate_of_disposition",
+    sensitive: true,
+    companion: { questionnaireId: "court-request-letters", label: "Download court request letter" },
+    help: "For EVERY arrest or summons — even if it was dismissed, sealed, or nullified (CPL Article 160) — the NYPD wants a Certificate of Disposition from the court plus your written statement of what happened. We write the statement with you and prepare a request letter for the court; the certificate itself comes from the court.",
+  },
+  "OOP-01": {
+    mode: "generate",
+    actionLabel: "Write your statement",
+    questionnaireId: "protection-order-statement",
+    documentType: "order_of_protection_copy",
+    sensitive: true,
+    help: "A copy of any order of protection plus your written explanation. Disclose every order, active or expired.",
+  },
+  "DIR-01": {
+    mode: "generate",
+    actionLabel: "Write your statement",
+    questionnaireId: "domestic-incident-statement",
+    sensitive: true,
+    help: "A written disclosure of any domestic incident report, in your own words. Disclose it even if no charges followed.",
+  },
+
+  // ── obtain ────────────────────────────────────────────────────────────────
+  "IDN-01": {
+    mode: "obtain",
+    actionLabel: "Upload your ID",
+    documentType: "id",
+    help: "A government-issued photo ID.",
+    steps: ["Photograph or scan your driver's license, state ID, or passport.", "Make sure all four corners and the text are readable.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "IDN-02": {
+    mode: "obtain",
+    actionLabel: "Upload proof of birth date",
+    documentType: "id",
+    help: "Proof of your date of birth — a birth certificate or passport.",
+    steps: ["Locate your birth certificate or passport.", "Scan or photograph the full page.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "IDN-03": {
+    mode: "obtain",
+    actionLabel: "Upload proof of status",
+    documentType: "id",
+    help: "Proof of U.S. citizenship or lawful status — passport, naturalization certificate, or permanent resident card.",
+    steps: ["Find your passport, naturalization certificate, or green card.", "Scan or photograph it in full.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "IDN-04": {
+    mode: "obtain",
+    actionLabel: "Upload your photo",
+    documentType: "applicant_photo",
+    help: "A passport-style photo that meets the NYPD portal's spec. We check the dimensions for you as you upload.",
+    steps: [
+      "Get a passport-style photo (any pharmacy does these) or take one against a plain background.",
+      "It must be square — between 600×600 and 1200×1200 pixels.",
+      "Taken within the last 30 days.",
+      "Upload it here — we'll verify the size and shape before it counts.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD photo spec",
+  },
+  "RES-01": {
+    mode: "obtain",
+    actionLabel: "Upload proof of residence",
+    documentType: "proof_residence",
+    help: "Proof you live at your NYC address. Note: cell phone bills are NOT accepted.",
+    steps: [
+      "Use a utility bill, lease, bank statement, or government correspondence showing your name and NYC address.",
+      "A cell phone bill will not be accepted — pick another document.",
+      "Upload it here.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "DMV-01": {
+    mode: "obtain",
+    actionLabel: "Get your driving abstract",
+    help: "A LIFETIME driving abstract from every state you've lived in over the past five years — not just New York (38 RCNY §5-05(b)(12)).",
+    steps: [
+      "Order your New York lifetime abstract online from the NYS DMV (about $7).",
+      "Choose the LIFETIME abstract — not the standard 3-year one.",
+      "If you've lived in another state in the past five years, request that state's abstract too.",
+      "Upload each abstract here.",
+    ],
+    sourceUrl: "https://dmv.ny.gov/records/get-my-own-driving-record-abstract",
+    sourceLabel: "NYS DMV — driving records",
+  },
+  "TRN-01": {
+    mode: "obtain",
+    actionLabel: "Upload your certificate",
+    documentType: "training_cert",
+    help: "The 16-hour classroom plus 2-hour live-fire course required for a carry license. The certificate expires six months after completion, so timing matters — we track the clock.",
+    steps: [
+      "Book a DCJS-approved instructor — you can find one right here under Find an instructor.",
+      "Complete the 16 classroom hours and the 2-hour live-fire session.",
+      "Your instructor issues the certificate.",
+      "Upload it here. We'll flag it if it's approaching six months old.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "RNW-01": {
+    mode: "obtain",
+    actionLabel: "Upload your certificate",
+    documentType: "training_cert",
+    help: "For a renewal: the 2-hour live-fire certificate, dated within the last six months.",
+    steps: ["Book a live-fire session with a DCJS-approved instructor.", "Complete the 2-hour session.", "Upload the certificate here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "MIL-01": {
+    mode: "obtain",
+    actionLabel: "Upload your DD-214",
+    documentType: "dd214",
+    help: "Your military discharge documentation (DD-214).",
+    steps: ["Find your DD-214. If you don't have a copy, request one from the National Archives.", "Scan it in full.", "Upload it here."],
+    sourceUrl: "https://www.archives.gov/veterans/military-service-records",
+    sourceLabel: "National Archives — service records",
+  },
+  "GMC-01": {
+    mode: "obtain",
+    actionLabel: "Upload the certificate",
+    documentType: "cert_good_conduct",
+    help: "A Certificate of Good Conduct, issued by the NYS Department of Corrections and Community Supervision.",
+    steps: ["Apply to NYS DOCCS for a Certificate of Good Conduct.", "Upload the issued certificate here."],
+    sourceUrl: "https://doccs.ny.gov/certificates-relief-disabilities-and-good-conduct",
+    sourceLabel: "NYS DOCCS — certificates",
+  },
+  "NAM-01": {
+    mode: "obtain",
+    actionLabel: "Upload proof of name change",
+    documentType: "name_change_proof",
+    help: "Court-ordered name change, marriage certificate, or divorce decree showing the change.",
+    steps: ["Find the court order, marriage certificate, or divorce decree.", "Scan it in full.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "LEO-01": {
+    mode: "obtain",
+    actionLabel: "Upload the letter",
+    documentType: "leo_good_guy_letter",
+    help: 'A "Good Guy" letter (PD 643-155) from your former agency.',
+    steps: ["Request the letter from your former agency's records unit.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD retired-officer procedure",
+  },
+  "LEO-02": {
+    mode: "obtain",
+    actionLabel: "Upload the receipt",
+    documentType: "leo_property_receipt",
+    help: "Your Property Receipt / Discontinuance of Firearms (PD 520-013).",
+    steps: ["Request the property receipt from your former agency.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD retired-officer procedure",
+  },
+  "LEO-03": {
+    mode: "obtain",
+    actionLabel: "Upload the certificate",
+    documentType: "leo_cert_of_service",
+    help: "A Certificate of Service on your former agency's letterhead.",
+    steps: ["Request a certificate of service from your former agency.", "Upload it here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD retired-officer procedure",
+  },
+  "OOS-01": {
+    mode: "obtain",
+    actionLabel: "Upload the forms",
+    documentType: "oos_background_form",
+    help: "An out-of-state background form for every jurisdiction you've lived in over the past five years (38 RCNY §5-03(b), effective 1/5/2025).",
+    steps: [
+      "List every state and county you've lived in for the past five years.",
+      "Request each jurisdiction's background form.",
+      "Upload each completed form here.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+  "PRM-01": {
+    mode: "obtain",
+    actionLabel: "Upload business documents",
+    help: "Business documentation for a premises-business license — incorporation papers, a business certificate, and proof of the business address.",
+    steps: ["Gather your incorporation or business certificate.", "Add proof of the business address.", "Upload them here."],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
+}
+
+/** The action for a requirement code, or null if the registry has one we don't map yet. */
+export function actionFor(reqCode: string): RequirementAction | null {
+  return REQUIREMENT_ACTIONS[reqCode] ?? null
+}
+
+/** Requirement codes whose documents must never reach an instructor. */
+export function isSensitiveRequirement(reqCode: string): boolean {
+  return REQUIREMENT_ACTIONS[reqCode]?.sensitive === true
+}
+
+/** Requirements that need a notarized upload before they can be satisfied. */
+export function needsNotarization(reqCode: string): boolean {
+  return REQUIREMENT_ACTIONS[reqCode]?.notarize === true
+}
