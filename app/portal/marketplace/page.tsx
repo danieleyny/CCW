@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MarketplacePanel } from "@/components/portal/marketplace-panel"
 import { LocationPrompt } from "@/components/portal/location-prompt"
+import { InstructorCard } from "@/components/portal/instructor-card"
+import { ChooseButton } from "@/components/portal/choose-instructor"
 import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
 import { cancelOffer } from "./actions"
 
@@ -37,6 +39,41 @@ export default async function MarketplacePage() {
   ])
 
   const hasOpenOffer = (offers ?? []).some((o) => o.status === "open")
+
+  // Instructors who expressed interest in my open offers (redacted view scoped
+  // to my case). Enrich with each instructor's locations + next opening.
+  const { data: interestedRows } = await supabase
+    .from("applicant_interest_feed")
+    .select(
+      "offer_id, type, instructor_id, distance_mi, note, quoted_price_cents, name, bio, dcjs_id, price_18h_cents, rating_avg, rating_count"
+    )
+  const interested = interestedRows ?? []
+  const interestedIds = [...new Set(interested.map((r) => r.instructor_id).filter(Boolean) as string[])]
+
+  const locByInstr = new Map<string, { label: string; isRange: boolean }[]>()
+  const nextByInstr = new Map<string, string>()
+  if (interestedIds.length) {
+    const { data: locs } = await supabase
+      .from("training_locations")
+      .select("instructor_id, label, is_range")
+      .in("instructor_id", interestedIds)
+    for (const l of locs ?? []) {
+      const arr = locByInstr.get(l.instructor_id) ?? []
+      arr.push({ label: l.label, isRange: l.is_range })
+      locByInstr.set(l.instructor_id, arr)
+    }
+    const { data: slots } = await supabase
+      .from("availability_slots")
+      .select("instructor_id, starts_at, capacity, booked_count")
+      .in("instructor_id", interestedIds)
+      .gt("starts_at", new Date().toISOString())
+      .order("starts_at", { ascending: true })
+    for (const s of slots ?? []) {
+      if (s.booked_count < s.capacity && !nextByInstr.has(s.instructor_id)) {
+        nextByInstr.set(s.instructor_id, s.starts_at)
+      }
+    }
+  }
 
   // Bookable slots from instructors the client is engaged with (flat selects +
   // lookups to avoid supabase-js embedded-select type friction).
@@ -88,14 +125,52 @@ export default async function MarketplacePage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Find an instructor</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Broadcast to verified instructors in your area. They see only your
-          borough and what you need — never your identity — until you&apos;re matched.
+          Tell verified local instructors what you need. They see only your borough
+          and the request — never your identity. Interested instructors show up
+          here, and you choose who to work with.
         </p>
       </div>
 
       <LocationPrompt zip={myCase.client.zip} borough={myCase.client.borough} />
 
       <MarketplacePanel hasOpenOffer={hasOpenOffer} />
+
+      {interested.length > 0 && (
+        <div>
+          <h2 className="engraved mb-1 text-text-low">Instructors interested in you</h2>
+          <p className="mb-3 text-sm text-text-mid">
+            {interested.length} verified instructor{interested.length === 1 ? " wants" : "s want"} to
+            help. Pick one — the rest are released.
+          </p>
+          <div className="space-y-3">
+            {interested.map((r) => (
+              <InstructorCard
+                key={`${r.offer_id}-${r.instructor_id}`}
+                data={{
+                  name: r.name ?? "Instructor",
+                  bio: r.bio,
+                  dcjsId: r.dcjs_id,
+                  priceCents: r.price_18h_cents,
+                  quotedPriceCents: r.quoted_price_cents,
+                  ratingAvg: r.rating_avg,
+                  ratingCount: r.rating_count,
+                  distanceMi: r.distance_mi,
+                  note: r.note,
+                  locations: locByInstr.get(r.instructor_id ?? "") ?? [],
+                  nextAvailable: nextByInstr.get(r.instructor_id ?? "") ?? null,
+                }}
+                action={
+                  <ChooseButton
+                    offerId={r.offer_id ?? ""}
+                    instructorId={r.instructor_id ?? ""}
+                    instructorName={r.name ?? "Instructor"}
+                  />
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {(engagements ?? []).length > 0 && (
         <div>

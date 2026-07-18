@@ -7,31 +7,57 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { notifyClient } from "@/lib/email"
 import { myInstructorId } from "@/lib/instructor"
 
-/** Accept an offer → engagement (via the security-definer RPC) → notify client. */
-export async function acceptOffer(formData: FormData) {
+/**
+ * Express interest in an offer (two-phase marketplace): flags the instructor as
+ * interested via the security-definer RPC — the offer stays OPEN and no
+ * engagement is created. The applicant then chooses among everyone interested.
+ * Notifies the applicant without ever exposing their identity to the instructor.
+ */
+export async function expressInterest(formData: FormData) {
   await requireRole(["instructor"])
   const offerId = String(formData.get("offerId") ?? "")
+  const note = (String(formData.get("note") ?? "").trim() || null)?.slice(0, 500) ?? null
   const supabase = await createClient()
 
-  const { data: engagementId, error } = await supabase.rpc("accept_offer", { p_offer_id: offerId })
+  const { error } = await supabase.rpc("express_interest", {
+    p_offer_id: offerId,
+    p_note: note ?? undefined,
+    p_price_cents: undefined,
+  })
   if (error) throw error
 
-  // The instructor cannot read client PII (RLS) — notify via the service-role
-  // client without ever exposing the client's identity to the instructor.
+  // Notify the applicant (in-app + email) via service role — no PII to instructor.
   const admin = createAdminClient()
-  const { data: eng } = await admin.from("engagements").select("case_id").eq("id", engagementId as string).single()
-  if (eng) {
-    const { data: kase } = await admin.from("cases").select("clients(full_name, email)").eq("id", eng.case_id).single()
-    const client = kase?.clients as unknown as { full_name: string; email: string | null } | null
+  const { data: offer } = await admin.from("case_offers").select("case_id").eq("id", offerId).single()
+  if (offer) {
+    const { data: kase } = await admin
+      .from("cases")
+      .select("clients(profile_id, full_name, email)")
+      .eq("id", offer.case_id)
+      .single()
+    const client = kase?.clients as unknown as {
+      profile_id: string | null
+      full_name: string
+      email: string | null
+    } | null
+    if (client?.profile_id) {
+      await admin.from("notifications").insert({
+        recipient: client.profile_id,
+        case_id: offer.case_id,
+        kind: "info",
+        title: "A verified instructor is interested",
+        body: "Open Find an instructor to see who's interested and choose.",
+        link: "/portal/marketplace",
+      })
+    }
     await notifyClient({
       to: client?.email,
-      subject: "An instructor accepted your Gun License NYC request",
-      body: `Hi ${client?.full_name ?? ""}, a verified instructor accepted your request. Open your Gun License NYC portal to book a session.`,
+      subject: "A verified instructor is interested in your Gun License NYC request",
+      body: `Hi ${client?.full_name ?? ""}, a verified instructor is interested. Open your portal to review who's interested and choose.`,
     })
   }
 
   revalidatePath("/instructor/feed")
-  revalidatePath("/instructor/cases")
 }
 
 export async function declineOffer(formData: FormData) {

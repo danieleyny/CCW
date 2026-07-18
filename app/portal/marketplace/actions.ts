@@ -82,6 +82,74 @@ export async function saveClientLocation(formData: FormData): Promise<{ error?: 
   return { ok: true }
 }
 
+/**
+ * Applicant chooses one interested instructor. The RPC creates the engagement,
+ * declines the rest, and closes the offer. We then notify the chosen instructor
+ * (they can now see the case) and the ones who weren't selected.
+ */
+export async function chooseInstructor(
+  formData: FormData
+): Promise<{ error?: string; ok?: boolean }> {
+  await requireRole(["client"])
+  const offerId = String(formData.get("offerId") ?? "")
+  const instructorId = String(formData.get("instructorId") ?? "")
+  if (!offerId || !instructorId) return { error: "Missing selection" }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc("choose_instructor", {
+    p_offer_id: offerId,
+    p_instructor_id: instructorId,
+  })
+  if (error) return { error: error.message }
+
+  // Notify instructors: the chosen one, and everyone who was declined.
+  const admin = createAdminClient()
+  const { data: offer } = await admin.from("case_offers").select("case_id").eq("id", offerId).single()
+  if (offer) {
+    const { data: chosen } = await admin
+      .from("instructors")
+      .select("profile_id")
+      .eq("id", instructorId)
+      .single()
+    if (chosen?.profile_id) {
+      await admin.from("notifications").insert({
+        recipient: chosen.profile_id,
+        case_id: offer.case_id,
+        kind: "info",
+        title: "You were selected for a training",
+        body: "An applicant chose you. Open the case to message them and schedule.",
+        link: "/instructor/cases",
+      })
+    }
+    const { data: declined } = await admin
+      .from("offer_matches")
+      .select("instructor_id")
+      .eq("offer_id", offerId)
+      .eq("responded", "declined")
+    const declinedIds = (declined ?? []).map((d) => d.instructor_id)
+    if (declinedIds.length) {
+      const { data: instrs } = await admin
+        .from("instructors")
+        .select("profile_id")
+        .in("id", declinedIds)
+      const rows = (instrs ?? [])
+        .filter((i) => i.profile_id)
+        .map((i) => ({
+          recipient: i.profile_id as string,
+          case_id: offer.case_id,
+          kind: "info" as const,
+          title: "Not selected this time",
+          body: "The applicant chose another instructor for this request.",
+          link: "/instructor/feed",
+        }))
+      if (rows.length) await admin.from("notifications").insert(rows)
+    }
+  }
+
+  revalidatePath("/portal/marketplace")
+  return { ok: true }
+}
+
 export async function cancelOffer(formData: FormData) {
   await requireRole(["client"])
   const offerId = String(formData.get("offerId") ?? "")

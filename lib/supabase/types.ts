@@ -1107,6 +1107,13 @@ export type Database = {
             foreignKeyName: "engagements_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "applicant_interest_feed"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "engagements_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "case_offers"
             referencedColumns: ["id"]
           },
@@ -1469,7 +1476,9 @@ export type Database = {
           distance_mi: number | null
           id: string
           instructor_id: string
+          note: string | null
           offer_id: string
+          quoted_price_cents: number | null
           responded: string | null
           responded_at: string | null
         }
@@ -1478,7 +1487,9 @@ export type Database = {
           distance_mi?: number | null
           id?: string
           instructor_id: string
+          note?: string | null
           offer_id: string
+          quoted_price_cents?: number | null
           responded?: string | null
           responded_at?: string | null
         }
@@ -1487,7 +1498,9 @@ export type Database = {
           distance_mi?: number | null
           id?: string
           instructor_id?: string
+          note?: string | null
           offer_id?: string
+          quoted_price_cents?: number | null
           responded?: string | null
           responded_at?: string | null
         }
@@ -1498,6 +1511,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_matches_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "applicant_interest_feed"
+            referencedColumns: ["offer_id"]
           },
           {
             foreignKeyName: "offer_matches_offer_id_fkey"
@@ -2198,6 +2218,41 @@ export type Database = {
       }
     }
     Views: {
+      applicant_interest_feed: {
+        Row: {
+          bio: string | null
+          case_id: string | null
+          dcjs_id: string | null
+          distance_mi: number | null
+          instructor_id: string | null
+          name: string | null
+          note: string | null
+          offer_id: string | null
+          price_18h_cents: number | null
+          quoted_price_cents: number | null
+          rating_avg: number | null
+          rating_count: number | null
+          responded_at: string | null
+          service_radius_mi: number | null
+          type: Database["public"]["Enums"]["offer_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -2249,6 +2304,7 @@ export type Database = {
           jurisdiction: Database["public"]["Enums"]["jurisdiction_key"] | null
           needs_note: string | null
           offer_id: string | null
+          responded: string | null
           stage: Database["public"]["Enums"]["case_stage"] | null
           type: Database["public"]["Enums"]["offer_type"] | null
         }
@@ -2385,6 +2441,10 @@ export type Database = {
             Returns: string
           }
       case_visible: { Args: { p_case_id: string }; Returns: boolean }
+      choose_instructor: {
+        Args: { p_instructor_id: string; p_offer_id: string }
+        Returns: string
+      }
       client_visible: { Args: { p_client_id: string }; Returns: boolean }
       current_user_role: {
         Args: never
@@ -2423,6 +2483,10 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      express_interest: {
+        Args: { p_note?: string; p_offer_id: string; p_price_cents?: number }
+        Returns: undefined
+      }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
