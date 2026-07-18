@@ -30,30 +30,50 @@ type DocumentType = Database["public"]["Enums"]["document_type"]
 
 export type RequirementMode = "generate" | "obtain" | "attest"
 
-export interface RequirementAction {
-  mode: RequirementMode
+interface ActionBase {
   /** Short, retail-voice label for the action button. */
   actionLabel: string
   /** Plain-English what this is and why it's needed. */
   help: string
-  /** For `generate`: the questionnaire schema id (lib/requirements/questionnaires). */
-  questionnaireId?: string
-  /** For `obtain`: numbered steps, plain English. */
-  steps?: string[]
-  /** For `obtain`: the official source (agency site). */
-  sourceUrl?: string
-  sourceLabel?: string
-  /** A document we prepare that HELPS obtain the external one (e.g. a court request letter). */
-  companion?: { questionnaireId: string; label: string }
-  /** What an upload binds to (mirrors requirements.document_type). */
-  documentType?: DocumentType
   /** Must be notarized → generation alone never satisfies. */
   notarize?: boolean
   /** Disclosure/affidavit/reference/arrest material — never visible to instructors. */
   sensitive?: boolean
   /** Rendered as optional; the requirement is non-blocking in the registry. */
   optional?: boolean
+  /** What an upload binds to (mirrors requirements.document_type). */
+  documentType?: DocumentType
 }
+
+interface GenerateAction extends ActionBase {
+  mode: "generate"
+  /** The questionnaire schema id (lib/requirements/questionnaires). */
+  questionnaireId: string
+  /** A document we prepare that HELPS obtain the external one (court request letter). */
+  companion?: { questionnaireId: string; label: string }
+}
+
+/**
+ * `obtain` REQUIRES documentType, steps and a source. DMV-01 and PRM-01 shipped
+ * without a documentType, so the uploader never rendered: the customer was told
+ * exactly what to fetch and then had nowhere to put it. Making these required
+ * means the compiler catches that class of bug instead of a user finding it.
+ */
+interface ObtainAction extends ActionBase {
+  mode: "obtain"
+  documentType: DocumentType
+  steps: string[]
+  sourceUrl: string
+  sourceLabel?: string
+  /** Several files are legitimate (e.g. one abstract per state lived in). */
+  multiple?: boolean
+}
+
+interface AttestAction extends ActionBase {
+  mode: "attest"
+}
+
+export type RequirementAction = GenerateAction | ObtainAction | AttestAction
 
 const NYPD_REQUIRED_DOCS = "https://licensing.nypdonline.org/app-instruction/requireddocs"
 
@@ -242,6 +262,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   },
   "DMV-01": {
     mode: "obtain",
+    documentType: "driving_abstract",
+    multiple: true, // one abstract per state lived in over the past 5 years
     actionLabel: "Get your driving abstract",
     help: "A LIFETIME driving abstract from every state you've lived in over the past five years — not just New York (38 RCNY §5-05(b)(12)).",
     steps: [
@@ -345,6 +367,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   },
   "PRM-01": {
     mode: "obtain",
+    documentType: "business_documentation",
+    multiple: true,
     actionLabel: "Upload business documents",
     help: "Business documentation for a premises-business license — incorporation papers, a business certificate, and proof of the business address.",
     steps: ["Gather your incorporation or business certificate.", "Add proof of the business address.", "Upload them here."],

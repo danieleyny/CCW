@@ -3448,6 +3448,14 @@ export type Database = {
         | "leo_cert_of_service"
         | "oos_background_form"
         | "applicant_photo"
+        | "disclosure_addendum"
+        | "arrest_statement"
+        | "order_of_protection_statement"
+        | "domestic_incident_statement"
+        | "application_worksheet"
+        | "driving_abstract"
+        | "court_request_letter"
+        | "business_documentation"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -3700,6 +3708,14 @@ export const Constants = {
         "leo_cert_of_service",
         "oos_background_form",
         "applicant_photo",
+        "disclosure_addendum",
+        "arrest_statement",
+        "order_of_protection_statement",
+        "domestic_incident_statement",
+        "application_worksheet",
+        "driving_abstract",
+        "court_request_letter",
+        "business_documentation",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

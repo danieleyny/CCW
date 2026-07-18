@@ -138,7 +138,10 @@ export async function generateCompanionDocument(reqCode: string): Promise<Result
   await requireRole(["client"])
   const myCase = await getMyCase()
   if (!myCase) return { error: "No case found" }
-  if (!actionFor(reqCode)?.companion) return { error: "No companion document for that requirement." }
+  const act = actionFor(reqCode)
+  if (act?.mode !== "generate" || !act.companion) {
+    return { error: "No companion document for that requirement." }
+  }
 
   const supabase = await createClient()
   const { data: saved } = await supabase

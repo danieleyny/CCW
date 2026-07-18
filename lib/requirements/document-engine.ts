@@ -42,8 +42,9 @@ export interface RenderInput {
 export interface RenderedDocument {
   bytes: Uint8Array
   fileName: string
-  /** Null when no enum type fits — the row still carries req_code. */
-  documentType: DocumentType | null
+  /** REQUIRED. Every generated document files under its own type — there is no
+   *  fallback. A missing type must fail loudly, never land in the ID slot. */
+  documentType: DocumentType
   label: string
 }
 
@@ -194,15 +195,15 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
       return { bytes: await socialMediaDisclosure(n, str(a.handles), today, sig), fileName: "social-media-list.pdf", documentType: "social_media_list", label: "Social media list (optional)" }
     case "DSC-01":
     case "QUE-01":
-      return { bytes: await disclosureAddendum(n, a, sig), fileName: "disclosure-addendum.pdf", documentType: null, label: "Disclosure addendum" }
+      return { bytes: await disclosureAddendum(n, a, sig), fileName: "disclosure-addendum.pdf", documentType: "disclosure_addendum", label: "Disclosure addendum" }
     case "ARR-01":
-      return { bytes: await arrestNarratives(n, toArrests(a.arrests), today, sig), fileName: "arrest-statements.pdf", documentType: null, label: "Arrest statements" }
+      return { bytes: await arrestNarratives(n, toArrests(a.arrests), today, sig), fileName: "arrest-statements.pdf", documentType: "arrest_statement", label: "Arrest statements" }
     case "OOP-01":
-      return { bytes: await protectionOrderStatement(n, a, sig), fileName: "order-of-protection-statement.pdf", documentType: null, label: "Order of protection statement" }
+      return { bytes: await protectionOrderStatement(n, a, sig), fileName: "order-of-protection-statement.pdf", documentType: "order_of_protection_statement", label: "Order of protection statement" }
     case "DIR-01":
-      return { bytes: await domesticIncidentStatement(n, a, sig), fileName: "domestic-incident-statement.pdf", documentType: null, label: "Domestic incident statement" }
+      return { bytes: await domesticIncidentStatement(n, a, sig), fileName: "domestic-incident-statement.pdf", documentType: "domestic_incident_statement", label: "Domestic incident statement" }
     case "WORKSHEET":
-      return { bytes: await applicationWorksheet(n, a), fileName: "application-worksheet.pdf", documentType: null, label: "Application worksheet" }
+      return { bytes: await applicationWorksheet(n, a), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
     default:
       throw new Error(`No generator for ${reqCode}`)
   }
@@ -215,7 +216,7 @@ export async function renderCompanionDocument(input: RenderInput): Promise<Rende
     return {
       bytes: await certOfDispositionRequests(input.applicantName, toArrests(input.answers.arrests), today, input.signaturePng),
       fileName: "certificate-of-disposition-requests.pdf",
-      documentType: null,
+      documentType: "court_request_letter",
       label: "Court request letters",
     }
   }
@@ -239,7 +240,7 @@ export async function storeGeneratedDocument(
     .insert({
       case_id: caseId,
       client_id: clientId,
-      type: doc.documentType ?? "id", // enum is NOT NULL; req_code carries the truth
+      type: doc.documentType, // real type per document — never a fallback
       file_name: doc.fileName,
       status: "pending",
       req_code: reqCode,

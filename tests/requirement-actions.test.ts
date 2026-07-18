@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from "vitest"
 import { REQUIREMENT_ACTIONS, actionFor } from "@/lib/requirements/actions"
+import { renderRequirementDocument } from "@/lib/requirements/document-engine"
 import { adminClient, supabaseReachable } from "./helpers/supabase"
 
 const reachable = await supabaseReachable()
@@ -40,6 +41,29 @@ describe("requirement → action map", () => {
     // These carry disclosure content — an instructor must never see them.
     for (const code of ["DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01", "COH-01", "REF-01", "REF-02"]) {
       expect(actionFor(code)?.sensitive, `${code} must be sensitive`).toBe(true)
+    }
+  })
+
+  /**
+   * REGRESSION: the engine shipped with `type: doc.documentType ?? "id"`, so a
+   * generated disclosure addendum was stored as a Government photo ID and then
+   * displayed in the ID slot. No generated document may ever file as 'id'.
+   */
+  it("no generated document files itself as a Government photo ID", async () => {
+    const generated = Object.entries(REQUIREMENT_ACTIONS)
+      .filter(([, a]) => a.mode === "generate")
+      .map(([code]) => code)
+      // These route through the token outreach flows, not renderRequirementDocument.
+      .filter((c) => !["COH-01", "REF-01", "REF-02"].includes(c))
+
+    for (const reqCode of [...generated, "WORKSHEET"]) {
+      const doc = await renderRequirementDocument({
+        reqCode,
+        applicantName: "Test Applicant",
+        answers: {},
+      })
+      expect(doc.documentType, `${reqCode} has no documentType`).toBeTruthy()
+      expect(doc.documentType, `${reqCode} would land in the ID slot`).not.toBe("id")
     }
   })
 
