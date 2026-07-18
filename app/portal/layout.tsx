@@ -18,7 +18,7 @@ export default async function PortalLayout({
   return (
     <div className="dark flex min-h-svh flex-col bg-background text-foreground">
       <DarkBackdrop />
-      <header className="glass sticky top-0 z-20 border-b border-hairline">
+      <header className="glass-bar sticky top-0 z-20 border-b border-hairline">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
           <Link href="/portal" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground">
             <LogoMark className="size-8 text-brass" />

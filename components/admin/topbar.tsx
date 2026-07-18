@@ -16,7 +16,7 @@ export function Topbar({
   title?: string
 }) {
   return (
-    <header className="glass sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-hairline px-4 md:px-6">
+    <header className="glass-bar sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-hairline px-4 md:px-6">
       <h1 className="font-display text-lg font-semibold tracking-tight">{title ?? "Dashboard"}</h1>
       <div className="flex items-center gap-3">
         <NotificationBell />

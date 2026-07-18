@@ -115,12 +115,22 @@
 
 /* ── Signature utilities ─────────────────────────────────────────────────── */
 
-/* Frosted glass — sticky bars, sheets, mobile nav, key panels */
+/* Frosted glass — sheets, key panels. Translucent by design. */
 .glass {
   background: color-mix(in oklab, var(--surface-2) 72%, transparent);
   backdrop-filter: blur(14px) saturate(130%);
   -webkit-backdrop-filter: blur(14px) saturate(130%);
   border: 1px solid var(--hairline);
+}
+
+/* Navigation chrome (sticky headers, fixed tab bars). Same frosted family, but
+   OPAQUE: content scrolling underneath must never read through a nav bar. The
+   blur stays for the rare translucent child; it costs nothing here. Borders are
+   left to the element (border-b / border-t) so bars don't get a full outline. */
+.glass-bar {
+  background: var(--surface-2);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
 }
 
 /* Hairline top highlight on raised cards (dark only — invisible/undesired on paper) */

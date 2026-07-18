@@ -64,7 +64,7 @@ export function PortalBottomNav() {
   const isActive = useActive()
   return (
     <nav
-      className="glass fixed inset-x-0 bottom-0 z-20 border-t border-hairline md:hidden"
+      className="glass-bar fixed inset-x-0 bottom-0 z-20 border-t border-hairline md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex max-w-3xl items-stretch justify-around">
