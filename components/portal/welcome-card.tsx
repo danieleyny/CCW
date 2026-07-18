@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
-import { X, GraduationCap, ClipboardList, Users } from "lucide-react"
+import { X, GraduationCap, ClipboardList, Users, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const KEY = "carry_welcome_dismissed"
@@ -20,7 +20,16 @@ function readDismissed(): boolean {
  * product's core thesis: training is the long pole and it expires — start it
  * on day one, in parallel with everything else.
  */
-export function WelcomeCard({ firstName }: { firstName: string }) {
+export function WelcomeCard({
+  firstName,
+  trainingHandled = false,
+  intakeDone = false,
+}: {
+  firstName: string
+  /** true once an instructor is chosen or a session is booked */
+  trainingHandled?: boolean
+  intakeDone?: boolean
+}) {
   // localStorage read via useSyncExternalStore (server snapshot: hidden) — the
   // sanctioned pattern; no setState inside an effect.
   const storedDismissed = useSyncExternalStore(noopSubscribe, readDismissed, () => true)
@@ -53,24 +62,58 @@ export function WelcomeCard({ firstName }: { firstName: string }) {
       </p>
       <ol className="mt-3 space-y-2 text-sm">
         <li className="flex gap-2">
-          <GraduationCap className="mt-0.5 size-4 shrink-0 text-brass" />
+          {trainingHandled ? (
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />
+          ) : (
+            <GraduationCap className="mt-0.5 size-4 shrink-0 text-brass" />
+          )}
           <span>
-            <b>Book training first.</b> The 16+2-hour course is the longest step and the certificate
-            expires 6 months after completion —{" "}
-            <Link href="/portal/marketplace" className="text-signal underline">
-              find a verified instructor now
-            </Link>
-            .
+            {trainingHandled ? (
+              <>
+                <b>Training — handled.</b> You&apos;ve lined up your instructor. Schedule and
+                complete your 16+2-hour course from{" "}
+                <Link href="/portal/marketplace" className="text-signal underline">
+                  Find an instructor
+                </Link>
+                .
+              </>
+            ) : (
+              <>
+                <b>Book training first.</b> The 16+2-hour course is the longest step and the
+                certificate expires 6 months after completion —{" "}
+                <Link href="/portal/marketplace" className="text-signal underline">
+                  find a verified instructor now
+                </Link>
+                .
+              </>
+            )}
           </span>
         </li>
         <li className="flex gap-2">
-          <ClipboardList className="mt-0.5 size-4 shrink-0 text-brass" />
+          {intakeDone ? (
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />
+          ) : (
+            <ClipboardList className="mt-0.5 size-4 shrink-0 text-brass" />
+          )}
           <span>
-            <b>Do the intake interview</b> (~15 minutes) — it builds your exact personalized checklist:{" "}
-            <Link href="/portal/intake" className="text-signal underline">
-              start the intake
-            </Link>
-            .
+            {intakeDone ? (
+              <>
+                <b>Intake — done.</b> Your personalized checklist is ready in{" "}
+                <Link href="/portal/checklist" className="text-signal underline">
+                  Your checklist
+                </Link>
+                .
+              </>
+            ) : (
+              <>
+                <b>Do the intake interview</b> (~15 minutes) — it builds your exact personalized
+                checklist:{" "}
+                <Link href="/portal/intake" className="text-signal underline">
+                  start the intake
+                </Link>
+                .
+              </>
+            )}
           </span>
         </li>
         <li className="flex gap-2">

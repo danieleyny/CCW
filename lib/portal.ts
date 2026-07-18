@@ -48,3 +48,58 @@ export async function getMyCase() {
 }
 
 export type MyCase = NonNullable<Awaited<ReturnType<typeof getMyCase>>>
+
+export type TrainingState = {
+  status: "none" | "pending" | "engaged" | "booked"
+  interestedCount: number
+  instructorName: string | null
+  bookingAt: string | null
+}
+
+/**
+ * Where the applicant is in getting trained — the single source of truth the
+ * home cards and welcome nudge share, so "find an instructor" / "book training"
+ * prompts disappear the moment they're actually engaged/booked.
+ * booked > engaged > pending(open training offer) > none.
+ */
+export async function getTrainingState(caseId: string): Promise<TrainingState> {
+  const supabase = await createClient()
+  const base: TrainingState = { status: "none", interestedCount: 0, instructorName: null, bookingAt: null }
+
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("starts_at, status")
+    .eq("case_id", caseId)
+    .in("status", ["requested", "confirmed", "completed"])
+    .order("starts_at", { ascending: true })
+  if (bookings && bookings.length > 0) {
+    return { ...base, status: "booked", bookingAt: bookings[0].starts_at }
+  }
+
+  const { data: eng } = await supabase
+    .from("engagements")
+    .select("instructors(name)")
+    .eq("case_id", caseId)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle()
+  if (eng) {
+    const inst = eng.instructors as unknown as { name: string } | null
+    return { ...base, status: "engaged", instructorName: inst?.name ?? "your instructor" }
+  }
+
+  const { data: openOffers } = await supabase
+    .from("case_offers")
+    .select("id")
+    .eq("case_id", caseId)
+    .eq("status", "open")
+    .eq("type", "training")
+  if (openOffers && openOffers.length > 0) {
+    const { count } = await supabase
+      .from("applicant_interest_feed")
+      .select("*", { count: "exact", head: true })
+    return { ...base, status: "pending", interestedCount: count ?? 0 }
+  }
+
+  return base
+}

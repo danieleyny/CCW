@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import { getMyCase } from "@/lib/portal"
+import { getMyCase, getTrainingState } from "@/lib/portal"
 import {
   stageMeta,
   stageIndex,
@@ -51,6 +51,7 @@ export default async function PortalHome() {
       supabase.from("intake_sessions").select("completed_at").eq("case_id", myCase.id).maybeSingle(),
     ])
   const intakeDone = !!intake?.completed_at
+  const trainingState = await getTrainingState(myCase.id)
 
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
@@ -78,7 +79,11 @@ export default async function PortalHome() {
 
       {/* V3-P4.4 — first-visit orientation (dismissible, early stages only) */}
       {!isLicensed && !isDenied && ["lead", "eligibility_screened", "signed_up_paid"].includes(stage) && (
-        <WelcomeCard firstName={myCase.client.full_name.split(" ")[0]} />
+        <WelcomeCard
+          firstName={myCase.client.full_name.split(" ")[0]}
+          trainingHandled={trainingState.status === "engaged" || trainingState.status === "booked"}
+          intakeDone={intakeDone}
+        />
       )}
 
       {/* V3-P3.3 — denial: the appeal window is the only thing that matters */}
@@ -143,12 +148,27 @@ export default async function PortalHome() {
         </Link>
       )}
 
-      {/* Marketplace entry */}
+      {/* Marketplace entry — reflects where the applicant is in getting trained,
+          so "find an instructor" disappears once they're engaged/booked. */}
       <Link
         href="/portal/marketplace"
-        className="flex items-center justify-between rounded-md border border-brass/30 bg-brass/8 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/50"
+        className={
+          trainingState.status === "engaged" || trainingState.status === "booked"
+            ? "flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
+            : "flex items-center justify-between rounded-md border border-brass/30 bg-brass/8 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/50"
+        }
       >
-        <span className="text-sm font-medium">Find a verified local instructor</span>
+        <span className="text-sm font-medium">
+          {trainingState.status === "booked" && trainingState.bookingAt
+            ? `Training booked — ${formatDate(trainingState.bookingAt)}`
+            : trainingState.status === "engaged"
+              ? `Your instructor: ${trainingState.instructorName} — schedule your session`
+              : trainingState.status === "pending"
+                ? trainingState.interestedCount > 0
+                  ? `${trainingState.interestedCount} instructor${trainingState.interestedCount === 1 ? "" : "s"} interested — choose yours`
+                  : "Training request sent — awaiting interested instructors"
+                : "Find a verified local instructor"}
+        </span>
         <ArrowRight className="size-4" />
       </Link>
 
