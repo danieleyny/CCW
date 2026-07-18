@@ -17,15 +17,17 @@
 import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
-import { buildPdf } from "@/lib/pdf/builder"
+import { buildPdf, longDate } from "@/lib/pdf/builder"
 import {
   affirmationOfUnderstanding,
   socialMediaDisclosure,
   arrestNarratives,
   certOfDispositionRequests,
   type ArrestEntry,
+  type SignOpts,
 } from "@/lib/forms/documents"
 import { brand } from "@/config/brand"
+import { SIGNING_CONSENT } from "@/lib/requirements/consent"
 
 type DB = SupabaseClient<Database>
 type DocumentType = Database["public"]["Enums"]["document_type"]
@@ -37,6 +39,13 @@ export interface RenderInput {
   applicantName: string
   answers: Record<string, unknown>
   signaturePng?: Uint8Array
+  /**
+   * When the applicant signed. Present ⇒ signed rendering (signature stamped,
+   * this date printed). Absent ⇒ DRAFT: banner on every page, blank signature
+   * and date line. The date on a document is a SIGNING date, never a render
+   * date — that was the Phase 3 bug.
+   */
+  signedAt?: Date
 }
 
 export interface RenderedDocument {
@@ -53,7 +62,7 @@ const rows = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v a
 const isYes = (v: unknown): boolean => v === true || v === "yes"
 
 /** Q10–28 addendum — one written explanation per "yes". */
-async function disclosureAddendum(name: string, a: Record<string, unknown>, sig?: Uint8Array) {
+async function disclosureAddendum(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   const items: { q: string; explain: string }[] = []
   const push = (flag: unknown, q: string, key: string) => {
     if (isYes(flag)) items.push({ q, explain: str(a[key]) })
@@ -88,10 +97,10 @@ async function disclosureAddendum(name: string, a: Record<string, unknown>, sig?
     c.para("I affirm the statements above are true and complete to the best of my knowledge.", { size: 10 })
     if (sig) c.signatureImage("Applicant signature")
     else c.signatureLine("Applicant signature")
-  }, { signaturePng: sig })
+  }, { signaturePng: sig, ...sign })
 }
 
-async function protectionOrderStatement(name: string, a: Record<string, unknown>, sig?: Uint8Array) {
+async function protectionOrderStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Order of Protection — Written Statement")
     c.para(PREPARED_BY, { size: 9, color: "muted" })
@@ -108,10 +117,10 @@ async function protectionOrderStatement(name: string, a: Record<string, unknown>
     c.para("A copy of the order is submitted with this statement.", { size: 10, color: "muted" })
     if (sig) c.signatureImage("Applicant signature")
     else c.signatureLine("Applicant signature")
-  }, { signaturePng: sig })
+  }, { signaturePng: sig, ...sign })
 }
 
-async function domesticIncidentStatement(name: string, a: Record<string, unknown>, sig?: Uint8Array) {
+async function domesticIncidentStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Domestic Incident Report — Written Disclosure")
     c.para(PREPARED_BY, { size: 9, color: "muted" })
@@ -126,10 +135,10 @@ async function domesticIncidentStatement(name: string, a: Record<string, unknown
     c.para(str(a.explanation) || "(no explanation provided)")
     if (sig) c.signatureImage("Applicant signature")
     else c.signatureLine("Applicant signature")
-  }, { signaturePng: sig })
+  }, { signaturePng: sig, ...sign })
 }
 
-async function safeStorageStatement(name: string, a: Record<string, unknown>, sig?: Uint8Array) {
+async function safeStorageStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   const kind =
     str(a.storageType) === "lockbox" ? "a locked box or cabinet"
     : str(a.storageType) === "trigger_lock" ? "a trigger or cable lock inside a locked container"
@@ -152,7 +161,7 @@ async function safeStorageStatement(name: string, a: Record<string, unknown>, si
     }
     if (sig) c.signatureImage("Applicant signature")
     else c.signatureLine("Applicant signature")
-  }, { signaturePng: sig })
+  }, { signaturePng: sig, ...sign })
 }
 
 /** Copy-into-the-portal worksheet. We prepare; the applicant files. */
@@ -183,25 +192,29 @@ const toArrests = (v: unknown): ArrestEntry[] =>
 
 /** Route a requirement to its generator. */
 export async function renderRequirementDocument(input: RenderInput): Promise<RenderedDocument> {
-  const { reqCode, applicantName: n, answers: a, signaturePng: sig } = input
-  const today = new Date().toLocaleDateString("en-US", { dateStyle: "long" })
+  const { reqCode, applicantName: n, answers: a, signedAt } = input
+  // A signature only counts when we know WHEN it was applied — an image with no
+  // signing act behind it renders as a draft, not as a signed document.
+  const sig = signedAt ? input.signaturePng : undefined
+  const sign: SignOpts = { signedAt, draft: !sig }
+  const dated = signedAt ? longDate(signedAt) : "Draft — unsigned"
 
   switch (reqCode) {
     case "AFF-01":
-      return { bytes: await affirmationOfUnderstanding(n, today, sig), fileName: "affirmation-of-understanding.pdf", documentType: "affirmation_understanding", label: "Affirmation of understanding" }
+      return { bytes: await affirmationOfUnderstanding(n, dated, sig, sign), fileName: "affirmation-of-understanding.pdf", documentType: "affirmation_understanding", label: "Affirmation of understanding" }
     case "SAF-01":
-      return { bytes: await safeStorageStatement(n, a, sig), fileName: "safe-storage-statement.pdf", documentType: "safeguard_ack", label: "Safe storage statement" }
+      return { bytes: await safeStorageStatement(n, a, sig, sign), fileName: "safe-storage-statement.pdf", documentType: "safeguard_ack", label: "Safe storage statement" }
     case "SOC-01":
-      return { bytes: await socialMediaDisclosure(n, str(a.handles), today, sig), fileName: "social-media-list.pdf", documentType: "social_media_list", label: "Social media list (optional)" }
+      return { bytes: await socialMediaDisclosure(n, str(a.handles), dated, sig, sign), fileName: "social-media-list.pdf", documentType: "social_media_list", label: "Social media list (optional)" }
     case "DSC-01":
     case "QUE-01":
-      return { bytes: await disclosureAddendum(n, a, sig), fileName: "disclosure-addendum.pdf", documentType: "disclosure_addendum", label: "Disclosure addendum" }
+      return { bytes: await disclosureAddendum(n, a, sig, sign), fileName: "disclosure-addendum.pdf", documentType: "disclosure_addendum", label: "Disclosure addendum" }
     case "ARR-01":
-      return { bytes: await arrestNarratives(n, toArrests(a.arrests), today, sig), fileName: "arrest-statements.pdf", documentType: "arrest_statement", label: "Arrest statements" }
+      return { bytes: await arrestNarratives(n, toArrests(a.arrests), dated, sig, sign), fileName: "arrest-statements.pdf", documentType: "arrest_statement", label: "Arrest statements" }
     case "OOP-01":
-      return { bytes: await protectionOrderStatement(n, a, sig), fileName: "order-of-protection-statement.pdf", documentType: "order_of_protection_statement", label: "Order of protection statement" }
+      return { bytes: await protectionOrderStatement(n, a, sig, sign), fileName: "order-of-protection-statement.pdf", documentType: "order_of_protection_statement", label: "Order of protection statement" }
     case "DIR-01":
-      return { bytes: await domesticIncidentStatement(n, a, sig), fileName: "domestic-incident-statement.pdf", documentType: "domestic_incident_statement", label: "Domestic incident statement" }
+      return { bytes: await domesticIncidentStatement(n, a, sig, sign), fileName: "domestic-incident-statement.pdf", documentType: "domestic_incident_statement", label: "Domestic incident statement" }
     case "WORKSHEET":
       return { bytes: await applicationWorksheet(n, a), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
     default:
@@ -231,9 +244,9 @@ export async function renderCompanionDocument(input: RenderInput): Promise<Rende
  */
 export async function storeGeneratedDocument(
   admin: DB,
-  args: { caseId: string; clientId: string; reqCode: string; doc: RenderedDocument }
+  args: { caseId: string; clientId: string; reqCode: string; doc: RenderedDocument; signedAt?: Date }
 ): Promise<string> {
-  const { caseId, clientId, reqCode, doc } = args
+  const { caseId, clientId, reqCode, doc, signedAt } = args
 
   const { data: row, error: insErr } = await admin
     .from("documents")
@@ -245,6 +258,7 @@ export async function storeGeneratedDocument(
       status: "pending",
       req_code: reqCode,
       generated: true,
+      signed_at: signedAt?.toISOString() ?? null,
     })
     .select("id")
     .single()
@@ -263,9 +277,31 @@ export async function storeGeneratedDocument(
   return row.id
 }
 
-/** The consent an applicant affirms when they apply their signature to a document. */
-export const SIGNING_CONSENT =
-  "I am signing this document electronically. I affirm the statements in it are true and complete to the best of my knowledge, and I agree my electronic signature has the same legal effect as a handwritten one."
+/**
+ * Replace a generated document's bytes in place and mark it signed.
+ *
+ * Signing re-renders the SAME content with the signature and signing date
+ * stamped in, then overwrites the draft at its existing storage path. One row
+ * per generation — the draft doesn't linger as a second, near-identical
+ * document the applicant could file by mistake.
+ */
+export async function markGeneratedDocumentSigned(
+  admin: DB,
+  args: { documentId: string; filePath: string; bytes: Uint8Array; signedAt: Date }
+): Promise<void> {
+  const { error: upErr } = await admin.storage
+    .from("documents")
+    .upload(args.filePath, Buffer.from(args.bytes), { contentType: "application/pdf", upsert: true })
+  if (upErr) throw new Error(upErr.message)
+
+  const { error } = await admin
+    .from("documents")
+    .update({ signed_at: args.signedAt.toISOString() })
+    .eq("id", args.documentId)
+  if (error) throw new Error(error.message)
+}
+
+export { SIGNING_CONSENT }
 
 /**
  * Record a signing act. The PNG in `signatures` is a reusable image, not a

@@ -32,6 +32,7 @@ export function RequirementsChecklist({
   clientId,
   prefills,
   generated,
+  signatureOnFile,
 }: {
   items: ReqChecklistItem[]
   caseId: string
@@ -40,6 +41,8 @@ export function RequirementsChecklist({
   prefills: Record<string, Record<string, unknown>>
   /** Documents we already generated, keyed by req_code. */
   generated: Record<string, GeneratedDoc>
+  /** Base64 PNG of the applicant's signature on file, if they've captured one. */
+  signatureOnFile: string | null
 }) {
   const applicable = items.filter((i) => i.status !== "na")
   const notApplicable = items.filter((i) => i.status === "na")
@@ -94,6 +97,7 @@ export function RequirementsChecklist({
               clientId={clientId}
               prefill={prefills[item.reqCode] ?? {}}
               generated={generated[item.reqCode] ?? null}
+              signatureOnFile={signatureOnFile}
             />
           </li>
         ))}

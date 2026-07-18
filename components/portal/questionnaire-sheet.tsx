@@ -5,6 +5,7 @@ import { Plus, Trash2, ShieldAlert, Scale } from "lucide-react"
 import { toast } from "sonner"
 import type { Field, Questionnaire } from "@/lib/requirements/questionnaires"
 import { saveRequirementAnswers, generateRequirementDocument } from "@/app/portal/requirements/actions"
+import { SignDocument } from "@/components/portal/sign-document"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,14 +25,19 @@ export function QuestionnaireSheet({
   reqCode,
   questionnaire,
   initial,
+  signatureOnFile,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   reqCode: string
   questionnaire: Questionnaire
   initial: Values
+  /** Base64 PNG already captured for this case — offered as "use my signature". */
+  signatureOnFile: string | null
 }) {
   const [values, setValues] = useState<Values>(initial)
+  /** answers → sign. A signable document is a DRAFT until the sign step runs. */
+  const [step, setStep] = useState<"answers" | "sign">("answers")
   const [pending, startTransition] = useTransition()
 
   const set = (name: string, v: unknown) => setValues((s) => ({ ...s, [name]: v }))
@@ -56,6 +62,10 @@ export function QuestionnaireSheet({
       const gen = await generateRequirementDocument(reqCode)
       if (gen.error) {
         toast.error(gen.error)
+        return
+      }
+      if (gen.needsSignature) {
+        setStep("sign")
         return
       }
       toast.success("Your document is ready to download.")
@@ -151,6 +161,29 @@ export function QuestionnaireSheet({
           <SheetTitle>{questionnaire.title}</SheetTitle>
         </SheetHeader>
 
+        {step === "sign" ? (
+          <div className="space-y-4 px-4 pb-8">
+            <p className="text-sm text-text-mid">
+              Your draft is ready. Read it, then sign — the document only counts once it&apos;s
+              signed, and the date on it is the date you sign.
+            </p>
+            <SignDocument
+              reqCode={reqCode}
+              signatureOnFile={signatureOnFile}
+              onSigned={() => {
+                setStep("answers")
+                onOpenChange(false)
+              }}
+            />
+            <Button variant="ghost" className="w-full" onClick={() => setStep("answers")}>
+              Back to my answers
+            </Button>
+            <p className="text-xs text-text-low">
+              You can close this and sign later — your draft is saved under Documents, marked
+              “DRAFT — unsigned”.
+            </p>
+          </div>
+        ) : (
         <div className="space-y-5 px-4 pb-8">
           <p className="text-sm text-text-mid">{questionnaire.intro}</p>
 
@@ -218,6 +251,7 @@ export function QuestionnaireSheet({
             {pending ? "Generating…" : questionnaire.submitLabel}
           </Button>
         </div>
+        )}
       </SheetContent>
     </Sheet>
   )

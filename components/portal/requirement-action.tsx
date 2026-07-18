@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { ChevronDown, Download, ExternalLink, FileText, Check, Stamp } from "lucide-react"
+import { ChevronDown, Download, ExternalLink, FileText, Check, Stamp, PenLine } from "lucide-react"
 import { toast } from "sonner"
 import type { Database } from "@/lib/supabase/types"
-import { actionFor } from "@/lib/requirements/actions"
+import { actionFor, isSignable } from "@/lib/requirements/actions"
 import { questionnaireFor } from "@/lib/requirements/questionnaires"
 import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requirements/actions"
 import { QuestionnaireSheet } from "@/components/portal/questionnaire-sheet"
+import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentUploader } from "@/components/portal/document-uploader"
 import { Button } from "@/components/ui/button"
 
@@ -17,6 +18,8 @@ export interface GeneratedDoc {
   id: string
   fileName: string | null
   url: string | null
+  /** ISO timestamp, or null while it's still an unsigned DRAFT. */
+  signedAt: string | null
 }
 
 /**
@@ -32,6 +35,7 @@ export function RequirementAction({
   clientId,
   prefill,
   generated,
+  signatureOnFile,
 }: {
   reqCode: string
   status: string
@@ -39,8 +43,11 @@ export function RequirementAction({
   clientId: string
   prefill: Record<string, unknown>
   generated?: GeneratedDoc | null
+  /** Base64 PNG of the signature already on file for this case, if any. */
+  signatureOnFile: string | null
 }) {
   const [open, setOpen] = useState(false)
+  const [signing, setSigning] = useState(false)
   const [howTo, setHowTo] = useState(false)
   const [pending, startTransition] = useTransition()
 
@@ -51,19 +58,32 @@ export function RequirementAction({
   // ── generate ──────────────────────────────────────────────────────────────
   if (action.mode === "generate") {
     const q = questionnaireFor(action.questionnaireId ?? "")
+    // A generated document is a DRAFT until it's signed. Say so plainly, and
+    // make signing — not downloading — the obvious next move.
+    const needsSignature = isSignable(action) && !!generated && !generated.signedAt
     return (
       <div className="mt-3 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {q && (
-            <Button size="sm" variant={done ? "outline" : "default"} onClick={() => setOpen(true)}>
+            <Button
+              size="sm"
+              variant={done || needsSignature ? "outline" : "default"}
+              onClick={() => setOpen(true)}
+            >
               <FileText className="mr-1.5 size-3.5" />
               {generated ? "Edit & regenerate" : action.actionLabel}
+            </Button>
+          )}
+          {needsSignature && !signing && (
+            <Button size="sm" onClick={() => setSigning(true)}>
+              <PenLine className="mr-1.5 size-3.5" /> Review &amp; sign
             </Button>
           )}
           {generated?.url && (
             <Button size="sm" variant="outline" asChild>
               <a href={generated.url} target="_blank" rel="noreferrer">
-                <Download className="mr-1.5 size-3.5" /> Download
+                <Download className="mr-1.5 size-3.5" />
+                {generated.signedAt ? "Download" : "Read the draft"}
               </a>
             </Button>
           )}
@@ -83,6 +103,22 @@ export function RequirementAction({
             </Button>
           )}
         </div>
+
+        {needsSignature && (
+          <p className="flex items-start gap-1.5 rounded-md border border-brass/30 bg-brass/10 p-2 text-xs text-brass">
+            <PenLine className="mt-0.5 size-3.5 shrink-0" />
+            Draft — unsigned. It doesn&apos;t count toward your application until you sign it, and
+            the date on it will be the date you sign.
+          </p>
+        )}
+
+        {needsSignature && signing && (
+          <SignDocument
+            reqCode={reqCode}
+            signatureOnFile={signatureOnFile}
+            onSigned={() => setSigning(false)}
+          />
+        )}
 
         {action.notarize && generated && !done && (
           <p className="flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
@@ -109,6 +145,7 @@ export function RequirementAction({
             reqCode={reqCode}
             questionnaire={q}
             initial={prefill}
+            signatureOnFile={signatureOnFile}
           />
         )}
       </div>

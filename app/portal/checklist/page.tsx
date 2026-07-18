@@ -22,16 +22,22 @@ export default async function ChecklistPage() {
   // V3-P2.1 — ONE source of truth: the versioned requirements engine. Every
   // case has case_requirements (materialized at creation and after intake);
   // the V1 checklist_items fallback is gone.
-  const [reqRows, { data: intake }, { data: savedAnswers }, { data: genDocs }] = await Promise.all([
+  const [reqRows, { data: intake }, { data: savedAnswers }, { data: genDocs }, { data: sig }] = await Promise.all([
     getCaseRequirements(supabase, myCase.id),
     supabase.from("intake_sessions").select("completed_at, answers").eq("case_id", myCase.id).maybeSingle(),
     supabase.from("requirement_answers").select("req_code, answers").eq("case_id", myCase.id),
     supabase
       .from("documents")
-      .select("id, req_code, file_name, file_path, created_at")
+      .select("id, req_code, file_name, file_path, created_at, signed_at")
       .eq("case_id", myCase.id)
       .eq("generated", true)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("signatures")
+      .select("png_base64")
+      .eq("case_id", myCase.id)
+      .eq("signer_key", "applicant")
+      .maybeSingle(),
   ])
   const intakeDone = !!intake?.completed_at
 
@@ -63,7 +69,7 @@ export default async function ChecklistPage() {
       const { data } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 3600)
       url = data?.signedUrl ?? null
     }
-    generated[d.req_code] = { id: d.id, fileName: d.file_name, url }
+    generated[d.req_code] = { id: d.id, fileName: d.file_name, url, signedAt: d.signed_at }
   }
 
   const items: ReqChecklistItem[] = reqRows.map((row) => {
@@ -88,6 +94,7 @@ export default async function ChecklistPage() {
         clientId={myCase.client.id}
         prefills={prefills}
         generated={generated}
+        signatureOnFile={sig?.png_base64 ?? null}
       />
     </div>
   )

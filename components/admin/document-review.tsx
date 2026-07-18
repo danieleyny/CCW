@@ -25,6 +25,10 @@ export interface DocRow {
   review_notes: string | null
   file_name: string | null
   signedUrl: string | null
+  /** Generated on platform (vs uploaded by the client). */
+  generated: boolean
+  /** ISO signing timestamp; null on a generated document means unsigned DRAFT. */
+  signed_at: string | null
 }
 
 export function DocumentReview({
@@ -94,6 +98,13 @@ export function DocumentReview({
                 {doc.notarized && (
                   <span className="rounded bg-brass/15 px-1.5 py-0.5 text-[10px] font-medium text-brass-bright">
                     notarized
+                  </span>
+                )}
+                {doc.generated && !doc.signed_at && (
+                  // An unsigned draft must never be reviewed as if it were the
+                  // filed article — the applicant hasn't signed it yet.
+                  <span className="rounded bg-brass/15 px-1.5 py-0.5 text-[10px] font-medium text-brass-bright">
+                    draft — unsigned
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">v{doc.version}</span>

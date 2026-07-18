@@ -10,6 +10,8 @@ const INK = rgb(0.05, 0.06, 0.08)
 const MUTED = rgb(0.42, 0.45, 0.5)
 const BRASS = rgb(0.71, 0.54, 0.21)
 const HAIR = rgb(0.85, 0.86, 0.88)
+const DRAFT_BG = rgb(0.99, 0.94, 0.85)
+const DRAFT_INK = rgb(0.55, 0.33, 0.04)
 
 export interface DrawOpts {
   size?: number
@@ -37,9 +39,19 @@ function colorOf(c?: DrawOpts["color"]) {
   return c === "muted" ? MUTED : c === "brass" ? BRASS : INK
 }
 
+/** Long-form date for anything a person reads on paper. */
+export const longDate = (d: Date) =>
+  d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+
 export async function buildPdf(
   draw: (c: Ctx) => void,
-  opts: { signaturePng?: Uint8Array } = {}
+  opts: {
+    signaturePng?: Uint8Array
+    /** When the applicant signed THESE bytes. Stamped beside the signature — never the render date. */
+    signedAt?: Date
+    /** No signature yet: banner every page so an unsigned copy can't pass for a filed one. */
+    draft?: boolean
+  } = {}
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
@@ -138,7 +150,11 @@ export async function buildPdf(
       y -= h + 2
       page.drawLine({ start: { x: M, y }, end: { x: M + 240, y }, thickness: 0.7, color: HAIR })
       y -= 12
-      drawText(`${label}     Date: ${new Date().toISOString().slice(0, 10)}`, M, { size: 9.5, color: "muted", gap: 14 })
+      // The SIGNING date, passed in by the caller. Never `new Date()` here — that
+      // would print the render date and quietly re-date the document on every
+      // regeneration.
+      const signed = opts.signedAt ? longDate(opts.signedAt) : "________________"
+      drawText(`${label}     Signed: ${signed}`, M, { size: 9.5, color: "muted", gap: 14 })
     },
     notaryBlock(personName) {
       this.h2("Notary Acknowledgment")
@@ -161,5 +177,18 @@ export async function buildPdf(
   }
 
   draw(ctx)
+
+  // Unsigned copy → say so on every page. An applicant may download a draft to
+  // read it; nothing about it should look filing-ready.
+  if (opts.draft) {
+    const banner = "DRAFT — UNSIGNED · not for filing"
+    for (const p of pdf.getPages()) {
+      const { width, height } = p.getSize()
+      const w = bold.widthOfTextAtSize(banner, 9)
+      p.drawRectangle({ x: 0, y: height - 22, width, height: 22, color: DRAFT_BG })
+      p.drawText(banner, { x: (width - w) / 2, y: height - 15, size: 9, font: bold, color: DRAFT_INK })
+    }
+  }
+
   return pdf.save()
 }

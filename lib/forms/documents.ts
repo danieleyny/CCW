@@ -9,8 +9,15 @@ export interface ArrestEntry {
 
 type Sig = Uint8Array | undefined
 
+/**
+ * Signing context for a rendered document: WHEN it was signed (stamped beside
+ * the signature — never the render date) and whether it's an unsigned draft
+ * (banner on every page). Unsigned + undated is the honest default.
+ */
+export type SignOpts = { signedAt?: Date; draft?: boolean }
+
 /** AFF-01 — affirmation acknowledging NYC carry rules + sensitive locations. */
-export async function affirmationOfUnderstanding(applicantName: string, dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
+export async function affirmationOfUnderstanding(applicantName: string, dateStr: string, signaturePng?: Sig, sign: SignOpts = {}): Promise<Uint8Array> {
   return buildPdf((c) => {
     c.heading("Affirmation of Understanding", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
@@ -22,11 +29,11 @@ export async function affirmationOfUnderstanding(applicantName: string, dateStr:
     c.spacer(8)
     c.para("I make this affirmation knowingly and voluntarily, and the statements above are true.", { gap: 16 })
     c.signatureImage(`Applicant: ${applicantName}`)
-  }, { signaturePng })
+  }, { signaturePng, ...sign })
 }
 
 /** SAF-01 — safe-storage attestation. */
-export async function safeStorageAttestation(applicantName: string, dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
+export async function safeStorageAttestation(applicantName: string, dateStr: string, signaturePng?: Sig, sign: SignOpts = {}): Promise<Uint8Array> {
   return buildPdf((c) => {
     c.heading("Safe-Storage Attestation", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
@@ -38,11 +45,11 @@ export async function safeStorageAttestation(applicantName: string, dateStr: str
       { gap: 16 }
     )
     c.signatureImage(`Applicant: ${applicantName}`)
-  }, { signaturePng })
+  }, { signaturePng, ...sign })
 }
 
 /** SOC-01 — 3-year social-media disclosure, from collected handles. */
-export async function socialMediaDisclosure(applicantName: string, handles: string, dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
+export async function socialMediaDisclosure(applicantName: string, handles: string, dateStr: string, signaturePng?: Sig, sign: SignOpts = {}): Promise<Uint8Array> {
   const list = (handles || "").split(/[\n,]+/).map((h) => h.trim()).filter(Boolean)
   return buildPdf((c) => {
     c.heading("Social-Media Disclosure (3 Years)", `NYC Concealed-Carry License Application · ${dateStr}`)
@@ -54,11 +61,11 @@ export async function socialMediaDisclosure(applicantName: string, handles: stri
     c.spacer(8)
     c.para("I affirm the list above is complete and accurate to the best of my knowledge.", { gap: 16 })
     c.signatureImage(`Applicant: ${applicantName}`)
-  }, { signaturePng })
+  }, { signaturePng, ...sign })
 }
 
 /** ARR-01 — formatted written explanation for each disclosed arrest/summons. */
-export async function arrestNarratives(applicantName: string, arrests: ArrestEntry[], dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
+export async function arrestNarratives(applicantName: string, arrests: ArrestEntry[], dateStr: string, signaturePng?: Sig, sign: SignOpts = {}): Promise<Uint8Array> {
   return buildPdf((c) => {
     c.heading("Disclosure — Written Explanations", `NYC Concealed-Carry License Application · ${dateStr}`)
     c.rule()
@@ -75,11 +82,11 @@ export async function arrestNarratives(applicantName: string, arrests: ArrestEnt
     c.spacer(4)
     c.para("The explanations above are true and complete to the best of my knowledge.", { gap: 16 })
     c.signatureImage(`Applicant: ${applicantName}`)
-  }, { signaturePng })
+  }, { signaturePng, ...sign })
 }
 
 /** ARR-01 — one Certificate-of-Disposition request letter per disclosed arrest. */
-export async function certOfDispositionRequests(applicantName: string, arrests: ArrestEntry[], dateStr: string, signaturePng?: Sig): Promise<Uint8Array> {
+export async function certOfDispositionRequests(applicantName: string, arrests: ArrestEntry[], dateStr: string, signaturePng?: Sig, sign: SignOpts = {}): Promise<Uint8Array> {
   const items = arrests.length ? arrests : [{} as ArrestEntry]
   return buildPdf((c) => {
     items.forEach((arrest, i) => {
@@ -100,5 +107,5 @@ export async function certOfDispositionRequests(applicantName: string, arrests: 
       c.signatureImage(`Applicant: ${applicantName}`)
       c.para("Mailing address: ____________________________________________________", { size: 10, color: "muted" })
     })
-  }, { signaturePng })
+  }, { signaturePng, ...sign })
 }

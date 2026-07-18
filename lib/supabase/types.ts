@@ -985,6 +985,7 @@ export type Database = {
           req_code: string | null
           review_notes: string | null
           reviewer: string | null
+          signed_at: string | null
           status: Database["public"]["Enums"]["document_status"]
           type: Database["public"]["Enums"]["document_type"]
           updated_at: string
@@ -1003,6 +1004,7 @@ export type Database = {
           req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
+          signed_at?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           type: Database["public"]["Enums"]["document_type"]
           updated_at?: string
@@ -1021,6 +1023,7 @@ export type Database = {
           req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
+          signed_at?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           type?: Database["public"]["Enums"]["document_type"]
           updated_at?: string

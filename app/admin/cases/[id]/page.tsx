@@ -131,6 +131,7 @@ export default async function CaseFilePage({
       return {
         id: d.id, type: d.type, status: d.status, notarized: d.notarized,
         version: d.version, review_notes: d.review_notes, file_name: d.file_name, signedUrl,
+        generated: d.generated, signed_at: d.signed_at,
       }
     })
   )

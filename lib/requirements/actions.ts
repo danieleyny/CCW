@@ -51,6 +51,13 @@ interface GenerateAction extends ActionBase {
   questionnaireId: string
   /** A document we prepare that HELPS obtain the external one (court request letter). */
   companion?: { questionnaireId: string; label: string }
+  /**
+   * Every generated document carries a signature line and so needs signing —
+   * OPT OUT explicitly (worksheets, reference letters signed by someone else).
+   * Defaulting to "signable" fails safe: a new document nobody thought about
+   * requires a signature rather than silently satisfying unsigned.
+   */
+  signable?: boolean
 }
 
 /**
@@ -144,6 +151,10 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Complete & generate",
     questionnaireId: "cohabitant-affidavit",
     documentType: "cohabitant_affidavit",
+    // Signed by the COHABITANT / REFERENCE, not the applicant — each signer
+    // signs their own copy through the tokenized outreach flow, then it's
+    // notarized and uploaded. There is nothing here for the applicant to sign.
+    signable: false,
     notarize: true,
     sensitive: true,
     help: "A notarized affidavit from every household member 18 or older — or, if you live alone, a sole-occupancy statement. We prepare each one; each signer notarizes it and you upload the signed copy.",
@@ -153,6 +164,10 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Invite your references",
     questionnaireId: "references",
     documentType: "reference_letter",
+    // Signed by the COHABITANT / REFERENCE, not the applicant — each signer
+    // signs their own copy through the tokenized outreach flow, then it's
+    // notarized and uploaded. There is nothing here for the applicant to sign.
+    signable: false,
     notarize: true,
     sensitive: true,
     help: "Four character references, at least two not related to you. Each gets a private link to complete and notarize their letter. The requirement completes when the notarized letters are in.",
@@ -162,6 +177,10 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Invite your references",
     questionnaireId: "references",
     documentType: "reference_letter",
+    // Signed by the COHABITANT / REFERENCE, not the applicant — each signer
+    // signs their own copy through the tokenized outreach flow, then it's
+    // notarized and uploaded. There is nothing here for the applicant to sign.
+    signable: false,
     notarize: true,
     sensitive: true,
     help: "Two non-family character references for a premises license. Each gets a private link to complete and notarize their letter.",
@@ -380,6 +399,16 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
 /** The action for a requirement code, or null if the registry has one we don't map yet. */
 export function actionFor(reqCode: string): RequirementAction | null {
   return REQUIREMENT_ACTIONS[reqCode] ?? null
+}
+
+/**
+ * Does this requirement's document need the applicant's signature before it
+ * counts? Generated documents do unless they explicitly opt out; nothing else
+ * does (an upload is evidence the applicant obtained, not something they sign
+ * here).
+ */
+export function isSignable(action: RequirementAction | null): boolean {
+  return action?.mode === "generate" && action.signable !== false
 }
 
 /** Requirement codes whose documents must never reach an instructor. */
