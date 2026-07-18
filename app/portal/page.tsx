@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, ClipboardList, CalendarDays, CreditCard } from "lucide-react"
+import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import {
@@ -39,15 +39,18 @@ export default async function PortalHome() {
   const here = stageIndex(stage)
   const next = nextStage(stage)
 
-  const [{ data: reqs }, { data: training }, { data: payments }] = await Promise.all([
-    supabase.from("case_requirements").select("status").eq("case_id", myCase.id),
-    supabase
-      .from("training_sessions")
-      .select("class_date")
-      .eq("case_id", myCase.id)
-      .order("class_date", { ascending: true }),
-    supabase.from("payments").select("amount_cents, status, package_key").eq("case_id", myCase.id),
-  ])
+  const [{ data: reqs }, { data: training }, { data: payments }, { data: intake }] =
+    await Promise.all([
+      supabase.from("case_requirements").select("status").eq("case_id", myCase.id),
+      supabase
+        .from("training_sessions")
+        .select("class_date")
+        .eq("case_id", myCase.id)
+        .order("class_date", { ascending: true }),
+      supabase.from("payments").select("amount_cents, status, package_key").eq("case_id", myCase.id),
+      supabase.from("intake_sessions").select("completed_at").eq("case_id", myCase.id).maybeSingle(),
+    ])
+  const intakeDone = !!intake?.completed_at
 
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
@@ -115,16 +118,30 @@ export default async function PortalHome() {
         </Link>
       )}
 
-      {/* Guided intake entry */}
-      <Link
-        href="/portal/intake"
-        className="flex items-center justify-between rounded-md border border-signal/30 bg-signal-dim px-4 py-3.5 text-signal transition-colors hover:border-signal/50"
-      >
-        <span className="text-sm font-medium">
-          Application intake — build your personalized document set
-        </span>
-        <ArrowRight className="size-4" />
-      </Link>
+      {/* Guided intake entry — flips to a completed state once submitted, so
+          finishing the wizard visibly registers as progress. */}
+      {intakeDone ? (
+        <Link
+          href="/portal/checklist"
+          className="flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <CheckCircle2 className="size-4" />
+            Intake complete — view your personalized checklist
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      ) : (
+        <Link
+          href="/portal/intake"
+          className="flex items-center justify-between rounded-md border border-signal/30 bg-signal-dim px-4 py-3.5 text-signal transition-colors hover:border-signal/50"
+        >
+          <span className="text-sm font-medium">
+            Application intake — build your personalized document set
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
 
       {/* Marketplace entry */}
       <Link

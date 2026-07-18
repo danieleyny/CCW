@@ -59,10 +59,14 @@ export async function saveIntakeStep(caseId: string, step: number, answers: Wiza
   if (!Number.isInteger(step) || step < 1 || step > 6) throw new Error("Invalid step")
 
   const supabase = await createClient()
+  // Upsert (not update): case_id is UNIQUE, so this self-heals if the session
+  // row is somehow missing instead of silently no-opping against zero rows.
   const { error } = await supabase
     .from("intake_sessions")
-    .update({ current_step: step, answers: parsed.answers as unknown as Json })
-    .eq("case_id", caseId)
+    .upsert(
+      { case_id: caseId, current_step: step, answers: parsed.answers as unknown as Json },
+      { onConflict: "case_id" }
+    )
   if (error) throw error
   revalidatePath("/portal/intake")
 }
@@ -90,8 +94,10 @@ export async function completeIntake(
     const supabase = await createClient()
     await supabase
       .from("intake_sessions")
-      .update({ current_step: 6, answers: answers as unknown as Json })
-      .eq("case_id", caseId)
+      .upsert(
+        { case_id: caseId, current_step: 6, answers: answers as unknown as Json },
+        { onConflict: "case_id" }
+      )
     await logActivity({
       action: "intake.attorney_review_required",
       caseId,
@@ -112,8 +118,10 @@ export async function completeIntake(
     const supabase = await createClient()
     await supabase
       .from("intake_sessions")
-      .update({ current_step: 6, answers: answers as unknown as Json })
-      .eq("case_id", caseId)
+      .upsert(
+        { case_id: caseId, current_step: 6, answers: answers as unknown as Json },
+        { onConflict: "case_id" }
+      )
     return {
       blockedEligibility: false,
       validationErrors: issues,
@@ -124,8 +132,15 @@ export async function completeIntake(
   const supabase = await createClient()
   await supabase
     .from("intake_sessions")
-    .update({ current_step: 6, answers: answers as unknown as Json, completed_at: new Date().toISOString() })
-    .eq("case_id", caseId)
+    .upsert(
+      {
+        case_id: caseId,
+        current_step: 6,
+        answers: answers as unknown as Json,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "case_id" }
+    )
 
   const admin = createAdminClient()
   const result = await processIntake(admin, caseId, gate.jurisdiction, answers)

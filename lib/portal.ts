@@ -27,7 +27,10 @@ export async function getMyCase() {
       "id, stage, status, nypd_app_ref, target_file_date, license_expires_on, is_renewal, client_id, clients(id, full_name, email, phone, borough, track)"
     )
     .in("client_id", clientIds)
+    // Deterministic "current case": newest, tie-broken by id, so this and
+    // provisioning (lib/onboarding.ts) always agree on the same canonical case.
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(1)
     .maybeSingle()
 

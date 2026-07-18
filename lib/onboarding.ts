@@ -17,11 +17,16 @@ export async function ensureClientCaseForProfile(
 ): Promise<{ caseId: string; clientId: string }> {
   const email = opts.email.trim()
 
-  // 1. Already linked to a client?
+  // 1. Already linked to a client? (Ordered limit(1), not maybeSingle: a unique
+  // index enforces one row per profile, but ordering keeps this deterministic
+  // and non-throwing even against legacy duplicates.)
   const { data: linked } = await admin
     .from("clients")
     .select("id")
     .eq("profile_id", opts.profileId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
     .maybeSingle()
   let clientId = linked?.id as string | undefined
 
