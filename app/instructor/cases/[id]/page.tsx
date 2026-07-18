@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation"
-import { Lock, CalendarClock } from "lucide-react"
+import { Lock, CalendarClock, MessageSquare } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getCaseRequirements } from "@/lib/requirements"
 import { stageMeta, type CaseStageKey } from "@/config/stages"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { confirmBooking, completeBooking, cancelBooking } from "../actions"
+import { sendEngagementMessage } from "@/app/portal/actions"
 
 export const metadata = { title: "Case (scoped)" }
 
@@ -32,6 +34,39 @@ export default async function InstructorCaseDetail({
     .select("id, type, status, starts_at")
     .eq("case_id", id)
     .order("starts_at", { ascending: true })
+
+  // The instructor↔applicant chat for this engagement (RLS returns only theirs).
+  const { data: eng } = await supabase
+    .from("engagements")
+    .select("id")
+    .eq("case_id", id)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  let chat: MessageRow[] = []
+  if (eng) {
+    const {
+      data: { user: me },
+    } = await supabase.auth.getUser()
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("id, body, created_at, sender_id")
+      .eq("engagement_id", eng.id)
+      .order("created_at")
+    // Firewall: the instructor never sees the applicant's real name — their
+    // messages read as "Applicant". The instructor's own show as "You".
+    chat = (msgs ?? []).map((m) => {
+      const mine = m.sender_id === me?.id
+      return {
+        id: m.id,
+        body: m.body,
+        created_at: m.created_at,
+        senderName: mine ? "You" : "Applicant",
+        senderRole: mine ? "instructor" : "client",
+      }
+    })
+  }
 
   return (
     <div className="space-y-5">
@@ -91,6 +126,22 @@ export default async function InstructorCaseDetail({
           </ul>
         )}
       </div>
+
+      {eng && (
+        <div>
+          <h2 className="engraved mb-2 flex items-center gap-2 text-text-low">
+            <MessageSquare className="size-3.5" /> Message the applicant
+          </h2>
+          <div className="rounded-lg border bg-card p-4">
+            <MessageThread
+              caseId={eng.id}
+              messages={chat}
+              send={sendEngagementMessage}
+              placeholder="Message your applicant…"
+            />
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="engraved mb-2 text-text-low">Requirements ({applicable.length})</h2>

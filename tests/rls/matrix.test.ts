@@ -150,4 +150,37 @@ describe.skipIf(!reachable)("RLS access matrix", () => {
     const safe = await instructor.from("instructor_offer_feed").select("offer_id, type, area_label").limit(1)
     expect(safe.error).toBeNull()
   })
+
+  it("engagement chat: instructor sees ONLY their thread, never the staff thread", async () => {
+    const { data: instr } = await admin
+      .from("instructors")
+      .select("id")
+      .eq("email", "instructor@carrypath.test")
+      .single()
+    // Bind the instructor to the fixture case so the chat lane opens.
+    const { data: eng } = await admin
+      .from("engagements")
+      .insert({ case_id: caseId, instructor_id: instr!.id, type: "training", status: "active" })
+      .select("id")
+      .single()
+
+    const { data: me } = await clientA.auth.getUser()
+    // Client posts to the staff thread (engagement_id null) and the engagement thread.
+    await clientA.from("messages").insert({ case_id: caseId, sender_id: me.user!.id, body: "STAFF ONLY secret" })
+    await clientA.from("messages").insert({ case_id: caseId, engagement_id: eng!.id, sender_id: me.user!.id, body: "hello instructor" })
+
+    // Instructor sees the engagement message but NOT the staff-only one.
+    const seen = await instructor.from("messages").select("body, engagement_id").eq("case_id", caseId)
+    const bodies = (seen.data ?? []).map((m) => m.body)
+    expect(bodies).toContain("hello instructor")
+    expect(bodies).not.toContain("STAFF ONLY secret")
+
+    // Instructor cannot post into the staff thread (engagement_id null).
+    const badWrite = await instructor
+      .from("messages")
+      .insert({ case_id: caseId, engagement_id: null, body: "reaching staff" })
+    expect(badWrite.error).not.toBeNull()
+
+    await admin.from("engagements").delete().eq("id", eng!.id)
+  })
 })

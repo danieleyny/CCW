@@ -243,10 +243,73 @@ export async function sendMessage(caseId: string, body: string) {
   const trimmed = body.trim()
   if (!trimmed) return
   const supabase = await createClient()
+  // Staff thread only (engagement_id stays null); the instructor never sees it.
   const { error } = await supabase
     .from("messages")
     .insert({ case_id: caseId, sender_id: userId, body: trimmed })
   if (error) throw error
   await logActivity({ action: "message.sent", caseId, entity: "message", detail: { from: "client" } })
   revalidatePath("/portal/messages")
+}
+
+/**
+ * Send a message on the applicant↔instructor thread for an engagement. Used by
+ * BOTH surfaces (the applicant's marketplace panel and the instructor's case
+ * view); RLS enforces that each party may only touch their own engagement's
+ * thread. `threadKey` is the engagement id (MessageThread passes it opaquely).
+ */
+export async function sendEngagementMessage(engagementId: string, body: string) {
+  const { userId, profile } = await requireRole(["client", "instructor"])
+  const role = profile.role
+  const trimmed = body.trim()
+  if (!trimmed || !engagementId) return
+  const supabase = await createClient()
+
+  // Both parties can read their own engagement (RLS) → derive the case id.
+  const { data: eng } = await supabase
+    .from("engagements")
+    .select("id, case_id, instructor_id")
+    .eq("id", engagementId)
+    .maybeSingle()
+  if (!eng) throw new Error("Engagement not found")
+
+  const { error } = await supabase.from("messages").insert({
+    case_id: eng.case_id,
+    engagement_id: engagementId,
+    sender_id: userId,
+    body: trimmed,
+  })
+  if (error) throw error
+
+  // Notify the other party in-app (service role — no PII crosses the wall).
+  const admin = createAdminClient()
+  if (role === "instructor") {
+    const { data: kase } = await admin
+      .from("cases")
+      .select("clients(profile_id)")
+      .eq("id", eng.case_id)
+      .single()
+    const client = kase?.clients as unknown as { profile_id: string | null } | null
+    if (client?.profile_id) {
+      await admin.from("notifications").insert({
+        recipient: client.profile_id, case_id: eng.case_id, kind: "info",
+        title: "New message from your instructor", body: trimmed.slice(0, 140),
+        link: "/portal/marketplace",
+      })
+    }
+  } else {
+    const { data: instr } = await admin
+      .from("instructors").select("profile_id").eq("id", eng.instructor_id).single()
+    if (instr?.profile_id) {
+      await admin.from("notifications").insert({
+        recipient: instr.profile_id, case_id: eng.case_id, kind: "info",
+        title: "New message from your applicant", body: trimmed.slice(0, 140),
+        link: "/instructor/cases",
+      })
+    }
+  }
+
+  await logActivity({ action: "message.sent", caseId: eng.case_id, entity: "message", detail: { from: role, engagement: engagementId } })
+  revalidatePath("/portal/marketplace")
+  revalidatePath(`/instructor/cases/${eng.case_id}`)
 }

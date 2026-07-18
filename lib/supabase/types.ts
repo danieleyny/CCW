@@ -1382,6 +1382,7 @@ export type Database = {
           body: string
           case_id: string
           created_at: string
+          engagement_id: string | null
           id: string
           read: boolean
           sender_id: string | null
@@ -1390,6 +1391,7 @@ export type Database = {
           body: string
           case_id: string
           created_at?: string
+          engagement_id?: string | null
           id?: string
           read?: boolean
           sender_id?: string | null
@@ -1398,6 +1400,7 @@ export type Database = {
           body?: string
           case_id?: string
           created_at?: string
+          engagement_id?: string | null
           id?: string
           read?: boolean
           sender_id?: string | null
@@ -1408,6 +1411,13 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
             referencedColumns: ["id"]
           },
           {
@@ -2587,6 +2597,10 @@ export type Database = {
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
       instructor_engaged: { Args: { p_case_id: string }; Returns: boolean }
+      instructor_owns_engagement: {
+        Args: { p_engagement_id: string }
+        Returns: boolean
+      }
       instructors_within_radius: {
         Args: {
           p_jurisdiction?: Database["public"]["Enums"]["jurisdiction_key"]

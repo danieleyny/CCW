@@ -10,7 +10,9 @@ import { LocationPrompt } from "@/components/portal/location-prompt"
 import { InstructorCard } from "@/components/portal/instructor-card"
 import { ChooseButton } from "@/components/portal/choose-instructor"
 import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
+import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { cancelOffer } from "./actions"
+import { sendEngagementMessage } from "@/app/portal/actions"
 
 export const metadata = { title: "Find an instructor" }
 
@@ -39,6 +41,40 @@ export default async function MarketplacePage() {
   ])
 
   const hasOpenOffer = (offers ?? []).some((o) => o.status === "open")
+
+  // Messages for the applicant↔instructor engagement thread(s). Cross-role
+  // profile reads are RLS-blocked, so resolve sender names from what the client
+  // already knows: their own name vs the chosen instructor's (public) name.
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser()
+  const engInstrName = new Map<string, string>()
+  for (const e of engagements ?? []) {
+    const inst = e.instructors as unknown as { name: string } | null
+    engInstrName.set(e.id, inst?.name ?? "Instructor")
+  }
+  const engIds = (engagements ?? []).map((e) => e.id)
+  const msgByEng = new Map<string, MessageRow[]>()
+  if (engIds.length) {
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("id, body, created_at, engagement_id, sender_id")
+      .in("engagement_id", engIds)
+      .order("created_at")
+    for (const m of msgs ?? []) {
+      const engId = m.engagement_id as string
+      const mine = m.sender_id === me?.id
+      const arr = msgByEng.get(engId) ?? []
+      arr.push({
+        id: m.id,
+        body: m.body,
+        created_at: m.created_at,
+        senderName: mine ? myCase.client.full_name : engInstrName.get(engId) ?? "Instructor",
+        senderRole: mine ? "client" : "instructor",
+      })
+      msgByEng.set(engId, arr)
+    }
+  }
 
   // Instructors who expressed interest in my open offers (redacted view scoped
   // to my case). Enrich with each instructor's locations + next opening.
@@ -184,21 +220,32 @@ export default async function MarketplacePage() {
             } | null
             return (
               <Card key={e.id}>
-                <CardContent className="flex items-center justify-between gap-3 p-4">
-                  <div>
-                    <div className="text-sm font-medium">{inst?.name ?? "Instructor"}</div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-text-mid">
-                      <span>{e.type === "full_assist" ? "Full application help" : "Training"}</span>
-                      {inst?.price_18h_cents != null && <span>· {money(inst.price_18h_cents)}</span>}
-                      {inst?.rating_count ? (
-                        <span className="flex items-center gap-0.5">
-                          <Star className="size-3 text-brass" />
-                          {inst.rating_avg}
-                        </span>
-                      ) : null}
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium">{inst?.name ?? "Instructor"}</div>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-text-mid">
+                        <span>{e.type === "full_assist" ? "Full application help" : "Training"}</span>
+                        {inst?.price_18h_cents != null && <span>· {money(inst.price_18h_cents)}</span>}
+                        {inst?.rating_count ? (
+                          <span className="flex items-center gap-0.5">
+                            <Star className="size-3 text-brass" />
+                            {inst.rating_avg}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
+                    <StatusBadge status="active" />
                   </div>
-                  <StatusBadge status="active" />
+                  <div className="mt-4 border-t border-hairline pt-4">
+                    <div className="engraved mb-2 text-text-low">Message your instructor</div>
+                    <MessageThread
+                      caseId={e.id}
+                      messages={msgByEng.get(e.id) ?? []}
+                      send={sendEngagementMessage}
+                      placeholder={`Message ${inst?.name ?? "your instructor"}…`}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             )

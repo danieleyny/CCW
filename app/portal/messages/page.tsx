@@ -21,6 +21,7 @@ export default async function MessagesPage() {
     .from("messages")
     .select("id, body, created_at, profiles:sender_id(full_name, role)")
     .eq("case_id", myCase.id)
+    .is("engagement_id", null) // staff thread only; instructor chat lives on the engagement
     .order("created_at")
 
   const messages: MessageRow[] = (data ?? []).map((m) => {
