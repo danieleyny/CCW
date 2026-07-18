@@ -1,174 +1,147 @@
-# Handoff — portal fixes & document engine (continue from Phase 3)
+# Handoff — portal fixes & document engine (ALL PHASES 1–11 COMPLETE)
 
-**Read this, then read `PORTAL_FIXES_PROMPT.md`. Phases 1–2 are DONE and shipped; start at Phase 3.**
+**`PORTAL_FIXES_PROMPT.md` is fully implemented.** This doc records what shipped,
+what was verified and how, and the honest list of what's still open.
 
-Everything below is verified against the code as of commit `4b32cec` on `main`
-(also pushed to `ccw-v2-build`). All migrations through `20260718000800` are
-applied to **local AND production**.
-
----
-
-## 1. What just shipped (this session)
-
-| Commit | What |
-|---|---|
-| `3ec29e3` | Opaque nav chrome (`.glass-bar`) — portal header, mobile tab bar, admin topbar |
-| `1a432d6` | `html:has(.dark)` paints the document obsidian (kills overscroll paper flash) |
-| `7ffdf37` | **P0.5 fixes**: REF-01 now satisfies on *notarized* (was `received`); staff rejection prose no longer leaks to instructors via `case_requirements.notes` |
-| `2370aeb` | **Doc engine P1**: `lib/requirements/actions.ts` — the requirement→action taxonomy (all 34 active req_codes) |
-| `ca61ef6` | **Doc engine P2–P5**: questionnaires, generation+persistence, notarization state machine, unified checklist UI, instructor firewall test |
-| `0656561` | Signing audit trail (`signature_events`) + evidence-backed satisfaction (DB trigger) |
-| `4b32cec` | **PORTAL_FIXES Phase 1 + 2** (see below) |
-
-### PORTAL_FIXES Phase 1 (done)
-The `type: doc.documentType ?? "id"` bug was real and was introduced in `ca61ef6`.
-- Migration `20260718000700` adds real types; `20260718000800` adds `business_documentation`.
-- `RenderedDocument.documentType` is now **required**; the `?? "id"` fallback is deleted.
-- `scripts/repair-generated-doc-types.ts` — run it again any time:
-  ```bash
-  pnpm exec tsx scripts/repair-generated-doc-types.ts                       # local
-  ENV_FILE=/private/tmp/ccw-prod-env pnpm exec tsx scripts/...              # prod
-  DRY=1 ...                                                                 # report only
-  ```
-  **Result: 0 rows local, 1 row repaired in production.**
-- Regression test in `tests/requirement-actions.test.ts`: no generated document may file as `'id'`.
-- ⚠️ **NOT done from Phase 1**: item 4 — the portal/admin document views still key on
-  "latest per type" (`app/portal/documents/page.tsx` ~line 50, `app/admin/cases/[id]/page.tsx`).
-  They should key on `req_code`/`generated`. **Do this in Phase 8.**
-
-### PORTAL_FIXES Phase 2 (done)
-- DMV-01 → `driving_abstract`, PRM-01 → `business_documentation` (both were missing it), both `multiple: true`.
-- `RequirementAction` is now a **discriminated union** — `obtain` requires `documentType`, `steps`, `sourceUrl`.
-- Note: the existing uploader already *appends versions* per type (`recordDocument` computes `version = count+1`), so repeat uploads work for multi-file. Verify the UI actually lets the user add a second file.
+Verified against the code at the head of `main`. All migrations through
+`20260718000900` are applied **locally**; see "Before you deploy" for prod.
 
 ---
 
-## 2. START HERE — Phase 3 (signing). This is the most important remaining item.
+## 1. What shipped
 
-**Current state:** generated documents are produced with **no signature and no signing date**.
-`generateRequirementDocument` (`app/portal/requirements/actions.ts`) *does* fetch
-`getSignaturePng(...)` and passes it to the renderer, and *does* write a
-`signature_events` row when a signature exists — but **nothing in the UI ever asks
-the applicant to sign**, so in practice `signaturePng` is always undefined for new
-users. The date rendered is `new Date()` at render time, not a signing date.
+| Phase | Commit | What |
+|---|---|---|
+| 1–2 | `4b32cec` | Real document types (no `?? "id"`), DMV-01/PRM-01 uploaders |
+| 3 | `565d35b` | Signing: draft → sign → satisfied, signing dates, audit trail |
+| 4 | `771a87f`, `68edfae` | System-verified controls + server-side upload enforcement |
+| 5 | `d976455` | Plain-language titles + our own example illustrations |
+| 6 | `5fa4e7d` | Questionnaire opens centered; 44px touch targets |
+| 7 | `3a7b5ef` | Checklist filters (All / To do / Completed / Needs notarization) |
+| 8 | `86548ec` | Documents rebuilt as the real library, keyed on `req_code` |
+| 9–10 | `3f07206` | Automatic stage advancement + portal "Your next step" card |
 
-The plumbing you need already exists:
-- `components/sign/signature-pad.tsx` — typed + drawn capture, outputs base64 PNG
-- `signatures` table + `lib/signatures.ts` (`getSignaturePng`)
-- `signature_events` table (append-only: `document_sha256`, `consent_text`, `signed_at`, `ip`, `user_agent`) + `recordSignatureEvent()` in `lib/requirements/document-engine.ts`
-- `SIGNING_CONSENT` constant, same file
-- `lib/pdf/builder.ts` `Ctx.signatureImage(label)` — extend to also stamp "Signed: {date}"
-- The OLD flow did this correctly — copy its posture: `app/portal/forms/actions.ts` `fileSignedForm` refuses without a signature
+### The load-bearing ideas (read these before changing anything)
 
-**What to build:** a SIGN step after the questionnaire in the same modal; record
-`signed_at`; stamp signature + signing date into the PDF; **do not satisfy a
-signable requirement until signed** (unsigned = downloadable but labelled
-"DRAFT — unsigned"); regenerating after an answer edit must invalidate the
-signature.
-
----
-
-## 3. Remaining phases (from `PORTAL_FIXES_PROMPT.md`)
-
-- **Phase 3** — signing (above). Do first.
-- **Phase 4** — FMT-01 off the customer checklist + server-side file validation. Note `components/portal/document-uploader.tsx` validates client-side only today; `app/portal/actions.ts` `recordDocument` is where server-side enforcement belongs.
-- **Phase 5** — plain-language titles + our own SVG example graphics (do NOT scrape web photos).
-- **Phase 6** — questionnaire: `<Sheet side="right">` → centered `<Dialog>`. File: `components/portal/questionnaire-sheet.tsx` (rename it).
-- **Phase 7** — checklist filters (All / To do / Completed / Needs notarization) in `components/portal/requirements-checklist.tsx`.
-- **Phase 8** — rebuild `/portal/documents` as the full library (still-needed + completed), driven off `lib/requirements/actions.ts`. **Include Phase 1 item 4 here.**
-- **Phase 9** — automatic stage advancement (`lib/cases/advance.ts` `maybeAdvanceStage`). Confirmed: `setCaseStage` exists only in `app/admin/actions.ts`; nothing advances automatically. Must NEVER auto-advance into `application_assembled`/`filed` (CP-5 gate + named staff sign-off).
-- **Phase 10** — portal home "Your next step" card at the top (`app/portal/page.tsx`). `getTrainingState()` in `lib/portal.ts` is a good model.
-- **Phase 11** — adversarial verify.
-
----
-
-## 4. Architecture you need to know
-
-**The requirement→action map is the spine.** `lib/requirements/actions.ts` maps all
-34 active `req_code`s to `generate` / `obtain` / `attest` plus `documentType`,
-`notarize`, `sensitive`. The checklist UI, questionnaire engine, and generators
-all read it. `tests/requirement-actions.test.ts` fails if a registry requirement
-has no action — keep it that way.
-
-**Requirements registry is versioned.** Rows are dated; a rule change is a data
-edit (close `effective_to`, insert a new dated row). Active = `effective_to is null`.
-Only **SOC-01** (enjoined, Antonyuk) and **SPC-01** are non-blocking.
-
-**Satisfaction paths** (there are five — know them before touching status):
-1. staff document review (`app/admin/actions.ts` ~line 266)
-2. bulk approve-with-evidence (~477)
-3. manual staff override (~456) — now requires evidence or a recorded `OVERRIDE:` reason
-4. REF-01/REF-02 recompute (`lib/references/process.ts`) — notarized count
-5. COH-01 recompute (`lib/cohabitants/process.ts`) — notarized ≥ total
-Plus the engine's own generate path. A **DB trigger** (`forbid_satisfied_without_evidence`)
-now blocks satisfying a document-backed requirement with nothing bound.
-
-**PRIVACY FIREWALL — the highest-risk area.** `case_visible()` is false for
-instructors; only `cases_select_instructor` and `case_requirements_select_instructor`
-use `instructor_engaged()`. An engaged instructor CAN see: the `cases` row, their
-`case_requirements` rows (including **`notes`** — keep it aggregate, never prose),
-the public registry, their own engagements/bookings/messages. They CANNOT see:
-`clients` (name/email/phone), `documents` (table *or* storage bytes),
-`disclosures`, `intake_sessions`, `case_notes`, `requirement_answers`,
-`signature_events`. Two tests lock this: the engagement-chat isolation test and
-the document-engine test in `tests/rls/matrix.test.ts`.
+- **`documents.signed_at` is the signing state.** NULL on a generated document
+  means DRAFT: downloadable, banner-stamped "DRAFT — UNSIGNED · not for filing",
+  and it does **not** satisfy a signable requirement. `lib/pdf/builder.ts` prints
+  the **signing** date, never `new Date()` at render time — that was the bug.
+- **Generation never applies the signature on file.** Signing is an act on
+  specific bytes, not a stamp we reuse. That's also why regenerating after an
+  answer edit invalidates the signature by construction: a regenerate produces
+  fresh unsigned bytes and pushes the requirement back to `pending`.
+- **`isSignable()` defaults to true** for generate-mode actions; opt out
+  explicitly. COH-01/REF-01/REF-02 opt out (signed by the reference/cohabitant
+  through the token flow, not the applicant).
+- **`systemVerified` on the action map** marks a control WE verify (FMT-01,
+  ELG-01/02/03, OOS-02). Hidden from the customer checklist, satisfied by the
+  code that verifies it, with a note recording HOW. Intake predicates only
+  satisfy what the applicant's own answers support — a reported disqualifier, an
+  unanswered prohibitor, an under-21 DOB or a non-resident answer all stay
+  pending. **Never loosen this**; it's the difference between a system control
+  and laundering a case clean.
+- **`lib/portal/requirement-view.ts` is the single loader** behind the checklist,
+  the documents library, and the portal home's next-step card. They cannot
+  disagree by construction. Don't add a fourth list.
+- **`lib/cases/advance.ts` refuses anything at or past `application_assembled`**
+  — it throws rather than quietly gating. The CP-5 gate + named staff sign-off in
+  `setCaseStage` own everything from there. Asking automation to reach `filed` is
+  a bug, not a config choice.
+- **Uploads carry their `req_code`.** IDN-01/02/03 all declare document type
+  `id`; binding by type alone attached proof of citizenship to the photo-ID row
+  and called it evidence.
 
 ---
 
-## 5. Verification playbook (this is how you actually prove things)
+## 2. Phase 11 — adversarial verification results
 
-**RPCs are `auth.uid()`-scoped — service-role CANNOT exercise them.** Use real JWTs:
-```ts
-const r = await fetch(`${URL}/auth/v1/token?grant_type=password`, {
-  method:"POST", headers:{apikey:ANON,"Content-Type":"application/json"},
-  body: JSON.stringify({ email:"client1@carrypath.test", password:"Passw0rd!" })})
-const c = createClient(URL, ANON, { global:{ headers:{ Authorization:`Bearer ${(await r.json()).access_token}` } } })
-```
-Local seed logins are all `Passw0rd!`: admin@ / staff@ / client1@ / client2@ / instructor@carrypath.test.
+**Test suite: 80 passing, 12 files. `tsc`, `lint` (now zero warnings) and
+`pnpm build` all clean.**
 
-**Browsing the app as a logged-in user** (the preview browser doesn't persist the
-server-action session cookie): mint a session with `@supabase/ssr`'s
-`createBrowserClient` capturing `setAll`, then inject the resulting
-`sb-127-auth-token=...` via `document.cookie` and navigate. Cookie name for local
-is `sb-127-auth-token`.
+Checked as a hostile reviewer, against the live local DB:
 
-**Prod env:** `vercel env pull /private/tmp/ccw-prod-env --environment=production --yes`.
-Prod Supabase ref `nabohrqydjzborehqslc`. **Always check `supabase migration list --linked`
-for drift before `supabase db push`.**
+| # | Claim | Result |
+|---|---|---|
+| 1 | No generated document stored as type `id` | ✅ 16 documents, 0 offenders. `?? "id"` is gone; `repair-generated-doc-types.ts` reports **0 local / 1 repaired in prod earlier** |
+| 2 | Every `obtain` action renders an uploader | ✅ 0 without `documentType`; the discriminated union makes it a compile error |
+| 3 | No signable requirement satisfied by an unsigned draft | ✅ 0 offenders in DB; stamped date == signing timestamp (verified: `Signed: July 18, 2026` in stored bytes, SHA-256 matching the `signature_events` row); regenerate returns the row to `pending` |
+| 4 | FMT-01 off the customer list, enforced server-side | ✅ absent from the checklist; 4 tests drive `enforceUploadedFile` against **real storage** — oversized rejected + deleted, `.exe` rejected + deleted, missing object rejected, dirty name normalized (`Résumé & scan #1.PDF` → `Resume-scan-1.pdf`) |
+| 5 | Stages advance automatically, never backwards, never past the gate | ✅ 6 tests: forward-only, idempotent, refuses `application_assembled`/`filed`/`licensed`, leaves a case alone once staff take it past the ceiling |
+| 6 | Privacy firewall intact | ✅ `tests/rls/matrix.test.ts` 10/10; `verify-esign.ts` PASSES incl. "instructors cannot read signatures" |
+| 7 | UX at 390px and desktop | ✅ checklist "To do 11" == documents "Still needed (11)"; questionnaire centered (672px desktop, no h-scroll at 390px, all controls 44px); next-step card above the fold |
+| 8 | Legal/candor | ✅ no banned words (`copy-guard` passes), no omission-friendly copy, attorney seam intact, every generated document still says "not an official NYPD form", nothing files on the applicant's behalf |
+
+**Live end-to-end run** (fresh `db reset` + `seed`, real browser, real server
+actions): generate → row stays PENDING with the draft banner → sign → SATISFIED
+and the item leaves "To do"; upload with a dirty filename → stored as
+`Resume-cert-1.png`, bound to **TRN-01** (not "first requirement of type id"),
+FMT-01 satisfied with provenance.
+
+### Honest caveats on the verification
+
+- The **stage auto-advance on upload** was a no-op in that run because the seeded
+  case already sat at `document_collection`. The helper itself is covered by 6
+  tests including a live insert/advance/log round-trip; the milestone call sites
+  are one-liners covered by typecheck, not driven live.
+- The **payment and booking milestones** were not exercised live (Stripe is off
+  in this environment).
+- Example illustrations were verified by DOM assertion, not by eye at every
+  breakpoint.
+
+---
+
+## 3. Pre-existing failures — NOT caused by this work
+
+Four `scripts/verify-*.ts` harnesses fail. **Confirmed identical at `9a12a0c`**
+(the pre-session commit) by running them in a git worktree, so these are stale
+expectations, not regressions:
+
+- `verify-v3p2.ts` — 3 failures (QA-gate sign-off + qa-ready reminder).
+- `verify-p9.ts` / `verify-ref.ts` — 4 failures, all asserting REF-01 satisfies
+  on **received**. Commit `7ffdf37` deliberately changed that to **notarized**.
+  The harnesses need updating to the current, stricter rule.
+
+Passing: `verify-esign`, `verify-v3p0`, `verify-v3p1`, `verify-v3p3`,
+`verify-packet`.
+
+---
+
+## 4. Still open
+
+- **Deploy**: migration `20260718000900_document_signing.sql` is local-only.
+  `supabase migration list --linked` for drift, then `supabase db push`, then
+  re-run `repair-generated-doc-types.ts` against prod.
+- **Doc-engine leftovers** (unchanged from before): the `references` and
+  `cohabitant-affidavit` questionnaires collect answers but aren't wired into the
+  token-outreach flows, so COH-01/REF-01/REF-02 have **no generator** —
+  `renderRequirementDocument` throws for them. The checklist offers
+  "Complete & generate" on those rows and it will fail. **This is the biggest
+  remaining hole.**
+- The application worksheet has a generator but no questionnaire;
+  `court-request-letters` has no schema of its own.
+- `lib/pdf/acroform.ts` stays dormant — no official fillable template is bundled.
+- The four stale harnesses above should be updated to the notarized-not-received
+  rule rather than left failing.
+- Old `/portal/forms` still exists alongside the new flow; it duplicates AFF-01 /
+  SOC-01 signing and is now the weaker path. Worth retiring.
+
+---
+
+## 5. Verification playbook (unchanged, still true)
+
+RPCs are `auth.uid()`-scoped — service-role can't exercise them; mint real JWTs
+against `/auth/v1/token?grant_type=password`. Local logins are all `Passw0rd!`
+(admin@ / staff@ / client1@ / client2@ / instructor@carrypath.test).
+
+Browser: the preview can't keep a server-action session, so sign in by filling
+the form via `javascript_tool` with a native value setter + `input` event.
+
+**Gotchas that cost time:** Radix portals mount outside `.dark` (every
+Dialog/Sheet needs `className="dark"`); the React Compiler rejects `useMemo` over
+values it can't prove stable — prefer plain computation; `min-h-11` renders 44px
+but the preview's mobile emulation *measures* ~42 (scaled viewport) — assert on
+computed styles, not rects; pdf-lib Flate-compresses content streams and writes
+text as hex, so `tests/helpers/pdf.ts` walks the object graph to read a PDF.
 
 Gate before every ship: `pnpm exec tsc --noEmit && pnpm lint && pnpm test && pnpm build`.
-Current baseline: **56 tests, 8 files, green.** One pre-existing lint warning
-(`app/portal/page.tsx:39` unused `here`) — not yours.
-
----
-
-## 6. Gotchas that cost time (don't rediscover these)
-
-- **Radix portals mount outside `.dark`.** Any Dialog/Sheet in the app needs
-  `className="dark ..."` or it renders in the light marketing palette. Bit us once already.
-- **View columns are nullable in generated types.** `applicant_interest_feed` etc. — expect `string | null`.
-- **`ALTER TYPE ... ADD VALUE`** works in these migrations, but you can't *use* the
-  new value in the same transaction. Add the enum in one migration, use it after.
-- **Never edit a shipped migration.** 14-digit prefix, new file, `pnpm db:types` after.
-- **`case_requirements.notes` is instructor-readable.** Never write reviewer prose there.
-- **`?? "id"` was the whole Phase 1 bug** — never default an enum to make a NOT NULL
-  column happy. Fail loudly instead.
-- The preview browser is janky on scroll+screenshot; prefer `javascript_tool` DOM
-  assertions, and re-`screenshot` before `computer{action:"scroll"}`.
-
----
-
-## 7. Known-open / honest list
-
-- Phase 1 item 4 (documents views keyed on type, not `req_code`) — fold into Phase 8.
-- Phases 3–11 untouched apart from the above.
-- **Doc-engine leftovers from `DOCUMENT_ENGINE_PROMPT.md`**: the `references` and
-  `cohabitant-affidavit` questionnaires collect answers but are **not yet wired into
-  the existing token-outreach flows** (`lib/references/process.ts`,
-  `lib/cohabitants/process.ts`) — they're the notarized ones, so this matters.
-  The application worksheet has a generator but no questionnaire. `court-request-letters`
-  has no schema of its own.
-- `lib/pdf/acroform.ts` is **deliberately dormant** — no official fillable template
-  is bundled. If you add one to `/public/forms`, wire it there; until then every
-  document is a labelled "prepared" document, never passed off as an NYPD form.
-- The full `scripts/verify-*.ts` harness suite has not been re-run this session.
