@@ -979,8 +979,10 @@ export type Database = {
           created_at: string
           file_name: string | null
           file_path: string | null
+          generated: boolean
           id: string
           notarized: boolean
+          req_code: string | null
           review_notes: string | null
           reviewer: string | null
           status: Database["public"]["Enums"]["document_status"]
@@ -995,8 +997,10 @@ export type Database = {
           created_at?: string
           file_name?: string | null
           file_path?: string | null
+          generated?: boolean
           id?: string
           notarized?: boolean
+          req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
           status?: Database["public"]["Enums"]["document_status"]
@@ -1011,8 +1015,10 @@ export type Database = {
           created_at?: string
           file_name?: string | null
           file_path?: string | null
+          generated?: boolean
           id?: string
           notarized?: boolean
+          req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
           status?: Database["public"]["Enums"]["document_status"]
@@ -1837,6 +1843,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "reminder_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requirement_answers: {
+        Row: {
+          answers: Json
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          req_code: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          req_code: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          req_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_answers_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"

@@ -1,7 +1,6 @@
-import Link from "next/link"
-import { Upload, ShieldCheck } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
-import { Button } from "@/components/ui/button"
+import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
 import { cn } from "@/lib/utils"
 
 export interface ReqChecklistItem {
@@ -27,7 +26,21 @@ const SEV_TONE: Record<string, string> = {
  * joined to the versioned registry). Every row shows its stable req_code and the
  * authority citation it traces to — the same source of truth admin QA reads.
  */
-export function RequirementsChecklist({ items }: { items: ReqChecklistItem[] }) {
+export function RequirementsChecklist({
+  items,
+  caseId,
+  clientId,
+  prefills,
+  generated,
+}: {
+  items: ReqChecklistItem[]
+  caseId: string
+  clientId: string
+  /** Per-requirement questionnaire starting values (intake + saved answers). */
+  prefills: Record<string, Record<string, unknown>>
+  /** Documents we already generated, keyed by req_code. */
+  generated: Record<string, GeneratedDoc>
+}) {
   const applicable = items.filter((i) => i.status !== "na")
   const notApplicable = items.filter((i) => i.status === "na")
 
@@ -74,16 +87,14 @@ export function RequirementsChecklist({ items }: { items: ReqChecklistItem[] }) 
               <StatusBadge status={item.status} />
             </div>
 
-            {item.documentType && item.status !== "satisfied" && (
-              <div className="mt-3">
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/portal/documents">
-                    <Upload className="size-4" />
-                    Upload
-                  </Link>
-                </Button>
-              </div>
-            )}
+            <RequirementAction
+              reqCode={item.reqCode}
+              status={item.status}
+              caseId={caseId}
+              clientId={clientId}
+              prefill={prefills[item.reqCode] ?? {}}
+              generated={generated[item.reqCode] ?? null}
+            />
           </li>
         ))}
       </ul>

@@ -183,4 +183,49 @@ describe.skipIf(!reachable)("RLS access matrix", () => {
 
     await admin.from("engagements").delete().eq("id", eng!.id)
   })
+
+  it("document engine: an ENGAGED instructor cannot read generated docs or questionnaire answers", async () => {
+    const { data: instr } = await admin
+      .from("instructors")
+      .select("id")
+      .eq("email", "instructor@carrypath.test")
+      .single()
+    const { data: eng } = await admin
+      .from("engagements")
+      .insert({ case_id: caseId, instructor_id: instr!.id, type: "training", status: "active" })
+      .select("id")
+      .single()
+
+    // A generated disclosure addendum + the raw questionnaire answers behind it.
+    const { data: genDoc } = await admin
+      .from("documents")
+      .insert({
+        case_id: caseId,
+        client_id: clientAId,
+        type: "id",
+        req_code: "DSC-01",
+        generated: true,
+        file_name: "disclosure-addendum.pdf",
+      })
+      .select("id")
+      .single()
+    await admin.from("requirement_answers").insert({
+      case_id: caseId,
+      req_code: "DSC-01",
+      answers: { arrestExplanation: "SEALED-ARREST-DETAIL" } as never,
+    })
+
+    // The owner sees both; the engaged instructor sees neither.
+    expect(await count(clientA, "requirement_answers", caseId)).toBeGreaterThan(0)
+    expect(await count(instructor, "documents", caseId)).toBe(0)
+    expect(await count(instructor, "requirement_answers", caseId)).toBe(0)
+
+    // And cannot reach the row directly by id.
+    const direct = await instructor.from("documents").select("id").eq("id", genDoc!.id)
+    expect(direct.data ?? []).toEqual([])
+
+    await admin.from("requirement_answers").delete().eq("case_id", caseId)
+    await admin.from("documents").delete().eq("id", genDoc!.id)
+    await admin.from("engagements").delete().eq("id", eng!.id)
+  })
 })
