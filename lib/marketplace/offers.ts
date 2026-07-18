@@ -16,10 +16,94 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { geocodeNyc, milesBetween } from "@/lib/geo/nyc"
+import { isLiveEligible } from "@/lib/instructors/profile"
 
 type DB = SupabaseClient<Database>
 type Jurisdiction = Database["public"]["Enums"]["jurisdiction_key"]
 type OfferType = Database["public"]["Enums"]["offer_type"]
+
+/** Everything isLiveEligible() reads, plus what auto-offer needs. */
+const ELIGIBILITY_COLUMNS =
+  "id, verified, active, bio, price_18h_cents, class_format, languages, provides_range, separate_range_note, " +
+  "auto_offer_enabled, auto_offer_note, auto_offer_price_cents, profile_id, name"
+
+type EligibilityRow = {
+  id: string
+  verified: boolean
+  active: boolean
+  bio: string | null
+  price_18h_cents: number | null
+  class_format: string | null
+  languages: string[] | null
+  provides_range: boolean | null
+  separate_range_note: string | null
+  auto_offer_enabled: boolean
+  auto_offer_note: string | null
+  auto_offer_price_cents: number | null
+  profile_id: string | null
+  name: string
+}
+
+/**
+ * Verified ISN'T enough to be shown to an applicant — the profile also has to
+ * say enough to choose from (lib/instructors/profile). This filters a candidate
+ * list down to the ones who may actually appear, and returns their rows so the
+ * caller can act on auto-offer settings without a second query.
+ */
+async function liveEligible(admin: DB, ids: string[]): Promise<EligibilityRow[]> {
+  if (ids.length === 0) return []
+  const { data } = await admin.from("instructors").select(ELIGIBILITY_COLUMNS).in("id", ids)
+  const rows = (data ?? []) as unknown as EligibilityRow[]
+
+  const withLocations = await Promise.all(
+    rows.map(async (r) => {
+      const { data: locs } = await admin
+        .from("training_locations")
+        .select("is_range, address")
+        .eq("instructor_id", r.id)
+      return { row: r, locations: locs ?? [] }
+    })
+  )
+
+  return withLocations.filter(({ row, locations }) => isLiveEligible({ ...row, locations })).map((x) => x.row)
+}
+
+/**
+ * AUTO-OFFER: instructors can opt into answering new in-area requests
+ * automatically, with the note and price they set once. Without it, a request
+ * posted at 9pm sits unanswered until somebody happens to open the app — which
+ * is the applicant's experience of "nobody wants to teach me".
+ *
+ * It only ever expresses INTEREST. The applicant still chooses, and nothing here
+ * creates an engagement or exposes their identity.
+ */
+async function applyAutoOffers(
+  admin: DB,
+  offerId: string,
+  instructors: EligibilityRow[]
+): Promise<number> {
+  const auto = instructors.filter((i) => i.auto_offer_enabled)
+  if (auto.length === 0) return 0
+
+  let sent = 0
+  for (const instructor of auto) {
+    const { data: updated } = await admin
+      .from("offer_matches")
+      .update({
+        responded: "interested",
+        responded_at: new Date().toISOString(),
+        note: instructor.auto_offer_note,
+        quoted_price_cents: instructor.auto_offer_price_cents ?? instructor.price_18h_cents,
+      })
+      .eq("offer_id", offerId)
+      .eq("instructor_id", instructor.id)
+      // Never overwrite a human decision they already made on this request.
+      .is("responded", null)
+      .select("offer_id")
+    if (updated?.length) sent++
+  }
+  return sent
+}
 
 export interface CreateOfferParams {
   caseId: string
@@ -34,7 +118,7 @@ export interface CreateOfferParams {
 export async function createAndMatchOffer(
   admin: DB,
   params: CreateOfferParams
-): Promise<{ offerId: string; matched: number }> {
+): Promise<{ offerId: string; matched: number; autoSent: number }> {
   const geo = geocodeNyc({ borough: params.borough, zip: params.zip })
   const radius = params.radiusMi ?? 25
 
@@ -65,10 +149,12 @@ export async function createAndMatchOffer(
       p_radius_mi: radius,
       p_jurisdiction: params.jurisdiction,
     })
-    rows = (near ?? []).map((r) => ({
+    const distanceById = new Map((near ?? []).map((r) => [r.id, Number(r.distance_mi)]))
+    const eligible = await liveEligible(admin, [...distanceById.keys()])
+    rows = eligible.map((r) => ({
       offer_id: offer.id,
       instructor_id: r.id,
-      distance_mi: Number(r.distance_mi),
+      distance_mi: distanceById.get(r.id) ?? null,
     }))
   } else {
     // No borough set yet → don't strand the offer. Match every verified
@@ -78,7 +164,8 @@ export async function createAndMatchOffer(
       .select("id")
       .eq("verified", true)
       .contains("jurisdictions", [params.jurisdiction])
-    rows = (all ?? []).map((r) => ({ offer_id: offer.id, instructor_id: r.id, distance_mi: null }))
+    const eligible = await liveEligible(admin, (all ?? []).map((r) => r.id))
+    rows = eligible.map((r) => ({ offer_id: offer.id, instructor_id: r.id, distance_mi: null }))
   }
 
   let matched = 0
@@ -91,7 +178,18 @@ export async function createAndMatchOffer(
     matched = rows.length
     // Offer stays 'open' (available to accept) until an instructor accepts it.
   }
-  return { offerId: offer.id, matched }
+
+  // Instructors who opted into auto-offering answer immediately, so a request
+  // posted at midnight isn't met with silence.
+  const autoSent = matched
+    ? await applyAutoOffers(
+        admin,
+        offer.id,
+        await liveEligible(admin, rows.map((r) => r.instructor_id))
+      )
+    : 0
+
+  return { offerId: offer.id, matched, autoSent }
 }
 
 /**
@@ -111,6 +209,9 @@ export async function backfillMatchesForInstructor(
     .eq("id", instructorId)
     .maybeSingle()
   if (!instr || !instr.verified) return 0
+  // Verified but incomplete → not shown to applicants, so not backfilled either.
+  const [eligible] = await liveEligible(admin, [instructorId])
+  if (!eligible) return 0
 
   const juris = new Set((instr.jurisdictions ?? []) as Jurisdiction[])
   if (juris.size === 0) return 0
@@ -151,5 +252,11 @@ export async function backfillMatchesForInstructor(
     .upsert(rows, { onConflict: "offer_id,instructor_id", ignoreDuplicates: true })
     .select("offer_id")
   if (error) throw error
+
+  // Auto-offer applies to backfilled requests too — otherwise an instructor who
+  // turned it on yesterday still has to answer today's older requests by hand.
+  for (const row of inserted ?? []) {
+    await applyAutoOffers(admin, row.offer_id, [eligible])
+  }
   return inserted?.length ?? 0
 }

@@ -81,21 +81,21 @@ export default async function MarketplacePage() {
   const { data: interestedRows } = await supabase
     .from("applicant_interest_feed")
     .select(
-      "offer_id, type, instructor_id, distance_mi, note, quoted_price_cents, name, bio, dcjs_id, price_18h_cents, rating_avg, rating_count"
+      "offer_id, type, instructor_id, distance_mi, note, quoted_price_cents, name, bio, dcjs_id, verified, price_18h_cents, rating_avg, rating_count, service_radius_mi, years_experience, background, languages, website_url, instagram_handle, class_format, typical_class_size, provides_range, separate_range_note, range_fee_included, ammo_included, materials_included, whats_to_bring, scheduling_notes, response_time_note, offers_intro_call, intro_call_note"
     )
   const interested = interestedRows ?? []
   const interestedIds = [...new Set(interested.map((r) => r.instructor_id).filter(Boolean) as string[])]
 
-  const locByInstr = new Map<string, { label: string; isRange: boolean }[]>()
+  const locByInstr = new Map<string, { label: string; isRange: boolean; address: string | null }[]>()
   const nextByInstr = new Map<string, string>()
   if (interestedIds.length) {
     const { data: locs } = await supabase
       .from("training_locations")
-      .select("instructor_id, label, is_range")
+      .select("instructor_id, label, is_range, address")
       .in("instructor_id", interestedIds)
     for (const l of locs ?? []) {
       const arr = locByInstr.get(l.instructor_id) ?? []
-      arr.push({ label: l.label, isRange: l.is_range })
+      arr.push({ label: l.label, isRange: l.is_range, address: l.address })
       locByInstr.set(l.instructor_id, arr)
     }
     const { data: slots } = await supabase
@@ -185,15 +185,34 @@ export default async function MarketplacePage() {
                 data={{
                   name: r.name ?? "Instructor",
                   bio: r.bio,
-                  dcjsId: r.dcjs_id,
+                  // Badge on VERIFIED, not on "typed a DCJS number".
+                  verified: r.verified,
                   priceCents: r.price_18h_cents,
                   quotedPriceCents: r.quoted_price_cents,
                   ratingAvg: r.rating_avg,
                   ratingCount: r.rating_count,
                   distanceMi: r.distance_mi,
+                  serviceRadiusMi: r.service_radius_mi,
                   note: r.note,
                   locations: locByInstr.get(r.instructor_id ?? "") ?? [],
                   nextAvailable: nextByInstr.get(r.instructor_id ?? "") ?? null,
+                  yearsExperience: r.years_experience,
+                  background: r.background,
+                  languages: r.languages,
+                  websiteUrl: r.website_url,
+                  instagramHandle: r.instagram_handle,
+                  classFormat: r.class_format,
+                  typicalClassSize: r.typical_class_size,
+                  providesRange: r.provides_range,
+                  separateRangeNote: r.separate_range_note,
+                  rangeFeeIncluded: r.range_fee_included,
+                  ammoIncluded: r.ammo_included,
+                  materialsIncluded: r.materials_included,
+                  whatsToBring: r.whats_to_bring,
+                  schedulingNotes: r.scheduling_notes,
+                  responseTimeNote: r.response_time_note,
+                  offersIntroCall: r.offers_intro_call,
+                  introCallNote: r.intro_call_note,
                 }}
                 action={
                   <ChooseButton

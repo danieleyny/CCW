@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getMyInstructor } from "@/lib/instructor"
 import { backfillMatchesForInstructor } from "@/lib/marketplace/offers"
+import { markFeedSeen } from "@/lib/instructors/feed-signal"
 import { stageMeta, type CaseStageKey } from "@/config/stages"
 import { Button } from "@/components/ui/button"
 import { expressInterest, declineOffer } from "./actions"
@@ -25,6 +26,20 @@ export default async function InstructorFeedPage() {
   }
 
   const supabase = await createClient()
+
+  // Opening the feed IS the "I've seen these" signal — that's what clears the
+  // green dot on the nav. Marked with the CALLER'S client so the auth.uid()-
+  // scoped RPC runs and the watermark comes from the database clock; a
+  // service-role call has no session, and an app-clock timestamp can land
+  // before rows that already exist, leaving the dot stuck on.
+  if (me) {
+    try {
+      await markFeedSeen(supabase, me.id)
+    } catch {
+      // A failed watermark update just means the dot lingers; never blank the feed.
+    }
+  }
+
   const { data: feed } = await supabase
     .from("instructor_offer_feed")
     .select("offer_id, type, jurisdiction, area_label, distance_mi, stage, needs_note, created_at, responded")

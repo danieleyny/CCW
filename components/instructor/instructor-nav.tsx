@@ -14,7 +14,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/instructor/profile", label: "Profile", icon: UserCog },
 ]
 
-export function InstructorNav() {
+/**
+ * `unseenRequests` > 0 puts a green dot on Feed — an applicant is looking for an
+ * instructor right now. Opening the feed moves the seen-watermark server-side,
+ * so the dot clears on the next render without any client bookkeeping.
+ */
+export function InstructorNav({ unseenRequests = 0 }: { unseenRequests?: number }) {
   const pathname = usePathname()
   return (
     <nav className="border-b border-hairline">
@@ -30,8 +35,24 @@ export function InstructorNav() {
                 active ? "border-brass text-brass" : "border-transparent text-text-mid hover:text-foreground"
               )}
             >
-              <Icon className="size-4" />
+              <span className="relative flex">
+                <Icon className="size-4" />
+                {href === "/instructor/feed" && unseenRequests > 0 && (
+                  <span
+                    className="absolute -right-1.5 -top-1.5 flex size-2.5"
+                    aria-hidden="true"
+                  >
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-ok opacity-60 motion-reduce:animate-none" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-ok ring-2 ring-background" />
+                  </span>
+                )}
+              </span>
               {label}
+              {href === "/instructor/feed" && unseenRequests > 0 && (
+                <span className="sr-only">
+                  {unseenRequests} new {unseenRequests === 1 ? "request" : "requests"}
+                </span>
+              )}
             </Link>
           )
         })}

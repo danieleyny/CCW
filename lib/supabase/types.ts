@@ -1177,78 +1177,153 @@ export type Database = {
       instructors: {
         Row: {
           active: boolean
+          ammo_included: boolean | null
+          auto_offer_enabled: boolean
+          auto_offer_note: string | null
+          auto_offer_price_cents: number | null
           availability: Json
+          avatar_path: string | null
+          background: string | null
           base_geog: unknown
           bio: string | null
+          class_format: string | null
           created_at: string
           dcjs_id: string | null
           email: string | null
+          facebook_url: string | null
+          facility_photo_paths: string[] | null
+          feed_seen_at: string | null
           id: string
+          instagram_handle: string | null
+          intro_call_note: string | null
           jurisdictions: Database["public"]["Enums"]["jurisdiction_key"][]
+          languages: string[] | null
           lat: number | null
           lng: number | null
+          materials_included: boolean | null
           name: string
+          offers_intro_call: boolean
           payouts_enabled: boolean
           phone: string | null
           price_18h_cents: number | null
           profile_id: string | null
+          provides_range: boolean | null
+          range_fee_included: boolean | null
           rating_avg: number | null
           rating_count: number
+          response_time_note: string | null
+          scheduling_notes: string | null
+          separate_range_note: string | null
           service_radius_mi: number
           stripe_connect_account_id: string | null
+          typical_class_size: number | null
           updated_at: string
           verified: boolean
           verified_at: string | null
+          website_url: string | null
+          whats_to_bring: string | null
+          x_handle: string | null
+          years_experience: number | null
         }
         Insert: {
           active?: boolean
+          ammo_included?: boolean | null
+          auto_offer_enabled?: boolean
+          auto_offer_note?: string | null
+          auto_offer_price_cents?: number | null
           availability?: Json
+          avatar_path?: string | null
+          background?: string | null
           base_geog?: unknown
           bio?: string | null
+          class_format?: string | null
           created_at?: string
           dcjs_id?: string | null
           email?: string | null
+          facebook_url?: string | null
+          facility_photo_paths?: string[] | null
+          feed_seen_at?: string | null
           id?: string
+          instagram_handle?: string | null
+          intro_call_note?: string | null
           jurisdictions?: Database["public"]["Enums"]["jurisdiction_key"][]
+          languages?: string[] | null
           lat?: number | null
           lng?: number | null
+          materials_included?: boolean | null
           name: string
+          offers_intro_call?: boolean
           payouts_enabled?: boolean
           phone?: string | null
           price_18h_cents?: number | null
           profile_id?: string | null
+          provides_range?: boolean | null
+          range_fee_included?: boolean | null
           rating_avg?: number | null
           rating_count?: number
+          response_time_note?: string | null
+          scheduling_notes?: string | null
+          separate_range_note?: string | null
           service_radius_mi?: number
           stripe_connect_account_id?: string | null
+          typical_class_size?: number | null
           updated_at?: string
           verified?: boolean
           verified_at?: string | null
+          website_url?: string | null
+          whats_to_bring?: string | null
+          x_handle?: string | null
+          years_experience?: number | null
         }
         Update: {
           active?: boolean
+          ammo_included?: boolean | null
+          auto_offer_enabled?: boolean
+          auto_offer_note?: string | null
+          auto_offer_price_cents?: number | null
           availability?: Json
+          avatar_path?: string | null
+          background?: string | null
           base_geog?: unknown
           bio?: string | null
+          class_format?: string | null
           created_at?: string
           dcjs_id?: string | null
           email?: string | null
+          facebook_url?: string | null
+          facility_photo_paths?: string[] | null
+          feed_seen_at?: string | null
           id?: string
+          instagram_handle?: string | null
+          intro_call_note?: string | null
           jurisdictions?: Database["public"]["Enums"]["jurisdiction_key"][]
+          languages?: string[] | null
           lat?: number | null
           lng?: number | null
+          materials_included?: boolean | null
           name?: string
+          offers_intro_call?: boolean
           payouts_enabled?: boolean
           phone?: string | null
           price_18h_cents?: number | null
           profile_id?: string | null
+          provides_range?: boolean | null
+          range_fee_included?: boolean | null
           rating_avg?: number | null
           rating_count?: number
+          response_time_note?: string | null
+          scheduling_notes?: string | null
+          separate_range_note?: string | null
           service_radius_mi?: number
           stripe_connect_account_id?: string | null
+          typical_class_size?: number | null
           updated_at?: string
           verified?: boolean
           verified_at?: string | null
+          website_url?: string | null
+          whats_to_bring?: string | null
+          x_handle?: string | null
+          years_experience?: number | null
         }
         Relationships: [
           {
@@ -2246,6 +2321,7 @@ export type Database = {
           label: string
           lat: number | null
           lng: number | null
+          notes: string | null
           updated_at: string
         }
         Insert: {
@@ -2258,6 +2334,7 @@ export type Database = {
           label: string
           lat?: number | null
           lng?: number | null
+          notes?: string | null
           updated_at?: string
         }
         Update: {
@@ -2270,6 +2347,7 @@ export type Database = {
           label?: string
           lat?: number | null
           lng?: number | null
+          notes?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2343,21 +2421,40 @@ export type Database = {
     Views: {
       applicant_interest_feed: {
         Row: {
+          ammo_included: boolean | null
+          avatar_path: string | null
+          background: string | null
           bio: string | null
           case_id: string | null
+          class_format: string | null
           dcjs_id: string | null
           distance_mi: number | null
+          instagram_handle: string | null
           instructor_id: string | null
+          intro_call_note: string | null
+          languages: string[] | null
+          materials_included: boolean | null
           name: string | null
           note: string | null
           offer_id: string | null
+          offers_intro_call: boolean | null
           price_18h_cents: number | null
+          provides_range: boolean | null
           quoted_price_cents: number | null
+          range_fee_included: boolean | null
           rating_avg: number | null
           rating_count: number | null
           responded_at: string | null
+          response_time_note: string | null
+          scheduling_notes: string | null
+          separate_range_note: string | null
           service_radius_mi: number | null
           type: Database["public"]["Enums"]["offer_type"] | null
+          typical_class_size: number | null
+          verified: boolean | null
+          website_url: string | null
+          whats_to_bring: string | null
+          years_experience: number | null
         }
         Relationships: [
           {
@@ -2425,6 +2522,7 @@ export type Database = {
           distance_mi: number | null
           expires_at: string | null
           jurisdiction: Database["public"]["Enums"]["jurisdiction_key"] | null
+          matched_at: string | null
           needs_note: string | null
           offer_id: string | null
           responded: string | null
@@ -2738,6 +2836,7 @@ export type Database = {
       is_instructor: { Args: never; Returns: boolean }
       is_staff_or_admin: { Args: never; Returns: boolean }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      mark_instructor_feed_seen: { Args: never; Returns: string }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
