@@ -11,6 +11,7 @@ import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
 import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
+import { maybeAdvanceStage } from "@/lib/cases/advance"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -99,6 +100,10 @@ export async function recordDocument(input: {
   // FMT-01 is a control we run, not a box the customer ticks: the upload just
   // passed the size/type/filename check, so the control is satisfied by evidence.
   await satisfySystemRequirement(createAdminClient(), input.caseId, "FMT-01")
+
+  // Documents are coming in — say so on the case instead of leaving the customer
+  // staring at a stage that predates everything they've done.
+  await maybeAdvanceStage(createAdminClient(), input.caseId, "document_collection", "document.uploaded")
 
   await logActivity({
     action: "document.uploaded",

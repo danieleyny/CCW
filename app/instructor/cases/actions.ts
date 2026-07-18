@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { logActivity } from "@/lib/activity"
 import { sendBookingInvites } from "@/lib/calendar/invites"
 
@@ -28,6 +29,10 @@ export async function confirmBooking(formData: FormData) {
   if (error) throw error
 
   await sendBookingInvites(bookingId)
+  // A confirmed booking is training scheduled — the customer shouldn't have to
+  // infer that from a calendar entry.
+  await maybeAdvanceStage(createAdminClient(), b.case_id, "training_scheduled", "booking.confirmed")
+
   await logActivity({ action: "booking.confirmed", caseId: b.case_id, entity: "booking", entityId: bookingId })
   revalidatePath(`/instructor/cases/${b.case_id}`)
 }
@@ -61,6 +66,10 @@ export async function completeBooking(formData: FormData) {
     test_score: testScore,
     passed,
   })
+
+  // The instructor confirming attendance is the milestone — not a staffer
+  // noticing later that it happened.
+  await maybeAdvanceStage(admin, b.case_id, "training_complete", "booking.completed")
 
   await logActivity({
     action: "booking.completed",

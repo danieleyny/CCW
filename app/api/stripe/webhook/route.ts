@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getStripe, STRIPE_ENABLED } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { maybeAdvanceStage } from "@/lib/cases/advance"
 
 /**
  * Stripe webhook handler — scaffolded behind the STRIPE_ENABLED flag. When
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       const session = event.data.object
       const paymentId = session.metadata?.payment_id
       if (paymentId) {
-        await supabase
+        const { data: paid } = await supabase
           .from("payments")
           .update({
             status: "paid",
@@ -43,11 +44,19 @@ export async function POST(request: NextRequest) {
             invoice_url: session.url ?? null,
           })
           .eq("id", paymentId)
+          .select("case_id")
+          .maybeSingle()
+        // Paying is a milestone the customer can feel; the stage should reflect
+        // it without waiting for a staffer. Idempotent, so webhook retries are
+        // harmless.
+        if (paid?.case_id) {
+          await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "payment.paid")
+        }
       }
       // Marketplace booking deposit (Connect) — reconcile by booking_id.
       const bookingId = session.metadata?.booking_id
       if (bookingId) {
-        await supabase
+        const { data: deposit } = await supabase
           .from("payments")
           .update({
             status: "paid",
@@ -56,6 +65,11 @@ export async function POST(request: NextRequest) {
           })
           .eq("booking_id", bookingId)
           .eq("status", "pending")
+          .select("case_id")
+          .maybeSingle()
+        if (deposit?.case_id) {
+          await maybeAdvanceStage(supabase, deposit.case_id, "training_scheduled", "booking.deposit_paid")
+        }
       }
       break
     }

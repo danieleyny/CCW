@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { eligibilityGate, type WizardAnswers } from "@/lib/intake/answers"
@@ -145,6 +146,12 @@ export async function completeIntake(
   const admin = createAdminClient()
   const result = await processIntake(admin, caseId, gate.jurisdiction, answers)
   const guard = await evaluateSubmissionGuard(admin, caseId)
+
+  // Intake cleared the eligibility gate — that IS the screening. Stay here and
+  // let the later milestones (payment, booking, training, documents) each move
+  // the case one step, so the pipeline reflects what actually happened rather
+  // than jumping to the end of it.
+  await maybeAdvanceStage(admin, caseId, "eligibility_screened", "intake.completed")
 
   await logActivity({
     action: "intake.completed",

@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/activity"
 import { getMyCase } from "@/lib/portal"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
+import { maybeAdvanceStage } from "@/lib/cases/advance"
 import {
   renderRequirementDocument,
   renderCompanionDocument,
@@ -121,6 +122,8 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
         .eq("case_id", myCase.id)
         .eq("req_code", reqCode)
         .in("status", ["pending"])
+      // Waiting on a notary is a stage of its own, and the customer can see it.
+      await maybeAdvanceStage(admin, myCase.id, "notarization", "requirement.notarized_document_generated")
     } else {
       await admin
         .from("case_requirements")
@@ -237,6 +240,7 @@ export async function signRequirementDocument(
         .eq("case_id", myCase.id)
         .eq("req_code", reqCode)
         .in("status", ["pending"])
+      await maybeAdvanceStage(admin, myCase.id, "notarization", "requirement.notarized_document_signed")
     } else {
       await admin
         .from("case_requirements")

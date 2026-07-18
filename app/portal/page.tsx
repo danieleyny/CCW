@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server"
 import { getMyCase, getTrainingState } from "@/lib/portal"
 import {
   stageMeta,
-  stageIndex,
   nextStage,
   type CaseStageKey,
 } from "@/config/stages"
@@ -14,6 +13,8 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { WelcomeCard } from "@/components/portal/welcome-card"
+import { loadRequirementView } from "@/lib/portal/requirement-view"
+import { computeNextStep } from "@/lib/portal/next-step"
 
 export const metadata = { title: "Your application" }
 
@@ -36,7 +37,6 @@ export default async function PortalHome() {
 
   const supabase = await createClient()
   const stage = myCase.stage as CaseStageKey
-  const here = stageIndex(stage)
   const next = nextStage(stage)
 
   const [{ data: reqs }, { data: training }, { data: payments }, { data: intake }] =
@@ -52,6 +52,11 @@ export default async function PortalHome() {
     ])
   const intakeDone = !!intake?.completed_at
   const trainingState = await getTrainingState(myCase.id)
+
+  // Phase 10 — the single most important outstanding action, computed from the
+  // same requirement view the checklist and documents pages read.
+  const view = await loadRequirementView(supabase, myCase)
+  const nextStep = computeNextStep({ items: view.items, intakeDone, stage })
 
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
@@ -76,6 +81,44 @@ export default async function PortalHome() {
           Tracking your NYC concealed carry application, end to end.
         </p>
       </div>
+
+      {/* Phase 10 — WHAT TO DO NEXT, first thing, above the fold on a phone.
+          A returning applicant shouldn't have to hunt three screens down for
+          their own to-do list. */}
+      {!isLicensed && !isDenied && (
+        <Card className={nextStep.waiting ? "" : "brass-edge"}>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <SectionEyebrow>{nextStep.waiting ? "Where you are" : "Your next step"}</SectionEyebrow>
+              <span className="font-mono text-[11px] tabular-nums text-text-low">
+                {nextStep.done} of {nextStep.total} done
+              </span>
+            </div>
+
+            <h2 className="mt-2 text-lg font-semibold tracking-tight">{nextStep.title}</h2>
+            {nextStep.detail && <p className="mt-1 text-sm text-text-mid">{nextStep.detail}</p>}
+
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
+              <div
+                className="h-full rounded-full bg-brass transition-[width]"
+                style={{ width: `${nextStep.total ? (nextStep.done / nextStep.total) * 100 : 0}%` }}
+              />
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Link
+                href={nextStep.href}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
+              >
+                {nextStep.cta} <ArrowRight className="size-4" />
+              </Link>
+              <Link href="/portal/checklist" className="text-sm text-signal underline">
+                View everything left to do
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* V3-P4.4 — first-visit orientation (dismissible, early stages only) */}
       {!isLicensed && !isDenied && ["lead", "eligibility_screened", "signed_up_paid"].includes(stage) && (
@@ -216,17 +259,6 @@ export default async function PortalHome() {
         <HudCard href="/portal/payments" icon={CreditCard} value={money(paidCents)} label="Paid" small />
       </div>
 
-      {outstanding > 0 && (
-        <Link
-          href="/portal/checklist"
-          className="flex items-center justify-between rounded-md border border-brass/40 bg-brass px-4 py-3.5 text-brand-foreground transition-colors hover:bg-brass-bright"
-        >
-          <span className="text-sm font-semibold">
-            {outstanding} item{outstanding === 1 ? "" : "s"} need your attention
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
-      )}
     </div>
   )
 }
