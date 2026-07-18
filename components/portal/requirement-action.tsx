@@ -9,6 +9,7 @@ import { questionnaireFor } from "@/lib/requirements/questionnaires"
 import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requirements/actions"
 import { QuestionnaireSheet } from "@/components/portal/questionnaire-sheet"
 import { SignDocument } from "@/components/portal/sign-document"
+import { DocumentExample } from "@/components/portal/document-example"
 import { DocumentUploader } from "@/components/portal/document-uploader"
 import { Button } from "@/components/ui/button"
 
@@ -128,6 +129,8 @@ export function RequirementAction({
           </p>
         )}
 
+        {action.example && <DocumentExample id={action.example} />}
+
         {action.notarize && generated && !done && action.documentType && (
           <DocumentUploader
             caseId={caseId}
@@ -185,6 +188,8 @@ export function RequirementAction({
             )}
           </div>
         )}
+
+        {action.example && <DocumentExample id={action.example} />}
 
         {!done && action.documentType && (
           <DocumentUploader

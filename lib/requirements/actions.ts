@@ -30,11 +30,27 @@ type DocumentType = Database["public"]["Enums"]["document_type"]
 
 export type RequirementMode = "generate" | "obtain" | "attest"
 
+/**
+ * Our own illustrations (components/portal/document-example) — deliberately NOT
+ * photographs pulled off the web: a stranger's ID or face carries copyright and
+ * privacy exposure this site should never take on.
+ */
+export type ExampleId = "id-document" | "applicant-photo" | "proof-of-address" | "certificate" | "safe"
+
 interface ActionBase {
   /** Short, retail-voice label for the action button. */
   actionLabel: string
   /** Plain-English what this is and why it's needed. */
   help: string
+  /**
+   * What to DO, in the words a person would use. The registry title is written
+   * for the record ("Photo — square, 600×600–1200×1200 px, taken within 30
+   * days"); that's spec-speak to a customer, so the checklist leads with this
+   * and keeps the official title underneath as the citation-grade detail.
+   */
+  customerTitle?: string
+  /** Which of our own illustrations shows what "good" looks like. */
+  example?: ExampleId
   /** Must be notarized → generation alone never satisfies. */
   notarize?: boolean
   /** Disclosure/affidavit/reference/arrest material — never visible to instructors. */
@@ -115,6 +131,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   "FEE-01": {
     mode: "attest",
     actionLabel: "Confirm",
+    customerTitle: "Be ready for the NYPD and fingerprint fees at filing",
     help: "The application and fingerprinting fees are paid to the NYPD and the fingerprint vendor when you file — not to us. Confirm you're ready for them at filing.",
   },
   "FMT-01": {
@@ -133,6 +150,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "attest",
     actionLabel: "Acknowledge",
     optional: true,
+    customerTitle: "One thing to know about a Special Carry license",
     help: "A Special Carry license's validity depends on you also holding a license from your home county (38 RCNY §5-25). This is an advisory — nothing to upload.",
   },
 
@@ -142,6 +160,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Complete & generate",
     questionnaireId: "affirmation",
     documentType: "affirmation_understanding",
+    customerTitle: "Read and sign your affirmation of understanding",
     help: "A signed affirmation that you understand NYC's carry rules and where carrying is prohibited. We prepare it from your intake — you review and sign it here.",
   },
   "SAF-01": {
@@ -149,6 +168,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Complete & generate",
     questionnaireId: "safe-storage",
     documentType: "safe_photo_closed",
+    customerTitle: "Tell us how you'll store the handgun — plus photos of your safe",
+    example: "safe",
     help: "How you'll store the handgun safely at home. We prepare your safe-storage statement; you'll also add photos of your safe (open and closed).",
   },
   "SOC-01": {
@@ -157,6 +178,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     questionnaireId: "social-media",
     documentType: "social_media_list",
     optional: true,
+    customerTitle: "Your social media list (optional — you can skip this)",
     help: "The CCIA's social-media disclosure has been enjoined (Antonyuk v. James), so this is OPTIONAL. Some applicants still choose to provide it. Skip it with no effect on your application.",
   },
   "COH-01": {
@@ -170,6 +192,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     signable: false,
     notarize: true,
     sensitive: true,
+    customerTitle: "A notarized statement from every adult in your home",
     help: "A notarized affidavit from every household member 18 or older — or, if you live alone, a sole-occupancy statement. We prepare each one; each signer notarizes it and you upload the signed copy.",
   },
   "REF-01": {
@@ -183,6 +206,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     signable: false,
     notarize: true,
     sensitive: true,
+    customerTitle: "Four people who'll vouch for you",
     help: "Four character references, at least two not related to you. Each gets a private link to complete and notarize their letter. The requirement completes when the notarized letters are in.",
   },
   "REF-02": {
@@ -196,6 +220,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     signable: false,
     notarize: true,
     sensitive: true,
+    customerTitle: "Two people who'll vouch for you",
     help: "Two non-family character references for a premises license. Each gets a private link to complete and notarize their letter.",
   },
   "DSC-01": {
@@ -203,6 +228,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Complete disclosures",
     questionnaireId: "disclosure-addendum",
     sensitive: true,
+    customerTitle: "Your written explanations for the application's history questions",
     help: "The NYPD application asks questions 10–28 about your history. Every 'yes' needs its own written explanation, submitted on the Handgun License Application Addendum (PD 643-041A). Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
   },
   "QUE-01": {
@@ -210,6 +236,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Write your explanations",
     questionnaireId: "disclosure-addendum",
     sensitive: true,
+    customerTitle: "Your written explanations, in your own words",
     help: "One written explanation for each 'yes' answer, in your own words. We turn them into the addendum.",
   },
   "ARR-01": {
@@ -219,6 +246,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "certificate_of_disposition",
     sensitive: true,
     companion: { questionnaireId: "court-request-letters", label: "Download court request letter" },
+    customerTitle: "Your written statement about each arrest or summons",
     help: "For EVERY arrest or summons — even if it was dismissed, sealed, or nullified (CPL Article 160) — the NYPD wants a Certificate of Disposition from the court plus your written statement of what happened. We write the statement with you and prepare a request letter for the court; the certificate itself comes from the court.",
   },
   "OOP-01": {
@@ -227,6 +255,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     questionnaireId: "protection-order-statement",
     documentType: "order_of_protection_copy",
     sensitive: true,
+    customerTitle: "Your written statement about the order of protection",
     help: "A copy of any order of protection plus your written explanation. Disclose every order, active or expired.",
   },
   "DIR-01": {
@@ -234,6 +263,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Write your statement",
     questionnaireId: "domestic-incident-statement",
     sensitive: true,
+    customerTitle: "Your written statement about the domestic incident report",
     help: "A written disclosure of any domestic incident report, in your own words. Disclose it even if no charges followed.",
   },
 
@@ -242,6 +272,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload your ID",
     documentType: "id",
+    customerTitle: "A clear photo of your driver's license, state ID, or passport",
+    example: "id-document",
     help: "A government-issued photo ID.",
     steps: ["Photograph or scan your driver's license, state ID, or passport.", "Make sure all four corners and the text are readable.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -251,6 +283,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload proof of birth date",
     documentType: "id",
+    customerTitle: "Proof of your date of birth",
+    example: "id-document",
     help: "Proof of your date of birth — a birth certificate or passport.",
     steps: ["Locate your birth certificate or passport.", "Scan or photograph the full page.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -260,6 +294,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload proof of status",
     documentType: "id",
+    customerTitle: "Proof that you're a citizen or lawful permanent resident",
+    example: "id-document",
     help: "Proof of U.S. citizenship or lawful status — passport, naturalization certificate, or permanent resident card.",
     steps: ["Find your passport, naturalization certificate, or green card.", "Scan or photograph it in full.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -269,6 +305,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload your photo",
     documentType: "applicant_photo",
+    customerTitle: "A square photo of you, taken in the last 30 days",
+    example: "applicant-photo",
     help: "A passport-style photo that meets the NYPD portal's spec. We check the dimensions for you as you upload.",
     steps: [
       "Get a passport-style photo (any pharmacy does these) or take one against a plain background.",
@@ -283,6 +321,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload proof of residence",
     documentType: "proof_residence",
+    customerTitle: "Proof that you live at your NYC address",
+    example: "proof-of-address",
     help: "Proof you live at your NYC address. Note: cell phone bills are NOT accepted.",
     steps: [
       "Use a utility bill, lease, bank statement, or government correspondence showing your name and NYC address.",
@@ -297,6 +337,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "driving_abstract",
     multiple: true, // one abstract per state lived in over the past 5 years
     actionLabel: "Get your driving abstract",
+    customerTitle: "Your lifetime driving record — one for every state you've lived in",
     help: "A LIFETIME driving abstract from every state you've lived in over the past five years — not just New York (38 RCNY §5-05(b)(12)).",
     steps: [
       "Order your New York lifetime abstract online from the NYS DMV (about $7).",
@@ -311,6 +352,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload your certificate",
     documentType: "training_cert",
+    customerTitle: "Your firearms training certificate",
+    example: "certificate",
     help: "The 16-hour classroom plus 2-hour live-fire course required for a carry license. The certificate expires six months after completion, so timing matters — we track the clock.",
     steps: [
       "Book a DCJS-approved instructor — you can find one right here under Find an instructor.",
@@ -325,6 +368,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload your certificate",
     documentType: "training_cert",
+    customerTitle: "Your refresher training certificate",
+    example: "certificate",
     help: "For a renewal: the 2-hour live-fire certificate, dated within the last six months.",
     steps: ["Book a live-fire session with a DCJS-approved instructor.", "Complete the 2-hour session.", "Upload the certificate here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -334,6 +379,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload your DD-214",
     documentType: "dd214",
+    customerTitle: "Your DD-214 discharge papers",
     help: "Your military discharge documentation (DD-214).",
     steps: ["Find your DD-214. If you don't have a copy, request one from the National Archives.", "Scan it in full.", "Upload it here."],
     sourceUrl: "https://www.archives.gov/veterans/military-service-records",
@@ -343,6 +389,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload the certificate",
     documentType: "cert_good_conduct",
+    customerTitle: "Your Certificate of Good Conduct",
+    example: "certificate",
     help: "A Certificate of Good Conduct, issued by the NYS Department of Corrections and Community Supervision.",
     steps: ["Apply to NYS DOCCS for a Certificate of Good Conduct.", "Upload the issued certificate here."],
     sourceUrl: "https://doccs.ny.gov/certificates-relief-disabilities-and-good-conduct",
@@ -352,6 +400,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload proof of name change",
     documentType: "name_change_proof",
+    customerTitle: "Proof of your name change",
     help: "Court-ordered name change, marriage certificate, or divorce decree showing the change.",
     steps: ["Find the court order, marriage certificate, or divorce decree.", "Scan it in full.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -361,6 +410,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload the letter",
     documentType: "leo_good_guy_letter",
+    customerTitle: "Your department's letter confirming you're in good standing",
     help: 'A "Good Guy" letter (PD 643-155) from your former agency.',
     steps: ["Request the letter from your former agency's records unit.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -370,6 +420,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload the receipt",
     documentType: "leo_property_receipt",
+    customerTitle: "Your firearm property receipt",
     help: "Your Property Receipt / Discontinuance of Firearms (PD 520-013).",
     steps: ["Request the property receipt from your former agency.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -379,6 +430,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload the certificate",
     documentType: "leo_cert_of_service",
+    customerTitle: "Your certificate of service",
+    example: "certificate",
     help: "A Certificate of Service on your former agency's letterhead.",
     steps: ["Request a certificate of service from your former agency.", "Upload it here."],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -388,6 +441,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload the forms",
     documentType: "oos_background_form",
+    customerTitle: "Your out-of-state background check forms",
     help: "An out-of-state background form for every jurisdiction you've lived in over the past five years (38 RCNY §5-03(b), effective 1/5/2025).",
     steps: [
       "List every state and county you've lived in for the past five years.",
@@ -402,6 +456,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "business_documentation",
     multiple: true,
     actionLabel: "Upload business documents",
+    customerTitle: "Paperwork showing your business and its address",
     help: "Business documentation for a premises-business license — incorporation papers, a business certificate, and proof of the business address.",
     steps: ["Gather your incorporation or business certificate.", "Add proof of the business address.", "Upload them here."],
     sourceUrl: NYPD_REQUIRED_DOCS,

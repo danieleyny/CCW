@@ -2,6 +2,7 @@ import { ShieldCheck } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
+import { actionFor } from "@/lib/requirements/actions"
 import { cn } from "@/lib/utils"
 
 export interface ReqChecklistItem {
@@ -84,13 +85,18 @@ export function RequirementsChecklist({
                     {item.severity.replace(/_/g, " ")}
                   </span>
                 </div>
-                <div className="mt-1 text-sm font-medium">{item.title}</div>
+                {/* Lead with what to DO in plain words; keep the registry's
+                    official title underneath, where it belongs — as the record. */}
+                <div className="mt-1 text-sm font-medium">
+                  {actionFor(item.reqCode)?.customerTitle ?? item.title}
+                </div>
                 {item.description && (
                   <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
                 )}
-                {item.authority && (
-                  <p className="mt-1 font-mono text-[10px] text-text-low">{item.authority}</p>
-                )}
+                <p className="mt-1 font-mono text-[10px] text-text-low">
+                  {item.title}
+                  {item.authority ? ` · ${item.authority}` : ""}
+                </p>
               </div>
               <StatusBadge status={item.status} />
             </div>
