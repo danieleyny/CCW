@@ -14,6 +14,7 @@ import {
   GraduationCap,
   Scale,
   ShieldCheck,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,7 @@ import { LogoMark } from "@/components/brand/logo"
 const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] = [
   { href: "/admin", label: "Today", icon: LayoutDashboard, exact: true },
   { href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
+  { href: "/admin/queue", label: "Filing queue", icon: ListChecks },
   { href: "/admin/cases", label: "Cases", icon: FolderOpen },
   { href: "/admin/inbox", label: "Inbox", icon: Inbox },
   { href: "/admin/requirements", label: "Requirements", icon: ScrollText },
