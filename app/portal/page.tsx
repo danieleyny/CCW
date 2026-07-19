@@ -11,6 +11,7 @@ import { money, formatDate } from "@/lib/format"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
+import { CaseTimeline } from "@/components/portal/case-timeline"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { WelcomeCard } from "@/components/portal/welcome-card"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
@@ -241,6 +242,16 @@ export default async function PortalHome() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Full application timeline — plain language + honest ETAs */}
+      <details className="rounded-lg border bg-card">
+        <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">
+          Your full application timeline
+        </summary>
+        <div className="border-t border-hairline p-5">
+          <CaseTimeline currentStage={stage} />
+        </div>
+      </details>
 
       {/* HUD quick cards */}
       <div className="grid grid-cols-3 gap-3">

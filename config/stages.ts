@@ -141,6 +141,22 @@ export function stageProgress(key: CaseStageKey): number {
   return Math.round((STAGE_BY_KEY[key].order / CASE_STAGES.length) * 100)
 }
 
+/**
+ * Stages where the clock belongs to the NYPD, not to us or the applicant. The
+ * timeline marks these honestly — we never imply we can speed them up, because
+ * we can't, and claiming otherwise is exactly the overclaim the guardrails ban.
+ */
+export const NYPD_CONTROLLED_STAGES: CaseStageKey[] = [
+  "filed",
+  "fingerprinting_booked",
+  "under_investigation",
+  "decision",
+]
+
+export function isNypdControlled(key: CaseStageKey): boolean {
+  return NYPD_CONTROLLED_STAGES.includes(key)
+}
+
 /** NYC boroughs + the non-resident business track destinations. */
 export const BOROUGHS = [
   "Manhattan",
