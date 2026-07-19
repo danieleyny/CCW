@@ -179,7 +179,7 @@ async function applicationWorksheet(
     c.para(PREPARED_BY, { size: 9, color: "muted" })
     c.rule()
     c.para(
-      "You file your own application at licensing.nypdonline.org. This sheet puts your answers in the form's own order so you can enter them without hunting. We do not submit anything on your behalf. Lines marked “enter at filing” are ones we deliberately don't store — like your Social Security number.",
+      "You file your own application at licensing.nypdonline.org. This sheet puts your answers in the form's own order so you can enter them without hunting. We prepare and organize — we never submit it for you. Lines marked “enter at filing” are ones we deliberately don't store — like your Social Security number.",
       { size: 10 }
     )
     for (const section of sections) {

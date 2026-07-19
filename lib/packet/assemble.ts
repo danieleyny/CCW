@@ -10,7 +10,7 @@ const BRASS = rgb(0.71, 0.54, 0.21)
 const HAIR = rgb(0.85, 0.86, 0.88)
 
 /** NYPD-friendly assembly order; unknown types fall to the end. */
-const DOC_ORDER: string[] = [
+export const DOC_ORDER: string[] = [
   "id",
   "proof_residence",
   "training_cert",
@@ -217,4 +217,27 @@ export async function assemblePacket(admin: DB, caseId: string): Promise<{ pdf: 
   }
 
   return { pdf: await master.save(), items }
+}
+
+/** NYPD-order index of a document type (unknown → end). */
+export function docOrderIndex(type: string): number {
+  const i = DOC_ORDER.indexOf(type)
+  return i === -1 ? 999 : i
+}
+
+export const documentLabel = labelFor
+
+/**
+ * Concatenate several PDFs into one, page for page. Used by the filing pack to
+ * prepend its guide pages onto the assembled document packet without
+ * reimplementing the pdf-lib copy dance.
+ */
+export async function mergePdfs(parts: Uint8Array[]): Promise<Uint8Array> {
+  const master = await PDFDocument.create()
+  for (const bytes of parts) {
+    const src = await PDFDocument.load(bytes, { ignoreEncryption: true })
+    const copied = await master.copyPages(src, src.getPageIndices())
+    copied.forEach((p) => master.addPage(p))
+  }
+  return master.save()
 }

@@ -260,14 +260,24 @@ export default async function CaseFilePage({
             </div>
             <div className="flex flex-col items-end gap-2">
               <StageControl caseId={kase.id} stage={stage} status={kase.status} />
-              <a
-                href={`/admin/cases/${kase.id}/packet`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-xs font-medium text-text-mid transition-colors hover:text-foreground"
-              >
-                <FileDown className="size-3.5" /> Assemble packet
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/admin/cases/${kase.id}/filing-pack`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-brass/40 bg-brass/8 px-3 py-1.5 text-xs font-medium text-brass-bright transition-colors hover:bg-brass/15"
+                >
+                  <FileDown className="size-3.5" /> Filing pack
+                </a>
+                <a
+                  href={`/admin/cases/${kase.id}/packet`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-xs font-medium text-text-mid transition-colors hover:text-foreground"
+                >
+                  <FileDown className="size-3.5" /> Docs only
+                </a>
+              </div>
               {stageIndex(stage) >= stageIndex("filed") && (
                 <RecordLicenseControl
                   caseId={kase.id}

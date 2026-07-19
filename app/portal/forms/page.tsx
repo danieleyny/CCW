@@ -65,21 +65,32 @@ export default async function FormsPage() {
         </Link>
       )}
 
-      {/* The assembled deliverable — everything merged into one filing-ready PDF */}
+      {/* The one-click deliverable — worksheet + upload guide + assembled docs */}
       <Card className="brass-edge">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold">Full application packet</h3>
+            <h3 className="text-sm font-semibold">Your filing pack</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Everything you&apos;ve uploaded, merged in NYPD order with a cover sheet and index — one
-              file to review before filing.
+              One guided PDF: the answers to type into the NYPD portal in the form&apos;s own order, a
+              guide to which document goes where, and all your assembled documents. You file it
+              yourself — we prepare and organize, we never submit it for you.
             </p>
           </div>
-          <Button asChild>
-            <a href="/portal/packet" target="_blank" rel="noreferrer">
-              <Download className="size-4" /> Download packet
+          <div className="flex shrink-0 flex-col gap-2">
+            <Button asChild>
+              <a href="/portal/filing-pack" target="_blank" rel="noreferrer">
+                <Download className="size-4" /> Download filing pack
+              </a>
+            </Button>
+            <a
+              href="/portal/packet"
+              target="_blank"
+              rel="noreferrer"
+              className="text-center text-[11px] text-text-low underline"
+            >
+              Just the documents
             </a>
-          </Button>
+          </div>
         </CardContent>
       </Card>
 
