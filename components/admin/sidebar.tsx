@@ -13,6 +13,7 @@ import {
   ScrollText,
   GraduationCap,
   Scale,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -26,6 +27,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/admin/inbox", label: "Inbox", icon: Inbox },
   { href: "/admin/requirements", label: "Requirements", icon: ScrollText },
   { href: "/admin/legal", label: "Legal review", icon: Scale },
+  { href: "/admin/privacy", label: "Privacy", icon: ShieldCheck },
   { href: "/admin/instructors", label: "Instructors", icon: GraduationCap },
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },

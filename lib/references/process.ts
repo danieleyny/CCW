@@ -65,14 +65,47 @@ export async function recomputeReferenceRequirement(admin: DB, caseId: string) {
   const status: Database["public"]["Enums"]["case_req_status"] =
     required > 0 && notarized >= required ? "satisfied" : "pending"
 
+  // Bind the evidence. REF-01 carries a `reference_letter` document_type, so
+  // forbid_satisfied_without_evidence (20260718000600) REJECTS a satisfied row
+  // with no reference_id/document_id bound — correctly, since a satisfied
+  // requirement should point at its proof.
+  //
+  // This used to be missing, and the failure was silent in the worst way: the
+  // UPDATE raised, the error was never checked, and the function still RETURNED
+  // status "satisfied". So a case with every reference notarized reported green
+  // to its caller while the row stayed `pending` — and `pending` on a blocking
+  // requirement means the CP-5 gate refuses to let the case be filed, forever.
+  let referenceId: string | null = null
+  if (status === "satisfied") {
+    const { data: notarizedRef } = await admin
+      .from("character_references")
+      .select("id")
+      .eq("case_id", caseId)
+      .eq("notarized", true)
+      .order("id")
+      .limit(1)
+      .maybeSingle()
+    referenceId = notarizedRef?.id ?? null
+  }
+
   // notes is the ONLY reference signal an engaged instructor can read (they can't
   // see character_references) — keep it an aggregate, never a name.
-  await admin
+  const { error } = await admin
     .from("case_requirements")
-    .update({ status, notes: `${notarized}/${required} notarized · ${received} received` })
+    .update({
+      status,
+      notes: `${notarized}/${required} notarized · ${received} received`,
+      ...(referenceId ? { reference_id: referenceId } : {}),
+    })
     .eq("case_id", caseId)
     .in("req_code", ["REF-01", "REF-02"])
     .in("status", ["pending", "satisfied"])
+
+  // Never report a status we failed to persist — that mismatch is what hid this
+  // for as long as it did.
+  if (error) {
+    throw new Error(`Could not update the reference requirement for case ${caseId}: ${error.message}`)
+  }
 
   return { received, notarized, required, status }
 }

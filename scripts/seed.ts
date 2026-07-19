@@ -233,6 +233,16 @@ async function main() {
           lat: bk.lat,
           lng: bk.lng,
           price_18h_cents: 65000,
+          // Live-eligibility (lib/instructors/profile.ts) requires the range
+          // question to be ANSWERED — either you supply the range or you name
+          // the one they'd go to. A null here silently drops the instructor out
+          // of offer matching, which is exactly what it was doing: the seeded
+          // "verified" instructor could never be matched to an offer. Same for
+          // class_format and languages — all three are live-eligibility checks
+          // that postdate this seed block.
+          provides_range: true,
+          class_format: "small_group",
+          languages: ["English", "Spanish"],
           jurisdictions: ["nyc"],
           rating_avg: 4.8,
           rating_count: 24,

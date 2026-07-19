@@ -109,7 +109,10 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   for (const d of docs ?? []) {
     let url: string | null = null
     if (d.file_path) {
-      const { data } = await db.storage.from("documents").createSignedUrl(d.file_path, 3600)
+      // 5 minutes, not an hour. A signed URL is a bearer token for a document
+      // that may contain an arrest narrative — long TTLs survive in browser
+      // history, shared links and proxy logs long after the session ends.
+      const { data } = await db.storage.from("documents").createSignedUrl(d.file_path, 300)
       url = data?.signedUrl ?? null
     }
     const file: LibraryFile = {

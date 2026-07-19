@@ -43,6 +43,13 @@ export default async function PortalLayout({
         {children}
       </main>
 
+      {/* Not a nav tab — this is rarely-needed but must always be findable. */}
+      <footer className="mx-auto w-full max-w-3xl px-4 pb-24 text-xs text-text-low md:pb-6">
+        <Link href="/portal/privacy" className="underline hover:text-text-mid">
+          Your data &amp; privacy
+        </Link>
+      </footer>
+
       <PortalBottomNav />
     </div>
   )

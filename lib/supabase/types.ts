@@ -1037,6 +1037,131 @@ export type Database = {
           },
         ]
       }
+      data_erasure_log: {
+        Row: {
+          actor: string | null
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          data_request_id: string | null
+          id: string
+          note: string | null
+          surfaces: Json
+        }
+        Insert: {
+          actor?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          data_request_id?: string | null
+          id?: string
+          note?: string | null
+          surfaces?: Json
+        }
+        Update: {
+          actor?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          data_request_id?: string | null
+          id?: string
+          note?: string | null
+          surfaces?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_erasure_log_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_erasure_log_data_request_id_fkey"
+            columns: ["data_request_id"]
+            isOneToOne: false
+            referencedRelation: "data_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_requests: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          detail: string | null
+          fulfilled_at: string | null
+          id: string
+          kind: string
+          requested_at: string
+          requester_email: string
+          resolution_note: string | null
+          status: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          detail?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          kind: string
+          requested_at?: string
+          requester_email: string
+          resolution_note?: string | null
+          status?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          detail?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          kind?: string
+          requested_at?: string
+          requester_email?: string
+          resolution_note?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_requests_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "data_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disclosures: {
         Row: {
           case_id: string
@@ -2451,6 +2576,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      retention_policies: {
+        Row: {
+          action: string
+          authority: string | null
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          label: string
+          notes: string | null
+          retain_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          authority?: string | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          label: string
+          notes?: string | null
+          retain_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          authority?: string | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          label?: string
+          notes?: string | null
+          retain_days?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_packages: {
         Row: {

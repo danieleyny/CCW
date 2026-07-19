@@ -228,4 +228,100 @@ describe.skipIf(!reachable)("RLS access matrix", () => {
     await admin.from("documents").delete().eq("id", genDoc!.id)
     await admin.from("engagements").delete().eq("id", eng!.id)
   })
+
+  // ── PART A / Phase 3 — privacy request + retention tables ────────────────
+  describe("privacy and retention tables", () => {
+    let requestId: string
+
+    beforeAll(async () => {
+      const { data } = await admin
+        .from("data_requests")
+        .insert({
+          case_id: caseId,
+          client_id: clientAId,
+          requester_email: "matrix-probe@test.local",
+          kind: "deletion",
+        })
+        .select("id")
+        .single()
+      requestId = data!.id
+    })
+
+    afterAll(async () => {
+      await admin.from("data_requests").delete().eq("id", requestId)
+    })
+
+    it("an applicant sees their own data request; another applicant sees none", async () => {
+      expect(await count(clientA, "data_requests", caseId)).toBeGreaterThan(0)
+      expect(await count(clientB, "data_requests", caseId)).toBe(0)
+    })
+
+    it("an instructor cannot see that a privacy request exists", async () => {
+      expect(await count(instructor, "data_requests", caseId)).toBe(0)
+    })
+
+    it("an applicant cannot mark their own request fulfilled", async () => {
+      await clientA.from("data_requests").update({ status: "fulfilled" }).eq("id", requestId)
+      // PostgREST reports success-with-zero-rows on an RLS-filtered update, so
+      // re-read with service role rather than trusting the absence of an error.
+      const { data } = await admin.from("data_requests").select("status").eq("id", requestId).single()
+      expect(data!.status).toBe("open")
+    })
+
+    it("retention windows are admin-only to change", async () => {
+      await staff.from("retention_policies").update({ enabled: true, retain_days: 1 }).eq("key", "notification")
+      const { data } = await admin
+        .from("retention_policies")
+        .select("enabled, retain_days")
+        .eq("key", "notification")
+        .single()
+      expect(data!.enabled).toBe(false)
+      expect(data!.retain_days).toBeNull()
+    })
+
+    it("an instructor cannot read retention policy or erasure history", async () => {
+      expect(await count(instructor, "retention_policies")).toBe(0)
+      expect(await count(instructor, "data_erasure_log")).toBe(0)
+    })
+
+    it("the erasure log cannot be deleted, even by staff or admin", async () => {
+      const { data: entry } = await admin
+        .from("data_erasure_log")
+        .insert({ case_id: caseId, client_id: clientAId, surfaces: { probe: 1 } })
+        .select("id")
+        .single()
+
+      // No delete policy exists on this table — the record of an erasure must
+      // outlive everyone's ability to remove it, including ours.
+      await staff.from("data_erasure_log").delete().eq("id", entry!.id)
+      await adminUser.from("data_erasure_log").delete().eq("id", entry!.id)
+      const { data } = await admin.from("data_erasure_log").select("id").eq("id", entry!.id).maybeSingle()
+      expect(data).not.toBeNull()
+
+      await admin.from("data_erasure_log").delete().eq("id", entry!.id)
+    })
+
+    it("signing evidence cannot be deleted by any interactive session", async () => {
+      const { data: ev } = await admin
+        .from("signature_events")
+        .insert({
+          case_id: caseId,
+          signer_key: "applicant",
+          req_code: "AFF-01",
+          document_sha256: "matrixprobe",
+          consent_text: "probe",
+        })
+        .select("id")
+        .single()
+
+      // ESIGN/UETA evidence is append-only by construction. Erasure minimizes
+      // it (nulls ip/user_agent); nothing deletes it.
+      await clientA.from("signature_events").delete().eq("id", ev!.id)
+      await staff.from("signature_events").delete().eq("id", ev!.id)
+      const { data } = await admin.from("signature_events").select("id").eq("id", ev!.id).maybeSingle()
+      expect(data).not.toBeNull()
+
+      await admin.from("signature_events").delete().eq("id", ev!.id)
+    })
+  })
 })

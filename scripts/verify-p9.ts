@@ -84,16 +84,27 @@ async function main() {
   check((await n(instrC, "case_offers")) === 0, "instructor CANNOT read case_offers directly (redacted view only)")
   check((await n(clientC, "case_offers", "case_id", jCase!.id)) >= 0, "client can read their own offers")
 
-  // case_requirements: engaged-scope for instructor
-  check((await n(instrC, "case_requirements", "case_id", tCaseId)) > 0, "engaged instructor CAN read the case's requirements")
+  // case_requirements: NO direct instructor access at all any more.
+  //
+  // These two assertions used to require the opposite. The trainer-concierge
+  // build (20260718001600) dropped `case_requirements_select_instructor` and
+  // `cases_select_instructor` because an RLS policy filters ROWS, not COLUMNS —
+  // so a trainer reading the table saw `notes` (staff prose, including OVERRIDE
+  // rationale) and every `req_code`, and an ARR-01 row discloses an arrest
+  // history by its mere existence. Access now goes through the curated
+  // `trainer_*` views. Asserting the old behaviour here left the harness
+  // permanently red against the correct security model.
+  check((await n(instrC, "case_requirements", "case_id", tCaseId)) === 0, "engaged instructor CANNOT read case_requirements directly (curated views only)")
   check((await n(instrC, "case_requirements", "case_id", jCase!.id)) === 0, "instructor CANNOT read a non-engaged case's requirements")
   check((await n(clientC, "case_requirements", "case_id", jCase!.id)) > 0, "client reads their own requirements")
 
   // intake_sessions: client + staff only
   check((await n(instrC, "intake_sessions")) === 0, "instructor sees ZERO intake_sessions")
 
-  // cases: instructor sees only engaged
-  check((await n(instrC, "cases", "id", tCaseId)) === 1, "engaged instructor can read the engaged case row")
+  // cases: no direct read either — `trainer_case_scope` is the only door, and
+  // it drops client_id/qa_signed_off_by/nypd_app_ref while adding the identity
+  // a trainer legitimately needs.
+  check((await n(instrC, "cases", "id", tCaseId)) === 0, "engaged instructor CANNOT read the cases row directly (trainer_case_scope only)")
   check((await n(instrC, "cases", "id", jCase!.id)) === 0, "instructor CANNOT read a non-engaged case row")
 
   // clients (PII): instructor none
@@ -158,15 +169,28 @@ async function main() {
   const { count: tsCount } = await admin.from("training_sessions").select("id", { count: "exact", head: true }).eq("case_id", eCaseId)
   check((tsCount ?? 0) === 1, "5. booking confirmed → completed → training session recorded")
 
-  // 6. references → satisfied
+  // 6. references → satisfied only when NOTARIZED.
+  //
+  // This used to assert that four RECEIVED references satisfied REF-01. They
+  // don't, and shouldn't: 38 RCNY requires notarized reference letters, and
+  // recomputeReferenceRequirement keys on `notarized`, not `received`. The old
+  // assertion described a weaker rule than the code enforces — the failing
+  // direction is the safe one, but a red harness is a harness nobody reads.
+  const refIds: string[] = []
   for (let i = 0; i < 4; i++) {
     const ref = await admin.from("character_references").insert({ case_id: eCaseId, name: `R${i}`, contact_email: `r${i}@e.com`, received: true }).select("id").single()
+    refIds.push(ref.data!.id)
     const token = newReferenceToken()
     await admin.from("reference_requests").insert({ reference_id: ref.data!.id, case_id: eCaseId, token, status: "submitted", submitted_at: new Date().toISOString() })
   }
   await recomputeReferenceRequirement(tadmin, eCaseId)
+  const { data: refReceived } = await admin.from("case_requirements").select("status").eq("case_id", eCaseId).eq("req_code", "REF-01").single()
+  check(refReceived?.status === "pending", "6a. four references RECEIVED but unnotarized → REF-01 still pending")
+
+  await admin.from("character_references").update({ notarized: true }).in("id", refIds)
+  await recomputeReferenceRequirement(tadmin, eCaseId)
   const { data: ref01 } = await admin.from("case_requirements").select("status").eq("case_id", eCaseId).eq("req_code", "REF-01").single()
-  check(ref01?.status === "satisfied", "6. four references received → REF-01 satisfied")
+  check(ref01?.status === "satisfied", "6b. four references NOTARIZED → REF-01 satisfied")
 
   // 7. reminders fire once
   await admin.from("reminder_log").delete().neq("id", "00000000-0000-0000-0000-000000000000")
