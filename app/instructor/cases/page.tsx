@@ -44,7 +44,9 @@ export default async function InstructorCasesPage() {
 
       {totalToReview > 0 && (
         <p className="rounded-md border border-brass/30 bg-brass/8 px-3 py-2 text-sm text-brass-bright">
-          {totalToReview} item{totalToReview === 1 ? "" : "s"} across your cases need your review.
+          {totalToReview === 1
+            ? "1 item across your cases needs your review."
+            : `${totalToReview} items across your cases need your review.`}
         </p>
       )}
 

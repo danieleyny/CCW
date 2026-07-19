@@ -29,7 +29,7 @@ your own test account — so these are for you to approve first.
 | 11 | Proof of Name Change (if applicable) | `NAM-01` | ✅ |
 | 12 | All other currently held firearms licenses (NYC/NYS, other states, HR 218 card) | `OOS-02` | ⚠️ **WRONG TRACK** |
 | 13 | Arrest info: Certificate of Disposition + detailed written statement | `ARR-01` | ✅ |
-| 13a | └ **Certificate of Relief from Disabilities** (felony or serious offense per P.L. § 265.00(17)) | — | ❌ **GAP** |
+| 13a | └ **Certificate of Relief from Disabilities** (felony or serious offense per P.L. § 265.00(17)) | `ARR-01` (prose only) | ⚠️ **not collected** |
 | 14 | Domestic Incident Report statement | `DIR-01` | ✅ |
 | 15 | Order of Protection: copy + detailed written statement | `OOP-01` | ✅ |
 | 16 | Military discharge: DD-214 **and** discharge papers | `MIL-01` | ✅ |
@@ -88,9 +88,14 @@ the consular version — it implies a criminal history to anyone watching who ha
 **Proposed:** close `GMC-01` and insert a dated replacement titled "Certificate of
 Good Conduct from your country of origin", naming the consulate in the steps, and
 reclassified `full` for trainers. Separately insert `REL-01` (NYS Certificate of
-Relief from Disabilities, `if_arrest_hx`, `hidden`) to cover gap 13a — the
-`cert_relief_disabilities` document type already exists in the enum with nothing
-pointing at it.
+Relief from Disabilities, `if_arrest_hx`, `hidden`) to cover gap 13a.
+
+On 13a specifically: `ARR-01`'s help text *does* tell the applicant a felony or
+serious-offense conviction requires a Certificate of Relief from Disabilities — I
+confirmed that in the live portal. But telling isn't collecting: there's no
+requirement row, no `document_type`, nothing that turns red if it's missing, and
+the `cert_relief_disabilities` enum value has nothing pointing at it. It's advice
+in a paragraph, not a tracked item.
 
 *Verified against the DB, not assumed:* both `GMC-01` rows carry authority
 `P.L. §400.00(1); 38 RCNY §5-03` and `document_type = cert_good_conduct`; no
