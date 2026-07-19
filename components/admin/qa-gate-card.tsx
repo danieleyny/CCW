@@ -19,12 +19,15 @@ export function QaGateCard({
   readyForSignOff,
   signedOffBy,
   signedOffAt,
+  trainerReviewed,
 }: {
   caseId: string
   blockers: string[]
   readyForSignOff: boolean
   signedOffBy: string | null
   signedOffAt: string | null
+  /** How much of the concierge-safe work a trainer has already checked. */
+  trainerReviewed?: { done: number; total: number } | null
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -41,6 +44,15 @@ export function QaGateCard({
         {signed ? <ShieldCheck className="size-4 text-ok" /> : <ShieldAlert className="size-4 text-warn" />}
         Pre-filing QA gate (CP-5)
       </div>
+
+      {trainerReviewed && trainerReviewed.total > 0 && (
+        // A signal into the gate, never a substitute for it: the blocker list
+        // below and the named sign-off are still what decide.
+        <p className="mt-1 text-xs text-text-mid">
+          Trainer has reviewed {trainerReviewed.done} of {trainerReviewed.total} items they can see.
+          Disclosures are reviewed here, not by them.
+        </p>
+      )}
 
       {signed ? (
         <p className="mt-1 text-sm text-ok">

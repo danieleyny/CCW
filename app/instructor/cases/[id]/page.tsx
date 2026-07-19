@@ -11,6 +11,7 @@ import {
   progressOf,
 } from "@/lib/trainer/queries"
 import { TrainerRequirementReview, type ReviewItem } from "@/components/trainer/requirement-review"
+import { computeTrainerNextStep } from "@/lib/trainer/next-steps"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Input } from "@/components/ui/input"
@@ -48,6 +49,7 @@ export default async function InstructorCaseDetail({
     getTrainerReviews(supabase, id),
   ])
   const progress = progressOf(reqs)
+  const next = computeTrainerNextStep(reqs)
   const rosterByCode = new Map(roster.map((r) => [r.reqCode, r]))
   const docByReq = new Map(docs.map((d) => [d.caseRequirementId, d]))
   // Latest first from the query, so the first hit per item is the current one.
@@ -145,6 +147,17 @@ export default async function InstructorCaseDetail({
           never appears here. Your review means &ldquo;complete and correct&rdquo;, not a legal
           judgement.
         </span>
+      </div>
+
+      <div
+        className={
+          next.owner === "handoff"
+            ? "rounded-lg border border-ok/30 bg-ok/8 p-4"
+            : "rounded-lg border border-hairline bg-surface-2/40 p-4"
+        }
+      >
+        <div className="text-sm font-medium">{next.headline}</div>
+        <p className="mt-1 text-xs text-text-mid">{next.detail}</p>
       </div>
 
       <TrainerRequirementReview items={reviewItems} />

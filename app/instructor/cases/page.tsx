@@ -3,6 +3,7 @@ import { ArrowRight, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { stageMeta, type CaseStageKey } from "@/config/stages"
 import { getTrainerCases, getTrainerRequirements, progressOf } from "@/lib/trainer/queries"
+import { computeTrainerNextStep } from "@/lib/trainer/next-steps"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata = { title: "My cases" }
@@ -20,11 +21,16 @@ export default async function InstructorCasesPage() {
   const rows = await Promise.all(
     cases.map(async (c) => {
       const reqs = await getTrainerRequirements(supabase, c.caseId)
-      return { ...c, progress: progressOf(reqs) }
+      return { ...c, progress: progressOf(reqs), next: computeTrainerNextStep(reqs) }
     })
   )
-  // Least-finished first: the ones needing work should be at the top.
-  rows.sort((a, b) => a.progress.percent - b.progress.percent)
+  // Action first: anything waiting on THIS trainer goes to the top, then the
+  // least-finished. A book of 20 cases is only useful if it sorts itself.
+  rows.sort((a, b) => {
+    if (a.next.reviewCount !== b.next.reviewCount) return b.next.reviewCount - a.next.reviewCount
+    return a.progress.percent - b.progress.percent
+  })
+  const totalToReview = rows.reduce((n, r) => n + r.next.reviewCount, 0)
 
   return (
     <div className="space-y-5">
@@ -35,6 +41,12 @@ export default async function InstructorCasesPage() {
           disclosures, which Gun License NYC handles.
         </p>
       </div>
+
+      {totalToReview > 0 && (
+        <p className="rounded-md border border-brass/30 bg-brass/8 px-3 py-2 text-sm text-brass-bright">
+          {totalToReview} item{totalToReview === 1 ? "" : "s"} across your cases need your review.
+        </p>
+      )}
 
       {rows.length === 0 ? (
         <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
@@ -58,6 +70,11 @@ export default async function InstructorCasesPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-text-mid">
+                        {c.next.reviewCount > 0 && (
+                          <span className="rounded-full bg-brass px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
+                            {c.next.reviewCount} to review
+                          </span>
+                        )}
                         <span className="font-mono tabular-nums">
                           {c.progress.done}/{c.progress.total}
                         </span>
@@ -70,6 +87,7 @@ export default async function InstructorCasesPage() {
                         style={{ width: `${c.progress.percent}%` }}
                       />
                     </div>
+                    <p className="text-xs text-text-low">{c.next.headline}</p>
                   </CardContent>
                 </Card>
               </Link>

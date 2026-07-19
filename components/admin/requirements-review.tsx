@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { CheckCircle2, CircleDashed, Ban, RotateCcw, FileCheck2, Filter } from "lucide-react"
+import { CheckCircle2, CircleDashed, Ban, RotateCcw, FileCheck2, Filter, UserCheck } from "lucide-react"
 import { setCaseRequirementStatus, approveRequirementsWithEvidence } from "@/app/admin/actions"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,12 @@ export interface CaseReqRow {
   authority: string | null
   severity: string
   blocking: boolean
+  /**
+   * The trainer's own review, when there is one. A signal INTO the QA picture —
+   * never a replacement for it: signPreFilingQa still gates filing and staff can
+   * reopen anything here.
+   */
+  trainerReview?: { decision: string; note: string | null; at: string; reviewer: string | null } | null
 }
 
 const SEV_TONE: Record<string, string> = {
@@ -100,6 +106,28 @@ export function RequirementsReview({ caseId, rows }: { caseId: string; rows: Cas
                 {r.documentId && <span className="ml-2 text-signal">· evidence attached</span>}
                 {r.notes && <span className="ml-2">· {r.notes}</span>}
               </p>
+              {r.trainerReview && (
+                // A signal into the QA picture, not a replacement for it: staff
+                // can still reopen this, and signPreFilingQa still gates filing.
+                <p
+                  className={cn(
+                    "mt-0.5 flex items-center gap-1.5 text-xs",
+                    r.trainerReview.decision === "approved" ? "text-ok" : "text-warn"
+                  )}
+                >
+                  <UserCheck className="size-3 shrink-0" />
+                  <span>
+                    {r.trainerReview.decision === "approved"
+                      ? "Trainer-approved"
+                      : "Trainer asked for a fix"}
+                    {r.trainerReview.reviewer ? ` by ${r.trainerReview.reviewer}` : ""} ·{" "}
+                    {new Date(r.trainerReview.at).toLocaleDateString("en-US", { dateStyle: "medium" })}
+                    {r.trainerReview.decision !== "approved" && r.trainerReview.note
+                      ? ` — ${r.trainerReview.note}`
+                      : ""}
+                  </span>
+                </p>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <StatusIcon status={r.status} />

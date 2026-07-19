@@ -138,11 +138,32 @@ export default async function CaseFilePage({
   const docNameById = new Map((docsRes.data ?? []).map((d) => [d.id, d.file_name ?? d.type]))
 
   // Requirements rows (the one checklist) + gate.
+  // Trainer reviews feed the QA picture: staff can see an item was checked, by
+  // whom and when, without that changing who may sign off.
+  const { data: trainerReviews } = await supabase
+    .from("requirement_reviews")
+    .select("case_requirement_id, decision, note, created_at, reviewer_kind, profiles(full_name)")
+    .eq("case_id", id)
+    .eq("reviewer_kind", "trainer")
+    .order("created_at", { ascending: false })
+  const reviewByReq = new Map<string, { decision: string; note: string | null; at: string; reviewer: string | null }>()
+  for (const rv of trainerReviews ?? []) {
+    if (reviewByReq.has(rv.case_requirement_id)) continue
+    const who = rv.profiles as unknown as { full_name: string | null } | null
+    reviewByReq.set(rv.case_requirement_id, {
+      decision: rv.decision,
+      note: rv.note,
+      at: rv.created_at,
+      reviewer: who?.full_name ?? null,
+    })
+  }
+
   const reqRows: CaseReqRow[] = (reqsRes.data ?? []).map((r) => {
     const req = r.requirements as unknown as { title: string; authority: string | null; severity: string; blocking: boolean }
     return {
       id: r.id, reqCode: r.req_code, status: r.status, notes: r.notes,
       documentId: r.document_id, title: req.title, authority: req.authority,
+      trainerReview: reviewByReq.get(r.id) ?? null,
       severity: req.severity, blocking: req.blocking,
     }
   })
