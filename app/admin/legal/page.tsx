@@ -87,9 +87,13 @@ export default async function LegalPage() {
             <Ban className="size-4" /> Not currently enforceable ({unenforced.length})
           </div>
           <ul className="mt-1 space-y-0.5 text-xs text-text-mid">
+            {/* Jurisdiction included: the same req_code exists once per
+                profile, and without it two rows look like a duplication bug. */}
             {unenforced.map((r) => (
               <li key={r.id}>
-                <span className="font-mono">{r.req_code}</span> — {r.legal_citation ?? "no citation recorded"}
+                <span className="font-mono">{r.req_code}</span>{" "}
+                <span className="text-text-low">({r.jurisdiction})</span> —{" "}
+                {r.legal_citation ?? "no citation recorded"}
               </li>
             ))}
           </ul>
