@@ -73,3 +73,42 @@ export function buildMessageTemplates(fees: Fees): { label: string; body: string
   },
   ]
 }
+
+/**
+ * PART B / Phase 8 — saved replies for the TRAINER↔applicant chat. Scoped to
+ * the paperwork a trainer actually helps with — completeness and format, never
+ * legal sufficiency, never anything touching disclosures (the trainer can't see
+ * those). Inserted into the composer for editing; never auto-sent.
+ *
+ * Static (no fee interpolation) — trainers don't quote fees.
+ */
+export const TRAINER_MESSAGE_TEMPLATES: { label: string; body: string }[] = [
+  {
+    label: "Re-upload — clearer photo",
+    body: "Thanks for sending this over. The image is a little hard to read — could you retake it in good light with all four corners and the text clearly visible, then re-upload? Once it's crisp I'll mark it complete.",
+  },
+  {
+    label: "Missing a page",
+    body: "This looks like it's missing a page. Could you upload the complete document (front and back / all pages) so it's ready to file? Let me know if you're not sure which part is missing.",
+  },
+  {
+    label: "Book your range session",
+    body: "Next step on your end is the live-fire range session. Head to your portal to pick a time that works — booking it now keeps the rest of your timeline on track.",
+  },
+  {
+    label: "Looks complete — moving forward",
+    body: "Got it — this one looks complete and correct. I've marked it reviewed. Nice work; on to the next item.",
+  },
+  {
+    label: "Format reminder",
+    body: "Quick format note: uploads need to be a clear PDF or photo (JPG/PNG), and each document should be its own file. If anything won't upload, send it my way and I'll help sort it out.",
+  },
+  {
+    label: "Checking in",
+    body: "Just checking in on your document list — anything you're stuck on or have questions about? Happy to point you to the right example or walk through what's needed.",
+  },
+  {
+    label: "You're all set on my end",
+    body: "You're all set on everything I review. The rest of the assembly and the final quality check are handled by the Gun License NYC team — they'll take it from here. Great working with you.",
+  },
+]

@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, UserCog, Radio, FolderOpen, CalendarClock, Wallet, type LucideIcon } from "lucide-react"
+import { LayoutDashboard, UserCog, Radio, FolderOpen, CalendarClock, Wallet, BarChart3, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] = [
   { href: "/instructor", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/instructor/feed", label: "Feed", icon: Radio },
   { href: "/instructor/cases", label: "Cases", icon: FolderOpen },
+  { href: "/instructor/performance", label: "Performance", icon: BarChart3 },
   { href: "/instructor/availability", label: "Availability", icon: CalendarClock },
   { href: "/instructor/payouts", label: "Payouts", icon: Wallet },
   { href: "/instructor/profile", label: "Profile", icon: UserCog },

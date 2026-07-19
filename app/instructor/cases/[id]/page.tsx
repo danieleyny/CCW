@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { confirmBooking, completeBooking, cancelBooking } from "../actions"
 import { sendEngagementMessage } from "@/app/portal/actions"
+import { TRAINER_MESSAGE_TEMPLATES } from "@/config/message-templates"
 
 export const metadata = { title: "Applicant" }
 
@@ -217,6 +218,7 @@ export default async function InstructorCaseDetail({
             messages={chat}
             send={sendEngagementMessage}
             placeholder="Message your applicant…"
+            templates={TRAINER_MESSAGE_TEMPLATES}
           />
         </div>
       </div>

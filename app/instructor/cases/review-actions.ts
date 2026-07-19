@@ -42,6 +42,52 @@ export async function reviewRequirement(
   return { ok: true }
 }
 
+export type BulkReviewResult = { ok: number; failed: number; errors: string[] }
+
+/**
+ * PART B / Phase 8 — review several items at once.
+ *
+ * Deliberately a thin loop over the SAME RPC: it re-checks scope, evidence and
+ * decision per item, so a bulk wrapper can't widen what a single review can do.
+ * One bad item (e.g. no evidence bound) fails on its own without sinking the
+ * rest. Revalidate once, at the end.
+ */
+export async function bulkReviewRequirements(
+  caseRequirementIds: string[],
+  decision: "approved" | "changes_requested",
+  note?: string
+): Promise<BulkReviewResult> {
+  await requireRole(["instructor"])
+  const supabase = await createClient()
+
+  let ok = 0
+  const errors: string[] = []
+  for (const id of caseRequirementIds) {
+    const { data, error } = await supabase.rpc("trainer_review_requirement", {
+      p_case_requirement_id: id,
+      p_decision: decision,
+      p_note: note ?? undefined,
+    })
+    if (error) {
+      errors.push(error.message)
+      continue
+    }
+    ok++
+    await logActivity({
+      action: decision === "approved" ? "trainer.item_approved" : "trainer.changes_requested",
+      entity: "case_requirement",
+      entityId: id,
+      detail: { review_id: data, bulk: true },
+    })
+  }
+
+  if (ok > 0) {
+    revalidatePath("/instructor/cases")
+    revalidatePath("/portal/checklist")
+  }
+  return { ok, failed: errors.length, errors }
+}
+
 /**
  * A short-lived link to a document the trainer is reviewing.
  *
