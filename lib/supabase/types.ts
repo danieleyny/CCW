@@ -84,6 +84,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activity_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "activity_log_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -133,6 +140,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "appointments_client_id_fkey"
@@ -187,6 +201,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "availability_slots_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
             foreignKeyName: "availability_slots_location_id_fkey"
@@ -255,6 +276,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "bookings_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -269,11 +297,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
+          },
+          {
             foreignKeyName: "bookings_instructor_id_fkey"
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
             foreignKeyName: "bookings_location_id_fkey"
@@ -378,6 +434,13 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "case_notes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       case_offers: {
@@ -440,6 +503,13 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       case_requirements: {
@@ -497,6 +567,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "case_requirements_cohabitant_id_fkey"
             columns: ["cohabitant_id"]
             isOneToOne: false
@@ -509,6 +586,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "case_requirements_reference_id_fkey"
@@ -578,6 +662,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_stages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -710,6 +801,13 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "character_references_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       checklist_items: {
@@ -768,6 +866,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -910,11 +1015,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cohabitants_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "cohabitants_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohabitants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
         ]
       }
@@ -968,6 +1087,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disclosures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -1038,6 +1164,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "documents_checklist_item_id_fkey"
             columns: ["checklist_item_id"]
             isOneToOne: false
@@ -1106,11 +1239,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "engagements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "engagements_instructor_id_fkey"
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
             foreignKeyName: "engagements_offer_id_fkey"
@@ -1374,6 +1521,13 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "intake_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       jurisdiction_profiles: {
@@ -1456,6 +1610,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "license_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "license_reports_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -1501,11 +1662,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "messages_engagement_id_fkey"
             columns: ["engagement_id"]
             isOneToOne: false
             referencedRelation: "engagements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
             foreignKeyName: "messages_sender_id_fkey"
@@ -1559,6 +1748,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "notifications_recipient_fkey"
             columns: ["recipient"]
             isOneToOne: false
@@ -1608,6 +1804,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
             foreignKeyName: "offer_matches_offer_id_fkey"
@@ -1712,6 +1915,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "payments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -1724,6 +1934,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "engagements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
           },
         ]
       }
@@ -1806,6 +2037,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_authorizations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "purchase_authorizations_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -1881,11 +2119,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reference_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "reference_requests_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "reference_requests_reference_id_fkey"
@@ -1929,6 +2181,13 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reminder_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       requirement_answers: {
@@ -1966,6 +2225,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_answers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -2150,11 +2416,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "signature_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "signature_events_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signature_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
         ]
       }
@@ -2199,6 +2479,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -2314,6 +2601,13 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       training_locations: {
@@ -2363,6 +2657,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_locations_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
         ]
       }
@@ -2415,11 +2716,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "training_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "training_sessions_instructor_id_fkey"
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
         ]
       }
@@ -2471,11 +2786,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "offer_matches_instructor_id_fkey"
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "instructors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
         ]
       }
@@ -2534,6 +2863,112 @@ export type Database = {
           responded: string | null
           stage: Database["public"]["Enums"]["case_stage"] | null
           type: Database["public"]["Enums"]["offer_type"] | null
+        }
+        Relationships: []
+      }
+      trainer_case_scope: {
+        Row: {
+          applicant_email: string | null
+          applicant_name: string | null
+          applicant_phone: string | null
+          case_id: string | null
+          engagement_id: string | null
+          instructor_id: string | null
+          is_renewal: boolean | null
+          stage: Database["public"]["Enums"]["case_stage"] | null
+          training_expires_on: string | null
+          trust_tier: string | null
+        }
+        Relationships: []
+      }
+      trainer_document_feed: {
+        Row: {
+          case_id: string | null
+          case_requirement_id: string | null
+          created_at: string | null
+          document_id: string | null
+          engagement_id: string | null
+          file_name: string | null
+          generated: boolean | null
+          notarized: boolean | null
+          req_code: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["document_status"] | null
+          type: Database["public"]["Enums"]["document_type"] | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+        ]
+      }
+      trainer_requirement_feed: {
+        Row: {
+          authority: string | null
+          blocking: boolean | null
+          case_id: string | null
+          case_requirement_id: string | null
+          description: string | null
+          document_id: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          engagement_id: string | null
+          req_code: string | null
+          scope: Database["public"]["Enums"]["concierge_scope"] | null
+          severity: Database["public"]["Enums"]["requirement_sev"] | null
+          status: Database["public"]["Enums"]["case_req_status"] | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
+      trainer_roster_progress: {
+        Row: {
+          case_id: string | null
+          done_count: number | null
+          engagement_id: string | null
+          invited_count: number | null
+          req_code: string | null
+          required_count: number | null
         }
         Relationships: []
       }
@@ -3469,6 +3904,10 @@ export type Database = {
         Returns: unknown
       }
       storage_doc_client_id: { Args: { path: string }; Returns: string }
+      trainer_may_read_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
+      }
       trainer_scope: {
         Args: { p_requirement_id: string; p_tier: string }
         Returns: Database["public"]["Enums"]["concierge_scope"]

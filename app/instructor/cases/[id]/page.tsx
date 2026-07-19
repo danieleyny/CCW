@@ -1,8 +1,14 @@
 import { notFound } from "next/navigation"
-import { Lock, CalendarClock, MessageSquare } from "lucide-react"
+import { Lock, CalendarClock, MessageSquare, Mail, Phone, FileText, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import { getCaseRequirements } from "@/lib/requirements"
 import { stageMeta, type CaseStageKey } from "@/config/stages"
+import {
+  getTrainerCase,
+  getTrainerRequirements,
+  getTrainerDocuments,
+  getRosterProgress,
+  progressOf,
+} from "@/lib/trainer/queries"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Input } from "@/components/ui/input"
@@ -10,8 +16,18 @@ import { Button } from "@/components/ui/button"
 import { confirmBooking, completeBooking, cancelBooking } from "../actions"
 import { sendEngagementMessage } from "@/app/portal/actions"
 
-export const metadata = { title: "Case (scoped)" }
+export const metadata = { title: "Applicant" }
 
+/**
+ * The trainer's scoped concierge view.
+ *
+ * Every read here goes through a `trainer_*` view (lib/trainer/queries), never a
+ * case table: a view can curate columns, and an RLS policy cannot. That's what
+ * keeps `case_requirements.notes` — staff prose, including override rationale —
+ * off this page, and what keeps disclosure requirements from appearing at all.
+ * Their absence is the point: a locked row labelled "ARR-01" would itself tell
+ * the trainer the applicant has an arrest history.
+ */
 export default async function InstructorCaseDetail({
   params,
 }: {
@@ -20,14 +36,17 @@ export default async function InstructorCaseDetail({
   const { id } = await params
   const supabase = await createClient()
 
-  // RLS (cases_select_instructor) returns this only if the instructor is engaged.
-  const { data: kase } = await supabase.from("cases").select("id, stage").eq("id", id).maybeSingle()
+  const kase = await getTrainerCase(supabase, id)
   if (!kase) notFound()
 
-  // Scoped checklist (RLS: case_requirements_select_instructor). No disclosures,
-  // no documents, no client identity are loaded here — by design.
-  const reqs = await getCaseRequirements(supabase, id)
-  const applicable = reqs.filter((r) => r.status !== "na")
+  const [reqs, docs, roster] = await Promise.all([
+    getTrainerRequirements(supabase, id),
+    getTrainerDocuments(supabase, id),
+    getRosterProgress(supabase, id),
+  ])
+  const progress = progressOf(reqs)
+  const reviewable = reqs.filter((r) => r.scope === "full" && r.status !== "na")
+  const rosterByCode = new Map(roster.map((r) => [r.reqCode, r]))
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -35,52 +54,132 @@ export default async function InstructorCaseDetail({
     .eq("case_id", id)
     .order("starts_at", { ascending: true })
 
-  // The instructor↔applicant chat for this engagement (RLS returns only theirs).
-  const { data: eng } = await supabase
-    .from("engagements")
-    .select("id")
-    .eq("case_id", id)
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  let chat: MessageRow[] = []
-  if (eng) {
-    const {
-      data: { user: me },
-    } = await supabase.auth.getUser()
-    const { data: msgs } = await supabase
-      .from("messages")
-      .select("id, body, created_at, sender_id")
-      .eq("engagement_id", eng.id)
-      .order("created_at")
-    // Firewall: the instructor never sees the applicant's real name — their
-    // messages read as "Applicant". The instructor's own show as "You".
-    chat = (msgs ?? []).map((m) => {
-      const mine = m.sender_id === me?.id
-      return {
-        id: m.id,
-        body: m.body,
-        created_at: m.created_at,
-        senderName: mine ? "You" : "Applicant",
-        senderRole: mine ? "instructor" : "client",
-      }
-    })
-  }
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser()
+  const { data: msgs } = await supabase
+    .from("messages")
+    .select("id, body, created_at, sender_id")
+    .eq("engagement_id", kase.engagementId)
+    .order("created_at")
+  const chat: MessageRow[] = (msgs ?? []).map((m) => {
+    const mine = m.sender_id === me?.id
+    return {
+      id: m.id,
+      body: m.body,
+      created_at: m.created_at,
+      // The applicant's name is now known for an active engagement, so the
+      // thread reads like a conversation rather than a redacted transcript.
+      senderName: mine ? "You" : kase.applicantName.split(" ")[0],
+      senderRole: mine ? "instructor" : "client",
+    }
+  })
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Case progress</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{kase.applicantName}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Stage: <b>{stageMeta(kase.stage as CaseStageKey).label}</b>
         </p>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-text-mid">
+          {kase.applicantEmail && (
+            <a href={`mailto:${kase.applicantEmail}`} className="flex items-center gap-1.5 text-signal underline">
+              <Mail className="size-3" /> {kase.applicantEmail}
+            </a>
+          )}
+          {kase.applicantPhone && (
+            <a href={`tel:${kase.applicantPhone}`} className="flex items-center gap-1.5 text-signal underline">
+              <Phone className="size-3" /> {kase.applicantPhone}
+            </a>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 rounded-md border border-hairline bg-surface-2/50 px-4 py-3 text-xs text-text-mid">
-        <Lock className="size-3.5" /> Scoped view — the client&apos;s name, contact,
-        documents, and disclosures are not shared with instructors.
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="font-medium">Paperwork you&apos;re helping with</span>
+          <span className="font-mono text-xs tabular-nums text-text-mid">
+            {progress.done} of {progress.total}
+          </span>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
+          <div
+            className="h-full rounded-full bg-brass transition-[width]"
+            style={{ width: `${progress.percent}%` }}
+          />
+        </div>
       </div>
+
+      <div className="flex items-start gap-2 rounded-md border border-hairline bg-surface-2/50 px-4 py-3 text-xs text-text-mid">
+        <Lock className="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          Scoped view. Anything touching the applicant&apos;s disclosures — arrests, orders of
+          protection, domestic incidents, the history questions — is handled by Gun License NYC and
+          never appears here. Your review means &ldquo;complete and correct&rdquo;, not a legal
+          judgement.
+        </span>
+      </div>
+
+      <div>
+        <h2 className="engraved mb-2 text-text-low">Requirements ({reviewable.length})</h2>
+        <ul className="divide-y rounded-lg border bg-card">
+          {reviewable.map((r) => {
+            const doc = docs.find((d) => d.caseRequirementId === r.caseRequirementId)
+            return (
+              <li key={r.caseRequirementId} className="flex items-start justify-between gap-3 p-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
+                      {r.reqCode}
+                    </span>
+                    <span className="text-sm">{r.title}</span>
+                    {r.blocking && <span className="text-[10px] uppercase tracking-wide text-brass">required</span>}
+                  </div>
+                  {doc && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-text-mid">
+                      <FileText className="size-3" /> {doc.fileName ?? doc.type}
+                    </p>
+                  )}
+                </div>
+                <StatusBadge status={r.status} />
+              </li>
+            )
+          })}
+          {reviewable.length === 0 && (
+            <li className="p-4 text-sm text-text-mid">Nothing to review yet.</li>
+          )}
+        </ul>
+      </div>
+
+      {roster.length > 0 && (
+        <div>
+          <h2 className="engraved mb-2 flex items-center gap-2 text-text-low">
+            <Users className="size-3.5" /> People they still need
+          </h2>
+          <ul className="divide-y rounded-lg border bg-card">
+            {reqs
+              .filter((r) => r.scope === "progress" && r.status !== "na")
+              .map((r) => {
+                const p = rosterByCode.get(r.reqCode)
+                return (
+                  <li key={r.caseRequirementId} className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0">
+                      <div className="text-sm">{r.title}</div>
+                      <p className="mt-0.5 text-xs text-text-low">
+                        {/* Counts only — these documents belong to other people. */}
+                        {p
+                          ? `${p.doneCount} of ${p.requiredCount ?? p.invitedCount} notarized`
+                          : "Waiting on the applicant"}
+                      </p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </li>
+                )
+              })}
+          </ul>
+        </div>
+      )}
 
       <div>
         <h2 className="engraved mb-2 text-text-low">Sessions</h2>
@@ -127,40 +226,18 @@ export default async function InstructorCaseDetail({
         )}
       </div>
 
-      {eng && (
-        <div>
-          <h2 className="engraved mb-2 flex items-center gap-2 text-text-low">
-            <MessageSquare className="size-3.5" /> Message the applicant
-          </h2>
-          <div className="rounded-lg border bg-card p-4">
-            <MessageThread
-              caseId={eng.id}
-              messages={chat}
-              send={sendEngagementMessage}
-              placeholder="Message your applicant…"
-            />
-          </div>
-        </div>
-      )}
-
       <div>
-        <h2 className="engraved mb-2 text-text-low">Requirements ({applicable.length})</h2>
-        <ul className="divide-y rounded-lg border bg-card">
-          {applicable.map((r) => (
-            <li key={r.id} className="flex items-center justify-between gap-3 p-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
-                    {r.req_code}
-                  </span>
-                  <span className="text-sm">{r.requirement?.title ?? r.req_code}</span>
-                </div>
-                {r.notes && <p className="mt-0.5 text-xs text-text-low">{r.notes}</p>}
-              </div>
-              <StatusBadge status={r.status} />
-            </li>
-          ))}
-        </ul>
+        <h2 className="engraved mb-2 flex items-center gap-2 text-text-low">
+          <MessageSquare className="size-3.5" /> Message {kase.applicantName.split(" ")[0]}
+        </h2>
+        <div className="rounded-lg border bg-card p-4">
+          <MessageThread
+            caseId={kase.engagementId}
+            messages={chat}
+            send={sendEngagementMessage}
+            placeholder="Message your applicant…"
+          />
+        </div>
       </div>
     </div>
   )
