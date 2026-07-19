@@ -2808,6 +2808,10 @@ export type Database = {
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
       instructor_engaged: { Args: { p_case_id: string }; Returns: boolean }
+      instructor_engagement_writable: {
+        Args: { p_engagement_id: string }
+        Returns: boolean
+      }
       instructor_owns_engagement: {
         Args: { p_engagement_id: string }
         Returns: boolean
