@@ -56,6 +56,21 @@ const socialSchema = z.object({
   platform: z.string().max(40),
   handle: z.string().max(200),
 })
+const yearMonth = z
+  .string()
+  .regex(/^\d{4}-\d{2}$/, "Use YYYY-MM")
+  .or(z.literal(""))
+const addressHistorySchema = z.object({
+  fromMonth: yearMonth.optional(),
+  toMonth: yearMonth.optional(),
+  address: z.string().max(400).optional(),
+})
+const employmentHistorySchema = z.object({
+  fromMonth: yearMonth.optional(),
+  toMonth: yearMonth.optional(),
+  employer: z.string().max(400).optional(),
+  occupation: short.optional(),
+})
 
 export const wizardAnswersSchema = z
   .object({
@@ -73,9 +88,43 @@ export const wizardAnswersSchema = z
     citizenship: z.enum(["citizen", "lpr"]).optional(),
     lprUnder7yr: z.boolean().optional(),
     residenceProof: z.string().max(100).optional(),
+    // Step 2 — full Section-A identity (Phase 2 field coverage)
+    middleInitial: z.string().max(4).optional(),
+    aliasName: short.optional(),
+    legalStreet: short.optional(),
+    legalApt: z.string().max(40).optional(),
+    legalCity: z.string().max(100).optional(),
+    legalState: z.string().max(40).optional(),
+    alienRegistrationNumber: z.string().max(40).optional(),
+    placeOfBirth: short.optional(),
+    heightInches: z.number().int().min(24).max(96).optional(),
+    weightLbs: z.number().int().min(50).max(700).optional(),
+    sex: z.string().max(20).optional(),
+    hairColor: z.string().max(30).optional(),
+    eyeColor: z.string().max(30).optional(),
+    // Employment / business the licence is for (fields 5–8)
+    businessName: short.optional(),
+    businessType: short.optional(),
+    businessStreet: short.optional(),
+    businessCity: z.string().max(100).optional(),
+    businessState: z.string().max(40).optional(),
+    businessZip: z.string().max(20).optional(),
+    businessPhone: z.string().max(40).optional(),
+    occupation: short.optional(),
+    // Out-of-city licence (Special Carry — field 9)
+    outOfCityLicenseNumber: z.string().max(60).optional(),
+    outOfCityIssuedBy: short.optional(),
+    outOfCityCounty: z.string().max(100).optional(),
+    outOfCityIssuedOn: isoDay.optional(),
+    outOfCityExpiresOn: isoDay.optional(),
     // Step 3 — household & safeguard
     cohabitants: z.array(cohabitantSchema).max(20).optional(),
     safeguardName: short.optional(),
+    // Q30–31 safeguarding
+    safeguardMethod: narrative.optional(),
+    safeguardAddress: short.optional(),
+    safeguardRelation: z.string().max(100).optional(),
+    safeguardPhone: z.string().max(40).optional(),
     // Step 4 — disclosures
     arrests: z.array(arrestSchema).max(50).optional(),
     ordersOfProtection: z.array(oopSchema).max(50).optional(),
@@ -92,6 +141,9 @@ export const wizardAnswersSchema = z
     isRetiredLeo: z.boolean().optional(),
     hasNameChange: z.boolean().optional(),
     hasOtherLicense: z.boolean().optional(),
+    // Q29 — five-year histories
+    residenceHistory: z.array(addressHistorySchema).max(20).optional(),
+    employmentHistory: z.array(employmentHistorySchema).max(20).optional(),
   })
   .strip()
 

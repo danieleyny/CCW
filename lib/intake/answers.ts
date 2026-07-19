@@ -39,6 +39,20 @@ export interface SocialAccount {
   handle: string
 }
 
+/** Q29 — one row of the five-year residence history. */
+export interface AddressHistoryEntry {
+  fromMonth?: string // YYYY-MM
+  toMonth?: string // YYYY-MM, or blank for "present"
+  address?: string // street, city, state, county, zip, apt
+}
+/** Q29 — one row of the five-year employment history. */
+export interface EmploymentHistoryEntry {
+  fromMonth?: string
+  toMonth?: string
+  employer?: string // business name + address
+  occupation?: string
+}
+
 /** Platforms offered in the social-media disclosure dropdown. */
 export const SOCIAL_PLATFORMS = [
   "Instagram",
@@ -67,9 +81,43 @@ export interface WizardAnswers {
   citizenship?: "citizen" | "lpr"
   lprUnder7yr?: boolean
   residenceProof?: string
+  // Step 2 — full Section-A identity (Phase 2 field coverage, PD 643-041 §1–4)
+  middleInitial?: string
+  aliasName?: string // maiden name / alias (form field 1 + Q28)
+  legalStreet?: string
+  legalApt?: string
+  legalCity?: string
+  legalState?: string // default "NY"
+  alienRegistrationNumber?: string // non-citizens only
+  placeOfBirth?: string // "City, State, Country"
+  heightInches?: number
+  weightLbs?: number
+  sex?: string
+  hairColor?: string
+  eyeColor?: string
+  // Employment / business the licence is for (form fields 5–8)
+  businessName?: string
+  businessType?: string
+  businessStreet?: string
+  businessCity?: string
+  businessState?: string
+  businessZip?: string
+  businessPhone?: string
+  occupation?: string
+  // Out-of-city licence (Special Carry — form field 9)
+  outOfCityLicenseNumber?: string
+  outOfCityIssuedBy?: string
+  outOfCityCounty?: string
+  outOfCityIssuedOn?: string
+  outOfCityExpiresOn?: string
   // Step 3 — household & safeguard
   cohabitants?: CohabitantEntry[]
   safeguardName?: string
+  // Q30–31 — safeguarding method + the designated safeguard person
+  safeguardMethod?: string
+  safeguardAddress?: string
+  safeguardRelation?: string
+  safeguardPhone?: string
   // Step 4 — disclosure interview
   arrests?: ArrestEntry[]
   ordersOfProtection?: OopEntry[]
@@ -86,6 +134,9 @@ export interface WizardAnswers {
   isRetiredLeo?: boolean
   hasNameChange?: boolean
   hasOtherLicense?: boolean
+  // Q29 — five-year residence + employment histories
+  residenceHistory?: AddressHistoryEntry[]
+  employmentHistory?: EmploymentHistoryEntry[]
 }
 
 /** One readable line per account for the social-media disclosure PDF. */
@@ -104,16 +155,33 @@ export const INTAKE_STEPS = [
   { n: 6, key: "review", label: "Review & generate" },
 ] as const
 
-/** The Q10–28 "mirror" — a representative subset; every yes binds a narrative. */
+/**
+ * The Section-B questionnaire — the yes/no + explain block, quoted from
+ * PD 643-041 (Rev. 11-10) verbatim. Every "yes" binds a narrative.
+ *
+ * These are the questions NOT already handled by a dedicated disclosure flow:
+ * Q23 (arrests) → `arrests`, Q24–26 (orders of protection) → `ordersOfProtection`,
+ * Q27 (domestic incident) → `domesticIncidents`, Q28 (alias) → `aliasName`. The
+ * coverage map (config/application-coverage.ts) is the source of truth for which
+ * question maps where.
+ *
+ * Q20a is folded into Q20's text (the form asks the same thing about the
+ * applicant's own corporate roles and about any officer/director/partner).
+ */
 export const QUESTIONNAIRE: { no: number; text: string }[] = [
-  { no: 10, text: "Have you ever been arrested, indicted, or convicted of a crime or offense (in any jurisdiction), even if sealed or dismissed?" },
-  { no: 12, text: "Have you ever had a firearms license or permit revoked, suspended, or denied?" },
-  { no: 14, text: "Are you now, or have you ever been, the subject of an order of protection or a restraining order?" },
-  { no: 16, text: "Have you ever been a party to a domestic-incident report?" },
-  { no: 18, text: "Have you ever been confined or treated for a mental illness, or adjudicated mentally incompetent?" },
-  { no: 20, text: "Have you ever been discharged from the military under other-than-honorable conditions?" },
-  { no: 22, text: "Do you use, or have you unlawfully used, a controlled substance?" },
-  { no: 24, text: "Have you ever been terminated from employment for cause involving violence, theft, or dishonesty?" },
+  { no: 10, text: "Had or ever applied for a Handgun License issued by any Licensing Authority in N.Y.S.?" },
+  { no: 11, text: "Been discharged from any employment?" },
+  { no: 12, text: "Used narcotics or tranquilizers? (List doctor's name, address, telephone number in your explanation.)" },
+  { no: 13, text: "Been subpoenaed to, or testified at, a hearing or inquiry conducted by any executive, legislative or judicial body?" },
+  { no: 14, text: "Been denied appointment in a civil service system — Federal, State, or Local?" },
+  { no: 15, text: "Served in the armed forces of this or any other country?" },
+  { no: 16, text: "Received a discharge other than honorable?" },
+  { no: 17, text: "Been rejected for military service?" },
+  { no: 18, text: "Are you presently engaged in any other employment, business or profession where a need for a firearm exists?" },
+  { no: 19, text: "Had or applied for any type of license or permit issued to you by any City, State or Federal agency?" },
+  { no: 20, text: "Has any corporation or partnership of which you are an officer, director, or partner — or any officer, director or partner — ever applied for or been issued a license or permit by the Police Department? (Give type, year, license number.)" },
+  { no: 21, text: "Suffered from mental illness, or due to mental illness received treatment, been admitted to a hospital or institution, or taken medication? (List doctors/institutions, name, address, phone.)" },
+  { no: 22, text: "Have you ever suffered from any disability or condition that may affect your ability to safely possess or use a handgun? (Epilepsy, Diabetes, Fainting Spells, Blackouts, Temporary Loss of Memory or any Nervous Disorder must be listed.)" },
 ]
 
 export function ageFromDob(dob: string): number {

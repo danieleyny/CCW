@@ -1,3 +1,5 @@
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/shared/page-header"
 import { Card, CardContent } from "@/components/ui/card"
@@ -51,6 +53,17 @@ export default async function Reports() {
   return (
     <div>
       <PageHeader title="Reports" description="Funnel, conversion, bottlenecks, and revenue." />
+
+      <Link
+        href="/admin/reports/coverage"
+        className="mb-6 flex items-center justify-between rounded-lg border border-signal/30 bg-signal/5 p-3 text-sm transition-colors hover:border-signal/50"
+      >
+        <span>
+          <span className="font-medium text-signal">Application coverage report</span>
+          <span className="text-text-mid"> — every official PD 643-041 field mapped to where we capture it, with gaps flagged.</span>
+        </span>
+        <ArrowRight className="size-4 text-signal" />
+      </Link>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Total leads" value={String(leads)} />

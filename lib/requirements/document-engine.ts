@@ -29,6 +29,8 @@ import {
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { brand } from "@/config/brand"
 import { SIGNING_CONSENT } from "@/lib/requirements/consent"
+import { buildWorksheet, type WorksheetContext } from "@/lib/requirements/worksheet"
+import type { WizardAnswers } from "@/lib/intake/answers"
 
 type DB = SupabaseClient<Database>
 type DocumentType = Database["public"]["Enums"]["document_type"]
@@ -49,6 +51,8 @@ export interface RenderInput {
   signedAt?: Date
   /** Short case reference for the letterhead. */
   caseRef?: string
+  /** Applicant contact/zip for the worksheet's copy-paste fields, when known. */
+  worksheetContext?: WorksheetContext
 }
 
 export interface RenderedDocument {
@@ -151,19 +155,42 @@ async function safeStorageStatement(name: string, a: Record<string, unknown>, si
   }, { signaturePng: sig, ...sign })
 }
 
-/** Copy-into-the-portal worksheet. We prepare; the applicant files. */
-async function applicationWorksheet(name: string, a: Record<string, unknown>, sign: SignOpts) {
+/**
+ * Copy-into-the-portal worksheet. We prepare; the applicant files.
+ *
+ * Renders FROM the coverage map (config/application-coverage.ts) in the
+ * application's own field order — so it can never drift from the live field
+ * list, and it never dumps a raw jsonb key the way the old version did.
+ */
+async function applicationWorksheet(
+  name: string,
+  a: Record<string, unknown>,
+  sign: SignOpts,
+  ctx?: WorksheetContext
+) {
+  const sections = buildWorksheet(a as WizardAnswers, {
+    applicantName: name,
+    phone: ctx?.phone ?? null,
+    email: ctx?.email ?? null,
+    zip: ctx?.zip ?? null,
+  })
   return buildPdf((c) => {
     c.heading("Application Worksheet", "Copy these answers into the NYPD online application")
     c.para(PREPARED_BY, { size: 9, color: "muted" })
     c.rule()
     c.para(
-      "You file your own application at licensing.nypdonline.org. This sheet puts your answers in one place so you can enter them without hunting. We do not submit anything on your behalf.",
+      "You file your own application at licensing.nypdonline.org. This sheet puts your answers in the form's own order so you can enter them without hunting. We do not submit anything on your behalf. Lines marked “enter at filing” are ones we deliberately don't store — like your Social Security number.",
       { size: 10 }
     )
-    c.spacer()
-    for (const [k, v] of Object.entries(a)) {
-      if (typeof v === "string" && v.trim()) c.para(`${k}: ${v}`)
+    for (const section of sections) {
+      c.spacer()
+      c.h2(section.label)
+      for (const row of section.rows) {
+        const label = row.questionNo ? `Q${row.questionNo}. ${row.label}` : row.label
+        c.para(label, { size: 9, color: "muted" })
+        // Multi-line values (the histories) render one line each.
+        for (const line of row.value.split("\n")) c.para(line, { size: 11 })
+      }
     }
   }, sign)
 }
@@ -247,7 +274,7 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
       }
     }
     case "WORKSHEET":
-      return { bytes: await applicationWorksheet(n, a, sign), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
+      return { bytes: await applicationWorksheet(n, a, sign, input.worksheetContext), fileName: "application-worksheet.pdf", documentType: "application_worksheet", label: "Application worksheet" }
     default:
       throw new Error(`No generator for ${reqCode}`)
   }

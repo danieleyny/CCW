@@ -433,9 +433,55 @@ function StepEligibility({ a, patch, reasons }: StepProps & { reasons: string[] 
 }
 
 function StepIdentity({ a, patch }: StepProps) {
+  const numPatch = (key: "heightInches" | "weightLbs") => (raw: string) => {
+    const n = parseInt(raw, 10)
+    patch({ [key]: Number.isFinite(n) ? n : undefined } as Partial<WizardAnswers>)
+  }
+  const isBusiness = a.licenseType === "premises"
+  const isSpecialCarry = a.residence === "non_resident"
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h2 className="text-lg font-semibold">Identity &amp; residence</h2>
+      <p className="text-sm text-muted-foreground">
+        This is exactly what the NYPD application (PD 643-041, Section A) asks for. Filling it here
+        means we can hand you a copy-and-paste worksheet later instead of a blank form.
+      </p>
+
+      {/* Name */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Middle initial">
+          <Input maxLength={4} value={a.middleInitial ?? ""} onChange={(e) => patch({ middleInitial: e.target.value })} />
+        </Field>
+        <Field label="Maiden name / alias" hint="Any other name you've used (form field 1 & Q28).">
+          <Input value={a.aliasName ?? ""} placeholder="If any" onChange={(e) => patch({ aliasName: e.target.value })} />
+        </Field>
+      </div>
+
+      {/* Legal address */}
+      <div className="grid gap-4 sm:grid-cols-6">
+        <div className="sm:col-span-4">
+          <Field label="Legal address — street">
+            <Input value={a.legalStreet ?? ""} placeholder="123 Main St" onChange={(e) => patch({ legalStreet: e.target.value })} />
+          </Field>
+        </div>
+        <div className="sm:col-span-2">
+          <Field label="Apt. #">
+            <Input value={a.legalApt ?? ""} onChange={(e) => patch({ legalApt: e.target.value })} />
+          </Field>
+        </div>
+        <div className="sm:col-span-3">
+          <Field label="City / town">
+            <Input value={a.legalCity ?? ""} onChange={(e) => patch({ legalCity: e.target.value })} />
+          </Field>
+        </div>
+        <div className="sm:col-span-3">
+          <Field label="State">
+            <Input value={a.legalState ?? "NY"} onChange={(e) => patch({ legalState: e.target.value })} />
+          </Field>
+        </div>
+      </div>
+
+      {/* Citizenship */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Photo ID type">
           <Input value={a.photoIdType ?? ""} placeholder="Driver license, passport…" onChange={(e) => patch({ photoIdType: e.target.value })} />
@@ -454,11 +500,88 @@ function StepIdentity({ a, patch }: StepProps) {
         </Field>
       </div>
       {a.citizenship === "lpr" && (
-        <Check label="Fewer than 7 years of U.S. residence (adds Certificate of Good Conduct)" checked={!!a.lprUnder7yr} onChange={(v) => patch({ lprUnder7yr: v })} />
+        <>
+          <Check label="Fewer than 7 years of U.S. residence (adds Certificate of Good Conduct)" checked={!!a.lprUnder7yr} onChange={(v) => patch({ lprUnder7yr: v })} />
+          <Field label="Alien Registration Number" hint="From your Alien Registration Card (form field 3).">
+            <Input value={a.alienRegistrationNumber ?? ""} onChange={(e) => patch({ alienRegistrationNumber: e.target.value })} />
+          </Field>
+        </>
       )}
       <Field label="Proof of residence method">
         <Input value={a.residenceProof ?? ""} placeholder="Utility bill, lease…" onChange={(e) => patch({ residenceProof: e.target.value })} />
       </Field>
+
+      {/* Birth + physical description (form field 4) */}
+      <Field label="Place of birth" hint="City, State, Country (form field 4).">
+        <Input value={a.placeOfBirth ?? ""} placeholder="Brooklyn, NY, USA" onChange={(e) => patch({ placeOfBirth: e.target.value })} />
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-5">
+        <Field label="Height (in)">
+          <Input type="number" inputMode="numeric" value={a.heightInches ?? ""} onChange={(e) => numPatch("heightInches")(e.target.value)} />
+        </Field>
+        <Field label="Weight (lb)">
+          <Input type="number" inputMode="numeric" value={a.weightLbs ?? ""} onChange={(e) => numPatch("weightLbs")(e.target.value)} />
+        </Field>
+        <Field label="Sex">
+          <Input value={a.sex ?? ""} onChange={(e) => patch({ sex: e.target.value })} />
+        </Field>
+        <Field label="Hair">
+          <Input value={a.hairColor ?? ""} onChange={(e) => patch({ hairColor: e.target.value })} />
+        </Field>
+        <Field label="Eyes">
+          <Input value={a.eyeColor ?? ""} onChange={(e) => patch({ eyeColor: e.target.value })} />
+        </Field>
+      </div>
+
+      {/* Business — only when the licence is for a business/premises */}
+      {isBusiness && (
+        <div className="space-y-3 rounded-md border border-hairline p-3">
+          <p className="text-xs text-text-low">Employment / business the license is for (form fields 5–7):</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Business name">
+              <Input value={a.businessName ?? ""} onChange={(e) => patch({ businessName: e.target.value })} />
+            </Field>
+            <Field label="Type of business">
+              <Input value={a.businessType ?? ""} onChange={(e) => patch({ businessType: e.target.value })} />
+            </Field>
+          </div>
+          <Field label="Business address">
+            <Input value={a.businessStreet ?? ""} placeholder="Street, City, State, Zip" onChange={(e) => patch({ businessStreet: e.target.value })} />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Business phone (day)">
+              <Input value={a.businessPhone ?? ""} onChange={(e) => patch({ businessPhone: e.target.value })} />
+            </Field>
+            <Field label="Occupation">
+              <Input value={a.occupation ?? ""} placeholder="Owner / Employee / Gun Custodian" onChange={(e) => patch({ occupation: e.target.value })} />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {/* Out-of-city license — special carry only (form field 9) */}
+      {isSpecialCarry && (
+        <div className="space-y-3 rounded-md border border-hairline p-3">
+          <p className="text-xs text-text-low">Out-of-city license validation (Special Carry — form field 9):</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Basic license number">
+              <Input value={a.outOfCityLicenseNumber ?? ""} onChange={(e) => patch({ outOfCityLicenseNumber: e.target.value })} />
+            </Field>
+            <Field label="Issued by">
+              <Input value={a.outOfCityIssuedBy ?? ""} onChange={(e) => patch({ outOfCityIssuedBy: e.target.value })} />
+            </Field>
+            <Field label="County">
+              <Input value={a.outOfCityCounty ?? ""} onChange={(e) => patch({ outOfCityCounty: e.target.value })} />
+            </Field>
+            <Field label="Date issued">
+              <Input type="date" value={a.outOfCityIssuedOn ?? ""} onChange={(e) => patch({ outOfCityIssuedOn: e.target.value })} />
+            </Field>
+            <Field label="Expiration date">
+              <Input type="date" value={a.outOfCityExpiresOn ?? ""} onChange={(e) => patch({ outOfCityExpiresOn: e.target.value })} />
+            </Field>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -503,11 +626,39 @@ function StepHousehold({ a, patch }: StepProps) {
         </Button>
       </div>
       <Field
-        label="Designated safeguard person (holds a key / secures firearms)"
-        hint="The trusted adult who can secure your firearm if you're unavailable. Often a spouse or family member — leave blank if not applicable."
+        label="How and where will the handgun be safeguarded when not in use?"
+        hint="Form Q30 — the storage method and location. Must be within N.Y. State. Drives your safe-storage evidence (SAF-01)."
       >
-        <Input placeholder="Full name" value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
+        <Textarea
+          rows={2}
+          placeholder="e.g. In a locked steel gun safe bolted to the bedroom closet floor at my home address."
+          value={a.safeguardMethod ?? ""}
+          onChange={(e) => patch({ safeguardMethod: e.target.value })}
+        />
       </Field>
+
+      <div className="space-y-3 rounded-md border border-hairline p-3">
+        <p className="text-xs text-text-low">
+          Person who will safeguard the handgun if you die or become disabled (form Q31 — must be a
+          N.Y. State resident). This person also signs the NYPD Acknowledgement form.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Full name">
+            <Input placeholder="Full name" value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
+          </Field>
+          <Field label="Relationship to you">
+            <Input value={a.safeguardRelation ?? ""} placeholder="Spouse, sibling…" onChange={(e) => patch({ safeguardRelation: e.target.value })} />
+          </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Address">
+            <Input value={a.safeguardAddress ?? ""} placeholder="Street, City, State, Zip" onChange={(e) => patch({ safeguardAddress: e.target.value })} />
+          </Field>
+          <Field label="Telephone">
+            <Input value={a.safeguardPhone ?? ""} onChange={(e) => patch({ safeguardPhone: e.target.value })} />
+          </Field>
+        </div>
+      </div>
     </div>
   )
 }
@@ -545,7 +696,7 @@ function StepDisclosures({ a, patch }: StepProps) {
       </div>
 
       <div className="space-y-2">
-        <h3 className="engraved text-text-low">Questionnaire (Q10–28 mirror)</h3>
+        <h3 className="engraved text-text-low">Questionnaire (Section B, Q10–22)</h3>
         {QUESTIONNAIRE.map((item) => {
           const cur = q.find((x) => x.no === item.no) ?? { no: item.no, yes: false }
           return (
@@ -579,6 +730,8 @@ function StepDisclosures({ a, patch }: StepProps) {
 function StepHistory({ a, patch }: StepProps) {
   const refs = a.references ?? []
   const social: SocialAccount[] = a.socialAccounts ?? []
+  const resHist = a.residenceHistory ?? []
+  const empHist = a.employmentHistory ?? []
   // Default the training status from the older free-text fields if present.
   const trainingStatus = a.trainingStatus ?? (a.trainingInstructor || a.trainingDate ? "completed" : undefined)
   const completed = trainingStatus === "completed"
@@ -592,6 +745,63 @@ function StepHistory({ a, patch }: StepProps) {
   return (
     <div className="space-y-5">
       <h2 className="text-lg font-semibold">Carry-specific &amp; history</h2>
+
+      {/* Five-year residence + employment history (form Q29) */}
+      <div className="space-y-2">
+        <Label className="text-xs">Places of residence — past 5 years</Label>
+        <Hint>
+          The application (Q29) requires every address you&apos;ve lived at in the last five years, with
+          dates. List them newest first; include state, county, zip and apartment.
+        </Hint>
+        {resHist.map((h, i) => (
+          <div key={i} className="grid gap-2 sm:grid-cols-[7rem_7rem_1fr_auto]">
+            <Input placeholder="From (YYYY-MM)" value={h.fromMonth ?? ""} onChange={(e) => {
+              const c = [...resHist]; c[i] = { ...c[i], fromMonth: e.target.value }; patch({ residenceHistory: c })
+            }} />
+            <Input placeholder="To / present" value={h.toMonth ?? ""} onChange={(e) => {
+              const c = [...resHist]; c[i] = { ...c[i], toMonth: e.target.value }; patch({ residenceHistory: c })
+            }} />
+            <Input placeholder="Address (street, city, state, county, zip, apt)" value={h.address ?? ""} onChange={(e) => {
+              const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
+            }} />
+            <Button variant="ghost" size="icon" onClick={() => patch({ residenceHistory: resHist.filter((_, j) => j !== i) })}>
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        ))}
+        <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
+          <Plus className="size-4" /> Add residence
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Places of employment — past 5 years</Label>
+        <Hint>Q29 also asks for your five-year employment history — business name, address and occupation.</Hint>
+        {empHist.map((h, i) => (
+          <div key={i} className="grid gap-2 sm:grid-cols-[7rem_7rem_1fr_auto]">
+            <Input placeholder="From (YYYY-MM)" value={h.fromMonth ?? ""} onChange={(e) => {
+              const c = [...empHist]; c[i] = { ...c[i], fromMonth: e.target.value }; patch({ employmentHistory: c })
+            }} />
+            <Input placeholder="To / present" value={h.toMonth ?? ""} onChange={(e) => {
+              const c = [...empHist]; c[i] = { ...c[i], toMonth: e.target.value }; patch({ employmentHistory: c })
+            }} />
+            <div className="grid gap-2">
+              <Input placeholder="Business name & address" value={h.employer ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], employer: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], occupation: e.target.value }; patch({ employmentHistory: c })
+              }} />
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => patch({ employmentHistory: empHist.filter((_, j) => j !== i) })}>
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        ))}
+        <Button variant="outline" size="sm" onClick={() => patch({ employmentHistory: [...empHist, {}] })}>
+          <Plus className="size-4" /> Add employment
+        </Button>
+      </div>
 
       {/* Training */}
       <div className="space-y-3">
