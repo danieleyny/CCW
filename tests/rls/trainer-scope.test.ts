@@ -305,12 +305,143 @@ describe.skipIf(!reachable)("trainer scope — the firewall", () => {
         expect(denied, "an arrest statement was readable").toBe(false)
       })
 
+      // ── The write path ────────────────────────────────────────────────────
+      it("cannot review a disclosure requirement — it isn't even addressable", async () => {
+        // They can't learn the id exists through any view, but a leaked or
+        // guessed id must fail too: the RPC re-derives scope from the view.
+        const { data: arrestCr } = await admin
+          .from("case_requirements")
+          .select("id")
+          .eq("case_id", caseId)
+          .eq("req_code", "ARR-01")
+          .single()
+        const { error } = await T().rpc("trainer_review_requirement", {
+          p_case_requirement_id: arrestCr!.id,
+          p_decision: "approved",
+        })
+        expect(error, "a trainer approved a disclosure requirement").not.toBeNull()
+      })
+
+      it("cannot review a progress-only item", async () => {
+        const { data: refReq } = await admin
+          .from("requirements")
+          .select("id")
+          .eq("req_code", "REF-01")
+          .is("effective_to", null)
+          .limit(1)
+          .single()
+        const { data: cr } = await admin
+          .from("case_requirements")
+          .upsert(
+            { case_id: caseId, requirement_id: refReq!.id, req_code: "REF-01", status: "pending" },
+            { onConflict: "case_id,requirement_id" }
+          )
+          .select("id")
+          .single()
+        const { error } = await T().rpc("trainer_review_requirement", {
+          p_case_requirement_id: cr!.id,
+          p_decision: "approved",
+        })
+        expect(error, "a trainer approved somebody else's notarized letter").not.toBeNull()
+      })
+
+      it("cannot request changes without saying what to fix", async () => {
+        const { error } = await T().rpc("trainer_review_requirement", {
+          p_case_requirement_id: safeReqId,
+          p_decision: "changes_requested",
+          p_note: "   ",
+        })
+        expect(error).not.toBeNull()
+      })
+
       it("sees nothing on a case they hold no engagement on", async () => {
         const { data } = await T().from("trainer_case_scope").select("case_id").eq("case_id", otherCaseId)
         expect(data ?? []).toEqual([])
       })
     })
   }
+
+  // ── The happy path, and what it must NOT touch ───────────────────────────
+  it("approving satisfies the requirement and leaves staff prose byte-identical", async () => {
+    const { data: before } = await admin
+      .from("case_requirements")
+      .select("notes")
+      .eq("id", safeReqId)
+      .single()
+
+    const { error } = await trainers.partner.client.rpc("trainer_review_requirement", {
+      p_case_requirement_id: safeReqId,
+      p_decision: "approved",
+      p_note: "Front and back are legible.",
+    })
+    expect(error, error?.message).toBeNull()
+
+    const { data: after } = await admin
+      .from("case_requirements")
+      .select("status, notes")
+      .eq("id", safeReqId)
+      .single()
+    expect(after!.status, "trainer approval must satisfy the requirement").toBe("satisfied")
+    expect(after!.notes, "the RPC touched staff prose").toBe(before!.notes)
+
+    const { data: review } = await admin
+      .from("requirement_reviews")
+      .select("decision, note, reviewer_kind")
+      .eq("case_requirement_id", safeReqId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
+    expect(review!.decision).toBe("approved")
+    expect(review!.reviewer_kind).toBe("trainer")
+
+    // Reset for the change-request test below.
+    await admin.from("case_requirements").update({ status: "pending" }).eq("id", safeReqId)
+  })
+
+  it("requesting changes notifies the applicant on that exact item", async () => {
+    const { error } = await trainers.partner.client.rpc("trainer_review_requirement", {
+      p_case_requirement_id: safeReqId,
+      p_decision: "changes_requested",
+      p_note: "The back of the licence is cut off — can you retake it?",
+    })
+    expect(error, error?.message).toBeNull()
+
+    const { data: notes } = await admin
+      .from("notifications")
+      .select("title, body, kind")
+      .eq("case_id", caseId)
+      .eq("kind", "action_required")
+      .order("created_at", { ascending: false })
+      .limit(1)
+    expect(notes?.[0]?.body, "the applicant wasn't told what to fix").toContain("cut off")
+  })
+
+  it("a trainer cannot read a STAFF review note", async () => {
+    // Staff prose can quote disclosure content, so it stays invisible even on a
+    // case this trainer is legitimately working.
+    const { data: staff } = await admin.from("profiles").select("id").eq("role", "staff").limit(1).single()
+    const { data: row } = await admin
+      .from("requirement_reviews")
+      .insert({
+        case_requirement_id: safeReqId,
+        case_id: caseId,
+        reviewer: staff!.id,
+        reviewer_kind: "staff",
+        decision: "changes_requested",
+        note: "STAFF ONLY: relates to the 2014 arrest narrative.",
+      })
+      .select("id")
+      .single()
+    try {
+      const { data } = await trainers.partner.client
+        .from("requirement_reviews")
+        .select("id, note")
+        .eq("id", row!.id)
+      expect(data ?? [], "a staff review note reached a trainer").toEqual([])
+    } finally {
+      await admin.from("requirement_reviews").delete().eq("id", row!.id)
+    }
+  })
 
   // ── Lifecycle: access is live state, not a grant made once ────────────────
   it("a cancelled engagement closes every view", async () => {

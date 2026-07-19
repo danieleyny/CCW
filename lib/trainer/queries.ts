@@ -146,6 +146,31 @@ export async function getRosterProgress(db: DB, caseId: string): Promise<RosterP
   }))
 }
 
+export interface TrainerReview {
+  caseRequirementId: string
+  decision: string
+  note: string | null
+  createdAt: string
+}
+
+/**
+ * The trainer's OWN prior decisions on a case. Staff review rows are excluded by
+ * RLS (they can quote disclosure content), so this is safe to render.
+ */
+export async function getTrainerReviews(db: DB, caseId: string): Promise<TrainerReview[]> {
+  const { data } = await db
+    .from("requirement_reviews")
+    .select("case_requirement_id, decision, note, created_at")
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: false })
+  return (data ?? []).map((r) => ({
+    caseRequirementId: r.case_requirement_id,
+    decision: r.decision,
+    note: r.note,
+    createdAt: r.created_at,
+  }))
+}
+
 /** Approved-of-applicable, for the progress bar. */
 export function progressOf(reqs: TrainerRequirement[]): { done: number; total: number; percent: number } {
   const applicable = reqs.filter((r) => r.status !== "na")

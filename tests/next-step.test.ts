@@ -15,6 +15,9 @@ const item = (reqCode: string, severity: string, status = "pending"): ReqCheckli
   authority: null,
   severity,
   documentType: null,
+  ladder: status === "satisfied" ? "approved" : "pending",
+  reviewNote: null,
+  reviewerKind: null,
 })
 
 describe("computeNextStep", () => {

@@ -2235,6 +2235,130 @@ export type Database = {
           },
         ]
       }
+      requirement_reviews: {
+        Row: {
+          case_id: string
+          case_requirement_id: string
+          created_at: string
+          decision: Database["public"]["Enums"]["review_decision"]
+          document_id: string | null
+          engagement_id: string | null
+          id: string
+          note: string | null
+          reviewer: string | null
+          reviewer_kind: string
+        }
+        Insert: {
+          case_id: string
+          case_requirement_id: string
+          created_at?: string
+          decision: Database["public"]["Enums"]["review_decision"]
+          document_id?: string | null
+          engagement_id?: string | null
+          id?: string
+          note?: string | null
+          reviewer?: string | null
+          reviewer_kind: string
+        }
+        Update: {
+          case_id?: string
+          case_requirement_id?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["review_decision"]
+          document_id?: string | null
+          engagement_id?: string | null
+          id?: string
+          note?: string | null
+          reviewer?: string | null
+          reviewer_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "case_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_reviewer_fkey"
+            columns: ["reviewer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requirements: {
         Row: {
           authority: string | null
@@ -2865,6 +2989,53 @@ export type Database = {
           type: Database["public"]["Enums"]["offer_type"] | null
         }
         Relationships: []
+      }
+      requirement_review_latest: {
+        Row: {
+          case_id: string | null
+          case_requirement_id: string | null
+          created_at: string | null
+          decision: Database["public"]["Enums"]["review_decision"] | null
+          note: string | null
+          reviewer_kind: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "case_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+        ]
       }
       trainer_case_scope: {
         Row: {
@@ -3908,6 +4079,14 @@ export type Database = {
         Args: { p_document_id: string }
         Returns: boolean
       }
+      trainer_review_requirement: {
+        Args: {
+          p_case_requirement_id: string
+          p_decision: Database["public"]["Enums"]["review_decision"]
+          p_note?: string
+        }
+        Returns: string
+      }
       trainer_scope: {
         Args: { p_requirement_id: string; p_tier: string }
         Returns: Database["public"]["Enums"]["concierge_scope"]
@@ -4040,6 +4219,7 @@ export type Database = {
         | "submitted"
         | "notarized"
       requirement_sev: "critical" | "high" | "watch" | "long_lead"
+      review_decision: "approved" | "changes_requested"
       slot_type: "classroom_16h" | "live_fire_2h" | "combined_18h" | "consult"
       stage_status: "not_started" | "in_progress" | "complete"
       task_status: "open" | "in_progress" | "done"
@@ -4308,6 +4488,7 @@ export const Constants = {
         "notarized",
       ],
       requirement_sev: ["critical", "high", "watch", "long_lead"],
+      review_decision: ["approved", "changes_requested"],
       slot_type: ["classroom_16h", "live_fire_2h", "combined_18h", "consult"],
       stage_status: ["not_started", "in_progress", "complete"],
       task_status: ["open", "in_progress", "done"],

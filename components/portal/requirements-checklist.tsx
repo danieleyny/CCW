@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { ShieldCheck } from "lucide-react"
-import { StatusBadge } from "@/components/shared/status-badge"
+import { ShieldCheck, MessageSquareWarning, Check } from "lucide-react"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { actionFor } from "@/lib/requirements/actions"
 import type { FeeSummary } from "@/lib/fees"
 import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { cn } from "@/lib/utils"
+import { LADDER_COPY, reviewerLabel, type LadderState } from "@/lib/requirements/ladder"
 
 export interface ReqChecklistItem {
   id: string
@@ -19,6 +19,12 @@ export interface ReqChecklistItem {
   authority: string | null
   severity: string // critical | high | watch | long_lead
   documentType: string | null
+  /** Where this stands in the applicant's terms — see lib/requirements/ladder. */
+  ladder: LadderState
+  /** What the reviewer asked for, when they asked for a change. */
+  reviewNote: string | null
+  /** 'trainer' | 'staff' — never imply an instructor read a disclosure. */
+  reviewerKind: string | null
 }
 
 type FilterKey = "all" | "todo" | "done" | "notarizing"
@@ -29,6 +35,29 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "done", label: "Completed" },
   { key: "notarizing", label: "Needs notarization" },
 ]
+
+const LADDER_TONE: Record<string, string> = {
+  muted: "bg-surface-2 text-text-mid",
+  signal: "bg-signal-dim text-signal",
+  ok: "bg-ok/10 text-ok",
+  warn: "bg-warn/10 text-warn",
+}
+
+/** The applicant-facing ladder, not the raw enum. */
+function LadderBadge({ item }: { item: ReqChecklistItem }) {
+  const copy = LADDER_COPY[item.ladder]
+  return (
+    <span
+      title={copy.hint}
+      className={cn(
+        "shrink-0 rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+        LADDER_TONE[copy.tone]
+      )}
+    >
+      {copy.label}
+    </span>
+  )
+}
 
 const SEV_TONE: Record<string, string> = {
   critical: "text-danger",
@@ -160,8 +189,27 @@ export function RequirementsChecklist({
                   {item.authority ? ` · ${item.authority}` : ""}
                 </p>
               </div>
-              <StatusBadge status={item.status} />
+              <LadderBadge item={item} />
             </div>
+
+            {item.ladder === "changes_requested" && item.reviewNote && (
+              <p className="mt-2 flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
+                <MessageSquareWarning className="mt-0.5 size-3.5 shrink-0" />
+                <span>
+                  <span className="font-medium">{reviewerLabel(item.reviewerKind)} asked for a fix:</span>{" "}
+                  {item.reviewNote}
+                </span>
+              </p>
+            )}
+
+            {item.ladder === "approved" && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-ok">
+                <Check className="size-3.5" />
+                {reviewerLabel(item.reviewerKind) === "your instructor"
+                  ? "Your instructor reviewed this — looks good."
+                  : "Reviewed and accepted."}
+              </p>
+            )}
 
             <RequirementAction
               reqCode={item.reqCode}

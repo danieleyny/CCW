@@ -21,6 +21,7 @@ import type { ReqChecklistItem } from "@/components/portal/requirements-checklis
 import type { LibraryFile } from "@/components/portal/document-library"
 import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { computeFeeSummary, type FeeSummary } from "@/lib/fees"
+import { deriveLadder } from "@/lib/requirements/ladder"
 
 type DB = SupabaseClient<Database>
 
@@ -42,8 +43,15 @@ export interface RequirementView {
 }
 
 export async function loadRequirementView(db: DB, myCase: MyCase): Promise<RequirementView> {
-  const [reqRows, { data: intake }, { data: savedAnswers }, { data: docs }, { data: sig }, { data: kase }] =
-    await Promise.all([
+  const [
+    reqRows,
+    { data: intake },
+    { data: savedAnswers },
+    { data: docs },
+    { data: sig },
+    { data: kase },
+    { data: reviews },
+  ] = await Promise.all([
       getCaseRequirements(db, myCase.id),
       db.from("intake_sessions").select("completed_at, answers").eq("case_id", myCase.id).maybeSingle(),
       db.from("requirement_answers").select("req_code, answers").eq("case_id", myCase.id),
@@ -59,6 +67,11 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
         .eq("signer_key", "applicant")
         .maybeSingle(),
       db.from("cases").select("is_renewal").eq("id", myCase.id).maybeSingle(),
+      // The latest review per item — staff rows are filtered by RLS on the view.
+      db
+        .from("requirement_review_latest")
+        .select("case_requirement_id, decision, note, reviewer_kind, created_at")
+        .eq("case_id", myCase.id),
     ])
 
   // Questionnaire starting values: intake first, then anything already saved for
@@ -122,16 +135,30 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     }
   }
 
-  const items: ReqChecklistItem[] = reqRows.map((row) => ({
+  const reviewByReq = new Map((reviews ?? []).map((r) => [r.case_requirement_id, r]))
+
+  const items: ReqChecklistItem[] = reqRows.map((row) => {
+    const review = reviewByReq.get(row.id)
+    return {
     id: row.id,
     reqCode: row.req_code,
     status: row.status,
+    // Where this item actually stands, in the applicant's terms. Derived from
+    // status + evidence + the latest review, never stored (lib/requirements/ladder).
+    ladder: deriveLadder({
+      status: row.status,
+      hasEvidence: !!(row.document_id || row.reference_id || row.cohabitant_id),
+      latestReview: review?.decision ? { decision: review.decision } : null,
+    }),
+    reviewNote: review?.decision === "changes_requested" ? (review.note ?? null) : null,
+    reviewerKind: review?.reviewer_kind ?? null,
     title: row.requirement?.title ?? row.req_code,
     description: row.requirement?.description ?? null,
     authority: row.requirement?.authority ?? null,
     severity: row.requirement?.severity ?? "high",
     documentType: row.requirement?.document_type ?? null,
-  }))
+    }
+  })
 
   // Fees are personalized (retired-LEO waiver, renewal wording) and every amount
   // comes from the fee schedule, so an admin edit moves all of this at once.

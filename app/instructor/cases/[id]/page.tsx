@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { Lock, CalendarClock, MessageSquare, Mail, Phone, FileText, Users } from "lucide-react"
+import { Lock, CalendarClock, MessageSquare, Mail, Phone } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { stageMeta, type CaseStageKey } from "@/config/stages"
 import {
@@ -7,8 +7,10 @@ import {
   getTrainerRequirements,
   getTrainerDocuments,
   getRosterProgress,
+  getTrainerReviews,
   progressOf,
 } from "@/lib/trainer/queries"
+import { TrainerRequirementReview, type ReviewItem } from "@/components/trainer/requirement-review"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Input } from "@/components/ui/input"
@@ -39,14 +41,38 @@ export default async function InstructorCaseDetail({
   const kase = await getTrainerCase(supabase, id)
   if (!kase) notFound()
 
-  const [reqs, docs, roster] = await Promise.all([
+  const [reqs, docs, roster, reviews] = await Promise.all([
     getTrainerRequirements(supabase, id),
     getTrainerDocuments(supabase, id),
     getRosterProgress(supabase, id),
+    getTrainerReviews(supabase, id),
   ])
   const progress = progressOf(reqs)
-  const reviewable = reqs.filter((r) => r.scope === "full" && r.status !== "na")
   const rosterByCode = new Map(roster.map((r) => [r.reqCode, r]))
+  const docByReq = new Map(docs.map((d) => [d.caseRequirementId, d]))
+  // Latest first from the query, so the first hit per item is the current one.
+  const reviewByReq = new Map<string, (typeof reviews)[number]>()
+  for (const r of reviews) if (!reviewByReq.has(r.caseRequirementId)) reviewByReq.set(r.caseRequirementId, r)
+
+  const reviewItems: ReviewItem[] = reqs
+    .filter((r) => r.status !== "na")
+    .map((r) => {
+      const p = rosterByCode.get(r.reqCode)
+      const doc = docByReq.get(r.caseRequirementId)
+      const last = reviewByReq.get(r.caseRequirementId)
+      return {
+        caseRequirementId: r.caseRequirementId,
+        reqCode: r.reqCode,
+        title: r.title,
+        status: r.status,
+        blocking: r.blocking,
+        scope: r.scope,
+        documentId: doc?.documentId ?? null,
+        documentName: doc?.fileName ?? doc?.type ?? null,
+        progress: p ? { done: p.doneCount, required: p.requiredCount } : null,
+        lastReview: last ? { decision: last.decision, note: last.note, at: last.createdAt } : null,
+      }
+    })
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -121,65 +147,7 @@ export default async function InstructorCaseDetail({
         </span>
       </div>
 
-      <div>
-        <h2 className="engraved mb-2 text-text-low">Requirements ({reviewable.length})</h2>
-        <ul className="divide-y rounded-lg border bg-card">
-          {reviewable.map((r) => {
-            const doc = docs.find((d) => d.caseRequirementId === r.caseRequirementId)
-            return (
-              <li key={r.caseRequirementId} className="flex items-start justify-between gap-3 p-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
-                      {r.reqCode}
-                    </span>
-                    <span className="text-sm">{r.title}</span>
-                    {r.blocking && <span className="text-[10px] uppercase tracking-wide text-brass">required</span>}
-                  </div>
-                  {doc && (
-                    <p className="mt-1 flex items-center gap-1.5 text-xs text-text-mid">
-                      <FileText className="size-3" /> {doc.fileName ?? doc.type}
-                    </p>
-                  )}
-                </div>
-                <StatusBadge status={r.status} />
-              </li>
-            )
-          })}
-          {reviewable.length === 0 && (
-            <li className="p-4 text-sm text-text-mid">Nothing to review yet.</li>
-          )}
-        </ul>
-      </div>
-
-      {roster.length > 0 && (
-        <div>
-          <h2 className="engraved mb-2 flex items-center gap-2 text-text-low">
-            <Users className="size-3.5" /> People they still need
-          </h2>
-          <ul className="divide-y rounded-lg border bg-card">
-            {reqs
-              .filter((r) => r.scope === "progress" && r.status !== "na")
-              .map((r) => {
-                const p = rosterByCode.get(r.reqCode)
-                return (
-                  <li key={r.caseRequirementId} className="flex items-center justify-between gap-3 p-3">
-                    <div className="min-w-0">
-                      <div className="text-sm">{r.title}</div>
-                      <p className="mt-0.5 text-xs text-text-low">
-                        {/* Counts only — these documents belong to other people. */}
-                        {p
-                          ? `${p.doneCount} of ${p.requiredCount ?? p.invitedCount} notarized`
-                          : "Waiting on the applicant"}
-                      </p>
-                    </div>
-                    <StatusBadge status={r.status} />
-                  </li>
-                )
-              })}
-          </ul>
-        </div>
-      )}
+      <TrainerRequirementReview items={reviewItems} />
 
       <div>
         <h2 className="engraved mb-2 text-text-low">Sessions</h2>
