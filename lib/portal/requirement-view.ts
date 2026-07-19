@@ -157,6 +157,11 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     authority: row.requirement?.authority ?? null,
     severity: row.requirement?.severity ?? "high",
     documentType: row.requirement?.document_type ?? null,
+    // A rule a court has stopped is shown as not-currently-required rather than
+    // hidden — an applicant who reads NYPD's (stale) checklist should find out
+    // here why we aren't asking for it.
+    legalStatus: row.requirement?.legal_status ?? "enforced",
+    legalCitation: row.requirement?.legal_citation ?? null,
     }
   })
 

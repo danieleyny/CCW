@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { computeFeeSummary } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
+import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -574,6 +575,53 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
           link: "https://concealedknowledge.com/updates",
         }))
       }
+    }
+  }
+
+  // ── PART A/P1 Rule: quarterly registry legal review. A rule confirmed last
+  // year may have been enjoined since — NYC is litigation-driven. This is the
+  // standing cadence that makes /admin/legal's staleness visible instead of
+  // waiting for someone to wonder.
+  //
+  // fireOnce's (rule_key, target, window_key) upsert does the scheduling: the
+  // quarter string is the window, so this fires on the first cron tick of each
+  // quarter and never again. No separate scheduler needed.
+  const quarter = `${now.getUTCFullYear()}-Q${Math.floor(now.getUTCMonth() / 3) + 1}`
+  const staleCutoff = new Date(now.getTime() - LEGAL_REVIEW_STALE_DAYS * DAY).toISOString().slice(0, 10)
+  const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin")
+  if (admins && admins.length) {
+    const { count: staleCount } = await admin
+      .from("requirements")
+      .select("id", { count: "exact", head: true })
+      .is("effective_to", null)
+      .eq("needs_legal_review", false)
+      .or(`verified_on.is.null,verified_on.lt.${staleCutoff}`)
+
+    let firedForAnyone = false
+    for (const a of admins) {
+      const f = await fireOnce(admin, {
+        ruleKey: "legal_review_quarterly",
+        target: a.id,
+        windowKey: quarter,
+        recipient: a.id,
+        kind: "action_required",
+        title: `Quarterly requirement legal review — ${quarter}`,
+        body: `${staleCount ?? 0} active rule(s) have not been attorney-verified in ${LEGAL_REVIEW_STALE_DAYS}+ days. Re-check each rule's enforcement status and citation.`,
+        link: "/admin/legal",
+      })
+      if (f) firedForAnyone = true
+      push(f)
+    }
+    // One task for the queue, not one per admin — and only when the window
+    // actually opened, so the hourly cron doesn't re-insert it all quarter.
+    if (firedForAnyone) {
+      await admin.from("tasks").insert({
+        case_id: null,
+        title: `Quarterly requirement legal review — ${quarter}`,
+        description: `Re-confirm every active registry rule's legal enforcement status and citation in /admin/legal. ${staleCount ?? 0} rule(s) are past the ${LEGAL_REVIEW_STALE_DAYS}-day mark.`,
+        priority: 1,
+        status: "open",
+      })
     }
   }
 

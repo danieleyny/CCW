@@ -126,6 +126,9 @@ export interface CaseRequirementRow {
     trigger_cond: string
     document_type: string | null
     effective_from: string
+    /** Enforcement status — 'enjoined_not_enforced'/'repealed' can never block. */
+    legal_status: string
+    legal_citation: string | null
   } | null
 }
 
@@ -140,7 +143,7 @@ export async function getCaseRequirements(db: DB, caseId: string): Promise<CaseR
     .from("case_requirements")
     .select(
       "id, req_code, status, document_id, reference_id, cohabitant_id, notes, " +
-        "requirement:requirements(id, title, description, authority, severity, trigger_cond, document_type, effective_from)"
+        "requirement:requirements(id, title, description, authority, severity, trigger_cond, document_type, effective_from, legal_status, legal_citation)"
     )
     .eq("case_id", caseId)
     .order("req_code", { ascending: true })

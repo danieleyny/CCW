@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ShieldCheck, MessageSquareWarning, Check } from "lucide-react"
+import { ShieldCheck, MessageSquareWarning, Check, Gavel } from "lucide-react"
 import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { actionFor } from "@/lib/requirements/actions"
@@ -9,6 +9,7 @@ import type { FeeSummary } from "@/lib/fees"
 import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { cn } from "@/lib/utils"
 import { LADDER_COPY, reviewerLabel, type LadderState } from "@/lib/requirements/ladder"
+import { isUnenforced } from "@/lib/legal-status"
 
 export interface ReqChecklistItem {
   id: string
@@ -25,6 +26,10 @@ export interface ReqChecklistItem {
   reviewNote: string | null
   /** 'trainer' | 'staff' — never imply an instructor read a disclosure. */
   reviewerKind: string | null
+  /** Enforcement status from the registry; 'enjoined_not_enforced'/'repealed' can never block. */
+  legalStatus: string
+  /** The case or statute behind a non-enforced status. Never fabricated. */
+  legalCitation: string | null
 }
 
 type FilterKey = "all" | "todo" | "done" | "notarizing"
@@ -97,7 +102,12 @@ export function RequirementsChecklist({
   // verify, not tasks for the customer — showing them as "Confirm" buttons was
   // asking someone to vouch for a machine check. Admin/QA still sees them.
   const visible = items.filter((i) => !isSystemVerified(i.reqCode))
-  const applicable = visible.filter((i) => i.status !== "na")
+  // A rule a court has stopped is still SHOWN — an applicant reading NYPD's
+  // (stale) published checklist deserves to know why we aren't asking for it —
+  // but it is not work, so it stays out of every count and out of "to do".
+  // Counting it would contradict the badge sitting right next to the number.
+  const unenforcedItems = visible.filter((i) => isUnenforced(i.legalStatus) && i.status !== "na")
+  const applicable = visible.filter((i) => i.status !== "na" && !isUnenforced(i.legalStatus))
   const notApplicable = visible.filter((i) => i.status === "na")
 
   const satisfied = applicable.filter((i) => i.status === "satisfied").length
@@ -106,7 +116,8 @@ export function RequirementsChecklist({
   // "Needs notarization" is a real waiting state, not a status: the document
   // exists, and the only thing between it and done is a notary.
   const groups: Record<FilterKey, ReqChecklistItem[]> = {
-    all: applicable,
+    // "All" includes the unenforced items so they're findable; "to do" does not.
+    all: [...applicable, ...unenforcedItems],
     todo: applicable.filter((i) => !isDone(i)),
     done: applicable.filter(isDone),
     notarizing: applicable.filter(
@@ -119,7 +130,7 @@ export function RequirementsChecklist({
   const [filter, setFilter] = useState<FilterKey>(() => (groups.todo.length ? "todo" : "all"))
   const shown = groups[filter]
 
-  if (applicable.length === 0 && notApplicable.length === 0) {
+  if (applicable.length === 0 && notApplicable.length === 0 && unenforcedItems.length === 0) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
         Your personalized requirements haven&apos;t been generated yet.
@@ -189,8 +200,27 @@ export function RequirementsChecklist({
                   {item.authority ? ` · ${item.authority}` : ""}
                 </p>
               </div>
-              <LadderBadge item={item} />
+              {isUnenforced(item.legalStatus) ? (
+                <span className="shrink-0 rounded bg-signal-dim px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
+                  Not required
+                </span>
+              ) : (
+                <LadderBadge item={item} />
+              )}
             </div>
+
+            {isUnenforced(item.legalStatus) && (
+              <p className="mt-2 flex items-start gap-1.5 rounded-md border border-signal/30 bg-signal/5 p-2 text-xs text-signal">
+                <Gavel className="mt-0.5 size-3.5 shrink-0" />
+                <span>
+                  <span className="font-medium">Not currently required</span> — this rule is
+                  {item.legalStatus === "repealed" ? " no longer law" : " under a court order"}
+                  {item.legalCitation ? ` (${item.legalCitation})` : ""}. NYPD&apos;s published
+                  checklist may still list it. You don&apos;t need to provide it, and it will never
+                  hold up your filing.
+                </span>
+              </p>
+            )}
 
             {item.ladder === "changes_requested" && item.reviewNote && (
               <p className="mt-2 flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
@@ -211,6 +241,9 @@ export function RequirementsChecklist({
               </p>
             )}
 
+            {/* No call to action on something we're telling them not to do.
+                They may still upload it voluntarily from Documents. */}
+            {!isUnenforced(item.legalStatus) && (
             <RequirementAction
               reqCode={item.reqCode}
               status={item.status}
@@ -222,6 +255,7 @@ export function RequirementsChecklist({
               feeSummary={feeSummary}
               feeReceipts={feeReceipts}
             />
+            )}
           </li>
         ))}
       </ul>

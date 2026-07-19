@@ -39,7 +39,7 @@ async function main() {
   const nycId = jur.find((j: { key: string }) => j.key === "nyc")!.id
   const { data: active } = await db
     .from("requirements")
-    .select("req_code, title, description, trigger_cond, blocking, severity, authority, source_url, needs_legal_review, validation_rule")
+    .select("req_code, id, title, description, trigger_cond, blocking, severity, authority, source_url, needs_legal_review, validation_rule, legal_status, legal_citation")
     .eq("jurisdiction_id", nycId)
     .is("effective_to", null)
 
@@ -48,6 +48,15 @@ async function main() {
   const soc = byCode.get("SOC-01")
   check(!!soc && soc.blocking === false, "SOC-01 is non-blocking (1.1)")
   check(!!soc && /enjoin/i.test(soc.description ?? ""), "SOC-01 explains the injunction (1.1)")
+
+  // PART A/P1 — the injunction is now STRUCTURAL, not just prose in a title.
+  check(soc?.legal_status === "enjoined_not_enforced", "SOC-01 carries a structured enjoined status (A1)")
+  check(/Antonyuk/i.test(soc?.legal_citation ?? ""), "SOC-01 cites Antonyuk (A1)")
+  // The separation that justifies the enum existing at all: SPC-01 is also
+  // non-blocking, but because it is advisory BY NATURE, not by court order.
+  // Conflating the two would let a real injunction hide among ordinary advisories.
+  const spc = byCode.get("SPC-01")
+  check(!spc || spc.legal_status === "enforced", "SPC-01 stays 'enforced' — advisory ≠ enjoined (A1)")
 
   const ref = byCode.get("REF-01")
   check(ref?.trigger_cond === "carry_not_renewal", "REF-01 is carry-only + renewal-exempt (1.1)")
@@ -122,6 +131,27 @@ async function main() {
   check(missingAuthority.length === 0, `every active NYC rule cites an authority (${missingAuthority.length} missing) (1.3)`)
   const unreviewed = active.filter((r: { needs_legal_review: boolean }) => r.needs_legal_review)
   check(unreviewed.length === active.length, "every rule awaits attorney verification (nothing presumed verified) (1.3)")
+  // PART A/P1 — the invariant is the whole design: `blocking` stays the single
+  // gate predicate, and the DATABASE (not eight call sites) guarantees a rule a
+  // court stopped can never be one. Prove it with the strongest client we have:
+  // if service-role can't break it, nothing can.
+  if (soc) {
+    await db.from("requirements").update({ blocking: true }).eq("id", soc.id)
+    const { data: after } = await db.from("requirements").select("blocking").eq("id", soc.id).single()
+    check(after?.blocking === false, "forcing blocking=true on an enjoined rule is coerced back (A1)")
+  }
+  {
+    // And the reverse direction: repealing a live blocking rule drops blocking.
+    const dmv = byCode.get("DMV-01")
+    if (dmv) {
+      await db.from("requirements").update({ legal_status: "repealed" }).eq("id", dmv.id)
+      const { data: after } = await db.from("requirements").select("blocking").eq("id", dmv.id).single()
+      check(after?.blocking === false, "repealing a blocking rule forces it non-blocking (A1)")
+      // Put it back — this harness runs against a seeded dev DB.
+      await db.from("requirements").update({ legal_status: "enforced", blocking: true }).eq("id", dmv.id)
+    }
+  }
+
   check(existsSync("app/admin/legal/page.tsx") && existsSync("app/admin/legal/actions.ts"), "legal-verification register exists (1.3)")
   check(!existsSync("app/admin/verify-live/page.tsx"), "ephemeral verify-live checklist deleted (1.3)")
 

@@ -2371,6 +2371,9 @@ export type Database = {
           effective_to: string | null
           id: string
           jurisdiction_id: string
+          legal_citation: string | null
+          legal_status: Database["public"]["Enums"]["legal_status"]
+          legal_status_note: string | null
           needs_legal_review: boolean
           req_code: string
           severity: Database["public"]["Enums"]["requirement_sev"]
@@ -2393,6 +2396,9 @@ export type Database = {
           effective_to?: string | null
           id?: string
           jurisdiction_id: string
+          legal_citation?: string | null
+          legal_status?: Database["public"]["Enums"]["legal_status"]
+          legal_status_note?: string | null
           needs_legal_review?: boolean
           req_code: string
           severity?: Database["public"]["Enums"]["requirement_sev"]
@@ -2415,6 +2421,9 @@ export type Database = {
           effective_to?: string | null
           id?: string
           jurisdiction_id?: string
+          legal_citation?: string | null
+          legal_status?: Database["public"]["Enums"]["legal_status"]
+          legal_status_note?: string | null
           needs_legal_review?: boolean
           req_code?: string
           severity?: Database["public"]["Enums"]["requirement_sev"]
@@ -4201,6 +4210,11 @@ export type Database = {
         | "suffolk"
         | "westchester"
         | "special_carry"
+      legal_status:
+        | "enforced"
+        | "enjoined_not_enforced"
+        | "contested"
+        | "repealed"
       notification_kind:
         | "info"
         | "action_required"
@@ -4467,6 +4481,12 @@ export const Constants = {
         "suffolk",
         "westchester",
         "special_carry",
+      ],
+      legal_status: [
+        "enforced",
+        "enjoined_not_enforced",
+        "contested",
+        "repealed",
       ],
       notification_kind: [
         "info",

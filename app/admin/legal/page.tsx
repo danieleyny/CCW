@@ -1,8 +1,14 @@
-import { ShieldAlert, ShieldCheck, ExternalLink, Ban } from "lucide-react"
+import { ShieldAlert, ShieldCheck, ExternalLink, Ban, CalendarClock } from "lucide-react"
 import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
+import {
+  LegalStatusBadge,
+  LegalStatusEditor,
+  type LegalStatusKey,
+} from "@/components/admin/legal-status-editor"
+import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { markRequirementVerified, flagRequirementForReview } from "./actions"
 
 export const metadata = { title: "Legal verification" }
@@ -20,7 +26,7 @@ export default async function LegalPage() {
   const { data: rows } = await supabase
     .from("requirements")
     .select(
-      "id, req_code, title, authority, source_url, severity, blocking, trigger_cond, effective_from, needs_legal_review, verified_by, verified_on, jurisdiction_profiles(key, label)"
+      "id, req_code, title, authority, source_url, severity, blocking, trigger_cond, effective_from, needs_legal_review, verified_by, verified_on, legal_status, legal_status_note, legal_citation, jurisdiction_profiles(key, label)"
     )
     .lte("effective_from", today)
     .or(`effective_to.is.null,effective_to.gte.${today}`)
@@ -42,12 +48,56 @@ export default async function LegalPage() {
   const pending = all.filter((r) => r.needs_legal_review)
   const verified = all.filter((r) => !r.needs_legal_review)
 
+  // A verification isn't permanent — NYC is litigation-driven and a rule
+  // confirmed a year ago may have been enjoined since.
+  const cutoffDate = new Date()
+  cutoffDate.setUTCDate(cutoffDate.getUTCDate() - LEGAL_REVIEW_STALE_DAYS)
+  const staleCutoff = cutoffDate.toISOString().slice(0, 10)
+  const stale = verified.filter((r) => !r.verified_on || r.verified_on < staleCutoff)
+  const unenforced = all.filter((r) => r.legal_status !== "enforced")
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Legal verification"
         description="Every active registry rule, its authority, and whether a NY attorney has confirmed it. Nothing here is presumed correct until verified — NYC is a litigation-driven jurisdiction and rules shift."
       />
+
+      {stale.length > 0 && (
+        <div className="rounded-lg border border-warn/30 bg-warn/8 p-3 text-sm">
+          <div className="flex items-center gap-2 font-semibold text-warn">
+            <CalendarClock className="size-4" />
+            {stale.length} verified rule{stale.length === 1 ? "" : "s"} not reviewed in{" "}
+            {LEGAL_REVIEW_STALE_DAYS}+ days
+          </div>
+          <p className="mt-1 text-xs text-text-mid">
+            {stale
+              .slice(0, 8)
+              .map((r) => r.req_code)
+              .join(", ")}
+            {stale.length > 8 && `, and ${stale.length - 8} more`}. A confirmation from last quarter
+            can be overtaken by litigation — re-check and re-save the status to renew the date.
+          </p>
+        </div>
+      )}
+
+      {unenforced.length > 0 && (
+        <div className="rounded-lg border border-signal/30 bg-signal/5 p-3 text-sm">
+          <div className="flex items-center gap-2 font-semibold text-signal">
+            <Ban className="size-4" /> Not currently enforceable ({unenforced.length})
+          </div>
+          <ul className="mt-1 space-y-0.5 text-xs text-text-mid">
+            {unenforced.map((r) => (
+              <li key={r.id}>
+                <span className="font-mono">{r.req_code}</span> — {r.legal_citation ?? "no citation recorded"}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-text-low">
+            These can never block filing — the database enforces it, not just the UI.
+          </p>
+        </div>
+      )}
 
       <section>
         <h2 className="engraved mb-2 flex items-center gap-2 text-warn">
@@ -89,6 +139,9 @@ function RuleList({
     effective_from: string
     verified_by: string | null
     verified_on: string | null
+    legal_status: string
+    legal_status_note: string | null
+    legal_citation: string | null
     jurisdiction: string
   }>
   names: Map<string, string>
@@ -110,12 +163,16 @@ function RuleList({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[11px]">{r.req_code}</span>
                 <span className="font-medium">{r.title}</span>
-                {!r.blocking && (
+                {!r.blocking && r.legal_status === "enforced" && (
                   <span className="rounded bg-signal-dim px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-signal">
                     advisory
                   </span>
                 )}
+                <LegalStatusBadge status={r.legal_status as LegalStatusKey} />
               </div>
+              {r.legal_citation && (
+                <p className="mt-1 text-xs italic text-text-mid">{r.legal_citation}</p>
+              )}
               <p className="mt-1 text-xs text-text-low">
                 {r.jurisdiction} · {r.authority ?? "no authority cited"} · trigger <code>{r.trigger_cond}</code> · since{" "}
                 {r.effective_from}
@@ -155,6 +212,13 @@ function RuleList({
               )}
             </div>
           </div>
+          <LegalStatusEditor
+            id={r.id}
+            reqCode={r.req_code}
+            status={r.legal_status as LegalStatusKey}
+            note={r.legal_status_note}
+            citation={r.legal_citation}
+          />
         </li>
       ))}
     </ul>
