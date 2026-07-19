@@ -1,6 +1,66 @@
 import "server-only"
 
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@/lib/supabase/types"
 import { createAdminClient } from "@/lib/supabase/admin"
+
+type DB = SupabaseClient<Database>
+
+export interface OpenRenewalResult {
+  /** null if a renewal already existed (idempotent). */
+  renewalCaseId: string | null
+  alreadyOpen: boolean
+}
+
+/**
+ * Open ONE renewal case for a client, idempotently — the shared primitive
+ * behind the cron engine, the applicant's one-click "start my renewal", and the
+ * admin "open renewal now" button. A renewal is its own case with
+ * `is_renewal = true`, so the requirements engine's `if_renewal` /
+ * `*_not_renewal` triggers give it the right delta automatically: no character
+ * references (§5-05(c)), a 2-hour live-fire refresher (RNW-01) instead of the
+ * full 16+2 course.
+ *
+ * Service-role: this writes a case + a staff task with server-derived values.
+ */
+export async function openRenewalForClient(
+  admin: DB,
+  input: { clientId: string; fullName?: string | null; expiresOn?: string | null; source: "cron" | "applicant" | "admin" }
+): Promise<OpenRenewalResult> {
+  // One renewal per client — a second click (or the cron overlapping a manual
+  // start) must never spawn a duplicate.
+  const { data: existing } = await admin
+    .from("cases")
+    .select("id")
+    .eq("client_id", input.clientId)
+    .eq("is_renewal", true)
+    .maybeSingle()
+  if (existing) return { renewalCaseId: existing.id, alreadyOpen: true }
+
+  const { data: renewal } = await admin
+    .from("cases")
+    .insert({ client_id: input.clientId, stage: "lead", status: "active", is_renewal: true })
+    .select("id")
+    .single()
+
+  await admin.from("tasks").insert({
+    case_id: renewal?.id ?? null,
+    title: `Renewal due: ${input.fullName ?? "client"}`,
+    description: input.expiresOn
+      ? `License expires ${input.expiresOn}. Open renewal workflow.`
+      : "Renewal started. Open renewal workflow.",
+    priority: 1,
+    status: "open",
+  })
+  await admin.from("activity_log").insert({
+    case_id: renewal?.id ?? null,
+    client_id: input.clientId,
+    action: "renewal.opened",
+    detail: { expires: input.expiresOn ?? null, source: input.source },
+  })
+
+  return { renewalCaseId: renewal?.id ?? null, alreadyOpen: false }
+}
 
 /**
  * Renewal engine: find licensed cases whose 3-year license expires within 90
@@ -20,35 +80,14 @@ export async function runRenewals() {
 
   let opened = 0
   for (const c of expiring ?? []) {
-    // Skip if a renewal case already exists for this client.
-    const { count } = await admin
-      .from("cases")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", c.client_id)
-      .eq("is_renewal", true)
-    if ((count ?? 0) > 0) continue
-
-    const { data: renewal } = await admin
-      .from("cases")
-      .insert({ client_id: c.client_id, stage: "lead", status: "active", is_renewal: true })
-      .select("id")
-      .single()
-
     const client = c.clients as unknown as { full_name: string } | null
-    await admin.from("tasks").insert({
-      case_id: renewal?.id ?? null,
-      title: `Renewal due: ${client?.full_name ?? "client"}`,
-      description: `License expires ${c.license_expires_on}. Open renewal workflow.`,
-      priority: 1,
-      status: "open",
+    const res = await openRenewalForClient(admin, {
+      clientId: c.client_id,
+      fullName: client?.full_name,
+      expiresOn: c.license_expires_on,
+      source: "cron",
     })
-    await admin.from("activity_log").insert({
-      case_id: renewal?.id ?? null,
-      client_id: c.client_id,
-      action: "renewal.opened",
-      detail: { expires: c.license_expires_on },
-    })
-    opened++
+    if (!res.alreadyOpen) opened++
   }
 
   return { renewalsOpened: opened }

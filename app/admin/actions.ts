@@ -191,6 +191,44 @@ export async function recordLicenseIssued(
   return { ok: true }
 }
 
+/**
+ * PART C / Phase 10 — open a renewal for a licensed case's client, on demand.
+ * Same idempotent primitive the cron uses; staff can start it without waiting
+ * for the 90-day auto-open.
+ */
+export async function openRenewalNow(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  await requireStaff()
+  const caseId = String(formData.get("caseId") ?? "")
+  if (!caseId) return { error: "No case." }
+
+  const supabase = await createClient()
+  const { data: kase } = await supabase
+    .from("cases")
+    .select("client_id, stage, license_expires_on, clients(full_name)")
+    .eq("id", caseId)
+    .single()
+  if (!kase) return { error: "Case not found." }
+  if (kase.stage !== "licensed") return { error: "Renewals open from a licensed case." }
+
+  const { openRenewalForClient } = await import("@/lib/renewals")
+  const res = await openRenewalForClient(createAdminClient(), {
+    clientId: kase.client_id,
+    fullName: (kase.clients as unknown as { full_name: string } | null)?.full_name,
+    expiresOn: kase.license_expires_on,
+    source: "admin",
+  })
+
+  await logActivity({
+    action: "renewal.opened_by_staff",
+    caseId,
+    clientId: kase.client_id,
+    detail: { renewal_case: res.renewalCaseId, already_open: res.alreadyOpen },
+  })
+  revalidatePath(`/admin/cases/${caseId}`)
+  if (res.renewalCaseId) redirect(`/admin/cases/${res.renewalCaseId}`)
+  return { ok: true }
+}
+
 /** V3-P2.2 — assign/reassign a case's consultant (there was no UI for this at all). */
 export async function reassignCase(formData: FormData) {
   const { profile } = await requireStaff()

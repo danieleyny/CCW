@@ -2,6 +2,7 @@ import { BadgeCheck, MapPin, ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { LicenseHub, type AuthRow, type ReportRow } from "@/components/portal/license-hub"
+import { StartRenewalButton } from "@/components/portal/start-renewal-button"
 import { formatDate, daysUntil } from "@/lib/format"
 import { RENEWAL_RUNWAY_DAYS } from "@/lib/license"
 import { Card, CardContent } from "@/components/ui/card"
@@ -47,6 +48,15 @@ export default async function LicensePage() {
   const expiresIn = daysUntil(expires)
   const inRunway = expiresIn != null && expiresIn <= RENEWAL_RUNWAY_DAYS
   const track = (kase?.clients as unknown as { track: string } | null)?.track
+
+  // Has a renewal case already been opened for this applicant? (cron or a
+  // previous click) — drives whether we show "start" or "continue".
+  const { data: renewalCase } = await supabase
+    .from("cases")
+    .select("id")
+    .eq("client_id", myCase.client_id)
+    .eq("is_renewal", true)
+    .maybeSingle()
   const countyExpires = kase?.county_license_expires_on ?? null
   const countyDays = daysUntil(countyExpires)
 
@@ -101,11 +111,14 @@ export default async function LicensePage() {
             )}
           </div>
           {inRunway && (
-            <p className="max-w-xs text-xs text-brass">
-              <b>Renewal runway is open.</b> NYPD mails renewal instructions — you can&apos;t submit before
-              they arrive, but your refreshed live-fire certificate must be dated within 6 months of the
-              renewal, so plan it now. Renewals need no character references.
-            </p>
+            <div className="max-w-xs space-y-2">
+              <p className="text-xs text-brass">
+                <b>Renewal runway is open.</b> NYPD mails renewal instructions — you can&apos;t submit before
+                they arrive, but your refreshed live-fire certificate must be dated within 6 months of the
+                renewal, so plan it now. Renewals need no character references.
+              </p>
+              <StartRenewalButton alreadyOpen={!!renewalCase} />
+            </div>
           )}
         </CardContent>
       </Card>

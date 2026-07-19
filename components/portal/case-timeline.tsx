@@ -76,7 +76,10 @@ export function CaseTimeline({ currentStage }: { currentStage: CaseStageKey }) {
           <>
             Once an application is filed, the License Division&apos;s review <b>typically takes about
             six months</b> — sometimes more. That timeline is set by the NYPD, not by us, and no one can
-            speed up their investigation. We&apos;ll keep you posted at every step we can see.
+            speed up their investigation. We&apos;ll keep you posted at every step we can see.{" "}
+            <a href="/portal/interview" className="text-signal underline">
+              Prepare for your interview →
+            </a>
           </>
         ) : (
           <>

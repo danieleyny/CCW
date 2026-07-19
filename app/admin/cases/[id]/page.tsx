@@ -23,6 +23,7 @@ import { MessageThread, type MessageRow } from "@/components/shared/message-thre
 import {
   postMessage,
 } from "@/app/admin/actions"
+import { AdminStartRenewal } from "@/components/admin/start-renewal"
 import {
   sendReferenceRequest,
   sendCohabitantRequest,
@@ -286,6 +287,7 @@ export default async function CaseFilePage({
                   issued={!!kase.license_expires_on}
                 />
               )}
+              {stage === "licensed" && !kase.is_renewal && <AdminStartRenewal caseId={kase.id} />}
             </div>
           </div>
 

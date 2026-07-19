@@ -7,9 +7,58 @@ import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
-import { authExpiresOn, inspectionDueAt, REPORT_KINDS } from "@/lib/license"
+import { authExpiresOn, inspectionDueAt, REPORT_KINDS, RENEWAL_RUNWAY_DAYS } from "@/lib/license"
+import { openRenewalForClient } from "@/lib/renewals"
+import { daysUntil } from "@/lib/format"
 
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+/**
+ * PART C / Phase 10 — the applicant starts their own renewal in one click.
+ *
+ * Only inside the renewal runway (T-9 months): starting earlier is pointless
+ * because the 2-hour live-fire refresher must be dated within 6 months of the
+ * renewal. Idempotent via openRenewalForClient — a second click, or the cron
+ * getting there first, returns the existing renewal instead of a duplicate.
+ */
+export async function startMyRenewal(): Promise<{ ok?: boolean; error?: string }> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found." }
+
+  const supabase = await createClient()
+  const { data: kase } = await supabase
+    .from("cases")
+    .select("license_expires_on, stage, clients(full_name)")
+    .eq("id", myCase.id)
+    .single()
+
+  if (kase?.stage !== "licensed" || !kase.license_expires_on) {
+    return { error: "Renewals open once your current license is issued." }
+  }
+  const daysLeft = daysUntil(kase.license_expires_on)
+  if (daysLeft != null && daysLeft > RENEWAL_RUNWAY_DAYS) {
+    return { error: "You're not in the renewal window yet — we'll let you know when it opens." }
+  }
+
+  // Service-role justified: opening a renewal writes a new case + staff task
+  // with server-derived values, after requireRole + ownership.
+  const res = await openRenewalForClient(createAdminClient(), {
+    clientId: myCase.client_id,
+    fullName: (kase.clients as unknown as { full_name: string } | null)?.full_name,
+    expiresOn: kase.license_expires_on,
+    source: "applicant",
+  })
+
+  await logActivity({
+    action: "renewal.started_by_applicant",
+    caseId: myCase.id,
+    clientId: myCase.client_id,
+    detail: { renewal_case: res.renewalCaseId, already_open: res.alreadyOpen },
+  })
+  revalidatePath("/portal/license")
+  return { ok: true }
+}
 
 /** Log a purchase authorization the NYPD issued (starts the 30-day clock). */
 export async function logAuthorization(formData: FormData): Promise<{ error?: string }> {
