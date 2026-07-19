@@ -1216,6 +1216,7 @@ export type Database = {
           separate_range_note: string | null
           service_radius_mi: number
           stripe_connect_account_id: string | null
+          trust_tier: string
           typical_class_size: number | null
           updated_at: string
           verified: boolean
@@ -1266,6 +1267,7 @@ export type Database = {
           separate_range_note?: string | null
           service_radius_mi?: number
           stripe_connect_account_id?: string | null
+          trust_tier?: string
           typical_class_size?: number | null
           updated_at?: string
           verified?: boolean
@@ -1316,6 +1318,7 @@ export type Database = {
           separate_range_note?: string | null
           service_radius_mi?: number
           stripe_connect_account_id?: string | null
+          trust_tier?: string
           typical_class_size?: number | null
           updated_at?: string
           verified?: boolean
@@ -1970,6 +1973,7 @@ export type Database = {
         Row: {
           authority: string | null
           blocking: boolean
+          concierge_scope: Database["public"]["Enums"]["concierge_scope"]
           created_at: string
           description: string | null
           document_type: Database["public"]["Enums"]["document_type"] | null
@@ -1991,6 +1995,7 @@ export type Database = {
         Insert: {
           authority?: string | null
           blocking?: boolean
+          concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
           created_at?: string
           description?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
@@ -2012,6 +2017,7 @@ export type Database = {
         Update: {
           authority?: string | null
           blocking?: boolean
+          concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
           created_at?: string
           description?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
@@ -3463,6 +3469,10 @@ export type Database = {
         Returns: unknown
       }
       storage_doc_client_id: { Args: { path: string }; Returns: string }
+      trainer_scope: {
+        Args: { p_requirement_id: string; p_tier: string }
+        Returns: Database["public"]["Enums"]["concierge_scope"]
+      }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
         Args: {
@@ -3524,6 +3534,7 @@ export type Database = {
         | "retired_leo"
         | "premises_business"
       cohabitant_status: "not_started" | "received" | "notarized"
+      concierge_scope: "hidden" | "progress" | "full"
       disclosure_type:
         | "arrest"
         | "summons"
@@ -3786,6 +3797,7 @@ export const Constants = {
         "premises_business",
       ],
       cohabitant_status: ["not_started", "received", "notarized"],
+      concierge_scope: ["hidden", "progress", "full"],
       disclosure_type: [
         "arrest",
         "summons",

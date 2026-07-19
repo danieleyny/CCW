@@ -7,7 +7,7 @@
  * Runs against the live local registry (skips when Supabase isn't reachable).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { REQUIREMENT_ACTIONS, actionFor, isSignable } from "@/lib/requirements/actions"
+import { REQUIREMENT_ACTIONS, actionFor, isSignable, conciergeScopeFor } from "@/lib/requirements/actions"
 import { renderRequirementDocument } from "@/lib/requirements/document-engine"
 import { adminClient, supabaseReachable } from "./helpers/supabase"
 import { pdfText } from "./helpers/pdf"
@@ -32,16 +32,23 @@ describe("requirement → action map", () => {
     }
   })
 
-  it("anything notarized is also marked sensitive (affidavits/references)", () => {
+  it("anything notarized is written by a third party, so never fully visible to a trainer", () => {
     for (const [code, a] of Object.entries(REQUIREMENT_ACTIONS)) {
-      if (a.notarize) expect(a.sensitive, `${code} is notarized but not sensitive`).toBe(true)
+      if (a.notarize) {
+        expect(a.conciergeScope, `${code} is notarized but trainer-visible`).not.toBe("full")
+      }
     }
   })
 
-  it("disclosure/arrest/affidavit/reference requirements are sensitive", () => {
-    // These carry disclosure content — an instructor must never see them.
-    for (const code of ["DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01", "COH-01", "REF-01", "REF-02"]) {
-      expect(actionFor(code)?.sensitive, `${code} must be sensitive`).toBe(true)
+  it("disclosure material is hidden from trainers; third-party documents are progress-only", () => {
+    // Seeing "ARR-01" on a checklist tells you the applicant has an arrest
+    // history — the row must be absent, not merely redacted.
+    for (const code of ["DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01", "GMC-01"]) {
+      expect(conciergeScopeFor(code), `${code} must be hidden`).toBe("hidden")
+    }
+    // Written and notarized by people who never signed up for this.
+    for (const code of ["COH-01", "REF-01", "REF-02"]) {
+      expect(conciergeScopeFor(code), `${code} must be progress-only`).toBe("progress")
     }
   })
 

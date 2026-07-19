@@ -19,9 +19,13 @@
  *              "No generator for COH-01".
  *
  * GUARDRAILS BAKED IN:
- * - `sensitive: true` marks disclosure / affidavit / reference / arrest material.
- *   Instructors must never see these documents. (RLS already hides `documents`
- *   from instructors; this flag keeps UI and future surfaces honest.)
+ * - `conciergeScope` mirrors `requirements.concierge_scope` in SQL, which is the
+ *   SOURCE OF TRUTH — views, policies and RPCs read the column, not this map.
+ *   The copy here drives UI wording only, and tests/concierge-scope.test.ts
+ *   fails if the two ever disagree.
+ *     hidden   — a trainer never learns the item exists (disclosure material)
+ *     progress — counts only (documents written by third parties)
+ *     full     — the trainer reviews it
  * - `notarize: true` means generation ALONE never satisfies the requirement —
  *   the applicant must upload the notarized copy. See lib/requirements/completion.
  * - Copy states facts and names the agency. No legal advice: questionnaires
@@ -59,8 +63,13 @@ interface ActionBase {
   example?: ExampleId
   /** Must be notarized → generation alone never satisfies. */
   notarize?: boolean
-  /** Disclosure/affidavit/reference/arrest material — never visible to instructors. */
-  sensitive?: boolean
+  /**
+   * Mirrors `requirements.concierge_scope`. SQL is authoritative; this is for
+   * copy. Omitted means `full` — but the DATABASE defaults to `hidden`, so an
+   * unclassified requirement is invisible to trainers regardless of what this
+   * map says. Fail safe lives in SQL, deliberately.
+   */
+  conciergeScope?: "hidden" | "progress" | "full"
   /** Rendered as optional; the requirement is non-blocking in the registry. */
   optional?: boolean
   /** What an upload binds to (mirrors requirements.document_type). */
@@ -215,6 +224,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     help: "The CCIA's social-media disclosure has been enjoined (Antonyuk v. James), so this is OPTIONAL. Some applicants still choose to provide it. Skip it with no effect on your application.",
   },
   "COH-01": {
+    conciergeScope: "progress",
     mode: "roster",
     roster: "cohabitants",
     actionLabel: "List your household",
@@ -223,10 +233,10 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     manageHref: "/portal/people?tab=household",
     documentType: "cohabitant_affidavit",
     notarize: true,
-    sensitive: true,
     help: "Every household member 18 or older signs a short affidavit acknowledging a licensed firearm in the home, and has it notarized. We send each of them a private link — nothing for you to chase by hand. If you live alone, we prepare a sole-occupancy statement for you to sign instead.",
   },
   "REF-01": {
+    conciergeScope: "progress",
     mode: "roster",
     roster: "references",
     minimum: 4,
@@ -236,10 +246,10 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     manageHref: "/portal/people?tab=references",
     documentType: "reference_letter",
     notarize: true,
-    sensitive: true,
     help: "Four character references, at least two not related to you. Each gets a private link to write and notarize their letter. The requirement completes when the notarized letters are in.",
   },
   "REF-02": {
+    conciergeScope: "progress",
     mode: "roster",
     roster: "references",
     minimum: 2,
@@ -249,49 +259,48 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     manageHref: "/portal/people?tab=references",
     documentType: "reference_letter",
     notarize: true,
-    sensitive: true,
     help: "Two non-family character references for a premises license. Each gets a private link to write and notarize their letter.",
   },
   "DSC-01": {
+    conciergeScope: "hidden",
     mode: "generate",
     actionLabel: "Complete disclosures",
     questionnaireId: "disclosure-addendum",
-    sensitive: true,
     customerTitle: "Your written explanations for the application's history questions",
     help: "The NYPD application asks questions 10–28 about your history. Every 'yes' needs its own written explanation, submitted on the Handgun License Application Addendum (PD 643-041A). Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
   },
   "QUE-01": {
+    conciergeScope: "hidden",
     mode: "generate",
     actionLabel: "Write your explanations",
     questionnaireId: "disclosure-addendum",
-    sensitive: true,
     customerTitle: "Your written explanations, in your own words",
     help: "One written explanation for each 'yes' answer, in your own words. We turn them into the addendum.",
   },
   "ARR-01": {
+    conciergeScope: "hidden",
     mode: "generate",
     actionLabel: "Write your statement",
     questionnaireId: "arrest-statements",
     documentType: "certificate_of_disposition",
-    sensitive: true,
     companion: { questionnaireId: "court-request-letters", label: "Download court request letter" },
     customerTitle: "Your written statement about each arrest or summons",
     help: "For EVERY arrest or summons — even if it was dismissed, sealed, or nullified (CPL Article 160) — the NYPD wants a Certificate of Disposition from the court plus your written statement of what happened. We write the statement with you and prepare a request letter for the court; the certificate itself comes from the court.",
   },
   "OOP-01": {
+    conciergeScope: "hidden",
     mode: "generate",
     actionLabel: "Write your statement",
     questionnaireId: "protection-order-statement",
     documentType: "order_of_protection_copy",
-    sensitive: true,
     customerTitle: "Your written statement about the order of protection",
     help: "A copy of any order of protection plus your written explanation. Disclose every order, active or expired.",
   },
   "DIR-01": {
+    conciergeScope: "hidden",
     mode: "generate",
     actionLabel: "Write your statement",
     questionnaireId: "domestic-incident-statement",
-    sensitive: true,
     customerTitle: "Your written statement about the domestic incident report",
     help: "A written disclosure of any domestic incident report, in your own words. Disclose it even if no charges followed.",
   },
@@ -415,6 +424,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     sourceLabel: "National Archives — service records",
   },
   "GMC-01": {
+    conciergeScope: "hidden",
     mode: "obtain",
     actionLabel: "Upload the certificate",
     documentType: "cert_good_conduct",
@@ -516,9 +526,12 @@ export function isSignable(action: RequirementAction | null): boolean {
   return action.mode === "roster" && action.roster === "cohabitants"
 }
 
-/** Requirement codes whose documents must never reach an instructor. */
-export function isSensitiveRequirement(reqCode: string): boolean {
-  return REQUIREMENT_ACTIONS[reqCode]?.sensitive === true
+/**
+ * What a trainer may see. SQL (`requirements.concierge_scope`) is authoritative
+ * — this exists so the UI can word things correctly without a round trip.
+ */
+export function conciergeScopeFor(reqCode: string): "hidden" | "progress" | "full" {
+  return REQUIREMENT_ACTIONS[reqCode]?.conciergeScope ?? "full"
 }
 
 /** Requirements that need a notarized upload before they can be satisfied. */

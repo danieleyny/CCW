@@ -41,7 +41,9 @@ describe("roster actions", () => {
       expect(a.manageHref, `${code} has nowhere to manage invitations`).toMatch(/^\/portal\/people/)
       // Somebody else notarizes it — it can never be satisfied by generation.
       expect(a.notarize, `${code} must require notarization`).toBe(true)
-      expect(a.sensitive, `${code} must be sensitive`).toBe(true)
+      // Written by the reference / cohabitant — a trainer sees progress, never
+      // the letters, the names or the addresses.
+      expect(a.conciergeScope, `${code} must be progress-only to a trainer`).toBe("progress")
     }
   })
 
