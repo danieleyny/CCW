@@ -13,6 +13,8 @@ import { rateLimit } from "@/lib/rate-limit"
 const cohabTokenActive = (c: { token_expires_at?: string | null; token_revoked_at?: string | null }) =>
   tokenActive({ expires_at: c.token_expires_at, revoked_at: c.token_revoked_at })
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 /** Capture the cohabitant's e-signature; the affidavit PDF then comes pre-signed. */
 export async function saveCohabitantSignature(token: string, base64: string): Promise<{ ok?: boolean; error?: string }> {
   if (!isReasonableSignature(base64)) return { error: "Please draw or type your signature first." }
@@ -35,8 +37,11 @@ export async function saveCohabitantSignature(token: string, base64: string): Pr
 export async function submitCohabitantAnswers(
   token: string,
   answers: Record<string, string>,
-  notaryArea: string
+  notaryArea: string,
+  confirmedEmail: string
 ): Promise<{ ok?: boolean; error?: string; alreadyDone?: boolean }> {
+  const email = (confirmedEmail || "").trim()
+  if (!EMAIL_RE.test(email)) return { error: "Please confirm your email address." }
   if (!rateLimit(`c:${token}`)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
   const { data: cohab } = await admin
@@ -50,7 +55,7 @@ export async function submitCohabitantAnswers(
   const firstTime = cohab.affidavit_status !== "received"
   await admin
     .from("cohabitants")
-    .update({ answers: answers as never, notary_area: notaryArea || null, affidavit_status: "received" })
+    .update({ answers: answers as never, notary_area: notaryArea || null, confirmed_email: email, affidavit_status: "received" })
     .eq("id", cohab.id)
   await recomputeCohabitantRequirement(admin, cohab.case_id)
 

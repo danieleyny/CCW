@@ -73,7 +73,7 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
   const link = `${siteBase()}/r/${token}`
   if (!ref.contact_email) return { link, emailed: false }
 
-  await sendEmail({
+  const res = await sendEmail({
     to: ref.contact_email,
     subject: `Character reference request — ${brand.name}`,
     html: `<div style="font-family:sans-serif;line-height:1.5">
@@ -85,7 +85,9 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
     </div>`,
     text: `Confirm your character reference: ${link}`,
   })
-  return { link, emailed: true }
+  // emailed reflects ACTUAL delivery, not "an address exists": if the send was a
+  // no-op (no key) or errored, the applicant is told to copy the link instead.
+  return { link, emailed: res.skipped === false && !("error" in res) }
 }
 
 /** Mint (or rotate) a household member's link and email it if we have an address. */
@@ -106,7 +108,7 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
   const link = `${siteBase()}/c/${token}`
   if (!cohab.contact_email) return { link, emailed: false }
 
-  await sendEmail({
+  const res = await sendEmail({
     to: cohab.contact_email,
     subject: `Please complete a cohabitant affidavit — ${brand.name}`,
     html: `<div style="font-family:sans-serif;line-height:1.5">
@@ -117,5 +119,6 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
     </div>`,
     text: `Complete your cohabitant affidavit: ${link}`,
   })
-  return { link, emailed: true }
+  // emailed reflects ACTUAL delivery (see inviteReference).
+  return { link, emailed: res.skipped === false && !("error" in res) }
 }

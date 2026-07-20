@@ -11,7 +11,7 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
 
   const { data: cohab } = await admin
     .from("cohabitants")
-    .select("id, name, relationship, affidavit_status, case_id, token_expires_at, token_revoked_at")
+    .select("id, name, relationship, affidavit_status, case_id, contact_email, token_expires_at, token_revoked_at")
     .eq("token", token)
     .maybeSingle()
 
@@ -42,6 +42,7 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
         relationship={cohab.relationship ?? null}
         applicant={applicant}
         initialStatus={cohab.affidavit_status}
+        invitedEmail={cohab.contact_email ?? ""}
       />
     </Shell>
   )

@@ -87,7 +87,11 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   const prefills: Record<string, Record<string, unknown>> = {}
   for (const row of reqRows) {
     const a = actionFor(row.req_code)
-    if (a?.mode !== "generate" || !a.questionnaireId) continue
+    // Both generated documents AND people-rosters (references, cohabitant
+    // affidavits) prefill from the intake answers — the roster branch was being
+    // skipped, which is why REF-01/REF-02/COH-01 came up blank in the checklist
+    // even though the applicant already listed them during intake.
+    if ((a?.mode !== "generate" && a?.mode !== "roster") || !a.questionnaireId) continue
     const q = questionnaireFor(a.questionnaireId)
     if (!q) continue
     prefills[row.req_code] = { ...prefillFor(q, prefillCtx), ...(savedByCode.get(row.req_code) ?? {}) }

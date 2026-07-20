@@ -20,18 +20,21 @@ export function ReferenceFlow({
   relationship,
   applicant,
   initialStatus,
+  invitedEmail,
 }: {
   token: string
   referenceName: string
   relationship: string | null
   applicant: string
   initialStatus: string
+  invitedEmail: string
 }) {
   const [phase, setPhase] = useState<Phase>(
     initialStatus === "notarized" ? "done" : initialStatus === "submitted" ? "notarize" : "answers"
   )
   const [answers, setAnswers] = useState<ReferenceAnswers>({})
   const [area, setArea] = useState("")
+  const [email, setEmail] = useState(invitedEmail)
   const [attest, setAttest] = useState(false)
   const [error, setError] = useState("")
   const [pending, start] = useTransition()
@@ -44,8 +47,9 @@ export function ReferenceFlow({
   function submitAnswers() {
     setError("")
     if (!attest) return setError("Please confirm the attestation to continue.")
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Please confirm your email address.")
     start(async () => {
-      const res = await submitReferenceAnswers(token, answers, area)
+      const res = await submitReferenceAnswers(token, answers, area, email.trim())
       if (res.error) setError(res.error)
       else setPhase("sign")
     })
@@ -218,6 +222,23 @@ export function ReferenceFlow({
             <MapPin className="size-4" /> Use my location
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="confirmEmail" className="text-xs">
+          Confirm your email address <span className="text-danger">*</span>
+        </Label>
+        <Input
+          id="confirmEmail"
+          type="email"
+          inputMode="email"
+          value={email}
+          placeholder="you@example.com"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <p className="text-[11px] text-text-low">
+          This confirms it&apos;s really you and links your reference to {applicant}&apos;s application.
+        </p>
       </div>
 
       <label className="flex items-start gap-2 text-sm">

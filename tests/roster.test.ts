@@ -109,8 +109,12 @@ describe.skipIf(!reachable)("roster sync against the database", () => {
       { name: "Robin Fox", relationship: "Neighbor" }, // no email
     ])
     expect(r.added).toBe(2)
-    expect(r.invited).toBe(1)
-    expect(r.needEmail).toEqual(["Robin Fox"]) // the applicant sends this one by hand
+    // `invited` now counts REAL deliveries, not "an address exists". With no email
+    // provider configured (RESEND_API_KEY unset in test/CI), nothing is delivered,
+    // so both fall to needEmail (copy-link fallback). Once Resend is connected,
+    // Alex — who has an email — would be invited and only Robin would need a hand-sent link.
+    expect(r.invited).toBe(0)
+    expect(r.needEmail).toEqual(["Alex Stone", "Robin Fox"])
 
     const { data: rows } = await admin.from("character_references").select("id, name").eq("case_id", caseId)
     expect(rows).toHaveLength(2)

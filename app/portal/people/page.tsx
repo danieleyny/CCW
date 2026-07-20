@@ -22,6 +22,12 @@ import {
 
 export const metadata = { title: "References & household" }
 
+/** Soft-verify signal: the invitee confirmed an email different from the one you entered. */
+function emailMismatch(onFile?: string | null, confirmed?: string | null): boolean {
+  if (!onFile || !confirmed) return false
+  return onFile.trim().toLowerCase() !== confirmed.trim().toLowerCase()
+}
+
 export default async function PeoplePage({
   searchParams,
 }: {
@@ -50,12 +56,12 @@ export default async function PeoplePage({
       .order("created_at"),
     supabase
       .from("cohabitants")
-      .select("id, name, relationship, affidavit_status, contact_email, token")
+      .select("id, name, relationship, affidavit_status, contact_email, confirmed_email, token")
       .eq("case_id", myCase.id)
       .order("created_at"),
     supabase
       .from("reference_requests")
-      .select("reference_id, status, token")
+      .select("reference_id, status, token, confirmed_email")
       .eq("case_id", myCase.id),
   ])
   const reqByRef = new Map((reqs.data ?? []).map((r) => [r.reference_id, r]))
@@ -110,6 +116,11 @@ export default async function PeoplePage({
                           <span className="text-text-low"> · {r.contact_email}</span>
                         ) : (
                           <span className="text-warn"> · add an email to invite</span>
+                        )}
+                        {emailMismatch(r.contact_email, req?.confirmed_email) && (
+                          <span className="mt-0.5 block text-[11px] text-warn">
+                            Confirmed a different email: {req?.confirmed_email}
+                          </span>
                         )}
                       </span>
                       <div className="flex items-center gap-2">
@@ -169,6 +180,11 @@ export default async function PeoplePage({
                           <span className="text-text-low"> · {c.contact_email}</span>
                         ) : (
                           <span className="text-warn"> · add an email to invite</span>
+                        )}
+                        {emailMismatch(c.contact_email, c.confirmed_email) && (
+                          <span className="mt-0.5 block text-[11px] text-warn">
+                            Confirmed a different email: {c.confirmed_email}
+                          </span>
                         )}
                       </span>
                       <div className="flex items-center gap-2">

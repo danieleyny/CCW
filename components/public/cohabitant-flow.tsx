@@ -18,17 +18,20 @@ export function CohabitantFlow({
   relationship,
   applicant,
   initialStatus,
+  invitedEmail,
 }: {
   token: string
   cohabitantName: string
   relationship: string | null
   applicant: string
   initialStatus: string
+  invitedEmail: string
 }) {
   const [phase, setPhase] = useState<Phase>(
     initialStatus === "notarized" ? "done" : initialStatus === "received" ? "notarize" : "confirm"
   )
   const [area, setArea] = useState("")
+  const [email, setEmail] = useState(invitedEmail)
   const [attest, setAttest] = useState(false)
   const [error, setError] = useState("")
   const [pending, start] = useTransition()
@@ -37,8 +40,9 @@ export function CohabitantFlow({
   function confirm() {
     setError("")
     if (!attest) return setError("Please confirm the attestation to continue.")
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Please confirm your email address.")
     start(async () => {
-      const res = await submitCohabitantAnswers(token, {}, area)
+      const res = await submitCohabitantAnswers(token, {}, area, email.trim())
       if (res.error) setError(res.error)
       else setPhase("sign")
     })
@@ -185,6 +189,23 @@ export function CohabitantFlow({
           </Button>
         </div>
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="confirmEmail" className="text-xs">
+          Confirm your email address <span className="text-danger">*</span>
+        </Label>
+        <Input
+          id="confirmEmail"
+          type="email"
+          inputMode="email"
+          value={email}
+          placeholder="you@example.com"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <p className="text-[11px] text-text-low">
+          This confirms it&apos;s really you and links your affidavit to {applicant}&apos;s application.
+        </p>
+      </div>
+
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={attest} onChange={(e) => setAttest(e.target.checked)} className="mt-0.5 size-4" />
         <span>

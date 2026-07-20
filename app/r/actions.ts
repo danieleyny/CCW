@@ -11,6 +11,8 @@ import { isReasonableSignature } from "@/lib/signatures"
 
 type Admin = ReturnType<typeof createAdminClient>
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 /** Capture the reference's e-signature; their letter PDF then comes pre-signed. */
 export async function saveReferenceSignature(token: string, base64: string): Promise<{ ok?: boolean; error?: string }> {
   if (!isReasonableSignature(base64)) return { error: "Please draw or type your signature first." }
@@ -71,13 +73,16 @@ async function notifyParties(
 export async function submitReferenceAnswers(
   token: string,
   answers: ReferenceAnswers,
-  notaryArea: string
+  notaryArea: string,
+  confirmedEmail: string
 ): Promise<{ ok?: boolean; error?: string; alreadyDone?: boolean }> {
   for (const q of REFERENCE_QUESTIONS) {
     if (q.required && !(answers[q.key] || "").trim()) {
       return { error: "Please answer all required questions." }
     }
   }
+  const email = (confirmedEmail || "").trim()
+  if (!EMAIL_RE.test(email)) return { error: "Please confirm your email address." }
   if (!rateLimit(`r:${token}`)) return { error: "Too many requests — please wait a minute and try again." }
   const admin = createAdminClient()
   const { data: req } = await admin
@@ -91,7 +96,7 @@ export async function submitReferenceAnswers(
   const firstTime = req.status !== "submitted"
   await admin
     .from("reference_requests")
-    .update({ answers: answers as never, notary_area: notaryArea || null, status: "submitted", answered_at: new Date().toISOString() })
+    .update({ answers: answers as never, notary_area: notaryArea || null, confirmed_email: email, status: "submitted", answered_at: new Date().toISOString() })
     .eq("id", req.id)
   await admin.from("character_references").update({ received: true }).eq("id", req.reference_id)
   await recomputeReferenceRequirement(admin, req.case_id)

@@ -959,6 +959,7 @@ export type Database = {
           affidavit_status: Database["public"]["Enums"]["cohabitant_status"]
           answers: Json
           case_id: string
+          confirmed_email: string | null
           contact_email: string | null
           created_at: string
           document_id: string | null
@@ -976,6 +977,7 @@ export type Database = {
           affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
           answers?: Json
           case_id: string
+          confirmed_email?: string | null
           contact_email?: string | null
           created_at?: string
           document_id?: string | null
@@ -993,6 +995,7 @@ export type Database = {
           affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
           answers?: Json
           case_id?: string
+          confirmed_email?: string | null
           contact_email?: string | null
           created_at?: string
           document_id?: string | null
@@ -2185,6 +2188,7 @@ export type Database = {
           answered_at: string | null
           answers: Json
           case_id: string
+          confirmed_email: string | null
           created_at: string
           document_id: string | null
           expires_at: string
@@ -2204,6 +2208,7 @@ export type Database = {
           answered_at?: string | null
           answers?: Json
           case_id: string
+          confirmed_email?: string | null
           created_at?: string
           document_id?: string | null
           expires_at?: string
@@ -2223,6 +2228,7 @@ export type Database = {
           answered_at?: string | null
           answers?: Json
           case_id?: string
+          confirmed_email?: string | null
           created_at?: string
           document_id?: string | null
           expires_at?: string
