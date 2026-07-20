@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { DarkBackdrop } from "@/components/theme/dark-backdrop"
+import { LocaleSwitcher } from "@/components/shared/locale-switcher"
+import { getLocale, getMessages } from "@/lib/i18n"
 
 export default async function PortalLayout({
   children,
@@ -14,6 +16,7 @@ export default async function PortalLayout({
   children: React.ReactNode
 }) {
   const { profile } = await requireRole(["client"])
+  const [locale, t] = await Promise.all([getLocale(), getMessages()])
 
   return (
     <div className="dark flex min-h-svh flex-col bg-background text-foreground">
@@ -25,13 +28,14 @@ export default async function PortalLayout({
             {brand.logo.wordmark}
           </Link>
           <div className="flex items-center gap-2">
+            <LocaleSwitcher current={locale} label={t.common.language} />
             <NotificationBell />
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {profile.full_name}
             </span>
             <form action={signOut}>
               <Button variant="ghost" size="sm" type="submit">
-                Sign out
+                {t.common.signOut}
               </Button>
             </form>
           </div>
@@ -46,7 +50,7 @@ export default async function PortalLayout({
       {/* Not a nav tab — this is rarely-needed but must always be findable. */}
       <footer className="mx-auto w-full max-w-3xl px-4 pb-24 text-xs text-text-low md:pb-6">
         <Link href="/portal/privacy" className="underline hover:text-text-mid">
-          Your data &amp; privacy
+          {t.portal.yourData}
         </Link>
       </footer>
 

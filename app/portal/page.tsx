@@ -16,6 +16,7 @@ import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { WelcomeCard } from "@/components/portal/welcome-card"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { computeNextStep } from "@/lib/portal/next-step"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Your application" }
 
@@ -58,6 +59,7 @@ export default async function PortalHome() {
   // same requirement view the checklist and documents pages read.
   const view = await loadRequirementView(supabase, myCase)
   const nextStep = computeNextStep({ items: view.items, intakeDone, stage })
+  const t = await getMessages()
 
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
@@ -78,9 +80,7 @@ export default async function PortalHome() {
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           {myCase.client.full_name.split(" ")[0]}
         </h1>
-        <p className="mt-1 text-sm text-text-mid">
-          Tracking your NYC concealed carry application, end to end.
-        </p>
+        <p className="mt-1 text-sm text-text-mid">{t.portal.tagline}</p>
       </div>
 
       {/* Phase 10 — WHAT TO DO NEXT, first thing, above the fold on a phone.
