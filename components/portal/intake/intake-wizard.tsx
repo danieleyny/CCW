@@ -16,6 +16,7 @@ import {
   type SocialAccount,
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
+import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
 import {
   eligibilityStepIssues,
   disclosureStepIssues,
@@ -47,6 +48,7 @@ export function IntakeWizard({
   completed,
   disclosures,
   guard,
+  aiEnabled = false,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -55,6 +57,7 @@ export function IntakeWizard({
   completed: boolean
   disclosures: Disclosure[]
   guard: SubmissionGuard | null
+  aiEnabled?: boolean
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
@@ -272,7 +275,7 @@ export function IntakeWizard({
         {step === 1 && <StepEligibility a={a} patch={patch} reasons={eligReasons} />}
         {step === 2 && <StepIdentity a={a} patch={patch} />}
         {step === 3 && <StepHousehold a={a} patch={patch} />}
-        {step === 4 && <StepDisclosures a={a} patch={patch} />}
+        {step === 4 && <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} />}
         {step === 5 && <StepHistory a={a} patch={patch} />}
         {step === 6 && <StepReview a={a} />}
       </div>
@@ -663,7 +666,7 @@ function StepHousehold({ a, patch }: StepProps) {
   )
 }
 
-function StepDisclosures({ a, patch }: StepProps) {
+function StepDisclosures({ a, patch, aiEnabled }: StepProps & { aiEnabled?: boolean }) {
   const arrests = a.arrests ?? []
   const q: QuestionAnswer[] = a.questionnaire ?? QUESTIONNAIRE.map((x) => ({ no: x.no, yes: false }))
   return (
@@ -685,9 +688,17 @@ function StepDisclosures({ a, patch }: StepProps) {
               <Input placeholder="Disposition (e.g. dismissed)" value={ar.disposition ?? ""} onChange={(e) => upd(i, { disposition: e.target.value })} />
             </div>
             <Textarea rows={2} placeholder="Written explanation (you can finish this at the review step)" value={ar.narrative ?? ""} onChange={(e) => upd(i, { narrative: e.target.value })} />
-            <Button variant="ghost" size="sm" onClick={() => patch({ arrests: arrests.filter((_, j) => j !== i) })}>
-              <Trash2 className="size-4" /> Remove
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => patch({ arrests: arrests.filter((_, j) => j !== i) })}>
+                <Trash2 className="size-4" /> Remove
+              </Button>
+              {aiEnabled && (
+                <DisclosureAssistant
+                  arrest={ar}
+                  onDraft={(draft) => upd(i, { narrative: draft })}
+                />
+              )}
+            </div>
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ arrests: [...arrests, {}] })}>

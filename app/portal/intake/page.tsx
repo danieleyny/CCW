@@ -5,6 +5,7 @@ import { evaluateSubmissionGuard } from "@/lib/intake/process"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { ensureIntakeSession } from "./actions"
 import { IntakeWizard } from "@/components/portal/intake/intake-wizard"
+import { AI_ENABLED } from "@/lib/ai"
 
 export const metadata = { title: "Application intake" }
 
@@ -73,6 +74,7 @@ export default async function IntakePage() {
         completed={completed}
         disclosures={disclosures}
         guard={guard}
+        aiEnabled={AI_ENABLED}
       />
     </div>
   )
