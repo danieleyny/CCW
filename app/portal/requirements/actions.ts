@@ -253,6 +253,12 @@ export async function submitRequirementRoster(
         } no email — copy their link from References & household and send it yourself.`
       )
     }
+    if (sync.sendFailed.length > 0) {
+      // Had an address but delivery didn't go through — never claim "sent".
+      parts.push(
+        `We couldn't email ${sync.sendFailed.join(", ")} just now — their link is ready to copy from References & household in the meantime.`
+      )
+    }
     if (sync.keptWithEvidence.length > 0) {
       // "Evidence" here means received OR notarized — don't claim notarized when
       // we only have a submitted letter.

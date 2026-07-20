@@ -26,8 +26,14 @@ const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:300
 export interface InviteResult {
   /** The private link, whether or not email delivery was possible. */
   link: string
-  /** False when there's no email on file — the applicant shares the link instead. */
+  /** True only when an email was actually delivered (provider accepted it). */
   emailed: boolean
+  /**
+   * True when there was an address on file to send to — even if delivery then
+   * failed. Lets callers tell "no email on file" (applicant must copy the link)
+   * apart from "we tried to email but it didn't go" (a delivery/config problem).
+   */
+  hadEmail: boolean
 }
 
 /** Mint (or rotate) a reference's link and email it if we have an address. */
@@ -71,7 +77,7 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
   }
 
   const link = `${siteBase()}/r/${token}`
-  if (!ref.contact_email) return { link, emailed: false }
+  if (!ref.contact_email) return { link, emailed: false, hadEmail: false }
 
   const res = await sendEmail({
     to: ref.contact_email,
@@ -87,7 +93,7 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
   })
   // emailed reflects ACTUAL delivery, not "an address exists": if the send was a
   // no-op (no key) or errored, the applicant is told to copy the link instead.
-  return { link, emailed: res.skipped === false && !("error" in res) }
+  return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
 }
 
 /** Mint (or rotate) a household member's link and email it if we have an address. */
@@ -106,7 +112,7 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
     .eq("id", cohab.id)
 
   const link = `${siteBase()}/c/${token}`
-  if (!cohab.contact_email) return { link, emailed: false }
+  if (!cohab.contact_email) return { link, emailed: false, hadEmail: false }
 
   const res = await sendEmail({
     to: cohab.contact_email,
@@ -120,5 +126,5 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
     text: `Complete your cohabitant affidavit: ${link}`,
   })
   // emailed reflects ACTUAL delivery (see inviteReference).
-  return { link, emailed: res.skipped === false && !("error" in res) }
+  return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
 }

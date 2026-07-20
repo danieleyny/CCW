@@ -109,12 +109,13 @@ describe.skipIf(!reachable)("roster sync against the database", () => {
       { name: "Robin Fox", relationship: "Neighbor" }, // no email
     ])
     expect(r.added).toBe(2)
-    // `invited` now counts REAL deliveries, not "an address exists". With no email
-    // provider configured (RESEND_API_KEY unset in test/CI), nothing is delivered,
-    // so both fall to needEmail (copy-link fallback). Once Resend is connected,
-    // Alex — who has an email — would be invited and only Robin would need a hand-sent link.
+    // `invited` counts REAL deliveries. With no email provider configured
+    // (RESEND_API_KEY unset in test/CI), Alex has an address but delivery no-ops,
+    // so he lands in sendFailed; Robin has no address at all, so he lands in
+    // needEmail. Once Resend is connected, Alex would be invited instead.
     expect(r.invited).toBe(0)
-    expect(r.needEmail).toEqual(["Alex Stone", "Robin Fox"])
+    expect(r.needEmail).toEqual(["Robin Fox"])
+    expect(r.sendFailed).toEqual(["Alex Stone"])
 
     const { data: rows } = await admin.from("character_references").select("id, name").eq("case_id", caseId)
     expect(rows).toHaveLength(2)

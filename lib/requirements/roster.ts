@@ -35,8 +35,14 @@ export interface RosterSyncResult {
   added: number
   updated: number
   invited: number
-  /** Listed with no email — the applicant shares the link by hand. */
+  /** Listed with no email on file — the applicant shares the link by hand. */
   needEmail: string[]
+  /**
+   * Had an email on file, but delivery didn't go through (no provider
+   * configured, or the provider rejected it). The link still exists to copy —
+   * distinct from needEmail so the UI doesn't say "has no email" when it does.
+   */
+  sendFailed: string[]
   /**
    * Dropped from the list but kept because we already hold their document
    * (received or notarized) — deleting them would orphan filed evidence.
@@ -77,7 +83,7 @@ export async function syncReferences(
 
   const byName = new Map((existing ?? []).map((r) => [key(r.name), r]))
   const listed = new Set(people.map((p) => key(p.name)))
-  const result: RosterSyncResult = { added: 0, updated: 0, invited: 0, needEmail: [], keptWithEvidence: [] }
+  const result: RosterSyncResult = { added: 0, updated: 0, invited: 0, needEmail: [], sendFailed: [], keptWithEvidence: [] }
 
   for (const person of people) {
     const match = byName.get(key(person.name))
@@ -117,6 +123,7 @@ export async function syncReferences(
     if (match?.notarized) continue
     const invite = await inviteReference(admin, id)
     if (invite?.emailed) result.invited++
+    else if (invite?.hadEmail) result.sendFailed.push(person.name)
     else result.needEmail.push(person.name)
   }
 
@@ -145,7 +152,7 @@ export async function syncCohabitants(
 
   const byName = new Map((existing ?? []).map((r) => [key(r.name), r]))
   const listed = new Set(people.map((p) => key(p.name)))
-  const result: RosterSyncResult = { added: 0, updated: 0, invited: 0, needEmail: [], keptWithEvidence: [] }
+  const result: RosterSyncResult = { added: 0, updated: 0, invited: 0, needEmail: [], sendFailed: [], keptWithEvidence: [] }
   const done = (s: string | null | undefined) => s === "notarized" || s === "received"
 
   for (const person of people) {
@@ -181,6 +188,7 @@ export async function syncCohabitants(
     if (done(match?.affidavit_status)) continue
     const invite = await inviteCohabitant(admin, id)
     if (invite?.emailed) result.invited++
+    else if (invite?.hadEmail) result.sendFailed.push(person.name)
     else result.needEmail.push(person.name)
   }
 
