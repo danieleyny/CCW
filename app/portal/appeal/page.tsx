@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Download, Scale, Clock } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
@@ -43,6 +44,13 @@ export default async function AppealPage() {
           considered, and — by NYPD rule — <b>only you or a New York–licensed attorney</b> may submit it.
           We can&apos;t file it for you, but we assemble your complete record and connect you with a
           partner attorney immediately.
+        </p>
+        <p className="text-xs text-text-low">
+          You can download your complete file any time from your{" "}
+          <Link href="/portal/forms" className="text-signal underline">
+            documents
+          </Link>
+          .
         </p>
       </div>
     )
@@ -101,14 +109,14 @@ export default async function AppealPage() {
         <Card>
           <CardContent className="flex h-full flex-col p-5">
             <Download className="size-5 text-signal" />
-            <h3 className="mt-2 text-sm font-semibold">Your complete record</h3>
+            <h3 className="mt-2 text-sm font-semibold">Export your file for an attorney</h3>
             <p className="mt-1 flex-1 text-xs text-muted-foreground">
-              Every document you filed, merged in order with a cover sheet and index — exactly what an
-              attorney needs on day one.
+              One PDF with your complete record — every document you filed, merged in order with a
+              cover sheet and index, plus the answers as they went in. Hand it to counsel on day one.
             </p>
             <Button asChild size="sm" variant="outline" className="mt-3 w-fit">
-              <a href="/portal/packet" target="_blank" rel="noreferrer">
-                <Download className="size-4" /> Download record
+              <a href="/portal/filing-pack" target="_blank" rel="noreferrer">
+                <Download className="size-4" /> Export for my attorney
               </a>
             </Button>
           </CardContent>
