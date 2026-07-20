@@ -4,6 +4,7 @@ import { z } from "zod"
 import { headers } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
 import { brand } from "@/config/brand"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { notifyFormspree } from "@/lib/formspree"
@@ -159,10 +160,21 @@ export async function captureLead(
     message: v.message,
     consult_time: v.consultAt,
   })
+  const { html, text } = renderEmail({
+    eyebrow: "New lead",
+    heading: v.name,
+    paragraphs: [
+      `${v.email}${v.phone ? ` · ${v.phone}` : ""}`,
+      `Source: ${v.source}`,
+      ...(v.message ? [v.message] : []),
+    ],
+    recipientReason: "Internal lead notification from the Gun License NYC site.",
+  })
   await sendEmail({
     to: brand.contact.email,
     subject: `New lead: ${v.name} (${v.source})`,
-    html: `<p><strong>${v.name}</strong> — ${v.email} ${v.phone ? `· ${v.phone}` : ""}</p><p>Source: ${v.source}</p><p>${v.message ?? ""}</p>`,
+    html,
+    text,
   })
 
   return { ok: true }

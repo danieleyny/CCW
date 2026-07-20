@@ -2,6 +2,7 @@ import "server-only"
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
 import { buildBookingIcs, mapLink } from "./ics"
 
 /**
@@ -46,21 +47,27 @@ export async function sendBookingInvites(bookingId: string) {
   })
 
   const when = new Date(b.starts_at).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" })
-  const body = `<div style="font-family:sans-serif;line-height:1.5">
-    <p>Your Gun License NYC <b>${typeLabel}</b> is confirmed.</p>
-    <p><b>When:</b> ${when}</p>
-    ${locationStr ? `<p><b>Where:</b> ${locationStr}${address ? ` — <a href="${mapLink(address)}">open map</a>` : ""}</p>` : ""}
-    <p>A calendar invite is attached. Bring a photo ID and eye/ear protection.</p>
-  </div>`
+  const { html, text } = renderEmail({
+    preheader: `Your ${typeLabel} is confirmed for ${when}.`,
+    eyebrow: "Confirmed",
+    heading: `Your ${typeLabel} is confirmed`,
+    paragraphs: [
+      `When: ${when}`,
+      ...(locationStr ? [`Where: ${locationStr}`] : []),
+      "A calendar invite is attached. Please bring a photo ID and eye and ear protection.",
+    ],
+    cta: address ? { label: "Open map →", url: mapLink(address) } : undefined,
+    recipientReason: "You're receiving this because a training session was booked.",
+  })
   const attachments = [{ filename: "carry-training.ics", content: ics, contentType: "text/calendar" }]
 
   let sent = 0
   if (client?.email) {
-    await sendEmail({ to: client.email, subject: "Your Gun License NYC training is confirmed", html: body, attachments })
+    await sendEmail({ to: client.email, subject: "Your Gun License NYC training is confirmed", html, text, attachments })
     sent++
   }
   if (instr?.email) {
-    await sendEmail({ to: instr.email, subject: "Training session confirmed", html: body, attachments })
+    await sendEmail({ to: instr.email, subject: "Training session confirmed", html, text, attachments })
     sent++
   }
   return { sent, ics }

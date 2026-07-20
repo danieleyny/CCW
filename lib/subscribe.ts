@@ -1,4 +1,5 @@
 import crypto from "node:crypto"
+import { renderEmail } from "@/lib/email/template"
 
 /**
  * V5b Workstream A — shared subscribe helpers. No `server-only` so the verify
@@ -56,8 +57,12 @@ export function offerSubject(offer: SubscribeOffer): string {
 }
 
 export function offerEmail(offer: SubscribeOffer, unsubUrl: string): { html: string; text: string } {
-  const line = OFFER_COPY[offer].line
-  const text = `${line}\n\nUnsubscribe: ${unsubUrl}`
-  const html = `<p>${line}</p><p style="color:#8A8580;font-size:12px">You can <a href="${unsubUrl}">unsubscribe</a> at any time.</p>`
-  return { html, text }
+  const { subject, line } = OFFER_COPY[offer]
+  return renderEmail({
+    preheader: line,
+    heading: subject,
+    paragraphs: [line],
+    recipientReason: "You received this because you requested it from Gun License NYC.",
+    unsubscribeUrl: unsubUrl,
+  })
 }

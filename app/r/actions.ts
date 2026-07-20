@@ -3,6 +3,7 @@
 import { randomUUID } from "crypto"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
 import { validateFile } from "@/lib/files/validator"
 import { recomputeReferenceRequirement, tokenActive } from "@/lib/references/process"
 import { rateLimit } from "@/lib/rate-limit"
@@ -46,7 +47,17 @@ async function notifyParties(
         title: opts.title, body: opts.body, link: "/portal/people",
       })
     }
-    if (client?.email) await sendEmail({ to: client.email, subject: opts.title, html: `<p>${opts.body}</p>`, text: opts.body })
+    if (client?.email) {
+      const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/portal/people`
+      const { html, text } = renderEmail({
+        preheader: opts.body,
+        heading: opts.title,
+        paragraphs: [opts.body],
+        cta: { label: "View your references →", url: portalUrl },
+        recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
+      })
+      await sendEmail({ to: client.email, subject: opts.title, html, text })
+    }
   }
   const { data: eng } = await admin
     .from("engagements")

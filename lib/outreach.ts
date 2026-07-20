@@ -16,6 +16,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
 import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
 import { brand } from "@/config/brand"
 
@@ -79,18 +80,19 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
   const link = `${siteBase()}/r/${token}`
   if (!ref.contact_email) return { link, emailed: false, hadEmail: false }
 
-  const res = await sendEmail({
-    to: ref.contact_email,
-    subject: `Character reference request — ${brand.name}`,
-    html: `<div style="font-family:sans-serif;line-height:1.5">
-      <p>Hi ${ref.name},</p>
-      <p>An applicant listed you as a character reference for their NYC concealed-carry
-      license. Please confirm and attest below — it takes a minute, no account needed:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p style="color:#666;font-size:12px">— ${brand.name}</p>
-    </div>`,
-    text: `Confirm your character reference: ${link}`,
+  const { html, text } = renderEmail({
+    preheader: "Confirm your character reference for a NYC carry-license application — takes a minute.",
+    eyebrow: "Action needed",
+    heading: "Confirm your character reference",
+    paragraphs: [
+      `Hi ${ref.name},`,
+      "An applicant listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build a ready-to-notarize letter from your answers.",
+    ],
+    cta: { label: "Confirm your reference →", url: link },
+    footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
+    recipientReason: "You received this because an applicant listed you as a character reference.",
   })
+  const res = await sendEmail({ to: ref.contact_email, subject: `Character reference request — ${brand.name}`, html, text })
   // emailed reflects ACTUAL delivery, not "an address exists": if the send was a
   // no-op (no key) or errored, the applicant is told to copy the link instead.
   return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
@@ -114,17 +116,19 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
   const link = `${siteBase()}/c/${token}`
   if (!cohab.contact_email) return { link, emailed: false, hadEmail: false }
 
-  const res = await sendEmail({
-    to: cohab.contact_email,
-    subject: `Please complete a cohabitant affidavit — ${brand.name}`,
-    html: `<div style="font-family:sans-serif;line-height:1.5">
-      <p>Hi ${cohab.name},</p>
-      <p>Please confirm and complete your cohabitant affidavit here — no account needed:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p style="color:#666;font-size:12px">— ${brand.name}</p>
-    </div>`,
-    text: `Complete your cohabitant affidavit: ${link}`,
+  const { html, text } = renderEmail({
+    preheader: "Confirm and complete your cohabitant affidavit — no account needed.",
+    eyebrow: "Action needed",
+    heading: "Complete your cohabitant affidavit",
+    paragraphs: [
+      `Hi ${cohab.name},`,
+      "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
+    ],
+    cta: { label: "Complete your affidavit →", url: link },
+    footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
+    recipientReason: "You received this because an applicant listed you as a member of their household.",
   })
+  const res = await sendEmail({ to: cohab.contact_email, subject: `Please complete a cohabitant affidavit — ${brand.name}`, html, text })
   // emailed reflects ACTUAL delivery (see inviteReference).
   return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
 }

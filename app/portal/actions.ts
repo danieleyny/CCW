@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
 import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
 import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile } from "@/lib/files/enforce"
@@ -178,17 +179,23 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
     })
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
     const link = `${base}/r/${token}`
+    const { html, text } = renderEmail({
+      preheader: "Confirm your character reference for a NYC carry-license application — takes a minute.",
+      eyebrow: "Action needed",
+      heading: "Confirm your character reference",
+      paragraphs: [
+        `Hi ${v.name},`,
+        "An applicant listed you as a character reference for their NYC concealed-carry license. Please confirm and complete it — it takes a minute, no account needed, and we'll build a ready-to-notarize letter for you.",
+      ],
+      cta: { label: "Confirm your reference →", url: link },
+      footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
+      recipientReason: "You received this because an applicant listed you as a character reference.",
+    })
     await sendEmail({
       to: v.contactEmail,
       subject: "You've been listed as a character reference — Gun License NYC",
-      html: `<div style="font-family:sans-serif;line-height:1.5">
-        <p>Hi ${v.name},</p>
-        <p>${"An applicant"} listed you as a character reference for their NYC concealed-carry
-        license. Please confirm and complete it here — it takes a minute, no account needed,
-        and we'll build a ready-to-notarize letter for you:</p>
-        <p><a href="${link}">${link}</a></p>
-      </div>`,
-      text: `Complete your character reference: ${link}`,
+      html,
+      text,
     })
   }
 
@@ -244,17 +251,23 @@ export async function addCohabitant(_prev: CollectorState, formData: FormData): 
     await admin.from("cohabitants").update({ token, token_expires_at: tokenExpiry() }).eq("id", created.id)
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
     const link = `${base}/c/${token}`
+    const { html, text } = renderEmail({
+      preheader: "Confirm and complete your cohabitant affidavit — no account needed.",
+      eyebrow: "Action needed",
+      heading: "Complete your cohabitant affidavit",
+      paragraphs: [
+        `Hi ${v.name},`,
+        "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
+      ],
+      cta: { label: "Complete your affidavit →", url: link },
+      footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
+      recipientReason: "You received this because an applicant listed you as a member of their household.",
+    })
     await sendEmail({
       to: v.contactEmail,
       subject: "Please complete a cohabitant affidavit — Gun License NYC",
-      html: `<div style="font-family:sans-serif;line-height:1.5">
-        <p>Hi ${v.name},</p>
-        <p>You were listed as a household member on a NYC concealed-carry license application.
-        Please confirm and complete a short affidavit here — no account needed, and we'll build
-        a ready-to-notarize document for you:</p>
-        <p><a href="${link}">${link}</a></p>
-      </div>`,
-      text: `Complete your cohabitant affidavit: ${link}`,
+      html,
+      text,
     })
   }
 

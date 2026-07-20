@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Local agent/preview config
 .claude/
+
+# dev-only rendered email previews
+public/email-preview/

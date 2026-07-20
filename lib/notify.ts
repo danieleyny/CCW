@@ -3,8 +3,11 @@ import "server-only"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
 
 type DB = SupabaseClient<Database>
+
+const portalUrl = () => `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/portal`
 
 /**
  * Notify the applicant (in-app + email) and the engaged instructor (in-app only,
@@ -19,7 +22,16 @@ export async function notifyCaseParties(admin: DB, caseId: string, opts: { title
         recipient: client.profile_id, case_id: caseId, kind: "info", title: opts.title, body: opts.body, link: "/portal/people",
       })
     }
-    if (client?.email) await sendEmail({ to: client.email, subject: opts.title, html: `<p>${opts.body}</p>`, text: opts.body })
+    if (client?.email) {
+      const { html, text } = renderEmail({
+        preheader: opts.body,
+        heading: opts.title,
+        paragraphs: [opts.body],
+        cta: { label: "View your case →", url: portalUrl() },
+        recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
+      })
+      await sendEmail({ to: client.email, subject: opts.title, html, text })
+    }
   }
   const { data: eng } = await admin
     .from("engagements")
