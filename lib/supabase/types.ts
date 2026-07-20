@@ -1475,6 +1475,7 @@ export type Database = {
           materials_included: boolean | null
           name: string
           offers_intro_call: boolean
+          onboarding_completed_at: string | null
           payouts_enabled: boolean
           phone: string | null
           price_18h_cents: number | null
@@ -1526,6 +1527,7 @@ export type Database = {
           materials_included?: boolean | null
           name: string
           offers_intro_call?: boolean
+          onboarding_completed_at?: string | null
           payouts_enabled?: boolean
           phone?: string | null
           price_18h_cents?: number | null
@@ -1577,6 +1579,7 @@ export type Database = {
           materials_included?: boolean | null
           name?: string
           offers_intro_call?: boolean
+          onboarding_completed_at?: string | null
           payouts_enabled?: boolean
           phone?: string | null
           price_18h_cents?: number | null

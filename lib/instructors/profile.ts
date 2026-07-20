@@ -112,9 +112,12 @@ export function evaluateProfile(instructor: InstructorProfileInput): ProfileComp
 
 /** Can this instructor be shown to applicants / send offers right now? */
 export function isLiveEligible(
-  instructor: InstructorProfileInput & Pick<InstructorRow, "verified" | "active">
+  instructor: InstructorProfileInput & Pick<InstructorRow, "verified" | "active" | "onboarding_completed_at">
 ): boolean {
-  if (!instructor.verified || !instructor.active) return false
+  // VERIFIED (who they are) + ONBOARDED (they know the rules) + ACTIVE + a
+  // COMPLETE profile. Onboarding is Phase 13: the privacy firewall, candor, and
+  // applicant-files-their-own-app must be acknowledged before reaching anyone.
+  if (!instructor.verified || !instructor.active || !instructor.onboarding_completed_at) return false
   return evaluateProfile(instructor).complete
 }
 

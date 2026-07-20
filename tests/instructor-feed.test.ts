@@ -36,6 +36,7 @@ async function makeLiveInstructor(name: string, extra: Record<string, unknown> =
       name,
       verified: true,
       active: true,
+      onboarding_completed_at: new Date().toISOString(),
       bio: "Two decades teaching first-time carriers across the five boroughs, patiently.",
       price_18h_cents: 65000,
       class_format: "small_group",

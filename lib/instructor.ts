@@ -38,7 +38,7 @@ export async function getMyInstructor() {
       // read — one row, so no surface has to re-query for a single column.
       // NOTE: one literal, not a concatenation — supabase-js infers the row type
       // from the string, and a concatenated select degrades to GenericStringError.
-      "id, name, email, phone, bio, dcjs_id, verified, verified_at, active, service_radius_mi, lat, lng, price_18h_cents, rating_avg, rating_count, jurisdictions, payouts_enabled, stripe_connect_account_id, website_url, instagram_handle, facebook_url, x_handle, years_experience, background, languages, avatar_path, facility_photo_paths, class_format, typical_class_size, provides_range, separate_range_note, range_fee_included, ammo_included, materials_included, whats_to_bring, scheduling_notes, response_time_note, offers_intro_call, intro_call_note, feed_seen_at, auto_offer_enabled, auto_offer_note, auto_offer_price_cents"
+      "id, name, email, phone, bio, dcjs_id, verified, verified_at, active, onboarding_completed_at, service_radius_mi, lat, lng, price_18h_cents, rating_avg, rating_count, jurisdictions, payouts_enabled, stripe_connect_account_id, website_url, instagram_handle, facebook_url, x_handle, years_experience, background, languages, avatar_path, facility_photo_paths, class_format, typical_class_size, provides_range, separate_range_note, range_fee_included, ammo_included, materials_included, whats_to_bring, scheduling_notes, response_time_note, offers_intro_call, intro_call_note, feed_seen_at, auto_offer_enabled, auto_offer_note, auto_offer_price_cents"
     )
     .eq("profile_id", user.id)
     .maybeSingle()

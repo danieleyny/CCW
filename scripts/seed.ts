@@ -229,6 +229,9 @@ async function main() {
           bio: "20-year range officer; NRA + DCJS certified. Patient with first-timers.",
           verified: true,
           verified_at: new Date().toISOString(),
+          // Frank is the "verified + live" fixture — onboarded so he's
+          // live-eligible (Phase 13 gate). Prod grandfathers existing verifieds.
+          onboarding_completed_at: new Date().toISOString(),
           service_radius_mi: 25,
           lat: bk.lat,
           lng: bk.lng,

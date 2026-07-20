@@ -10,7 +10,10 @@ import { join, relative } from "node:path"
 
 const ROOTS = ["app", "components", "content", "config"]
 const EXT = /\.(tsx?|mdx)$/
-const ALLOW = new Set(["config/brand.ts"])
+// Allowlisted files legitimately NAME the banned words in order to forbid them:
+// the standing disclaimer, and the trainer-onboarding quiz that teaches trainers
+// not to use guarantee/insider/approval-rate language.
+const ALLOW = new Set(["config/brand.ts", "content/trainer-onboarding.ts"])
 const BANNED: [string, RegExp][] = [
   ["guarantee", /guarantee/i],
   ["expedite", /expedite/i],

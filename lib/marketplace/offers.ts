@@ -24,13 +24,14 @@ type OfferType = Database["public"]["Enums"]["offer_type"]
 
 /** Everything isLiveEligible() reads, plus what auto-offer needs. */
 const ELIGIBILITY_COLUMNS =
-  "id, verified, active, bio, price_18h_cents, class_format, languages, provides_range, separate_range_note, " +
+  "id, verified, active, onboarding_completed_at, bio, price_18h_cents, class_format, languages, provides_range, separate_range_note, " +
   "auto_offer_enabled, auto_offer_note, auto_offer_price_cents, profile_id, name"
 
 type EligibilityRow = {
   id: string
   verified: boolean
   active: boolean
+  onboarding_completed_at: string | null
   bio: string | null
   price_18h_cents: number | null
   class_format: string | null

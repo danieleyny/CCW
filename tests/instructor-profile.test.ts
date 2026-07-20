@@ -25,6 +25,7 @@ const full = {
   locations: [{ is_range: false, address: "123 W 30th St, New York, NY" }],
   verified: true,
   active: true,
+  onboarding_completed_at: "2026-07-19T00:00:00Z",
 }
 
 describe("profile completeness", () => {
@@ -88,6 +89,10 @@ describe("profile completeness", () => {
   it("an unverified instructor is never live, however complete the profile", () => {
     expect(isLiveEligible({ ...full, verified: false })).toBe(false)
     expect(isLiveEligible({ ...full, active: false })).toBe(false)
+  })
+
+  it("onboarding is required to go live, even verified with a complete profile (Phase 13)", () => {
+    expect(isLiveEligible({ ...full, onboarding_completed_at: null })).toBe(false)
   })
 })
 

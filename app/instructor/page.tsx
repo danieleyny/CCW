@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ShieldCheck, ShieldAlert, MapPin, Star, ArrowRight } from "lucide-react"
+import { ShieldCheck, ShieldAlert, MapPin, Star, ArrowRight, ClipboardCheck } from "lucide-react"
 import { getMyInstructor, getMyTrainingLocations } from "@/lib/instructor"
 import { money } from "@/lib/format"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,6 +26,19 @@ export default async function InstructorDashboard() {
         <SectionEyebrow>Instructor</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">{me.name.split(" ")[0]}</h1>
       </div>
+
+      {/* Onboarding gate — required before going live (Phase 13). */}
+      {!me.onboarding_completed_at && (
+        <Link
+          href="/instructor/onboarding"
+          className="flex items-center justify-between gap-2 rounded-md border border-brass/40 bg-brass/10 px-4 py-3 text-sm text-brass-bright transition-colors hover:bg-brass/15"
+        >
+          <span className="flex items-center gap-2">
+            <ClipboardCheck className="size-4" /> Complete your platform onboarding to go live — a few minutes.
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
 
       {/* Verification status */}
       {me.verified ? (
