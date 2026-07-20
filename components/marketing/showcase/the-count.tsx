@@ -13,8 +13,8 @@ import { SectionEyebrow } from "@/components/shared/section-eyebrow"
  * it). Abstract cards — no legible text at rest. Reduced-motion → assembled.
  */
 const SAMPLE = [
-  "Four notarized references",
   "18-hour safety course",
+  "Four notarized references",
   "A statement from everyone at home",
   "Passport-style photo",
   "Proof any past record is resolved",
@@ -95,7 +95,8 @@ export function TheCount() {
             Twenty-four documents stand between you and your license. We track every one.
           </h2>
           <p className="mt-4 max-w-md text-text-mid">
-            Miss one and the application bounces. We hold all of them, so you don&apos;t have to.
+            Twenty-four documents stand between you and your license — and we hold, track, and organize
+            every one for you, so you never have to keep it all in your head.
           </p>
 
           <ul className="mt-6 space-y-2">

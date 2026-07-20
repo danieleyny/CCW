@@ -21,6 +21,9 @@ function parseAnswers(raw: unknown): { answers?: WizardAnswers; error?: string }
   return { answers: parsed.data as WizardAnswers }
 }
 
+/** Guard shape returned on any early-out so the UI always has one to read. */
+const EMPTY_GUARD: SubmissionGuard = { ok: false, blockers: [], emptyNarrativeCount: 0, pendingCount: 0 }
+
 /** Confirm the signed-in client owns this case; returns it or null (RLS-scoped). */
 async function ownedCase(caseId: string) {
   const supabase = await createClient()
@@ -53,11 +56,19 @@ export async function ensureIntakeSession(caseId: string) {
 }
 
 /** Persist wizard progress (resumable). Client writes their own via RLS. */
-export async function saveIntakeStep(caseId: string, step: number, answers: WizardAnswers) {
+export async function saveIntakeStep(
+  caseId: string,
+  step: number,
+  answers: WizardAnswers
+): Promise<{ ok: true } | { error: string }> {
   await requireRole(["client"])
   const parsed = parseAnswers(answers)
-  if (parsed.error || !parsed.answers) throw new Error(parsed.error ?? "Invalid intake data")
-  if (!Number.isInteger(step) || step < 1 || step > 6) throw new Error("Invalid step")
+  if (parsed.error || !parsed.answers) {
+    // Surface the specific field/row that failed instead of a generic toast.
+    console.error("[intake] saveIntakeStep validation failed:", parsed.error)
+    return { error: parsed.error ?? "Invalid intake data" }
+  }
+  if (!Number.isInteger(step) || step < 1 || step > 6) return { error: "Invalid step" }
 
   const supabase = await createClient()
   // Upsert (not update): case_id is UNIQUE, so this self-heals if the session
@@ -68,8 +79,12 @@ export async function saveIntakeStep(caseId: string, step: number, answers: Wiza
       { case_id: caseId, current_step: step, answers: parsed.answers as unknown as Json },
       { onConflict: "case_id" }
     )
-  if (error) throw error
+  if (error) {
+    console.error("[intake] saveIntakeStep db error:", error)
+    return { error: `Couldn't save progress: ${error.message}` }
+  }
   revalidatePath("/portal/intake")
+  return { ok: true }
 }
 
 /**
@@ -80,13 +95,16 @@ export async function saveIntakeStep(caseId: string, step: number, answers: Wiza
 export async function completeIntake(
   caseId: string,
   rawAnswers: WizardAnswers
-): Promise<{ guard: SubmissionGuard; blockedEligibility: boolean; validationErrors?: string[] }> {
+): Promise<{ guard: SubmissionGuard; blockedEligibility: boolean; validationErrors?: string[]; error?: string }> {
   await requireRole(["client"])
   const kase = await ownedCase(caseId)
-  if (!kase) throw new Error("Case not found")
+  if (!kase) return { error: "Case not found", blockedEligibility: false, guard: EMPTY_GUARD }
 
   const parsed = parseAnswers(rawAnswers)
-  if (parsed.error || !parsed.answers) throw new Error(parsed.error ?? "Invalid intake data")
+  if (parsed.error || !parsed.answers) {
+    console.error("[intake] completeIntake validation failed:", parsed.error)
+    return { error: parsed.error ?? "Invalid intake data", blockedEligibility: false, guard: EMPTY_GUARD }
+  }
   const answers = parsed.answers
 
   const gate = eligibilityGate(answers)
@@ -143,28 +161,37 @@ export async function completeIntake(
       { onConflict: "case_id" }
     )
 
-  const admin = createAdminClient()
-  const result = await processIntake(admin, caseId, gate.jurisdiction, answers)
-  const guard = await evaluateSubmissionGuard(admin, caseId)
+  // Deterministic generation runs under the service-role client. Wrap it so a
+  // genuine failure (a schema drift, a bad row) surfaces the real reason instead
+  // of the generic "Generation failed" toast.
+  try {
+    const admin = createAdminClient()
+    const result = await processIntake(admin, caseId, gate.jurisdiction, answers)
+    const guard = await evaluateSubmissionGuard(admin, caseId)
 
-  // Intake cleared the eligibility gate — that IS the screening. Stay here and
-  // let the later milestones (payment, booking, training, documents) each move
-  // the case one step, so the pipeline reflects what actually happened rather
-  // than jumping to the end of it.
-  await maybeAdvanceStage(admin, caseId, "eligibility_screened", "intake.completed")
+    // Intake cleared the eligibility gate — that IS the screening. Stay here and
+    // let the later milestones (payment, booking, training, documents) each move
+    // the case one step, so the pipeline reflects what actually happened rather
+    // than jumping to the end of it.
+    await maybeAdvanceStage(admin, caseId, "eligibility_screened", "intake.completed")
 
-  await logActivity({
-    action: "intake.completed",
-    caseId,
-    entity: "case",
-    entityId: caseId,
-    detail: { ...result, jurisdiction: gate.jurisdiction, guardOk: guard.ok },
-  })
+    await logActivity({
+      action: "intake.completed",
+      caseId,
+      entity: "case",
+      entityId: caseId,
+      detail: { ...result, jurisdiction: gate.jurisdiction, guardOk: guard.ok },
+    })
 
-  revalidatePath("/portal/intake")
-  revalidatePath("/portal/checklist")
-  revalidatePath("/portal")
-  return { guard, blockedEligibility: false }
+    revalidatePath("/portal/intake")
+    revalidatePath("/portal/checklist")
+    revalidatePath("/portal")
+    return { guard, blockedEligibility: false }
+  } catch (e) {
+    console.error("[intake] completeIntake generation failed:", e)
+    const detail = e instanceof Error ? e.message : "unknown error"
+    return { error: `Generation failed: ${detail}`, blockedEligibility: false, guard: EMPTY_GUARD }
+  }
 }
 
 /** Fill/edit a disclosure's required narrative; re-evaluate the guard. */

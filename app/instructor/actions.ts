@@ -104,8 +104,9 @@ const profileSchema = z.object({
   radiusMi: z.coerce.number().int().min(1).max(100),
   price18hDollars: z.coerce.number().min(0).optional(),
 
-  // About them
-  websiteUrl: z.string().url().max(300).optional().or(z.literal("")),
+  // About them — website is validated leniently (a bare domain is fine); we
+  // normalize to a scheme before storing rather than rejecting "daniel.com".
+  websiteUrl: z.string().max(300).optional().or(z.literal("")),
   instagramHandle: z.string().max(80).optional().or(z.literal("")),
   yearsExperience: z.coerce.number().int().min(0).max(70).optional(),
   background: optionalText,
@@ -132,6 +133,25 @@ const profileSchema = z.object({
   autoOfferNote: optionalText,
   autoOfferPriceDollars: z.coerce.number().min(0).optional(),
 })
+
+/**
+ * Users type "daniel.com" or "www.eye-uni.com" without a scheme. Prepend
+ * https:// so the stored value is a real, clickable URL. Returns null for empty
+ * or clearly-unusable input (no dot, or contains a space).
+ */
+function normalizeUrl(raw?: string | null): string | null {
+  const v = (raw ?? "").trim()
+  if (!v) return null
+  const withScheme = /^https?:\/\//i.test(v) ? v : `https://${v}`
+  try {
+    const u = new URL(withScheme)
+    // Require a dotted host — rejects "https://foo" but accepts "foo.com".
+    if (!u.hostname.includes(".")) return null
+    return u.toString()
+  } catch {
+    return null
+  }
+}
 
 /** Split "English, Spanish , ASL" into a clean array. */
 const parseLanguages = (raw?: string | null): string[] =>
@@ -207,7 +227,7 @@ export async function updateInstructorProfile(
       lat: geo?.lat ?? null,
       lng: geo?.lng ?? null,
 
-      website_url: input.websiteUrl || null,
+      website_url: normalizeUrl(input.websiteUrl),
       instagram_handle: input.instagramHandle || null,
       years_experience: input.yearsExperience ?? null,
       background: input.background || null,

@@ -52,9 +52,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {/* The per-section backdrop lives in each route group's layout: marketing
-            renders <LightBackdrop />, the app groups render <DarkBackdrop /> inside
-            their `.dark` wrapper. */}
+        {/* Every route group runs the dark register: marketing renders
+            <DarkBackdrop /> in MarketingFrame, and the app groups render it
+            inside their own `.dark` wrapper. */}
         <div id="main" className="contents">
           {children}
         </div>

@@ -153,7 +153,10 @@ function valueFor(f: CoverageField, a: WizardAnswers, ctx: WorksheetContext): st
     case "employment_history":
       return renderHistory(
         (a.employmentHistory ?? []).map((h) =>
-          joinNonEmpty([period(h.fromMonth, h.toMonth), h.employer, h.occupation], " — ")
+          joinNonEmpty(
+            [period(h.fromMonth, h.toMonth), h.employerName ?? h.employer, h.employerAddress, h.occupation],
+            " — "
+          )
         )
       )
     case "safeguard_method":

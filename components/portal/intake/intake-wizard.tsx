@@ -80,12 +80,18 @@ export function IntakeWizard({
     return []
   }
 
-  async function persist(next: number) {
+  async function persist(next: number): Promise<boolean> {
     setSaving(true)
     try {
-      await saveIntakeStep(caseId, next, a)
+      const res = await saveIntakeStep(caseId, next, a)
+      if (res && "error" in res && res.error) {
+        toast.error(res.error)
+        return false
+      }
+      return true
     } catch {
       toast.error("Couldn't save progress.")
+      return false
     } finally {
       setSaving(false)
     }
@@ -107,8 +113,8 @@ export function IntakeWizard({
       setEligReasons(null)
     }
     const n = Math.min(step + 1, 6)
-    await persist(n)
-    setStep(n)
+    const ok = await persist(n)
+    if (ok) setStep(n)
   }
   function back() {
     setStepErrors([])
@@ -119,6 +125,10 @@ export function IntakeWizard({
     setGenerating(true)
     try {
       const res = await completeIntake(caseId, a)
+      if (res.error) {
+        toast.error(res.error)
+        return
+      }
       if (res.blockedEligibility) {
         setAttorneyReview(true)
         return
@@ -738,6 +748,53 @@ function StepDisclosures({ a, patch, aiEnabled }: StepProps & { aiEnabled?: bool
   }
 }
 
+/**
+ * From/To month range with a "Present" affordance. `type="month"` makes the
+ * browser emit only valid YYYY-MM (matching the schema regex), so the old
+ * free-text "2021"/"present" values that failed validation can't be entered.
+ * Convention: an empty `to` means "present" (checkbox reflects and sets that).
+ */
+function HistoryDates({
+  fromMonth,
+  toMonth,
+  onFrom,
+  onTo,
+}: {
+  fromMonth?: string
+  toMonth?: string
+  onFrom: (v: string) => void
+  onTo: (v: string) => void
+}) {
+  const present = !toMonth
+  return (
+    <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+      <div className="space-y-1">
+        <Label className="text-[11px] text-text-low">From</Label>
+        <Input type="month" className="w-[9rem]" value={fromMonth ?? ""} onChange={(e) => onFrom(e.target.value)} />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-[11px] text-text-low">To</Label>
+        <Input
+          type="month"
+          className="w-[9rem]"
+          value={toMonth ?? ""}
+          disabled={present}
+          onChange={(e) => onTo(e.target.value)}
+        />
+      </div>
+      <label className="flex items-center gap-1.5 pb-2.5 text-xs text-text-mid">
+        <input
+          type="checkbox"
+          checked={present}
+          onChange={(e) => onTo(e.target.checked ? "" : new Date().toISOString().slice(0, 7))}
+          className="size-4 rounded border-input"
+        />
+        Present
+      </label>
+    </div>
+  )
+}
+
 function StepHistory({ a, patch }: StepProps) {
   const refs = a.references ?? []
   const social: SocialAccount[] = a.socialAccounts ?? []
@@ -765,19 +822,21 @@ function StepHistory({ a, patch }: StepProps) {
           dates. List them newest first; include state, county, zip and apartment.
         </Hint>
         {resHist.map((h, i) => (
-          <div key={i} className="grid gap-2 sm:grid-cols-[7rem_7rem_1fr_auto]">
-            <Input placeholder="From (YYYY-MM)" value={h.fromMonth ?? ""} onChange={(e) => {
-              const c = [...resHist]; c[i] = { ...c[i], fromMonth: e.target.value }; patch({ residenceHistory: c })
-            }} />
-            <Input placeholder="To / present" value={h.toMonth ?? ""} onChange={(e) => {
-              const c = [...resHist]; c[i] = { ...c[i], toMonth: e.target.value }; patch({ residenceHistory: c })
-            }} />
+          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+            <div className="flex items-start justify-between gap-2">
+              <HistoryDates
+                fromMonth={h.fromMonth}
+                toMonth={h.toMonth}
+                onFrom={(v) => { const c = [...resHist]; c[i] = { ...c[i], fromMonth: v }; patch({ residenceHistory: c }) }}
+                onTo={(v) => { const c = [...resHist]; c[i] = { ...c[i], toMonth: v }; patch({ residenceHistory: c }) }}
+              />
+              <Button variant="ghost" size="icon" onClick={() => patch({ residenceHistory: resHist.filter((_, j) => j !== i) })}>
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
             <Input placeholder="Address (street, city, state, county, zip, apt)" value={h.address ?? ""} onChange={(e) => {
               const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
             }} />
-            <Button variant="ghost" size="icon" onClick={() => patch({ residenceHistory: resHist.filter((_, j) => j !== i) })}>
-              <Trash2 className="size-4" />
-            </Button>
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
@@ -789,24 +848,30 @@ function StepHistory({ a, patch }: StepProps) {
         <Label className="text-xs">Places of employment — past 5 years</Label>
         <Hint>Q29 also asks for your five-year employment history — business name, address and occupation.</Hint>
         {empHist.map((h, i) => (
-          <div key={i} className="grid gap-2 sm:grid-cols-[7rem_7rem_1fr_auto]">
-            <Input placeholder="From (YYYY-MM)" value={h.fromMonth ?? ""} onChange={(e) => {
-              const c = [...empHist]; c[i] = { ...c[i], fromMonth: e.target.value }; patch({ employmentHistory: c })
-            }} />
-            <Input placeholder="To / present" value={h.toMonth ?? ""} onChange={(e) => {
-              const c = [...empHist]; c[i] = { ...c[i], toMonth: e.target.value }; patch({ employmentHistory: c })
-            }} />
-            <div className="grid gap-2">
-              <Input placeholder="Business name & address" value={h.employer ?? ""} onChange={(e) => {
-                const c = [...empHist]; c[i] = { ...c[i], employer: e.target.value }; patch({ employmentHistory: c })
+          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+            <div className="flex items-start justify-between gap-2">
+              <HistoryDates
+                fromMonth={h.fromMonth}
+                toMonth={h.toMonth}
+                onFrom={(v) => { const c = [...empHist]; c[i] = { ...c[i], fromMonth: v }; patch({ employmentHistory: c }) }}
+                onTo={(v) => { const c = [...empHist]; c[i] = { ...c[i], toMonth: v }; patch({ employmentHistory: c }) }}
+              />
+              <Button variant="ghost" size="icon" onClick={() => patch({ employmentHistory: empHist.filter((_, j) => j !== i) })}>
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input placeholder="Business name" value={h.employerName ?? h.employer ?? ""} onChange={(e) => {
+                // Writing the split field retires the legacy combined `employer`.
+                const c = [...empHist]; c[i] = { ...c[i], employerName: e.target.value, employer: undefined }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
-                const c = [...empHist]; c[i] = { ...c[i], occupation: e.target.value }; patch({ employmentHistory: c })
+              <Input placeholder="Business address" value={h.employerAddress ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], employerAddress: e.target.value }; patch({ employmentHistory: c })
               }} />
             </div>
-            <Button variant="ghost" size="icon" onClick={() => patch({ employmentHistory: empHist.filter((_, j) => j !== i) })}>
-              <Trash2 className="size-4" />
-            </Button>
+            <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
+              const c = [...empHist]; c[i] = { ...c[i], occupation: e.target.value }; patch({ employmentHistory: c })
+            }} />
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ employmentHistory: [...empHist, {}] })}>

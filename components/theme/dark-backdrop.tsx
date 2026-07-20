@@ -1,7 +1,7 @@
 /**
  * The obsidian app backdrop: faint blueprint grid + brass/signal/ice rim glows.
- * Lives inside a `.dark` wrapper (portal/admin/instructor) so it only ever
- * renders on the dark surfaces — marketing gets <LightBackdrop /> instead.
+ * Lives inside a `.dark` wrapper (marketing, portal, admin, instructor) so it
+ * renders on every surface — the whole product runs the dark register.
  */
 export function DarkBackdrop() {
   return (

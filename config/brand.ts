@@ -186,8 +186,8 @@ export const externalCostEstimates = {
   training: {
     label: "18-hour firearms course",
     note: "Paid to your state-certified instructor",
-    lowCents: 35000,
-    highCents: 42500,
+    lowCents: 50000,
+    highCents: 65000,
   },
   notary: {
     label: "Notarization",

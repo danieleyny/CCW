@@ -62,7 +62,9 @@ export async function signUp(
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName, role: "client" },
-      // Where the confirmation email sends them back to — our live site, not localhost.
+      // Only used if email confirmation is ever re-enabled at the project level;
+      // with "Confirm email" OFF (see docs/AUTH_EMAIL_CONFIRMATION.md), signUp
+      // returns a session directly and this round-trip never happens.
       emailRedirectTo: `${getSiteUrl()}/auth/callback?next=/dashboard`,
     },
   })
@@ -84,7 +86,11 @@ export async function signUp(
     }
   }
 
-  redirect("/dashboard")
+  // Confirm-email OFF → signUp returns a live session; go straight into the app.
+  // If confirmation is ever turned back on, there's no session yet, so send them
+  // to sign in (they'll confirm via the email link first).
+  if (data.session) redirect("/dashboard")
+  redirect("/auth/login")
 }
 
 export async function signOut() {

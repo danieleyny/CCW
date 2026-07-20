@@ -1,6 +1,7 @@
 import Link from "next/link"
-import { ShieldCheck, ShieldAlert, MapPin, Star, ArrowRight, ClipboardCheck } from "lucide-react"
+import { ShieldCheck, ShieldAlert, MapPin, Star, ArrowRight, ClipboardCheck, ListChecks } from "lucide-react"
 import { getMyInstructor, getMyTrainingLocations } from "@/lib/instructor"
+import { evaluateProfile } from "@/lib/instructors/profile"
 import { money } from "@/lib/format"
 import { Card, CardContent } from "@/components/ui/card"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -19,6 +20,7 @@ export default async function InstructorDashboard() {
     )
   }
   const locations = await getMyTrainingLocations(me.id)
+  const completeness = evaluateProfile({ ...me, locations })
 
   return (
     <div className="space-y-6">
@@ -38,6 +40,43 @@ export default async function InstructorDashboard() {
           </span>
           <ArrowRight className="size-4" />
         </Link>
+      )}
+
+      {/* Profile completeness — until this is done the trainer isn't shown to
+          applicants (isLiveEligible requires a complete profile). Persistent. */}
+      {!completeness.complete && (
+        <Card className="border-brass/40 bg-brass/5">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ListChecks className="size-4 text-brass-bright" />
+                <h2 className="text-sm font-semibold text-brass-bright">
+                  Complete your profile to start getting matched
+                </h2>
+              </div>
+              <span className="font-mono text-[11px] tabular-nums text-text-low">
+                {completeness.percent}%
+              </span>
+            </div>
+            <p className="mt-1.5 text-sm text-text-mid">
+              Applicants only see trainers with a complete profile. Still needed:
+            </p>
+            <ul className="mt-2 space-y-1 text-sm text-text-mid">
+              {completeness.missing.map((c) => (
+                <li key={c.key} className="flex items-start gap-2">
+                  <span className="mt-1 size-1.5 shrink-0 rounded-full bg-brass" />
+                  {c.label}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/instructor/profile"
+              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
+            >
+              Finish your profile <ArrowRight className="size-4" />
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
       {/* Verification status */}

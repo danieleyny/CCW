@@ -126,8 +126,8 @@ export function InstructorProfileForm({
           <Textarea id="background" name="background" rows={2} defaultValue={initial.background} />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="websiteUrl" label="Website">
-            <Input id="websiteUrl" name="websiteUrl" type="url" defaultValue={initial.websiteUrl} placeholder="https://" />
+          <Field id="websiteUrl" label="Website" hint="No need to type https:// — “daniel.com” works.">
+            <Input id="websiteUrl" name="websiteUrl" type="text" inputMode="url" defaultValue={initial.websiteUrl} placeholder="yoursite.com" />
           </Field>
           <Field id="instagramHandle" label="Instagram">
             <Input id="instagramHandle" name="instagramHandle" defaultValue={initial.instagramHandle} placeholder="@yourhandle" />

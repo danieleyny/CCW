@@ -68,6 +68,10 @@ const addressHistorySchema = z.object({
 const employmentHistorySchema = z.object({
   fromMonth: yearMonth.optional(),
   toMonth: yearMonth.optional(),
+  employerName: z.string().max(200).optional(),
+  employerAddress: z.string().max(300).optional(),
+  // Legacy combined field — kept optional so in-progress sessions that still
+  // hold `employer` survive the .strip() and can be coalesced on read.
   employer: z.string().max(400).optional(),
   occupation: short.optional(),
 })

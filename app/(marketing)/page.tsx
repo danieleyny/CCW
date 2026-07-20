@@ -18,7 +18,6 @@ import { CostCard } from "@/components/marketing/cost-card"
 import { StickyCta } from "@/components/marketing/sticky-cta"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 import { PlacemakingBand } from "@/components/marketing/placemaking-band"
-import { CandorReveal } from "@/components/marketing/candor-reveal"
 import { CaseAnimation } from "@/components/marketing/showcase/case-animation"
 import { TheCount } from "@/components/marketing/showcase/the-count"
 
@@ -54,9 +53,9 @@ export default async function Home() {
     ["~6 months", "Start to decision letter. No one can rush it — us included."],
     [`${fees.applicationFee} + ${fees.fingerprintFee}`, "Government fees, paid directly to them."],
     ["18 hours", "Of training — and it expires six months after it's dated."],
-    ["4 references", "Notarized. We send them the link."],
-    ["1 affidavit", "Per adult in your home. We chase them, not you."],
-    ["1 interview", "Yours. You submit your own application — that's the law."],
+    ["4 references", "We send your references a link to get their reference completed."],
+    ["1 affidavit", "Completed for each individual over 18 living in your household."],
+    ["1 interview", "We make sure you have a full package ready for your interview and know what to expect beforehand."],
   ]
 
   return (
@@ -84,9 +83,9 @@ export default async function Home() {
             </Reveal>
             <Reveal delay={170}>
               <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-text-mid lg:mx-0">
-                Getting a gun license in New York City is slow, strict, and easy to get wrong. We make it
-                simple — one team tracking every document, deadline, and requirement from your first
-                question to the day you&apos;re licensed.
+                Getting a gun license in New York City is slow, and strict. We make it simple — one team
+                tracking every document, deadline, and requirement from your first question to the day
+                you&apos;re licensed.
               </p>
             </Reveal>
             <Reveal delay={250}>
@@ -197,11 +196,14 @@ export default async function Home() {
 
         <div className="relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6">
           <Reveal>
-            <SectionEyebrow>Candor, not concealment</SectionEyebrow>
-            <CandorReveal />
+            <SectionEyebrow>Nothing slips through</SectionEyebrow>
+            <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+              Every detail, handled — so nothing surprises you later.
+            </h2>
             <p className="mx-auto mt-6 max-w-2xl text-xl leading-relaxed text-text-mid">
-              New York requires it, and hiding one is how good applications die. We help you explain it —
-              never omit it. When it&apos;s a lawyer&apos;s question, we point you to a lawyer.
+              From the first form to the final review, we track every requirement, deadline, and document,
+              and tell you exactly what&apos;s needed and when. No missed steps, no scramble — just a
+              complete, correct application you can stand behind.
             </p>
           </Reveal>
         </div>

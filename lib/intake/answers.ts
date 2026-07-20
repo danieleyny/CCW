@@ -49,7 +49,10 @@ export interface AddressHistoryEntry {
 export interface EmploymentHistoryEntry {
   fromMonth?: string
   toMonth?: string
-  employer?: string // business name + address
+  employerName?: string // business name
+  employerAddress?: string // business address
+  /** @deprecated legacy combined "name + address"; coalesced into employerName on read. */
+  employer?: string
   occupation?: string
 }
 

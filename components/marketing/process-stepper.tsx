@@ -35,7 +35,7 @@ const PHASES: {
     short: "Qualify",
     icon: UserRound,
     blurb:
-      "A two-minute eligibility check tells you exactly where you stand — no guesswork, no payment to start. Pick your package and we open your case.",
+      "A two-minute eligibility check tells you exactly where you stand — no guesswork, no payment to start. Pick your package and we open your application.",
   },
   {
     title: "Train",
@@ -49,21 +49,21 @@ const PHASES: {
     short: "Assemble",
     icon: FolderCheck,
     blurb:
-      "References, statements, disclosures, and safe photos — we gather all 24 documents and chase the people you'd otherwise have to chase yourself.",
+      "References, statements, disclosures, and photos — we gather all the documents necessary and make sure the job gets done properly and simply.",
   },
   {
     title: "Review & file",
     short: "Review",
     icon: ClipboardCheck,
     blurb:
-      "We check that every requirement is complete and correct. You review the finished packet, then you submit your own application — assembled in the order they read it.",
+      "We check that every requirement is complete and correct. You review the finished packet, then submit your own application — with everything prepared so it's quick and right, and we're with you the whole way.",
   },
   {
     title: "Interview",
     short: "Interview",
     icon: Handshake,
     blurb:
-      "You sit for your own interview. We make sure what you filed and what you say line up, so nothing sends you back to the start of the line.",
+      "The final stretch — fingerprinting, your interview, and the NYPD's review. We make sure everything you filed lines up and that you know exactly what to expect, so nothing sends you back to the start of the line.",
   },
 ]
 
