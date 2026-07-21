@@ -16,12 +16,14 @@ import { getCaseRequirements } from "@/lib/requirements"
 import { actionFor } from "@/lib/requirements/actions"
 import { questionnaireFor, prefillFor, type PrefillContext } from "@/lib/requirements/questionnaires"
 import type { WizardAnswers } from "@/lib/intake/answers"
-import type { GeneratedDoc } from "@/components/portal/requirement-action"
+import type { GeneratedDoc, ReferenceProgress, RefPersonState } from "@/components/portal/requirement-action"
 import type { ReqChecklistItem } from "@/components/portal/requirements-checklist"
 import type { LibraryFile } from "@/components/portal/document-library"
+import type { CurrentDoc } from "@/components/portal/document-uploader"
 import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { computeFeeSummary, type FeeSummary } from "@/lib/fees"
 import { deriveLadder } from "@/lib/requirements/ladder"
+import { requiredReferences } from "@/lib/intake/schema"
 
 type DB = SupabaseClient<Database>
 
@@ -33,6 +35,10 @@ export interface RequirementView {
   generated: Record<string, GeneratedDoc>
   /** Every file bound to a requirement, newest first. */
   filesByReq: Record<string, LibraryFile[]>
+  /** The current UPLOAD per req_code — what the inline upload widget shows. */
+  currentByReq: Record<string, CurrentDoc>
+  /** Per-reference progress for the REF-01/REF-02 card, or null when no ref req. */
+  referenceProgress: ReferenceProgress | null
   /** Files that belong to no requirement — request letters, worksheets. */
   looseFiles: LibraryFile[]
   signatureOnFile: string | null
@@ -57,7 +63,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       db.from("requirement_answers").select("req_code, answers").eq("case_id", myCase.id),
       db
         .from("documents")
-        .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at")
+        .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at, review_notes, version")
         .eq("case_id", myCase.id)
         .order("created_at", { ascending: false }),
       db
@@ -108,6 +114,10 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
 
   const generated: Record<string, GeneratedDoc> = {}
   const filesByReq: Record<string, LibraryFile[]> = {}
+  // The latest UPLOADED (non-generated) doc per req_code — what the inline upload
+  // widget shows as "current" so it can display status + View + Re-upload instead
+  // of a perpetual "Not uploaded".
+  const currentByReq: Record<string, CurrentDoc> = {}
   const looseFiles: LibraryFile[] = []
 
   for (const d of docs ?? []) {
@@ -137,12 +147,55 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       if (d.generated && !generated[reqCode]) {
         generated[reqCode] = { id: d.id, fileName: d.file_name, url, signedAt: d.signed_at }
       }
+      // The newest UPLOAD is the widget's "current" (docs are newest-first).
+      if (!d.generated && !currentByReq[reqCode]) {
+        currentByReq[reqCode] = {
+          status: d.status,
+          review_notes: d.review_notes ?? null,
+          version: d.version,
+          signedUrl: url,
+        }
+      }
     } else {
       looseFiles.push(file)
     }
   }
 
   const reviewByReq = new Map((reviews ?? []).map((r) => [r.case_requirement_id, r]))
+
+  // Per-reference progress for the REF-01/REF-02 card: who's been invited, who
+  // opened, who submitted (awaiting notary), who's fully notarized. Only queried
+  // when a references requirement is actually on this case.
+  const isRefRoster = (reqCode: string) => {
+    const a = actionFor(reqCode)
+    return a?.mode === "roster" && a.roster === "references"
+  }
+  let referenceProgress: ReferenceProgress | null = null
+  if (reqRows.some((r) => isRefRoster(r.req_code))) {
+    const [{ data: refs }, { data: refReqs }] = await Promise.all([
+      db.from("character_references").select("id, name, received, notarized").eq("case_id", myCase.id).order("created_at"),
+      db.from("reference_requests").select("reference_id, status, revoked_at").eq("case_id", myCase.id),
+    ])
+    const reqByRef = new Map((refReqs ?? []).map((r) => [r.reference_id, r]))
+    const people = (refs ?? []).map((r) => {
+      const rr = reqByRef.get(r.id)
+      const active = rr && !rr.revoked_at
+      let state: RefPersonState
+      if (r.notarized) state = "notarized"
+      else if (r.received) state = "submitted"
+      else if (active && rr!.status === "opened") state = "opened"
+      else if (active && rr!.status !== "pending") state = "invited"
+      else state = "not_invited"
+      return { name: r.name, state }
+    })
+    referenceProgress = {
+      required: requiredReferences(intakeAnswers, { isRenewal: kase?.is_renewal ?? false }),
+      people,
+      invitedCount: people.filter((p) => p.state !== "not_invited").length,
+      notarizedCount: people.filter((p) => p.state === "notarized").length,
+    }
+  }
+  const refInvited = (referenceProgress?.invitedCount ?? 0) > 0
 
   const items: ReqChecklistItem[] = reqRows.map((row) => {
     const review = reviewByReq.get(row.id)
@@ -156,6 +209,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       status: row.status,
       hasEvidence: !!(row.document_id || row.reference_id || row.cohabitant_id),
       latestReview: review?.decision ? { decision: review.decision } : null,
+      rosterInvited: isRefRoster(row.req_code) && refInvited,
     }),
     reviewNote: review?.decision === "changes_requested" ? (review.note ?? null) : null,
     reviewerKind: review?.reviewer_kind ?? null,
@@ -191,6 +245,8 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     prefills,
     generated,
     filesByReq,
+    currentByReq,
+    referenceProgress,
     looseFiles,
     signatureOnFile: sig?.png_base64 ?? null,
   }

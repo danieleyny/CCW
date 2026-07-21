@@ -31,6 +31,18 @@ export interface DocRow {
   signed_at: string | null
 }
 
+/**
+ * A document is reviewable only when it's actually been submitted for review:
+ * still `pending` (not already approved/rejected) AND not an unsigned draft.
+ * Approving or rejecting a draft-unsigned or already-decided doc is meaningless,
+ * so the Approve / Needs-fix actions are hidden for those.
+ */
+function reviewable(doc: DocRow): boolean {
+  if (doc.status !== "pending") return false // approved or rejected — already decided
+  if (doc.generated && !doc.signed_at) return false // draft, not yet signed/submitted
+  return true
+}
+
 export function DocumentReview({
   caseId,
   clientId,
@@ -123,27 +135,35 @@ export function DocumentReview({
             ) : (
               <span className="text-xs text-muted-foreground">no file</span>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pending || doc.status === "approved"}
-              onClick={() => approve(doc)}
-              className="text-ok"
-            >
-              <Check className="size-4" /> Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={() => {
-                setRejecting(doc)
-                setNote(doc.review_notes ?? "")
-              }}
-              className="text-destructive"
-            >
-              <X className="size-4" /> Needs fix
-            </Button>
+            {reviewable(doc) ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => approve(doc)}
+                  className="text-ok"
+                >
+                  <Check className="size-4" /> Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => {
+                    setRejecting(doc)
+                    setNote(doc.review_notes ?? "")
+                  }}
+                  className="text-destructive"
+                >
+                  <X className="size-4" /> Needs fix
+                </Button>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {doc.status === "approved" ? "reviewed" : doc.status === "rejected" ? "sent back" : "awaiting signature"}
+              </span>
+            )}
           </li>
         ))}
       </ul>

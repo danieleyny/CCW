@@ -16,7 +16,7 @@
  * check can satisfy an item nobody reviewed), then an outstanding change
  * request, then evidence-without-review, then nothing.
  */
-export type LadderState = "pending" | "submitted" | "approved" | "changes_requested"
+export type LadderState = "pending" | "waiting" | "submitted" | "approved" | "changes_requested"
 
 export interface LadderInput {
   /** case_requirements.status */
@@ -25,12 +25,19 @@ export interface LadderInput {
   hasEvidence: boolean
   /** The most recent review of this item, if there is one. */
   latestReview?: { decision: string } | null
+  /**
+   * Roster items (references / cohabitant affidavits): invitations are out and
+   * we're waiting on OTHER people to complete and notarize. There's no bound
+   * evidence yet, but the item is genuinely in progress — not "not started".
+   */
+  rosterInvited?: boolean
 }
 
 export function deriveLadder(input: LadderInput): LadderState {
   if (input.status === "satisfied") return "approved"
   if (input.latestReview?.decision === "changes_requested") return "changes_requested"
   if (input.hasEvidence) return "submitted"
+  if (input.rosterInvited) return "waiting"
   return "pending"
 }
 
@@ -40,6 +47,11 @@ export const LADDER_COPY: Record<LadderState, { label: string; hint: string; ton
     label: "Not started",
     hint: "We still need this one.",
     tone: "muted",
+  },
+  waiting: {
+    label: "Waiting on others",
+    hint: "Invitations are out — this completes when their notarized copies come back.",
+    tone: "signal",
   },
   submitted: {
     label: "In review",

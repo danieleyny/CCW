@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { ShieldCheck, MessageSquareWarning, Check, Gavel } from "lucide-react"
-import { RequirementAction, type GeneratedDoc } from "@/components/portal/requirement-action"
+import { RequirementAction, type GeneratedDoc, type ReferenceProgress } from "@/components/portal/requirement-action"
+import type { CurrentDoc } from "@/components/portal/document-uploader"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { actionFor } from "@/lib/requirements/actions"
 import type { FeeSummary } from "@/lib/fees"
@@ -82,6 +83,8 @@ export function RequirementsChecklist({
   clientId,
   prefills,
   generated,
+  currentByReq,
+  referenceProgress,
   signatureOnFile,
   feeSummary,
   feeReceipts,
@@ -93,6 +96,10 @@ export function RequirementsChecklist({
   prefills: Record<string, Record<string, unknown>>
   /** Documents we already generated, keyed by req_code. */
   generated: Record<string, GeneratedDoc>
+  /** The current UPLOAD per req_code — shows in the inline upload widget. */
+  currentByReq: Record<string, CurrentDoc>
+  /** Per-reference progress for REF-01/REF-02, or null when no ref requirement. */
+  referenceProgress: ReferenceProgress | null
   /** Base64 PNG of the applicant's signature on file, if they've captured one. */
   signatureOnFile: string | null
   feeSummary: FeeSummary
@@ -251,6 +258,8 @@ export function RequirementsChecklist({
               clientId={clientId}
               prefill={prefills[item.reqCode] ?? {}}
               generated={generated[item.reqCode] ?? null}
+              current={currentByReq[item.reqCode] ?? null}
+              referenceProgress={referenceProgress}
               signatureOnFile={signatureOnFile}
               feeSummary={feeSummary}
               feeReceipts={feeReceipts}

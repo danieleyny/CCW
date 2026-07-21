@@ -113,7 +113,11 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "How you'll store the handgun at home. NYC requires secure storage (P.L. §265.45; NYC Admin. Code §10-312). You'll also add photos of your safe — open and closed.",
     submitLabel: "Generate my statement",
-    prefill: (ctx) => ({ safeguardName: ctx.intake.safeguardName ?? "" }),
+    // No prefill: the make/model field previously (wrongly) shared the key
+    // `safeguardName` with the intake "person who will safeguard the handgun"
+    // custodian, so it prefilled a PERSON'S NAME into the make/model box. The
+    // field is now `safeStorageMakeModel` and starts empty — there is no intake
+    // source for a safe's make/model.
     fields: [
       { name: "address", label: "Address where the firearm will be stored", type: "text", required: true },
       {
@@ -127,7 +131,7 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
           { value: "trigger_lock", label: "Trigger/cable lock in a locked container" },
         ],
       },
-      { name: "safeguardName", label: "Make/model of the safe or lock (if you know it)", type: "text" },
+      { name: "safeStorageMakeModel", label: "Make/model of the safe or lock (if you know it)", type: "text" },
       {
         name: "othersInHome",
         label: "Does anyone else live at this address?",

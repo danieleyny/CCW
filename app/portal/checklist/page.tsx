@@ -24,6 +24,8 @@ export default async function ChecklistPage() {
         clientId={myCase.client.id}
         prefills={view.prefills}
         generated={view.generated}
+        currentByReq={view.currentByReq}
+        referenceProgress={view.referenceProgress}
         signatureOnFile={view.signatureOnFile}
         feeSummary={view.feeSummary}
         feeReceipts={view.feeReceipts}

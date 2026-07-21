@@ -286,18 +286,35 @@ export async function reviewDocument(input: {
       reviewer: userId,
     })
     .eq("id", input.documentId)
-    .select("type, client_id, clients(full_name, email)")
+    .select("type, req_code, client_id, clients(full_name, email)")
     .single()
   if (error) throw error
 
   // V3-P2.1 — the review decision drives the requirement (one checklist):
   // approve → matching requirement satisfied + evidence bound; reject → back to
   // pending with the reviewer's note so the client sees what to fix.
-  const { data: matchingReqs } = await supabase
-    .from("case_requirements")
-    .select("id, status, requirements!inner(document_type)")
-    .eq("case_id", input.caseId)
-    .eq("requirements.document_type", doc.type)
+  //
+  // Match the SAME way the upload bound evidence: by req_code. Matching by
+  // document_type is ambiguous when several requirements share a type — the three
+  // IDN reqs all map to 'id', and IDN-03's registry document_type is NULL — which
+  // both left IDN-03 stuck "In review" after approval AND over-satisfied IDN-01/02.
+  // Fall back to document_type only for legacy docs uploaded before req_code existed.
+  let matchingReqs: Array<{ id: string; status: string }> | null = null
+  if (doc.req_code) {
+    const { data } = await supabase
+      .from("case_requirements")
+      .select("id, status")
+      .eq("case_id", input.caseId)
+      .eq("req_code", doc.req_code)
+    matchingReqs = data
+  } else {
+    const { data } = await supabase
+      .from("case_requirements")
+      .select("id, status, requirements!inner(document_type)")
+      .eq("case_id", input.caseId)
+      .eq("requirements.document_type", doc.type)
+    matchingReqs = data
+  }
   for (const r of matchingReqs ?? []) {
     if (r.status === "na") continue
     await supabase

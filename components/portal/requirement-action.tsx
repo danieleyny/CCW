@@ -10,7 +10,7 @@ import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requ
 import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
-import { DocumentUploader } from "@/components/portal/document-uploader"
+import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
 import { FeePanel, type FeeReceipts } from "@/components/portal/fee-panel"
 import type { FeeSummary } from "@/lib/fees"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,24 @@ export interface GeneratedDoc {
   url: string | null
   /** ISO timestamp, or null while it's still an unsigned DRAFT. */
   signedAt: string | null
+}
+
+export type RefPersonState = "not_invited" | "invited" | "opened" | "submitted" | "notarized"
+
+export interface ReferenceProgress {
+  /** How many notarized references this track needs (4 carry / 2 premises). */
+  required: number
+  people: { name: string; state: RefPersonState }[]
+  invitedCount: number
+  notarizedCount: number
+}
+
+const REF_STATE_COPY: Record<RefPersonState, { label: string; tone: string }> = {
+  not_invited: { label: "not invited yet", tone: "text-text-low" },
+  invited: { label: "invited — waiting", tone: "text-text-mid" },
+  opened: { label: "opened the link", tone: "text-signal" },
+  submitted: { label: "submitted — getting notarized", tone: "text-brass" },
+  notarized: { label: "done", tone: "text-ok" },
 }
 
 /**
@@ -38,6 +56,8 @@ export function RequirementAction({
   clientId,
   prefill,
   generated,
+  current,
+  referenceProgress,
   signatureOnFile,
   feeSummary,
   feeReceipts,
@@ -48,6 +68,10 @@ export function RequirementAction({
   clientId: string
   prefill: Record<string, unknown>
   generated?: GeneratedDoc | null
+  /** The current uploaded document for this requirement, if any. */
+  current?: CurrentDoc | null
+  /** Per-reference progress — only used by the references roster card. */
+  referenceProgress?: ReferenceProgress | null
   /** Base64 PNG of the signature already on file for this case, if any. */
   signatureOnFile: string | null
   /** Personalized fee breakdown — only needed by FEE-01. */
@@ -145,7 +169,7 @@ export function RequirementAction({
             type={action.documentType as DocumentType}
             reqCode={reqCode}
             label="Upload the notarized copy"
-            current={null}
+            current={current ?? null}
           />
         )}
 
@@ -206,7 +230,7 @@ export function RequirementAction({
             type={action.documentType as DocumentType}
             reqCode={reqCode}
             label={action.actionLabel}
-            current={null}
+            current={current ?? null}
             photoSpec={reqCode === "IDN-04"}
           />
         )}
@@ -225,6 +249,8 @@ export function RequirementAction({
     // draft → sign → notarize controls instead of invitation copy.
     const soleOccupancy = action.roster === "cohabitants" && !!generated
     const needsSignature = soleOccupancy && !generated!.signedAt
+    // References already invited → the primary button becomes a reminder resend.
+    const refsInvited = action.roster === "references" && (referenceProgress?.invitedCount ?? 0) > 0
 
     return (
       <div className="mt-3 space-y-2">
@@ -232,11 +258,11 @@ export function RequirementAction({
           {q && (
             <Button
               size="sm"
-              variant={done || needsSignature ? "outline" : "default"}
+              variant={done || needsSignature || refsInvited ? "outline" : "default"}
               onClick={() => setOpen(true)}
             >
               <Users className="mr-1.5 size-3.5" />
-              {soleOccupancy ? "Edit my answer" : action.actionLabel}
+              {soleOccupancy ? "Edit my answer" : refsInvited ? "Send reminder" : action.actionLabel}
             </Button>
           )}
           {needsSignature && !signing && (
@@ -278,13 +304,33 @@ export function RequirementAction({
           />
         )}
 
+        {action.roster === "references" && referenceProgress && referenceProgress.people.length > 0 && (
+          <div className="rounded-md border border-hairline bg-surface-2/40 p-3">
+            <p className="mb-2 text-xs font-medium text-text-mid">
+              Reference progress — {referenceProgress.notarizedCount} of {referenceProgress.required} notarized
+            </p>
+            <ul className="space-y-1 text-sm">
+              {referenceProgress.people.map((p, i) => (
+                <li key={i} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-text-mid">{p.name}</span>
+                  <span className={`shrink-0 text-[11px] ${REF_STATE_COPY[p.state].tone}`}>
+                    {REF_STATE_COPY[p.state].label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {!done && (
           <p className="flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
             <Stamp className="mt-0.5 size-3.5 shrink-0" />
             {soleOccupancy
               ? "Once it's signed, have it notarized and upload the signed copy — that's what completes this."
               : action.roster === "references"
-                ? "Each reference writes and notarizes their own letter through a private link. This completes when the notarized letters are uploaded."
+                ? refsInvited
+                  ? "We've emailed your references — they each write and notarize their own letter through a private link. This completes when the notarized letters are uploaded. Send a reminder if they're taking a while."
+                  : "Each reference writes and notarizes their own letter through a private link. This completes when the notarized letters are uploaded."
                 : "Each adult in your home signs and notarizes their own affidavit through a private link. This completes when the notarized copies are uploaded."}
           </p>
         )}
@@ -296,7 +342,7 @@ export function RequirementAction({
             type={action.documentType as DocumentType}
             reqCode={reqCode}
             label="Upload the notarized copy"
-            current={null}
+            current={current ?? null}
           />
         )}
 

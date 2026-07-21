@@ -142,7 +142,7 @@ async function safeStorageStatement(name: string, a: Record<string, unknown>, si
     c.heading("Safe Storage Statement")
     c.rule()
     c.para(`Storage address: ${str(a.address) || "—"}`)
-    c.para(`Method: ${kind}${str(a.safeguardName) ? ` (${str(a.safeguardName)})` : ""}`)
+    c.para(`Method: ${kind}${str(a.safeStorageMakeModel) ? ` (${str(a.safeStorageMakeModel)})` : ""}`)
     c.spacer()
     c.para(
       "I will store any handgun secured as described above when it is not in my immediate possession and control, consistent with P.L. §265.45 and NYC Administrative Code §10-312.",
