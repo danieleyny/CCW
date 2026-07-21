@@ -174,7 +174,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     panel: "fees",
     actionLabel: "See what you'll owe",
     customerTitle: "Be ready for the NYPD and fingerprint fees",
-    help: "Two government fees, both paid by you directly: the application fee to the NYPD License Division on their portal, and the fingerprint fee to the DCJS-approved vendor at your appointment. Neither is ever paid to us. Retired law enforcement: your application fee is waived.",
+    help: "Two government fees, both paid by you directly to the NYPD License Division: the application fee when you submit on their portal, and the fingerprint fee in person when NYPD schedules your fingerprinting. Neither is ever paid to us. Retired law enforcement: your application fee is waived.",
   },
   "FMT-01": {
     mode: "attest",

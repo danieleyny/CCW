@@ -436,9 +436,10 @@ export async function generateCompanionDocument(reqCode: string): Promise<Result
  * that it's non-refundable — and what payment method they intend to use.
  *
  * WE NEVER TAKE THESE FEES. This is an acknowledgement, not a payment step: the
- * NYPD application fee is paid on the NYPD portal and the fingerprint fee to the
- * vendor at the appointment. Recording what was acknowledged (and the amounts
- * shown at the time) is what makes this meaningful for the audit trail later.
+ * NYPD application fee is paid on the NYPD portal and the fingerprint fee in
+ * person to the NYPD License Division at the appointment it schedules. Recording
+ * what was acknowledged (and the amounts shown at the time) makes this
+ * meaningful for the audit trail later.
  */
 export async function acknowledgeFees(
   reqCode: string,

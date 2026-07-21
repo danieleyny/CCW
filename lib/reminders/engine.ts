@@ -290,8 +290,8 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       kind: "reminder",
       title: "Have your filing fees ready",
       body: application.waived
-        ? `Your NYPD application fee is waived as retired law enforcement. You'll still pay ${fingerprint.amount} to the fingerprint vendor at your appointment. Neither fee is paid to us.`
-        : `You'll pay ${application.amount} to the NYPD when you submit, and about ${fingerprint.amount} to the fingerprint vendor at your appointment — ${summary.total} in total, paid directly to them, never to us.`,
+        ? `Your NYPD application fee is waived as retired law enforcement. You'll still pay ${fingerprint.amount} to the NYPD License Division when they schedule your in-person fingerprinting. Neither fee is paid to us.`
+        : `You'll pay ${application.amount} to the NYPD when you submit, and about ${fingerprint.amount} to the NYPD License Division at your in-person fingerprinting appointment — ${summary.total} in total, paid directly to the NYPD, never to us.`,
       link: "/portal/checklist",
     }))
   }
@@ -315,8 +315,8 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       recipient: c.profileId,
       email: c.email,
       kind: "reminder",
-      title: "Bring your fingerprint fee and ID",
-      body: `The fingerprint fee (about ${summary.items[1].amount}) is paid to the vendor at your appointment — card, check, or money order payable to IDEMIA. Confirm the exact amount when you arrive, and bring your photo ID. Your fee sheet has the details.`,
+      title: "Bring your originals, ID, and fingerprint fee",
+      body: `The fingerprint fee (about ${summary.items[1].amount}) is paid in person to the NYPD License Division when they schedule your fingerprinting — money order payable to the New York City Police Department, or a credit/debit card (no cash or personal checks). Bring the originals of your uploaded documents and your photo ID. Your fee sheet has the details.`,
       link: "/portal/checklist",
     }))
   }

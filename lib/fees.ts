@@ -46,10 +46,11 @@ export async function getFees(db: DB): Promise<Fees> {
 // PERSONALIZED FEE READINESS
 //
 // WE NEVER COLLECT THESE. The application fee is paid by the applicant to the
-// NYPD License Division on the NYPD portal, and the fingerprint fee to the
-// DCJS-approved vendor (IDEMIA/IdentoGO) at the appointment. Taking either —
-// even as a pass-through — would put us in the position NYPD reserves for the
-// applicant. Our own service fee (Stripe / enroll) is a separate thing entirely.
+// NYPD License Division on the NYPD portal, and the fingerprint fee to the NYPD
+// License Division IN PERSON at the appointment NYPD schedules after reviewing
+// the documents — there is no third-party vendor for this license type. Taking
+// either — even as a pass-through — would put us in the position NYPD reserves
+// for the applicant. Our own service fee (Stripe / enroll) is a separate thing.
 //
 // What we CAN do is make the money part unambiguous: exactly what this person
 // owes given their situation, to whom, when, and how it can be paid.
@@ -65,15 +66,15 @@ export interface FeeLineItem {
   payTo: string
   /** When it comes due. */
   when: string
-  /** Accepted payment methods, per the agency/vendor. */
+  /** Accepted payment methods, per the NYPD License Division. */
   how: string[]
   /** Waived for this applicant (retired law enforcement). */
   waived?: boolean
   waivedReason?: string
   /**
-   * The fingerprint fee is set by the vendor and drifts (our schedule and NYPD's
-   * public page have disagreed). Show the number we have and tell them to
-   * confirm it — quietly confident and wrong is the failure mode here.
+   * The fingerprint fee amount can drift (our schedule and NYPD's public page
+   * have disagreed). Show the number we have and tell them to confirm it —
+   * quietly confident and wrong is the failure mode here.
    */
   caveat?: string
 }
@@ -137,11 +138,16 @@ export async function computeFeeSummary(db: DB, ctx: FeeContext = {}): Promise<F
       label: rows.get("dcjs_fingerprint")?.label ?? "Fingerprint fee",
       amountCents: fingerprintCents,
       amount: usd(fingerprintCents),
-      // Collected by the DCJS-approved vendor at the appointment, not by NYPD.
-      payTo: "IDEMIA / IdentoGO — the DCJS-approved fingerprint vendor",
-      when: "At your fingerprint appointment",
-      how: ["Credit card, check, or money order payable to IDEMIA"],
-      caveat: "Confirm the exact amount when you book — the vendor sets it and it changes.",
+      // Collected by the NYPD License Division IN PERSON at the fingerprinting
+      // appointment NYPD schedules — no third-party vendor for this license type.
+      payTo: "NYPD License Division — at your in-person fingerprinting appointment",
+      when: "When NYPD schedules you to be fingerprinted in person, after your documents are reviewed",
+      how: [
+        "Money order payable to “New York City Police Department”, or",
+        "Credit or debit card",
+        "No cash and no personal checks",
+      ],
+      caveat: "Confirm the exact amount when NYPD schedules you — it can change.",
     },
   ]
 
@@ -156,23 +162,24 @@ export async function computeFeeSummary(db: DB, ctx: FeeContext = {}): Promise<F
 }
 
 /**
- * Fingerprint scheduling. The NY DCJS service code for NYPD handgun licensing is
- * NOT published on the NYPD required-documents checklist or on IdentoGO's public
- * lookup, and the codes that ARE public (15464Z / 15465F) are for DCJS record
- * reviews — a different service. Printing one of those, or inventing a code,
- * would send someone to the wrong appointment and cost them a reprint and
- * another fee. So we link to the lookup and say where the real code comes from.
+ * Fingerprinting for an NYPD handgun license is done IN PERSON at the NYPD
+ * License Division. NYPD contacts the applicant to schedule it after the
+ * documents are reviewed, and collects the fingerprint fee there. There is NO
+ * third-party vendor, NO IdentoGO/IDEMIA, and NO DCJS service code for this
+ * license type — that's a different NY process. The applicant should not go
+ * hunting for a code or a vendor location.
+ * Source: NYPD License Division "New Application Instructions", steps 3 & 9
+ * (licensing.nypdonline.org/new-app-instruction).
  */
 export const FINGERPRINT_SCHEDULING = {
-  vendor: "IDEMIA / IdentoGO",
-  lookupUrl: "https://uenroll.identogo.com/service-code-lookup",
-  schedulingUrl: "https://uenroll.identogo.com",
-  phone: "(877) 472-6915",
-  serviceCodeNote:
-    "Your NYPD application instructions give the exact NY DCJS service code to use — enter that code at IdentoGO, or call and tell them it's for an NYPD handgun license. Don't guess a code: the wrong one means being reprinted and paying again.",
+  scheduledBy: "the NYPD License Division",
+  location: "the NYPD License Division (One Police Plaza, Manhattan)",
+  instructionsUrl: "https://licensing.nypdonline.org/new-app-instruction",
+  process:
+    "You don't book this yourself, and there's no service code to find. After you submit your application and upload your documents on the NYPD portal, the NYPD License Division contacts you to schedule an in-person appointment to be fingerprinted and pay your fees.",
   bring: [
-    "Your government photo ID",
-    "The fingerprint fee, in a method IDEMIA accepts",
-    "Your appointment confirmation and the service code from your NYPD instructions",
+    "Originals of every document you uploaded with your application",
+    "Your government-issued photo ID",
+    "The fingerprint fee — money order payable to the New York City Police Department, or a credit/debit card (no cash, no personal checks)",
   ],
 } as const

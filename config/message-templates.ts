@@ -49,7 +49,7 @@ export function buildMessageTemplates(fees: Fees): { label: string; body: string
   },
   {
     label: "Fingerprints reminder",
-    body: `Don't forget the fingerprint appointment — the DCJS fee (currently ${fees.fingerprintFee}) is paid separately from the NYPD application fee. Bring your confirmation and photo ID.`,
+    body: `After your documents are reviewed, the NYPD License Division will contact you to schedule your fingerprinting in person at the License Division — there's no outside vendor or service code to find. Bring the originals of your uploaded documents and your photo ID; the fingerprint fee (currently ${fees.fingerprintFee}) is paid there by money order to the NYPD or by card (no cash or personal checks).`,
   },
   {
     label: "Interview prep",
@@ -61,7 +61,7 @@ export function buildMessageTemplates(fees: Fees): { label: string; body: string
   },
   {
     label: "Fee reminder",
-    body: `A reminder on fees: the NYPD application fee (currently ${fees.applicationFee}) is due at filing, plus the DCJS fingerprint fee (currently ${fees.fingerprintFee}) paid separately. Neither is refundable, and cash/personal checks aren't accepted.`,
+    body: `A reminder on fees: the NYPD application fee (currently ${fees.applicationFee}) is due when you submit on the NYPD portal, plus the fingerprint fee (currently ${fees.fingerprintFee}) paid in person to the NYPD License Division when they schedule your fingerprinting. Both go to the NYPD, neither is refundable, and cash/personal checks aren't accepted.`,
   },
   {
     label: "Renewal runway",

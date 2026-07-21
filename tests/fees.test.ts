@@ -76,15 +76,16 @@ describe.skipIf(!reachable)("computeFeeSummary", () => {
 })
 
 describe("fingerprint scheduling facts", () => {
-  it("links to the official lookup instead of printing an unverifiable service code", () => {
-    // The public DCJS codes (15464Z / 15465F) are for record reviews, not NYPD
-    // handgun licensing. Printing one would send someone to the wrong
-    // appointment — a reprint and a second fee.
+  it("describes the in-person NYPD process — no vendor, no IdentoGO, no service code", () => {
+    // NYPD prints in-house at the License Division and schedules the applicant
+    // itself. There is no third-party vendor and no DCJS service code for this
+    // license type — sending someone hunting for one is the exact wrong-code trap.
     const blob = JSON.stringify(FINGERPRINT_SCHEDULING)
-    expect(blob).not.toMatch(/\b\d{5}[A-Z]\b/)
-    expect(FINGERPRINT_SCHEDULING.lookupUrl).toMatch(/identogo\.com/)
-    expect(FINGERPRINT_SCHEDULING.phone).toBe("(877) 472-6915")
-    expect(FINGERPRINT_SCHEDULING.serviceCodeNote).toMatch(/don't guess/i)
+    expect(blob).not.toMatch(/identogo|idemia/i)
+    expect(blob).not.toMatch(/\b\d{5}[A-Z]\b/) // no service code printed
+    expect(FINGERPRINT_SCHEDULING.instructionsUrl).toMatch(/nypdonline\.org/)
+    expect(FINGERPRINT_SCHEDULING.scheduledBy).toMatch(/NYPD/i)
+    expect(FINGERPRINT_SCHEDULING.process).toMatch(/in.person/i)
   })
 })
 

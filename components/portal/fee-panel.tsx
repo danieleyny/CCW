@@ -10,7 +10,6 @@ import {
   Fingerprint,
   Info,
   Landmark,
-  Phone,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { FeeSummary } from "@/lib/fees"
@@ -29,8 +28,8 @@ export interface FeeReceipts {
  * FEE-01: what you'll owe, to whom, when, and how — then an acknowledgement
  * that actually means something.
  *
- * THE LINE WE DON'T CROSS: these two fees are paid by the applicant directly to
- * the NYPD and to the fingerprint vendor. There is no "pay now" here and there
+ * THE LINE WE DON'T CROSS: both fees are paid by the applicant directly to the
+ * NYPD License Division. There is no "pay now" here and there
  * never will be — collecting government money, even as a pass-through, would put
  * us in the role NYPD reserves for the applicant. Every amount comes from the
  * platform fee schedule, so an admin edit moves this panel.
@@ -68,7 +67,7 @@ export function FeePanel({
       {/* The reassurance people actually need, before the numbers. */}
       <p className="flex items-start gap-2 rounded-md border border-hairline bg-surface-2/40 p-3 text-xs text-text-mid">
         <Info className="mt-0.5 size-3.5 shrink-0 text-signal" />
-        These go straight to the government and the fingerprint vendor — never to us. Here&apos;s
+        These go straight to the NYPD — never to us. Here&apos;s
         exactly what to have ready so nothing surprises you at filing.
       </p>
 
@@ -131,33 +130,22 @@ export function FeePanel({
 
       <p className="text-xs text-warn">{summary.nonRefundable}</p>
 
-      {/* ── Fingerprint appointment helper ─────────────────────────────────── */}
+      {/* ── Fingerprinting appointment — NYPD schedules it, in person ───────── */}
       <div className="rounded-md border border-hairline bg-surface-2/40 p-3">
         <div className="flex items-center gap-1.5 text-sm font-medium">
           <CalendarClock className="size-3.5 text-brass" />
-          Booking your fingerprinting
+          Your fingerprinting appointment
         </div>
-        <p className="mt-1 text-xs text-text-mid">{FINGERPRINT_SCHEDULING.serviceCodeNote}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
+        <p className="mt-1 text-xs text-text-mid">{FINGERPRINT_SCHEDULING.process}</p>
+        <div className="mt-2">
           <a
-            href={FINGERPRINT_SCHEDULING.schedulingUrl}
+            href={FINGERPRINT_SCHEDULING.instructionsUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex min-h-[44px] items-center gap-1.5 text-xs text-signal underline"
           >
-            Book with {FINGERPRINT_SCHEDULING.vendor} <ExternalLink className="size-3" />
+            NYPD application instructions <ExternalLink className="size-3" />
           </a>
-          <a
-            href={FINGERPRINT_SCHEDULING.lookupUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-[44px] items-center gap-1.5 text-xs text-signal underline"
-          >
-            Service code lookup <ExternalLink className="size-3" />
-          </a>
-          <span className="inline-flex items-center gap-1.5 text-xs text-text-mid">
-            <Phone className="size-3" /> {FINGERPRINT_SCHEDULING.phone}
-          </span>
         </div>
         <div className="mt-2 text-xs text-text-low">
           Bring: {FINGERPRINT_SCHEDULING.bring.join(" · ")}
