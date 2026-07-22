@@ -143,6 +143,99 @@
   -webkit-backdrop-filter: blur(14px) saturate(130%);
 }
 
+/* ── Elevated requirement cards ──────────────────────────────────────────────
+   Each checklist item is a standalone "material" object: top-lit gradient
+   (surface-2 → surface-1), a faint inset top highlight, and a soft wide shadow
+   lifting it off the near-black canvas. All three together make the depth read;
+   drop any one and the card flattens back into a box. Space, not lines,
+   separates cards. Tokens only — a rebrand carries these along. */
+.card-raised {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 22px 44px -26px rgba(0, 0, 0, 0.85);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-raised:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 26px 52px -26px rgba(0, 0, 0, 0.9);
+}
+
+/* The card's visual anchor: a 44px graphite tile holding the category icon. */
+.icon-tile {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Status-driven ambient glow — a soft blurred radial in the top-right corner
+   whose color encodes where the item stands. Functional, not decorative: it
+   lets someone feel a card's state before reading it. Kept faint, clipped by
+   the card's overflow, and out of the a11y tree (pseudo-element). */
+.glow-neutral::before,
+.glow-review::before,
+.glow-ok::before,
+.glow-fix::before {
+  content: "";
+  position: absolute;
+  top: -3.5rem;
+  right: -3.5rem;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 9999px;
+  filter: blur(42px);
+  pointer-events: none;
+}
+.glow-neutral::before {
+  background: color-mix(in oklab, var(--brass) 13%, transparent);
+}
+.glow-review::before {
+  background: color-mix(in oklab, var(--signal) 15%, transparent);
+}
+.glow-ok::before {
+  background: color-mix(in oklab, var(--ok) 15%, transparent);
+}
+.glow-fix::before {
+  background: color-mix(in oklab, var(--warn) 15%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-raised,
+  .card-raised:hover {
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Scale the glow down so it never bleeds past a full-width phone card. */
+  .glow-neutral::before,
+  .glow-review::before,
+  .glow-ok::before,
+  .glow-fix::before {
+    width: 7rem;
+    height: 7rem;
+    top: -2.5rem;
+    right: -2.5rem;
+    filter: blur(32px);
+  }
+  /* Thumb-sized actions on phones without forking the shared action component. */
+  .card-raised button {
+    min-height: 44px;
+  }
+}
+
 /* Hairline top highlight on raised cards (dark only — invisible/undesired on paper) */
 .dark .edge-highlight {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);

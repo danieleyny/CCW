@@ -1,7 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { ShieldCheck, MessageSquareWarning, Check, Gavel } from "lucide-react"
+import {
+  ShieldCheck,
+  MessageSquareWarning,
+  Check,
+  Gavel,
+  Fingerprint,
+  Users,
+  GraduationCap,
+  Scale,
+  Lock,
+  Receipt,
+  Medal,
+  FileText,
+  type LucideIcon,
+} from "lucide-react"
+import { groupByCategory, categoryKeyFor } from "@/lib/requirements/categories"
 import { RequirementAction, type GeneratedDoc, type ReferenceProgress } from "@/components/portal/requirement-action"
 import type { CurrentDoc } from "@/components/portal/document-uploader"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
@@ -65,11 +80,38 @@ function LadderBadge({ item }: { item: ReqChecklistItem }) {
   )
 }
 
-const SEV_TONE: Record<string, string> = {
-  critical: "text-danger",
-  high: "text-brass",
-  watch: "text-text-low",
-  long_lead: "text-signal",
+/** Ambient corner glow per ladder tone — the card's state, felt before read. */
+const GLOW_BY_TONE: Record<string, string> = {
+  muted: "glow-neutral",
+  signal: "glow-review",
+  ok: "glow-ok",
+  warn: "glow-fix",
+}
+
+/** Icon glyph tint follows the same tone, softly. */
+const ICON_TONE: Record<string, string> = {
+  muted: "text-text-mid",
+  signal: "text-signal",
+  ok: "text-ok",
+  warn: "text-warn",
+}
+
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  eligibility: ShieldCheck,
+  identity: Fingerprint,
+  household: Users,
+  training: GraduationCap,
+  record: Scale,
+  storage: Lock,
+  fees: Receipt,
+  special: Medal,
+  other: FileText,
+}
+
+/** Priority shows as a quiet dot on the icon tile, not a shouted label. */
+const PRIORITY_DOT: Record<string, string> = {
+  critical: "bg-danger",
+  high: "bg-warn",
 }
 
 /**
@@ -155,6 +197,20 @@ export function RequirementsChecklist({
           </span>
         </div>
 
+        <div
+          role="progressbar"
+          aria-label="Checklist progress"
+          aria-valuemin={0}
+          aria-valuemax={applicable.length}
+          aria-valuenow={satisfied}
+          className="h-1 w-full overflow-hidden rounded-full bg-surface-2"
+        >
+          <div
+            className="h-full rounded-full bg-ok transition-[width] duration-300 motion-reduce:transition-none"
+            style={{ width: applicable.length ? `${(satisfied / applicable.length) * 100}%` : "0%" }}
+          />
+        </div>
+
         <div role="group" aria-label="Filter your checklist" className="flex flex-wrap gap-2">
           {FILTERS.map((f) => {
             const count = groups[f.key].length
@@ -181,93 +237,152 @@ export function RequirementsChecklist({
         </div>
       </div>
 
-      <ul className="divide-y rounded-lg border bg-card">
-        {shown.map((item) => (
-          <li key={item.id} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wide text-text-mid">
-                    {item.reqCode}
-                  </span>
-                  <span className={cn("text-[10px] font-medium uppercase tracking-wide", SEV_TONE[item.severity] ?? "text-text-low")}>
-                    {item.severity.replace(/_/g, " ")}
-                  </span>
-                </div>
-                {/* Lead with what to DO in plain words; keep the registry's
-                    official title underneath, where it belongs — as the record. */}
-                <div className="mt-1 text-sm font-medium">
-                  {actionFor(item.reqCode)?.customerTitle ?? item.title}
-                </div>
-                {item.description && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
-                )}
-                <p className="mt-1 font-mono text-[10px] text-text-low">
-                  {item.title}
-                  {item.authority ? ` · ${item.authority}` : ""}
-                </p>
-              </div>
-              {isUnenforced(item.legalStatus) ? (
-                <span className="shrink-0 rounded bg-signal-dim px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
-                  Not required
+      {/* Categories are LABEL ROWS — mono label, fading rule, count. The elevated
+          cards do the separating; no container boxes around a group. */}
+      {groupByCategory(shown).map(({ category, items: catItems }) => {
+        const catAll = applicable.filter((i) => categoryKeyFor(i.reqCode) === category.key)
+        const catDone = catAll.filter(isDone).length
+        const Icon = CATEGORY_ICON[category.key] ?? FileText
+        return (
+          <section key={category.key} aria-labelledby={`cat-${category.key}`}>
+            <div className="mb-3 flex items-center gap-3">
+              <h3 id={`cat-${category.key}`} className="engraved shrink-0 text-text-low">
+                {category.label}
+              </h3>
+              <div aria-hidden className="h-px min-w-6 flex-1 bg-gradient-to-r from-hairline to-transparent" />
+              {catAll.length > 0 && (
+                <span className="shrink-0 font-mono text-[10px] tabular-nums text-text-low">
+                  {catDone} / {catAll.length}
                 </span>
-              ) : (
-                <LadderBadge item={item} />
               )}
             </div>
 
-            {isUnenforced(item.legalStatus) && (
-              <p className="mt-2 flex items-start gap-1.5 rounded-md border border-signal/30 bg-signal/5 p-2 text-xs text-signal">
-                <Gavel className="mt-0.5 size-3.5 shrink-0" />
-                <span>
-                  <span className="font-medium">Not currently required</span> — this rule is
-                  {item.legalStatus === "repealed" ? " no longer law" : " under a court order"}
-                  {item.legalCitation ? ` (${item.legalCitation})` : ""}. NYPD&apos;s published
-                  checklist may still list it. You don&apos;t need to provide it, and it will never
-                  hold up your filing.
-                </span>
-              </p>
-            )}
+            <ul className="space-y-3.5">
+              {catItems.map((item) => {
+                const tone = isUnenforced(item.legalStatus) ? "muted" : LADDER_COPY[item.ladder].tone
+                const dot = PRIORITY_DOT[item.severity]
+                return (
+                  <li
+                    key={item.id}
+                    className={cn("card-raised p-5", GLOW_BY_TONE[tone] ?? "glow-neutral")}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className="relative shrink-0" aria-hidden>
+                        <div className="icon-tile">
+                          <Icon className={cn("size-5", ICON_TONE[tone] ?? "text-text-mid")} />
+                        </div>
+                        {dot && (
+                          <span
+                            className={cn(
+                              "absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-surface-1",
+                              dot
+                            )}
+                          />
+                        )}
+                      </div>
 
-            {item.ladder === "changes_requested" && item.reviewNote && (
-              <p className="mt-2 flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
-                <MessageSquareWarning className="mt-0.5 size-3.5 shrink-0" />
-                <span>
-                  <span className="font-medium">{reviewerLabel(item.reviewerKind)} asked for a fix:</span>{" "}
-                  {item.reviewNote}
-                </span>
-              </p>
-            )}
+                      <div className="min-w-0 flex-1">
+                        {dot && (
+                          <span className="sr-only">
+                            Priority: {item.severity.replace(/_/g, " ")}
+                          </span>
+                        )}
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                          {/* Plain words first; the registry title lives in Details. */}
+                          <h4 className="min-w-0 text-[15px] font-semibold leading-snug">
+                            {actionFor(item.reqCode)?.customerTitle ?? item.title}
+                          </h4>
+                          {isUnenforced(item.legalStatus) ? (
+                            <span className="shrink-0 rounded-full bg-signal-dim px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
+                              Not required
+                            </span>
+                          ) : (
+                            <LadderBadge item={item} />
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                            {item.description}
+                          </p>
+                        )}
 
-            {item.ladder === "approved" && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs text-ok">
-                <Check className="size-3.5" />
-                {reviewerLabel(item.reviewerKind) === "your instructor"
-                  ? "Your instructor reviewed this — looks good."
-                  : "Reviewed and accepted."}
-              </p>
-            )}
+                        {isUnenforced(item.legalStatus) && (
+                          <p className="mt-2.5 flex items-start gap-1.5 rounded-md border border-signal/30 bg-signal/5 p-2 text-xs text-signal">
+                            <Gavel className="mt-0.5 size-3.5 shrink-0" />
+                            <span>
+                              <span className="font-medium">Not currently required</span> — this rule is
+                              {item.legalStatus === "repealed" ? " no longer law" : " under a court order"}
+                              {item.legalCitation ? ` (${item.legalCitation})` : ""}. NYPD&apos;s published
+                              checklist may still list it. You don&apos;t need to provide it, and it will
+                              never hold up your filing.
+                            </span>
+                          </p>
+                        )}
 
-            {/* No call to action on something we're telling them not to do.
-                They may still upload it voluntarily from Documents. */}
-            {!isUnenforced(item.legalStatus) && (
-            <RequirementAction
-              reqCode={item.reqCode}
-              status={item.status}
-              caseId={caseId}
-              clientId={clientId}
-              prefill={prefills[item.reqCode] ?? {}}
-              generated={generated[item.reqCode] ?? null}
-              current={currentByReq[item.reqCode] ?? null}
-              referenceProgress={referenceProgress}
-              signatureOnFile={signatureOnFile}
-              feeSummary={feeSummary}
-              feeReceipts={feeReceipts}
-            />
-            )}
-          </li>
-        ))}
-      </ul>
+                        {item.ladder === "changes_requested" && item.reviewNote && (
+                          <p className="mt-2.5 flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
+                            <MessageSquareWarning className="mt-0.5 size-3.5 shrink-0" />
+                            <span>
+                              <span className="font-medium">
+                                {reviewerLabel(item.reviewerKind)} asked for a fix:
+                              </span>{" "}
+                              {item.reviewNote}
+                            </span>
+                          </p>
+                        )}
+
+                        {item.ladder === "approved" && (
+                          <p className="mt-2.5 flex items-center gap-1.5 text-xs text-ok">
+                            <Check className="size-3.5" />
+                            {reviewerLabel(item.reviewerKind) === "your instructor"
+                              ? "Your instructor reviewed this — looks good."
+                              : "Reviewed and accepted."}
+                          </p>
+                        )}
+
+                        {/* No call to action on something we're telling them not to do.
+                            They may still upload it voluntarily from Documents. */}
+                        {!isUnenforced(item.legalStatus) && (
+                          <RequirementAction
+                            reqCode={item.reqCode}
+                            status={item.status}
+                            caseId={caseId}
+                            clientId={clientId}
+                            prefill={prefills[item.reqCode] ?? {}}
+                            generated={generated[item.reqCode] ?? null}
+                            current={currentByReq[item.reqCode] ?? null}
+                            referenceProgress={referenceProgress}
+                            signatureOnFile={signatureOnFile}
+                            feeSummary={feeSummary}
+                            feeReceipts={feeReceipts}
+                          />
+                        )}
+
+                        {/* The record, off the card face: official title + citation
+                            behind a quiet disclosure; the code recessive, far right. */}
+                        <div className="mt-3 flex items-end justify-between gap-3">
+                          <details className="min-w-0 text-[11px] text-text-low">
+                            <summary className="cursor-pointer select-none rounded transition-colors hover:text-text-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40">
+                              Official requirement
+                            </summary>
+                            <p className="mt-1 font-mono text-[10px] leading-relaxed">
+                              {item.title}
+                              {item.authority ? ` · ${item.authority}` : ""}
+                            </p>
+                          </details>
+                          <span className="shrink-0 font-mono text-[10px] tracking-wide text-text-low/70">
+                            {item.reqCode}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )
+      })}
 
       {shown.length === 0 && (
         <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
