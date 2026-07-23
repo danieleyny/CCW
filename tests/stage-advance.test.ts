@@ -20,7 +20,13 @@ const stageOf = async () => {
 
 describe.skipIf(!reachable)("maybeAdvanceStage", () => {
   beforeAll(async () => {
-    const { data: client } = await admin.from("clients").select("id").limit(1).single()
+    // Pinned to a seeded client — an arbitrary limit(1) can grab another test
+    // file's throwaway client, whose cleanup cascades this case away mid-test.
+    const { data: client } = await admin
+      .from("clients")
+      .select("id")
+      .eq("email", "client1@carrypath.test")
+      .single()
     const { data } = await admin
       .from("cases")
       .insert({ client_id: client!.id, stage: "lead" })

@@ -110,7 +110,9 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
   const token = !cohab.token || cohab.token_revoked_at ? newReferenceToken() : cohab.token
   await admin
     .from("cohabitants")
-    .update({ token, token_expires_at: tokenExpiry(), token_revoked_at: null })
+    // sent_at mirrors reference_requests: it stamps every (re)send, so the
+    // 3/7-day reminder clock and the "invited" state track the LAST invite.
+    .update({ token, token_expires_at: tokenExpiry(), token_revoked_at: null, sent_at: new Date().toISOString() })
     .eq("id", cohab.id)
 
   const link = `${siteBase()}/c/${token}`

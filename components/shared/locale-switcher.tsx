@@ -16,7 +16,9 @@ export function LocaleSwitcher({ current, label }: { current: Locale; label: str
 
   return (
     <label className="inline-flex items-center gap-1.5 text-xs text-text-mid">
-      <Languages className="size-3.5" aria-hidden />
+      {/* Decorative next to a labeled select — yields its ~20px on narrow
+          headers so the wordmark keeps breathing room on one line. */}
+      <Languages className="hidden size-3.5 sm:block" aria-hidden />
       <span className="sr-only">{label}</span>
       <select
         aria-label={label}

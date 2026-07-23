@@ -55,7 +55,7 @@ export async function submitCohabitantAnswers(
   const firstTime = cohab.affidavit_status !== "received"
   await admin
     .from("cohabitants")
-    .update({ answers: answers as never, notary_area: notaryArea || null, confirmed_email: email, affidavit_status: "received" })
+    .update({ answers: answers as never, notary_area: notaryArea || null, confirmed_email: email, affidavit_status: "received", answered_at: new Date().toISOString() })
     .eq("id", cohab.id)
   await recomputeCohabitantRequirement(admin, cohab.case_id)
 

@@ -141,6 +141,38 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }))
   }
 
+  // ── Rule: a cohabitant affidavit is unfilled at 3 and 7 days ──────────────
+  // Parity with reference_unfilled: same clock, same buckets, same idempotency.
+  // Only invites with a sent_at (post-tracking) tick — legacy links have no
+  // honest send date to count from. Opened-but-unsubmitted still counts as
+  // unfilled, exactly like references.
+  const { data: cohabInvites } = await admin
+    .from("cohabitants")
+    .select("id, case_id, sent_at, token_revoked_at")
+    .eq("affidavit_status", "not_started")
+    .not("sent_at", "is", null)
+  const cohabContacts = await caseContacts(admin, (cohabInvites ?? []).map((c) => c.case_id))
+  for (const ch of cohabInvites ?? []) {
+    if (!ch.sent_at || ch.token_revoked_at) continue
+    const days = (now.getTime() - new Date(ch.sent_at).getTime()) / DAY
+    const bucket = days >= 7 ? "7d" : days >= 3 ? "3d" : null
+    if (!bucket) continue
+    const c = cohabContacts.get(ch.case_id)
+    if (!c) continue
+    push(await fireOnce(admin, {
+      ruleKey: "cohabitant_unfilled",
+      target: c.profileId ?? c.email ?? c.clientId,
+      windowKey: `${ch.id}:${bucket}`,
+      caseId: ch.case_id,
+      recipient: c.profileId,
+      email: c.email,
+      kind: "reminder",
+      title: "A household affidavit is still pending",
+      body: `One of your household members hasn't completed their affidavit yet (${bucket}). A reminder may help.`,
+      link: "/portal/people?tab=household",
+    }))
+  }
+
   // ── Rule: a booking was confirmed → confirm to the client ─────────────────
   const { data: confirmed } = await admin
     .from("bookings")

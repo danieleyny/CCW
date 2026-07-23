@@ -26,6 +26,7 @@ export default async function ChecklistPage() {
         generated={view.generated}
         currentByReq={view.currentByReq}
         referenceProgress={view.referenceProgress}
+        cohabitantProgress={view.cohabitantProgress}
         signatureOnFile={view.signatureOnFile}
         feeSummary={view.feeSummary}
         feeReceipts={view.feeReceipts}

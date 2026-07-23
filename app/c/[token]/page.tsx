@@ -11,7 +11,7 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
 
   const { data: cohab } = await admin
     .from("cohabitants")
-    .select("id, name, relationship, affidavit_status, case_id, contact_email, token_expires_at, token_revoked_at")
+    .select("id, name, relationship, affidavit_status, case_id, contact_email, token_expires_at, token_revoked_at, opened_at")
     .eq("token", token)
     .maybeSingle()
 
@@ -28,6 +28,12 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
 
   const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", cohab.case_id).single()
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
+
+  // First open leaves a trace — same journey tracking the reference flow has,
+  // so the applicant can see "opened the link" instead of wondering.
+  if (!cohab.opened_at) {
+    await admin.from("cohabitants").update({ opened_at: new Date().toISOString() }).eq("id", cohab.id)
+  }
 
   return (
     <Shell>

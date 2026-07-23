@@ -957,6 +957,7 @@ export type Database = {
       cohabitants: {
         Row: {
           affidavit_status: Database["public"]["Enums"]["cohabitant_status"]
+          answered_at: string | null
           answers: Json
           case_id: string
           confirmed_email: string | null
@@ -967,7 +968,9 @@ export type Database = {
           name: string
           notarized_at: string | null
           notary_area: string | null
+          opened_at: string | null
           relationship: string | null
+          sent_at: string | null
           token: string | null
           token_expires_at: string | null
           token_revoked_at: string | null
@@ -975,6 +978,7 @@ export type Database = {
         }
         Insert: {
           affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
+          answered_at?: string | null
           answers?: Json
           case_id: string
           confirmed_email?: string | null
@@ -985,7 +989,9 @@ export type Database = {
           name: string
           notarized_at?: string | null
           notary_area?: string | null
+          opened_at?: string | null
           relationship?: string | null
+          sent_at?: string | null
           token?: string | null
           token_expires_at?: string | null
           token_revoked_at?: string | null
@@ -993,6 +999,7 @@ export type Database = {
         }
         Update: {
           affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
+          answered_at?: string | null
           answers?: Json
           case_id?: string
           confirmed_email?: string | null
@@ -1003,7 +1010,9 @@ export type Database = {
           name?: string
           notarized_at?: string | null
           notary_area?: string | null
+          opened_at?: string | null
           relationship?: string | null
+          sent_at?: string | null
           token?: string | null
           token_expires_at?: string | null
           token_revoked_at?: string | null

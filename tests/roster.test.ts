@@ -91,7 +91,14 @@ describe("roster actions", () => {
 
 describe.skipIf(!reachable)("roster sync against the database", () => {
   beforeAll(async () => {
-    const { data: client } = await admin.from("clients").select("id").limit(1).single()
+    // Pin a SEEDED client, never `limit(1)` of whatever exists: qa-gate creates
+    // throwaway clients in parallel and deletes them in its afterAll — grabbing
+    // one of those cascaded this case (and its cohabitants) away mid-test.
+    const { data: client } = await admin
+      .from("clients")
+      .select("id")
+      .eq("email", "client1@carrypath.test")
+      .single()
     const { data } = await admin
       .from("cases")
       .insert({ client_id: client!.id, stage: "lead" })

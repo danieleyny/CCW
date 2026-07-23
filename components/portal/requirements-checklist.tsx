@@ -127,6 +127,7 @@ export function RequirementsChecklist({
   generated,
   currentByReq,
   referenceProgress,
+  cohabitantProgress,
   signatureOnFile,
   feeSummary,
   feeReceipts,
@@ -142,6 +143,8 @@ export function RequirementsChecklist({
   currentByReq: Record<string, CurrentDoc>
   /** Per-reference progress for REF-01/REF-02, or null when no ref requirement. */
   referenceProgress: ReferenceProgress | null
+  /** Per-person progress for COH-01, or null when there's no household roster. */
+  cohabitantProgress: ReferenceProgress | null
   /** Base64 PNG of the applicant's signature on file, if they've captured one. */
   signatureOnFile: string | null
   feeSummary: FeeSummary
@@ -352,6 +355,7 @@ export function RequirementsChecklist({
                             generated={generated[item.reqCode] ?? null}
                             current={currentByReq[item.reqCode] ?? null}
                             referenceProgress={referenceProgress}
+                            cohabitantProgress={cohabitantProgress}
                             signatureOnFile={signatureOnFile}
                             feeSummary={feeSummary}
                             feeReceipts={feeReceipts}

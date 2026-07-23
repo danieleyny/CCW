@@ -58,6 +58,18 @@ async function makeLiveInstructor(name: string, extra: Record<string, unknown> =
 
 describe.skipIf(!reachable)("instructor feed", () => {
   beforeAll(async () => {
+    // Self-heal from interrupted prior runs: afterAll never got to delete its
+    // fixtures if the run was killed, and a leaked auto-offer-enabled "Second
+    // Instructor" inflates the exact autoSent/matched counts below. FKs from
+    // matches/engagements/locations all cascade, so this is a clean sweep.
+    const { data: stale } = await admin
+      .from("instructors")
+      .select("id")
+      .in("name", ["Second Instructor", "Thin Profile"])
+    for (const s of stale ?? []) {
+      await admin.from("instructors").delete().eq("id", s.id)
+    }
+
     const { data: instr } = await admin
       .from("instructors")
       .select("id, feed_seen_at")

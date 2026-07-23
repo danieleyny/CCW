@@ -6,9 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
-import { sendEmail } from "@/lib/email"
-import { renderEmail } from "@/lib/email/template"
-import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
+import { inviteReference, inviteCohabitant } from "@/lib/outreach"
 import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
@@ -168,35 +166,13 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
   if (error) return { error: error.message }
   await logActivity({ action: "reference.added", caseId: v.caseId, entity: "character_reference", entityId: created.id })
 
-  // Auto-invite: if we have an email, create the tokenized request and send it
-  // immediately so the reference can self-serve without the applicant chasing them.
+  // Auto-invite: if we have an email, mint the tokenized request and send it
+  // immediately so the reference can self-serve without the applicant chasing
+  // them. Through the ONE outreach helper — lib/outreach owns token minting,
+  // sent_at stamping and the email copy for every invite path. (Service role:
+  // client-initiated write of a token the client must never read back.)
   if (v.contactEmail) {
-    const admin = createAdminClient()
-    const token = newReferenceToken()
-    await admin.from("reference_requests").insert({
-      reference_id: created.id, case_id: v.caseId, token, status: "sent", sent_at: new Date().toISOString(),
-      expires_at: tokenExpiry(),
-    })
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-    const link = `${base}/r/${token}`
-    const { html, text } = renderEmail({
-      preheader: "Confirm your character reference for a NYC carry-license application — takes a minute.",
-      eyebrow: "Action needed",
-      heading: "Confirm your character reference",
-      paragraphs: [
-        `Hi ${v.name},`,
-        "An applicant listed you as a character reference for their NYC concealed-carry license. Please confirm and complete it — it takes a minute, no account needed, and we'll build a ready-to-notarize letter for you.",
-      ],
-      cta: { label: "Confirm your reference →", url: link },
-      footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
-      recipientReason: "You received this because an applicant listed you as a character reference.",
-    })
-    await sendEmail({
-      to: v.contactEmail,
-      subject: "You've been listed as a character reference — Gun License NYC",
-      html,
-      text,
-    })
+    await inviteReference(createAdminClient(), created.id)
   }
 
   revalidatePath("/portal/people")
@@ -245,30 +221,12 @@ export async function addCohabitant(_prev: CollectorState, formData: FormData): 
   await logActivity({ action: "cohabitant.added", caseId: v.caseId, entity: "cohabitant", entityId: created.id })
 
   // Auto-invite the cohabitant to complete + notarize their affidavit in-system.
+  // Through the ONE outreach helper — an inline copy of it here minted the token
+  // without stamping sent_at, so the link-journey tracker and the 3/7-day
+  // reminder rule never saw this invite. (Service role: client-initiated write
+  // of a token the client must never read back.)
   if (v.contactEmail) {
-    const admin = createAdminClient()
-    const token = newReferenceToken()
-    await admin.from("cohabitants").update({ token, token_expires_at: tokenExpiry() }).eq("id", created.id)
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-    const link = `${base}/c/${token}`
-    const { html, text } = renderEmail({
-      preheader: "Confirm and complete your cohabitant affidavit — no account needed.",
-      eyebrow: "Action needed",
-      heading: "Complete your cohabitant affidavit",
-      paragraphs: [
-        `Hi ${v.name},`,
-        "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
-      ],
-      cta: { label: "Complete your affidavit →", url: link },
-      footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
-      recipientReason: "You received this because an applicant listed you as a member of their household.",
-    })
-    await sendEmail({
-      to: v.contactEmail,
-      subject: "Please complete a cohabitant affidavit — Gun License NYC",
-      html,
-      text,
-    })
+    await inviteCohabitant(createAdminClient(), created.id)
   }
 
   revalidatePath("/portal/people")

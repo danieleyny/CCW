@@ -30,8 +30,22 @@ export async function anonClientFor(
   password: string = DEMO_PASSWORD
 ): Promise<SupabaseClient<Database>> {
   const c = createClient(SUPABASE_URL, ANON, { auth: { persistSession: false } })
-  await c.auth.signInWithPassword({ email, password })
-  return c as unknown as SupabaseClient<Database>
+  // A swallowed sign-in failure here was the root of the flaky suite: when the
+  // parallel test files stormed GoTrue and a sign-in got rate-limited, the
+  // error was DISCARDED and the caller got an ANONYMOUS client. Every
+  // RLS-scoped read then returned empty — indistinguishable from a product
+  // bug, and only under full-suite parallelism. Fail loudly instead, and
+  // absorb transient blips with a short backoff.
+  let lastError: unknown = null
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const { error } = await c.auth.signInWithPassword({ email, password })
+    if (!error) return c as unknown as SupabaseClient<Database>
+    lastError = error
+    await new Promise((r) => setTimeout(r, 400 * attempt))
+  }
+  throw new Error(
+    `anonClientFor(${email}): sign-in failed after 4 attempts — ${(lastError as Error | null)?.message}`
+  )
 }
 
 export function anonClient(): SupabaseClient<Database> {

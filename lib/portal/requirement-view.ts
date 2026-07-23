@@ -24,6 +24,7 @@ import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { computeFeeSummary, type FeeSummary } from "@/lib/fees"
 import { deriveLadder } from "@/lib/requirements/ladder"
 import { requiredReferences } from "@/lib/intake/schema"
+import { cohabitantState } from "@/lib/cohabitants/process"
 
 type DB = SupabaseClient<Database>
 
@@ -39,6 +40,12 @@ export interface RequirementView {
   currentByReq: Record<string, CurrentDoc>
   /** Per-reference progress for the REF-01/REF-02 card, or null when no ref req. */
   referenceProgress: ReferenceProgress | null
+  /**
+   * Per-person progress for the COH-01 card — same shape and states as the
+   * reference tracker so the two rosters read identically. Null when the case
+   * has no cohabitant requirement or no cohabitants listed (lives alone).
+   */
+  cohabitantProgress: ReferenceProgress | null
   /** Files that belong to no requirement — request letters, worksheets. */
   looseFiles: LibraryFile[]
   signatureOnFile: string | null
@@ -197,6 +204,31 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   }
   const refInvited = (referenceProgress?.invitedCount ?? 0) > 0
 
+  // Same journey tracking for household affidavits. States derive from the
+  // timestamp trail (lib/cohabitants/process.cohabitantState); "required" is
+  // every adult listed — there's no track-dependent count like references.
+  const isCohabRoster = (reqCode: string) => {
+    const a = actionFor(reqCode)
+    return a?.mode === "roster" && a.roster === "cohabitants"
+  }
+  let cohabitantProgress: ReferenceProgress | null = null
+  if (reqRows.some((r) => isCohabRoster(r.req_code))) {
+    const { data: cohabs } = await db
+      .from("cohabitants")
+      .select("name, affidavit_status, token, token_revoked_at, opened_at")
+      .eq("case_id", myCase.id)
+      .order("created_at")
+    if (cohabs && cohabs.length > 0) {
+      const people = cohabs.map((c) => ({ name: c.name, state: cohabitantState(c) as RefPersonState }))
+      cohabitantProgress = {
+        required: people.length,
+        people,
+        invitedCount: people.filter((p) => p.state !== "not_invited").length,
+        notarizedCount: people.filter((p) => p.state === "notarized").length,
+      }
+    }
+  }
+
   const items: ReqChecklistItem[] = reqRows.map((row) => {
     const review = reviewByReq.get(row.id)
     return {
@@ -209,7 +241,9 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       status: row.status,
       hasEvidence: !!(row.document_id || row.reference_id || row.cohabitant_id),
       latestReview: review?.decision ? { decision: review.decision } : null,
-      rosterInvited: isRefRoster(row.req_code) && refInvited,
+      rosterInvited:
+        (isRefRoster(row.req_code) && refInvited) ||
+        (isCohabRoster(row.req_code) && (cohabitantProgress?.invitedCount ?? 0) > 0),
     }),
     reviewNote: review?.decision === "changes_requested" ? (review.note ?? null) : null,
     reviewerKind: review?.reviewer_kind ?? null,
@@ -247,6 +281,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     filesByReq,
     currentByReq,
     referenceProgress,
+    cohabitantProgress,
     looseFiles,
     signatureOnFile: sig?.png_base64 ?? null,
   }

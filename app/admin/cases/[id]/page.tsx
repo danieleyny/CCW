@@ -441,7 +441,16 @@ export default async function CaseFilePage({
                     <TableCell className="text-muted-foreground">{c.relationship ?? "—"}</TableCell>
                     <TableCell><StatusBadge status={c.affidavit_status ?? "not_started"} /></TableCell>
                     <TableCell className="text-xs capitalize">
-                      {c.token_revoked_at ? "revoked" : c.token ? "invited" : "not invited"}
+                      {/* Same journey derivation as references: revoked > submitted > opened > sent > not sent. */}
+                      {c.token_revoked_at
+                        ? "revoked"
+                        : c.answered_at
+                          ? "submitted"
+                          : c.opened_at
+                            ? "opened"
+                            : c.sent_at || c.token
+                              ? "sent"
+                              : "not sent"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5">

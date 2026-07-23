@@ -23,11 +23,13 @@ export default async function PortalLayout({
       <DarkBackdrop />
       <header className="glass-bar sticky top-0 z-20 border-b border-hairline">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
-          <Link href="/portal" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground">
-            <LogoMark className="size-8 text-brass" />
+          {/* The wordmark never wraps: at 390px the language selector squeezed
+              it onto three lines, so the lockup shrinks a step instead. */}
+          <Link href="/portal" className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold tracking-tight text-foreground sm:text-lg">
+            <LogoMark className="size-7 shrink-0 text-brass sm:size-8" />
             {brand.logo.wordmark}
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LocaleSwitcher current={locale} label={t.common.language} />
             <NotificationBell />
             <span className="hidden text-sm text-muted-foreground sm:inline">

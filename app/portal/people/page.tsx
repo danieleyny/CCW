@@ -1,6 +1,7 @@
 import { Send, CheckCircle2, Ban } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
+import { cohabitantState } from "@/lib/cohabitants/process"
 import {
   ReferenceCollector,
   CohabitantCollector,
@@ -56,7 +57,7 @@ export default async function PeoplePage({
       .order("created_at"),
     supabase
       .from("cohabitants")
-      .select("id, name, relationship, affidavit_status, contact_email, confirmed_email, token")
+      .select("id, name, relationship, affidavit_status, contact_email, confirmed_email, token, token_revoked_at, opened_at")
       .eq("case_id", myCase.id)
       .order("created_at"),
     supabase
@@ -170,7 +171,19 @@ export default async function PeoplePage({
               <ul className="space-y-2">
                 {(cohabs.data ?? []).map((c) => {
                   const st = c.affidavit_status
-                  const label = st === "notarized" ? "notarized" : st === "received" ? "confirmed" : c.token ? "invited" : "not invited"
+                  // Same journey states the reference list shows — including
+                  // "opened link", so the applicant can tell silence from progress.
+                  const state = cohabitantState(c)
+                  const label =
+                    state === "notarized"
+                      ? "notarized"
+                      : state === "submitted"
+                        ? "confirmed"
+                        : state === "opened"
+                          ? "opened link"
+                          : state === "invited"
+                            ? "invited"
+                            : "not invited"
                   const tone = st === "notarized" ? "bg-ok/12 text-ok" : st === "received" ? "bg-signal-dim text-signal" : "bg-surface-2 text-text-mid"
                   return (
                     <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 text-sm">

@@ -58,6 +58,7 @@ export function RequirementAction({
   generated,
   current,
   referenceProgress,
+  cohabitantProgress,
   signatureOnFile,
   feeSummary,
   feeReceipts,
@@ -72,6 +73,8 @@ export function RequirementAction({
   current?: CurrentDoc | null
   /** Per-reference progress — only used by the references roster card. */
   referenceProgress?: ReferenceProgress | null
+  /** Per-person progress — only used by the cohabitants roster card. */
+  cohabitantProgress?: ReferenceProgress | null
   /** Base64 PNG of the signature already on file for this case, if any. */
   signatureOnFile: string | null
   /** Personalized fee breakdown — only needed by FEE-01. */
@@ -304,23 +307,30 @@ export function RequirementAction({
           />
         )}
 
-        {action.roster === "references" && referenceProgress && referenceProgress.people.length > 0 && (
-          <div className="rounded-md border border-hairline bg-surface-2/40 p-3">
-            <p className="mb-2 text-xs font-medium text-text-mid">
-              Reference progress — {referenceProgress.notarizedCount} of {referenceProgress.required} notarized
-            </p>
-            <ul className="space-y-1 text-sm">
-              {referenceProgress.people.map((p, i) => (
-                <li key={i} className="flex items-center justify-between gap-2">
-                  <span className="truncate text-text-mid">{p.name}</span>
-                  <span className={`shrink-0 text-[11px] ${REF_STATE_COPY[p.state].tone}`}>
-                    {REF_STATE_COPY[p.state].label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {(() => {
+          // One tracker for both rosters — references and household affidavits
+          // share the same five-state journey, so they read identically.
+          const progress = action.roster === "references" ? referenceProgress : cohabitantProgress
+          if (!progress || progress.people.length === 0) return null
+          return (
+            <div className="rounded-md border border-hairline bg-surface-2/40 p-3">
+              <p className="mb-2 text-xs font-medium text-text-mid">
+                {action.roster === "references" ? "Reference progress" : "Affidavit progress"} —{" "}
+                {progress.notarizedCount} of {progress.required} notarized
+              </p>
+              <ul className="space-y-1 text-sm">
+                {progress.people.map((p, i) => (
+                  <li key={i} className="flex items-center justify-between gap-2">
+                    <span className="truncate text-text-mid">{p.name}</span>
+                    <span className={`shrink-0 text-[11px] ${REF_STATE_COPY[p.state].tone}`}>
+                      {REF_STATE_COPY[p.state].label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        })()}
 
         {!done && (
           <p className="flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
