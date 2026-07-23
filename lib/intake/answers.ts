@@ -142,6 +142,20 @@ export interface WizardAnswers {
   employmentHistory?: EmploymentHistoryEntry[]
 }
 
+/**
+ * The applicant's legal address as one human line — "123 Main St Apt 2,
+ * Brooklyn, NY". The single source every "suggest my home address" affordance
+ * reads (wizard chips/datalists, questionnaire prefills), so the applicant
+ * never retypes an address the intake already knows. Skips blanks; "" when
+ * nothing is known.
+ */
+export function formatLegalAddress(a: WizardAnswers): string {
+  const street = [a.legalStreet?.trim(), a.legalApt?.trim() ? `Apt ${a.legalApt.trim().replace(/^apt\.?\s*/i, "")}` : ""]
+    .filter(Boolean)
+    .join(" ")
+  return [street, a.legalCity?.trim(), a.legalState?.trim()].filter(Boolean).join(", ")
+}
+
 /** One readable line per account for the social-media disclosure PDF. */
 export function formatSocialAccounts(a: WizardAnswers): string {
   const rows = (a.socialAccounts ?? []).filter((s) => s.handle?.trim())

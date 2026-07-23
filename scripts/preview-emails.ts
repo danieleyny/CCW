@@ -12,26 +12,30 @@ mkdirSync(outDir, { recursive: true })
 const link = "https://gunlicensenyc.com/r/6bQ2eXAMPLEtoken8f3k9q2xw8pR"
 const clink = "https://gunlicensenyc.com/c/7cR3fEXAMPLEtoken9g4l0r3yx9qS"
 
+// The invite copy mirrors lib/outreach.ts (applicant-named variant) — update
+// both together.
+const applicant = "Jordan Rivera"
+
 const emails: Record<string, ReturnType<typeof renderEmail>> = {
   reference: renderEmail({
-    preheader: "Confirm your character reference for a NYC carry-license application — takes a minute.",
+    preheader: `${applicant} asked you to be a character reference — confirm in about a minute.`,
     eyebrow: "Action needed",
-    heading: "Confirm your character reference",
+    heading: `${applicant} listed you as a character reference`,
     paragraphs: [
       "Hi Pat Rivera,",
-      "An applicant listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build a ready-to-notarize letter from your answers.",
+      `${applicant} listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build a ready-to-notarize letter from your answers.`,
     ],
     cta: { label: "Confirm your reference →", url: link },
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
     recipientReason: "You received this because an applicant listed you as a character reference.",
   }),
   cohabitant: renderEmail({
-    preheader: "Confirm and complete your cohabitant affidavit — no account needed.",
+    preheader: `${applicant} listed you as a household member — complete a short affidavit.`,
     eyebrow: "Action needed",
-    heading: "Complete your cohabitant affidavit",
+    heading: `${applicant} listed you as a household member`,
     paragraphs: [
       "Hi Sam Rivera,",
-      "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
+      `${applicant} listed you as a household member on their NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.`,
     ],
     cta: { label: "Complete your affidavit →", url: clink },
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",

@@ -47,6 +47,17 @@ export function QuestionnaireDialog({
 
   const set = (name: string, v: unknown) => setValues((s) => ({ ...s, [name]: v }))
 
+  // Same-kind address suggestions: every address-ish value the prefill already
+  // knows becomes a native datalist entry on address text fields, so an address
+  // the user cleared or edited is one keystroke away — never auto-clobbered.
+  const knownAddresses = [
+    ...new Set(
+      Object.entries(initial)
+        .filter(([k, v]) => /address/i.test(k) && typeof v === "string" && (v as string).trim())
+        .map(([, v]) => (v as string).trim())
+    ),
+  ]
+
   const groupRows = (name: string): Values[] => {
     const v = values[name]
     return Array.isArray(v) && v.length ? (v as Values[]) : [{}]
@@ -170,6 +181,7 @@ export function QuestionnaireDialog({
             type={f.type === "date" ? "date" : "text"}
             maxLength={f.maxLength}
             placeholder={f.placeholder}
+            list={f.type === "text" && /address/i.test(f.name) && knownAddresses.length ? "known-addresses-q" : undefined}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -283,6 +295,14 @@ export function QuestionnaireDialog({
           <Button onClick={submit} disabled={pending} className="min-h-[44px] w-full">
             {pending ? "Generating…" : questionnaire.submitLabel}
           </Button>
+
+          {knownAddresses.length > 0 && (
+            <datalist id="known-addresses-q">
+              {knownAddresses.map((addr) => (
+                <option key={addr} value={addr} />
+              ))}
+            </datalist>
+          )}
         </div>
         )}
         </div>

@@ -10,6 +10,8 @@ import {
   QUESTIONNAIRE,
   SOCIAL_PLATFORMS,
   eligibilityGate,
+  ageFromDob,
+  formatLegalAddress,
   type WizardAnswers,
   type ArrestEntry,
   type QuestionAnswer,
@@ -21,6 +23,7 @@ import {
   eligibilityStepIssues,
   disclosureStepIssues,
   historyStepIssues,
+  requiredReferences,
 } from "@/lib/intake/schema"
 import {
   saveIntakeStep,
@@ -101,6 +104,15 @@ export function IntakeWizard({
     const issues = issuesForStep(step)
     if (issues.length > 0) {
       setStepErrors(issues)
+      // Don't just list the problems — physically send the user back to the
+      // first offending field (it renders red once stepErrors is non-empty).
+      // setTimeout, not rAF: rAF is throttled in hidden tabs and can fire
+      // before React commits the invalid markers.
+      setTimeout(() => {
+        const el = document.querySelector<HTMLElement>("[data-intake-invalid]")
+        el?.scrollIntoView({ behavior: "smooth", block: "center" })
+        el?.focus({ preventScroll: true })
+      }, 50)
       return
     }
     setStepErrors([])
@@ -282,11 +294,17 @@ export function IntakeWizard({
       <StepRail step={step} />
 
       <div className="rounded-lg border bg-card p-5">
-        {step === 1 && <StepEligibility a={a} patch={patch} reasons={eligReasons} />}
+        {step === 1 && (
+          <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
+        )}
         {step === 2 && <StepIdentity a={a} patch={patch} />}
         {step === 3 && <StepHousehold a={a} patch={patch} />}
-        {step === 4 && <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} />}
-        {step === 5 && <StepHistory a={a} patch={patch} />}
+        {step === 4 && (
+          <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
+        )}
+        {step === 5 && (
+          <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} />
+        )}
         {step === 6 && <StepReview a={a} />}
       </div>
 
@@ -348,14 +366,45 @@ function StepRail({ step }: { step: number }) {
 
 type StepProps = { a: WizardAnswers; patch: (p: Partial<WizardAnswers>) => void }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  required,
+  children,
+}: {
+  label: string
+  hint?: string
+  /**
+   * Red asterisk — ONLY for fields the step validators actually block on
+   * (eligibilityStepIssues / disclosureStepIssues / historyStepIssues). Marking
+   * anything optional as required is worse than no marker at all.
+   */
+  required?: boolean
+  children: React.ReactNode
+}) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs">
+        {label}
+        {required && (
+          <span aria-hidden className="ml-0.5 text-danger">
+            *
+          </span>
+        )}
+      </Label>
       {children}
       {hint && <Hint>{hint}</Hint>}
     </div>
   )
+}
+
+/**
+ * a11y + styling flags for a field the validators are currently blocking on.
+ * Inputs get red border/ring from their built-in `aria-invalid:` styles; the
+ * `data-intake-invalid` marker is what next() scrolls/focuses to.
+ */
+function invalidAttrs(bad: boolean) {
+  return bad ? { "aria-invalid": true as const, "data-intake-invalid": "" } : {}
 }
 
 /** Short "why we collect this" note shown under a field. */
@@ -364,6 +413,32 @@ function Hint({ children }: { children: React.ReactNode }) {
 }
 
 const SELECT_CLASS = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+
+/**
+ * Native suggestion pop-up of addresses the intake already knows (today: the
+ * applicant's legal address). Same-kind only — addresses suggest into address
+ * fields, never names or anything else. Attach with `<Input list={id} …>`.
+ */
+function KnownAddresses({ id, a }: { id: string; a: WizardAnswers }) {
+  const home = formatLegalAddress(a)
+  if (!home) return null
+  return (
+    <datalist id={id}>
+      <option value={home} />
+    </datalist>
+  )
+}
+
+/** One-click "fill with my home address" — only offered while the target is empty. */
+function UseHomeAddress({ a, current, onUse }: { a: WizardAnswers; current?: string; onUse: (v: string) => void }) {
+  const home = formatLegalAddress(a)
+  if (!home || current?.trim()) return null
+  return (
+    <button type="button" onClick={() => onUse(home)} className="text-[11px] text-signal underline-offset-2 hover:underline">
+      Use my home address
+    </button>
+  )
+}
 
 function Check({
   label,
@@ -387,20 +462,34 @@ function Check({
   )
 }
 
-function StepEligibility({ a, patch, reasons }: StepProps & { reasons: string[] | null }) {
+function StepEligibility({
+  a,
+  patch,
+  reasons,
+  attempted,
+}: StepProps & { reasons: string[] | null; attempted: boolean }) {
+  // Red exactly when (and only when) eligibilityStepIssues blocks on it.
+  const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
+  const residenceBad = attempted && !a.residence
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Date of birth">
-          <Input type="date" value={a.dob ?? ""} onChange={(e) => patch({ dob: e.target.value })} />
+        <Field label="Date of birth" required>
+          <Input
+            type="date"
+            value={a.dob ?? ""}
+            onChange={(e) => patch({ dob: e.target.value })}
+            {...invalidAttrs(dobBad)}
+          />
         </Field>
-        <Field label="Residence">
+        <Field label="Residence" required>
           <select
             aria-label="Residence"
             value={a.residence ?? ""}
             onChange={(e) => patch({ residence: e.target.value as WizardAnswers["residence"] })}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            className={cn(SELECT_CLASS, residenceBad && "border-danger ring-2 ring-danger/30")}
+            {...invalidAttrs(residenceBad)}
           >
             <option value="">Select…</option>
             <option value="nyc">NYC resident / place of business</option>
@@ -494,24 +583,22 @@ function StepIdentity({ a, patch }: StepProps) {
         </div>
       </div>
 
-      {/* Citizenship */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Photo ID type">
-          <Input value={a.photoIdType ?? ""} placeholder="Driver license, passport…" onChange={(e) => patch({ photoIdType: e.target.value })} />
-        </Field>
-        <Field label="Citizenship status">
-          <select
-            aria-label="Citizenship status"
-            value={a.citizenship ?? ""}
-            onChange={(e) => patch({ citizenship: e.target.value as WizardAnswers["citizenship"] })}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-          >
-            <option value="">Select…</option>
-            <option value="citizen">U.S. citizen</option>
-            <option value="lpr">Lawful permanent resident</option>
-          </select>
-        </Field>
-      </div>
+      {/* Citizenship. (The old "Photo ID type" / "Proof of residence method"
+          questions only described documents uploaded later in the checklist —
+          they added friction with no application value, so they're gone. The
+          keys stay in WizardAnswers/zod for in-progress sessions.) */}
+      <Field label="Citizenship status">
+        <select
+          aria-label="Citizenship status"
+          value={a.citizenship ?? ""}
+          onChange={(e) => patch({ citizenship: e.target.value as WizardAnswers["citizenship"] })}
+          className={SELECT_CLASS}
+        >
+          <option value="">Select…</option>
+          <option value="citizen">U.S. citizen</option>
+          <option value="lpr">Lawful permanent resident</option>
+        </select>
+      </Field>
       {a.citizenship === "lpr" && (
         <>
           <Check label="Fewer than 7 years of U.S. residence (adds Certificate of Good Conduct)" checked={!!a.lprUnder7yr} onChange={(v) => patch({ lprUnder7yr: v })} />
@@ -520,10 +607,6 @@ function StepIdentity({ a, patch }: StepProps) {
           </Field>
         </>
       )}
-      <Field label="Proof of residence method">
-        <Input value={a.residenceProof ?? ""} placeholder="Utility bill, lease…" onChange={(e) => patch({ residenceProof: e.target.value })} />
-      </Field>
-
       {/* Birth + physical description (form field 4) */}
       <Field label="Place of birth" hint="City, State, Country (form field 4).">
         <Input value={a.placeOfBirth ?? ""} placeholder="Brooklyn, NY, USA" onChange={(e) => patch({ placeOfBirth: e.target.value })} />
@@ -536,7 +619,19 @@ function StepIdentity({ a, patch }: StepProps) {
           <Input type="number" inputMode="numeric" value={a.weightLbs ?? ""} onChange={(e) => numPatch("weightLbs")(e.target.value)} />
         </Field>
         <Field label="Sex">
-          <Input value={a.sex ?? ""} onChange={(e) => patch({ sex: e.target.value })} />
+          <select
+            aria-label="Sex"
+            value={a.sex ?? ""}
+            onChange={(e) => patch({ sex: e.target.value })}
+            className={SELECT_CLASS}
+          >
+            <option value="">Select…</option>
+            {/* A legacy free-text value stays selectable so it isn't silently dropped. */}
+            {a.sex && !["Male", "Female", "X"].includes(a.sex) && <option value={a.sex}>{a.sex}</option>}
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="X">X</option>
+          </select>
         </Field>
         <Field label="Hair">
           <Input value={a.hairColor ?? ""} onChange={(e) => patch({ hairColor: e.target.value })} />
@@ -665,18 +760,30 @@ function StepHousehold({ a, patch }: StepProps) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Address">
-            <Input value={a.safeguardAddress ?? ""} placeholder="Street, City, State, Zip" onChange={(e) => patch({ safeguardAddress: e.target.value })} />
+            <Input
+              list="known-addresses"
+              value={a.safeguardAddress ?? ""}
+              placeholder="Street, City, State, Zip"
+              onChange={(e) => patch({ safeguardAddress: e.target.value })}
+            />
+            <UseHomeAddress a={a} current={a.safeguardAddress} onUse={(v) => patch({ safeguardAddress: v })} />
           </Field>
           <Field label="Telephone">
             <Input value={a.safeguardPhone ?? ""} onChange={(e) => patch({ safeguardPhone: e.target.value })} />
           </Field>
         </div>
       </div>
+      <KnownAddresses id="known-addresses" a={a} />
     </div>
   )
 }
 
-function StepDisclosures({ a, patch, aiEnabled }: StepProps & { aiEnabled?: boolean }) {
+function StepDisclosures({
+  a,
+  patch,
+  aiEnabled,
+  attempted,
+}: StepProps & { aiEnabled?: boolean; attempted: boolean }) {
   const arrests = a.arrests ?? []
   const q: QuestionAnswer[] = a.questionnaire ?? QUESTIONNAIRE.map((x) => ({ no: x.no, yes: false }))
   return (
@@ -694,8 +801,19 @@ function StepDisclosures({ a, patch, aiEnabled }: StepProps & { aiEnabled?: bool
           <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
             <div className="grid gap-2 sm:grid-cols-3">
               <Input type="date" value={ar.occurredOn ?? ""} onChange={(e) => upd(i, { occurredOn: e.target.value })} />
-              <Input placeholder="Court / jurisdiction" value={ar.jurisdiction ?? ""} onChange={(e) => upd(i, { jurisdiction: e.target.value })} />
-              <Input placeholder="Disposition (e.g. dismissed)" value={ar.disposition ?? ""} onChange={(e) => upd(i, { disposition: e.target.value })} />
+              {/* Court + disposition are what disclosureStepIssues blocks on. */}
+              <Input
+                placeholder="Court / jurisdiction *"
+                value={ar.jurisdiction ?? ""}
+                onChange={(e) => upd(i, { jurisdiction: e.target.value })}
+                {...invalidAttrs(attempted && !ar.jurisdiction?.trim())}
+              />
+              <Input
+                placeholder="Disposition (e.g. dismissed) *"
+                value={ar.disposition ?? ""}
+                onChange={(e) => upd(i, { disposition: e.target.value })}
+                {...invalidAttrs(attempted && !ar.disposition?.trim())}
+              />
             </div>
             <Textarea rows={2} placeholder="Written explanation (you can finish this at the review step)" value={ar.narrative ?? ""} onChange={(e) => upd(i, { narrative: e.target.value })} />
             <div className="flex items-center gap-2">
@@ -795,8 +913,15 @@ function HistoryDates({
   )
 }
 
-function StepHistory({ a, patch }: StepProps) {
+function StepHistory({
+  a,
+  patch,
+  attempted,
+  isRenewal,
+}: StepProps & { attempted: boolean; isRenewal: boolean }) {
   const refs = a.references ?? []
+  // Track-aware, same source as historyStepIssues: 4 carry / 2 premises / 0 renewal.
+  const refsNeeded = requiredReferences(a, { isRenewal })
   const social: SocialAccount[] = a.socialAccounts ?? []
   const resHist = a.residenceHistory ?? []
   const empHist = a.employmentHistory ?? []
@@ -834,9 +959,21 @@ function StepHistory({ a, patch }: StepProps) {
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            <Input placeholder="Address (street, city, state, county, zip, apt)" value={h.address ?? ""} onChange={(e) => {
+            <Input list="known-addresses" placeholder="Address (street, city, state, county, zip, apt)" value={h.address ?? ""} onChange={(e) => {
               const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
             }} />
+            {/* The newest row is usually where they live now — offer it, never force it. */}
+            {i === 0 && (
+              <UseHomeAddress
+                a={a}
+                current={h.address}
+                onUse={(v) => {
+                  const c = [...resHist]
+                  c[0] = { ...c[0], address: v }
+                  patch({ residenceHistory: c })
+                }}
+              />
+            )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
@@ -910,8 +1047,13 @@ function StepHistory({ a, patch }: StepProps) {
                 onChange={(e) => patch({ trainingInstructor: e.target.value })}
               />
             </Field>
-            <Field label="Training completion date">
-              <Input type="date" value={a.trainingDate ?? ""} onChange={(e) => patch({ trainingDate: e.target.value })} />
+            <Field label="Training completion date" required>
+              <Input
+                type="date"
+                value={a.trainingDate ?? ""}
+                onChange={(e) => patch({ trainingDate: e.target.value })}
+                {...invalidAttrs(attempted && !a.trainingDate)}
+              />
             </Field>
           </div>
         )}
@@ -925,19 +1067,36 @@ function StepHistory({ a, patch }: StepProps) {
 
       {/* References */}
       <div className="space-y-2">
-        <Label className="text-xs">Character references (4 required)</Label>
+        <Label className="text-xs">
+          Character references{refsNeeded > 0 ? ` (${refsNeeded} required)` : " (not required for renewals)"}
+          {refsNeeded > 0 && (
+            <span aria-hidden className="ml-0.5 text-danger">
+              *
+            </span>
+          )}
+        </Label>
         <Hint>
-          NYC requires four people of good character who know you well. Add their email and we&apos;ll invite each one
-          to complete and notarize their reference for you — you don&apos;t have to chase paperwork.
+          NYC requires {refsNeeded === 2 ? "two" : "four"} people of good character who know you well. Add their email
+          and we&apos;ll invite each one to complete and notarize their reference for you — you don&apos;t have to chase
+          paperwork.
         </Hint>
         {refs.map((r, i) => (
           <div key={i} className="flex gap-2">
             <Input placeholder="Full name" value={r.name} onChange={(e) => {
               const copy = [...refs]; copy[i] = { ...copy[i], name: e.target.value }; patch({ references: copy })
             }} />
-            <Input placeholder="name@email.com" type="email" value={r.email ?? ""} onChange={(e) => {
-              const copy = [...refs]; copy[i] = { ...copy[i], email: e.target.value }; patch({ references: copy })
-            }} />
+            {/* historyStepIssues blocks on a valid email for every named reference. */}
+            <Input
+              placeholder="name@email.com"
+              type="email"
+              value={r.email ?? ""}
+              onChange={(e) => {
+                const copy = [...refs]; copy[i] = { ...copy[i], email: e.target.value }; patch({ references: copy })
+              }}
+              {...invalidAttrs(
+                attempted && refsNeeded > 0 && !!r.name?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email?.trim() ?? "")
+              )}
+            />
             <Button variant="ghost" size="icon" onClick={() => patch({ references: refs.filter((_, j) => j !== i) })}>
               <Trash2 className="size-4" />
             </Button>
@@ -1000,6 +1159,9 @@ function StepHistory({ a, patch }: StepProps) {
         <Check label="I have legally changed my name (adds proof of name change)" checked={!!a.hasNameChange} onChange={(v) => patch({ hasNameChange: v })} />
         <Check label="I hold another firearms license (adds a copy of that license)" checked={!!a.hasOtherLicense} onChange={(v) => patch({ hasOtherLicense: v })} />
       </div>
+
+      {/* Only one step renders at a time, so the shared datalist id is safe. */}
+      <KnownAddresses id="known-addresses" a={a} />
     </div>
   )
 }

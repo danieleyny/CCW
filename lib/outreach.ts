@@ -24,6 +24,18 @@ type DB = SupabaseClient<Database>
 
 const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
+/**
+ * The applicant's name, for the invite email — a recipient who instantly sees
+ * WHO added them is far more likely to act than one greeted by "an applicant".
+ * Same join the token pages (/r, /c) already use. Null when unresolvable, so
+ * callers fall back to the impersonal wording rather than sending "undefined".
+ */
+async function applicantNameFor(admin: DB, caseId: string): Promise<string | null> {
+  const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", caseId).maybeSingle()
+  const name = (kase?.clients as unknown as { full_name: string } | null)?.full_name?.trim()
+  return name || null
+}
+
 export interface InviteResult {
   /** The private link, whether or not email delivery was possible. */
   link: string
@@ -80,13 +92,17 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
   const link = `${siteBase()}/r/${token}`
   if (!ref.contact_email) return { link, emailed: false, hadEmail: false }
 
+  const applicant = await applicantNameFor(admin, ref.case_id)
   const { html, text } = renderEmail({
-    preheader: "Confirm your character reference for a NYC carry-license application — takes a minute.",
+    // Lead with WHO asked — that's the line the inbox preview shows.
+    preheader: applicant
+      ? `${applicant} asked you to be a character reference — confirm in about a minute.`
+      : "Confirm your character reference for a NYC carry-license application — takes a minute.",
     eyebrow: "Action needed",
-    heading: "Confirm your character reference",
+    heading: applicant ? `${applicant} listed you as a character reference` : "Confirm your character reference",
     paragraphs: [
       `Hi ${ref.name},`,
-      "An applicant listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build a ready-to-notarize letter from your answers.",
+      `${applicant ?? "An applicant"} listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build a ready-to-notarize letter from your answers.`,
     ],
     cta: { label: "Confirm your reference →", url: link },
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
@@ -118,13 +134,19 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
   const link = `${siteBase()}/c/${token}`
   if (!cohab.contact_email) return { link, emailed: false, hadEmail: false }
 
+  const applicant = await applicantNameFor(admin, cohab.case_id)
   const { html, text } = renderEmail({
-    preheader: "Confirm and complete your cohabitant affidavit — no account needed.",
+    // Lead with WHO listed them — that's the line the inbox preview shows.
+    preheader: applicant
+      ? `${applicant} listed you as a household member — complete a short affidavit.`
+      : "Confirm and complete your cohabitant affidavit — no account needed.",
     eyebrow: "Action needed",
-    heading: "Complete your cohabitant affidavit",
+    heading: applicant ? `${applicant} listed you as a household member` : "Complete your cohabitant affidavit",
     paragraphs: [
       `Hi ${cohab.name},`,
-      "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
+      applicant
+        ? `${applicant} listed you as a household member on their NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.`
+        : "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
     ],
     cta: { label: "Complete your affidavit →", url: link },
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",

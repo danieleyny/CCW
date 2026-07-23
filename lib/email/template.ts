@@ -101,7 +101,11 @@ export function renderEmail(opts: RenderEmailOpts): { html: string; text: string
 
   // Preheader: hidden, followed by whitespace so the client preview shows only it.
   const preheaderHtml = preheader
-    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${esc(preheader)}${"&nbsp;&zwnj;".repeat(30)}</div>`
+    // The padding run after the preheader matters: inbox previews show ~90-140
+    // characters, and 30 pads left room for the visible header (wordmark +
+    // eyebrow + heading) to bleed into the preview. 100 repeats fills the
+    // preview window with whitespace so the preheader line stands alone.
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${esc(preheader)}${"&nbsp;&zwnj;".repeat(100)}</div>`
     : ""
 
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>

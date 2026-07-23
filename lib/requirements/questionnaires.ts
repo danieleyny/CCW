@@ -14,7 +14,7 @@
  * nullified matters ARE disclosed (CPL Article 160), and that non-disclosure is
  * more damaging than the underlying event. Nothing here may suggest omitting.
  */
-import type { WizardAnswers } from "@/lib/intake/answers"
+import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
 
 /**
  * Everything we already know about the applicant. Name/borough/ZIP live on the
@@ -86,7 +86,7 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "A short statement that you understand where a NYC carry license does and doesn't let you carry. We fill in what we already know — read it, correct anything, and sign.",
     submitLabel: "Generate my affirmation",
-    prefill: (ctx) => ({ fullName: ctx.clientName }),
+    prefill: (ctx) => ({ fullName: ctx.clientName, address: formatLegalAddress(ctx.intake) }),
     fields: [
       { name: "fullName", label: "Your full legal name", type: "text", required: true },
       { name: "address", label: "Your NYC address", type: "text", required: true },
@@ -113,11 +113,13 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "How you'll store the handgun at home. NYC requires secure storage (P.L. §265.45; NYC Admin. Code §10-312). You'll also add photos of your safe — open and closed.",
     submitLabel: "Generate my statement",
-    // No prefill: the make/model field previously (wrongly) shared the key
-    // `safeguardName` with the intake "person who will safeguard the handgun"
-    // custodian, so it prefilled a PERSON'S NAME into the make/model box. The
-    // field is now `safeStorageMakeModel` and starts empty — there is no intake
-    // source for a safe's make/model.
+    // Same-kind prefill only: the storage ADDRESS defaults to the home address
+    // the intake already knows. The make/model field previously (wrongly)
+    // shared the key `safeguardName` with the intake "person who will safeguard
+    // the handgun" custodian, so it prefilled a PERSON'S NAME into the
+    // make/model box. The field is now `safeStorageMakeModel` and starts empty
+    // — there is no intake source for a safe's make/model.
+    prefill: (ctx) => ({ address: formatLegalAddress(ctx.intake) }),
     fields: [
       { name: "address", label: "Address where the firearm will be stored", type: "text", required: true },
       {
