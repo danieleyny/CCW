@@ -10,6 +10,8 @@ import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requ
 import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
+import { DmvFallback } from "@/components/portal/dmv-fallback"
+import type { DmvApplicant } from "@/lib/portal/requirement-view"
 import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
 import { FeePanel, type FeeReceipts } from "@/components/portal/fee-panel"
 import type { FeeSummary } from "@/lib/fees"
@@ -62,6 +64,7 @@ export function RequirementAction({
   signatureOnFile,
   feeSummary,
   feeReceipts,
+  dmvApplicant,
 }: {
   reqCode: string
   status: string
@@ -80,6 +83,8 @@ export function RequirementAction({
   /** Personalized fee breakdown — only needed by FEE-01. */
   feeSummary?: FeeSummary | null
   feeReceipts?: FeeReceipts | null
+  /** Applicant identity for the DMV-01 email-request draft (no SSN). */
+  dmvApplicant?: DmvApplicant | null
 }) {
   const [open, setOpen] = useState(false)
   const [signing, setSigning] = useState(false)
@@ -225,6 +230,9 @@ export function RequirementAction({
         )}
 
         {action.example && <DocumentExample id={action.example} />}
+
+        {/* DMV-01 only: a real path when MyDMV / NY.gov ID login errors out. */}
+        {reqCode === "DMV-01" && <DmvFallback applicant={dmvApplicant} />}
 
         {!done && action.documentType && (
           <DocumentUploader

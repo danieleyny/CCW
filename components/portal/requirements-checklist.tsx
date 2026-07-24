@@ -14,10 +14,30 @@ import {
   Receipt,
   Medal,
   FileText,
+  // Per-requirement glyphs (REQ_ICON) — one recognizable icon per document.
+  IdCard,
+  BadgeCheck,
+  Globe,
+  Camera,
+  House,
+  PenLine,
+  UserCheck,
+  RefreshCw,
+  ClipboardList,
+  ShieldAlert,
+  FileWarning,
+  Car,
+  AtSign,
+  FileSignature,
+  PackageCheck,
+  Plane,
+  Building2,
+  Star,
   type LucideIcon,
 } from "lucide-react"
 import { groupByCategory, categoryKeyFor } from "@/lib/requirements/categories"
 import { RequirementAction, type GeneratedDoc, type ReferenceProgress } from "@/components/portal/requirement-action"
+import type { DmvApplicant } from "@/lib/portal/requirement-view"
 import type { CurrentDoc } from "@/components/portal/document-uploader"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { actionFor } from "@/lib/requirements/actions"
@@ -108,6 +128,55 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
   other: FileText,
 }
 
+/**
+ * One glyph per requirement, so cards in the same section read as distinct
+ * documents instead of six identical Fingerprints. Falls back to the category
+ * icon, then FileText, so a new registry code is never iconless.
+ */
+const REQ_ICON: Record<string, LucideIcon> = {
+  // Eligibility (mostly system-verified, rarely on the customer list)
+  "ELG-01": ShieldCheck,
+  "ELG-02": ShieldCheck,
+  "ELG-03": ShieldCheck,
+  // Identity & residence
+  "IDN-01": IdCard,
+  "IDN-02": BadgeCheck,
+  "IDN-03": Globe,
+  "IDN-04": Camera,
+  "RES-01": House,
+  "NAM-01": PenLine,
+  // Household & references
+  "COH-01": Users,
+  "REF-01": UserCheck,
+  "REF-02": UserCheck,
+  // Training
+  "TRN-01": GraduationCap,
+  "RNW-01": RefreshCw,
+  // Record & history
+  "DSC-01": ClipboardList,
+  "QUE-01": ClipboardList,
+  "ARR-01": Gavel,
+  "OOP-01": ShieldAlert,
+  "DIR-01": FileWarning,
+  "DMV-01": Car,
+  "GMC-01": BadgeCheck,
+  "SOC-01": AtSign,
+  // Storage / fees / sign-offs
+  "SAF-01": Lock,
+  "FEE-01": Receipt,
+  "AFF-01": FileSignature,
+  "FMT-01": PackageCheck,
+  // Special tracks
+  "MIL-01": Medal,
+  "LEO-01": ShieldCheck,
+  "LEO-02": ShieldCheck,
+  "LEO-03": ShieldCheck,
+  "OOS-01": Plane,
+  "OOS-02": Plane,
+  "PRM-01": Building2,
+  "SPC-01": Star,
+}
+
 /** Priority shows as a quiet dot on the icon tile, not a shouted label. */
 const PRIORITY_DOT: Record<string, string> = {
   critical: "bg-danger",
@@ -131,6 +200,7 @@ export function RequirementsChecklist({
   signatureOnFile,
   feeSummary,
   feeReceipts,
+  dmvApplicant,
 }: {
   items: ReqChecklistItem[]
   caseId: string
@@ -149,6 +219,8 @@ export function RequirementsChecklist({
   signatureOnFile: string | null
   feeSummary: FeeSummary
   feeReceipts: FeeReceipts
+  /** Applicant identity for the DMV-01 email-request draft (no SSN). */
+  dmvApplicant: DmvApplicant
 }) {
   // System controls (FMT-01, the intake-derived eligibility items) are things we
   // verify, not tasks for the customer — showing them as "Confirm" buttons was
@@ -245,7 +317,6 @@ export function RequirementsChecklist({
       {groupByCategory(shown).map(({ category, items: catItems }) => {
         const catAll = applicable.filter((i) => categoryKeyFor(i.reqCode) === category.key)
         const catDone = catAll.filter(isDone).length
-        const Icon = CATEGORY_ICON[category.key] ?? FileText
         return (
           <section key={category.key} aria-labelledby={`cat-${category.key}`}>
             <div className="mb-3 flex items-center gap-3">
@@ -264,6 +335,8 @@ export function RequirementsChecklist({
               {catItems.map((item) => {
                 const tone = isUnenforced(item.legalStatus) ? "muted" : LADDER_COPY[item.ladder].tone
                 const dot = PRIORITY_DOT[item.severity]
+                // Per-requirement glyph, category icon, then FileText.
+                const Icon = REQ_ICON[item.reqCode] ?? CATEGORY_ICON[categoryKeyFor(item.reqCode)] ?? FileText
                 return (
                   <li
                     key={item.id}
@@ -359,6 +432,7 @@ export function RequirementsChecklist({
                             signatureOnFile={signatureOnFile}
                             feeSummary={feeSummary}
                             feeReceipts={feeReceipts}
+                            dmvApplicant={item.reqCode === "DMV-01" ? dmvApplicant : null}
                           />
                         )}
 

@@ -380,11 +380,16 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     steps: [
       "Order your New York lifetime abstract online from the NYS DMV (about $7).",
       "Choose the LIFETIME abstract — not the standard 3-year one.",
+      "If the online MyDMV / NY.gov ID login errors out, use the offline options below — by mail with form MV-15C ($10), or in person at a DMV office.",
       "If you've lived in another state in the past five years, request that state's abstract too.",
       "Upload each abstract here.",
     ],
     sourceUrl: "https://dmv.ny.gov/records/get-my-own-driving-record-abstract",
     sourceLabel: "NYS DMV — driving records",
+    // TODO(concierge): optionally generate a pre-filled MV-15C PDF (same identity
+    // fields as the email draft) via the document engine so the applicant just
+    // prints, signs and mails it. Deferred — the mailto + offline paths (see
+    // components/portal/dmv-fallback) unblock people today without new plumbing.
   },
   "TRN-01": {
     mode: "obtain",

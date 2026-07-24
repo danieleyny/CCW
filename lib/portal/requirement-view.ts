@@ -15,7 +15,7 @@ import type { MyCase } from "@/lib/portal"
 import { getCaseRequirements } from "@/lib/requirements"
 import { actionFor } from "@/lib/requirements/actions"
 import { questionnaireFor, prefillFor, type PrefillContext } from "@/lib/requirements/questionnaires"
-import type { WizardAnswers } from "@/lib/intake/answers"
+import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
 import type { GeneratedDoc, ReferenceProgress, RefPersonState } from "@/components/portal/requirement-action"
 import type { ReqChecklistItem } from "@/components/portal/requirements-checklist"
 import type { LibraryFile } from "@/components/portal/document-library"
@@ -53,6 +53,21 @@ export interface RequirementView {
   feeSummary: FeeSummary
   /** Whether they've filed each fee receipt (tracking only; never gates FEE-01). */
   feeReceipts: FeeReceipts
+  /**
+   * Identity fields the DMV-01 "email my request" draft interpolates — the same
+   * data the questionnaire prefill uses, so nothing is retyped. NEVER includes
+   * SSN (see the DMV fallback UI): name + DOB + address + DL/Client ID is the
+   * whole verification set.
+   */
+  dmvApplicant: DmvApplicant
+}
+
+export interface DmvApplicant {
+  fullName: string
+  dob: string | null
+  address: string
+  email: string | null
+  phone: string | null
 }
 
 export async function loadRequirementView(db: DB, myCase: MyCase): Promise<RequirementView> {
@@ -271,6 +286,16 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     fingerprint: (docs ?? []).some((d) => d.type === "fingerprint_fee_receipt"),
   }
 
+  // Same identity set the questionnaire prefill uses — reused so the DMV draft
+  // never asks the applicant to retype what intake already knows. No SSN.
+  const dmvApplicant: DmvApplicant = {
+    fullName: myCase.client.full_name,
+    dob: intakeAnswers.dob ?? null,
+    address: formatLegalAddress(intakeAnswers),
+    email: myCase.client.email,
+    phone: myCase.client.phone,
+  }
+
   return {
     items,
     intakeDone: !!intake?.completed_at,
@@ -284,5 +309,6 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     cohabitantProgress,
     looseFiles,
     signatureOnFile: sig?.png_base64 ?? null,
+    dmvApplicant,
   }
 }
