@@ -60,7 +60,7 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
 
   const { data: existing } = await admin
     .from("reference_requests")
-    .select("id, token, revoked_at")
+    .select("id, token, nudge_token, revoked_at")
     .eq("reference_id", referenceId)
     .maybeSingle()
 
@@ -71,6 +71,9 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
       .from("reference_requests")
       .update({
         token,
+        // The nudge capability is STABLE across resends — the applicant may hold
+        // it in an old reminder email. Mint only if this row never had one.
+        nudge_token: existing.nudge_token ?? newReferenceToken(),
         status: "sent",
         sent_at: new Date().toISOString(),
         expires_at: tokenExpiry(),
@@ -83,6 +86,7 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
       reference_id: referenceId,
       case_id: ref.case_id,
       token,
+      nudge_token: newReferenceToken(),
       status: "sent",
       sent_at: new Date().toISOString(),
       expires_at: tokenExpiry(),

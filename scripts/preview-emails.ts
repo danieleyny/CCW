@@ -50,6 +50,16 @@ const emails: Record<string, ReturnType<typeof renderEmail>> = {
     cta: { label: "View your case →", url: "https://gunlicensenyc.com/portal" },
     recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
   }),
+  // The reference-unfilled reminder (to the applicant) — names the reference and
+  // carries a one-click resend button. Mirrors lib/reminders/engine.ts.
+  referenceReminder: renderEmail({
+    heading: "A character reference is still pending",
+    paragraphs: [
+      "Pat Rivera hasn't completed their character reference yet (3d). Send them a reminder — it takes one click.",
+    ],
+    cta: { label: "Remind Pat Rivera →", url: "https://gunlicensenyc.com/r/nudge/EXAMPLEnudgeToken9g4l0r3yx9qS" },
+    recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
+  }),
 }
 
 for (const [name, { html, text }] of Object.entries(emails)) {

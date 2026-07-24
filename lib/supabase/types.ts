@@ -2204,6 +2204,7 @@ export type Database = {
           id: string
           notarized_at: string | null
           notary_area: string | null
+          nudge_token: string | null
           opened_at: string | null
           reference_id: string
           revoked_at: string | null
@@ -2224,6 +2225,7 @@ export type Database = {
           id?: string
           notarized_at?: string | null
           notary_area?: string | null
+          nudge_token?: string | null
           opened_at?: string | null
           reference_id: string
           revoked_at?: string | null
@@ -2244,6 +2246,7 @@ export type Database = {
           id?: string
           notarized_at?: string | null
           notary_area?: string | null
+          nudge_token?: string | null
           opened_at?: string | null
           reference_id?: string
           revoked_at?: string | null

@@ -10,9 +10,12 @@ import type { Database } from "@/lib/supabase/types"
 import { computeFeeSummary } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
+import { newReferenceToken } from "@/lib/references/process"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
+
+const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
 export interface Fired {
   ruleKey: string
@@ -20,6 +23,8 @@ export interface Fired {
   email: string | null
   title: string
   body: string
+  /** Optional action button carried into the email (absolute URL). */
+  cta?: { label: string; url: string }
 }
 
 interface FireInput {
@@ -33,6 +38,8 @@ interface FireInput {
   title: string
   body: string
   link?: string
+  /** Optional action button carried into the email (absolute URL). */
+  cta?: { label: string; url: string }
 }
 
 /** Gate on reminder_log; on first occurrence write the in-app notification. */
@@ -57,7 +64,14 @@ async function fireOnce(admin: DB, input: FireInput): Promise<Fired | null> {
       link: input.link ?? null,
     })
   }
-  return { ruleKey: input.ruleKey, caseId: input.caseId ?? null, email: input.email ?? null, title: input.title, body: input.body }
+  return {
+    ruleKey: input.ruleKey,
+    caseId: input.caseId ?? null,
+    email: input.email ?? null,
+    title: input.title,
+    body: input.body,
+    cta: input.cta,
+  }
 }
 
 interface Contact {
@@ -115,9 +129,11 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
   }
 
   // ── Rule: a reference is unfilled at 3 and 7 days ─────────────────────────
+  // Names the specific reference and carries a one-click "remind them" button
+  // (a token-scoped page at /r/nudge/<nudge_token> that resends the invite).
   const { data: refReqs } = await admin
     .from("reference_requests")
-    .select("id, case_id, sent_at, status")
+    .select("id, case_id, sent_at, status, nudge_token, character_references(name)")
     .in("status", ["sent", "opened"])
   const refContacts = await caseContacts(admin, (refReqs ?? []).map((r) => r.case_id))
   for (const r of refReqs ?? []) {
@@ -127,6 +143,14 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     if (!bucket) continue
     const c = refContacts.get(r.case_id)
     if (!c) continue
+    const refName = (r.character_references as unknown as { name: string } | null)?.name?.trim() || "One of your references"
+    // Rows created before nudge_token existed get one on first reminder, so the
+    // button works for every applicant regardless of when they invited.
+    let nudge = r.nudge_token
+    if (!nudge) {
+      nudge = newReferenceToken()
+      await admin.from("reference_requests").update({ nudge_token: nudge }).eq("id", r.id)
+    }
     push(await fireOnce(admin, {
       ruleKey: "reference_unfilled",
       target: c.profileId ?? c.email ?? c.clientId,
@@ -136,8 +160,9 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       email: c.email,
       kind: "reminder",
       title: "A character reference is still pending",
-      body: `One of your references hasn't responded yet (${bucket}). A reminder may help.`,
+      body: `${refName} hasn't completed their character reference yet (${bucket}). Send them a reminder — it takes one click.`,
       link: "/portal/people",
+      cta: { label: `Remind ${refName} →`, url: `${siteBase()}/r/nudge/${nudge}` },
     }))
   }
 

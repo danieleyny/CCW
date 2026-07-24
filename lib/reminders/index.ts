@@ -16,7 +16,7 @@ export async function runReminders() {
   let emailed = 0
   for (const f of fired) {
     if (f.email) {
-      await notifyClient({ to: f.email, subject: f.title, body: f.body })
+      await notifyClient({ to: f.email, subject: f.title, body: f.body, cta: f.cta })
       emailed++
     }
   }

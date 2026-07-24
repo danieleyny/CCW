@@ -62,8 +62,10 @@ export async function notifyClient(opts: {
   to: string | null | undefined
   subject: string
   body: string
+  /** Optional action button (e.g. a one-click "remind this reference" link). */
+  cta?: { label: string; url: string }
 }) {
   if (!opts.to) return { skipped: true as const }
-  const { html, text } = renderEmail({ heading: opts.subject, paragraphs: [opts.body] })
+  const { html, text } = renderEmail({ heading: opts.subject, paragraphs: [opts.body], cta: opts.cta })
   return sendEmail({ to: opts.to, subject: opts.subject, html, text })
 }
