@@ -893,6 +893,7 @@ export type Database = {
           lng: number | null
           phone: string | null
           profile_id: string | null
+          stripe_customer_id: string | null
           track: Database["public"]["Enums"]["client_track"]
           updated_at: string
           zip: string | null
@@ -913,6 +914,7 @@ export type Database = {
           lng?: number | null
           phone?: string | null
           profile_id?: string | null
+          stripe_customer_id?: string | null
           track?: Database["public"]["Enums"]["client_track"]
           updated_at?: string
           zip?: string | null
@@ -933,6 +935,7 @@ export type Database = {
           lng?: number | null
           phone?: string | null
           profile_id?: string | null
+          stripe_customer_id?: string | null
           track?: Database["public"]["Enums"]["client_track"]
           updated_at?: string
           zip?: string | null
@@ -1986,12 +1989,14 @@ export type Database = {
           currency: string
           description: string | null
           engagement_id: string | null
+          hosted_invoice_url: string | null
           id: string
           invoice_url: string | null
           package_key: string | null
           paid_at: string | null
           status: Database["public"]["Enums"]["payment_status"]
           stripe_connect_account: string | null
+          stripe_invoice_id: string | null
           stripe_payment_intent: string | null
           stripe_session_id: string | null
           type: Database["public"]["Enums"]["payment_type"]
@@ -2007,12 +2012,14 @@ export type Database = {
           currency?: string
           description?: string | null
           engagement_id?: string | null
+          hosted_invoice_url?: string | null
           id?: string
           invoice_url?: string | null
           package_key?: string | null
           paid_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_connect_account?: string | null
+          stripe_invoice_id?: string | null
           stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           type?: Database["public"]["Enums"]["payment_type"]
@@ -2028,12 +2035,14 @@ export type Database = {
           currency?: string
           description?: string | null
           engagement_id?: string | null
+          hosted_invoice_url?: string | null
           id?: string
           invoice_url?: string | null
           package_key?: string | null
           paid_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_connect_account?: string | null
+          stripe_invoice_id?: string | null
           stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           type?: Database["public"]["Enums"]["payment_type"]

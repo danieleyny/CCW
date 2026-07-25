@@ -96,6 +96,44 @@ export async function POST(request: NextRequest) {
       await supabase.from("payments").update({ status: "failed" }).eq("stripe_payment_intent", pi.id)
       break
     }
+    // ── Stripe Invoicing (admin-issued hosted invoices) ──────────────────────
+    // All keyed on metadata.payment_id (set when the invoice was created),
+    // falling back to stripe_invoice_id. Same idempotent update-by-key +
+    // forward-only stage advance as the Checkout path — retries are harmless.
+    case "invoice.finalized": {
+      const invoice = event.data.object
+      const paymentId = invoice.metadata?.payment_id
+      const patch = {
+        stripe_invoice_id: invoice.id,
+        hosted_invoice_url: invoice.hosted_invoice_url ?? null,
+      }
+      if (paymentId) await supabase.from("payments").update(patch).eq("id", paymentId)
+      else await supabase.from("payments").update(patch).eq("stripe_invoice_id", invoice.id)
+      break
+    }
+    case "invoice.paid": {
+      const invoice = event.data.object
+      const paymentId = invoice.metadata?.payment_id
+      const query = supabase
+        .from("payments")
+        .update({ status: "paid", paid_at: new Date().toISOString() })
+        .select("case_id")
+      const { data: paid } = paymentId
+        ? await query.eq("id", paymentId).maybeSingle()
+        : await query.eq("stripe_invoice_id", invoice.id).maybeSingle()
+      if (paid?.case_id) {
+        await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "invoice.paid")
+      }
+      break
+    }
+    case "invoice.payment_failed": {
+      const invoice = event.data.object
+      const paymentId = invoice.metadata?.payment_id
+      const q = supabase.from("payments").update({ status: "failed" })
+      if (paymentId) await q.eq("id", paymentId)
+      else await q.eq("stripe_invoice_id", invoice.id)
+      break
+    }
     default:
       // Unhandled event types are acknowledged so Stripe stops retrying.
       break

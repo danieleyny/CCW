@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/shared/page-header"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,7 +22,7 @@ export default async function AdminPayments() {
   const [{ data: payments }, { data: cases }] = await Promise.all([
     supabase
       .from("payments")
-      .select("id, amount_cents, type, status, description, paid_at, created_at, clients(full_name)")
+      .select("id, amount_cents, type, status, description, hosted_invoice_url, paid_at, created_at, clients(full_name)")
       .order("created_at", { ascending: false }),
     supabase
       .from("cases")
@@ -98,13 +99,14 @@ export default async function AdminPayments() {
               <TableHead>Type</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Invoice</TableHead>
               <TableHead>Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-20 text-center text-text-mid">
+                <TableCell colSpan={7} className="h-20 text-center text-text-mid">
                   No payments yet.
                 </TableCell>
               </TableRow>
@@ -119,6 +121,20 @@ export default async function AdminPayments() {
                   <TableCell className="font-mono tabular-nums">{money(p.amount_cents)}</TableCell>
                   <TableCell>
                     <StatusBadge status={p.status} />
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {p.hosted_invoice_url ? (
+                      <a
+                        href={p.hosted_invoice_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-signal hover:underline"
+                      >
+                        View <ExternalLink className="size-3" />
+                      </a>
+                    ) : (
+                      <span className="text-text-low">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="font-mono text-xs text-text-low">
                     {formatDate(p.paid_at ?? p.created_at)}

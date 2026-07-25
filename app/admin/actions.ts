@@ -8,6 +8,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { notifyClient } from "@/lib/email"
+import { getStripe } from "@/lib/stripe"
+import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing"
 import { STAGE_KEYS, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
@@ -375,31 +377,112 @@ export async function postMessage(caseId: string, body: string) {
 }
 
 // ── payments ─────────────────────────────────────────────────────────────────
+export interface RequestPaymentResult {
+  ok: boolean
+  /** Present when a real Stripe invoice was issued — the hosted pay page. */
+  hostedInvoiceUrl?: string | null
+  /** True when Stripe was off and we fell back to the manual invoice task. */
+  fallback?: boolean
+  error?: string
+}
+
+/**
+ * Staff-requested payment. With Stripe on, issue a REAL hosted invoice that
+ * emails the client a branded pay link (Stripe Invoicing). With Stripe off,
+ * fall back to a pending row + a staff "send invoice" task so nothing dead-ends.
+ */
 export async function requestPayment(input: {
   caseId: string
   amountCents: number
   type: "deposit" | "full" | "installment"
   description: string
-}) {
+}): Promise<RequestPaymentResult> {
   await requireStaff()
-  if (!input.amountCents || input.amountCents < 50) throw new Error("Enter a valid amount")
+  if (!input.amountCents || input.amountCents < 50) return { ok: false, error: "Enter a valid amount" }
+
   const supabase = await createClient()
   const { data: kase } = await supabase
     .from("cases")
     .select("client_id")
     .eq("id", input.caseId)
     .single()
-  const { error } = await supabase.from("payments").insert({
+  const clientId = kase?.client_id ?? null
+  const description = input.description || `${input.type} payment`
+
+  // The pending row first — it's the record of truth either path shares, and its
+  // id is the invoice's reconciliation key.
+  const { data: payment, error } = await supabase
+    .from("payments")
+    .insert({
+      case_id: input.caseId,
+      client_id: clientId,
+      amount_cents: input.amountCents,
+      type: input.type,
+      status: "pending",
+      description,
+    })
+    .select("id")
+    .single()
+  if (error || !payment) return { ok: false, error: error?.message ?? "Could not create the payment" }
+
+  const stripe = getStripe()
+  if (stripe && clientId) {
+    try {
+      const { data: client } = await supabase
+        .from("clients")
+        .select("id, email, full_name, stripe_customer_id")
+        .eq("id", clientId)
+        .single()
+      if (client?.email) {
+        const customerId = await findOrCreateCustomer(supabase, stripe, client)
+        const invoice = await createAndSendInvoice(stripe, {
+          customerId,
+          paymentId: payment.id,
+          caseId: input.caseId,
+          amountCents: input.amountCents,
+          description,
+        })
+        await supabase
+          .from("payments")
+          .update({ stripe_invoice_id: invoice.id, hosted_invoice_url: invoice.hostedInvoiceUrl })
+          .eq("id", payment.id)
+        await logActivity({
+          action: "payment.invoiced",
+          caseId: input.caseId,
+          clientId,
+          entity: "payment",
+          entityId: payment.id,
+          detail: { amount: input.amountCents, type: input.type, stripe_invoice_id: invoice.id },
+        })
+        revalidatePath("/admin/payments")
+        return { ok: true, hostedInvoiceUrl: invoice.hostedInvoiceUrl }
+      }
+    } catch (e) {
+      // A Stripe failure shouldn't lose the requested payment — the row stands,
+      // and staff can send it manually via the fallback task below.
+      console.error("[stripe] invoice creation failed:", e)
+    }
+  }
+
+  // Stripe-off (or no client email / Stripe error) fallback: a staff task so the
+  // request is actioned by a human. Mirrors the enroll-page invoice fallback.
+  await supabase.from("tasks").insert({
     case_id: input.caseId,
-    client_id: kase?.client_id ?? null,
-    amount_cents: input.amountCents,
-    type: input.type,
-    status: "pending",
-    description: input.description || `${input.type} payment`,
+    title: `Send invoice: ${description}`,
+    description: "Payment requested from the admin console. Send the invoice / payment link.",
+    priority: 1,
+    status: "open",
   })
-  if (error) throw error
-  await logActivity({ action: "payment.requested", caseId: input.caseId, detail: { amount: input.amountCents, type: input.type } })
+  await logActivity({
+    action: "payment.requested",
+    caseId: input.caseId,
+    clientId,
+    entity: "payment",
+    entityId: payment.id,
+    detail: { amount: input.amountCents, type: input.type },
+  })
   revalidatePath("/admin/payments")
+  return { ok: true, fallback: true }
 }
 
 // ── tasks ────────────────────────────────────────────────────────────────────

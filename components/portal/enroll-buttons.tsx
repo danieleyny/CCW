@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Loader2 } from "lucide-react"
 import { startCheckout, type EnrollResult } from "@/app/portal/enroll/actions"
 import { Button } from "@/components/ui/button"
 
@@ -31,17 +31,25 @@ export function EnrollButtons({
   }
 
   const custom = priceCents <= 0
+  const primaryLabel = custom
+    ? "Request a quote"
+    : stripeOn
+      ? `Pay $${(priceCents / 100).toLocaleString("en-US")} now`
+      : "Request invoice"
   return (
     <div className="mt-4 space-y-2">
       <form action={action}>
         <input type="hidden" name="packageKey" value={packageKey} />
         <input type="hidden" name="mode" value="full" />
-        <Button type="submit" disabled={pending} variant={featured ? "default" : "outline"} className="w-full">
-          {custom
-            ? "Request a quote"
-            : stripeOn
-              ? `Pay $${(priceCents / 100).toLocaleString("en-US")} now`
-              : "Request invoice"}
+        <Button
+          type="submit"
+          disabled={pending}
+          aria-busy={pending}
+          variant={featured ? "default" : "outline"}
+          className="w-full"
+        >
+          {pending && <Loader2 className="mr-1.5 size-4 animate-spin" />}
+          {pending ? "Starting…" : primaryLabel}
         </Button>
       </form>
       {!custom && depositCents > 0 && stripeOn && (
@@ -53,7 +61,11 @@ export function EnrollButtons({
           </Button>
         </form>
       )}
-      {state.error && <p className="text-xs text-danger">{state.error}</p>}
+      {state.error && (
+        <p className="text-xs text-danger" role="alert">
+          {state.error} — please try again.
+        </p>
+      )}
     </div>
   )
 }

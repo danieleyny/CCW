@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { CreditCard, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { payPending } from "@/app/portal/payments/actions"
 import { Button } from "@/components/ui/button"
@@ -22,8 +23,13 @@ export function PayButton({ paymentId }: { paymentId: string }) {
   }
 
   return (
-    <Button size="sm" onClick={pay} disabled={pending}>
-      {pending ? "…" : "Pay now"}
+    <Button size="sm" onClick={pay} disabled={pending} aria-busy={pending}>
+      {pending ? (
+        <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+      ) : (
+        <CreditCard className="mr-1.5 size-3.5" />
+      )}
+      {pending ? "Starting…" : "Pay now"}
     </Button>
   )
 }

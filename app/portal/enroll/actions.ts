@@ -7,6 +7,7 @@ import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getStripe, STRIPE_ENABLED } from "@/lib/stripe"
+import { findOrCreateCustomer } from "@/lib/stripe/invoicing"
 import { getPackage } from "@/lib/packages"
 import { getSiteUrl } from "@/lib/site-url"
 import { logActivity } from "@/lib/activity"
@@ -75,9 +76,24 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
     .single()
   if (error || !payment) return { error: "Couldn't start checkout. Try again." }
 
+  // Attach a reusable Stripe Customer so receipts + saved details work. Best
+  // effort: never block a purchase on customer creation.
+  let customerId: string | undefined
+  try {
+    const { data: client } = await admin
+      .from("clients")
+      .select("id, email, full_name, stripe_customer_id")
+      .eq("id", myCase.client_id)
+      .single()
+    if (client) customerId = await findOrCreateCustomer(admin, stripe, client)
+  } catch (e) {
+    console.error("[stripe] customer attach (checkout) failed:", e)
+  }
+
   const base = getSiteUrl()
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    ...(customerId ? { customer: customerId } : {}),
     line_items: [
       {
         quantity: 1,

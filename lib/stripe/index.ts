@@ -12,11 +12,19 @@ export const STRIPE_ENABLED =
 
 let cached: Stripe | null = null
 
+/**
+ * Pin the API version explicitly (best practice): the account's default version
+ * can drift, silently changing webhook payload shapes. This matches the `stripe`
+ * SDK's own bundled version (22.2.0 → 2026-05-27.dahlia), so the runtime and the
+ * TypeScript types agree. Bump this deliberately alongside an SDK upgrade.
+ */
+const STRIPE_API_VERSION = "2026-05-27.dahlia"
+
 /** Returns a Stripe client, or null when disabled. Always null-check the result. */
 export function getStripe(): Stripe | null {
   if (!STRIPE_ENABLED) return null
   if (!cached) {
-    cached = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    cached = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: STRIPE_API_VERSION })
   }
   return cached
 }

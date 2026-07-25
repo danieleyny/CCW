@@ -19,7 +19,12 @@ const DB_TESTS = DB_TEST_FILES
 
 export default defineConfig({
   resolve: {
-    alias: { "@": path.resolve(__dirname, ".") },
+    alias: {
+      "@": path.resolve(__dirname, "."),
+      // Let tests import `server-only` modules (Stripe libs, auth, email) — the
+      // real package throws when bundled for the client; in node it's a no-op.
+      "server-only": path.resolve(__dirname, "tests/stubs/server-only.ts"),
+    },
   },
   test: {
     projects: [
@@ -38,6 +43,9 @@ export default defineConfig({
           name: "db",
           include: DB_TESTS,
           environment: "node",
+          // Load .env.local before the DB modules import, so the Stripe suite
+          // sees local test keys (skips cleanly when they're absent).
+          setupFiles: ["tests/setup.env.ts"],
           // One process, one file at a time — the shared DB is not reentrant.
           // fileParallelism:false serializes the files; maxWorkers:1 keeps them
           // in a single fork (Vitest-4 replacement for poolOptions.singleFork).
