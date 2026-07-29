@@ -6,20 +6,27 @@ import { BrandStyle } from "@/config/brand-style";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
+// Body + hero display fonts are on the critical path → preload. Mono is only
+// small eyebrows/labels → keep it off the preload list so it doesn't compete
+// with the LCP fonts. All swap so text paints immediately in the fallback.
 const fontSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const fontDisplay = Space_Grotesk({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 const fontMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

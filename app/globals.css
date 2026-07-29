@@ -99,6 +99,14 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  /* Defensive horizontal-overflow guard against decorative full-bleed spill on
+     mobile (aura glows, tilted cards). `overflow-x: clip` — NOT `hidden` — so it
+     never establishes a scroll container that would break `position: sticky`
+     (the marketing nav) or the fixed mobile CTA. Fixed backdrops (DarkBackdrop)
+     aren't clipped by this, so they clip themselves. */
+  html {
+    overflow-x: clip;
+  }
   /* App routes wrap their tree in `.dark`, but <html>/<body> sit OUTSIDE it and
      keep the light marketing paper. Overscroll (rubber-band) and pages shorter
      than the shell then flash paper behind the obsidian app. Paint the document

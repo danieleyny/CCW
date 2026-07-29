@@ -18,7 +18,7 @@ import { CostCard } from "@/components/marketing/cost-card"
 import { StickyCta } from "@/components/marketing/sticky-cta"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 import { PlacemakingBand } from "@/components/marketing/placemaking-band"
-import { CaseAnimation } from "@/components/marketing/showcase/case-animation"
+import { CaseAnimationLazy } from "@/components/marketing/showcase/case-animation-lazy"
 import { TheCount } from "@/components/marketing/showcase/the-count"
 
 /**
@@ -113,7 +113,7 @@ export default async function Home() {
 
           {/* RIGHT: self-advancing animated case card */}
           <Reveal delay={200} className="relative z-10 w-full">
-            <CaseAnimation />
+            <CaseAnimationLazy />
           </Reveal>
         </div>
       </section>
