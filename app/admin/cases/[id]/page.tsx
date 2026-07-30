@@ -18,6 +18,7 @@ import { CaseNotes, type NoteRow } from "@/components/admin/case-notes"
 import { CaseTasks, type CaseTaskRow, type StaffOption } from "@/components/admin/case-tasks"
 import { AssignControl } from "@/components/admin/assign-control"
 import { QaGateCard } from "@/components/admin/qa-gate-card"
+import { IntakeReview, type IntakeData } from "@/components/admin/intake-review"
 import { MarkMessagesRead } from "@/components/admin/mark-read"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import {
@@ -88,6 +89,7 @@ export default async function CaseFilePage({
     activityRes,
     staffListRes,
     apptRes,
+    intakeRes,
   ] = await Promise.all([
     supabase
       .from("case_requirements")
@@ -119,6 +121,9 @@ export default async function CaseFilePage({
       .limit(50),
     supabase.from("profiles").select("id, full_name").in("role", ["staff", "admin"]).order("full_name"),
     supabase.from("appointments").select("type, scheduled_at, location").eq("case_id", id).gte("scheduled_at", new Date().toISOString()).order("scheduled_at").limit(1),
+    // Admin-only playback of the raw wizard answers (staff-gated page). Shows
+    // data only for intakes that actually saved; a null row is the empty state.
+    supabase.from("intake_sessions").select("answers, current_step, completed_at, updated_at").eq("case_id", id).maybeSingle(),
   ])
 
   // Signed URLs for uploaded documents.
@@ -209,6 +214,17 @@ export default async function CaseFilePage({
     const p = m.profiles as unknown as { full_name: string; role: string } | null
     return { id: m.id, body: m.body, created_at: m.created_at, senderName: p?.full_name ?? null, senderRole: p?.role ?? null }
   })
+
+  // Raw intake answers for the admin-only "Intake responses" tab. Null = no
+  // session row saved for this case (the empty state, not an error).
+  const intake: IntakeData | null = intakeRes.data
+    ? {
+        answers: (intakeRes.data.answers ?? {}) as unknown as IntakeData["answers"],
+        currentStep: intakeRes.data.current_step,
+        completedAt: intakeRes.data.completed_at,
+        updatedAt: intakeRes.data.updated_at,
+      }
+    : null
 
   // Left-rail vitals.
   const stage = kase.stage as CaseStageKey
@@ -329,6 +345,7 @@ export default async function CaseFilePage({
       <Tabs defaultValue="requirements">
         <TabsList className="flex-wrap">
           <TabsTrigger value="requirements">Requirements ({blockingOpen})</TabsTrigger>
+          <TabsTrigger value="intake">Intake responses</TabsTrigger>
           <TabsTrigger value="disclosures">Disclosures ({disclosureRows.length})</TabsTrigger>
           <TabsTrigger value="documents">Documents ({docs.length})</TabsTrigger>
           <TabsTrigger value="people">People</TabsTrigger>
@@ -348,6 +365,10 @@ export default async function CaseFilePage({
             signedOffAt={kase.qa_signed_off_at}
           />
           <RequirementsReview caseId={id} rows={reqRows} />
+        </TabsContent>
+
+        <TabsContent value="intake" className="mt-4">
+          <IntakeReview intake={intake} />
         </TabsContent>
 
         <TabsContent value="disclosures" className="mt-4">
