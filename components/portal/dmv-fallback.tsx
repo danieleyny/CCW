@@ -40,13 +40,13 @@ export function DmvFallback({ applicant }: { applicant?: DmvApplicant | null }) 
     "",
     "I'm trying to obtain my own New York driving record abstract, but the online MyDMV / NY.gov ID portal returns \"There was an error processing your request\" (apps-ext.dmv.ny.gov/OIDC), so I can't self-serve. Could you help resolve the login error, or advise how to obtain my LIFETIME NY driving abstract?",
     "",
-    "If I've lived in another state in the past five years, I also need that state's abstract.",
-    "",
     "Identifying information:",
     `- Full legal name: ${a?.fullName || "[Your full legal name]"}`,
     `- Date of birth: ${a?.dob || "[Your date of birth]"}`,
     `- Residential address: ${a?.address || "[Your residential address]"}`,
-    `- Phone: ${a?.phone || "[Your phone number]"}`,
+    // Use the phone on file; if there isn't one, omit the line entirely rather
+    // than send a "[Your phone number]" placeholder to the state help desk.
+    ...(a?.phone ? [`- Phone: ${a.phone}`] : []),
     `- Email: ${a?.email || "[Your email]"}`,
     `- NY driver license / client ID number: ${dl}`,
     "",

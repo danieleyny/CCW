@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   DndContext,
@@ -33,17 +34,29 @@ export interface PipelineCase {
 }
 
 function Card({ c }: { c: PipelineCase }) {
+  const router = useRouter()
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: c.id,
     data: { stage: c.stage },
   })
+  // Where the pointer went down — so a click that didn't move opens the case,
+  // while a drag (moved past the 5px sensor threshold) does not navigate.
+  const downPos = useRef<{ x: number; y: number } | null>(null)
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onPointerDownCapture={(e) => {
+        downPos.current = { x: e.clientX, y: e.clientY }
+      }}
+      onClick={(e) => {
+        const d = downPos.current
+        if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return // was a drag
+        router.push(`/admin/cases/${c.id}`)
+      }}
       className={cn(
-        "cursor-grab touch-none rounded-md border border-hairline border-l-2 bg-card p-3 transition-colors hover:border-hairline-strong active:cursor-grabbing",
+        "cursor-pointer touch-none rounded-md border border-hairline border-l-2 bg-card p-3 transition-colors hover:border-hairline-strong active:cursor-grabbing",
         // Stall SLA: red edge past 14 days in stage (blocked status also reads red).
         c.status === "blocked" || c.daysInStage > 14 ? "border-l-danger" : "border-l-brass/40",
         isDragging && "opacity-40"
@@ -70,6 +83,7 @@ function Card({ c }: { c: PipelineCase }) {
           href={`/admin/cases/${c.id}`}
           className="font-mono text-[10px] uppercase tracking-wider text-signal underline-offset-2 hover:underline"
           onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           Open
         </Link>

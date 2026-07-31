@@ -26,6 +26,14 @@ export interface LadderInput {
   /** The most recent review of this item, if there is one. */
   latestReview?: { decision: string } | null
   /**
+   * The status of the current UPLOADED document for this requirement, if any
+   * (documents.status). It's the truth the upload widget shows, so the card
+   * must agree with it: an approved document reads "approved" even if the
+   * requirement row's status/binding lagged behind (e.g. IDN-03, whose registry
+   * document_type is NULL, so the staff-approval cascade couldn't match it).
+   */
+  docStatus?: string | null
+  /**
    * Roster items (references / cohabitant affidavits): invitations are out and
    * we're waiting on OTHER people to complete and notarize. There's no bound
    * evidence yet, but the item is genuinely in progress — not "not started".
@@ -34,8 +42,9 @@ export interface LadderInput {
 }
 
 export function deriveLadder(input: LadderInput): LadderState {
-  if (input.status === "satisfied") return "approved"
-  if (input.latestReview?.decision === "changes_requested") return "changes_requested"
+  if (input.status === "satisfied" || input.docStatus === "approved") return "approved"
+  if (input.latestReview?.decision === "changes_requested" || input.docStatus === "rejected")
+    return "changes_requested"
   if (input.hasEvidence) return "submitted"
   if (input.rosterInvited) return "waiting"
   return "pending"

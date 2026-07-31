@@ -15,6 +15,7 @@ import { getStripe } from "@/lib/stripe"
 import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing"
 import { STAGE_KEYS, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
+import { actionFor } from "@/lib/requirements/actions"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import {
   BOROUGHS,
@@ -304,22 +305,27 @@ export async function reviewDocument(input: {
   // IDN reqs all map to 'id', and IDN-03's registry document_type is NULL — which
   // both left IDN-03 stuck "In review" after approval AND over-satisfied IDN-01/02.
   // Fall back to document_type only for legacy docs uploaded before req_code existed.
-  let matchingReqs: Array<{ id: string; status: string }> | null = null
-  if (doc.req_code) {
-    const { data } = await supabase
+  // Resolve the req_code this document satisfies. Prefer the doc's own req_code;
+  // otherwise map its document TYPE to a req_code the SAME way the portal
+  // associates uploads — via the action config (actionFor().documentType), NOT
+  // the registry requirements.document_type. The registry column is NULL for
+  // some reqs (IDN-03), so the old fallback couldn't match them and an approved
+  // document was left with its requirement stuck unsatisfied + unbound.
+  let targetReqCode: string | null = doc.req_code ?? null
+  if (!targetReqCode) {
+    const { data: crs } = await supabase
       .from("case_requirements")
-      .select("id, status")
+      .select("req_code")
       .eq("case_id", input.caseId)
-      .eq("req_code", doc.req_code)
-    matchingReqs = data
-  } else {
-    const { data } = await supabase
-      .from("case_requirements")
-      .select("id, status, requirements!inner(document_type)")
-      .eq("case_id", input.caseId)
-      .eq("requirements.document_type", doc.type)
-    matchingReqs = data
+    targetReqCode = (crs ?? []).find((r) => actionFor(r.req_code)?.documentType === doc.type)?.req_code ?? null
   }
+  const { data: matchingReqs } = targetReqCode
+    ? await supabase
+        .from("case_requirements")
+        .select("id, status")
+        .eq("case_id", input.caseId)
+        .eq("req_code", targetReqCode)
+    : { data: [] as Array<{ id: string; status: string }> }
   for (const r of matchingReqs ?? []) {
     if (r.status === "na") continue
     await supabase
@@ -419,7 +425,9 @@ export async function adminAssignInstructor(caseId: string, instructorId: string
     .eq("id", instructorId)
     .maybeSingle()
   if (!instr) throw new Error("Instructor not found")
-  if (!instr.verified) throw new Error("That instructor isn't verified yet.")
+  // Full assignment power: admin may assign an as-yet-unverified instructor
+  // (the dropdown labels them "pending"). Verification gates marketplace
+  // visibility, not an admin's deliberate override.
 
   // Retire any other active engagement, then bind the chosen instructor.
   // Reassigning to a previously-engaged instructor reactivates their row

@@ -154,8 +154,10 @@ export default async function CaseFilePage({
       .eq("case_id", id)
       .eq("staff_only", true)
       .order("created_at"),
-    // B3A — verified instructors for the admin assignment lever.
-    supabase.from("instructors").select("id, name").eq("verified", true).order("name"),
+    // B3A — every instructor for the admin assignment lever. Not verified-only:
+    // admin has full assignment power and needs to see all trainers (an
+    // unverified one is labelled "pending" in the dropdown).
+    supabase.from("instructors").select("id, name, verified").order("verified", { ascending: false }).order("name"),
   ])
 
   // Signed URLs for uploaded documents.
@@ -275,7 +277,11 @@ export default async function CaseFilePage({
   const activeEngagementId = activeEngagement?.id ?? null
   const activeInstructorName =
     (activeEngagement?.instructors as unknown as { name: string } | null)?.name ?? null
-  const verifiedInstructors = (verifiedInstructorsRes.data ?? []).map((i) => ({ id: i.id, name: i.name }))
+  const verifiedInstructors = (verifiedInstructorsRes.data ?? []).map((i) => ({
+    id: i.id,
+    name: i.name,
+    verified: i.verified,
+  }))
   const staffLaneMessages = (staffLaneMessagesRes.data ?? []).map((m) => {
     const p = m.profiles as unknown as { full_name: string; role: string } | null
     return {

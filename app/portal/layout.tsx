@@ -31,9 +31,12 @@ export default async function PortalLayout({
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LocaleSwitcher current={locale} label={t.common.language} />
             <NotificationBell />
-            <span className="hidden text-sm text-muted-foreground sm:inline">
+            <Link
+              href="/portal/profile"
+              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
+            >
               {profile.full_name}
-            </span>
+            </Link>
             <AccountActions signOutLabel={t.common.signOut} />
           </div>
         </div>
@@ -45,7 +48,10 @@ export default async function PortalLayout({
       </main>
 
       {/* Not a nav tab — this is rarely-needed but must always be findable. */}
-      <footer className="mx-auto w-full max-w-3xl px-4 pb-24 text-xs text-text-low md:pb-6">
+      <footer className="mx-auto flex w-full max-w-3xl gap-4 px-4 pb-24 text-xs text-text-low md:pb-6">
+        <Link href="/portal/profile" className="underline hover:text-text-mid">
+          Profile
+        </Link>
         <Link href="/portal/privacy" className="underline hover:text-text-mid">
           {t.portal.yourData}
         </Link>

@@ -14,14 +14,14 @@ import {
 } from "@/components/ui/select"
 import { formatDateTime } from "@/lib/format"
 
-/** B3A — direct assign/reassign of a verified instructor (full assignment power). */
+/** B3A — direct assign/reassign of any instructor (full assignment power). */
 export function AssignInstructorForm({
   caseId,
   instructors,
   currentName,
 }: {
   caseId: string
-  instructors: { id: string; name: string }[]
+  instructors: { id: string; name: string; verified: boolean }[]
   currentName: string | null
 }) {
   const [pending, start] = useTransition()
@@ -43,6 +43,14 @@ export function AssignInstructorForm({
     })
   }
 
+  if (instructors.length === 0) {
+    return (
+      <p className="text-sm text-text-low">
+        No instructors on the platform yet. Instructors appear here once they sign up.
+      </p>
+    )
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select value={sel} onValueChange={setSel}>
@@ -53,6 +61,7 @@ export function AssignInstructorForm({
           {instructors.map((i) => (
             <SelectItem key={i.id} value={i.id}>
               {i.name}
+              {!i.verified && <span className="ml-1.5 text-[10px] text-warn">· pending</span>}
             </SelectItem>
           ))}
         </SelectContent>

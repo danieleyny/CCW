@@ -57,6 +57,20 @@ describe("status ladder", () => {
     expect(deriveLadder({ status: "satisfied", hasEvidence: false })).toBe("approved")
   })
 
+  it("an approved document reads approved even if the requirement lagged", () => {
+    // IDN-03: the document is approved (widget shows it) but the requirement row
+    // was left unsatisfied by the old cascade — the card must still say approved.
+    expect(
+      deriveLadder({ status: "pending", hasEvidence: true, docStatus: "approved" })
+    ).toBe("approved")
+  })
+
+  it("a rejected document reads as needs-a-fix", () => {
+    expect(
+      deriveLadder({ status: "pending", hasEvidence: true, docStatus: "rejected" })
+    ).toBe("changes_requested")
+  })
+
   it("never tells an applicant an instructor reviewed their disclosures", () => {
     expect(reviewerLabel("trainer")).toBe("your instructor")
     expect(reviewerLabel("staff")).toBe("Gun License NYC")

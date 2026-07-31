@@ -246,6 +246,10 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
 
   const items: ReqChecklistItem[] = reqRows.map((row) => {
     const review = reviewByReq.get(row.id)
+    // The current uploaded doc for this req (associated by req_code, with the
+    // same type-fallback the widget uses). Its status is what the upload widget
+    // shows, so the ladder derives from it too — the card and the widget agree.
+    const currentDoc = currentByReq[row.req_code]
     return {
     id: row.id,
     reqCode: row.req_code,
@@ -254,7 +258,11 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     // status + evidence + the latest review, never stored (lib/requirements/ladder).
     ladder: deriveLadder({
       status: row.status,
-      hasEvidence: !!(row.document_id || row.reference_id || row.cohabitant_id),
+      // A current uploaded doc counts as evidence even if case_requirements
+      // .document_id was never bound (the desync that showed IDN-03 as both
+      // "Approved" in the widget and "Not started" on the card).
+      hasEvidence: !!(row.document_id || row.reference_id || row.cohabitant_id) || !!currentDoc,
+      docStatus: currentDoc?.status ?? null,
       latestReview: review?.decision ? { decision: review.decision } : null,
       rosterInvited:
         (isRefRoster(row.req_code) && refInvited) ||
