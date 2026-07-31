@@ -51,6 +51,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // INTENTIONAL: a genuinely signed-in user who lands on the login/sign-up
+  // page is bounced to their dashboard (the auto-login convenience). This is
+  // NOT the source of the old "logout then instantly back in" bug — that was
+  // signOut() failing to clear the chunked auth cookies, so the user was still
+  // signed in here. The "Switch account" action signs out FIRST, so it reaches
+  // the form cleanly instead of being bounced. Keep this exact-match on
+  // /auth/login and /auth/sign-up only (so /auth/reset-password etc. are never
+  // bounced while carrying a recovery session).
   if (user && (path === "/auth/login" || path === "/auth/sign-up")) {
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard"

@@ -1,6 +1,8 @@
 "use server"
 
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -9,6 +11,11 @@ import { getSiteUrl } from "@/lib/site-url"
 
 export interface AuthFormState {
   error?: string
+}
+
+export interface ResetRequestState {
+  error?: string
+  sent?: boolean
 }
 
 const loginSchema = z.object({
@@ -93,8 +100,90 @@ export async function signUp(
   redirect("/auth/login")
 }
 
-export async function signOut() {
+/**
+ * Truly end the session. supabase.auth.signOut() emits cookie-removal writes
+ * through the SSR adapter, but that adapter's setAll swallows errors and does
+ * NOT sweep the chunked auth cookies (sb-<ref>-auth-token.0/.1). A surviving
+ * chunk lets proxy.ts still see a user and — per its intentional "signed-in →
+ * /dashboard" bounce — auto-log you back in. So we delete every sb-* cookie
+ * explicitly, then revalidate the layout so the deletions flush before the
+ * redirect throws.
+ */
+async function clearSession() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect("/auth/login")
+  const jar = await cookies()
+  for (const c of jar.getAll()) {
+    if (c.name.startsWith("sb-")) jar.delete(c.name)
+  }
+  revalidatePath("/", "layout")
+}
+
+export async function signOut() {
+  await clearSession()
+  redirect("/auth/login?loggedout=1")
+}
+
+/**
+ * "Use a different account": sign out cleanly, then land on the login form.
+ * Unlike a bare link to /auth/login (which the proxy bounces back to the
+ * dashboard for a signed-in user), this signs out first so the form is reached.
+ */
+export async function switchAccount() {
+  await clearSession()
+  redirect("/auth/login?switch=1")
+}
+
+const emailSchema = z.object({ email: z.string().email("Enter a valid email") })
+
+/**
+ * Send a password-reset email. Neutral by design: the response is identical
+ * whether or not an account exists, so it never leaks which emails are
+ * registered. The recovery link lands on /auth/callback (type=recovery), which
+ * establishes the recovery session and forwards to /auth/reset-password.
+ */
+export async function requestPasswordReset(
+  _prev: ResetRequestState,
+  formData: FormData
+): Promise<ResetRequestState> {
+  const parsed = emailSchema.safeParse({ email: formData.get("email") })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Enter a valid email" }
+  }
+  const supabase = await createClient()
+  // Ignore the result: surfacing an error here would reveal account existence.
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${getSiteUrl()}/auth/callback?next=/auth/reset-password`,
+  })
+  return { sent: true }
+}
+
+const updatePasswordSchema = z.object({
+  password: z.string().min(8, "Use at least 8 characters"),
+})
+
+/**
+ * Set a new password. Requires the recovery session the callback established;
+ * if it's missing/expired, updateUser errors and we route the user to request
+ * a fresh link rather than showing a raw Supabase error.
+ */
+export async function updatePassword(
+  _prev: AuthFormState,
+  formData: FormData
+): Promise<AuthFormState> {
+  const password = String(formData.get("password") ?? "")
+  const confirm = String(formData.get("confirm") ?? "")
+  const parsed = updatePasswordSchema.safeParse({ password })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid password" }
+  }
+  if (password !== confirm) {
+    return { error: "Passwords don't match" }
+  }
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
+  if (error) {
+    return { error: "This reset link has expired or is invalid. Request a new one below." }
+  }
+  redirect("/dashboard")
 }

@@ -1,10 +1,9 @@
 import Link from "next/link"
 import { requireRole } from "@/lib/auth"
-import { signOut } from "@/app/auth/actions"
 import { brand } from "@/config/brand"
 import { LogoMark } from "@/components/brand/logo"
-import { Button } from "@/components/ui/button"
 import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
+import { AccountActions } from "@/components/auth/account-actions"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
@@ -35,11 +34,7 @@ export default async function PortalLayout({
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {profile.full_name}
             </span>
-            <form action={signOut}>
-              <Button variant="ghost" size="sm" type="submit">
-                {t.common.signOut}
-              </Button>
-            </form>
+            <AccountActions signOutLabel={t.common.signOut} />
           </div>
         </div>
         <PortalTopNav />

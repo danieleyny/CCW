@@ -4,6 +4,7 @@ import { brand } from "@/config/brand"
 import { LogoMark } from "@/components/brand/logo"
 import { InstructorNav } from "@/components/instructor/instructor-nav"
 import { NotificationBell } from "@/components/shared/notification-bell"
+import { AccountActions } from "@/components/auth/account-actions"
 import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 import { getMyInstructor } from "@/lib/instructor"
 import { createClient } from "@/lib/supabase/server"
@@ -29,11 +30,9 @@ export default async function InstructorLayout({ children }: { children: React.R
             {brand.logo.wordmark}
             <span className="text-text-low">· Instructor</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <NotificationBell />
-            <Link href="/" className="text-xs text-text-mid hover:text-foreground">
-              Exit
-            </Link>
+            <AccountActions />
           </div>
         </div>
         <InstructorNav unseenRequests={unseenRequests} />

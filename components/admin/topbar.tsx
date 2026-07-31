@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { Plus } from "lucide-react"
-import { signOut } from "@/app/auth/actions"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { initials } from "@/lib/format"
 import { NotificationBell } from "@/components/shared/notification-bell"
+import { AccountActions } from "@/components/auth/account-actions"
 
 export function Topbar({
   name,
@@ -37,11 +37,7 @@ export function Topbar({
             <div className="text-xs capitalize text-muted-foreground">{role}</div>
           </div>
         </div>
-        <form action={signOut}>
-          <Button variant="ghost" size="sm" type="submit">
-            Sign out
-          </Button>
-        </form>
+        <AccountActions />
       </div>
     </header>
   )
