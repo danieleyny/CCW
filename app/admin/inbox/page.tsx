@@ -18,9 +18,13 @@ export default async function InboxPage() {
   const supabase = await createClient()
 
   // Latest message + unread count per case, assembled in one pass.
+  // B1B — the staff inbox is the STAFF↔CLIENT lane only (engagement_id IS NULL).
+  // Without this, the newest instructor↔applicant message could surface as a
+  // case's preview line even though staff aren't a party to it.
   const { data: msgs } = await supabase
     .from("messages")
     .select("id, case_id, body, read, created_at, profiles:sender_id(full_name, role)")
+    .is("engagement_id", null)
     .order("created_at", { ascending: false })
     .limit(500)
 

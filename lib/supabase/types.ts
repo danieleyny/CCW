@@ -1777,6 +1777,7 @@ export type Database = {
           id: string
           read: boolean
           sender_id: string | null
+          staff_only: boolean
         }
         Insert: {
           body: string
@@ -1786,6 +1787,7 @@ export type Database = {
           id?: string
           read?: boolean
           sender_id?: string | null
+          staff_only?: boolean
         }
         Update: {
           body?: string
@@ -1795,6 +1797,7 @@ export type Database = {
           id?: string
           read?: boolean
           sender_id?: string | null
+          staff_only?: boolean
         }
         Relationships: [
           {
@@ -3479,6 +3482,7 @@ export type Database = {
             }
             Returns: string
           }
+      case_client_is_me: { Args: { p_case_id: string }; Returns: boolean }
       case_visible: { Args: { p_case_id: string }; Returns: boolean }
       choose_instructor: {
         Args: { p_instructor_id: string; p_offer_id: string }

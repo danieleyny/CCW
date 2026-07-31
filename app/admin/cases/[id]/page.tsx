@@ -21,8 +21,11 @@ import { QaGateCard } from "@/components/admin/qa-gate-card"
 import { IntakeReview, type IntakeData } from "@/components/admin/intake-review"
 import { MarkMessagesRead } from "@/components/admin/mark-read"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
+import { AssignInstructorForm, StaffInstructorThread } from "@/components/admin/training-controls"
 import {
   postMessage,
+  adminConfirmBooking,
+  adminCancelBooking,
 } from "@/app/admin/actions"
 import { AdminStartRenewal } from "@/components/admin/start-renewal"
 import {
@@ -90,6 +93,9 @@ export default async function CaseFilePage({
     staffListRes,
     apptRes,
     intakeRes,
+    engagementMessagesRes,
+    staffLaneMessagesRes,
+    verifiedInstructorsRes,
   ] = await Promise.all([
     supabase
       .from("case_requirements")
@@ -108,10 +114,16 @@ export default async function CaseFilePage({
     supabase.from("payments").select("*").eq("case_id", id).order("created_at"),
     supabase.from("case_notes").select("id, body, pinned, created_at, profiles:author(full_name)").eq("case_id", id).order("pinned", { ascending: false }).order("created_at", { ascending: false }),
     supabase.from("tasks").select("id, title, description, due_date, priority, status, profiles:assignee(full_name)").eq("case_id", id).order("status").order("due_date", { ascending: true, nullsFirst: false }),
+    // B1B — the primary Messages tab is the STAFF↔CLIENT lane only
+    // (engagement_id IS NULL). Without this filter, instructor↔applicant
+    // messages bled into the staff thread and skewed the "last message" /
+    // client-activity vitals. The instructor lane is surfaced separately in the
+    // Training tab (engagementMessagesRes below).
     supabase
       .from("messages")
       .select("id, body, created_at, profiles:sender_id(full_name, role)")
       .eq("case_id", id)
+      .is("engagement_id", null)
       .order("created_at"),
     supabase
       .from("activity_log")
@@ -124,6 +136,26 @@ export default async function CaseFilePage({
     // Admin-only playback of the raw wizard answers (staff-gated page). Shows
     // data only for intakes that actually saved; a null row is the empty state.
     supabase.from("intake_sessions").select("answers, current_step, completed_at, updated_at").eq("case_id", id).maybeSingle(),
+    // B1B — the instructor↔applicant lane (engagement_id NOT NULL, staff_only
+    // false), surfaced read-only in the Training tab so staff can see it without
+    // it contaminating the staff↔client thread.
+    supabase
+      .from("messages")
+      .select("id, body, created_at, engagement_id, profiles:sender_id(full_name, role)")
+      .eq("case_id", id)
+      .not("engagement_id", "is", null)
+      .eq("staff_only", false)
+      .order("created_at"),
+    // B3B — the private staff↔instructor lane (staff_only true). Staff-visible;
+    // the client can never read it (RLS).
+    supabase
+      .from("messages")
+      .select("id, body, created_at, engagement_id, profiles:sender_id(full_name, role)")
+      .eq("case_id", id)
+      .eq("staff_only", true)
+      .order("created_at"),
+    // B3A — verified instructors for the admin assignment lever.
+    supabase.from("instructors").select("id, name").eq("verified", true).order("name"),
   ])
 
   // Signed URLs for uploaded documents.
@@ -213,6 +245,46 @@ export default async function CaseFilePage({
   const messages: MessageRow[] = (messagesRes.data ?? []).map((m) => {
     const p = m.profiles as unknown as { full_name: string; role: string } | null
     return { id: m.id, body: m.body, created_at: m.created_at, senderName: p?.full_name ?? null, senderRole: p?.role ?? null }
+  })
+
+  // B1B — instructor↔applicant lane (read-only), for the Training tab. Kept
+  // strictly separate from the staff↔client thread above; never merged.
+  const engInstructorName = new Map(
+    (engagementsRes.data ?? []).map((e) => [
+      e.id,
+      (e.instructors as unknown as { name: string } | null)?.name ?? "Instructor",
+    ])
+  )
+  const engagementMessages = (engagementMessagesRes.data ?? []).map((m) => {
+    const p = m.profiles as unknown as { full_name: string; role: string } | null
+    const engId = m.engagement_id as string | null
+    return {
+      id: m.id,
+      body: m.body,
+      createdAt: m.created_at,
+      senderName: p?.full_name ?? null,
+      senderRole: p?.role ?? null,
+      instructorName: engId ? engInstructorName.get(engId) ?? "Instructor" : "Instructor",
+    }
+  })
+
+  // B3A/B3B — the active engagement (assignment target + staff-lane key), the
+  // verified-instructor list for the lever, and the private staff↔instructor
+  // thread.
+  const activeEngagement = (engagementsRes.data ?? []).find((e) => e.status === "active")
+  const activeEngagementId = activeEngagement?.id ?? null
+  const activeInstructorName =
+    (activeEngagement?.instructors as unknown as { name: string } | null)?.name ?? null
+  const verifiedInstructors = (verifiedInstructorsRes.data ?? []).map((i) => ({ id: i.id, name: i.name }))
+  const staffLaneMessages = (staffLaneMessagesRes.data ?? []).map((m) => {
+    const p = m.profiles as unknown as { full_name: string; role: string } | null
+    return {
+      id: m.id,
+      body: m.body,
+      createdAt: m.created_at,
+      senderName: p?.full_name ?? null,
+      senderRole: p?.role ?? null,
+    }
   })
 
   // Raw intake answers for the admin-only "Intake responses" tab. Null = no
@@ -506,6 +578,19 @@ export default async function CaseFilePage({
         <TabsContent value="training" className="mt-4 space-y-6">
           <section>
             <h3 className="mb-2 text-sm font-semibold">Marketplace engagement</h3>
+            {/* B3A — admin can assign/reassign any verified instructor directly,
+                overriding applicant choice. Logged + the applicant is notified. */}
+            <div className="mb-3 rounded-lg border border-dashed bg-card p-3">
+              <p className="mb-2 text-xs text-text-low">
+                Assign an instructor on the applicant&apos;s behalf (for stuck cases). This overrides
+                their marketplace choice, is logged, and notifies the applicant.
+              </p>
+              <AssignInstructorForm
+                caseId={id}
+                instructors={verifiedInstructors}
+                currentName={activeInstructorName}
+              />
+            </div>
             {(engagementsRes.data ?? []).length === 0 && (offersRes.data ?? []).length === 0 ? (
               <Empty>No instructor engaged and no open offers.</Empty>
             ) : (
@@ -528,6 +613,47 @@ export default async function CaseFilePage({
               </ul>
             )}
           </section>
+          {/* B1B — the instructor↔applicant lane, read-only and clearly labeled,
+              kept out of the staff↔client Messages tab. */}
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Instructor ↔ applicant messages</h3>
+            <p className="mb-2 text-xs text-text-low">
+              Read-only. The applicant&apos;s conversation with their instructor — separate from your
+              staff thread with the client.
+            </p>
+            {engagementMessages.length === 0 ? (
+              <Empty>No instructor↔applicant messages.</Empty>
+            ) : (
+              <ul className="space-y-2">
+                {engagementMessages.map((m) => (
+                  <li key={m.id} className="rounded-lg border bg-card p-3 text-sm">
+                    <div className="mb-1 flex items-center justify-between gap-2 text-xs text-text-low">
+                      <span>
+                        {m.senderRole === "instructor" ? m.instructorName : m.senderName ?? "Applicant"}
+                        {" · "}
+                        <span className="capitalize">{m.senderRole ?? "—"}</span>
+                      </span>
+                      <span>{formatDateTime(m.createdAt)}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap text-text-mid">{m.body}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          {/* B3B — private staff↔instructor channel (the client never sees it). */}
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Staff ↔ instructor (private)</h3>
+            <p className="mb-2 text-xs text-text-low">
+              A coordination channel between staff and the assigned instructor. The applicant can&apos;t
+              see it — never share disclosures or PII here.
+            </p>
+            <StaffInstructorThread
+              caseId={id}
+              engagementId={activeEngagementId}
+              messages={staffLaneMessages}
+            />
+          </section>
           <section>
             <h3 className="mb-2 text-sm font-semibold">Bookings</h3>
             {(bookingsRes.data ?? []).length === 0 ? (
@@ -538,6 +664,7 @@ export default async function CaseFilePage({
                   <TableRow>
                     <TableHead>Type</TableHead><TableHead>Instructor</TableHead>
                     <TableHead>Starts</TableHead><TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -547,6 +674,26 @@ export default async function CaseFilePage({
                       <TableCell>{(b.instructors as unknown as { name: string } | null)?.name ?? "—"}</TableCell>
                       <TableCell>{formatDateTime(b.starts_at)}</TableCell>
                       <TableCell><StatusBadge status={b.status} /></TableCell>
+                      {/* B3A — staff can confirm/cancel a booking (mirror of the
+                          instructor action). Terminal states show nothing. */}
+                      <TableCell className="text-right">
+                        {b.status !== "cancelled" && b.status !== "completed" ? (
+                          <div className="flex justify-end gap-1">
+                            {b.status !== "confirmed" && (
+                              <form action={adminConfirmBooking}>
+                                <input type="hidden" name="bookingId" value={b.id} />
+                                <Button type="submit" size="sm" variant="outline">Confirm</Button>
+                              </form>
+                            )}
+                            <form action={adminCancelBooking}>
+                              <input type="hidden" name="bookingId" value={b.id} />
+                              <Button type="submit" size="sm" variant="ghost">Cancel</Button>
+                            </form>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-text-low">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

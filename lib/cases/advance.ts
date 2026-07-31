@@ -97,5 +97,99 @@ export async function maybeAdvanceStage(
     detail: { from, to, milestone } as never,
   })
 
+  // B3C — a silent auto-advance is a case that moved with nobody told. On a
+  // MEANINGFUL milestone, nudge the assigned staffer and (for payment/training)
+  // give the applicant a friendly notice. Idempotent via reminder_log, so a
+  // webhook retry never double-nags.
+  await notifyStageAdvance(admin, caseId, to)
+
   return { moved: true, from, to, reason: milestone }
+}
+
+type NotifKind = Database["public"]["Enums"]["notification_kind"]
+
+/**
+ * The stages worth telling a human about. Internal advances (eligibility,
+ * document_collection, notarization) still fire silently — only these two carry
+ * an applicant-facing notice, per the product decision.
+ */
+const MEANINGFUL_STAGES: Partial<
+  Record<
+    CaseStageKey,
+    {
+      staff: { title: string; body: (name: string) => string }
+      applicant: { kind: NotifKind; title: string; body: string; link: string }
+    }
+  >
+> = {
+  signed_up_paid: {
+    staff: { title: "Payment received", body: (n) => `${n} paid and is now enrolled.` },
+    applicant: {
+      kind: "payment",
+      title: "You're enrolled — payment received",
+      body: "We've received your payment. Your case is officially underway.",
+      link: "/portal",
+    },
+  },
+  training_complete: {
+    staff: { title: "Training complete", body: (n) => `${n} completed their training.` },
+    applicant: {
+      kind: "booking",
+      title: "Training recorded",
+      body: "Your instructor recorded your training — a big step done.",
+      link: "/portal/checklist",
+    },
+  },
+}
+
+async function notifyStageAdvance(admin: DB, caseId: string, to: CaseStageKey) {
+  const spec = MEANINGFUL_STAGES[to]
+  if (!spec) return
+
+  const { data: kase } = await admin
+    .from("cases")
+    .select("clients(full_name, profile_id, assigned_staff)")
+    .eq("id", caseId)
+    .maybeSingle()
+  const client = kase?.clients as unknown as {
+    full_name: string | null
+    profile_id: string | null
+    assigned_staff: string | null
+  } | null
+  if (!client) return
+
+  // First-time-only for a given (rule, target, stage-entry). DO-NOTHING on
+  // conflict returns no row, so a non-empty result means "freshly inserted".
+  const once = async (ruleKey: string, target: string): Promise<boolean> => {
+    const { data } = await admin
+      .from("reminder_log")
+      .upsert(
+        { rule_key: ruleKey, target, window_key: `${caseId}:${to}`, case_id: caseId },
+        { onConflict: "rule_key,target,window_key", ignoreDuplicates: true }
+      )
+      .select("id")
+    return !!(data && data.length > 0)
+  }
+
+  if (client.assigned_staff && (await once("stage_auto_advanced", client.assigned_staff))) {
+    await admin.from("notifications").insert({
+      recipient: client.assigned_staff,
+      case_id: caseId,
+      kind: "info",
+      title: spec.staff.title,
+      body: spec.staff.body(client.full_name ?? "A case"),
+      link: `/admin/cases/${caseId}`,
+    })
+  }
+
+  if (client.profile_id && (await once("stage_advanced_applicant", client.profile_id))) {
+    await admin.from("notifications").insert({
+      recipient: client.profile_id,
+      case_id: caseId,
+      kind: spec.applicant.kind,
+      title: spec.applicant.title,
+      body: spec.applicant.body,
+      link: spec.applicant.link,
+    })
+  }
 }

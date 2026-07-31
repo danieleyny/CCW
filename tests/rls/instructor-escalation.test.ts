@@ -29,6 +29,8 @@ let instructorId = ""
 let instructorUserId = ""
 let clientId = ""
 let clientProfileId = ""
+let clientEmail = ""
+let clientClient: DB
 let caseId = ""
 let engagementId = ""
 
@@ -65,12 +67,17 @@ describe.skipIf(!reachable)("instructor privilege escalation is closed", () => {
 
     const { data: c } = await admin
       .from("clients")
-      .select("id, profile_id")
+      .select("id, profile_id, email")
       .not("profile_id", "is", null)
+      .not("email", "is", null)
       .limit(1)
       .single()
     clientId = c!.id
     clientProfileId = c!.profile_id!
+    clientEmail = c!.email!
+    // Seeded demo clients share DEMO_PASSWORD, so we can sign in as this case's
+    // own client to prove the private staff↔instructor lane stays hidden.
+    clientClient = await anonClientFor(clientEmail)
 
     const { data: k } = await admin
       .from("cases")
@@ -192,6 +199,31 @@ describe.skipIf(!reachable)("instructor privilege escalation is closed", () => {
       body: "legitimate message",
     })
     expect(error, error?.message).toBeNull()
+  })
+
+  // ── B3B: the private staff↔instructor lane ──────────────────────────────────
+  it("the instructor sees the private staff↔instructor lane on their engagement", async () => {
+    await admin.from("messages").insert({
+      case_id: caseId,
+      engagement_id: engagementId,
+      sender_id: null,
+      body: "STAFF-ONLY-probe",
+      staff_only: true,
+    })
+    const { data } = await instructor.from("messages").select("id").eq("body", "STAFF-ONLY-probe")
+    expect((data ?? []).length, "instructor should read their own staff lane").toBe(1)
+  })
+
+  it("the applicant CANNOT read the private staff↔instructor lane", async () => {
+    // Same message (staff_only=true) must be invisible to the case's own client.
+    const { data } = await clientClient.from("messages").select("id").eq("body", "STAFF-ONLY-probe")
+    expect(data ?? [], "a staff_only message leaked to the applicant").toEqual([])
+  })
+
+  it("the applicant still reads the ordinary engagement lane", async () => {
+    // Guard against over-blocking: a normal client↔instructor message stays visible.
+    const { data } = await clientClient.from("messages").select("id").eq("body", "legitimate message")
+    expect((data ?? []).length, "the applicant lost their own instructor chat").toBe(1)
   })
 
   it("a cancelled engagement closes the message lane", async () => {

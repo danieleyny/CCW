@@ -1,4 +1,5 @@
-import { ShieldCheck, ShieldAlert, MapPin } from "lucide-react"
+import Link from "next/link"
+import { ShieldCheck, ShieldAlert, MapPin, ArrowRight } from "lucide-react"
 import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { boroughFromLatLng } from "@/lib/geo/nyc"
@@ -57,13 +58,21 @@ export default async function AdminInstructorsPage() {
                 <span>{(i.jurisdictions ?? []).join(", ")}</span>
               </div>
             </div>
-            <form action={setInstructorVerified}>
-              <input type="hidden" name="id" value={i.id} />
-              <input type="hidden" name="verified" value={i.verified ? "false" : "true"} />
-              <Button type="submit" size="sm" variant={i.verified ? "outline" : "default"}>
-                {i.verified ? "Un-verify" : "Verify"}
-              </Button>
-            </form>
+            <div className="flex items-center gap-2">
+              <form action={setInstructorVerified}>
+                <input type="hidden" name="id" value={i.id} />
+                <input type="hidden" name="verified" value={i.verified ? "false" : "true"} />
+                <Button type="submit" size="sm" variant={i.verified ? "outline" : "default"}>
+                  {i.verified ? "Un-verify" : "Verify"}
+                </Button>
+              </form>
+              <Link
+                href={`/admin/instructors/${i.id}`}
+                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs text-signal transition-colors hover:bg-accent"
+              >
+                Details <ArrowRight className="size-3" />
+              </Link>
+            </div>
           </div>
         ))}
         {rows.length === 0 && (

@@ -14,9 +14,10 @@ import { TrainerRequirementReview, type ReviewItem } from "@/components/trainer/
 import { computeTrainerNextStep } from "@/lib/trainer/next-steps"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
+import { StaffInstructorThread } from "@/components/admin/training-controls"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { confirmBooking, completeBooking, cancelBooking } from "../actions"
+import { confirmBooking, completeBooking, cancelBooking, sendStaffMessage } from "../actions"
 import { sendEngagementMessage } from "@/app/portal/actions"
 import { TRAINER_MESSAGE_TEMPLATES } from "@/config/message-templates"
 
@@ -88,21 +89,37 @@ export default async function InstructorCaseDetail({
   } = await supabase.auth.getUser()
   const { data: msgs } = await supabase
     .from("messages")
-    .select("id, body, created_at, sender_id")
+    .select("id, body, created_at, sender_id, staff_only")
     .eq("engagement_id", kase.engagementId)
     .order("created_at")
-  const chat: MessageRow[] = (msgs ?? []).map((m) => {
-    const mine = m.sender_id === me?.id
-    return {
-      id: m.id,
-      body: m.body,
-      created_at: m.created_at,
-      // The applicant's name is now known for an active engagement, so the
-      // thread reads like a conversation rather than a redacted transcript.
-      senderName: mine ? "You" : kase.applicantName.split(" ")[0],
-      senderRole: mine ? "instructor" : "client",
-    }
-  })
+  // B3B — two lanes on the same engagement: the applicant chat (staff_only
+  // false) and the private staff channel (staff_only true). Keep them apart.
+  const chat: MessageRow[] = (msgs ?? [])
+    .filter((m) => !m.staff_only)
+    .map((m) => {
+      const mine = m.sender_id === me?.id
+      return {
+        id: m.id,
+        body: m.body,
+        created_at: m.created_at,
+        // The applicant's name is now known for an active engagement, so the
+        // thread reads like a conversation rather than a redacted transcript.
+        senderName: mine ? "You" : kase.applicantName.split(" ")[0],
+        senderRole: mine ? "instructor" : "client",
+      }
+    })
+  const staffChat = (msgs ?? [])
+    .filter((m) => m.staff_only)
+    .map((m) => {
+      const mine = m.sender_id === me?.id
+      return {
+        id: m.id,
+        body: m.body,
+        createdAt: m.created_at,
+        senderName: mine ? "You" : "Gun License NYC staff",
+        senderRole: mine ? "instructor" : "staff",
+      }
+    })
 
   return (
     <div className="space-y-5">
@@ -219,6 +236,21 @@ export default async function InstructorCaseDetail({
             send={sendEngagementMessage}
             placeholder="Message your applicant…"
             templates={TRAINER_MESSAGE_TEMPLATES}
+          />
+        </div>
+      </div>
+
+      {/* B3B — the private staff↔instructor channel (the applicant never sees it). */}
+      <div>
+        <h2 className="engraved mb-2 flex items-center gap-2 text-text-low">
+          <Lock className="size-3.5" /> Staff channel (private)
+        </h2>
+        <div className="rounded-lg border bg-card p-4">
+          <StaffInstructorThread
+            caseId={kase.caseId}
+            engagementId={kase.engagementId}
+            messages={staffChat}
+            send={sendStaffMessage}
           />
         </div>
       </div>

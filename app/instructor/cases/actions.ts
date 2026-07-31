@@ -89,3 +89,24 @@ export async function cancelBooking(formData: FormData) {
   await supabase.from("bookings").update({ status: "cancelled" }).eq("id", bookingId)
   if (b) revalidatePath(`/instructor/cases/${b.case_id}`)
 }
+
+/**
+ * B3B — instructor's reply on the private STAFF↔INSTRUCTOR lane (staff_only,
+ * keyed to their engagement). RLS lets an instructor write only their own
+ * engagement's rows; the client can never read this lane.
+ */
+export async function sendStaffMessage(caseId: string, engagementId: string, body: string) {
+  const { userId } = await requireRole(["instructor"])
+  const trimmed = body.trim()
+  if (!trimmed || !engagementId) return
+  const supabase = await createClient()
+  const { error } = await supabase.from("messages").insert({
+    case_id: caseId,
+    engagement_id: engagementId,
+    sender_id: userId,
+    body: trimmed,
+    staff_only: true,
+  })
+  if (error) throw error
+  revalidatePath(`/instructor/cases/${caseId}`)
+}

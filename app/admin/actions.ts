@@ -8,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { notifyClient } from "@/lib/email"
+import { notifyCaseParties } from "@/lib/notify"
+import { maybeAdvanceStage } from "@/lib/cases/advance"
+import { sendBookingInvites } from "@/lib/calendar/invites"
 import { getStripe } from "@/lib/stripe"
 import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing"
 import { STAGE_KEYS, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
@@ -374,6 +377,111 @@ export async function postMessage(caseId: string, body: string) {
   if (error) throw error
   await logActivity({ action: "message.sent", caseId, entity: "message" })
   revalidatePath(`/admin/cases/${caseId}`)
+}
+
+/**
+ * B3B — the private STAFF↔INSTRUCTOR lane (staff_only=true, keyed to the
+ * engagement). RLS keeps this hidden from the client. Carries coordination
+ * only — never applicant disclosures/PII.
+ */
+export async function sendStaffInstructorMessage(caseId: string, engagementId: string, body: string) {
+  const { userId } = await requireStaff()
+  const trimmed = body.trim()
+  if (!trimmed) return
+  const supabase = await createClient()
+  const { error } = await supabase.from("messages").insert({
+    case_id: caseId,
+    engagement_id: engagementId,
+    sender_id: userId,
+    body: trimmed,
+    staff_only: true,
+  })
+  if (error) throw error
+  await logActivity({ action: "message.staff_instructor_sent", caseId, entity: "message" })
+  revalidatePath(`/admin/cases/${caseId}`)
+}
+
+// ── B3A: admin instructor assignment (full assignment power) ───────────────────
+/**
+ * Directly assign (or reassign) a verified instructor to a case, overriding the
+ * applicant's marketplace choice. Every assignment is logged as an admin action
+ * and surfaced to the applicant. Uses the service role because `engagements`
+ * has no staff INSERT policy (created only via RPCs) — the values here are all
+ * server-derived from a staff-gated action.
+ */
+export async function adminAssignInstructor(caseId: string, instructorId: string) {
+  const { profile } = await requireStaff()
+  const admin = createAdminClient()
+
+  const { data: instr } = await admin
+    .from("instructors")
+    .select("id, name, verified")
+    .eq("id", instructorId)
+    .maybeSingle()
+  if (!instr) throw new Error("Instructor not found")
+  if (!instr.verified) throw new Error("That instructor isn't verified yet.")
+
+  // Retire any other active engagement, then bind the chosen instructor.
+  // Reassigning to a previously-engaged instructor reactivates their row
+  // (unique case_id + instructor_id).
+  await admin
+    .from("engagements")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("case_id", caseId)
+    .eq("status", "active")
+    .neq("instructor_id", instructorId)
+
+  const { error } = await admin.from("engagements").upsert(
+    {
+      case_id: caseId,
+      instructor_id: instructorId,
+      type: "training",
+      status: "active",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "case_id,instructor_id" }
+  )
+  if (error) throw error
+
+  await logActivity({
+    action: "case.admin_assigned_instructor",
+    caseId,
+    entity: "engagement",
+    detail: { instructor_id: instructorId, instructor: instr.name, by: profile.full_name },
+  })
+  await notifyCaseParties(admin, caseId, {
+    title: "An instructor was assigned to your case",
+    body: `${instr.name} will handle your training — you can message them from your portal.`,
+  })
+  revalidatePath(`/admin/cases/${caseId}`)
+}
+
+/** Staff confirm a booking (mirror of the instructor action, staff-authorized). */
+export async function adminConfirmBooking(formData: FormData) {
+  await requireStaff()
+  const bookingId = String(formData.get("bookingId") ?? "")
+  const admin = createAdminClient()
+  const { data: b } = await admin.from("bookings").select("id, case_id, ics_uid").eq("id", bookingId).maybeSingle()
+  if (!b) throw new Error("Booking not found")
+  const uid = b.ics_uid ?? `${bookingId}@carry.app`
+  const { error } = await admin.from("bookings").update({ status: "confirmed", ics_uid: uid }).eq("id", bookingId)
+  if (error) throw error
+  await sendBookingInvites(bookingId)
+  await maybeAdvanceStage(admin, b.case_id, "training_scheduled", "booking.confirmed_by_staff")
+  await logActivity({ action: "booking.confirmed_by_staff", caseId: b.case_id, entity: "booking", entityId: bookingId })
+  revalidatePath(`/admin/cases/${b.case_id}`)
+}
+
+/** Staff cancel a booking (logs + revalidates — the instructor path did neither). */
+export async function adminCancelBooking(formData: FormData) {
+  await requireStaff()
+  const bookingId = String(formData.get("bookingId") ?? "")
+  const admin = createAdminClient()
+  const { data: b } = await admin.from("bookings").select("case_id").eq("id", bookingId).maybeSingle()
+  if (!b) throw new Error("Booking not found")
+  await admin.from("bookings").update({ status: "cancelled" }).eq("id", bookingId)
+  await logActivity({ action: "booking.cancelled_by_staff", caseId: b.case_id, entity: "booking", entityId: bookingId })
+  revalidatePath(`/admin/cases/${b.case_id}`)
 }
 
 // ── payments ─────────────────────────────────────────────────────────────────

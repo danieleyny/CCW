@@ -68,7 +68,7 @@ export default async function TodayPage({
     { label: "Active cases", value: activeCases.count ?? 0, icon: ClipboardList, href: "/admin/cases" },
     { label: "New leads", value: leads.count ?? 0, icon: Users, href: "/admin/cases?stage=lead" },
     { label: "Blocked", value: blocked.count ?? 0, icon: Flag, href: "/admin/cases?status=blocked" },
-    { label: "Docs to review", value: pendingDocs.count ?? 0, icon: FileWarning, href: "/admin" },
+    { label: "Docs to review", value: pendingDocs.count ?? 0, icon: FileWarning, href: "/admin/documents" },
   ]
 
   return (
