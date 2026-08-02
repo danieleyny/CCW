@@ -68,7 +68,8 @@ async function main() {
   check((direct.data ?? []).length === 0, "instructor CANNOT read case_offers directly (RLS)")
 
   // ── A non-matched verified instructor sees nothing & cannot accept ────────
-  const otherId = (await admin.auth.admin.createUser({ email: "ztest-instr@carrypath.test", password: "Passw0rd!", email_confirm: true, user_metadata: { full_name: "ZZ Other Instr", role: "instructor" } })).data.user!.id
+  const otherId = (await admin.auth.admin.createUser({ email: "ztest-instr@carrypath.test", password: "Passw0rd!", email_confirm: true, user_metadata: { full_name: "ZZ Other Instr" } })).data.user!.id
+  await admin.from("profiles").update({ role: "instructor" }).eq("id", otherId)
   await admin.from("instructors").insert({ name: "ZZ Other Instr", email: "ztest-instr@carrypath.test", profile_id: otherId, verified: true, verified_at: new Date().toISOString(), lat: 40.5795, lng: -74.1502, jurisdictions: ["nyc"], rating_count: 0 })
   const other = await signIn("ztest-instr@carrypath.test")
   const { data: otherFeed } = await other.from("instructor_offer_feed").select("offer_id")

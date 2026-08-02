@@ -58,10 +58,22 @@ export async function registerInstructor(
     email: input.email,
     password: input.password,
     email_confirm: true,
-    user_metadata: { full_name: input.name, role: "instructor" },
+    user_metadata: { full_name: input.name },
   })
   if (userErr || !created.user) {
     return { error: userErr?.message ?? "Could not create the account" }
+  }
+
+  // handle_new_user creates every new profile as 'client' (signup can't set a
+  // role). Promote to 'instructor' with the service role — the only path that
+  // may. If this fails, tear the account down rather than leave a stuck client.
+  const { error: roleErr } = await admin
+    .from("profiles")
+    .update({ role: "instructor" })
+    .eq("id", created.user.id)
+  if (roleErr) {
+    await admin.auth.admin.deleteUser(created.user.id)
+    return { error: "Could not finish creating your instructor account." }
   }
 
   const geo = geocodeNyc({ borough: input.borough })

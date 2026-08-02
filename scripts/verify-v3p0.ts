@@ -52,8 +52,10 @@ async function main() {
     email: email2,
     password: "Passw0rd!",
     email_confirm: true,
-    user_metadata: { full_name: "Second Instructor", role: "instructor" },
+    user_metadata: { full_name: "Second Instructor" },
   })
+  // Role is set via the service role (signup metadata is no longer trusted).
+  await admin.from("profiles").update({ role: "instructor" }).eq("id", created!.user!.id)
   await admin.from("instructors").delete().eq("email", email2)
   await admin.from("instructors").insert({
     profile_id: created!.user!.id,

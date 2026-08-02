@@ -85,12 +85,18 @@ async function createUser(
         email,
         password: PASSWORD,
         email_confirm: true,
-        user_metadata: { full_name: fullName, role },
+        user_metadata: { full_name: fullName },
       })
       .then((r) => ({ data: r.data.user, error: r.error })),
     `create user ${email}`
   )
-  // The handle_new_user trigger inserts the profile with this role.
+  // handle_new_user inserts every profile as 'client' — signup metadata is no
+  // longer trusted for role (20260731000500). Set the real role with the
+  // service role, the only path allowed to, mirroring registerInstructor.
+  if (role !== "client") {
+    const { error } = await db.from("profiles").update({ role }).eq("id", user.id)
+    if (error) throw new Error(`set role ${role} for ${email}: ${error.message}`)
+  }
   return user.id
 }
 

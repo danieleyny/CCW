@@ -902,7 +902,9 @@ export async function createClientWithCase(
       email: input.email,
       email_confirm: true,
       password: crypto.randomUUID(),
-      user_metadata: { full_name: input.fullName, role: "client" },
+      user_metadata: { full_name: input.fullName },
+      // Role is not set here — handle_new_user creates 'client' by default,
+      // which is exactly what this flow provisions.
     })
     if (error) return { error: `Account: ${error.message}` }
     profileId = data.user?.id ?? null

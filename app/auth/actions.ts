@@ -63,12 +63,15 @@ export async function signUp(
   }
 
   const supabase = await createClient()
-  // New users default to the `client` role (handle_new_user trigger).
+  // Role is NOT set here: user_metadata (options.data) is client-controlled, and
+  // handle_new_user deliberately ignores it for role — self-serve signups always
+  // become 'client'. Non-client roles are set via app_metadata in the
+  // service-role creation flows only.
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.fullName, role: "client" },
+      data: { full_name: parsed.data.fullName },
       // Only used if email confirmation is ever re-enabled at the project level;
       // with "Confirm email" OFF (see docs/AUTH_EMAIL_CONFIRMATION.md), signUp
       // returns a session directly and this round-trip never happens.
