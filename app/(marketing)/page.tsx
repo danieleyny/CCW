@@ -1,9 +1,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
-import { createClient } from "@/lib/supabase/server"
-import { getActivePackages } from "@/lib/packages"
-import { getFees } from "@/lib/fees"
+import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { brand, externalCostEstimates } from "@/config/brand"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -46,8 +44,8 @@ const TRUST: string[] = [
 ]
 
 export default async function Home() {
-  const supabase = await createClient()
-  const [packages, fees] = await Promise.all([getActivePackages(supabase), getFees(supabase)])
+  // Cookieless + cached → this page renders statically (see lib/public-data).
+  const [packages, fees] = await Promise.all([getPublicPackages(), getPublicFees()])
   const concierge = packages.find((p) => p.key === "full_concierge") ?? packages.find((p) => p.featured)
 
   const REALITY: [string, string][] = [

@@ -1,7 +1,5 @@
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
-import { getActivePackages } from "@/lib/packages"
-import { getFees } from "@/lib/fees"
+import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { externalCostEstimates } from "@/config/brand"
 import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
@@ -19,8 +17,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function CostPage() {
-  const supabase = await createClient()
-  const [packages, fees] = await Promise.all([getActivePackages(supabase), getFees(supabase)])
+  const [packages, fees] = await Promise.all([getPublicPackages(), getPublicFees()])
   const concierge = packages.find((p) => p.key === "full_concierge") ?? packages.find((p) => p.featured)
 
   // Every number here is computed from the same DB rows the rest of the site uses.

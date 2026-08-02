@@ -5,6 +5,7 @@ import { brand } from "@/config/brand";
 import { BrandStyle } from "@/config/brand-style";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { WebVitals } from "@/components/analytics/web-vitals";
 
 // Body + hero display fonts are on the critical path → preload. Mono is only
 // small eyebrows/labels → keep it off the preload list so it doesn't compete
@@ -81,7 +82,12 @@ export default function RootLayout({
         <Toaster richColors closeButton theme="dark" />
         {/* GA4 — only on the real production deployment, so localhost + preview
             traffic never pollutes the analytics. */}
-        {process.env.VERCEL_ENV === "production" && <GoogleAnalytics />}
+        {process.env.VERCEL_ENV === "production" && (
+          <>
+            <GoogleAnalytics />
+            <WebVitals />
+          </>
+        )}
       </body>
     </html>
   );

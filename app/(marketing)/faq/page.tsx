@@ -2,8 +2,8 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { JsonLd, faqSchema } from "@/components/marketing/json-ld"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { RelatedLinks } from "@/components/marketing/page-blocks"
-import { createClient } from "@/lib/supabase/server"
-import { getFees, type Fees } from "@/lib/fees"
+import { getPublicFees } from "@/lib/public-data"
+import { type Fees } from "@/lib/fees"
 import { buildMetadata } from "@/lib/seo"
 
 export const metadata = buildMetadata({
@@ -41,7 +41,7 @@ const buildFaqs = (fees: Fees) => [
 ]
 
 export default async function Faq() {
-  const fees = await getFees(await createClient())
+  const fees = await getPublicFees()
   const FAQS = buildFaqs(fees)
   return (
     <>

@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
-import { getFees } from "@/lib/fees"
+import { getPublicFees } from "@/lib/public-data"
 import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
 import { Button } from "@/components/ui/button"
@@ -51,8 +50,7 @@ const DOCS = [
 ]
 
 export default async function RequirementsPage() {
-  const supabase = await createClient()
-  const fees = await getFees(supabase)
+  const fees = await getPublicFees()
 
   const FAQS = [
     {

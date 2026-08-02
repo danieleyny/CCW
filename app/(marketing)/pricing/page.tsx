@@ -1,8 +1,6 @@
 import Link from "next/link"
 import { Check } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
-import { getActivePackages } from "@/lib/packages"
-import { getFees } from "@/lib/fees"
+import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { getTrustStats } from "@/lib/stats"
 import { buildMetadata } from "@/lib/seo"
 import { RefilePromise } from "@/components/marketing/refile-promise"
@@ -36,10 +34,8 @@ const FEATURES: Record<string, string[]> = {
 
 export default async function Pricing() {
   // V3-P3.1 — pricing comes from the DB; a price change is a data edit.
-  const supabase = await createClient()
-  const packages = await getActivePackages(supabase)
-  const fees = await getFees(supabase)
-  const stats = await getTrustStats()
+  // Cookieless + cached → static render (see lib/public-data).
+  const [packages, fees, stats] = await Promise.all([getPublicPackages(), getPublicFees(), getTrustStats()])
   return (
     <>
       {/* The Service + live Offers belong on the canonical pricing page too, not

@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
-import { getPreviewRegistry } from "@/lib/requirements/preview"
+import { getPublicRegistry } from "@/lib/public-data"
 import { buildMetadata } from "@/lib/seo"
 import { ChecklistView } from "@/components/marketing/checklist-view"
 import { JsonLd, checklistHowToSchema } from "@/components/marketing/json-ld"
@@ -18,7 +17,7 @@ export const metadata = buildMetadata({
  * the product; the account is optional.
  */
 export default async function ChecklistPage() {
-  const registry = await getPreviewRegistry(await createClient())
+  const registry = await getPublicRegistry()
   return (
     <>
       <JsonLd data={checklistHowToSchema} />

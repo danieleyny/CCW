@@ -5,8 +5,7 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { RelatedLinks } from "@/components/marketing/page-blocks"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { buildResourceGroups } from "@/content/resources"
-import { getFees } from "@/lib/fees"
-import { createClient } from "@/lib/supabase/server"
+import { getPublicFees } from "@/lib/public-data"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Official Sources",
@@ -16,7 +15,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function ResourcesPage() {
-  const fees = await getFees(await createClient())
+  const fees = await getPublicFees()
   const resourceGroups = buildResourceGroups(fees)
 
   return (
