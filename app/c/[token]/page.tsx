@@ -3,7 +3,7 @@ import { LogoLockup } from "@/components/brand/logo"
 import { tokenActive } from "@/lib/references/process"
 import { CohabitantFlow } from "@/components/public/cohabitant-flow"
 
-export const metadata = { title: "Cohabitant affidavit — Gun License NYC" }
+export const metadata = { title: "Cohabitant affidavit — Gun License NYC", robots: { index: false, follow: false } }
 
 export default async function CohabitantPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params

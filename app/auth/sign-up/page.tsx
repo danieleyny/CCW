@@ -49,6 +49,16 @@ export default function SignUpPage() {
         </CardDescription>
       </CardHeader>
       <form action={formAction}>
+        {/* SEC-06 — honeypot: hidden from humans, tempting to bots. Off-screen +
+            aria-hidden + tab-excluded so no real user ever fills it. */}
+        <input
+          type="text"
+          name="company"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute left-[-9999px] h-0 w-0 opacity-0"
+        />
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full name</Label>

@@ -179,6 +179,20 @@ describe.skipIf(!reachable)("applicant cannot write verification state", () => {
     expect(error, error?.message).toBeNull()
   })
 
+  // ── SEC-16 · message content is immutable to a client (mark-read only) ─────
+  it("a client can mark a message read but cannot rewrite its body", async () => {
+    const { data: msg } = await admin
+      .from("messages")
+      .insert({ case_id: caseId, body: "original staff message", read: false })
+      .select("id")
+      .single()
+    const upd = await clientA.from("messages").update({ read: true, body: "TAMPERED" }).eq("id", msg!.id)
+    expect(upd.error, upd.error?.message).toBeNull()
+    const { data } = await admin.from("messages").select("body, read").eq("id", msg!.id).single()
+    expect(data!.body, "body frozen").toBe("original staff message")
+    expect(data!.read, "read still flips").toBe(true)
+  })
+
   // ── SEC-08 · DB backstop for the CP-5 sign-off ─────────────────────────────
   it("a case cannot reach a filing stage without a recorded QA sign-off", async () => {
     // admin session (authenticated) — the recordLicenseIssued / raw-update path.

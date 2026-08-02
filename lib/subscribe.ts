@@ -8,10 +8,17 @@ import { renderEmail } from "@/lib/email/template"
 export const SUBSCRIBE_OFFERS = ["fit-report", "reciprocity-card", "law-watch", "checklist"] as const
 export type SubscribeOffer = (typeof SUBSCRIBE_OFFERS)[number]
 
-// One HMAC secret. Unsubscribe links only go out with email enabled (RESEND key
-// set), so a missing secret can't leak a live link; set SUBSCRIBE_SECRET in prod.
+// One HMAC secret. SEC-21 — fail CLOSED in production: without SUBSCRIBE_SECRET
+// the code must NOT fall back to a well-known constant, or anyone could forge an
+// unsubscribe token for any subscriber. The dev constant survives only outside
+// production so local/test flows keep working.
 function secret(): string {
-  return process.env.SUBSCRIBE_SECRET || "carry-subscribe-dev-secret"
+  const s = process.env.SUBSCRIBE_SECRET
+  if (s) return s
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SUBSCRIBE_SECRET is not configured")
+  }
+  return "carry-subscribe-dev-secret"
 }
 
 /** `<id>.<hmac>` — a one-click, no-login unsubscribe token. */

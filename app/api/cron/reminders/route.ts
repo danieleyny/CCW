@@ -1,8 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { timingSafeEqual } from "node:crypto"
 import { runReminders } from "@/lib/reminders"
 import { runRenewals } from "@/lib/renewals"
 import { runRetention } from "@/lib/retention"
 import { createAdminClient } from "@/lib/supabase/admin"
+
+/** Constant-time bearer-token comparison (SEC-24). */
+function bearerMatches(header: string | null, secret: string): boolean {
+  if (!header) return false
+  const expected = `Bearer ${secret}`
+  const a = Buffer.from(header)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
 /**
  * Daily automation endpoint (Vercel Cron — see vercel.json). Runs reminder
@@ -19,8 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 503 })
     }
   } else {
-    const auth = request.headers.get("authorization")
-    if (auth !== `Bearer ${secret}`) {
+    if (!bearerMatches(request.headers.get("authorization"), secret)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
   }

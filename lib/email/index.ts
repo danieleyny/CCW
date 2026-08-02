@@ -27,10 +27,17 @@ export interface SendEmailInput {
   attachments?: EmailAttachment[]
 }
 
+/** SEC-18 — mask an email for logs: keep the first char + domain, drop the rest. */
+function maskEmail(addr: string): string {
+  const at = addr.indexOf("@")
+  if (at <= 0) return "***"
+  return `${addr[0]}***${addr.slice(at)}`
+}
+
 export async function sendEmail(input: SendEmailInput) {
   if (!EMAIL_ENABLED) {
     console.log(
-      `[email:noop] to=${input.to} subject="${input.subject}"` +
+      `[email:noop] to=${maskEmail(input.to)} subject="${input.subject}"` +
         (input.attachments?.length ? ` +${input.attachments.length} attachment(s)` : "") +
         " (set RESEND_API_KEY to enable)"
     )

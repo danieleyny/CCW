@@ -3,7 +3,7 @@ import { LogoLockup } from "@/components/brand/logo"
 import { tokenActive } from "@/lib/references/process"
 import { ReferenceFlow } from "@/components/public/reference-flow"
 
-export const metadata = { title: "Character reference — Gun License NYC" }
+export const metadata = { title: "Character reference — Gun License NYC", robots: { index: false, follow: false } }
 
 export default async function ReferencePage({
   params,

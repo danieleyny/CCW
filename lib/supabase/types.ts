@@ -2846,6 +2846,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_events: {
+        Row: {
+          id: string
+          received_at: string
+          type: string | null
+        }
+        Insert: {
+          id: string
+          received_at?: string
+          type?: string | null
+        }
+        Update: {
+          id?: string
+          received_at?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           confirmed_at: string | null
@@ -3660,6 +3678,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_instructor: { Args: never; Returns: boolean }
+      is_privileged_writer: { Args: never; Returns: boolean }
       is_staff_or_admin: { Args: never; Returns: boolean }
       longtransactionsenabled: { Args: never; Returns: boolean }
       mark_instructor_feed_seen: { Args: never; Returns: string }

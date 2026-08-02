@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og"
 import { brand } from "@/config/brand"
+import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 
 /**
  * Branded 1200x630 Open Graph card, generated per page.
@@ -25,6 +26,13 @@ const TEXT_HI = "#F2F3F5"
 const TEXT_MID = "#A8AEB8"
 
 export async function GET(request: Request) {
+  // SEC-14 — image synthesis is expensive; throttle per IP so an attacker can't
+  // spray unique ?title= values to exhaust CPU. Crawlers hitting the handful of
+  // real page cards stay well under this.
+  if (!rateLimit(`og:${clientIpFrom(request.headers)}`, 30)) {
+    return new Response("Too many requests", { status: 429 })
+  }
+
   const { searchParams } = new URL(request.url)
   const title = (searchParams.get("title") ?? brand.tagline).slice(0, 110)
   const eyebrow = (searchParams.get("eyebrow") ?? "NYC · gun license, handled").slice(0, 60)
@@ -105,6 +113,12 @@ export async function GET(request: Request) {
         </div>
       </div>
     ),
-    { width: 1200, height: 630 }
+    {
+      width: 1200,
+      height: 630,
+      // SEC-14 — let the CDN/browser cache the card so repeat fetches don't
+      // re-synthesize the image (the inputs are stable per page title).
+      headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400, immutable" },
+    }
   )
 }

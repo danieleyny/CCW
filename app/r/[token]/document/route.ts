@@ -4,10 +4,14 @@ import { generateReferenceLetterPdf } from "@/lib/references/document"
 import { getSignaturePng } from "@/lib/signatures"
 import { tokenActive } from "@/lib/references/process"
 import type { ReferenceAnswers } from "@/lib/references/questions"
+import { rateLimit } from "@/lib/rate-limit"
 
 /** Regenerate the reference's letter PDF on demand from their stored answers. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
+  // SEC-15 — PDF generation is CPU-heavy; throttle per token so a leaked link
+  // can't be turned into a resource-exhaustion lever.
+  if (!rateLimit(`rpdf:${token}`, 12)) return new Response("Too many requests", { status: 429 })
   const admin = createAdminClient()
 
   const { data: req } = await admin

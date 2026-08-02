@@ -31,11 +31,41 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient()
 
+  // SEC-23 — idempotency ledger. Stripe delivers each event at-least-once (and
+  // an attacker who replays a captured body can't pass signature verification,
+  // but a legitimately-retried event must not re-run side effects). Record the
+  // event id first; if it's already there, acknowledge and stop.
+  const { error: dupErr } = await supabase.from("stripe_events").insert({ id: event.id, type: event.type })
+  if (dupErr) {
+    // Unique-violation → already processed. Any other error: log and continue
+    // (don't drop a real event because the ledger insert hiccuped).
+    if (dupErr.code === "23505") return NextResponse.json({ received: true, deduped: true })
+    console.error("[stripe] event ledger insert failed:", dupErr.code)
+  }
+
+  /**
+   * SEC-23 — amount reconciliation. Checkout/invoice amounts are set server-side
+   * at creation, so a mismatch means tampering or a bug. We don't hard-fail (that
+   * would strand a real payment on a units/rounding edge) but we surface it loudly
+   * for reconciliation, and never advance the stage on a short payment.
+   */
+  async function amountMatches(paymentId: string, paidCents: number | null | undefined): Promise<boolean> {
+    if (paidCents == null) return true
+    const { data } = await supabase.from("payments").select("amount_cents").eq("id", paymentId).maybeSingle()
+    if (!data) return true
+    if (data.amount_cents !== paidCents) {
+      console.error(`[stripe] AMOUNT MISMATCH payment=${paymentId} expected=${data.amount_cents} paid=${paidCents}`)
+      return false
+    }
+    return true
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object
       const paymentId = session.metadata?.payment_id
       if (paymentId) {
+        const amountOk = await amountMatches(paymentId, session.amount_total)
         const { data: paid } = await supabase
           .from("payments")
           .update({
@@ -48,8 +78,8 @@ export async function POST(request: NextRequest) {
           .maybeSingle()
         // Paying is a milestone the customer can feel; the stage should reflect
         // it without waiting for a staffer. Idempotent, so webhook retries are
-        // harmless.
-        if (paid?.case_id) {
+        // harmless. Never advance on a short payment (SEC-23).
+        if (paid?.case_id && amountOk) {
           await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "payment.paid")
         }
       }
@@ -114,6 +144,7 @@ export async function POST(request: NextRequest) {
     case "invoice.paid": {
       const invoice = event.data.object
       const paymentId = invoice.metadata?.payment_id
+      const amountOk = paymentId ? await amountMatches(paymentId, invoice.amount_paid) : true
       const query = supabase
         .from("payments")
         .update({ status: "paid", paid_at: new Date().toISOString() })
@@ -121,7 +152,7 @@ export async function POST(request: NextRequest) {
       const { data: paid } = paymentId
         ? await query.eq("id", paymentId).maybeSingle()
         : await query.eq("stripe_invoice_id", invoice.id).maybeSingle()
-      if (paid?.case_id) {
+      if (paid?.case_id && amountOk) {
         await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "invoice.paid")
       }
       break

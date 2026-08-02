@@ -2,12 +2,19 @@
 
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { ensureClientCaseForProfile } from "@/lib/onboarding"
 import { getSiteUrl } from "@/lib/site-url"
+import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
+import { safeInternalPath } from "@/lib/safe-redirect"
+
+/** Best-effort caller IP for throttling unauthenticated auth attempts. */
+async function callerIp(): Promise<string> {
+  return clientIpFrom(await headers())
+}
 
 export interface AuthFormState {
   error?: string
@@ -41,18 +48,32 @@ export async function login(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
   }
 
+  // SEC-22 — throttle credential-stuffing / brute force per IP and per email.
+  const ip = await callerIp()
+  if (!rateLimit(`login:ip:${ip}`, 10) || !rateLimit(`login:email:${parsed.data.email.toLowerCase()}`, 8)) {
+    return { error: "Too many attempts. Please wait a minute and try again." }
+  }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword(parsed.data)
-  if (error) return { error: error.message }
+  // SEC-12 — never surface the raw provider error (it distinguishes "no such
+  // user" from "wrong password", enabling account enumeration).
+  if (error) return { error: "That email or password is incorrect." }
 
-  const redirectTo = (formData.get("redirect") as string) || "/dashboard"
-  redirect(redirectTo)
+  // SEC-17 — only ever redirect to a same-site path.
+  redirect(safeInternalPath(formData.get("redirect")))
 }
 
 export async function signUp(
   _prev: AuthFormState,
   formData: FormData
 ): Promise<AuthFormState> {
+  // SEC-06 — honeypot: a hidden "company" field no human fills. Bots do.
+  // Return the neutral success path so the bot learns nothing.
+  if (String(formData.get("company") ?? "").trim() !== "") {
+    redirect("/auth/login")
+  }
+
   const parsed = signUpSchema.safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),
@@ -60,6 +81,12 @@ export async function signUp(
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
+  }
+
+  // SEC-06 — throttle automated account creation per IP.
+  const ip = await callerIp()
+  if (!rateLimit(`signup:ip:${ip}`, 5)) {
+    return { error: "Too many sign-ups from this network. Please wait a minute and try again." }
   }
 
   const supabase = await createClient()
@@ -78,7 +105,9 @@ export async function signUp(
       emailRedirectTo: `${getSiteUrl()}/auth/callback?next=/dashboard`,
     },
   })
-  if (error) return { error: error.message }
+  // SEC-12 — don't echo the raw provider error. Neutral wording also avoids
+  // confirming whether an email is already registered.
+  if (error) return { error: "We couldn't create your account. If you already have one, try signing in." }
 
   // Open their case immediately so they land in a ready portal — no manual
   // handoff. Non-fatal if it fails: the portal falls back to the "concierge

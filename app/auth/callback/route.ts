@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import type { EmailOtpType } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
+import { safeInternalPath } from "@/lib/safe-redirect"
 
 /**
  * Auth landing route. Consumes both flavours Supabase can hand back:
@@ -15,7 +16,9 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const tokenHash = searchParams.get("token_hash")
   const type = searchParams.get("type") as EmailOtpType | null
-  const next = searchParams.get("next") ?? "/dashboard"
+  // SEC-17 — `next` is attacker-controllable; only follow a same-site path so
+  // `${origin}${next}` can't be steered off-site (e.g. next="@evil.com").
+  const next = safeInternalPath(searchParams.get("next"))
 
   const supabase = await createClient()
 
