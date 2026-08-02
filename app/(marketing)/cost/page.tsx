@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
-import { CostCard } from "@/components/marketing/cost-card"
+import { CostCalculator } from "@/components/marketing/cost-calculator"
 import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
 
 export const metadata = buildMetadata({
@@ -69,13 +69,7 @@ export default async function CostPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        {concierge && (
-          <CostCard
-            concierge={{ name: concierge.name, priceCents: concierge.priceCents }}
-            fees={fees}
-            estimates={externalCostEstimates}
-          />
-        )}
+        <CostCalculator packages={packages} fees={fees} estimates={externalCostEstimates} />
       </section>
 
       <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
