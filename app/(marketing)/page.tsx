@@ -8,6 +8,7 @@ import { brand, externalCostEstimates } from "@/config/brand"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
+import { RelatedLinks } from "@/components/marketing/page-blocks"
 import { HeroAura } from "@/components/marketing/hero-aura"
 import { Magnetic } from "@/components/marketing/magnetic"
 import { Reveal } from "@/components/marketing/reveal"
@@ -78,7 +79,7 @@ export default async function Home() {
             </Reveal>
             <Reveal delay={90}>
               <h1 className="mx-auto mt-5 max-w-xl text-balance font-display font-semibold leading-[1.02] tracking-tight [font-size:clamp(2.5rem,8vw,4rem)] lg:mx-0">
-                <span className="text-prestige">The whole process.</span> Handled.
+                <span className="text-prestige">The whole NYC gun license process.</span> Handled.
               </h1>
             </Reveal>
             <Reveal delay={170}>
@@ -247,6 +248,18 @@ export default async function Home() {
           </p>
         </div>
       </section>
+
+      {/* ── EXPLORE (in-content links into the pillar/borough cluster) ─────── */}
+      <RelatedLinks
+        links={[
+          { label: "Everything a NYC gun license requires", href: "/requirements" },
+          { label: "What it costs, all-in", href: "/cost" },
+          { label: "How long it takes", href: "/timeline" },
+          { label: "How the whole process works", href: "/how-it-works" },
+          { label: "Your borough's page", href: "/gun-license" },
+          { label: "Common questions, answered", href: "/faq" },
+        ]}
+      />
 
       {/* ── CLOSING ──────────────────────────────────────────────────────── */}
       <section id="closing" className="section-void relative overflow-hidden border-t border-hairline">

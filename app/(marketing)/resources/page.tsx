@@ -1,6 +1,8 @@
 import { ExternalLink } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
+import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
+import { RelatedLinks } from "@/components/marketing/page-blocks"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { buildResourceGroups } from "@/content/resources"
 import { getFees } from "@/lib/fees"
@@ -19,6 +21,7 @@ export default async function ResourcesPage() {
 
   return (
     <>
+      <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Resources", path: "/resources" }]} />
       <PageHero
         eyebrow="Resources"
         title="Official sources, in one place"
@@ -70,6 +73,15 @@ export default async function ResourcesPage() {
           </p>
         </div>
       </section>
+
+      <RelatedLinks
+        links={[
+          { label: "Everything a NYC gun license requires", href: "/requirements" },
+          { label: "What it costs, all-in", href: "/cost" },
+          { label: "How long it takes", href: "/timeline" },
+          { label: "Common questions, answered", href: "/faq" },
+        ]}
+      />
     </>
   )
 }

@@ -28,15 +28,26 @@ const LOGO = ogImage(brand.name)
 const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"]
 
 /**
- * The anchor entity. `sameAs` is INTENTIONALLY EMPTY: it must only ever contain
- * profiles we actually control, and inventing them would poison the entity.
+ * The anchor entity's `sameAs` — the profiles we actually control. It must only
+ * ever contain real, owned URLs; inventing them would poison the entity.
  *
- * TODO — add each of these as it goes live, then redeploy:
- *   · Google Business Profile (highest value — also drives local pack + AI)
- *   · Instagram / Facebook / LinkedIn / X / YouTube
+ * These are wired to environment variables so the owner can publish a profile
+ * and have it flow into the graph WITHOUT a code change: set the var in Vercel,
+ * redeploy, and the URL appears in `sameAs` (and nowhere is a fake URL hardcoded).
+ * Highest value first — a Google Business Profile also unlocks the local pack.
+ *   · NEXT_PUBLIC_GBP_URL        — Google Business Profile
+ *   · NEXT_PUBLIC_INSTAGRAM_URL, NEXT_PUBLIC_FACEBOOK_URL,
+ *     NEXT_PUBLIC_LINKEDIN_URL, NEXT_PUBLIC_X_URL, NEXT_PUBLIC_YOUTUBE_URL
  * See SEO_OFFSITE_CHECKLIST.md.
  */
-const SAME_AS: string[] = []
+const SAME_AS: string[] = [
+  process.env.NEXT_PUBLIC_GBP_URL,
+  process.env.NEXT_PUBLIC_INSTAGRAM_URL,
+  process.env.NEXT_PUBLIC_FACEBOOK_URL,
+  process.env.NEXT_PUBLIC_LINKEDIN_URL,
+  process.env.NEXT_PUBLIC_X_URL,
+  process.env.NEXT_PUBLIC_YOUTUBE_URL,
+].filter((u): u is string => typeof u === "string" && u.startsWith("https://"))
 
 /**
  * ProfessionalService is a LocalBusiness subtype — one node serves as both the
@@ -58,6 +69,17 @@ export const organizationSchema = {
   telephone: brand.contact.phone,
   priceRange: "$$",
   ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
+  // A ContactPoint makes the phone/email an addressable node (not just flat
+  // fields) — clearer for AI resolution and honest about scope: we serve NYC,
+  // in English, as customer service (never legal representation).
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    telephone: brand.contact.phone,
+    email: brand.contact.email,
+    areaServed: "US-NY",
+    availableLanguage: ["English"],
+  },
   address: {
     "@type": "PostalAddress",
     addressLocality: "New York",
@@ -139,6 +161,24 @@ export function serviceSchemaWithOffers(packages: ServicePackage[] = []) {
 
 /** Back-compat for any caller that wants the Service without offers. */
 export const serviceSchema = serviceSchemaWithOffers()
+
+/**
+ * A borough-scoped Service node for the /gun-license/{borough} pages. Same
+ * provider (→ org @id), but `areaServed` narrowed to the one borough so each
+ * page asserts local relevance for its own area rather than leaning only on the
+ * site-wide graph. No offers here — pricing lives on the home/pricing Service.
+ */
+export function boroughServiceSchema(borough: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    serviceType: "Gun license application assistance",
+    name: `NYC gun license help — ${borough}`,
+    description: `Guidance through the NYC gun-license process for ${borough} applicants: eligibility, training, document preparation, and pre-filing review. The applicant files their own application.`,
+    provider: { "@id": ID.organization },
+    areaServed: { "@type": "AdministrativeArea", name: borough },
+  }
+}
 
 /** BreadcrumbList — render on every non-home page. */
 export function breadcrumbSchema(items: { name: string; path: string }[]) {

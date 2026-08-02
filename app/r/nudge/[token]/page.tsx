@@ -2,7 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { LogoLockup } from "@/components/brand/logo"
 import { ReferenceNudge } from "@/components/public/reference-nudge"
 
-export const metadata = { title: "Remind a reference — Gun License NYC" }
+export const metadata = {
+  title: "Remind a reference — Gun License NYC",
+  // Tokenized, applicant-facing — never index (matches /r and /c).
+  robots: { index: false, follow: false },
+}
 
 /**
  * Applicant-facing landing for the one-click "remind this reference" button in

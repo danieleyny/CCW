@@ -12,19 +12,23 @@ import { CANONICAL_ORIGIN } from "@/lib/seo"
  * Update the date when a page's CONTENT actually changes.
  */
 const REVIEWED = "2026-07-16"
+// Pages whose CONTENT actually changed in the Aug 2026 SEO pass get a fresher
+// date; untouched pages keep their real prior review date (Google discounts a
+// sitemap that stamps "today" on everything each deploy).
+const UPDATED = "2026-08-02"
 
 type Entry = { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"]; lastModified: string }
 
 const ROUTES: Entry[] = [
   // The head term.
-  { path: "", priority: 1.0, changeFrequency: "weekly", lastModified: REVIEWED },
+  { path: "", priority: 1.0, changeFrequency: "weekly", lastModified: UPDATED },
   // High-intent / money pages — the queries that convert AND get quoted by AI.
   { path: "/cost", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/timeline", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/requirements", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/how-it-works", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/how-it-works", priority: 0.8, changeFrequency: "monthly", lastModified: UPDATED },
   { path: "/checklist", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/pricing", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/pricing", priority: 0.8, changeFrequency: "monthly", lastModified: UPDATED },
   { path: "/eligibility", priority: 0.8, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/do-i-need-a-lawyer", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/non-resident-business", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
@@ -32,15 +36,16 @@ const ROUTES: Entry[] = [
   { path: "/denied-appeal", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
   // Entity clarity — a top page for AI to cite.
   { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
-  // Borough / local intent.
-  { path: "/gun-license/manhattan", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/gun-license/brooklyn", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/gun-license/queens", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/gun-license/bronx", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/gun-license/staten-island", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  // Borough / local intent — the hub plus its five spokes.
+  { path: "/gun-license", priority: 0.7, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/gun-license/manhattan", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/gun-license/brooklyn", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/gun-license/queens", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/gun-license/bronx", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/gun-license/staten-island", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
   // Supporting.
-  { path: "/faq", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
-  { path: "/resources", priority: 0.6, changeFrequency: "monthly", lastModified: REVIEWED },
+  { path: "/faq", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/resources", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
   { path: "/blog", priority: 0.6, changeFrequency: "weekly", lastModified: REVIEWED },
   { path: "/contact", priority: 0.6, changeFrequency: "yearly", lastModified: REVIEWED },
   { path: "/book", priority: 0.6, changeFrequency: "yearly", lastModified: REVIEWED },

@@ -4,6 +4,8 @@ import { JOURNEY } from "@/content/journey"
 import { buildMetadata } from "@/lib/seo"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
+import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
+import { RelatedLinks } from "@/components/marketing/page-blocks"
 import { RequirementsWall } from "@/components/marketing/showcase/requirements-wall"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 
@@ -17,6 +19,7 @@ export const metadata = buildMetadata({
 export default function HowItWorks() {
   return (
     <>
+      <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "How it works", path: "/how-it-works" }]} />
       {/* Copy note: this page renders content/journey.ts (the PUBLIC story), not
           config/stages.ts (the internal pipeline vocabulary). Staff say "Lead /
           Inquiry"; a nervous applicant should never have to. */}
@@ -63,6 +66,15 @@ export default function HowItWorks() {
           </Button>
         </div>
       </section>
+
+      <RelatedLinks
+        links={[
+          { label: "Everything a NYC gun license requires", href: "/requirements" },
+          { label: "What it costs, all-in", href: "/cost" },
+          { label: "How long it takes", href: "/timeline" },
+          { label: "Your borough's page", href: "/gun-license" },
+        ]}
+      />
     </>
   )
 }

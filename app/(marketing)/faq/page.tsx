@@ -1,5 +1,7 @@
 import { PageHero } from "@/components/marketing/page-hero"
 import { JsonLd, faqSchema } from "@/components/marketing/json-ld"
+import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
+import { RelatedLinks } from "@/components/marketing/page-blocks"
 import { createClient } from "@/lib/supabase/server"
 import { getFees, type Fees } from "@/lib/fees"
 import { buildMetadata } from "@/lib/seo"
@@ -44,6 +46,7 @@ export default async function Faq() {
   return (
     <>
       <JsonLd data={faqSchema(FAQS)} />
+      <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "FAQ", path: "/faq" }]} />
       <PageHero
         eyebrow="FAQ"
         title="Questions, answered"
@@ -67,6 +70,15 @@ export default async function Faq() {
           ))}
         </div>
       </section>
+
+      <RelatedLinks
+        links={[
+          { label: "Everything a NYC gun license requires", href: "/requirements" },
+          { label: "What it costs, all-in", href: "/cost" },
+          { label: "How long it takes", href: "/timeline" },
+          { label: "Find your borough's page", href: "/gun-license" },
+        ]}
+      />
     </>
   )
 }

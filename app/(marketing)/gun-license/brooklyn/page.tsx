@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
+import { JsonLd, boroughServiceSchema } from "@/components/marketing/json-ld"
 
 export const metadata = buildMetadata({
   title: "Gun License in Brooklyn",
@@ -37,10 +38,11 @@ const FAQS = [
 export default function BrooklynGunLicensePage() {
   return (
     <>
+      <JsonLd data={boroughServiceSchema("Brooklyn")} />
       <Breadcrumbs
         items={[
           { name: "Home", path: "/" },
-          { name: "Gun license by borough", path: "/gun-license/manhattan" },
+          { name: "Gun license by borough", path: "/gun-license" },
           { name: "Brooklyn", path: "/gun-license/brooklyn" },
         ]}
       />

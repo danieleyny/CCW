@@ -9,6 +9,9 @@ import { RefilePromise } from "@/components/marketing/refile-promise"
 import { TrustStats } from "@/components/marketing/trust-stats"
 import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
+import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
+import { RelatedLinks } from "@/components/marketing/page-blocks"
+import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Service Pricing",
@@ -39,6 +42,10 @@ export default async function Pricing() {
   const stats = await getTrustStats()
   return (
     <>
+      {/* The Service + live Offers belong on the canonical pricing page too, not
+          only the home page — every Offer's url already points here. */}
+      <JsonLd data={serviceSchemaWithOffers(packages)} />
+      <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Pricing", path: "/pricing" }]} />
       <PageHero
         eyebrow="Membership"
         title="Pick how much you want us to handle"
@@ -89,6 +96,15 @@ export default async function Pricing() {
       </section>
 
       <TrustStats stats={stats} />
+
+      <RelatedLinks
+        links={[
+          { label: "What the whole thing costs, all-in", href: "/cost" },
+          { label: "Do I even need to pay for help?", href: "/do-i-need-a-lawyer" },
+          { label: "Everything a NYC gun license requires", href: "/requirements" },
+          { label: "How the process works, step by step", href: "/how-it-works" },
+        ]}
+      />
     </>
   )
 }

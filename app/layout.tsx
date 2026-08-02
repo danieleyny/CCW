@@ -29,6 +29,18 @@ const fontMono = JetBrains_Mono({
   preload: false,
 });
 
+// Search Console / Bing verification tokens are wired to env so the owner can
+// verify ownership WITHOUT a code change: set the var in Vercel and redeploy.
+// (DNS/HTML-file verification also works; this is the meta-tag path.)
+const verification: Metadata["verification"] = {
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : {}),
+  ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+    ? { other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } }
+    : {}),
+};
+
 export const metadata: Metadata = {
   title: {
     default: `${brand.name} — ${brand.tagline}`,
@@ -36,6 +48,7 @@ export const metadata: Metadata = {
   },
   description: brand.description,
   metadataBase: new URL(brand.url),
+  ...(Object.keys(verification).length ? { verification } : {}),
 };
 
 export default function RootLayout({

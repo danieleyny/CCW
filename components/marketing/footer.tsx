@@ -40,6 +40,7 @@ const COLS = [
   {
     title: "Boroughs",
     links: [
+      { href: "/gun-license", label: "By borough — overview" },
       { href: "/gun-license/manhattan", label: "Manhattan" },
       { href: "/gun-license/brooklyn", label: "Brooklyn" },
       { href: "/gun-license/queens", label: "Queens" },
@@ -73,7 +74,7 @@ export function MarketingFooter() {
             </Link>
             <p className="mt-4 max-w-sm text-sm text-text-mid">{brand.tagline}</p>
             <p className="mt-4 font-mono text-xs text-text-low">
-              {brand.contact.email} · {brand.contact.phone}
+              {brand.contact.email} · {brand.contact.phone} · {brand.contact.address}
             </p>
           </div>
           {COLS.map((col) => (
