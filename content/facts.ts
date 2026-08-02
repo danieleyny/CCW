@@ -123,3 +123,11 @@ export const FACTS = {
 } as const
 
 export type FactKey = keyof typeof FACTS
+
+/**
+ * NEW claims for the not-yet-built content cluster (premises-vs-carry,
+ * disqualifiers, reciprocity, retired-LEO, license-type comparison) are drafted
+ * in `content/facts-pending.ts` and reviewed in `docs/LEGAL_REVIEW_PENDING_FACTS.md`.
+ * On attorney sign-off, move an approved entry HERE (with a fresh verifiedOn date)
+ * — that is the only path a new claim becomes publishable.
+ */
