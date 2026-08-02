@@ -85,11 +85,18 @@ async function main() {
   const { data: offerAfter } = await admin.from("case_offers").select("status").eq("id", offerId).single()
   check(offerAfter?.status === "accepted", "offer is marked accepted")
 
-  // scoped access checks (Frank)
-  const caseRead = await fi.from("cases").select("id, stage").eq("id", caseId)
-  check((caseRead.data ?? []).length === 1, "engaged instructor CAN read the case (stage)")
-  const reqRead = await fi.from("case_requirements").select("id").eq("case_id", caseId)
-  check((reqRead.data ?? []).length > 0, "engaged instructor CAN read the requirement checklist")
+  // scoped access checks (Frank). NB: the trainer-concierge firewall (2026-07-18)
+  // removed instructors' DIRECT table RLS on cases/case_requirements and routes
+  // every trainer read through curated, column-redacted views. So the correct
+  // invariant now is: direct reads are DENIED, view reads are scoped-ALLOWED.
+  const caseDirect = await fi.from("cases").select("id").eq("id", caseId)
+  check((caseDirect.data ?? []).length === 0, "engaged instructor CANNOT read cases directly (firewall)")
+  const caseScope = await fi.from("trainer_case_scope").select("case_id, stage").eq("case_id", caseId)
+  check((caseScope.data ?? []).length === 1, "engaged instructor reads the case via trainer_case_scope view")
+  const reqDirect = await fi.from("case_requirements").select("id").eq("case_id", caseId)
+  check((reqDirect.data ?? []).length === 0, "engaged instructor CANNOT read case_requirements directly (firewall)")
+  const reqFeed = await fi.from("trainer_requirement_feed").select("case_requirement_id").eq("case_id", caseId)
+  check((reqFeed.data ?? []).length > 0, "engaged instructor reads requirements via trainer_requirement_feed view")
   const discRead = await fi.from("disclosures").select("id").eq("case_id", caseId)
   check((discRead.data ?? []).length === 0, "engaged instructor CANNOT read disclosures (firewall holds)")
   const cliRead = await fi.from("clients").select("id").eq("id", clientId)
