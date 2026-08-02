@@ -3,6 +3,7 @@
 import { randomUUID } from "crypto"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { validateFile } from "@/lib/files/validator"
+import { sniffFileType } from "@/lib/files/magic"
 import { notifyCaseParties } from "@/lib/notify"
 import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
 import { isReasonableSignature } from "@/lib/signatures"
@@ -93,9 +94,13 @@ export async function uploadNotarizedCohabitant(
   const documentId = randomUUID()
   const path = `clients/${kase.client_id}/${documentId}/${check.sanitizedName}`
   const bytes = new Uint8Array(await file.arrayBuffer())
+  // SEC-10 — sniff magic bytes; store under the derived Content-Type, not the
+  // client-declared one.
+  const sniff = sniffFileType(bytes)
+  if (!sniff) return { error: "That file isn't a valid PDF or image. Upload a PDF, JPG, PNG, or HEIC." }
   const { error: upErr } = await admin.storage
     .from("documents")
-    .upload(path, bytes, { contentType: file.type || "application/octet-stream", upsert: true })
+    .upload(path, bytes, { contentType: sniff.contentType, upsert: true })
   if (upErr) return { error: "Upload failed. Please try again." }
 
   await admin.from("documents").insert({

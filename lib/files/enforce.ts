@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { validateFile } from "@/lib/files/validator"
+import { sniffFileType } from "@/lib/files/magic"
 
 type DB = SupabaseClient<Database>
 
@@ -45,12 +46,29 @@ export async function enforceUploadedFile(
   const size = await storedObjectSize(admin, args.path)
   const check = validateFile({ name: args.fileName, size: size ?? 0 })
 
-  if (size === null || !check.ok) {
+  // SEC-10 — the extension is only a label; confirm the OBJECT THAT LANDED is
+  // actually one of the allowed binary document types by its magic bytes. A file
+  // named *.pdf whose bytes are HTML/SVG is stored XSS the moment a reviewer
+  // opens the signed URL. Only the head is needed.
+  let sniffOk = false
+  if (size !== null && check.ok) {
+    const { data: blob } = await admin.storage.from("documents").download(args.path)
+    if (blob) {
+      const head = new Uint8Array(await blob.slice(0, 16).arrayBuffer())
+      sniffOk = sniffFileType(head) !== null
+    }
+  }
+
+  if (size === null || !check.ok || !sniffOk) {
     // Service role: the client's own RLS let them write here, so a rejected
     // object has to be removed by us or it lingers unreferenced in the bucket.
     await admin.storage.from("documents").remove([args.path])
     throw new UploadRejected(
-      size === null ? "The uploaded file wasn't found." : (check.errors[0] ?? "That file can't be uploaded.")
+      size === null
+        ? "The uploaded file wasn't found."
+        : !check.ok
+          ? (check.errors[0] ?? "That file can't be uploaded.")
+          : "That file isn't a valid PDF or image. Please upload the document as a PDF, JPG, PNG, or HEIC."
     )
   }
   return check.sanitizedName

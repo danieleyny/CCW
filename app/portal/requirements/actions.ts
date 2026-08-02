@@ -552,7 +552,7 @@ export async function generateFeeSheet(): Promise<Result & { url?: string }> {
     const { data: doc } = await admin.from("documents").select("file_path").eq("id", documentId).single()
     let url: string | null = null
     if (doc?.file_path) {
-      const { data } = await supabase.storage.from("documents").createSignedUrl(doc.file_path, 3600)
+      const { data } = await supabase.storage.from("documents").createSignedUrl(doc.file_path, 300)
       url = data?.signedUrl ?? null
     }
 

@@ -24,6 +24,17 @@ async function put(name: string, bytes: number) {
   return path
 }
 
+/** Upload real bytes (with a genuine leading signature) at a target size. */
+async function putContent(name: string, header: Buffer, totalBytes: number) {
+  const path = `${FOLDER}/${crypto.randomUUID()}/${name}`
+  const body = Buffer.concat([header, Buffer.alloc(Math.max(0, totalBytes - header.length), 0x20)])
+  const { error } = await admin.storage
+    .from("documents")
+    .upload(path, body, { contentType: "application/octet-stream", upsert: true })
+  if (error) throw error
+  return path
+}
+
 describe.skipIf(!reachable)("server-side upload enforcement (FMT-01)", () => {
   it("rejects an oversized file the client claimed was fine, and deletes it", async () => {
     const path = await put("big.pdf", MAX_FILE_BYTES + 1024)
@@ -43,8 +54,15 @@ describe.skipIf(!reachable)("server-side upload enforcement (FMT-01)", () => {
     ).rejects.toThrow(UploadRejected)
   })
 
+  it("SEC-10 — rejects HTML bytes masquerading as a .pdf, and deletes them", async () => {
+    const path = await putContent("evil.pdf", Buffer.from("<!DOCTYPE html><script>alert(1)</script>"), 2048)
+    await expect(enforceUploadedFile(admin, { path, fileName: "evil.pdf" })).rejects.toThrow(UploadRejected)
+    expect(await storedObjectSize(admin, path), "stored XSS must not linger").toBeNull()
+  })
+
   it("accepts a good file and normalizes a dirty filename instead of rejecting it", async () => {
-    const path = await put("clean.pdf", 4096)
+    // Real PDF bytes (%PDF signature) padded to 4096 — passes the magic-byte sniff.
+    const path = await putContent("clean.pdf", Buffer.from("%PDF-1.7\n"), 4096)
     const name = await enforceUploadedFile(admin, { path, fileName: "Résumé & scan #1.PDF" })
     expect(name).toBe("Resume-scan-1.pdf")
     expect(await storedObjectSize(admin, path), "a good file must survive").toBe(4096)

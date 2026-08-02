@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
 import { validateFile } from "@/lib/files/validator"
+import { sniffFileType } from "@/lib/files/magic"
 import { recomputeReferenceRequirement, tokenActive } from "@/lib/references/process"
 import { rateLimit } from "@/lib/rate-limit"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
@@ -154,9 +155,14 @@ export async function uploadNotarizedReference(
   const documentId = randomUUID()
   const path = `clients/${kase.client_id}/${documentId}/${check.sanitizedName}`
   const bytes = new Uint8Array(await file.arrayBuffer())
+  // SEC-10 — trust the bytes, not the client-declared type: sniff the magic
+  // bytes, reject anything that isn't an allowed binary document, and store it
+  // under the Content-Type we derived (never text/html from a crafted upload).
+  const sniff = sniffFileType(bytes)
+  if (!sniff) return { error: "That file isn't a valid PDF or image. Upload a PDF, JPG, PNG, or HEIC." }
   const { error: upErr } = await admin.storage
     .from("documents")
-    .upload(path, bytes, { contentType: file.type || "application/octet-stream", upsert: true })
+    .upload(path, bytes, { contentType: sniff.contentType, upsert: true })
   if (upErr) return { error: "Upload failed. Please try again." }
 
   await admin.from("documents").insert({

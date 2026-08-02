@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
+import { enforceUploadedFile } from "@/lib/files/enforce"
 import { recomputeReferenceRequirement } from "@/lib/references/process"
 import { inviteReference, inviteCohabitant } from "@/lib/outreach"
 import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
@@ -61,9 +62,13 @@ export async function recordReferenceUpload(input: {
   if (!input.path.startsWith(`clients/${kase.client_id}/`)) throw new Error("Invalid upload path")
 
   const admin = createAdminClient()
+  // SEC-10 — the browser wrote this object under the client's own RLS; re-check
+  // its real bytes/size server-side (magic-byte sniff) and remove it if it isn't
+  // a genuine PDF/image before we bind a notarized documents row to it.
+  const safeName = await enforceUploadedFile(admin, { path: input.path, fileName: input.fileName })
   await admin.from("documents").insert({
     id: input.documentId, case_id: ref.case_id, client_id: kase.client_id,
-    type: "reference_letter", status: "pending", file_path: input.path, file_name: input.fileName, notarized: true,
+    type: "reference_letter", status: "pending", file_path: input.path, file_name: safeName, notarized: true,
   })
   await admin.from("character_references").update({ notarized: true, received: true }).eq("id", ref.id)
   await admin
@@ -94,9 +99,11 @@ export async function recordCohabitantUpload(input: {
   if (!input.path.startsWith(`clients/${kase.client_id}/`)) throw new Error("Invalid upload path")
 
   const admin = createAdminClient()
+  // SEC-10 — validate the actual uploaded bytes before binding a notarized row.
+  const safeName = await enforceUploadedFile(admin, { path: input.path, fileName: input.fileName })
   await admin.from("documents").insert({
     id: input.documentId, case_id: cohab.case_id, client_id: kase.client_id,
-    type: "cohabitant_affidavit", status: "pending", file_path: input.path, file_name: input.fileName, notarized: true,
+    type: "cohabitant_affidavit", status: "pending", file_path: input.path, file_name: safeName, notarized: true,
   })
   await admin
     .from("cohabitants")

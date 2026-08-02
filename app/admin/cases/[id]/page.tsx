@@ -165,7 +165,7 @@ export default async function CaseFilePage({
     (docsRes.data ?? []).map(async (d) => {
       let signedUrl: string | null = null
       if (d.file_path) {
-        const { data } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 3600)
+        const { data } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 300)
         signedUrl = data?.signedUrl ?? null
       }
       return {
