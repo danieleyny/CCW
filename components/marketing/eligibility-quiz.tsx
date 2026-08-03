@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Crosshair, ShieldCheck, ShieldAlert, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/lib/analytics"
 import { Button } from "@/components/ui/button"
 import { LeadForm } from "@/components/marketing/lead-form"
 
@@ -98,12 +99,16 @@ export function EligibilityQuiz() {
   const q = QUESTIONS[step]
 
   function choose(opt: Answer) {
+    // Conversion funnel: the very first answer starts the quiz; the last completes it.
+    if (Object.keys(answers).length === 0) trackEvent("eligibility_start")
     const next = { ...answers, [q.key]: opt }
     const last = step >= QUESTIONS.length - 1
     const nextStep = last ? step : step + 1
     setAnswers(next)
-    if (last) setDone(true)
-    else setStep(nextStep)
+    if (last) {
+      setDone(true)
+      trackEvent("eligibility_complete")
+    } else setStep(nextStep)
     persist({ step: nextStep, answers: next, done: last })
   }
 

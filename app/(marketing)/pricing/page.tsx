@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Check } from "lucide-react"
+import { TrackView } from "@/components/analytics/track-view"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { getTrustStats } from "@/lib/stats"
 import { buildMetadata } from "@/lib/seo"
@@ -38,6 +39,7 @@ export default async function Pricing() {
   const [packages, fees, stats] = await Promise.all([getPublicPackages(), getPublicFees(), getTrustStats()])
   return (
     <>
+      <TrackView event="pricing_viewed" />
       {/* The Service + live Offers belong on the canonical pricing page too, not
           only the home page — every Offer's url already points here. */}
       <JsonLd data={serviceSchemaWithOffers(packages)} />

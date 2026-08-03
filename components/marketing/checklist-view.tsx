@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { ExternalLink, FileText, Mail, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/lib/analytics"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { LeadForm } from "@/components/marketing/lead-form"
@@ -45,6 +46,11 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
     [registry, jurisdiction, answers]
   )
   const groups = useMemo(() => groupBySeverity(items), [items])
+
+  // Conversion: a personalized checklist was produced (once per page view).
+  useEffect(() => {
+    trackEvent("checklist_generated")
+  }, [])
 
   return (
     <div className="pb-24 md:pb-0">

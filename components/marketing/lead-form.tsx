@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react"
 import Link from "next/link"
 import { CheckCircle2, ArrowRight } from "lucide-react"
 import { captureLead, type LeadState } from "@/app/(marketing)/actions"
+import { trackEvent } from "@/lib/analytics"
 import { BOROUGHS } from "@/config/stages"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,6 +51,12 @@ export function LeadForm({
       }
     }
   }, [state.ok, accountCta, name, email])
+
+  // Conversion event on a successful lead capture (contact page + checklist
+  // capture both flow through here). `source` distinguishes them in GA4.
+  useEffect(() => {
+    if (state.ok) trackEvent("contact_submitted", { source })
+  }, [state.ok, source])
 
   if (state.ok) {
     if (accountCta) {

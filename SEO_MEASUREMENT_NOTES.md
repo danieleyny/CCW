@@ -70,13 +70,39 @@ still unnamed after ~8 weeks *and* the off-site checklist is done, the problem i
 
 ## 4. GA4
 
-Already installed (`G-VXS177VWT2`), firing only in production. Worth adding when you have the
-appetite: mark **eligibility quiz started** and **contact submitted** as conversions, then segment by
-landing page to see which of the new pages actually produce applicants rather than just traffic.
+Already installed (`G-VXS177VWT2`, in `components/analytics/google-analytics.tsx`), rendered by
+`app/layout.tsx` **only on the production deploy** — localhost and preview traffic never pollute the
+data. It fires one `page_view` per route change (App-Router SPA-safe).
+
+On top of `page_view`, **five conversion events** now fire via `lib/analytics.ts` → `trackEvent(...)`.
+Because `window.gtag` only exists in production, they are silent everywhere else — no env check needed.
+
+| Event | Fires when | Fired from |
+|---|---|---|
+| `eligibility_start` | first answer chosen on the quiz | `components/marketing/eligibility-quiz.tsx` |
+| `eligibility_complete` | quiz reaches its result screen | `components/marketing/eligibility-quiz.tsx` |
+| `checklist_generated` | a personalized `/checklist` renders | `components/marketing/checklist-view.tsx` |
+| `contact_submitted` | a lead form submits OK (carries `source`) | `components/marketing/lead-form.tsx` |
+| `pricing_viewed` | `/pricing` is viewed | `components/analytics/track-view.tsx` (mounted on `/pricing`) |
+
+**Mark as key events (conversions)** in GA4 → Admin → Events: `contact_submitted` (the real lead),
+`eligibility_complete`, and `checklist_generated`. Leave `eligibility_start` and `pricing_viewed` as
+ordinary funnel steps. Register `source` as a custom dimension to split contact-page leads from
+checklist-capture leads. Verify in **Realtime**/DebugView on production (they don't fire elsewhere).
+
+Then segment conversions by landing page to see which new pages produce applicants, not just traffic.
 
 Caveat worth knowing: **AI referrals are largely invisible.** Assistants often summarise without a
 click, and when they do link, referrer data is inconsistent. So GA4 will *understate* AI impact.
 Treat the manual log in §3 as the real instrument, and GA4 as the floor.
+
+## 4b. The Spanish surface (`/es`)
+
+Ships **dark** behind `NEXT_PUBLIC_I18N_ES` (see `.env.example`). Off → the five `/es` pages 404, no
+hreflang is emitted, and the footer toggle is hidden. When a native-fluent reviewer signs off on
+`content/es.ts`, set `NEXT_PUBLIC_I18N_ES=true` in Vercel and redeploy — the `/es` pages, their
+hreflang alternates, the sitemap entries, and the toggle all light up. Re-submit the sitemap so
+Search Console picks up the alternates.
 
 ## 5. What to actually check monthly
 
