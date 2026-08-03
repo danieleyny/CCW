@@ -14,6 +14,7 @@ export const metadata = buildMetadata({
   description:
     "The NYC gun license process end to end — eligibility, the 18-hour course, documents, notarization, filing, the investigation, and the interview.",
   path: "/how-it-works",
+  hreflang: "/how-it-works",
 })
 
 export default function HowItWorks() {

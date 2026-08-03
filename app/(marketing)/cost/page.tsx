@@ -14,6 +14,7 @@ export const metadata = buildMetadata({
   description:
     "The honest all-in cost of a NYC gun license: our fee, the NYPD and State fees you pay directly, and typical training and notary ranges — nothing marked up.",
   path: "/cost",
+  hreflang: "/cost",
 })
 
 export default async function CostPage() {

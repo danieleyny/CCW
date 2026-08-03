@@ -28,3 +28,27 @@ export const LOCALE_COOKIE = "NEXT_LOCALE"
 export function isLocale(v: string | undefined | null): v is Locale {
   return !!v && LOCALES.some((l) => l.key === v)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEO V2 Phase 5 — URL-prefixed /es routes (distinct from the cookie catalog
+// above, which localizes app UI). This is the PUBLIC, indexable Spanish surface:
+// a small set of translated money pages under /es, with hreflang wiring.
+//
+// The whole surface is gated behind ONE flag so it can ship DARK while a native-
+// fluent reviewer checks the copy: with it off, /es routes 404, no hreflang is
+// emitted, and the language toggle is hidden. No Accept-Language auto-redirect
+// (SEO poison) — the toggle is the only entry point.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Master switch for the public /es surface. Off → ships dark. */
+export const I18N_ES_ENABLED = process.env.NEXT_PUBLIC_I18N_ES === "true"
+
+/**
+ * The ENGLISH paths that have a Spanish twin at `/es` + path ("" = home).
+ * Only these emit hreflang and appear in the toggle/sitemap alternates.
+ */
+export const TRANSLATED_PATHS = ["", "/cost", "/requirements", "/timeline", "/how-it-works"] as const
+
+export function hasSpanishTwin(path: string): boolean {
+  return (TRANSLATED_PATHS as readonly string[]).includes(path)
+}

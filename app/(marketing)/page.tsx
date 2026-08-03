@@ -29,6 +29,7 @@ export const metadata = buildMetadata({
   description:
     "Get a NYC gun license without the guesswork. We track all 24 documents, your 18-hour course, and every deadline as one case — you file it yourself.",
   path: "/",
+  hreflang: "",
   ogTitle: "NYC gun license, handled — Gun License NYC",
 })
 

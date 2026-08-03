@@ -3,6 +3,7 @@ import { brand } from "@/config/brand"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { LogoMark } from "@/components/brand/logo"
 import { footerColumns } from "@/lib/marketing-routes"
+import { LangToggle } from "@/components/marketing/lang-toggle"
 
 /**
  * The footer is the hub of the hub-and-spoke: every new SEO page is reachable
@@ -51,9 +52,12 @@ export function MarketingFooter() {
 
         <div className="mt-12 border-t border-hairline pt-6">
           <p className="max-w-3xl text-xs leading-relaxed text-text-low">{brand.disclaimer}</p>
-          <p className="mt-4 font-mono text-xs text-text-low">
-            © {brand.legalName}
-          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="font-mono text-xs text-text-low">© {brand.legalName}</p>
+            {/* Language toggle — self-hides unless the /es surface is live and the
+                current page has a Spanish twin. No Accept-Language redirect. */}
+            <LangToggle />
+          </div>
         </div>
       </div>
     </footer>

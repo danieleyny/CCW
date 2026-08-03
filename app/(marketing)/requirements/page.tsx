@@ -12,6 +12,7 @@ export const metadata = buildMetadata({
   description:
     "What a NYC gun license actually requires — be 21, 18 hours of training, about 24 documents, and you file it yourself. In plain English, with sources.",
   path: "/requirements",
+  hreflang: "/requirements",
 })
 
 /**

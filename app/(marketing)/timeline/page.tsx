@@ -11,6 +11,7 @@ export const metadata = buildMetadata({
   description:
     "Roughly six months from a complete submission to a decision — what happens in each stage, what actually causes delays, and the parts you can control.",
   path: "/timeline",
+  hreflang: "/timeline",
 })
 
 /**

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { brand } from "@/config/brand"
+import { I18N_ES_ENABLED, hasSpanishTwin } from "@/config/i18n"
 
 /**
  * SEO origin + metadata helper — the single source of truth for every
@@ -49,6 +50,8 @@ export function buildMetadata({
   type = "website",
   ogTitle,
   noIndex = false,
+  hreflang,
+  locale = "en_US",
 }: {
   /** Keyword-led, <= 60 chars including the " · Gun License NYC" suffix. */
   title: string
@@ -60,21 +63,41 @@ export function buildMetadata({
   /** Full title for the OG card (the template isn't applied to OG). */
   ogTitle?: string
   noIndex?: boolean
+  /**
+   * The ENGLISH path of a translated page (e.g. "/cost", or "" for home). Set on
+   * BOTH the English page and its /es twin — both pass the same english path — so
+   * hreflang alternates point at each other. Only emitted when I18N_ES_ENABLED
+   * and the path actually has a Spanish twin. Omit for untranslated pages.
+   */
+  hreflang?: string
+  /** OG locale — "es_ES" on Spanish pages. */
+  locale?: string
 }): Metadata {
   const url = canonical(path)
   const social = ogTitle ?? `${title} · ${brand.name}`
   const image = ogImage(title)
 
+  // hreflang alternates (+ x-default → English), only for translated pages when
+  // the Spanish surface is live. English is x-default.
+  const languages =
+    hreflang !== undefined && I18N_ES_ENABLED && hasSpanishTwin(hreflang)
+      ? {
+          "en-US": canonical(hreflang || "/"),
+          es: canonical(`/es${hreflang}`),
+          "x-default": canonical(hreflang || "/"),
+        }
+      : undefined
+
   return {
     title,
     description,
-    alternates: { canonical: url },
+    alternates: { canonical: url, ...(languages ? { languages } : {}) },
     openGraph: {
       title: social,
       description,
       url,
       siteName: brand.name,
-      locale: "en_US",
+      locale,
       type,
       images: [{ url: image, width: 1200, height: 630, alt: social }],
     },
