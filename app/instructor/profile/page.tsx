@@ -1,4 +1,4 @@
-import { Trash2, MapPin, Check, Circle } from "lucide-react"
+import { Trash2, MapPin } from "lucide-react"
 import { getMyInstructor, getMyTrainingLocations } from "@/lib/instructor"
 import { boroughFromLatLng, BOROUGHS } from "@/lib/geo/nyc"
 import { addTrainingLocation, removeTrainingLocation } from "@/app/instructor/actions"
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { InstructorProfileForm } from "@/components/instructor/profile-form"
+import { ProfileChecklist } from "@/components/instructor/profile-checklist"
 import { evaluateProfile } from "@/lib/instructors/profile"
 
 export const metadata = { title: "Instructor profile" }
@@ -31,53 +32,12 @@ export default async function InstructorProfilePage() {
         </p>
       </div>
 
-      <Card className={live ? "border-ok/30" : "border-brass/30"}>
-        <CardContent className="space-y-3 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold tracking-tight">
-                {live ? "You're live — applicants can find you" : "Complete these to start getting matched"}
-              </h2>
-              <p className="mt-1 text-xs text-text-mid">
-                {me.verified
-                  ? "Your DCJS credential is verified."
-                  : "An admin still needs to verify your DCJS credential — we'll check it before you go live."}
-              </p>
-            </div>
-            <span className="font-mono text-sm tabular-nums text-text-mid">{completeness.percent}%</span>
-          </div>
-
-          <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
-            <div
-              className={live ? "h-full rounded-full bg-ok" : "h-full rounded-full bg-brass"}
-              style={{ width: `${completeness.percent}%` }}
-            />
-          </div>
-
-          <ul className="space-y-1.5">
-            {completeness.checks.map((c) => (
-              <li key={c.key} className="flex items-start gap-2 text-xs">
-                {c.done ? (
-                  <Check className="mt-0.5 size-3.5 shrink-0 text-ok" />
-                ) : (
-                  <Circle className="mt-0.5 size-3.5 shrink-0 text-text-low" />
-                )}
-                <span className={c.done ? "text-text-low line-through" : ""}>
-                  <span className={c.done ? "" : "font-medium text-foreground"}>{c.label}</span>
-                  {!c.done && <span className="block text-text-mid">{c.why}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {!live && (
-            <p className="text-xs text-text-low">
-              Until this is complete you won&apos;t appear in an applicant&apos;s feed or be able to
-              send offers — including auto-offers.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <ProfileChecklist
+        live={live}
+        verified={me.verified}
+        percent={completeness.percent}
+        checks={completeness.checks}
+      />
 
       <Card>
         <CardContent className="p-5">
@@ -106,6 +66,11 @@ export default async function InstructorProfilePage() {
               responseTimeNote: me.response_time_note ?? "",
               offersIntroCall: !!me.offers_intro_call,
               introCallNote: me.intro_call_note ?? "",
+              classFrequency: me.class_frequency ?? "",
+              openToMoreClasses: !!me.open_to_more_classes,
+              consultDays: me.consult_days ?? [],
+              consultHoursStart: me.consult_hours_start != null ? String(me.consult_hours_start) : "",
+              consultHoursEnd: me.consult_hours_end != null ? String(me.consult_hours_end) : "",
               autoOfferEnabled: !!me.auto_offer_enabled,
               autoOfferNote: me.auto_offer_note ?? "",
               autoOfferPriceDollars: me.auto_offer_price_cents
@@ -116,7 +81,7 @@ export default async function InstructorProfilePage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="field-classroom" className="scroll-mt-24">
         <CardContent className="p-5">
           <h2 className="mb-3 text-sm font-semibold">Training locations</h2>
           {locations.length > 0 && (

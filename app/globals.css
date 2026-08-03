@@ -353,6 +353,24 @@
 }
 
 /* Shimmer skeleton */
+/* Instructor profile — a signal-colored ring pulses around the field the
+   go-live checklist just jumped to, so it's unmistakable what needs filling.
+   Two outward pulses, then gone. Applied briefly by profile-checklist.tsx. */
+@keyframes field-flash {
+  0%   { box-shadow: 0 0 0 2px color-mix(in oklab, var(--signal) 85%, transparent); }
+  100% { box-shadow: 0 0 0 9px color-mix(in oklab, var(--signal) 0%, transparent); }
+}
+.field-flash {
+  border-radius: 0.6rem;
+  animation: field-flash 0.9s ease-out 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .field-flash {
+    animation: none;
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--signal) 70%, transparent);
+  }
+}
+
 @keyframes shimmer { 100% { transform: translateX(100%); } }
 .shimmer {
   position: relative;

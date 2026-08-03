@@ -134,11 +134,16 @@ const profileSchema = z.object({
   materialsIncluded: checkbox,
   whatsToBring: optionalText,
 
-  // Scheduling + first contact
+  // Scheduling + availability
   schedulingNotes: optionalText,
   responseTimeNote: optionalText,
   offersIntroCall: checkbox,
   introCallNote: optionalText,
+  classFrequency: z.enum(["weekly", "biweekly", "monthly", "bimonthly", ""]).optional(),
+  openToMoreClasses: checkbox,
+  // Consult window as hour-of-day integers (0–23 start, 1–24 end).
+  consultHoursStart: z.coerce.number().int().min(0).max(23).optional(),
+  consultHoursEnd: z.coerce.number().int().min(1).max(24).optional(),
 
   // Auto-offer
   autoOfferEnabled: checkbox,
@@ -205,12 +210,31 @@ export async function updateInstructorProfile(
     responseTimeNote: get("responseTimeNote"),
     offersIntroCall: formData.get("offersIntroCall"),
     introCallNote: get("introCallNote"),
+    classFrequency: get("classFrequency"),
+    openToMoreClasses: formData.get("openToMoreClasses"),
+    consultHoursStart: formData.get("consultHoursStart") || undefined,
+    consultHoursEnd: formData.get("consultHoursEnd") || undefined,
     autoOfferEnabled: formData.get("autoOfferEnabled"),
     autoOfferNote: get("autoOfferNote"),
     autoOfferPriceDollars: formData.get("autoOfferPriceDollars") || undefined,
   })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
   const input = parsed.data
+
+  // Days the instructor can be reached to consult — multi-value, validated
+  // against the canonical set (Mon…Sun) so order is stable and no junk lands.
+  const DAY_SET = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  const selectedDays = new Set(formData.getAll("consultDays").map(String))
+  const consultDays = DAY_SET.filter((d) => selectedDays.has(d))
+
+  // A consult window must be a real range.
+  if (
+    input.consultHoursStart != null &&
+    input.consultHoursEnd != null &&
+    input.consultHoursEnd <= input.consultHoursStart
+  ) {
+    return { error: "Your consult end time must be after the start time." }
+  }
 
   // COMPLIANCE: the required 18-hour course is in person under NY's CCIA. An
   // instructor may offer a free intro call remotely — never the course itself.
@@ -260,6 +284,11 @@ export async function updateInstructorProfile(
       response_time_note: input.responseTimeNote || null,
       offers_intro_call: input.offersIntroCall,
       intro_call_note: input.introCallNote || null,
+      class_frequency: input.classFrequency || null,
+      open_to_more_classes: input.openToMoreClasses,
+      consult_days: consultDays,
+      consult_hours_start: input.consultHoursStart ?? null,
+      consult_hours_end: input.consultHoursEnd ?? null,
 
       auto_offer_enabled: input.autoOfferEnabled,
       auto_offer_note: input.autoOfferNote || null,

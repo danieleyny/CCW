@@ -20,15 +20,36 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   )
 }
 
-function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  id,
+  label,
+  hint,
+  anchorId,
+  children,
+}: {
+  id: string
+  label: string
+  hint?: string
+  /** Scroll/highlight target id, so the go-live checklist can jump here. */
+  anchorId?: string
+  children: React.ReactNode
+}) {
   return (
-    <div className="space-y-1.5">
+    <div id={anchorId} className="space-y-1.5 scroll-mt-24">
       <Label htmlFor={id} className="text-xs">{label}</Label>
       {hint && <p className="text-xs text-text-low">{hint}</p>}
       {children}
     </div>
   )
 }
+
+/** Day chips for the consult-availability multi-select. */
+const CONSULT_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+/** Hour options 6 AM → midnight, as {value:"6", label:"6 AM"}. */
+const HOURS = Array.from({ length: 19 }, (_, i) => i + 6).map((h) => ({
+  value: String(h),
+  label: h === 24 ? "Midnight" : h === 12 ? "12 PM" : h > 12 ? `${h - 12} PM` : `${h} AM`,
+}))
 
 function Check({ name, label, hint, defaultChecked }: { name: string; label: string; hint?: string; defaultChecked?: boolean }) {
   return (
@@ -69,6 +90,11 @@ export function InstructorProfileForm({
     responseTimeNote: string
     offersIntroCall: boolean
     introCallNote: string
+    classFrequency: string
+    openToMoreClasses: boolean
+    consultDays: string[]
+    consultHoursStart: string
+    consultHoursEnd: string
     autoOfferEnabled: boolean
     autoOfferNote: string
     autoOfferPriceDollars: string
@@ -77,7 +103,7 @@ export function InstructorProfileForm({
   const [state, action, pending] = useActionState(updateInstructorProfile, {})
   return (
     <form action={action} className="space-y-4">
-      <div className="space-y-1.5">
+      <div id="field-bio" className="space-y-1.5 scroll-mt-24">
         <Label htmlFor="bio" className="text-xs">Bio <span className="text-text-low">(applicants read this when choosing)</span></Label>
         <Textarea id="bio" name="bio" rows={3} defaultValue={initial.bio} placeholder="Your experience, specialties, range affiliations…" />
       </div>
@@ -107,7 +133,7 @@ export function InstructorProfileForm({
           <Label htmlFor="radiusMi" className="text-xs">Service radius (miles)</Label>
           <Input id="radiusMi" name="radiusMi" type="number" min={1} max={100} defaultValue={initial.radiusMi} />
         </div>
-        <div className="space-y-1.5">
+        <div id="field-price" className="space-y-1.5 scroll-mt-24">
           <Label htmlFor="price18hDollars" className="text-xs">18-hr course price (USD)</Label>
           <Input id="price18hDollars" name="price18hDollars" type="number" min={0} step="1" defaultValue={initial.price18hDollars} placeholder="e.g. 650" />
         </div>
@@ -118,7 +144,7 @@ export function InstructorProfileForm({
           <Field id="yearsExperience" label="Years teaching">
             <Input id="yearsExperience" name="yearsExperience" type="number" min={0} max={70} defaultValue={initial.yearsExperience} placeholder="e.g. 12" />
           </Field>
-          <Field id="languages" label="Languages you teach in" hint="Comma-separated — this decides it for a lot of New Yorkers.">
+          <Field id="languages" anchorId="field-languages" label="Languages you teach in" hint="Comma-separated — this decides it for a lot of New Yorkers.">
             <Input id="languages" name="languages" defaultValue={initial.languages} placeholder="English, Spanish" />
           </Field>
         </div>
@@ -140,7 +166,7 @@ export function InstructorProfileForm({
         hint="The 18-hour course is in person by law (16 classroom hours + 2 hours live fire) — so this is about the real-world logistics."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="classFormat" label="Class format">
+          <Field id="classFormat" anchorId="field-format" label="Class format">
             <select id="classFormat" name="classFormat" defaultValue={initial.classFormat} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Select…</option>
               <option value="private_1on1">Private, one-on-one</option>
@@ -153,7 +179,7 @@ export function InstructorProfileForm({
           </Field>
         </div>
 
-        <Field id="providesRange" label="Do you provide the live-fire range?" hint="The range fee is the most common surprise cost — say so either way.">
+        <Field id="providesRange" anchorId="field-range" label="Do you provide the live-fire range?" hint="The range fee is the most common surprise cost — say so either way.">
           <select id="providesRange" name="providesRange" defaultValue={initial.providesRange} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
             <option value="">Select…</option>
             <option value="yes">Yes — the range is arranged by me</option>
@@ -176,10 +202,102 @@ export function InstructorProfileForm({
         </Field>
       </Section>
 
-      <Section title="Scheduling & first contact">
-        <Field id="schedulingNotes" label="Typical availability" hint="How soon you can usually start.">
-          <Textarea id="schedulingNotes" name="schedulingNotes" rows={2} defaultValue={initial.schedulingNotes} placeholder="Weeknights and Saturdays; usually within two weeks." />
-        </Field>
+      <Section title="Scheduling & availability">
+        {/* How often you can run the 18-hour course — one cadence. */}
+        <fieldset className="space-y-2">
+          <legend className="text-xs font-medium text-text-mid">How often can you run the 18-hour course?</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              { value: "weekly", label: "Weekly" },
+              { value: "biweekly", label: "Every 2 weeks" },
+              { value: "monthly", label: "Monthly" },
+              { value: "bimonthly", label: "Every 2 months" },
+            ].map((o) => (
+              <label
+                key={o.value}
+                className="flex cursor-pointer items-center justify-center rounded-md border border-hairline-strong bg-surface-2 px-3 py-2.5 text-sm has-[:checked]:border-signal has-[:checked]:bg-signal/10 has-[:checked]:font-medium has-[:checked]:text-signal"
+              >
+                <input
+                  type="radio"
+                  name="classFrequency"
+                  value={o.value}
+                  defaultChecked={initial.classFrequency === o.value}
+                  className="sr-only"
+                />
+                {o.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <Check
+          name="openToMoreClasses"
+          label="I'd run classes more often than that"
+          defaultChecked={initial.openToMoreClasses}
+          hint="Only if we send you enough interested applicants to make it worth your time."
+        />
+
+        {/* Consult availability — days + an hours window. Not a text box. */}
+        <div className="space-y-3 rounded-md border border-hairline bg-surface-2/40 p-3">
+          <div>
+            <p className="text-xs font-medium text-text-mid">When can applicants reach you to talk?</p>
+            <p className="mt-0.5 text-xs text-text-low">
+              Applicants often want a quick conversation before booking. Pick the days you can be
+              reachable and a window — we ask for at least one hour on each day you choose. A wider
+              window means more applicants can connect with you.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {CONSULT_DAYS.map((d) => (
+              <label
+                key={d}
+                className="cursor-pointer rounded-full border border-hairline-strong px-3 py-1.5 text-xs has-[:checked]:border-signal has-[:checked]:bg-signal/15 has-[:checked]:font-medium has-[:checked]:text-signal"
+              >
+                <input
+                  type="checkbox"
+                  name="consultDays"
+                  value={d}
+                  defaultChecked={initial.consultDays.includes(d)}
+                  className="sr-only"
+                />
+                {d}
+              </label>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="consultHoursStart" className="text-xs">From</Label>
+              <select
+                id="consultHoursStart"
+                name="consultHoursStart"
+                defaultValue={initial.consultHoursStart}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">—</option>
+                {HOURS.map((h) => (
+                  <option key={h.value} value={h.value}>{h.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="consultHoursEnd" className="text-xs">To</Label>
+              <select
+                id="consultHoursEnd"
+                name="consultHoursEnd"
+                defaultValue={initial.consultHoursEnd}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">—</option>
+                {HOURS.map((h) => (
+                  <option key={h.value} value={h.value}>{h.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <Field id="responseTimeNote" label="How fast you reply">
           <Input id="responseTimeNote" name="responseTimeNote" defaultValue={initial.responseTimeNote} placeholder="Usually the same day" />
         </Field>

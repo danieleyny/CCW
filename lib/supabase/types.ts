@@ -1474,6 +1474,10 @@ export type Database = {
           base_geog: unknown
           bio: string | null
           class_format: string | null
+          class_frequency: string | null
+          consult_days: string[]
+          consult_hours_end: number | null
+          consult_hours_start: number | null
           created_at: string
           dcjs_id: string | null
           email: string | null
@@ -1491,6 +1495,7 @@ export type Database = {
           name: string
           offers_intro_call: boolean
           onboarding_completed_at: string | null
+          open_to_more_classes: boolean
           payouts_enabled: boolean
           phone: string | null
           price_18h_cents: number | null
@@ -1528,6 +1533,10 @@ export type Database = {
           base_geog?: unknown
           bio?: string | null
           class_format?: string | null
+          class_frequency?: string | null
+          consult_days?: string[]
+          consult_hours_end?: number | null
+          consult_hours_start?: number | null
           created_at?: string
           dcjs_id?: string | null
           email?: string | null
@@ -1545,6 +1554,7 @@ export type Database = {
           name: string
           offers_intro_call?: boolean
           onboarding_completed_at?: string | null
+          open_to_more_classes?: boolean
           payouts_enabled?: boolean
           phone?: string | null
           price_18h_cents?: number | null
@@ -1582,6 +1592,10 @@ export type Database = {
           base_geog?: unknown
           bio?: string | null
           class_format?: string | null
+          class_frequency?: string | null
+          consult_days?: string[]
+          consult_hours_end?: number | null
+          consult_hours_start?: number | null
           created_at?: string
           dcjs_id?: string | null
           email?: string | null
@@ -1599,6 +1613,7 @@ export type Database = {
           name?: string
           offers_intro_call?: boolean
           onboarding_completed_at?: string | null
+          open_to_more_classes?: boolean
           payouts_enabled?: boolean
           phone?: string | null
           price_18h_cents?: number | null
