@@ -8,7 +8,9 @@ import { money, formatDate, formatDateTime } from "@/lib/format"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/status-badge"
-import { setInstructorVerified } from "../actions"
+import { setInstructorVerified, setInstructorPublicListing } from "../actions"
+
+const NYC_BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"]
 
 export const metadata = { title: "Instructor" }
 
@@ -120,6 +122,50 @@ export default async function AdminInstructorDetailPage({
               v={inst.payouts_enabled ? "Enabled" : inst.stripe_connect_account_id ? "Connected (not enabled)" : "Not set up"}
             />
           </dl>
+        </CardContent>
+      </Card>
+
+      {/* Public directory listing (opt-in, admin-controlled) */}
+      <Card>
+        <CardContent className="p-5">
+          <h2 className="text-sm font-semibold">Public directory listing</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            When enabled AND the instructor is verified, they appear on the public{" "}
+            <Link href="/instructors" className="text-signal hover:underline">/instructors</Link>{" "}
+            directory. Only name, chosen boroughs, languages, class format, and bio are shown publicly.
+            {!inst.verified && " This instructor isn't verified yet, so they won't appear until they are."}
+          </p>
+          <form action={setInstructorPublicListing} className="mt-4 space-y-3">
+            <input type="hidden" name="id" value={inst.id} />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="public_profile"
+                value="true"
+                defaultChecked={inst.public_profile}
+                className="size-4 accent-brass"
+              />
+              List this instructor publicly
+            </label>
+            <div>
+              <p className="text-xs text-text-low">Boroughs shown on the public card</p>
+              <div className="mt-1.5 flex flex-wrap gap-3">
+                {NYC_BOROUGHS.map((b) => (
+                  <label key={b} className="flex items-center gap-1.5 text-sm">
+                    <input
+                      type="checkbox"
+                      name="borough"
+                      value={b}
+                      defaultChecked={(inst.public_boroughs ?? []).includes(b)}
+                      className="size-4 accent-brass"
+                    />
+                    {b}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <Button type="submit" size="sm">Save listing</Button>
+          </form>
         </CardContent>
       </Card>
 

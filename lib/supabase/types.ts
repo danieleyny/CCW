@@ -1496,6 +1496,8 @@ export type Database = {
           price_18h_cents: number | null
           profile_id: string | null
           provides_range: boolean | null
+          public_boroughs: string[]
+          public_profile: boolean
           range_fee_included: boolean | null
           rating_avg: number | null
           rating_count: number
@@ -1548,6 +1550,8 @@ export type Database = {
           price_18h_cents?: number | null
           profile_id?: string | null
           provides_range?: boolean | null
+          public_boroughs?: string[]
+          public_profile?: boolean
           range_fee_included?: boolean | null
           rating_avg?: number | null
           rating_count?: number
@@ -1600,6 +1604,8 @@ export type Database = {
           price_18h_cents?: number | null
           profile_id?: string | null
           provides_range?: boolean | null
+          public_boroughs?: string[]
+          public_profile?: boolean
           range_fee_included?: boolean | null
           rating_avg?: number | null
           rating_count?: number
@@ -3214,6 +3220,33 @@ export type Database = {
           responded: string | null
           stage: Database["public"]["Enums"]["case_stage"] | null
           type: Database["public"]["Enums"]["offer_type"] | null
+        }
+        Relationships: []
+      }
+      public_instructor_directory: {
+        Row: {
+          bio: string | null
+          boroughs: string[] | null
+          class_format: string | null
+          languages: string[] | null
+          name: string | null
+          slug: string | null
+        }
+        Insert: {
+          bio?: string | null
+          boroughs?: string[] | null
+          class_format?: string | null
+          languages?: string[] | null
+          name?: string | null
+          slug?: never
+        }
+        Update: {
+          bio?: string | null
+          boroughs?: string[] | null
+          class_format?: string | null
+          languages?: string[] | null
+          name?: string | null
+          slug?: never
         }
         Relationships: []
       }

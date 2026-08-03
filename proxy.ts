@@ -42,7 +42,10 @@ export async function proxy(request: NextRequest) {
   const isGated =
     path.startsWith("/admin") ||
     path.startsWith("/portal") ||
-    path.startsWith("/instructor")
+    // The instructor APP surface (singular) — NOT the public "/instructors"
+    // marketing directory (plural), which must stay reachable signed-out.
+    path === "/instructor" ||
+    path.startsWith("/instructor/")
 
   if (!user && isGated) {
     const url = request.nextUrl.clone()

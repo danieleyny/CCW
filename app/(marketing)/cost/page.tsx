@@ -93,10 +93,10 @@ export default async function CostPage() {
 
       <RelatedLinks
         links={[
+          { label: "The current government fees, in a table", href: "/fees" },
           { label: "How long a NYC gun license takes", href: "/timeline" },
           { label: "Everything a NYC gun license requires", href: "/requirements" },
           { label: "Compare our packages", href: "/pricing" },
-          { label: "Official sources and fees", href: "/resources" },
         ]}
       />
     </>

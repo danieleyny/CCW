@@ -212,6 +212,91 @@ export const checklistHowToSchema = {
   ],
 }
 
+/**
+ * DefinedTermSet — the /glossary. Each term is a DefinedTerm whose `url` deep-links
+ * to the page that explains it in full, and the set references the site's WebSite
+ * node so the glossary resolves as part of the same entity, not a stray vocabulary.
+ */
+export function definedTermSetSchema(
+  name: string,
+  description: string,
+  terms: { term: string; definition: string; path?: string }[]
+) {
+  const setId = `${CANONICAL_ORIGIN}/glossary#termset`
+  return {
+    "@context": "https://schema.org",
+    "@type": "DefinedTermSet",
+    "@id": setId,
+    name,
+    description,
+    url: canonical("/glossary"),
+    inDefinedTermSet: { "@id": ID.website },
+    hasDefinedTerm: terms.map((t) => ({
+      "@type": "DefinedTerm",
+      name: t.term,
+      description: t.definition,
+      inDefinedTermSet: { "@id": setId },
+      ...(t.path ? { url: canonical(t.path) } : {}),
+    })),
+  }
+}
+
+/**
+ * A public instructor's profile — a real, opted-in person (distinct from the
+ * brand, which never gets a Person node). Person + the Course they teach, with
+ * only fields we can honestly assert from the opt-in projection. The Course
+ * `provider` points at the instructor; the profile's breadcrumb ties it back to
+ * the org graph. No ratings, no invented credentials.
+ */
+export function instructorProfileSchema(args: {
+  name: string
+  slug: string
+  boroughs: string[]
+  languages: string[]
+  bio: string | null
+}) {
+  const url = canonical(`/instructors/${args.slug}`)
+  const person = {
+    "@type": "Person",
+    "@id": `${url}#person`,
+    name: args.name,
+    jobTitle: "Firearms instructor",
+    url,
+    ...(args.bio ? { description: args.bio } : {}),
+    ...(args.languages.length ? { knowsLanguage: args.languages } : {}),
+    ...(args.boroughs.length
+      ? { areaServed: args.boroughs.map((b) => ({ "@type": "AdministrativeArea", name: b })) }
+      : {}),
+  }
+  const course = {
+    "@type": "Course",
+    name: "18-hour NY concealed-carry course (CCIA)",
+    description:
+      "New York's required firearms-safety training: 16 hours of classroom instruction plus 2 hours of live-fire, taught in person.",
+    provider: { "@id": person["@id"] },
+    ...(args.boroughs.length
+      ? { areaServed: args.boroughs.map((b) => ({ "@type": "AdministrativeArea", name: b })) }
+      : {}),
+  }
+  return { "@context": "https://schema.org", "@graph": [person, course] }
+}
+
+/** The /instructors index as an ItemList tied to the site's WebSite node. */
+export function instructorDirectorySchema(items: { name: string; slug: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "DCJS-approved NYC firearms instructors",
+    isPartOf: { "@id": ID.website },
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: canonical(`/instructors/${it.slug}`),
+      name: it.name,
+    })),
+  }
+}
+
 export function faqSchema(faqs: { q: string; a: string }[]) {
   return {
     "@context": "https://schema.org",

@@ -43,6 +43,58 @@ export async function getFees(db: DB): Promise<Fees> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC FEE TABLE (the /fees reference page)
+//
+// The compact, indexable reference table. /cost keeps the narrative + all-in
+// estimate; /fees renders the raw government-fee rows straight from the table so
+// the "source of truth" is visible and dated. Every column here is real DB data:
+// amount, who it's paid to, the authority that sets it, and the day the row was
+// last touched (updated_at → "last verified"). No fee is ever collected by us.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface FeeTableRow {
+  key: string
+  label: string
+  amount: string
+  amountCents: number
+  payTo: string
+  /** The statute/agency that sets it — verbatim from the `authority` column. */
+  authority: string | null
+  notes: string | null
+  /** Row's last-touched date (ISO), surfaced as "last verified". */
+  updatedAt: string
+}
+
+/**
+ * All active government-fee rows for the public reference table, cheapest edits
+ * flowing straight through. Ordered so the two fees everyone pays lead, and the
+ * conditional retired-LEO waiver trails.
+ */
+export async function getFeeTable(db: DB): Promise<FeeTableRow[]> {
+  const { data } = await db
+    .from("fees")
+    .select("key, label, amount_cents, payee, authority, notes, updated_at")
+    .eq("active", true)
+  const ORDER = ["nypd_application", "dcjs_fingerprint", "retired_leo_application"]
+  return (data ?? [])
+    .map((f) => ({
+      key: f.key,
+      label: f.label,
+      amount: usd(f.amount_cents),
+      amountCents: f.amount_cents,
+      payTo: f.payee,
+      authority: f.authority ?? null,
+      notes: f.notes ?? null,
+      updatedAt: (f.updated_at as string) ?? "",
+    }))
+    .sort((a, b) => {
+      const ia = ORDER.indexOf(a.key)
+      const ib = ORDER.indexOf(b.key)
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+    })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PERSONALIZED FEE READINESS
 //
 // WE NEVER COLLECT THESE. The application fee is paid by the applicant to the

@@ -186,9 +186,9 @@ export default async function RequirementsPage() {
       <RelatedLinks
         links={[
           { label: "Build your free personalized checklist", href: "/checklist" },
+          { label: "Find a DCJS-approved instructor", href: "/instructors" },
           { label: "What a NYC gun license costs", href: "/cost" },
-          { label: "How long a NYC gun license takes", href: "/timeline" },
-          { label: "How the process works, step by step", href: "/how-it-works" },
+          { label: "Glossary of gun-license terms", href: "/glossary" },
         ]}
       />
     </>

@@ -45,6 +45,7 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   // ── Answers / money pages ────────────────────────────────────────────────
   { path: "/how-it-works", label: "How it works", priority: 0.8, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Service", nav: true, llmsDescription: "The full process, stage by stage, from eligibility to licensure." },
   { path: "/cost", label: "What it costs", priority: 0.8, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Answers" },
+  { path: "/fees", label: "Government fees", priority: 0.7, changeFrequency: "monthly", lastReviewed: "2026-08-03", footerGroup: "Answers", llmsDescription: "The current NYPD and NYS government fees, each with the agency that sets it and the date last verified — read live from our records." },
   { path: "/timeline", label: "How long it takes", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Answers" },
   { path: "/requirements", label: "What's required", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Answers" },
   { path: "/premises-vs-carry", label: "Premises vs carry", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Answers" },
@@ -72,6 +73,8 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: "/gun-license/staten-island", label: "Staten Island", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
   // ── Learn / supporting ───────────────────────────────────────────────────
   { path: "/blog", label: "Guides", priority: 0.6, changeFrequency: "weekly", lastReviewed: U, footerGroup: "Learn", llmsDescription: "In-depth guides to the NYC gun-license process." },
+  { path: "/instructors", label: "Find an instructor", priority: 0.6, changeFrequency: "weekly", lastReviewed: "2026-08-03", footerGroup: "Learn", llmsDescription: "A directory of DCJS-approved NYC firearms instructors who teach the required 18-hour concealed-carry course — opt-in, verified, listing the boroughs and languages they teach in." },
+  { path: "/glossary", label: "Glossary", priority: 0.5, changeFrequency: "monthly", lastReviewed: "2026-08-03", footerGroup: "Learn", llmsDescription: "Plain-language definitions of the NYC gun-license terms, each linked to the page that explains it in full." },
   { path: "/faq", label: "FAQ", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Learn", nav: true, llmsDescription: "Common questions about the NYC gun-license process." },
   { path: "/contact", label: "Contact", priority: 0.6, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Learn", llmsDescription: "Reach the team." },
   { path: "/privacy", label: "Privacy", priority: 0.3, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Learn" },
