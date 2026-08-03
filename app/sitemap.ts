@@ -34,6 +34,11 @@ const ROUTES: Entry[] = [
   { path: "/non-resident-business", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/renewal", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
   { path: "/denied-appeal", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
+  // Attorney-approved content cluster (2026-08-02).
+  { path: "/premises-vs-carry", priority: 0.7, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/disqualifiers", priority: 0.7, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/reciprocity", priority: 0.7, changeFrequency: "monthly", lastModified: UPDATED },
+  { path: "/retired-leo", priority: 0.6, changeFrequency: "monthly", lastModified: UPDATED },
   // Entity clarity — a top page for AI to cite.
   { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: REVIEWED },
   // Borough / local intent — the hub plus its five spokes.

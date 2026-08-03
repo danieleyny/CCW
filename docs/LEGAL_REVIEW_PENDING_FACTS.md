@@ -1,6 +1,11 @@
 # Legal review — pending facts for the new content cluster
 
-**Status:** awaiting attorney review · **Prepared:** 2026-08-02 · **Nothing here is published.**
+**Status:** ✅ APPROVED 2026-08-02 — all items promoted to `content/facts.ts` and
+the corresponding pages built. This document is retained as the review record.
+· **Prepared:** 2026-08-02
+
+> Batch 1 (below) is approved and live. For the NEXT batch, draft new claims in
+> `content/facts-pending.ts` and re-open this review process.
 
 ## Why this exists
 

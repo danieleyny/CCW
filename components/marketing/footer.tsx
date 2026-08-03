@@ -24,6 +24,8 @@ const COLS = [
       { href: "/cost", label: "What it costs" },
       { href: "/timeline", label: "How long it takes" },
       { href: "/requirements", label: "What's required" },
+      { href: "/premises-vs-carry", label: "Premises vs carry" },
+      { href: "/disqualifiers", label: "What disqualifies you" },
       { href: "/checklist", label: "Free checklist" },
       { href: "/do-i-need-a-lawyer", label: "Do I need a lawyer?" },
     ],
@@ -32,6 +34,8 @@ const COLS = [
     title: "Situations",
     links: [
       { href: "/non-resident-business", label: "Non-residents & business" },
+      { href: "/reciprocity", label: "Reciprocity" },
+      { href: "/retired-leo", label: "Retired law enforcement" },
       { href: "/renewal", label: "Renewal" },
       { href: "/denied-appeal", label: "If you're denied" },
       { href: "/resources", label: "Official sources" },

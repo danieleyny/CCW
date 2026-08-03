@@ -21,6 +21,14 @@
 
 /** The day each fact below was last checked against its primary source. */
 export const FACTS_VERIFIED = "2026-07-14"
+/**
+ * The content-cluster facts (license types, disqualifiers, reciprocity,
+ * retired-LEO) were drafted with primary-source citations, reviewed, and
+ * APPROVED through the legal-review pipeline on this date
+ * (docs/LEGAL_REVIEW_PENDING_FACTS.md). They carry their own date so provenance
+ * stays honest about when each set was verified.
+ */
+export const FACTS_VERIFIED_LEGAL = "2026-08-02"
 
 export interface Fact {
   /** The claim, in plain English. */
@@ -38,6 +46,19 @@ const f = (claim: string, authority: string, href: string): Fact => ({
   href,
   verifiedOn: FACTS_VERIFIED,
 })
+
+/** Same, but stamped with the legal-review approval date. */
+const fL = (claim: string, authority: string, href: string): Fact => ({
+  claim,
+  authority,
+  href,
+  verifiedOn: FACTS_VERIFIED_LEGAL,
+})
+
+// Primary-source URLs used by the attorney-approved cluster facts below.
+const PEN_40000 = "https://www.nysenate.gov/legislation/laws/PEN/400.00"
+const PEN_26520 = "https://www.nysenate.gov/legislation/laws/PEN/265.20"
+const LEOSA_926C = "https://www.law.cornell.edu/uscode/text/18/926C"
 
 export const FACTS = {
   training: f(
@@ -119,6 +140,57 @@ export const FACTS = {
     "The NYPD retains full investigative discretion over the decision.",
     "NYPD License Division",
     "https://www.nyc.gov/site/nypd/services/law-enforcement/pistol-license.page"
+  ),
+
+  // ── Attorney-approved content-cluster facts (2026-08-02) ───────────────────
+  // License types
+  licenseTypes: fL(
+    "New York issues distinct handgun license types: a premises license authorizes possessing a handgun at a specified location — a dwelling or a place of business — while a carry license authorizes carrying a handgun concealed. The unrestricted carry license permits concealed carry without regard to employment or a particular place of possession.",
+    "NY Penal Law §400.00(2)",
+    PEN_40000
+  ),
+  premisesScope: fL(
+    "A premises license does not authorize carrying a handgun in public. It covers possession at the licensed location, with only limited lawful transport — for example, directly to and from an authorized range — under New York law.",
+    "NY Penal Law §400.00",
+    PEN_40000
+  ),
+  // Eligibility / disqualifiers (general statutory criteria — never case-specific)
+  characterStandard: fL(
+    "A handgun-license applicant must be of good moral character — the essential character, temperament, and judgment necessary to be entrusted with a firearm.",
+    "NY Penal Law §400.00(1)(b)",
+    PEN_40000
+  ),
+  disqualifyingConvictions: fL(
+    "An applicant must not have been convicted anywhere of a felony or a “serious offense” as defined by New York law, and must not be the subject of an outstanding arrest warrant.",
+    "NY Penal Law §400.00(1)(c)",
+    PEN_40000
+  ),
+  controlledSubstance: fL(
+    "An applicant must not be an unlawful user of, or addicted to, any controlled substance.",
+    "NY Penal Law §400.00(1)(e)",
+    PEN_40000
+  ),
+  mentalHealthCriteria: fL(
+    "An applicant must not have been involuntarily committed to a mental-health facility, and must disclose any history of mental illness on the application.",
+    "NY Penal Law §400.00(1)(i)–(j)",
+    PEN_40000
+  ),
+  carryFiveYearBar: fL(
+    "For an unrestricted carry license, an applicant must not have been convicted within the preceding five years of certain offenses, including specified assault, misdemeanor driving-while-intoxicated, or menacing offenses.",
+    "NY Penal Law §400.00(1)(n)",
+    PEN_40000
+  ),
+  // Reciprocity
+  noReciprocity: fL(
+    "New York does not recognize handgun-carry permits issued by other states, and a person generally must hold a valid New York license to carry a handgun in New York.",
+    "NY Penal Law §265.20; §400.00",
+    PEN_26520
+  ),
+  // Retired law enforcement (federal LEOSA)
+  leosaRetired: fL(
+    "Under the federal Law Enforcement Officers Safety Act (18 U.S.C. §926C), a qualified retired law enforcement officer who meets the statute’s conditions — including at least 10 years of service (or separation due to a service-connected disability), separation in good standing, and current annual firearms qualification — may carry a concealed firearm, subject to the statute’s limits and to state laws on where carry is prohibited.",
+    "18 U.S.C. §926C (LEOSA)",
+    LEOSA_926C
   ),
 } as const
 
