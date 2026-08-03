@@ -5,10 +5,25 @@ import { useEffect, useState } from "react"
 import { Crosshair, ShieldCheck, ShieldAlert, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
+import { FACTS } from "@/content/facts"
 import { Button } from "@/components/ui/button"
 import { LeadForm } from "@/components/marketing/lead-form"
+import { FactList } from "@/components/marketing/page-blocks"
 
-type Answer = { value: string; label: string; flag?: "ineligible" | "review"; track?: string }
+/**
+ * A per-answer explanation shown the instant a disqualifying / needs-a-lawyer
+ * answer is chosen. `factKey` renders the underlying RULE from content/facts.ts
+ * (agency + primary source + date) — we explain the published rule, never a
+ * verdict on someone's specific record.
+ */
+type Explain = { headline: string; body: string; factKey: keyof typeof FACTS }
+type Answer = {
+  value: string
+  label: string
+  flag?: "ineligible" | "review"
+  track?: string
+  explain?: Explain
+}
 type Question = { key: string; prompt: string; options: Answer[] }
 
 const QUESTIONS: Question[] = [
@@ -17,7 +32,16 @@ const QUESTIONS: Question[] = [
     prompt: "Are you 21 years of age or older?",
     options: [
       { value: "yes", label: "Yes, I'm 21+" },
-      { value: "no", label: "No", flag: "ineligible" },
+      {
+        value: "no",
+        label: "No",
+        flag: "ineligible",
+        explain: {
+          headline: "You must be 21 to apply",
+          body: "New York requires handgun-license applicants to be at least 21 years old, and there isn't a version of the application for someone younger. This one's simply a matter of time — reach back out when you're eligible and we'll be ready to help.",
+          factKey: "age",
+        },
+      },
     ],
   },
   {
@@ -43,7 +67,16 @@ const QUESTIONS: Question[] = [
     prompt: "Do you have any felony or disqualifying convictions?",
     options: [
       { value: "none", label: "No disqualifiers" },
-      { value: "yes", label: "I have a conviction", flag: "review" },
+      {
+        value: "yes",
+        label: "I have a conviction",
+        flag: "review",
+        explain: {
+          headline: "This is a question for a lawyer",
+          body: "A felony or “serious offense” conviction can affect a handgun-license application — but whether a specific record actually disqualifies you is a legal judgment, and only a New York-licensed attorney can make it for your situation. This isn't a denial, and we won't guess. We can't give legal advice; we can connect you with someone who can, confidentially.",
+          factKey: "disqualifyingConvictions",
+        },
+      },
     ],
   },
   {
@@ -51,7 +84,16 @@ const QUESTIONS: Question[] = [
     prompt: "Any disqualifying mental-health or restraining-order history?",
     options: [
       { value: "none", label: "None" },
-      { value: "yes", label: "I have history to discuss", flag: "review" },
+      {
+        value: "yes",
+        label: "I have history to discuss",
+        flag: "review",
+        explain: {
+          headline: "Let's talk this through first",
+          body: "Certain mental-health or restraining-order history can affect eligibility. Whether yours does is a legal question we aren't allowed to answer — a licensed attorney can. This isn't a decision; it's a reason to review your options confidentially before you spend a dollar.",
+          factKey: "mentalHealthCriteria",
+        },
+      },
     ],
   },
   {
@@ -99,9 +141,22 @@ export function EligibilityQuiz() {
   const q = QUESTIONS[step]
 
   function choose(opt: Answer) {
-    // Conversion funnel: the very first answer starts the quiz; the last completes it.
+    // Conversion funnel: the very first answer starts the quiz.
     if (Object.keys(answers).length === 0) trackEvent("eligibility_start")
     const next = { ...answers, [q.key]: opt }
+
+    // EARLY EXIT: the moment a disqualifying / needs-a-lawyer answer is chosen,
+    // end the quiz and explain why — there's no point making someone finish a
+    // form whose outcome their answer already settled. (With short-circuit, at
+    // most ONE answer can ever carry a flag, so the Result can just find it.)
+    if (opt.flag) {
+      setAnswers(next)
+      setDone(true)
+      trackEvent("eligibility_complete")
+      persist({ step, answers: next, done: true })
+      return
+    }
+
     const last = step >= QUESTIONS.length - 1
     const nextStep = last ? step : step + 1
     setAnswers(next)
@@ -118,9 +173,21 @@ export function EligibilityQuiz() {
     persist({ step: prev, answers, done: false })
   }
 
+  // Let a mis-tap be recoverable — clears saved progress and restarts the quiz.
+  function reset() {
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // ignore blocked storage
+    }
+    setAnswers({})
+    setStep(0)
+    setDone(false)
+  }
+
   if (done) {
-    const ineligible = Object.values(answers).some((a) => a.flag === "ineligible")
-    const review = Object.values(answers).some((a) => a.flag === "review")
+    // With early-exit, at most one answer carries a flag — that's the trigger.
+    const flagged = Object.values(answers).find((a) => a.flag)
     const track = answers.location?.track ?? "resident"
     const eligibilityJson = JSON.stringify(
       Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, v.value]))
@@ -128,10 +195,10 @@ export function EligibilityQuiz() {
 
     return (
       <Result
-        ineligible={ineligible}
-        review={review}
+        flagged={flagged}
         track={track}
         eligibilityJson={eligibilityJson}
+        onReset={reset}
       />
     )
   }
@@ -189,31 +256,25 @@ export function EligibilityQuiz() {
 }
 
 function Result({
-  ineligible,
-  review,
+  flagged,
   track,
   eligibilityJson,
+  onReset,
 }: {
-  ineligible: boolean
-  review: boolean
+  flagged: Answer | undefined
   track: string
   eligibilityJson: string
+  onReset: () => void
 }) {
-  const status = ineligible ? "ineligible" : review ? "review" : "likely"
+  const status = flagged?.flag ?? "likely" // "ineligible" | "review" | "likely"
+  const isIneligible = status === "ineligible"
+  const isReview = status === "review"
+  const explain = flagged?.explain
 
-  const headline =
-    status === "ineligible"
-      ? "You must be 21 to apply"
-      : status === "review"
-        ? "Let's review your situation"
-        : "You likely qualify"
-
+  const headline = explain?.headline ?? "You likely qualify"
   const body =
-    status === "ineligible"
-      ? "NYC requires applicants to be at least 21 years old. Reach out when you're eligible and we'll be ready."
-      : status === "review"
-        ? "Some answers need a closer look — that's exactly what we're here for. Tell us a little more and we'll walk you through your options, confidentially."
-        : "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline."
+    explain?.body ??
+    "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline."
 
   return (
     <div className="rounded-lg border bg-card p-6 sm:p-8 brass-edge">
@@ -228,24 +289,64 @@ function Result({
       <h2 className="mt-4 font-display text-2xl font-semibold sm:text-3xl">{headline}</h2>
       <p className="mt-2 text-text-mid">{body}</p>
 
-      {status !== "ineligible" && (
-        <div className="mt-7 border-t border-hairline pt-7">
-          <LeadForm
-            source="eligibility_quiz"
-            showBorough={false}
-            submitLabel={status === "review" ? "Request a confidential review" : "Start my application"}
-            successTitle={status === "review" ? "Let's get started." : "You're all set."}
-            successBody="we can reach out within one business day."
-            accountCta
-            hidden={{ track, eligibility: eligibilityJson }}
-          />
+      {/* The published RULE behind this result — agency, primary source, date.
+          We explain the rule; we never adjudicate a specific record. */}
+      {explain && (
+        <div className="mt-5">
+          <FactList facts={[FACTS[explain.factKey]]} />
         </div>
       )}
 
-      {status === "ineligible" && (
-        <Button asChild variant="outline" className="mt-6">
-          <Link href="/">Back to home</Link>
-        </Button>
+      {/* Hard statutory bar (age): an honest dead-end, no lead form. */}
+      {isIneligible && (
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <Button asChild variant="outline">
+            <Link href="/">Back to home</Link>
+          </Button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="font-mono text-xs uppercase tracking-wider text-text-mid hover:text-foreground"
+          >
+            Start over
+          </button>
+        </div>
+      )}
+
+      {/* Needs-a-lawyer OR clean pass: both route to us. Review goes to the
+          attorney seam (never a denial); a clean pass starts the application. */}
+      {!isIneligible && (
+        <div className="mt-6">
+          {isReview && (
+            <p className="text-sm text-text-mid">
+              Want to understand how this is treated in general? See{" "}
+              <Link href="/do-i-need-a-lawyer" className="text-signal hover:underline">
+                do I need a lawyer
+              </Link>
+              . When you&apos;re ready, request a confidential review below.
+            </p>
+          )}
+          <div className="mt-6 border-t border-hairline pt-7">
+            <LeadForm
+              source="eligibility_quiz"
+              showBorough={false}
+              submitLabel={isReview ? "Request a confidential review" : "Start my application"}
+              successTitle={isReview ? "Let's get started." : "You're all set."}
+              successBody="we can reach out within one business day."
+              accountCta
+              hidden={{ track, eligibility: eligibilityJson }}
+            />
+          </div>
+          {isReview && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="mt-4 font-mono text-xs uppercase tracking-wider text-text-mid hover:text-foreground"
+            >
+              Start over
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
