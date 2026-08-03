@@ -10,7 +10,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "NYC Gun License Requirements",
   description:
-    "What a NYC gun license actually requires — be 21, 18 hours of training, about 24 documents, and you file it yourself. In plain English, with sources.",
+    "What a NYC gun license actually requires — be 21, 18 hours of training, about 24 documents, filed by you or by us. In plain English, with sources.",
   path: "/requirements",
   hreflang: "/requirements",
 })
@@ -161,12 +161,14 @@ export default async function RequirementsPage() {
 
       <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
         <h2 className="font-display text-2xl font-semibold tracking-tight">
-          And then you file it — you, personally
+          And then it&apos;s filed — by you, or by us
         </h2>
         <p className="mt-3 text-text-mid">
-          This one isn&apos;t a technicality. The application is yours; you submit it and you sign it.
-          Nobody can stand in for you at the License Division except a New York-licensed attorney.
-          What we do is get the file right before it leaves your hands.
+          The application is always yours, and you always sign it. On the Self-Guided plan you file it
+          yourself; with Full Concierge we file it with the NYPD on your behalf. Either way, only a New
+          York-licensed attorney can represent you at the License Division — a document-preparation
+          service prepares and files, it doesn&apos;t represent you. What we do is get the file right
+          before it goes in.
         </p>
         <FactList facts={[FACTS.youFile]} />
       </section>

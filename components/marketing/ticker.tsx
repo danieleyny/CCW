@@ -4,7 +4,7 @@ const ITEMS = [
   "State-certified instructors",
   "Step-by-step guided process",
   "All five boroughs",
-  "You review & submit your own application",
+  "You file it — or, with Full Concierge, we do",
 ]
 
 function Row() {

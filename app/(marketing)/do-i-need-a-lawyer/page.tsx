@@ -60,7 +60,7 @@ const FAQS = [
   },
   {
     q: "Are you attorneys?",
-    a: "No. Gun License NYC is a document-preparation and case-management service. We are not attorneys, we don't represent you before the NYPD License Division, and we can't advise you on your specific legal situation. You review and submit your own application.",
+    a: "No. Gun License NYC is a document-preparation and case-management service. We are not attorneys, we don't represent you before the NYPD License Division, and we can't advise you on your specific legal situation. On Self-Guided you file your own application; with Full Concierge we file it for you.",
   },
   {
     q: "What's the difference between what you do and what a lawyer does?",
@@ -103,7 +103,7 @@ export default function DoINeedALawyerPage() {
           <strong>arrest history, an order of protection, a prior denial, or an appeal</strong>,
           because those call for legal advice and representation. A service like ours sits in the
           middle: we prepare your documents and manage the case, but we aren&apos;t attorneys, and
-          you always review and submit your own application.
+          you file your own application on Self-Guided, or we file it for you with Full Concierge.
         </DirectAnswer>
       </section>
 

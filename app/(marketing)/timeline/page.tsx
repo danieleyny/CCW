@@ -28,9 +28,9 @@ const STAGES = [
     body: "Nothing starts until your application is complete. This is where the 18 hours of training, four notarized references, statements from the adults in your home, and the rest of the paperwork come together. Most people lose more time here than anywhere else — and it's the only stretch where moving faster is up to you.",
   },
   {
-    stage: "You file it",
+    stage: "It gets filed",
     when: "One day",
-    body: "You submit your own application to the NYPD License Division and pay the fees directly. We can't file it for you, and neither can any other consulting firm.",
+    body: "On Self-Guided you file your own application with the NYPD and pay the fees directly; with Full Concierge, Gun License NYC files it for you. Either way, we don't represent you before the License Division.",
   },
   {
     stage: "Interview and fingerprinting",

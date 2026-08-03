@@ -134,7 +134,7 @@ export function serviceSchemaWithOffers(packages: ServicePackage[] = []) {
     serviceType: "Gun license application assistance",
     name: "NYC gun license concierge",
     description:
-      "Guidance through the NYC gun-license process: eligibility, training, document preparation, notarization, and pre-filing review. The applicant files their own application.",
+      "Guidance through the NYC gun-license process: eligibility, training, document preparation, notarization, and filing. On Self-Guided the applicant files their own application; with Full Concierge we file it on their behalf.",
     provider: { "@id": ID.organization },
     areaServed: [
       { "@type": "City", name: "New York City" },
@@ -175,7 +175,7 @@ export function boroughServiceSchema(borough: string) {
     "@type": "Service",
     serviceType: "Gun license application assistance",
     name: `NYC gun license help — ${borough}`,
-    description: `Guidance through the NYC gun-license process for ${borough} applicants: eligibility, training, document preparation, and pre-filing review. The applicant files their own application.`,
+    description: `Guidance through the NYC gun-license process for ${borough} applicants: eligibility, training, document preparation, and filing. On Self-Guided the applicant files their own application; with Full Concierge we file it on their behalf.`,
     provider: { "@id": ID.organization },
     areaServed: { "@type": "AdministrativeArea", name: borough },
   }

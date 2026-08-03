@@ -132,7 +132,7 @@ export const FACTS = {
     "https://firearms.troopers.ny.gov/"
   ),
   youFile: f(
-    "You submit your own application. A consulting firm cannot file for you or represent you before the License Division — only a New York-licensed attorney may represent an applicant.",
+    "How the application is filed depends on your plan: on Self-Guided you file it yourself, and with Full Concierge Gun License NYC files it for you. Either way, a document-preparation service cannot represent you before the License Division — only a New York-licensed attorney may represent an applicant.",
     "NYPD License Division",
     "https://www.nyc.gov/site/nypd/services/law-enforcement/pistol-license.page"
   ),

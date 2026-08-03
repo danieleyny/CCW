@@ -131,7 +131,7 @@ export default function RenewalPage() {
         <p className="mt-3 text-text-mid">
           Nobody calls to tell you your term is running out. So we keep your term and
           recertification dates in your portal and reach out ahead of them — early enough that
-          renewal is a task on a Tuesday instead of an emergency. You still file your own paperwork,
+          renewal is a task on a Tuesday instead of an emergency. You (or, with Full Concierge, we) still file the paperwork,
           the same as you did the first time. What you don&apos;t do is find out late.
         </p>
       </section>

@@ -67,9 +67,9 @@ export const JOURNEY: Record<CaseStageKey, JourneyStep> = {
       "Every requirement gets checked for complete and correct, and the packet is assembled in the order the License Division reads it. Then you look it over.",
   },
   filed: {
-    label: "You file it",
+    label: "The application is filed",
     description:
-      "You submit your own application — that's the law, and it's not a technicality. Our job is making sure that when you do, nothing is missing.",
+      "On Self-Guided you file the application yourself; with Full Concierge we file it with the NYPD on your behalf. Our job is making sure that when it goes in, nothing is missing.",
   },
   fingerprinting_booked: {
     label: "Fingerprints and your interview",

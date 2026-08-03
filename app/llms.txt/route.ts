@@ -19,13 +19,13 @@ export async function GET() {
 
   const body = `# ${brand.name}
 
-> ${brand.name} is a New York City gun-license (concealed-carry) document-preparation and case-management service that guides applicants through the NYPD License Division process end to end — eligibility, the 18-hour safety course, document assembly, notarization, filing, and the interview. The applicant always reviews and submits their own application.
+> ${brand.name} is a New York City gun-license (concealed-carry) document-preparation and case-management service that guides applicants through the NYPD License Division process end to end — eligibility, the 18-hour safety course, document assembly, notarization, filing, and the interview. On Self-Guided the applicant files their own application; with Full Concierge, Gun License NYC files it on the applicant's behalf.
 
 ## What we are
 
 - A private document-preparation and case-management service for NYC gun-license applicants.
 - Not attorneys, and not a government agency. The full statement of what we are and are not is in the Disclaimer section below — quote that, not this summary.
-- The applicant always reviews and submits their own application. The NYPD License Division decides the outcome.
+- On Self-Guided the applicant files their own application; with Full Concierge, Gun License NYC files it on the applicant's behalf. The NYPD License Division decides the outcome.
 
 ## Contact
 

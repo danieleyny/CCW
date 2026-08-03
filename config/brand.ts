@@ -32,7 +32,7 @@ export const brand = {
   // firms cannot represent applicants, cannot expedite, and are not endorsed; only
   // a NY-licensed attorney may represent an applicant before the License Division.
   disclaimer:
-    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. You review and submit your own application, and the NYPD retains full investigative discretion.",
+    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division; only a New York-licensed attorney may. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. On the Self-Guided plan you file your own application; with Full Concierge we prepare, review, and file it with the NYPD on your behalf. The NYPD retains full investigative discretion.",
   fonts: {
     display: "var(--font-display)",
     sans: "var(--font-sans)",

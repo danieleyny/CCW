@@ -27,21 +27,22 @@ import { TheCount } from "@/components/marketing/showcase/the-count"
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
   description:
-    "Get a NYC gun license without the guesswork. We track all 24 documents, your 18-hour course, and every deadline as one case — you file it yourself.",
+    "Get a NYC gun license without the guesswork. We track all 24 documents, your 18-hour course, and every deadline as one case — and can file it for you.",
   path: "/",
   hreflang: "",
   ogTitle: "NYC gun license, handled — Gun License NYC",
 })
 
 /**
- * Copy note: the third chip is load-bearing, not decoration. It discloses that
- * the applicant files their own application — which NYPD's position requires us
- * to be clear about. Warm the tone, never drop the fact.
+ * Copy note: the third chip is load-bearing, not decoration. It discloses who
+ * files — the applicant on Self-Guided, or Gun License NYC on Full Concierge
+ * (counsel-cleared) — while never implying we REPRESENT anyone (only a licensed
+ * attorney may). Warm the tone, never blur that line.
  */
 const TRUST: string[] = [
   "One team, start to finish",
   "Every step explained",
-  "You file it — we make sure it's right",
+  "Filed right — by you, or by us",
 ]
 
 export default async function Home() {

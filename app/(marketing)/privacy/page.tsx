@@ -12,10 +12,11 @@ export const metadata = buildMetadata({
  * This page describes ACTUAL PRACTICE, not aspiration. Two rules for anyone
  * editing it:
  *
- *  1. Never claim we submit or represent. We prepare and review; the applicant
- *     files their own application. NYPD's published position is that consulting
- *     firms cannot represent applicants — saying otherwise here is a compliance
- *     problem, not a copy problem. (tests/copy-guard.test.ts enforces this.)
+ *  1. Never claim we REPRESENT. We prepare and review; the applicant files on
+ *     Self-Guided, and Gun License NYC files on the applicant's behalf on Full
+ *     Concierge (counsel-cleared). But only a New York-licensed attorney may
+ *     represent an applicant — saying otherwise is a compliance problem, not a
+ *     copy problem.
  *  2. Do not promise a retention period until counsel sets one. The mechanism
  *     lives in `retention_policies` and ships disabled; see
  *     docs/DATA_INVENTORY.md.

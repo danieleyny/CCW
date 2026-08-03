@@ -20,8 +20,13 @@ const BANNED: [string, RegExp][] = [
   ["fast-track", /fast[- ]track/i],
   ["insider", /\binsider\b/i],
   ["approval rate", /approval rate/i],
-  ["we file", /\bwe file\b/i],
-  ["on your behalf", /on your behalf/i],
+  // NOTE: "we file" and "on your behalf" were BANNED under the old "the applicant
+  // always files their own application" position. As of 2026-08-03 that reversed
+  // for the Full Concierge tier (Gun License NYC files on the applicant's behalf,
+  // counsel-cleared), so those phrases are now legitimate and no longer banned.
+  // The load-bearing guard is now REPRESENTATION — we still never represent an
+  // applicant — but that's enforced by copy + review, not a regex (every mention
+  // is a negation like "we don't represent you", which a naive ban would misfire on).
   ["endorsed by", /endorsed by/i],
 
   // ── Implied-outcome claims (added during the retail-voice copy pass) ──

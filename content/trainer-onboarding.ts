@@ -26,7 +26,7 @@ export const ONBOARDING_ACKNOWLEDGEMENTS: Acknowledgement[] = [
   {
     key: "applicant_files",
     label:
-      "I understand the applicant files their own application. I never file, submit, or represent anyone before the NYPD License Division, and I won't imply that I can.",
+      "I understand that, as the instructor, I never file, submit, or represent anyone before the NYPD License Division, and I won't imply that I can. Filing is handled by the applicant (Self-Guided) or by Gun License NYC (Full Concierge) — never by me.",
   },
   {
     key: "candor",
@@ -72,12 +72,12 @@ export const ONBOARDING_QUIZ: QuizQuestion[] = [
     key: "who_files",
     q: "Who submits the application to the NYPD License Division?",
     options: [
-      "You, on the applicant's behalf, once their documents are ready.",
-      "Gun License NYC files it for them.",
-      "The applicant files their own application; you help prepare it.",
+      "You, the instructor, on the applicant's behalf, once their documents are ready.",
+      "Either the applicant files it (Self-Guided) or Gun License NYC files it for them (Full Concierge) — never the instructor.",
+      "The applicant always files it themselves, no matter the plan.",
     ],
-    answer: 2,
-    explain: "The applicant always files their own application. We prepare and review — we never file or represent.",
+    answer: 1,
+    explain: "Filing depends on the applicant's plan — they file it on Self-Guided, or Gun License NYC files it for them on Full Concierge. As the instructor, you never file, submit, or represent anyone; you teach the 18-hour course.",
   },
   {
     key: "outcome",

@@ -56,7 +56,7 @@ const PHASES: {
     short: "Review",
     icon: ClipboardCheck,
     blurb:
-      "We check that every requirement is complete and correct. You review the finished packet, then submit your own application — with everything prepared so it's quick and right, and we're with you the whole way.",
+      "We check that every requirement is complete and correct. You review the finished packet, then it's filed — by you on Self-Guided, or by us with Full Concierge — with everything prepared so it's quick and right, and we're with you the whole way.",
   },
   {
     title: "Interview",
