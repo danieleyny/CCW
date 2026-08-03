@@ -5,6 +5,7 @@ import { LicenseHub, type AuthRow, type ReportRow } from "@/components/portal/li
 import { StartRenewalButton } from "@/components/portal/start-renewal-button"
 import { formatDate, daysUntil } from "@/lib/format"
 import { RENEWAL_RUNWAY_DAYS } from "@/lib/license"
+import { reviewUrl } from "@/lib/review"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata = { title: "Your license" }
@@ -122,6 +123,29 @@ export default async function LicensePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* The review ASK — only once licensed AND a real review URL is configured
+          (NEXT_PUBLIC_REVIEW_URL). Never a rating display, never fabricated. */}
+      {expires && reviewUrl() && (
+        <Card className="brass-edge">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <div>
+              <h2 className="text-sm font-semibold">Licensed — congratulations.</h2>
+              <p className="mt-1 text-sm text-text-mid">
+                If the process went well for you, a short review helps other New Yorkers find us.
+              </p>
+            </div>
+            <a
+              href={reviewUrl()!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-brass px-4 text-sm font-semibold text-[#0B0A07] transition-opacity hover:opacity-90"
+            >
+              Leave a review
+            </a>
+          </CardContent>
+        </Card>
+      )}
 
       <LicenseHub auths={auths} reports={reports} />
 

@@ -62,6 +62,7 @@ export const organizationSchema = {
   name: brand.name,
   legalName: brand.legalName,
   description: brand.description,
+  slogan: brand.tagline,
   url: CANONICAL_ORIGIN,
   logo: { "@type": "ImageObject", url: LOGO, width: 1200, height: 630 },
   image: LOGO,

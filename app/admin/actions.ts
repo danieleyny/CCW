@@ -9,6 +9,7 @@ import { requireStaff } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { notifyClient } from "@/lib/email"
 import { notifyCaseParties } from "@/lib/notify"
+import { reviewUrl } from "@/lib/review"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { sendBookingInvites } from "@/lib/calendar/invites"
 import { getStripe } from "@/lib/stripe"
@@ -185,10 +186,16 @@ export async function recordLicenseIssued(
   })
 
   const client = kase.clients as unknown as { full_name: string; email: string | null }
+  // The one honest moment to ask for a review: the case is licensed. Only when a
+  // real review URL is configured (NEXT_PUBLIC_REVIEW_URL) — silent otherwise.
+  const review = reviewUrl()
   await notifyClient({
     to: client?.email,
     subject: "Your carry license has been issued",
-    body: `Hi ${client?.full_name ?? ""}, your ${licenseType} license is recorded as issued ${issuedOn} and valid through ${expiresOn}. Your portal now shows your license details, purchase-authorization clock, and renewal runway.`,
+    body:
+      `Hi ${client?.full_name ?? ""}, your ${licenseType} license is recorded as issued ${issuedOn} and valid through ${expiresOn}. Your portal now shows your license details, purchase-authorization clock, and renewal runway.` +
+      (review ? `\n\nIf the process went well for you, a short review would mean a lot and helps other New Yorkers find us.` : ""),
+    cta: review ? { label: "Leave a review", url: review } : undefined,
   })
 
   revalidatePath(`/admin/cases/${caseId}`)

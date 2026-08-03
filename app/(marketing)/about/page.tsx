@@ -84,6 +84,10 @@ export default function AboutPage() {
                 A case file that stays current — training dates, notarizations, references, and
                 affidavits, tracked so nothing expires while you wait on something else.
               </li>
+              <li>
+                A pre-filing review gate: nothing reaches the filing stage until the blocking
+                requirements are met and a named person on our team signs off.
+              </li>
               <li>Plain-English explanations of published rules, with the source attached.</li>
             </ul>
           </div>
