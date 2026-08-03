@@ -7,9 +7,9 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
 
 export const metadata = buildMetadata({
-  title: "What Disqualifies You From a NYC Gun License",
+  title: "NYC Gun License Disqualifiers",
   description:
-    "The general legal criteria the NYPD weighs — good moral character, convictions, controlled-substance use, and mental-health history. General information, not advice about your case.",
+    "The general legal criteria the NYPD weighs for a NYC gun license — character, convictions, controlled substances, mental health. General info, not advice.",
   path: "/disqualifiers",
 })
 

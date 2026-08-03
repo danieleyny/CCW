@@ -10,7 +10,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "If Your NYC Gun License Is Denied",
   description:
-    "Denied a NYC gun license? A denial isn't necessarily the end — but challenging one is legal representation. Here's what we can help with and when to call an attorney.",
+    "Denied a NYC gun license? A denial isn't the end — but challenging one is legal work. Here's what we help with, and when to call an attorney.",
   path: "/denied-appeal",
 })
 

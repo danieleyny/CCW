@@ -11,7 +11,7 @@ import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 export const metadata = buildMetadata({
   title: "NYC Gun License by Borough",
   description:
-    "Applying for a gun license in Manhattan, Brooklyn, Queens, the Bronx, or Staten Island? The NYPD process is identical citywide — here's the one standard, and the questions each borough raises.",
+    "Getting a NYC gun license in Manhattan, Brooklyn, Queens, the Bronx, or Staten Island? The NYPD process is identical citywide — here's the one standard.",
   path: "/gun-license",
 })
 

@@ -133,3 +133,43 @@ The right play:
 - A small number of names may carry registry **premium pricing** at the registrar; the long-tail ones here almost certainly won't, but check the price before buying.
 - I couldn't verify the `.co` variants (registry query blocked) — check those manually if you want them.
 - Buy through a registrar with **free WHOIS privacy** and auto-renew on (Cloudflare Registrar is at-cost; Porkbun/Namecheap are cheap) so you never lose one to expiry.
+
+---
+
+## Deployment — attaching keyword domains (owner steps)
+
+Redirects are already coded in `next.config.ts` and are **host-conditional**: each
+rule only fires for its exact domain, so it stays dormant until you attach that
+domain in Vercel. No microsites, no doorway pages — every attached domain 301s
+straight to the matching page on `gunlicensenyc.com`.
+
+**To activate a domain:**
+1. Buy it (Cloudflare Registrar / Porkbun / Namecheap), WHOIS privacy on, auto-renew on.
+2. In the **Vercel** project `ccw` → **Settings → Domains → Add**, enter the domain
+   (and `www.` variant). Vercel shows the DNS records to set.
+3. At the registrar's DNS, set the records Vercel gives you (apex `A` → Vercel, or
+   the nameserver/CNAME option). Wait for Vercel to show "Valid Configuration".
+4. Done — the coded 301 for that host activates automatically. Verify with
+   `curl -sI https://<domain>/` → `301` to the mapped page.
+
+**Mapping already coded** (`next.config.ts` → `redirects()`):
+
+| Domain cluster | Example hosts | 301 target |
+| --- | --- | --- |
+| Brand aliases (owned) | gunlicenseny.com, firearmlicense{nyc,ny}.com, nycgunlaws.com | canonical, **same path** |
+| `www.gunlicensenyc.com` | — | apex, same path |
+| Training / course | nycfirearmstraining.com, nycguntraining.com, guntrainingnyc.com, nycccwcourse.com, guntraining.nyc | `/requirements` |
+| Renewal | nycgunlicenserenewal.com, gunlicenserenewalnyc.com | `/renewal` |
+| Boroughs | {manhattan,brooklyn,queens,bronx,statenisland}gunlicense.com | that borough page |
+| Premises | nycpremiseslicense.com, premiseslicensenyc.com | `/premises-vs-carry` |
+| Handgun / carry / pistolpermit | nychandgunlicense.com, carrylicensenyc.com, concealedcarryny.com, pistolpermit.nyc, gunlicense.nyc | `/` |
+
+**To add a new domain to the mapping:** edit the `KEYWORD_REDIRECTS` array (or
+`BRAND_ALIAS_HOSTS`) in `next.config.ts` — add the host string to the right
+cluster and redeploy. Include both the bare and `www.` forms are handled
+automatically (`withWww`).
+
+**Reserved (do NOT redirect):** `concealedknowledge.com` / `.org` / `.net` and the
+`*knowledge*` family are earmarked to become a genuine content property (real
+articles that rank + get cited by AI), per "How to actually USE these" above — not
+a redirect. Leave them out of `next.config.ts`.

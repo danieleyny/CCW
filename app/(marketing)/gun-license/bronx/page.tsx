@@ -10,7 +10,7 @@ import { JsonLd, boroughServiceSchema } from "@/components/marketing/json-ld"
 export const metadata = buildMetadata({
   title: "Gun License in The Bronx",
   description:
-    "Applying for a gun license from the Bronx: identical citywide NYPD rules, and a practical way to coordinate the notarized signatures the application asks other people to give.",
+    "Applying for a gun license from the Bronx: the identical citywide NYPD rules, and a practical way to coordinate the notarized reference signatures.",
   path: "/gun-license/bronx",
 })
 

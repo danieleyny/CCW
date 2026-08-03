@@ -11,6 +11,8 @@ export interface PostMeta {
   title: string
   description: string
   date: string
+  /** Optional `updated:` frontmatter → Article dateModified + sitemap lastmod. */
+  updated?: string
   tag: string
   readingMinutes: number
 }
@@ -34,6 +36,7 @@ export function getAllPosts(): PostMeta[] {
         title: data.title as string,
         description: data.description as string,
         date: data.date as string,
+        updated: (data.updated as string) || undefined,
         tag: (data.tag as string) ?? "Guide",
         readingMinutes: readingMinutes(content),
       }

@@ -12,7 +12,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "How Much Does a NYC Gun License Cost?",
   description:
-    "The honest all-in cost of a NYC gun license — our fee, the NYPD and State fees you pay directly, plus typical training and notary ranges. Nothing marked up.",
+    "The honest all-in cost of a NYC gun license: our fee, the NYPD and State fees you pay directly, and typical training and notary ranges — nothing marked up.",
   path: "/cost",
 })
 

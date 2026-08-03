@@ -10,7 +10,7 @@ import { JsonLd, boroughServiceSchema } from "@/components/marketing/json-ld"
 export const metadata = buildMetadata({
   title: "Gun License in Staten Island",
   description:
-    "Applying for a gun license from Staten Island: the same citywide NYPD rules, and an honest look at which steps actually require you to travel and which don't.",
+    "Applying for a gun license from Staten Island: the same citywide NYPD rules, and an honest look at which steps actually require travel.",
   path: "/gun-license/staten-island",
 })
 

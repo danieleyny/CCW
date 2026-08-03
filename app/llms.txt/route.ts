@@ -1,6 +1,7 @@
 import { brand } from "@/config/brand"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { getAllPosts } from "@/lib/blog"
+import { LLMS_KEY_PAGES } from "@/lib/marketing-routes"
 
 /**
  * /llms.txt — a plain-text map of the site for language models, following the
@@ -35,14 +36,7 @@ export async function GET() {
 
 ## Key pages
 
-- [Home](${u("/")}): What the NYC gun-license process involves and how we run it as one tracked case.
-- [How it works](${u("/how-it-works")}): The full process, stage by stage, from eligibility to licensure.
-- [Free checklist](${u("/checklist")}): A free, no-account checklist of the documents required, personalized to your situation.
-- [Eligibility check](${u("/eligibility")}): A two-minute check of whether you likely qualify.
-- [Pricing](${u("/pricing")}): Our membership tiers and what each includes.
-- [FAQ](${u("/faq")}): Common questions about the NYC gun-license process.
-- [Official resources](${u("/resources")}): Links to the primary sources — NYPD License Division, fees, DCJS, CCIA training, recertification, safe storage. Each link is dated with the day we last verified it.
-- [Contact](${u("/contact")}): Reach the team.
+${LLMS_KEY_PAGES.map((k) => `- [${k.label}](${u(k.path)}): ${k.description}`).join("\n")}
 
 ## Guides
 

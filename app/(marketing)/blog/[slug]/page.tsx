@@ -82,7 +82,7 @@ export default async function Article({
     headline: post.meta.title,
     description: post.meta.description,
     datePublished: post.meta.date,
-    dateModified: post.meta.date,
+    dateModified: post.meta.updated ?? post.meta.date,
     image: ogImage(post.meta.title),
     mainEntityOfPage: canonical(`/blog/${slug}`),
     author: { "@id": ID.organization },

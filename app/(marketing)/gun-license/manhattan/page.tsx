@@ -10,7 +10,7 @@ import { JsonLd, boroughServiceSchema } from "@/components/marketing/json-ld"
 export const metadata = buildMetadata({
   title: "Gun License in Manhattan",
   description:
-    "Applying for a gun license from Manhattan: why a central address changes nothing about the NYPD process, and the storage and household questions that come up in Manhattan apartments.",
+    "Applying for a gun license from Manhattan: why a central address changes nothing, plus the storage and household questions common in NYC apartments.",
   path: "/gun-license/manhattan",
 })
 

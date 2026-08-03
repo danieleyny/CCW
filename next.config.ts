@@ -59,21 +59,71 @@ const nextConfig: NextConfig = {
   },
 
   /**
-   * Blog posts that cannibalized the pillar pages. Three early posts covered the
-   * same queries as /requirements and /timeline, competing with them for the same
-   * terms and splitting the signal. The pillars win: each post 301s to the page
-   * that superseded it, and the .mdx files are deleted so nothing regenerates
-   * them (getAllPosts() reads the directory, so the sitemap and blog index drop
-   * them automatically — do not hand-edit app/sitemap.ts).
+   * Redirects. Three kinds:
    *
-   * These are permanent on purpose: the posts are gone, the pillar is the
-   * canonical home of the topic, and the redirect passes their equity along.
+   * 1. Cannibalizing blog posts → their pillar (301). The .mdx files are deleted
+   *    so nothing regenerates them; the pillar is the canonical home of the topic.
+   * 2. www → apex, so the canonical host is always the bare gunlicensenyc.com.
+   * 3. Keyword / brand-alias domains → the MATCHING page on the canonical site,
+   *    NOT a microsite (Google penalizes doorway networks). Every rule is
+   *    HOST-CONDITIONAL, so it only fires once that domain is actually attached to
+   *    the Vercel project and no-ops until then — see DOMAIN_STRATEGY.md
+   *    "Deployment". Brand aliases preserve the path; exact-match keyword domains
+   *    send all their traffic to the single best-matching page.
    */
   async redirects() {
+    const CANONICAL = "gunlicensenyc.com"
+    const host = (value: string) => ({ type: "host" as const, value })
+    const withWww = (hosts: string[]) => hosts.flatMap((h) => [h, `www.${h}`])
+
+    // Owned brand-variant domains → canonical, path-preserving. (concealedknowledge.*
+    // is intentionally omitted — it's reserved to become a real content property,
+    // not a redirect. See DOMAIN_STRATEGY.md.)
+    const BRAND_ALIAS_HOSTS = ["gunlicenseny.com", "firearmlicensenyc.com", "firearmlicenseny.com", "nycgunlaws.com"]
+
+    // Exact-match keyword domains → the matching page. Add a host here as you buy +
+    // attach it in Vercel; unattached hosts simply never match. Mapping mirrors the
+    // clusters in DOMAIN_STRATEGY.md.
+    const KEYWORD_REDIRECTS: { target: string; hosts: string[] }[] = [
+      // Training / course cluster → the requirements pillar (training section).
+      { target: "/requirements", hosts: ["nycfirearmstraining.com", "nycguntraining.com", "guntrainingnyc.com", "nycccwcourse.com", "nyccarrycourse.com", "guntraining.nyc"] },
+      // Renewal cluster → /renewal.
+      { target: "/renewal", hosts: ["nycgunlicenserenewal.com", "gunlicenserenewalnyc.com", "nycpistolpermitrenewal.com"] },
+      // Borough exact-match → that borough page.
+      { target: "/gun-license/manhattan", hosts: ["manhattangunlicense.com"] },
+      { target: "/gun-license/brooklyn", hosts: ["brooklyngunlicense.com"] },
+      { target: "/gun-license/queens", hosts: ["queensgunlicense.com"] },
+      { target: "/gun-license/bronx", hosts: ["bronxgunlicense.com"] },
+      { target: "/gun-license/staten-island", hosts: ["statenislandgunlicense.com"] },
+      // Premises cluster → the premises-vs-carry explainer.
+      { target: "/premises-vs-carry", hosts: ["nycpremiseslicense.com", "premiseslicensenyc.com"] },
+      // Handgun / carry-license / pistolpermit brand-type → home.
+      { target: "/", hosts: ["nychandgunlicense.com", "handgunlicensenyc.com", "nychandgunpermit.com", "carrylicensenyc.com", "nycarrylicense.com", "nycfirearmlicense.com", "concealedcarryny.com", "pistolpermit.nyc", "gunlicense.nyc"] },
+    ]
+
     return [
+      // 1. cannibalizing posts → pillars
       { source: "/blog/nyc-ccw-requirements-2026", destination: "/requirements", permanent: true },
       { source: "/blog/how-long-does-nyc-ccw-take", destination: "/timeline", permanent: true },
       { source: "/blog/documents-you-need-for-nyc-ccw", destination: "/requirements", permanent: true },
+      // 2. www → apex
+      { source: "/:path*", has: [host(`www.${CANONICAL}`)], destination: `https://${CANONICAL}/:path*`, permanent: true },
+      // 3a. brand aliases → canonical (path preserved)
+      ...withWww(BRAND_ALIAS_HOSTS).map((h) => ({
+        source: "/:path*",
+        has: [host(h)],
+        destination: `https://${CANONICAL}/:path*`,
+        permanent: true,
+      })),
+      // 3b. keyword domains → matching page (all paths)
+      ...KEYWORD_REDIRECTS.flatMap(({ target, hosts }) =>
+        withWww(hosts).map((h) => ({
+          source: "/:path*",
+          has: [host(h)],
+          destination: `https://${CANONICAL}${target}`,
+          permanent: true,
+        }))
+      ),
     ]
   },
 };

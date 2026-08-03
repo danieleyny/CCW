@@ -9,7 +9,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "Premises vs Carry License in NYC",
   description:
-    "The difference between a NYC premises license and a carry license — where each lets you keep or carry a handgun, and which one fits how you actually want to be licensed.",
+    "The difference between a NYC premises license and a carry license — where each lets you keep or carry a handgun, and which one fits you.",
   path: "/premises-vs-carry",
 })
 

@@ -49,6 +49,9 @@ export const metadata: Metadata = {
   },
   description: brand.description,
   metadataBase: new URL(brand.url),
+  alternates: {
+    types: { "application/rss+xml": [{ url: "/feed.xml", title: `${brand.name} — Guides` }] },
+  },
   ...(Object.keys(verification).length ? { verification } : {}),
 };
 

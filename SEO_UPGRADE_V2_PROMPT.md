@@ -24,11 +24,13 @@ Run phases in order. `pnpm build && pnpm test` must pass after each phase. Commi
 5. **Keyword-domain redirects.** Per `DOMAIN_STRATEGY.md` we own several exact-match domains. In `next.config.ts` (or a documented Vercel-level config if cleaner), 301 the domains — when they're attached to the Vercel project — to the MATCHING page, not just the home page: training-cluster domains → /requirements (training section anchor), handgun/carry-license domains → /, renewal domains → /renewal, borough domains → their borough page. Where code can't do this (DNS attach), write exact step-by-step instructions into `DOMAIN_STRATEGY.md` under a new "Deployment" heading. No microsites, ever.
 6. Verify: canonical host untouched, `/c/` `/r/` still disallowed, previews still noindex.
 
-## PHASE 2 — E-E-A-T: a real human + review infrastructure
+## PHASE 2 — Review infrastructure + entity corroboration
 
-1. **Person entity.** Add founder/author config to `config/brand.ts` (name, role, one-paragraph bio, real profile URLs — leave placeholders as env-style TODOs, never invent). Emit a `Person` node with `@id` in the graph; reference as `founder` on Organization and `author` on every Article. Render a compact author byline on blog posts and an expanded "who runs this" block on /about. ONLY real information — if a field isn't provided, omit the field.
-2. **Review capture (not display).** Build the ask, not fake proof: when an admin marks a case licensed, the existing notification flow appends a review-request line with a `NEXT_PUBLIC_REVIEW_URL` (GBP short link) — env-gated so it's silent until the profile exists. Add the same link to the portal's license-issued screen. Do NOT add AggregateRating schema anywhere.
-3. **sameAs check.** Confirm the existing env-var wiring (`NEXT_PUBLIC_GBP_URL` etc.) flows to the graph, and add all of these env names to `.env.example` with comments.
+Note: no founder/author Person entity and no personal bios anywhere — the brand itself stays the voice. Articles keep the Organization as `author`/`publisher` (already the case in the Article schema).
+
+1. **Review capture (not display).** Build the ask, not fake proof: when an admin marks a case licensed, the existing notification flow appends a review-request line with a `NEXT_PUBLIC_REVIEW_URL` (GBP short link) — env-gated so it's silent until the profile exists. Add the same link to the portal's license-issued screen. Do NOT add AggregateRating schema anywhere.
+2. **sameAs check.** Confirm the existing env-var wiring (`NEXT_PUBLIC_GBP_URL` etc.) flows to the graph, and add all of these env names to `.env.example` with comments.
+3. **Brand-level E-E-A-T (no individuals).** Strengthen /about's "what we are / what we are not" block and ensure the Organization node carries everything honest we can assert (knowsAbout, areaServed, contactPoint — most already present). No named humans, no invented credentials.
 
 ## PHASE 3 — Content engine: 10 long-tail guides
 
@@ -66,7 +68,7 @@ Also: `/blog` index gets tag filtering only if trivially cheap; otherwise skip �
 2. **Env docs:** `.env.example` gains every SEO env (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`, `NEXT_PUBLIC_BING_SITE_VERIFICATION`, GBP/social `sameAs` vars, `NEXT_PUBLIC_REVIEW_URL`) with one-line instructions.
 3. **Adversarial pass — as a hostile SEO reviewer:**
    - Every marketing route (old + new, + /es): unique title/description within limits, canonical, OG image, in sitemap, reachable ≤2 clicks from home, breadcrumbs present.
-   - Validate every JSON-LD block (Organization, Person, WebSite, Service+Offers, borough Services, FAQPage, HowTo, Article, DefinedTermSet, Course) — zero errors, all cross-referenced by `@id`, no fabricated fields.
+   - Validate every JSON-LD block (Organization, WebSite, Service+Offers, borough Services, FAQPage, HowTo, Article, DefinedTermSet, Course, and instructor-profile Person nodes from Phase 4) — zero errors, all cross-referenced by `@id`, no fabricated fields, no founder/author Person anywhere.
    - Grep ALL new content for: guarantee, expedite, fast-track, insider, approval rate, "we file", endorsed. Report hits verbatim and fix.
    - Confirm no new route leaks into robots-disallowed space and nothing tokenized (`/c/`, `/r/`) is linked from public pages.
    - Lighthouse (or equivalent) on home + /fees + /instructors + one guide: SEO 100, perf ≥ 90 mobile; fix regressions.

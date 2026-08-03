@@ -21,7 +21,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "NYC Gun License for Non-Residents",
   description:
-    "Don't live in NYC but work or run a business here? There's a separate track for non-residents and business owners. Here's how it differs and how we scope it.",
+    "Don't live in NYC but work or run a business here? There's a separate track for non-residents and business owners — how it differs, and how we scope it.",
   path: "/non-resident-business",
   ogTitle: `NYC Gun License: Non-Residents & Business Owners · ${brand.name}`,
 })

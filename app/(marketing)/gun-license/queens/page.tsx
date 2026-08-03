@@ -10,7 +10,7 @@ import { JsonLd, boroughServiceSchema } from "@/components/marketing/json-ld"
 export const metadata = buildMetadata({
   title: "Gun License in Queens",
   description:
-    "Applying for a gun license from Queens: the same citywide NYPD rules, plus the scheduling reality of fitting 18 hours of training and a live-fire session around a working week.",
+    "Applying for a gun license from Queens: the same citywide NYPD rules, plus the reality of fitting 18 hours of training around a working week.",
   path: "/gun-license/queens",
 })
 

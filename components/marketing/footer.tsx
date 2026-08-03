@@ -2,66 +2,15 @@ import Link from "next/link"
 import { brand } from "@/config/brand"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { LogoMark } from "@/components/brand/logo"
+import { footerColumns } from "@/lib/marketing-routes"
 
 /**
  * The footer is the hub of the hub-and-spoke: every new SEO page is reachable
  * from here, so nothing is an orphan and everything sits <=2 clicks from home.
+ * Columns are derived from the single route registry (lib/marketing-routes), so
+ * adding a page there automatically lists it here.
  */
-const COLS = [
-  {
-    title: "Service",
-    links: [
-      { href: "/how-it-works", label: "How it works" },
-      { href: "/pricing", label: "Pricing" },
-      { href: "/eligibility", label: "Eligibility quiz" },
-      { href: "/book", label: "Book a consult" },
-      { href: "/about", label: "About us" },
-    ],
-  },
-  {
-    title: "Answers",
-    links: [
-      { href: "/cost", label: "What it costs" },
-      { href: "/timeline", label: "How long it takes" },
-      { href: "/requirements", label: "What's required" },
-      { href: "/premises-vs-carry", label: "Premises vs carry" },
-      { href: "/disqualifiers", label: "What disqualifies you" },
-      { href: "/checklist", label: "Free checklist" },
-      { href: "/do-i-need-a-lawyer", label: "Do I need a lawyer?" },
-    ],
-  },
-  {
-    title: "Situations",
-    links: [
-      { href: "/non-resident-business", label: "Non-residents & business" },
-      { href: "/reciprocity", label: "Reciprocity" },
-      { href: "/retired-leo", label: "Retired law enforcement" },
-      { href: "/renewal", label: "Renewal" },
-      { href: "/denied-appeal", label: "If you're denied" },
-      { href: "/resources", label: "Official sources" },
-    ],
-  },
-  {
-    title: "Boroughs",
-    links: [
-      { href: "/gun-license", label: "By borough — overview" },
-      { href: "/gun-license/manhattan", label: "Manhattan" },
-      { href: "/gun-license/brooklyn", label: "Brooklyn" },
-      { href: "/gun-license/queens", label: "Queens" },
-      { href: "/gun-license/bronx", label: "The Bronx" },
-      { href: "/gun-license/staten-island", label: "Staten Island" },
-    ],
-  },
-  {
-    title: "Learn",
-    links: [
-      { href: "/blog", label: "Guides" },
-      { href: "/faq", label: "FAQ" },
-      { href: "/contact", label: "Contact" },
-      { href: "/privacy", label: "Privacy" },
-    ],
-  },
-]
+const COLS = footerColumns()
 
 export function MarketingFooter() {
   return (

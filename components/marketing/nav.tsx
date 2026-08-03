@@ -14,14 +14,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { NAV_ROUTES } from "@/lib/marketing-routes"
 
-const LINKS = [
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/checklist", label: "Free checklist" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/resources", label: "Resources" },
-  { href: "/faq", label: "FAQ" },
-]
+// Top-nav links come from the single route registry (nav: true entries).
+const LINKS = NAV_ROUTES
 
 export function MarketingNav() {
   const [open, setOpen] = useState(false)

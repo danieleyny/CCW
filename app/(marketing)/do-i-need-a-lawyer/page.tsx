@@ -9,7 +9,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "Do I Need a Lawyer for a NYC Gun License?",
   description:
-    "An honest comparison of doing it yourself, hiring a document-prep service, and hiring a New York attorney for a NYC gun license — including when we're the wrong choice.",
+    "An honest comparison of doing it yourself, a document-prep service, and a New York attorney for a NYC gun license — including when we're the wrong choice.",
   path: "/do-i-need-a-lawyer",
 })
 

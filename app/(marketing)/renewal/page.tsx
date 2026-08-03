@@ -9,7 +9,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "NYC Gun License Renewal",
   description:
-    "A NYC carry license runs a three-year term, and New York requires recertification on the State's schedule. What renewal involves, and how to not miss the date.",
+    "A NYC carry license runs a three-year term, with State recertification on a set schedule. What renewal involves, and how not to miss the date.",
   path: "/renewal",
 })
 

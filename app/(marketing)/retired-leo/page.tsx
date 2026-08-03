@@ -7,9 +7,9 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
 
 export const metadata = buildMetadata({
-  title: "Retired Law Enforcement Carry in NYC (LEOSA)",
+  title: "Retired LEO Carry in NYC (LEOSA)",
   description:
-    "How the federal Law Enforcement Officers Safety Act (LEOSA) works for qualified retired officers, and how it relates to a NYC gun license — general information, sourced.",
+    "How the federal Law Enforcement Officers Safety Act (LEOSA) works for qualified retired officers, and how it relates to a NYC gun license. Sourced.",
   path: "/retired-leo",
 })
 

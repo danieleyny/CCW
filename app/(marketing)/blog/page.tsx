@@ -22,6 +22,14 @@ export default function Blog() {
         title="NYC gun licensing, explained"
         subtitle="Plain-English guides to a confusing process — precise, current, and genuinely useful."
       />
+      <div className="mx-auto max-w-4xl px-4 pt-6 text-right sm:px-6">
+        <a
+          href="/feed.xml"
+          className="font-mono text-xs text-text-low underline-offset-4 hover:text-signal hover:underline"
+        >
+          RSS feed
+        </a>
+      </div>
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
         <div className="space-y-3">
           {posts.map((p) => (

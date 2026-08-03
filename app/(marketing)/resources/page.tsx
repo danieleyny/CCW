@@ -10,7 +10,7 @@ import { getPublicFees } from "@/lib/public-data"
 export const metadata = buildMetadata({
   title: "NYC Gun License Official Sources",
   description:
-    "Primary sources for NYC gun licensing — the NYPD License Division, fees, DCJS, CCIA training, recertification, and safe storage. Every link dated when verified.",
+    "Primary sources for NYC gun licensing — the NYPD License Division, fees, DCJS, CCIA training, recertification, and safe storage. Each link dated.",
   path: "/resources",
 })
 

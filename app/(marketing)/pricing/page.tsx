@@ -14,7 +14,7 @@ import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 export const metadata = buildMetadata({
   title: "NYC Gun License Service Pricing",
   description:
-    "What our NYC gun license help costs — Self-Guided, Full Concierge, Non-Resident / Special Carry, and Renewal. Government fees are paid directly, never marked up.",
+    "What our NYC gun license help costs — Self-Guided, Full Concierge, Non-Resident, and Renewal tiers. Government fees are paid directly, never marked up.",
   path: "/pricing",
 })
 

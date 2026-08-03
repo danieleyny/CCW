@@ -9,7 +9,7 @@ import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/mar
 export const metadata = buildMetadata({
   title: "NYC Gun License Reciprocity",
   description:
-    "Does New York honor an out-of-state carry permit, and does a NYC license work elsewhere? The honest answer, sourced — plus where to confirm the current rules.",
+    "Does New York honor an out-of-state carry permit, and does a NYC license work elsewhere? The honest, sourced answer — and where to confirm current rules.",
   path: "/reciprocity",
 })
 
