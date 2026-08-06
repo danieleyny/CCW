@@ -57,6 +57,9 @@ export const paletteDark = {
   "surface-1": "#0E1015",
   "surface-2": "#14171D",
   "surface-3": "#1C2027",
+  // V9 — the raised section surface. A real step above --bg (#07080B) so a
+  // section boundary is visible without relying on a 1px hairline alone.
+  "sec-raised": "#0E1117",
   hairline: "rgba(255,255,255,0.08)",
   "hairline-strong": "rgba(255,255,255,0.14)",
   "text-hi": "#F2F3F5",
@@ -88,6 +91,8 @@ export const paletteLight = {
   "surface-1": "#FFFFFF",
   "surface-2": "#F4F2EE",
   "surface-3": "#EAE7E1",
+  // V9 — raised section surface, warm-paper twin of the dark #0E1117.
+  "sec-raised": "#F4F2EE",
   hairline: "rgba(20,18,14,0.08)",
   "hairline-strong": "rgba(20,18,14,0.14)",
   "text-hi": "#14120E",
