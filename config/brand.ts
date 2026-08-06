@@ -175,7 +175,11 @@ export function brandCss(): string {
   // `--app-bg-dark` is published on :root (not just .dark) so the DOCUMENT can be
   // painted obsidian on app routes — otherwise overscroll/short pages reveal the
   // light marketing paper behind the app shell. See globals.css `html:has(.dark)`.
-  return `:root{${light}--app-bg-dark:${paletteDark.bg};} .dark{${dark}}`
+  //
+  // `.paper` re-declares the LIGHT palette on itself, so a subtree inside a `.dark`
+  // shell renders as warm paper with no hardcoded colour anywhere (V14 THE COUNT
+  // sheets are the only place on the site the warm-paper theme surfaces).
+  return `:root{${light}--app-bg-dark:${paletteDark.bg};} .dark{${dark}} .paper{${light}}`
 }
 
 export type Brand = typeof brand

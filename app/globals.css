@@ -645,28 +645,6 @@
   .cfa-pseudobtn { width: 100%; min-height: 46px; }
 }
 
-/* THE COUNT — paper cards assemble from scattered into a tidy fan on scroll-in.
-   Settled (assembled) is the DEFAULT so reduced-motion + no-JS render correctly;
-   the scatter only exists while not yet in view. */
-.the-count .count-card {
-  transform: translate(0, var(--fy)) rotate(var(--fr));
-  opacity: 0.9;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s ease;
-}
-.the-count[data-inview="false"] .count-card {
-  transform: translate(var(--sx), var(--sy)) rotate(var(--sr));
-  opacity: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .the-count .count-card {
-    transition: none;
-  }
-  .the-count[data-inview="false"] .count-card {
-    transform: translate(0, var(--fy)) rotate(var(--fr));
-    opacity: 0.9;
-  }
-}
-
 /* ── V6 media + motion ───────────────────────────────────────────────────
    A single entrance easing/duration scale reused across new sections, one
    product-shot tilt for floating panels, and the tour-video placeholder sweep.
@@ -944,4 +922,384 @@
   .animate-hero-sweep {
     animation: none !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE COUNT — V14 "catch, replace, clear"
+   A desk of 24 paper documents (6×4 → 4×6 on a phone). One reticle walks a
+   serpentine path; each sheet stamps a verdict, a flagged sheet is lifted away
+   and a fresh one drawn in, and clearing one problem raises another elsewhere.
+
+   Ported from mockups/the-count-v14.html with two deliberate structural changes
+   from that source, both to keep colour resolution correct under the token
+   system (the mockup hardcoded hex; we do not — §6):
+     1. `.paper` sits on `.sheet` ONLY, so the drawn paper resolves to
+        paletteLight (warm paper) while the reticle, status strip and verdict
+        overlay stay in the dark shell (neon --signal / --ok / --warn / --danger).
+     2. `.verdict / .vedge / .chipslot / .idx` are children of `.doc` (dark),
+        NOT nested in `.sheet` — otherwise nested var() would resolve the verdict
+        colours in the light scope. They sit inset over the sheet identically.
+   Every colour flows through config/brand.ts; no inline hex.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.the-count {
+  --doc-gap: clamp(7px, 0.85vw, 11px);
+  --doc-cols: 6;
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(88px, 9.5vw, 140px);
+  background: var(--bg);
+}
+.the-count .tc-wrap { position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.the-count .tc-grid {
+  display: grid; gap: 52px 60px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-rows: min-content min-content;
+  grid-template-areas: "art head" "art tail";
+  align-content: center;
+}
+.the-count .tc-head { grid-area: head; min-width: 0; }
+.the-count .tc-tail { grid-area: tail; min-width: 0; }
+.the-count .tc-art { grid-area: art; align-self: center; position: relative; }
+
+/* ── the desk ── */
+.the-count .artwrap { position: relative; perspective: 1500px; }
+.the-count .lamp {
+  position: absolute; z-index: 0; inset: -14% -10%; pointer-events: none;
+  background: radial-gradient(38% 42% at 50% 50%,
+    color-mix(in oklab, var(--brass) 24%, transparent),
+    color-mix(in oklab, var(--brass) 6%, transparent) 55%, transparent 72%);
+  filter: blur(14px);
+}
+@keyframes tc-lamp-drift {
+  0%, 100% { transform: translate3d(-13%, -6%, 0) scale(1); }
+  33% { transform: translate3d(10%, 5%, 0) scale(1.1); }
+  66% { transform: translate3d(4%, -9%, 0) scale(1.04); }
+}
+.the-count .artwrap[data-live="true"] .lamp { animation: tc-lamp-drift 26s ease-in-out infinite; }
+
+.the-count .wall {
+  position: relative; z-index: 2; display: grid;
+  grid-template-columns: repeat(var(--doc-cols), 1fr); gap: var(--doc-gap);
+  transform: rotate(-1.3deg) rotateY(calc(var(--px, 0) * 2.1deg)) rotateX(calc(var(--py, 0) * -1.5deg));
+  transform-origin: 50% 50%; transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.the-count .artwrap[data-track="true"] .wall { transition: transform 0.16s linear; }
+
+/* a cell + the sheet inside it (split so the sheet can shake on its own axis) */
+.the-count .doc {
+  position: relative; aspect-ratio: 3 / 4;
+  transform: translateY(var(--ry, 0px)) rotate(var(--r, 0deg));
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.the-count .doc.named { z-index: 3; transform: translateY(var(--ry, 0px)) rotate(var(--r, 0deg)) scale(1.07); }
+.the-count .doc[data-audit="true"] { z-index: 6; transform: translateY(calc(var(--ry, 0px) - 7px)) rotate(var(--r, 0deg)) scale(1.045); }
+.the-count .doc.named[data-audit="true"] { transform: translateY(calc(var(--ry, 0px) - 7px)) rotate(var(--r, 0deg)) scale(1.12); }
+
+/* the paper itself — `.paper` re-declares paletteLight on this subtree */
+.the-count .sheet {
+  position: absolute; inset: 0; border-radius: 4px; overflow: hidden; padding: 11% 12% 12%;
+  background: linear-gradient(168deg, var(--surface-1), var(--surface-2) 42%, var(--surface-3));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 60%, transparent),
+    0 10px 22px -12px color-mix(in oklab, black 85%, transparent),
+    0 2px 5px -2px color-mix(in oklab, black 60%, transparent);
+  transition: box-shadow 0.38s ease, filter 0.38s ease;
+}
+.the-count .doc.named .sheet {
+  box-shadow: 0 0 0 1px var(--brass), inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 18px 36px -16px color-mix(in oklab, black 95%, transparent),
+    0 0 26px -6px var(--brass-glow);
+}
+.the-count .doc[data-audit="true"] .sheet {
+  filter: brightness(1.08) contrast(1.02);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 22px 44px -14px color-mix(in oklab, black 95%, transparent),
+    0 0 30px -8px color-mix(in oklab, var(--signal) 55%, transparent);
+}
+.the-count .doc.named[data-audit="true"] .sheet {
+  box-shadow: 0 0 0 1px var(--brass), inset 0 1px 0 color-mix(in oklab, white 75%, transparent),
+    0 24px 48px -14px color-mix(in oklab, black 95%, transparent),
+    0 0 32px -6px color-mix(in oklab, var(--signal) 55%, transparent);
+}
+.the-count .sheet::after {
+  content: ""; position: absolute; right: 0; top: 0; border-width: 0 12px 12px 0; border-style: solid;
+  border-color: color-mix(in oklab, var(--text-hi) 13%, transparent) color-mix(in oklab, var(--text-hi) 13%, transparent) transparent transparent;
+  z-index: 4;
+}
+
+/* ── verdict colours (declared on .doc → resolved in the dark shell = neon) ── */
+.the-count .doc[data-v="ok"]    { --vc: var(--ok);     --vsoft: color-mix(in oklab, var(--ok) 20%, transparent);     --vedge: transparent; }
+.the-count .doc[data-v="wait"]  { --vc: var(--signal); --vsoft: color-mix(in oklab, var(--signal) 20%, transparent); --vedge: color-mix(in oklab, var(--signal) 55%, transparent); }
+.the-count .doc[data-v="fix"]   { --vc: var(--warn);   --vsoft: color-mix(in oklab, var(--warn) 22%, transparent);   --vedge: color-mix(in oklab, var(--warn) 60%, transparent); }
+.the-count .doc[data-v="exp"]   { --vc: var(--danger); --vsoft: color-mix(in oklab, var(--danger) 22%, transparent); --vedge: color-mix(in oklab, var(--danger) 60%, transparent); }
+.the-count .doc[data-v="fresh"] { --vc: var(--brass);  --vsoft: color-mix(in oklab, var(--brass) 18%, transparent);  --vedge: color-mix(in oklab, var(--brass) 50%, transparent); }
+.the-count .doc[data-v="fresh"] .vchip { display: none; }
+.the-count .doc[data-v="ok"] .vedge { opacity: 0; }
+
+/* persistent state at rest: a tinted edge + a quiet corner glyph */
+.the-count .vedge {
+  position: absolute; inset: 0; border-radius: 4px; z-index: 3; pointer-events: none;
+  box-shadow: inset 0 0 0 1.5px var(--vedge); opacity: 0.85;
+}
+.the-count .chipslot { position: absolute; left: 8%; bottom: var(--chipb, 7%); width: 15%; z-index: 3; }
+.the-count .vchip { display: block; width: 100%; color: var(--vc); opacity: 0.9; }
+.the-count .doc[data-v="ok"] .chipslot { width: 13%; }
+.the-count .doc[data-v="ok"] .vchip { opacity: 0.42; }
+.the-count .doc.named { --chipb: 25%; }
+
+/* the drawn contents (all inside .sheet → light/paper scope) */
+.the-count .hd {
+  height: 3px; border-radius: 2px; background: color-mix(in oklab, var(--text-hi) 20%, transparent);
+  margin-bottom: 13%; transform-origin: left; transition: background 0.25s ease;
+}
+.the-count .doc.named .hd { background: var(--brass-bright); opacity: 0.85; }
+.the-count .ln {
+  height: 2px; border-radius: 2px; background: color-mix(in oklab, var(--text-hi) 11%, transparent);
+  margin-bottom: 10.5%; transform-origin: left; transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.the-count .doc[data-read="true"] .ln, .the-count .doc[data-read="true"] .hd {
+  background: var(--brass-bright); box-shadow: 0 0 6px color-mix(in oklab, var(--brass-bright) 55%, transparent);
+}
+.the-count .w92 { width: 92%; } .the-count .w78 { width: 78%; } .the-count .w64 { width: 64%; }
+.the-count .w50 { width: 50%; } .the-count .w40 { width: 40%; }
+.the-count .mark { display: block; color: color-mix(in oklab, var(--text-hi) 34%, transparent); margin: 0 0 11%; }
+.the-count .mark.right { margin-left: auto; }
+.the-count .mark.seal { color: var(--brass-bright); opacity: 0.8; }
+.the-count .photo {
+  width: 46%; aspect-ratio: 4 / 5; border-radius: 2px;
+  background: color-mix(in oklab, var(--text-hi) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--text-hi) 13%, transparent); margin-bottom: 11%;
+}
+.the-count .idx {
+  position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0 0 4px 4px;
+  background: var(--brass); color: var(--bg); z-index: 3;
+  font-family: var(--font-mono); font-size: clamp(6.5px, 0.68vw, 10px); font-weight: 600; letter-spacing: 0.12em;
+  text-align: center; padding: 5% 0 6%;
+}
+
+/* ═══ the verdict event ═══ */
+.the-count .verdict {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0;
+  border-radius: 4px; overflow: hidden; transition: opacity 0.55s ease;
+}
+.the-count .doc[data-stage="verdict"] .verdict { opacity: 1; }
+/* FLAGGED — the stamp stays on the sheet after the head moves on, settled back */
+.the-count .doc[data-stage="flagged"] .verdict { opacity: 1; }
+.the-count .doc[data-stage="flagged"] .vwash { opacity: 0.5; }
+.the-count .doc[data-stage="flagged"] .vglyph { opacity: 0.9; }
+.the-count .doc[data-stage="flagged"] .vring { opacity: 0; }
+@keyframes tc-flagged-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
+.the-count .artwrap[data-live="true"] .doc[data-stage="flagged"] .vlabel { animation: tc-flagged-breathe 2.4s ease-in-out infinite; }
+
+/* ═══ the replacement — catch it, replace it ═══ */
+@keyframes tc-doc-out {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  35% { transform: translate(2%, -6%) rotate(2deg) scale(1.02); }
+  100% { opacity: 0; transform: translate(-16%, -30%) rotate(-13deg) scale(0.88); }
+}
+@keyframes tc-doc-in {
+  0% { opacity: 0; transform: translateY(-18%) rotate(3deg) scale(0.9); }
+  55% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
+.the-count .doc::before {
+  content: ""; position: absolute; inset: 0; border-radius: 4px;
+  border: 1px dashed var(--hairline-strong); opacity: 0; transition: opacity 0.22s ease;
+}
+.the-count .doc[data-swap]::before { opacity: 1; }
+.the-count .doc[data-swap="out"] { z-index: 8; }
+.the-count .doc[data-swap="in"] { z-index: 7; }
+.the-count .doc[data-swap="out"] .sheet { animation: tc-doc-out 0.44s cubic-bezier(0.55, 0, 0.8, 0.2) both; }
+.the-count .doc[data-swap="in"] .sheet { animation: tc-doc-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.the-count .doc[data-swap="in"] .hd, .the-count .doc[data-swap="in"] .ln {
+  animation: tc-rule-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--li) * 46ms + 170ms);
+}
+.the-count .doc[data-swap="in"] .mark path, .the-count .doc[data-swap="in"] .mark circle,
+.the-count .doc[data-swap="in"] .mark rect, .the-count .doc[data-swap="in"] .mark line {
+  stroke-dasharray: 1; animation: tc-ink-in 0.6s ease both 0.22s;
+}
+@keyframes tc-flag-raise { 0% { opacity: 0; transform: scale(0.4); } 60% { transform: scale(1.25); } 100% { opacity: 0.9; transform: scale(1); } }
+.the-count .doc[data-flagging="true"] .chipslot { animation: tc-flag-raise 0.5s cubic-bezier(0.3, 1.4, 0.4, 1) both; }
+.the-count .doc[data-flagging="true"] .vedge { animation: tc-flag-raise 0.45s cubic-bezier(0.3, 1.4, 0.4, 1) both; }
+
+.the-count .vwash { position: absolute; inset: 0; background: var(--vsoft); transform: scaleY(1); transform-origin: bottom; transition: opacity 0.4s ease; }
+.the-count .vglyph { position: absolute; left: 50%; top: 40%; width: 36%; color: var(--vc); transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 2px 8px color-mix(in oklab, black 35%, transparent)); }
+.the-count .vring { position: absolute; left: 50%; top: 40%; width: 36%; aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--vc); transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+.the-count .vlabel {
+  position: absolute; left: 0; right: 0; bottom: 0; background: var(--vc); color: var(--bg);
+  font-family: var(--font-mono); font-weight: 600; font-size: clamp(5.6px, 0.58vw, 8px); letter-spacing: 0.1em;
+  text-align: center; padding: 5.5% 0 6%; transform: scaleY(1); transform-origin: bottom; white-space: nowrap;
+}
+@keyframes tc-v-wash { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes tc-v-glyph { 0% { transform: translate(-50%, -50%) scale(0) rotate(-18deg); } 58% { transform: translate(-50%, -50%) scale(1.42) rotate(4deg); } 100% { transform: translate(-50%, -50%) scale(1) rotate(0); } }
+@keyframes tc-v-ring { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.95; } 100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } }
+@keyframes tc-v-label { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.the-count .doc[data-stage="verdict"] .vwash { animation: tc-v-wash 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.the-count .doc[data-stage="verdict"] .vglyph { animation: tc-v-glyph 0.42s cubic-bezier(0.3, 1.5, 0.4, 1) both 0.06s; }
+.the-count .doc[data-stage="verdict"] .vring { animation: tc-v-ring 0.6s cubic-bezier(0.22, 1, 0.36, 1) both 0.06s; }
+.the-count .doc[data-stage="verdict"] .vlabel { animation: tc-v-label 0.24s cubic-bezier(0.22, 1, 0.36, 1) both 0.2s; }
+
+/* verdict-specific beats — the reason the loop is not a metronome */
+@keyframes tc-v-flash { 0%, 100% { opacity: 1; } 30% { opacity: 0.25; } 62% { opacity: 1; } 80% { opacity: 0.4; } }
+@keyframes tc-v-shake { 0%, 100% { transform: translateX(0); } 18% { transform: translateX(-2.5px); } 38% { transform: translateX(2.5px); } 58% { transform: translateX(-1.6px); } 78% { transform: translateX(1.2px); } }
+.the-count .doc[data-v="fix"][data-stage="verdict"] .vwash { animation: tc-v-wash 0.3s cubic-bezier(0.22, 1, 0.36, 1) both, tc-v-flash 0.7s ease-in-out 0.3s both; }
+.the-count .doc[data-v="fix"][data-stage="verdict"] .sheet { animation: tc-v-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.1s both; }
+@keyframes tc-v-stamp { 0% { transform: translate(-50%, -50%) scale(2.4) rotate(-24deg); opacity: 0; } 40% { opacity: 1; } 62% { transform: translate(-50%, -50%) scale(0.86) rotate(3deg); } 100% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; } }
+.the-count .doc[data-v="exp"][data-stage="verdict"] .vglyph { animation: tc-v-stamp 0.46s cubic-bezier(0.3, 1.2, 0.4, 1) both; }
+.the-count .doc[data-v="wait"][data-stage="verdict"] .vring { animation: tc-v-ring 0.6s cubic-bezier(0.22, 1, 0.36, 1) both 0.06s, tc-v-ring 0.6s cubic-bezier(0.22, 1, 0.36, 1) both 0.42s; }
+@keyframes tc-spin-slow { to { transform: rotate(360deg); } }
+.the-count .artwrap[data-live="true"] .doc[data-v="wait"] .vchip { animation: tc-idle-wait 2.6s ease-in-out infinite, tc-spin-slow 7s linear infinite; }
+
+/* the two problem states never rest */
+@keyframes tc-idle-exp {
+  0%, 100% { box-shadow: inset 0 0 0 1.5px var(--vedge), 0 0 0 0 color-mix(in oklab, var(--danger) 0%, transparent); }
+  55% { box-shadow: inset 0 0 0 1.5px var(--vedge), 0 0 18px 2px color-mix(in oklab, var(--danger) 35%, transparent); }
+}
+@keyframes tc-idle-wait { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.95; } }
+.the-count .artwrap[data-live="true"] .doc[data-v="exp"] .vedge { animation: tc-idle-exp 3.4s ease-in-out infinite; }
+@keyframes tc-breathe { 0%, 100% { transform: translateY(var(--ry, 0px)) rotate(var(--r, 0deg)); } 50% { transform: translateY(calc(var(--ry, 0px) - 2px)) rotate(var(--r, 0deg)); } }
+.the-count .artwrap[data-live="true"] .doc[data-breathe="1"]:not([data-audit="true"]) { animation: tc-breathe 11s ease-in-out infinite; animation-delay: calc(var(--i) * 420ms); }
+
+/* ═══ the reticle head ═══ */
+.the-count .audit {
+  position: absolute; z-index: 7; top: 0; left: 0; pointer-events: none;
+  width: calc((100% - (var(--doc-cols) - 1) * var(--doc-gap)) / var(--doc-cols)); aspect-ratio: 3 / 4;
+  transform: translate(calc(var(--c, 0) * (100% + var(--doc-gap))), calc(var(--r2, 0) * (100% + var(--doc-gap)))) scale(var(--as, 1.045));
+  transition: transform 0.4s cubic-bezier(0.45, 0.02, 0.2, 1), opacity 0.3s ease; opacity: 0;
+}
+.the-count .artwrap[data-live="true"] .audit { opacity: 1; }
+.the-count .audit b {
+  position: absolute; width: 22%; height: 16%; border: 1.5px solid var(--signal); display: block;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--signal) 85%, transparent));
+}
+.the-count .audit b:nth-child(1) { top: -4%; left: -3%; border-right: 0; border-bottom: 0; border-top-left-radius: 3px; }
+.the-count .audit b:nth-child(2) { top: -4%; right: -3%; border-left: 0; border-bottom: 0; border-top-right-radius: 3px; }
+.the-count .audit b:nth-child(3) { bottom: -4%; left: -3%; border-right: 0; border-top: 0; border-bottom-left-radius: 3px; }
+.the-count .audit b:nth-child(4) { bottom: -4%; right: -3%; border-left: 0; border-top: 0; border-bottom-right-radius: 3px; }
+.the-count .audit .scan {
+  position: absolute; left: -3%; right: -3%; height: 2px; top: 0; opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--signal), transparent);
+  box-shadow: 0 0 12px 2px color-mix(in oklab, var(--signal) 70%, transparent);
+}
+@keyframes tc-scanline { 0% { top: 2%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 96%; opacity: 0; } }
+.the-count .audit[data-scan="true"] .scan { animation: tc-scanline 0.56s cubic-bezier(0.4, 0, 0.5, 1) both; }
+
+/* ── live status strip (dark shell) ── */
+.the-count .strip { position: relative; z-index: 6; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 24px; padding-left: 16px; }
+.the-count .strip::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, var(--brass-bright), color-mix(in oklab, var(--brass) 0%, transparent)); }
+.the-count .now { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.the-count .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--signal); flex: none; }
+@keyframes tc-dot-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--signal) 45%, transparent); } 60% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--signal) 0%, transparent); } }
+.the-count .artwrap[data-live="true"] .dot { animation: tc-dot-pulse 1.6s ease-out infinite; }
+.the-count .nnum { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--brass-bright); font-variant-numeric: tabular-nums; min-width: 2.4ch; text-align: right; }
+.the-count .nsep { font-family: var(--font-mono); font-size: 12px; color: var(--text-low); }
+.the-count .nlab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-low); transition: color 0.3s ease; min-width: 11ch; }
+.the-count .tallies { display: flex; align-items: center; gap: 13px; margin-left: auto; }
+.the-count .t { display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-mid); }
+.the-count .t i { width: 5px; height: 5px; border-radius: 50%; display: block; flex: none; }
+.the-count .t em { font-style: normal; min-width: 2ch; text-align: left; transition: color 0.3s ease; }
+.the-count .t.ok i { background: var(--ok); } .the-count .t.wait i { background: var(--signal); }
+.the-count .t.fix i { background: var(--warn); } .the-count .t.exp i { background: var(--danger); }
+.the-count .t.ok { color: color-mix(in oklab, var(--ok) 58%, var(--text-hi)); }
+.the-count .t.wait { color: color-mix(in oklab, var(--signal) 58%, var(--text-hi)); }
+.the-count .t.fix { color: color-mix(in oklab, var(--warn) 62%, var(--text-hi)); }
+.the-count .t.exp { color: color-mix(in oklab, var(--danger) 62%, var(--text-hi)); }
+
+/* ── copy column ── */
+.the-count .eyerule { width: 34px; height: 2px; background: var(--brass); border-radius: 2px; margin-bottom: 14px; box-shadow: 0 0 12px var(--brass-glow); }
+.the-count .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--brass); display: flex; gap: 6px; align-items: center; }
+.the-count .eyebrow i { color: color-mix(in oklab, var(--brass) 50%, transparent); font-style: normal; }
+.the-count h2.tch { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.022em; line-height: 1.06; font-size: clamp(1.9rem, 3.05vw, 2.65rem); margin: 16px 0 0; text-wrap: balance; max-width: 19ch; }
+.the-count h2.tch .q { color: var(--brass-bright); }
+.the-count .lead { margin: 18px 0 0; color: var(--text-mid); font-size: 1.0625rem; line-height: 1.68; max-width: 46ch; text-wrap: pretty; }
+.the-count .lead b { color: var(--text-hi); font-weight: 600; }
+
+.the-count .lcap { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+.the-count .lcap .t2, .the-count .lcap .c { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-low); }
+.the-count .lcap .c { letter-spacing: 0.14em; }
+.the-count .ledger { list-style: none; margin: 0; padding: 0; }
+.the-count .ledger li { display: grid; grid-template-columns: 8px 26px 1fr auto; gap: 9px; align-items: baseline; padding: 13px 0; border-top: 1px solid var(--hairline); position: relative; transition: background 0.32s ease; }
+.the-count .ledger li:first-of-type { border-top: 1px solid var(--hairline-strong); }
+.the-count .ledger li::before { content: ""; position: absolute; left: -16px; top: 13px; bottom: 13px; width: 2px; border-radius: 2px; background: var(--signal); opacity: 0; transition: opacity 0.3s ease; box-shadow: 0 0 10px color-mix(in oklab, var(--signal) 60%, transparent); }
+.the-count .ledger li[data-on="true"]::before { opacity: 0.95; }
+.the-count .ledger li[data-on="true"] { background: linear-gradient(90deg, color-mix(in oklab, var(--signal) 7%, transparent), transparent 62%); }
+.the-count .ledger li[data-on="true"] .ix { color: var(--signal); }
+.the-count .sdot { width: 7px; height: 7px; border-radius: 50%; align-self: center; transform: translateY(1px); }
+.the-count li[data-v="ok"] .sdot { background: var(--ok); box-shadow: 0 0 8px color-mix(in oklab, var(--ok) 50%, transparent); }
+.the-count li[data-v="wait"] .sdot { background: var(--signal); box-shadow: 0 0 8px color-mix(in oklab, var(--signal) 50%, transparent); }
+.the-count li[data-v="fix"] .sdot { background: var(--warn); box-shadow: 0 0 8px color-mix(in oklab, var(--warn) 50%, transparent); }
+.the-count li[data-v="exp"] .sdot { background: var(--danger); box-shadow: 0 0 8px color-mix(in oklab, var(--danger) 50%, transparent); }
+@keyframes tc-sdot-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.the-count li[data-v="exp"] .sdot, .the-count li[data-v="wait"] .sdot { animation: tc-sdot-pulse 2.8s ease-in-out infinite; }
+.the-count .ix { font-family: var(--font-mono); font-size: 11px; color: var(--brass); font-variant-numeric: tabular-nums; letter-spacing: 0.06em; transition: color 0.3s ease; }
+.the-count .nm { font-size: 0.90625rem; font-weight: 600; color: var(--text-hi); letter-spacing: -0.005em; }
+.the-count .src { font-size: 0.75rem; color: var(--text-low); text-align: right; white-space: nowrap; transition: color 0.3s ease; }
+.the-count .ledger li[data-on="true"] .src { color: var(--text-mid); }
+.the-count .src em { font-style: normal; color: var(--text-mid); }
+.the-count .cta { margin-top: 26px; display: inline-flex; align-items: center; gap: 9px; min-height: 44px; font-size: 0.9375rem; font-weight: 600; color: var(--brass-bright); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--brass) 30%, transparent); padding-bottom: 2px; transition: color 0.18s, border-color 0.18s, gap 0.18s; }
+.the-count .cta:hover { color: var(--text-hi); border-color: var(--brass); gap: 13px; }
+.the-count .cta svg { width: 15px; height: 15px; }
+.the-count .ctanote { margin: 10px 0 0; font-size: 0.8125rem; color: var(--text-low); }
+
+/* ═══ entrance (one-shot) ═══ */
+@keyframes tc-deal { from { opacity: 0; transform: translate(calc(var(--dx) * 100%), calc(var(--dy) * 100%)) translateY(var(--ry)) rotate(-15deg) scale(0.84); } 55% { opacity: 1; } to { opacity: 1; transform: translateY(var(--ry)) rotate(var(--r)) scale(1); } }
+@keyframes tc-deal-named { from { opacity: 0; transform: translate(calc(var(--dx) * 100%), calc(var(--dy) * 100%)) translateY(var(--ry)) rotate(-15deg) scale(0.84); } 55% { opacity: 1; } to { opacity: 1; transform: translateY(var(--ry)) rotate(var(--r)) scale(1.07); } }
+@keyframes tc-rule-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tc-ink-in { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tc-pop-in { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+.the-count .wall[data-play="true"] .doc { animation: tc-deal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 40ms); }
+.the-count .wall[data-play="true"] .doc.named { animation-name: tc-deal-named; }
+.the-count .wall[data-play="true"] .hd, .the-count .wall[data-play="true"] .ln { animation: tc-rule-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 40ms + 280ms + var(--li) * 48ms); }
+.the-count .wall[data-play="true"] .mark path, .the-count .wall[data-play="true"] .mark circle,
+.the-count .wall[data-play="true"] .mark rect, .the-count .wall[data-play="true"] .mark line {
+  stroke-dasharray: 1; animation: tc-ink-in 0.7s ease both; animation-delay: calc(var(--i) * 40ms + 350ms);
+}
+.the-count .wall[data-play="true"] .photo, .the-count .wall[data-play="true"] .vedge, .the-count .wall[data-play="true"] .chipslot { animation: tc-pop-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 40ms + 520ms); }
+.the-count .wall[data-play="true"] .idx { animation: tc-pop-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 40ms + 560ms); }
+
+/* ═══ reduced motion — a still, fully-drawn desk ═══ */
+@media (prefers-reduced-motion: reduce) {
+  .the-count .wall, .the-count .doc, .the-count .sheet, .the-count .audit, .the-count .lamp,
+  .the-count .dot, .the-count .verdict, .the-count .vedge, .the-count .vchip, .the-count .sdot,
+  .the-count .vwash, .the-count .vglyph, .the-count .vring, .the-count .vlabel {
+    animation: none !important; transition: none !important;
+  }
+  .the-count .doc[data-swap] .sheet { opacity: 1 !important; transform: none !important; }
+  .the-count .wall { transform: rotate(-1.3deg) !important; }
+  .the-count .audit { display: none; }
+  .the-count .doc[data-audit="true"] { transform: translateY(var(--ry, 0px)) rotate(var(--r, 0deg)); }
+  .the-count .doc.named[data-audit="true"] { transform: translateY(var(--ry, 0px)) rotate(var(--r, 0deg)) scale(1.07); }
+  .the-count .verdict { opacity: 0 !important; }
+}
+
+/* ═══ responsive ═══ */
+@media (max-width: 1179px) {
+  .the-count .tc-grid { grid-template-columns: 1fr; gap: 32px; grid-template-rows: auto auto auto; grid-template-areas: "head" "art" "tail"; }
+  .the-count h2.tch { max-width: 22ch; } .the-count .lead { max-width: 64ch; }
+  .the-count .wall { transform: rotate(-1deg) !important; }
+  .the-count .artwrap { perspective: none; }
+  .the-count { padding-block: clamp(76px, 9vw, 116px); }
+}
+@media (min-width: 700px) and (max-width: 1179px) { .the-count .artwrap { max-width: 660px; margin: 0 auto; } }
+@media (max-width: 820px) { .the-count h2.tch .q { display: block; margin-top: 0.12em; } }
+@media (max-width: 600px) {
+  .the-count { --doc-cols: 4; --doc-gap: 7px; padding-block: 70px; }
+  .the-count .tc-wrap { padding: 0 18px; }
+  .the-count .tc-grid { gap: 26px; }
+  .the-count h2.tch { font-size: clamp(1.7rem, 6.4vw, 2.2rem); max-width: 17ch; }
+  .the-count .lead { font-size: 1rem; margin-top: 16px; }
+  .the-count .wall { transform: rotate(-0.7deg) !important; }
+  .the-count .sheet { padding: 10% 11% 11%; border-radius: 3px; }
+  .the-count .sheet::after { border-width: 0 9px 9px 0; }
+  .the-count .hd { height: 2.5px; margin-bottom: 12%; }
+  .the-count .ln { height: 2px; margin-bottom: 10%; }
+  .the-count .vlabel { font-size: 7px; }
+  .the-count .strip { margin-top: 18px; padding-left: 13px; gap: 10px; }
+  .the-count .now { width: 100%; }
+  .the-count .tallies { margin-left: 0; gap: 14px; }
+  .the-count .lcap .c { display: none; }
+  .the-count .ledger li { grid-template-columns: 8px 26px 1fr; gap: 10px; padding: 12px 0; }
+  .the-count .src { grid-column: 3; text-align: left; margin-top: 3px; white-space: normal; }
+  .the-count .ledger li::before { left: -10px; }
+  .the-count .cta { margin-top: 22px; }
 }
