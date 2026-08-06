@@ -10,14 +10,14 @@ import { RelatedLinks } from "@/components/marketing/page-blocks"
 import { HeroAura } from "@/components/marketing/hero-aura"
 import { Magnetic } from "@/components/marketing/magnetic"
 import { Reveal } from "@/components/marketing/reveal"
-import { Ticker } from "@/components/marketing/ticker"
 import { ProductFeature } from "@/components/marketing/product-feature"
 import { ProcessStepper } from "@/components/marketing/process-stepper"
 import { CostCard } from "@/components/marketing/cost-card"
 import { StickyCta } from "@/components/marketing/sticky-cta"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 import { PlacemakingBand } from "@/components/marketing/placemaking-band"
-import { CaseAnimationLazy } from "@/components/marketing/showcase/case-animation-lazy"
+import { HeroSkyline } from "@/components/marketing/hero-skyline"
+import { HeroTrackPanel } from "@/components/marketing/hero-track-panel"
 import { TheCount } from "@/components/marketing/showcase/the-count"
 
 /**
@@ -32,18 +32,6 @@ export const metadata = buildMetadata({
   hreflang: "",
   ogTitle: "NYC gun license, handled — Gun License NYC",
 })
-
-/**
- * Copy note: the third chip is load-bearing, not decoration. It discloses who
- * files — the applicant on Self-Guided, or Gun License NYC on Full Concierge
- * (counsel-cleared) — while never implying we REPRESENT anyone (only a licensed
- * attorney may). Warm the tone, never blur that line.
- */
-const TRUST: string[] = [
-  "One team, start to finish",
-  "Every step explained",
-  "Filed right — by you, or by us",
-]
 
 export default async function Home() {
   // Cookieless + cached → this page renders statically (see lib/public-data).
@@ -65,62 +53,86 @@ export default async function Home() {
           admin moves the structured data with it. */}
       <JsonLd data={serviceSchemaWithOffers(packages)} />
 
-      {/* ── HERO (copy left · animated case card right) ──────────────────── */}
-      <section
-        id="hero"
-        className="section-void relative overflow-hidden px-4 pt-20 sm:px-6"
-      >
+      {/* ── HERO V4 — Manhattan blueprint · two-clock track panel ────────────
+          The city + scrims live under the copy; the H1 is the LCP element and is
+          NOT wrapped in anything that defers its paint. The panel owns only the
+          track state; everything else here is server-rendered. There is no
+          firearm imagery and no process line (HERO_V4_PROMPT §2.1, §7). */}
+      <section id="hero" className="hero-shell">
         <HeroAura />
-        <div className="relative z-10 mx-auto grid min-h-[80svh] max-w-6xl items-center gap-12 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
-          {/* LEFT: copy */}
-          <div className="text-center lg:text-left">
-            <Reveal>
-              <div className="engraved text-brass-bright">NYC · gun license, handled</div>
-            </Reveal>
-            <Reveal delay={90}>
-              <h1 className="mx-auto mt-5 max-w-xl text-balance font-display font-semibold leading-[1.02] tracking-tight [font-size:clamp(2.5rem,8vw,4rem)] lg:mx-0">
-                <span className="text-prestige">The whole NYC gun license process.</span> Handled.
+        <HeroSkyline />
+        <span aria-hidden className="hero-veil" />
+        <span aria-hidden className="hero-veil-l" />
+
+        <div className="hero-wrap">
+          <div className="hero-cols">
+            <div className="hero-copy">
+              <div aria-hidden className="hero-eyerule" />
+              <div className="hero-eyebrow">
+                <i aria-hidden>[</i>
+                <span>NYC · gun license, handled</span>
+                <i aria-hidden>]</i>
+              </div>
+              {/* H1 text UNCHANGED and kept contiguous in one span so it survives
+                  a curl grep; only "Handled." breaks to its own line + prestige. */}
+              <h1 className="hero-h1">
+                <span className="hero-h1-lead">The whole NYC gun license process.</span>{" "}
+                <span className="text-prestige">Handled.</span>
               </h1>
-            </Reveal>
-            <Reveal delay={170}>
-              <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-text-mid lg:mx-0">
+              <p className="hero-lead">
                 Getting a gun license in New York City is slow, and strict. We make it simple — one team
                 tracking every document, deadline, and requirement from your first question to the day
                 you&apos;re licensed.
               </p>
-            </Reveal>
-            <Reveal delay={250}>
-              <div className="mt-9 flex justify-center lg:justify-start">
-                <Magnetic className="w-full sm:w-auto">
-                  <Button asChild size="lg" className="min-h-12 w-full sm:w-auto">
-                    <Link href="/eligibility">
-                      Check your eligibility <ArrowRight className="size-4" />
-                    </Link>
-                  </Button>
-                </Magnetic>
+              <div className="hero-ctas">
+                {/* plain <a> (not next/link) so the panel's per-track href update
+                    on #hero-cta actually changes where the click goes */}
+                <a id="hero-cta" className="hero-btn" href="/eligibility?track=resident">
+                  Check your eligibility
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </a>
+                <Link className="hero-btn2" href="/how-it-works">
+                  See how it works
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </Link>
               </div>
-            </Reveal>
-            <Reveal delay={320}>
-              <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 lg:justify-start">
-                {TRUST.map((t) => (
-                  <li key={t} className="flex items-center gap-2 text-sm text-text-mid">
-                    <span className="size-1.5 rounded-full bg-brass" aria-hidden />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
-          </div>
+              <p className="hero-micro">Two minutes · no card · no commitment</p>
+            </div>
 
-          {/* RIGHT: self-advancing animated case card */}
-          <Reveal delay={200} className="relative z-10 w-full">
-            <CaseAnimationLazy />
-          </Reveal>
+            <HeroTrackPanel />
+          </div>
         </div>
+
+        <span aria-hidden className="hero-spacer" />
       </section>
 
-      {/* ── PROOF STRIP ──────────────────────────────────────────────────── */}
-      <Ticker />
+      {/* ── PROOF STRIP (sibling floor for the hero — replaces the old Ticker) ── */}
+      <div className="hero-strip">
+        <div className="hero-stripin">
+          <div className="hero-cell">
+            <div className="hero-ck">Where we work</div>
+            <div className="hero-cv">
+              <b>All five boroughs</b> — and the one NYPD division that decides them.
+            </div>
+          </div>
+          <div className="hero-cell">
+            <div className="hero-ck">What we run</div>
+            <div className="hero-cv">
+              <b>Carry, premises, renewal</b> — retired LEO and non-resident too.
+            </div>
+          </div>
+          <div className="hero-cell">
+            <div className="hero-ck">How we work</div>
+            <div className="hero-cv">
+              <b>Every rule carries its citation</b> — check our work against the source.
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ── PRODUCT (Stripe-style split + video) ─────────────────────────── */}
       <ProductFeature />
