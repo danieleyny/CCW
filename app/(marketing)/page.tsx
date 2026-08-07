@@ -101,18 +101,8 @@ export default async function Home() {
               <p className="hero-micro">Two minutes · no card · no commitment</p>
             </div>
 
-            {/* the glass panel now holds the 25s hero film + a plain-language floor */}
-            <div className="hero-panel">
-              <HeroFilm />
-              <p className="hero-film-cap">
-                Carry, premises or renewal — we run the whole application, from the first form to the
-                decision letter.
-              </p>
-              <Link className="hero-film-foot" href="/how-it-works">
-                See how we run it
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </div>
+            {/* the 1.85:1 plate — a framed object, no glass card, no footer */}
+            <HeroFilm />
           </div>
         </div>
 

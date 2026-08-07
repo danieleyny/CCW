@@ -1361,7 +1361,7 @@
   position: relative; z-index: 5; flex: 1; display: flex; align-items: center; width: 100%;
   max-width: 1240px; margin: 0 auto; padding: clamp(40px, 5vw, 70px) 26px clamp(24px, 3vw, 40px);
 }
-.hero-cols { display: grid; grid-template-columns: minmax(0, 1fr) 412px; gap: 56px; align-items: center; width: 100%; }
+.hero-cols { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 1fr); gap: clamp(28px, 3.2vw, 44px); align-items: center; width: 100%; }
 .hero-copy { max-width: 620px; }
 .hero-eyerule { width: 34px; height: 2px; background: var(--brass); border-radius: 2px; margin-bottom: 16px; box-shadow: 0 0 12px var(--brass-glow); }
 .hero-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--brass); display: flex; align-items: center; gap: 7px; }
@@ -1394,16 +1394,6 @@
 .hero-btn2 svg { width: 14px; height: 14px; }
 .hero-micro { margin: 13px 0 0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-low); }
 
-/* ── the instrument ── */
-.hero-panel {
-  position: relative; border-radius: 16px; padding: 20px 20px 18px;
-  border: 1px solid var(--hairline-strong);
-  background: linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 93%, transparent), color-mix(in oklab, var(--bg) 96%, transparent));
-  backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, white 8%, transparent), 0 34px 80px -30px color-mix(in oklab, black 98%, transparent),
-    0 0 0 1px color-mix(in oklab, var(--brass) 7%, transparent), 0 0 70px -22px var(--brass-glow);
-}
-
 .hero-spacer { display: none; }
 
 /* ── proof strip (SIBLING of the hero) ── */
@@ -1422,7 +1412,7 @@
 @media (max-width: 1060px) {
   .hero-cols { grid-template-columns: 1fr; gap: 30px; align-items: start; }
   .hero-copy { max-width: none; }
-  .hero-panel { max-width: 540px; }
+  .filmfig { margin-right: 0; max-width: 640px; }
   .hero-wrap { align-items: flex-start; padding-top: 44px; }
   .hero-shell { min-height: auto; }
   .hero-spacer { display: block; height: clamp(180px, 22vw, 240px); flex: none; }
@@ -1442,7 +1432,6 @@
   .hero-ctas { margin-top: 24px; gap: 12px; width: 100%; }
   .hero-btn { width: 100%; justify-content: center; }
   .hero-btn2 { min-height: 44px; }
-  .hero-panel { max-width: none; padding: 16px 15px 15px; border-radius: 14px; }
   .hero-spacer { height: clamp(140px, 32vw, 190px); }
   .hero-city-far { height: clamp(150px, 34vw, 210px); }
   .hero-city-near { height: clamp(124px, 28vw, 175px); }
@@ -1460,7 +1449,7 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    HERO FILM V6 — the 25s looping SVG/CSS film (replaces the V4 track panel).
-   Ported from mockups/hero-film-v6.html; scoped under .hero-film, keyframes
+   Ported from mockups/hero-film-v6.html; scoped under .filmfig, keyframes
    hf-prefixed, mockup vars mapped to config/brand.ts tokens. The three §4
    comment blocks are preserved verbatim — they are load-bearing.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1485,61 +1474,73 @@
       then, 60ms later, sets data-beat="2". By the time the pose changes
       there is no animation left to be removed, so the transition actually
       runs and the fold eases out of a genuinely still body. */
-.hero-film{container-type:inline-size;position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;
-  background:#0A0C11;border:1px solid var(--hairline-strong);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 30px 70px -30px rgba(0,0,0,.95),
-             0 0 0 1px rgba(201,162,75,.06)}
-.hero-film svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* ── THE PLATE — one brass hairline, one shadow, a warm bloom. No glass, no
+   blur, no second rectangle (that instinct produced the versions this replaces).
+   Radius 5px: sharp reads as precise. --reach extends the plate toward the
+   viewport edge on wide screens while always leaving 40px of margin. ── */
+.hero-shell { --reach: max(0px, calc((100vw - min(100vw, 1240px)) / 2 + 26px - 40px)); }
+.filmfig { margin: 0; position: relative; z-index: 0; margin-right: calc(-1 * min(110px, var(--reach))); }
+.filmfig::before { content: ""; position: absolute; inset: -14% -10% -18% -10%; z-index: -1; pointer-events: none;
+  background: radial-gradient(58% 62% at 52% 48%,
+    color-mix(in oklab, var(--brass) 13%, transparent),
+    color-mix(in oklab, var(--brass) 4%, transparent) 52%,
+    color-mix(in oklab, var(--brass) 0%, transparent) 76%); }
+.filmstage { position: relative; width: 100%; aspect-ratio: 700/378; border-radius: 5px; overflow: hidden; background: #07080B; /* --bg */
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--brass) 22%, transparent),        /* the hairline — the entire border */
+    0 34px 80px -32px rgba(0,0,0,.94),                                   /* depth */
+    0 0 100px -34px color-mix(in oklab, var(--brass) 20%, transparent); }/* ambient warmth */
+.filmstage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 
 /* ── THE CAMERA ──────────────────────────────────────────────────
-   translate(320 − s·cx, 240 − s·cy) scale(s) puts world point (cx,cy)
-   dead centre. Beats 6–7 hold the screen (400,222) at 2.05× — the push
-   stays put while the application finishes — and beat 8 pulls back to
-   the licence card (320,216). Nothing else moves. */
-.hero-film .cam{transform-box:view-box;transform-origin:0 0;
+   viewBox centre is now (290,215). translate(290 − s·cx, 215 − s·cy) scale(s)
+   puts world point (cx,cy) dead centre. Beats 6–7 hold the screen (400,212) at
+   1.8× and beat 8 pulls back to the licence card (320,216) at 1.35×. Both pushes
+   are gentler than before because the plate is ~620px wide, not ~380. */
+.filmfig .cam{transform-box:view-box;transform-origin:0 0;
      transition:transform 1.45s cubic-bezier(.4,0,.2,1)}
-.hero-film[data-beat="6"] .cam, .hero-film[data-beat="7"] .cam{transform:translate(-500px,-215.1px) scale(2.05)}
-.hero-film[data-beat="8"] .cam{transform:translate(-19.2px,11px) scale(1.06)}
+.filmfig[data-beat="6"] .cam, .filmfig[data-beat="7"] .cam{transform:translate(-430px,-166.6px) scale(1.8)}
+.filmfig[data-beat="8"] .cam{transform:translate(-142px,-76.6px) scale(1.35)}
 
 /* the two worlds, stacked; the ordered one revealed by an expanding clip */
-.hero-film .world-order{clip-path:inset(0 100% 0 0);transition:clip-path 1.05s cubic-bezier(.65,0,.35,1)}
-.hero-film[data-beat="4"] .world-order, .hero-film[data-beat="5"] .world-order, .hero-film[data-beat="6"] .world-order, .hero-film[data-beat="7"] .world-order, .hero-film[data-beat="8"] .world-order{clip-path:inset(0 0 0 0)}
-.hero-film .sweep{opacity:0;transition:opacity .2s ease}
-.hero-film[data-beat="4"] .sweep{opacity:1;transition:opacity .1s ease}
-.hero-film .sweepbar{transform:translateX(-700px);transition:transform 1.05s cubic-bezier(.65,0,.35,1)}
-.hero-film[data-beat="4"] .sweepbar, .hero-film[data-beat="5"] .sweepbar, .hero-film[data-beat="6"] .sweepbar, .hero-film[data-beat="7"] .sweepbar, .hero-film[data-beat="8"] .sweepbar{transform:translateX(0)}
+.filmfig .world-order{clip-path:inset(0 100% 0 0);transition:clip-path 1.05s cubic-bezier(.65,0,.35,1)}
+.filmfig[data-beat="4"] .world-order, .filmfig[data-beat="5"] .world-order, .filmfig[data-beat="6"] .world-order, .filmfig[data-beat="7"] .world-order, .filmfig[data-beat="8"] .world-order{clip-path:inset(0 0 0 0)}
+.filmfig .sweep{opacity:0;transition:opacity .2s ease}
+.filmfig[data-beat="4"] .sweep{opacity:1;transition:opacity .1s ease}
+.filmfig .sweepbar{transform:translateX(-820px);transition:transform 1.05s cubic-bezier(.65,0,.35,1)}
+.filmfig[data-beat="4"] .sweepbar, .filmfig[data-beat="5"] .sweepbar, .filmfig[data-beat="6"] .sweepbar, .filmfig[data-beat="7"] .sweepbar, .filmfig[data-beat="8"] .sweepbar{transform:translateX(0)}
 
 /* ── the pile: paper keeps ARRIVING, so it gets worse while you watch ── */
-.hero-film .pg{opacity:0;transform:translate(var(--fx,60px),-120px);
+.filmfig .pg{opacity:0;transform:translate(var(--fx,60px),-120px);
     transition:opacity .38s ease,transform .6s cubic-bezier(.22,1,.36,1)}
-.hero-film[data-beat="1"] .pg, .hero-film[data-beat="2"] .pg, .hero-film[data-beat="3"] .pg{opacity:1;transform:translate(0,0);
+.filmfig[data-beat="1"] .pg, .filmfig[data-beat="2"] .pg, .filmfig[data-beat="3"] .pg{opacity:1;transform:translate(0,0);
     transition-delay:calc(var(--i) * 150ms)}
-.hero-film[data-beat="2"] .pg, .hero-film[data-beat="3"] .pg{transition-delay:0ms}
+.filmfig[data-beat="2"] .pg, .filmfig[data-beat="3"] .pg{transition-delay:0ms}
 
 /* the three problems hanging over the desk */
-.hero-film .prob{opacity:0;transform:translateY(-16px) scale(.92);
+.filmfig .prob{opacity:0;transform:translateY(-16px) scale(.92);
       transition:opacity .5s ease,transform .6s cubic-bezier(.22,1,.36,1)}
-.hero-film[data-beat="1"] .prob, .hero-film[data-beat="2"] .prob, .hero-film[data-beat="3"] .prob{opacity:1;transform:none;
+.filmfig[data-beat="1"] .prob, .filmfig[data-beat="2"] .prob, .filmfig[data-beat="3"] .prob{opacity:1;transform:none;
       transition-delay:calc(var(--i) * 320ms + 900ms)}
 @keyframes hf-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.hero-film[data-beat="1"] .bobber, .hero-film[data-beat="2"] .bobber, .hero-film[data-beat="3"] .bobber{animation:hf-bob 3.4s ease-in-out infinite;animation-delay:calc(var(--i) * .55s)}
+.filmfig[data-beat="1"] .bobber, .filmfig[data-beat="2"] .bobber, .filmfig[data-beat="3"] .bobber{animation:hf-bob 3.4s ease-in-out infinite;animation-delay:calc(var(--i) * .55s)}
 @keyframes hf-redpulse{0%,100%{opacity:.6}50%{opacity:1}}
-.hero-film[data-beat="1"] .red, .hero-film[data-beat="2"] .red, .hero-film[data-beat="3"] .red{animation:hf-redpulse 1.5s ease-in-out infinite}
+.filmfig[data-beat="1"] .red, .filmfig[data-beat="2"] .red, .filmfig[data-beat="3"] .red{animation:hf-redpulse 1.5s ease-in-out infinite}
 
 /* the same three, resolved — same objects, same places, green */
-.hero-film .fix{opacity:0;transform:translateY(8px) scale(.94);
+.filmfig .fix{opacity:0;transform:translateY(8px) scale(.94);
      transition:opacity .5s ease,transform .55s cubic-bezier(.28,1.4,.45,1)}
-.hero-film[data-beat="5"] .fix, .hero-film[data-beat="6"] .fix, .hero-film[data-beat="7"] .fix, .hero-film[data-beat="8"] .fix{opacity:1;transform:none;
+.filmfig[data-beat="5"] .fix, .filmfig[data-beat="6"] .fix, .filmfig[data-beat="7"] .fix, .filmfig[data-beat="8"] .fix{opacity:1;transform:none;
      transition-delay:calc(var(--i) * 360ms + 480ms)}
 
 /* ══ THE FIGURE ═══════════════════════════════════════════════════ */
-.hero-film .rig{transform-box:view-box;transform-origin:0 0;transition:transform 1.1s cubic-bezier(.42,0,.3,1)}
-.hero-film .j{transform-box:view-box;transition:transform 1.1s cubic-bezier(.42,0,.3,1)}
-.hero-film .j-lo{transform-origin:144px 314px}
-.hero-film .j-up{transform-origin:146px 280px}
-.hero-film .j-hd{transform-origin:147px 243px}
-.hero-film .j-ua{transform-origin:166px 250px}
-.hero-film .j-fa{transform-origin:176px 296px}
+.filmfig .rig{transform-box:view-box;transform-origin:0 0;transition:transform 1.1s cubic-bezier(.42,0,.3,1)}
+.filmfig .j{transform-box:view-box;transition:transform 1.1s cubic-bezier(.42,0,.3,1)}
+.filmfig .j-lo{transform-origin:144px 314px}
+.filmfig .j-up{transform-origin:146px 280px}
+.filmfig .j-hd{transform-origin:147px 243px}
+.filmfig .j-ua{transform-origin:166px 250px}
+.filmfig .j-fa{transform-origin:176px 296px}
 
 /* ── beat 1 · working. Periods 1.35 / 1.8 / 2.7 / 5.4 all divide the
       5400ms beat, so every joint is at rest the moment beat 2 fires. ── */
@@ -1550,90 +1551,90 @@
 @keyframes hf-nods   {0%,100%{transform:rotate(0deg)}22%{transform:rotate(9deg)}
                    50%{transform:rotate(1.5deg)}76%{transform:rotate(10.5deg)}}
 @keyframes hf-sways  {0%,100%{transform:rotate(0deg)}50%{transform:rotate(1.8deg)}}
-.hero-film[data-idle="1"] .m .j-fa{animation:hf-writes  1.35s ease-in-out infinite}
-.hero-film[data-idle="1"] .m .j-up{animation:hf-breathe 1.8s  ease-in-out infinite}
-.hero-film[data-idle="1"] .m .j-ua{animation:hf-shrug   2.7s  ease-in-out infinite}
-.hero-film[data-idle="1"] .m .j-hd{animation:hf-nods    2.7s  ease-in-out infinite}
-.hero-film[data-idle="1"] .m .j-lo{animation:hf-sways   5.4s  ease-in-out infinite}
+.filmfig[data-idle="1"] .m .j-fa{animation:hf-writes  1.35s ease-in-out infinite}
+.filmfig[data-idle="1"] .m .j-up{animation:hf-breathe 1.8s  ease-in-out infinite}
+.filmfig[data-idle="1"] .m .j-ua{animation:hf-shrug   2.7s  ease-in-out infinite}
+.filmfig[data-idle="1"] .m .j-hd{animation:hf-nods    2.7s  ease-in-out infinite}
+.filmfig[data-idle="1"] .m .j-lo{animation:hf-sways   5.4s  ease-in-out infinite}
 
 /* ── beat 2 · he stops. Pen down, shoulders go, one look at the pile.
       Small — but it is the first move AWAY from neutral, so the fold
       that follows has somewhere to come from. ── */
-.hero-film[data-beat="2"] .m.rig{transform:translate(-4px,1px);transition-duration:.8s}
-.hero-film[data-beat="2"] .m .j-lo{transform:rotate(1deg);transition-duration:.8s}
-.hero-film[data-beat="2"] .m .j-up{transform:rotate(7deg);transition-duration:.8s}
-.hero-film[data-beat="2"] .m .j-hd{transform:rotate(13deg);transition-duration:.85s;transition-delay:.08s}
-.hero-film[data-beat="2"] .m .j-ua{transform:rotate(-11deg);transition-duration:.7s}
-.hero-film[data-beat="2"] .m .j-fa{transform:rotate(7deg);transition-duration:.6s}
+.filmfig[data-beat="2"] .m.rig{transform:translate(-4px,1px);transition-duration:.8s}
+.filmfig[data-beat="2"] .m .j-lo{transform:rotate(1deg);transition-duration:.8s}
+.filmfig[data-beat="2"] .m .j-up{transform:rotate(7deg);transition-duration:.8s}
+.filmfig[data-beat="2"] .m .j-hd{transform:rotate(13deg);transition-duration:.85s;transition-delay:.08s}
+.filmfig[data-beat="2"] .m .j-ua{transform:rotate(-11deg);transition-duration:.7s}
+.filmfig[data-beat="2"] .m .j-fa{transform:rotate(7deg);transition-duration:.6s}
 
 /* ── beat 3 · the drop. Spine gives first, the head arrives last —
       1.4s of fall out of a body that is already tipped forward. ── */
-.hero-film[data-beat="3"] .m.rig{transform:translate(-16px,0);transition-duration:1.3s}
-.hero-film[data-beat="3"] .m .j-lo{transform:rotate(2deg);transition-duration:1.25s}
-.hero-film[data-beat="3"] .m .j-up{transform:rotate(51.5deg);transition-duration:1.3s;
+.filmfig[data-beat="3"] .m.rig{transform:translate(-16px,0);transition-duration:1.3s}
+.filmfig[data-beat="3"] .m .j-lo{transform:rotate(2deg);transition-duration:1.25s}
+.filmfig[data-beat="3"] .m .j-up{transform:rotate(51.5deg);transition-duration:1.3s;
                          transition-timing-function:cubic-bezier(.55,.02,.3,1)}
-.hero-film[data-beat="3"] .m .j-hd{transform:rotate(58deg);transition-duration:1.35s;transition-delay:.16s;
+.filmfig[data-beat="3"] .m .j-hd{transform:rotate(58deg);transition-duration:1.35s;transition-delay:.16s;
                          transition-timing-function:cubic-bezier(.6,.02,.28,1)}
-.hero-film[data-beat="3"] .m .j-ua{transform:rotate(-63deg);transition-duration:1.15s;transition-delay:.05s}
-.hero-film[data-beat="3"] .m .j-fa{transform:rotate(-12deg);transition-duration:1.1s;transition-delay:.1s}
+.filmfig[data-beat="3"] .m .j-ua{transform:rotate(-63deg);transition-duration:1.15s;transition-delay:.05s}
+.filmfig[data-beat="3"] .m .j-fa{transform:rotate(-12deg);transition-duration:1.1s;transition-delay:.1s}
 
 /* ── the ordered world: they sit back and let it run ── */
 @keyframes hf-breatheCalm{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(-11deg)}}
 @keyframes hf-glanceUp   {0%,100%{transform:rotate(0deg)}38%{transform:rotate(-6deg)}68%{transform:rotate(-1.5deg)}}
-.hero-film .o .j-lo{transform:rotate(-5deg)}
-.hero-film .o .j-up{transform:rotate(-9deg)}
-.hero-film .o .j-ua{transform:rotate(-9deg)}
-.hero-film .o .j-fa{transform:rotate(-6deg)}
-.hero-film[data-beat="5"] .o .j-up, .hero-film[data-beat="6"] .o .j-up, .hero-film[data-beat="7"] .o .j-up, .hero-film[data-beat="8"] .o .j-up{animation:hf-breatheCalm 5.2s ease-in-out infinite}
-.hero-film[data-beat="5"] .o .j-hd, .hero-film[data-beat="6"] .o .j-hd, .hero-film[data-beat="7"] .o .j-hd, .hero-film[data-beat="8"] .o .j-hd{animation:hf-glanceUp 7.5s ease-in-out infinite}
+.filmfig .o .j-lo{transform:rotate(-5deg)}
+.filmfig .o .j-up{transform:rotate(-9deg)}
+.filmfig .o .j-ua{transform:rotate(-9deg)}
+.filmfig .o .j-fa{transform:rotate(-6deg)}
+.filmfig[data-beat="5"] .o .j-up, .filmfig[data-beat="6"] .o .j-up, .filmfig[data-beat="7"] .o .j-up, .filmfig[data-beat="8"] .o .j-up{animation:hf-breatheCalm 5.2s ease-in-out infinite}
+.filmfig[data-beat="5"] .o .j-hd, .filmfig[data-beat="6"] .o .j-hd, .filmfig[data-beat="7"] .o .j-hd, .filmfig[data-beat="8"] .o .j-hd{animation:hf-glanceUp 7.5s ease-in-out infinite}
 
 /* ── the app on the screen ── */
-.hero-film .row{opacity:.3;transition:opacity .4s ease}
-.hero-film .rowtick{opacity:0;transform:scale(.3);transform-origin:center;transition:opacity .3s ease,transform .4s cubic-bezier(.3,1.6,.4,1)}
-.hero-film .rowlab{transition:fill .4s ease}
-.hero-film[data-beat="6"] .row, .hero-film[data-beat="7"] .row, .hero-film[data-beat="8"] .row{opacity:1;transition-delay:calc(var(--i) * 620ms + 700ms)}
-.hero-film[data-beat="6"] .rowtick, .hero-film[data-beat="7"] .rowtick, .hero-film[data-beat="8"] .rowtick{opacity:1;transform:scale(1);transition-delay:calc(var(--i) * 620ms + 960ms)}
-.hero-film[data-beat="6"] .rowlab, .hero-film[data-beat="7"] .rowlab, .hero-film[data-beat="8"] .rowlab{fill:#CBD2DC;transition-delay:calc(var(--i) * 620ms + 700ms)}
+.filmfig .row{opacity:.3;transition:opacity .4s ease}
+.filmfig .rowtick{opacity:0;transform:scale(.3);transform-origin:center;transition:opacity .3s ease,transform .4s cubic-bezier(.3,1.6,.4,1)}
+.filmfig .rowlab{transition:fill .4s ease}
+.filmfig[data-beat="6"] .row, .filmfig[data-beat="7"] .row, .filmfig[data-beat="8"] .row{opacity:1;transition-delay:calc(var(--i) * 620ms + 700ms)}
+.filmfig[data-beat="6"] .rowtick, .filmfig[data-beat="7"] .rowtick, .filmfig[data-beat="8"] .rowtick{opacity:1;transform:scale(1);transition-delay:calc(var(--i) * 620ms + 960ms)}
+.filmfig[data-beat="6"] .rowlab, .filmfig[data-beat="7"] .rowlab, .filmfig[data-beat="8"] .rowlab{fill:#CBD2DC;transition-delay:calc(var(--i) * 620ms + 700ms)}
 
 /* the rail: 7 of 13 while you watch it work, then all the way to 13 */
-.hero-film .railfill{transform:scaleX(.06);transform-origin:left;transition:transform 2.9s cubic-bezier(.4,0,.2,1)}
-.hero-film[data-beat="6"] .railfill{transform:scaleX(.54);transition-delay:.7s}
-.hero-film[data-beat="7"] .railfill, .hero-film[data-beat="8"] .railfill{transform:scaleX(1);transition-duration:1.7s;
+.filmfig .railfill{transform:scaleX(.06);transform-origin:left;transition:transform 2.9s cubic-bezier(.4,0,.2,1)}
+.filmfig[data-beat="6"] .railfill{transform:scaleX(.54);transition-delay:.7s}
+.filmfig[data-beat="7"] .railfill, .filmfig[data-beat="8"] .railfill{transform:scaleX(1);transition-duration:1.7s;
   transition-timing-function:cubic-bezier(.3,0,.2,1)}
 
 /* the stage counter ticks 7 → 10 → 13 as the rail runs out. One shared
    2s clock, absolute keyframes — a plain transition can't hold a value
    through a beat change, it just drops to the base. */
-.hero-film .stg{opacity:0}
+.filmfig .stg{opacity:0}
 @keyframes hf-stgA{0%,26%{opacity:1}34%,100%{opacity:0}}
 @keyframes hf-stgB{0%,30%{opacity:0}38%,58%{opacity:1}66%,100%{opacity:0}}
 @keyframes hf-stgC{0%,62%{opacity:0}70%,100%{opacity:1}}
-.hero-film[data-beat="6"] .stg-a{opacity:1;transition:opacity .5s ease 2.9s}
-.hero-film[data-beat="7"] .stg-a{animation:hf-stgA 2s linear forwards}
-.hero-film[data-beat="7"] .stg-b{animation:hf-stgB 2s linear forwards}
-.hero-film[data-beat="7"] .stg-c{animation:hf-stgC 2s linear forwards}
-.hero-film[data-beat="8"] .stg-c{opacity:1}
+.filmfig[data-beat="6"] .stg-a{opacity:1;transition:opacity .5s ease 2.9s}
+.filmfig[data-beat="7"] .stg-a{animation:hf-stgA 2s linear forwards}
+.filmfig[data-beat="7"] .stg-b{animation:hf-stgB 2s linear forwards}
+.filmfig[data-beat="7"] .stg-c{animation:hf-stgC 2s linear forwards}
+.filmfig[data-beat="8"] .stg-c{opacity:1}
 
 /* the one thing left to do → nothing left to do */
-.hero-film .nextcard{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .55s cubic-bezier(.22,1,.36,1)}
-.hero-film[data-beat="6"] .nextcard{opacity:1;transform:none;transition-delay:3.3s}
-.hero-film[data-beat="7"] .nextcard, .hero-film[data-beat="8"] .nextcard{opacity:0;transform:translateY(-10px);transition-duration:.35s}
-.hero-film .donecard{opacity:0;transform:translateY(12px)scale(.97);transform-origin:center;
+.filmfig .nextcard{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .55s cubic-bezier(.22,1,.36,1)}
+.filmfig[data-beat="6"] .nextcard{opacity:1;transform:none;transition-delay:3.3s}
+.filmfig[data-beat="7"] .nextcard, .filmfig[data-beat="8"] .nextcard{opacity:0;transform:translateY(-10px);transition-duration:.35s}
+.filmfig .donecard{opacity:0;transform:translateY(12px)scale(.97);transform-origin:center;
   transition:opacity .5s ease,transform .55s cubic-bezier(.28,1.3,.45,1)}
-.hero-film[data-beat="7"] .donecard, .hero-film[data-beat="8"] .donecard{opacity:1;transform:none;transition-delay:1.5s}
+.filmfig[data-beat="7"] .donecard, .filmfig[data-beat="8"] .donecard{opacity:1;transform:none;transition-delay:1.5s}
 
-.hero-film .screencontent{opacity:0;transition:opacity .6s ease}
-.hero-film[data-beat="5"] .screencontent, .hero-film[data-beat="6"] .screencontent, .hero-film[data-beat="7"] .screencontent{opacity:1;transition-delay:.25s}
-.hero-film[data-beat="8"] .screencontent{opacity:.14}
+.filmfig .screencontent{opacity:0;transition:opacity .6s ease}
+.filmfig[data-beat="5"] .screencontent, .filmfig[data-beat="6"] .screencontent, .filmfig[data-beat="7"] .screencontent{opacity:1;transition-delay:.25s}
+.filmfig[data-beat="8"] .screencontent{opacity:.14}
 @keyframes hf-cursorpulse{0%,100%{opacity:.4}50%{opacity:1}}
-.hero-film[data-beat="5"] .live, .hero-film[data-beat="6"] .live, .hero-film[data-beat="7"] .live{animation:hf-cursorpulse 2s ease-in-out infinite}
+.filmfig[data-beat="5"] .live, .filmfig[data-beat="6"] .live, .filmfig[data-beat="7"] .live{animation:hf-cursorpulse 2s ease-in-out infinite}
 
 /* ── the license ── */
-.hero-film .lic{opacity:0;transform:translateY(26px) scale(.88);transform-origin:center;
+.filmfig .lic{opacity:0;transform:translateY(26px) scale(.88);transform-origin:center;
   transition:opacity .55s ease,transform .75s cubic-bezier(.28,1.3,.45,1)}
-.hero-film[data-beat="8"] .lic{opacity:1;transform:none;transition-delay:.55s}
+.filmfig[data-beat="8"] .lic{opacity:1;transform:none;transition-delay:.55s}
 @keyframes hf-sealglow{0%,100%{opacity:.32;transform:scale(1)}50%{opacity:.72;transform:scale(1.08)}}
-.hero-film[data-beat="8"] .lichalo{animation:hf-sealglow 3.4s ease-in-out infinite 1.3s;transform-box:fill-box;transform-origin:center}
+.filmfig[data-beat="8"] .lichalo{animation:hf-sealglow 3.4s ease-in-out infinite 1.3s;transform-box:fill-box;transform-origin:center}
 
 /* ── CONFETTI ────────────────────────────────────────────────────
    Three nested groups per piece so the arc is real: .cf-x carries a
@@ -1642,9 +1643,9 @@
    about the piece's own centre. Half the pieces are drawn behind the
    licence card and half in front, which is what gives the burst depth.
    Index-derived, so it bursts identically every loop. */
-.hero-film .cf-x, .hero-film .cf-y{transform-box:view-box;transform-origin:0 0}
-.hero-film .cf-r{transform-box:fill-box;transform-origin:center}
-.hero-film .cf-x{opacity:0}
+.filmfig .cf-x, .filmfig .cf-y{transform-box:view-box;transform-origin:0 0}
+.filmfig .cf-r{transform-box:fill-box;transform-origin:center}
+.filmfig .cf-x{opacity:0}
 @keyframes hf-cfx{to{transform:translateX(var(--dx))}}
 @keyframes hf-cfy{
   0%  {transform:translateY(0);            animation-timing-function:cubic-bezier(.12,.62,.4,1)}
@@ -1653,55 +1654,41 @@
 }
 @keyframes hf-cfr{to{transform:rotate(var(--rot))}}
 @keyframes hf-cfo{0%{opacity:0}4%{opacity:1}68%{opacity:1}100%{opacity:0}}
-.hero-film[data-beat="8"] .cf-x{animation:hf-cfx var(--t) linear forwards var(--d),
+.filmfig[data-beat="8"] .cf-x{animation:hf-cfx var(--t) linear forwards var(--d),
                                 hf-cfo var(--t) linear forwards var(--d)}
-.hero-film[data-beat="8"] .cf-y{animation:hf-cfy var(--t) linear forwards var(--d)}
-.hero-film[data-beat="8"] .cf-r{animation:hf-cfr var(--t) linear forwards var(--d)}
+.filmfig[data-beat="8"] .cf-y{animation:hf-cfy var(--t) linear forwards var(--d)}
+.filmfig[data-beat="8"] .cf-r{animation:hf-cfr var(--t) linear forwards var(--d)}
 
-/* ── captions: ink on the paper world, light on the dark one.
-      Five lines, one idea each, and none of them shares the screen
-      with another number. ── */
-.hero-film .cap{position:absolute;left:0;right:0;bottom:0;padding:0 4cqi 3.2cqi;z-index:3;pointer-events:none}
-.hero-film .capin{position:relative;min-height:4.6cqi}
-.hero-film .capline{position:absolute;left:0;right:0;bottom:0;font-family:var(--font-mono);font-size:clamp(8.5px,2.15cqi,11.5px);
-  letter-spacing:.12em;text-transform:uppercase;color:#7A705C;opacity:0;transform:translateY(6px);
-  transition:opacity .55s ease,transform .6s cubic-bezier(.22,1,.36,1),color .6s ease;line-height:1.5}
-.hero-film .capline b{color:#14120E;font-weight:600;transition:color .6s ease}
-.hero-film[data-beat="4"] .capline, .hero-film[data-beat="5"] .capline, .hero-film[data-beat="6"] .capline, .hero-film[data-beat="7"] .capline, .hero-film[data-beat="8"] .capline{color:var(--text-mid)}
-.hero-film[data-beat="4"] .capline b, .hero-film[data-beat="5"] .capline b, .hero-film[data-beat="6"] .capline b, .hero-film[data-beat="7"] .capline b, .hero-film[data-beat="8"] .capline b{color:var(--text-hi)}
-.hero-film[data-beat="8"] .capline b{color:var(--brass-bright)}
-.hero-film .capline[data-on="true"]{opacity:1;transform:none}
-.hero-film .scrimPaper, .hero-film .scrimDark{position:absolute;inset:auto 0 0 0;height:34%;z-index:2;pointer-events:none;transition:opacity .55s ease}
-.hero-film .scrimPaper{background:linear-gradient(180deg,rgba(233,225,210,0),rgba(233,225,210,.72) 55%,rgba(233,225,210,.95));opacity:1}
-.hero-film .scrimDark{background:linear-gradient(180deg,rgba(6,7,10,0),rgba(6,7,10,.62) 55%,rgba(6,7,10,.93));opacity:0}
-.hero-film[data-beat="4"] .scrimPaper, .hero-film[data-beat="5"] .scrimPaper, .hero-film[data-beat="6"] .scrimPaper, .hero-film[data-beat="7"] .scrimPaper, .hero-film[data-beat="8"] .scrimPaper{opacity:0}
-.hero-film[data-beat="4"] .scrimDark, .hero-film[data-beat="5"] .scrimDark, .hero-film[data-beat="6"] .scrimDark, .hero-film[data-beat="7"] .scrimDark, .hero-film[data-beat="8"] .scrimDark{opacity:1}
+/* ── captions: OUT of the picture now — real DOM text UNDER the plate, always
+   light (they sit on the page, never on the paper). Better for SR + translation. ── */
+.filmfig .fcap { margin-top: 20px; }
+.filmfig .fcapin { position: relative; min-height: 2.9em; }
+.filmfig .capline { position: absolute; left: 0; right: 0; top: 0; font-family: var(--font-mono);
+  font-size: clamp(11px, 1.16vw, 13.5px); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--text-mid); line-height: 1.55; opacity: 0; transform: translateY(7px);
+  transition: opacity .55s ease, transform .6s cubic-bezier(.22,1,.36,1); }
+.filmfig .capline b { color: var(--text-hi); font-weight: 600; transition: color .5s ease; }
+.filmfig[data-beat="8"] .capline b { color: var(--brass-bright); }
+.filmfig .capline[data-on="true"] { opacity: 1; transform: none; }
 
-/* ── the ticker ── */
-.hero-film .ticker{position:absolute;left:0;right:0;top:0;height:2px;z-index:4;background:rgba(0,0,0,.14)}
-.hero-film .tickerfill{height:100%;background:linear-gradient(90deg,var(--brass-deep),var(--brass-bright));
-  transform-origin:left;transform:scaleX(0)}
-@keyframes hf-tick{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.hero-film[data-playing="true"] .tickerfill{animation:hf-tick var(--dur,25.4s) linear infinite}
+/* ── the loop hairline, moved out of the picture ── */
+.filmfig .fticker { position: relative; height: 1px; width: clamp(110px, 16%, 190px); margin-top: 14px;
+  background: color-mix(in oklab, white 10%, transparent); overflow: hidden; }
+.filmfig .fticker i { position: absolute; inset: 0; display: block; transform-origin: left; transform: scaleX(0);
+  background: linear-gradient(90deg, var(--brass-deep), var(--brass-bright)); }
+@keyframes hf-tick { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.filmfig[data-playing="true"] .fticker i { animation: hf-tick var(--dur, 25.4s) linear infinite; }
 
 /* ── SVG type ── */
-.hero-film .t{font-family:var(--font-mono)}
-.hero-film .ts{font-family:var(--font-sans)}
+.filmfig .t{font-family:var(--font-mono)}
+.filmfig .ts{font-family:var(--font-sans)}
 
 @media (prefers-reduced-motion:reduce){
-  .hero-film *{transition:none !important;animation:none !important}
-  .hero-film .world-order{clip-path:inset(0 0 0 0) !important}
-  .hero-film .cam{transform:none !important}
-  .hero-film .sweep, .hero-film .ticker, .hero-film .cf-x{display:none}
-  .hero-film .row, .hero-film .rowtick, .hero-film .railfill, .hero-film .lic, .hero-film .fix, .hero-film .screencontent, .hero-film .donecard, .hero-film .stg-c{opacity:1 !important;transform:none !important}
-  .hero-film .nextcard{opacity:0 !important}
-  .hero-film .scrimPaper{opacity:0 !important} .hero-film .scrimDark{opacity:1 !important}
+  .filmfig *{transition:none !important;animation:none !important}
+  .filmfig .world-order{clip-path:inset(0 0 0 0) !important}
+  .filmfig .cam{transform:none !important}
+  .filmfig .sweep, .filmfig .fticker, .filmfig .cf-x{display:none}
+  .filmfig .row, .filmfig .rowtick, .filmfig .railfill, .filmfig .lic, .filmfig .fix, .filmfig .screencontent, .filmfig .donecard, .filmfig .stg-c{opacity:1 !important;transform:none !important}
+  .filmfig .nextcard{opacity:0 !important}
 }
-/* HERO FILM — the plain-language floor under the film, inside the glass panel */
-.hero-film-cap { margin: 15px 2px 0; font-size: 0.8125rem; line-height: 1.55; color: var(--text-mid); }
-.hero-film-foot {
-  display: inline-flex; align-items: center; gap: 7px; margin-top: 11px; font-size: 0.8125rem; font-weight: 600;
-  color: var(--brass-bright); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--brass) 28%, transparent);
-  padding-bottom: 2px; transition: color 0.18s, border-color 0.18s, gap 0.18s;
-}
-.hero-film-foot:hover { color: var(--text-hi); border-color: var(--brass); gap: 10px; }
+

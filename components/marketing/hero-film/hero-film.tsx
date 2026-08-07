@@ -126,7 +126,7 @@ function Confetti({ p }: { p: ConfettiPiece }) {
 }
 
 export function HeroFilm() {
-  const rootRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const root = rootRef.current
@@ -202,13 +202,10 @@ export function HeroFilm() {
   }, [])
 
   return (
-    <div ref={rootRef} className="hero-film" id="hero-film" data-beat="0" data-playing="true" style={{ "--dur": "25.4s" } as CSSProperties}>
-      <div className="ticker" aria-hidden>
-        <div className="tickerfill" />
-      </div>
-
+    <figure ref={rootRef} className="filmfig" id="hero-film" data-beat="0" data-idle="1" data-playing="true" style={{ "--dur": "25.4s" } as CSSProperties}>
+      <div className="filmstage">
       <svg
-        viewBox="0 0 640 480"
+        viewBox="-60 26 700 378"
         role="img"
         aria-label="An applicant buried in paperwork puts their head down; a sweep of light reorganises the desk into the Gun License NYC dashboard, which tracks every document and names the next step; the license issues."
       >
@@ -251,15 +248,31 @@ export function HeroFilm() {
             <stop offset="0%" stopColor="var(--signal)" stopOpacity=".10" />
             <stop offset="100%" stopColor="var(--signal)" stopOpacity="0" />
           </radialGradient>
+          {/* two vignettes — the room falls off toward the corners like a real
+              over-lit desk. Lighting, not edge-hiding: tops out at .44. */}
+          <radialGradient id="hf-vignA" cx="56%" cy="47%" r="74%">
+            <stop offset="0%" stopColor="#100C06" stopOpacity="0" />
+            <stop offset="46%" stopColor="#100C06" stopOpacity="0" />
+            <stop offset="70%" stopColor="#100C06" stopOpacity=".08" />
+            <stop offset="88%" stopColor="#100C06" stopOpacity=".26" />
+            <stop offset="100%" stopColor="#100C06" stopOpacity=".44" />
+          </radialGradient>
+          <radialGradient id="hf-vignB" cx="56%" cy="47%" r="74%">
+            <stop offset="0%" stopColor="#05060A" stopOpacity="0" />
+            <stop offset="48%" stopColor="#05060A" stopOpacity="0" />
+            <stop offset="72%" stopColor="#05060A" stopOpacity=".08" />
+            <stop offset="90%" stopColor="#05060A" stopOpacity=".26" />
+            <stop offset="100%" stopColor="#05060A" stopOpacity=".44" />
+          </radialGradient>
         </defs>
 
         <g className="cam">
           {/* ══════════ WORLD A · THE PAPER ROOM ══════════ */}
           <g className="world-mess">
-            <rect width={640} height={480} fill="url(#hf-wall)" />
-            <ellipse cx={330} cy={120} rx={330} ry={200} fill="url(#hf-glare)" opacity=".5" />
-            <rect y={326} width={640} height={154} fill="url(#hf-floor)" />
-            <rect y={322} width={640} height={5} fill="#B9AA8D" opacity=".5" />
+            <rect x={-150} width={940} height={480} fill="url(#hf-wall)" />
+            <ellipse cx={300} cy={118} rx={380} ry={205} fill="url(#hf-glare)" opacity=".5" />
+            <rect x={-150} y={326} width={940} height={154} fill="url(#hf-floor)" />
+            <rect x={-150} y={322} width={940} height={5} fill="#B9AA8D" opacity=".5" />
 
             {/* the three problems hanging over the desk */}
             <g>
@@ -317,10 +330,10 @@ export function HeroFilm() {
             </g>
 
             {/* the desk */}
-            <ellipse cx={330} cy={322} rx={250} ry={16} fill="url(#hf-deskshadow)" />
-            <rect x={34} y={306} width={572} height={12} rx={3} fill="#C8B695" />
-            <rect x={34} y={306} width={572} height={4} rx={2} fill="#DCCDAF" />
-            <rect x={34} y={318} width={572} height={15} fill="#9C8A6C" />
+            <ellipse cx={270} cy={322} rx={340} ry={16} fill="url(#hf-deskshadow)" />
+            <rect x={-150} y={306} width={756} height={12} rx={3} fill="#C8B695" />
+            <rect x={-150} y={306} width={756} height={4} rx={2} fill="#DCCDAF" />
+            <rect x={-150} y={318} width={756} height={15} fill="#9C8A6C" />
             <rect x={70} y={333} width={15} height={86} fill="#A69475" />
             <rect x={556} y={333} width={15} height={86} fill="#A69475" />
 
@@ -329,12 +342,14 @@ export function HeroFilm() {
                 <Sheet key={`f${p.i}`} p={p} idx={p.i} />
               ))}
             </g>
+            {/* vignette — last, over everything in this world */}
+            <rect x={-150} y={4} width={940} height={476} fill="url(#hf-vignA)" />
           </g>
 
           {/* ══════════ WORLD B · THE SYSTEM ══════════ */}
           <g className="world-order">
-            <rect width={640} height={480} fill="url(#hf-coldbg)" />
-            <ellipse cx={400} cy={215} rx={290} ry={205} fill="url(#hf-lamp)" opacity=".8" />
+            <rect x={-150} width={940} height={480} fill="url(#hf-coldbg)" />
+            <ellipse cx={380} cy={215} rx={340} ry={205} fill="url(#hf-lamp)" opacity=".8" />
             <ellipse cx={400} cy={226} rx={230} ry={150} fill="url(#hf-screenglow)" />
 
             {/* the same three problems, resolved — same objects, same places, green */}
@@ -449,12 +464,12 @@ export function HeroFilm() {
             </g>
 
             {/* the desk */}
-            <rect x={34} y={306} width={572} height={12} rx={3} fill="#272C35" />
-            <rect x={34} y={306} width={572} height={3} rx={1.5} fill="#333944" />
-            <rect x={34} y={318} width={572} height={15} fill="#13161C" />
+            <rect x={-150} y={306} width={756} height={12} rx={3} fill="#272C35" />
+            <rect x={-150} y={306} width={756} height={3} rx={1.5} fill="#333944" />
+            <rect x={-150} y={318} width={756} height={15} fill="#13161C" />
             <rect x={70} y={333} width={15} height={86} fill="#101319" />
             <rect x={556} y={333} width={15} height={86} fill="#101319" />
-            <rect y={412} width={640} height={68} fill="var(--bg)" />
+            <rect x={-150} y={412} width={940} height={68} fill="var(--bg)" />
 
             {/* confetti behind the card */}
             <g>
@@ -499,6 +514,8 @@ export function HeroFilm() {
                 <Confetti key={p.i} p={p} />
               ))}
             </g>
+            {/* vignette — last, over everything in this world */}
+            <rect x={-150} y={4} width={940} height={476} fill="url(#hf-vignB)" />
           </g>
 
           {/* ══ THE SWEEP ══ */}
@@ -511,31 +528,33 @@ export function HeroFilm() {
         </g>
         {/* /cam */}
       </svg>
-
-      <div className="scrimPaper" aria-hidden />
-      <div className="scrimDark" aria-hidden />
-      <div className="cap">
-        <div className="capin">
-          <div className="capline" data-cap="c1">
-            A NYC gun license takes <b>24 documents.</b>
-          </div>
-          <div className="capline" data-cap="c2">
-            And it gets <b>messy, fast.</b>
-          </div>
-          <div className="capline" data-cap="c3">
-            So we <b>simplified it.</b>
-          </div>
-          <div className="capline" data-cap="c4">
-            We track, verify and chase <b>every step</b> &mdash;
-          </div>
-          <div className="capline" data-cap="c5">
-            <b>right through to the last one.</b>
-          </div>
-          <div className="capline" data-cap="c6">
-            <b>Until you&rsquo;re licensed.</b>
-          </div>
-        </div>
       </div>
-    </div>
+
+      <figcaption className="fcap">
+        <div className="fcapin">
+          <span className="capline" data-cap="c1">
+            A NYC gun license takes <b>24 documents.</b>
+          </span>
+          <span className="capline" data-cap="c2">
+            And it gets <b>messy, fast.</b>
+          </span>
+          <span className="capline" data-cap="c3">
+            So we <b>simplified it.</b>
+          </span>
+          <span className="capline" data-cap="c4">
+            We track, verify and chase <b>every step</b> &mdash;
+          </span>
+          <span className="capline" data-cap="c5">
+            <b>right through to the last one.</b>
+          </span>
+          <span className="capline" data-cap="c6">
+            <b>Until you&rsquo;re licensed.</b>
+          </span>
+        </div>
+        <div className="fticker" aria-hidden>
+          <i />
+        </div>
+      </figcaption>
+    </figure>
   )
 }

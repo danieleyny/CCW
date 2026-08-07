@@ -47,10 +47,11 @@ function buildPaper(): Sheet[] {
 /** The 24 sheets behind the figure. */
 export const PAPER: Sheet[] = buildPaper()
 
-/** Two sheets already on the floor (indices reuse tone slots 1 and 2). */
+/** Two sheets already on the floor (moved up for the 1.85:1 plate crop so the
+ *  shorter frame doesn't decapitate them). Indices reuse tone slots 1 and 2. */
 export const FLOOR: Sheet[] = [
-  { i: 1, x: 146, y: 396, w: 98, r: -13 },
-  { i: 2, x: 412, y: 416, w: 90, r: 9 },
+  { i: 1, x: 146, y: 364, w: 98, r: -13 },
+  { i: 2, x: 412, y: 382, w: 90, r: 9 },
 ]
 
 /** Warm-paper sheet tones (bespoke illustration literals; mirror paletteLight paper). */
