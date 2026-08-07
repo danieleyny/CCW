@@ -17,7 +17,7 @@ import { StickyCta } from "@/components/marketing/sticky-cta"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 import { PlacemakingBand } from "@/components/marketing/placemaking-band"
 import { HeroSkyline } from "@/components/marketing/hero-skyline"
-import { HeroTrackPanel } from "@/components/marketing/hero-track-panel"
+import { HeroFilm } from "@/components/marketing/hero-film/hero-film"
 import { TheCount } from "@/components/marketing/showcase/the-count"
 
 /**
@@ -85,14 +85,12 @@ export default async function Home() {
                 you&apos;re licensed.
               </p>
               <div className="hero-ctas">
-                {/* plain <a> (not next/link) so the panel's per-track href update
-                    on #hero-cta actually changes where the click goes */}
-                <a id="hero-cta" className="hero-btn" href="/eligibility?track=resident">
+                <Link className="hero-btn" href="/eligibility">
                   Check your eligibility
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
-                </a>
+                </Link>
                 <Link className="hero-btn2" href="/how-it-works">
                   See how it works
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -103,7 +101,18 @@ export default async function Home() {
               <p className="hero-micro">Two minutes · no card · no commitment</p>
             </div>
 
-            <HeroTrackPanel />
+            {/* the glass panel now holds the 25s hero film + a plain-language floor */}
+            <div className="hero-panel">
+              <HeroFilm />
+              <p className="hero-film-cap">
+                Carry, premises or renewal — we run the whole application, from the first form to the
+                decision letter.
+              </p>
+              <Link className="hero-film-foot" href="/how-it-works">
+                See how we run it
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            </div>
           </div>
         </div>
 
