@@ -28,6 +28,7 @@ export default async function FormsPage() {
   const answers = (session?.answers ?? {}) as WizardAnswers
   const hasArrests = (answers.arrests?.length ?? 0) > 0
   const hasCohabitants = (answers.cohabitants?.length ?? 0) > 0
+  const hasSafeguard = !!answers.safeguardName?.trim()
 
   // Signature on file? Which signature-only forms are already filed?
   const [{ data: sig }, { data: reqs }] = await Promise.all([
@@ -43,6 +44,7 @@ export default async function FormsPage() {
     { key: "arrest-narratives", title: "Written Explanations", desc: "Formatted explanations for your disclosed matters.", notarize: false, fileable: false, filed: false, show: hasArrests },
     { key: "court-letters", title: "Certificate-of-Disposition Requests", desc: "Ready-to-mail letters to the court clerk, one per matter.", notarize: false, fileable: false, filed: false, show: hasArrests },
     { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed; notarize before filing.", notarize: true, fileable: false, filed: false, show: !hasCohabitants },
+    { key: "safeguard-designation", title: "Safeguard-Person Designation", desc: "Names who will take custody of your handgun if you die or become disabled (from intake). The person you named signs it in front of a notary — don't sign it yourself.", notarize: true, fileable: false, filed: false, show: hasSafeguard },
   ].filter((d) => (d as { show?: boolean }).show !== false).map(({ ...d }) => d as FormDoc)
 
   return (

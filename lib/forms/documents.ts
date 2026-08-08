@@ -49,6 +49,55 @@ export async function safeStorageAttestation(applicantName: string, dateStr: str
   }, { signaturePng, ...sign })
 }
 
+export interface SafeguardPerson {
+  name?: string | null
+  relation?: string | null
+  address?: string | null
+  phone?: string | null
+}
+
+/**
+ * Safeguard-Person Designation (form Q31) — names the N.Y.-resident who will
+ * take custody of the applicant's handgun(s) if the applicant dies or becomes
+ * disabled, built from the intake answer. The DESIGNATED PERSON signs this in
+ * the notary's presence, so it goes out with a BLANK signature line above the
+ * jurat — never a pre-placed signature (same rule as the reference/cohabitant
+ * documents). Prepared, not filing-facing until counsel confirms the exact
+ * NYPD "Acknowledgement of Person Agreeing to Safeguard Firearm(s)" wording.
+ */
+export async function safeguardDesignation(
+  applicantName: string,
+  person: SafeguardPerson,
+  dateStr: string,
+  sign: SignOpts = {}
+): Promise<Uint8Array> {
+  const name = person.name?.trim() || "____________________________"
+  return buildPdf((c) => {
+    c.heading("Safeguard-Person Designation", `NYC concealed-carry license application · ${dateStr}`)
+    c.rule()
+    c.para(`RE: Person designated to safeguard the handgun(s) of ${applicantName}`, { bold: true, gap: 10 })
+    c.para(
+      `${applicantName} has designated the person named below to take custody of and safeguard their ` +
+        `handgun(s) in the event of ${applicantName}'s death or disability. This person is a resident of New York State.`,
+      { gap: 12 }
+    )
+    c.para(`Name: ${name}`, { gap: 2 })
+    if (person.relation?.trim()) c.para(`Relationship to the applicant: ${person.relation.trim()}`, { gap: 2 })
+    if (person.address?.trim()) c.para(`Address: ${person.address.trim()}`, { gap: 2 })
+    if (person.phone?.trim()) c.para(`Telephone: ${person.phone.trim()}`, { gap: 12 })
+    c.spacer(4)
+    c.para(
+      `I, ${name}, agree to take custody of and safeguard the handgun(s) of ${applicantName} if ${applicantName} ` +
+        `dies or becomes unable to lawfully possess them, and to keep them stored securely in an approved safe or ` +
+        `lock-box, inaccessible to anyone not authorized to possess them, until they are lawfully transferred or surrendered.`,
+      { gap: 16 }
+    )
+    // The designated person signs in the notary's presence — blank rule + jurat.
+    c.signatureLine("Signature of designated person — sign in the presence of the notary", name)
+    c.notaryBlock(name)
+  }, { ...sign })
+}
+
 /** SOC-01 — 3-year social-media disclosure, from collected handles. */
 export async function socialMediaDisclosure(applicantName: string, handles: string, dateStr: string, signaturePng?: Sig, sign: SignOpts = {}): Promise<Uint8Array> {
   const list = (handles || "").split(/[\n,]+/).map((h) => h.trim()).filter(Boolean)

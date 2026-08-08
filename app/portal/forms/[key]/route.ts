@@ -8,6 +8,7 @@ import {
   socialMediaDisclosure,
   arrestNarratives,
   certOfDispositionRequests,
+  safeguardDesignation,
 } from "@/lib/forms/documents"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { getSignaturePng } from "@/lib/signatures"
@@ -57,6 +58,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
     case "sole-occupancy":
       pdf = await generateCohabitantAffidavitPdf({ applicantName: applicant, cohabitantName: applicant, liveAlone: true, dateStr, signaturePng: sig })
       filename = "sole-occupancy-statement.pdf"
+      break
+    case "safeguard-designation":
+      // The DESIGNATED person signs this before a notary — no applicant signature
+      // is applied, so it renders with a blank rule above the jurat.
+      pdf = await safeguardDesignation(
+        applicant,
+        {
+          name: answers.safeguardName,
+          relation: answers.safeguardRelation,
+          address: answers.safeguardAddress,
+          phone: answers.safeguardPhone,
+        },
+        dateStr
+      )
+      filename = "safeguard-person-designation.pdf"
       break
     default:
       return new Response("Unknown document", { status: 404 })
