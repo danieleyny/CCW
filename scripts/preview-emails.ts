@@ -5,6 +5,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import { renderEmail } from "@/lib/email/template"
+import { brand } from "@/config/brand"
 
 const outDir = process.argv[2] ?? "public/email-preview"
 mkdirSync(outDir, { recursive: true })
@@ -49,6 +50,20 @@ const emails: Record<string, ReturnType<typeof renderEmail>> = {
     ],
     cta: { label: "View your case →", url: "https://gunlicensenyc.com/portal" },
     recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
+  }),
+  // Password reset — mirrors app/auth/actions.ts requestPasswordReset. Branded
+  // from-us so it never reads like phishing. Update both together.
+  passwordReset: renderEmail({
+    preheader: `Reset your ${brand.name} password — this link expires in 60 minutes.`,
+    eyebrow: "Account security",
+    heading: "Reset your password",
+    paragraphs: [
+      `We received a request to reset the password for your ${brand.name} account. Choose a new password with the button below.`,
+    ],
+    cta: { label: "Choose a new password", url: "https://gunlicensenyc.com/auth/callback?next=/auth/reset-password" },
+    footnote:
+      `This link expires in 60 minutes. If you didn't request a reset, you can ignore this email — ` +
+      `your password won't change. Questions? Contact ${brand.contact.email}.`,
   }),
   // The reference-unfilled reminder (to the applicant) — names the reference and
   // carries a one-click resend button. Mirrors lib/reminders/engine.ts.

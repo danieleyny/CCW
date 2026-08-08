@@ -10,6 +10,9 @@ import { ensureClientCaseForProfile } from "@/lib/onboarding"
 import { getSiteUrl } from "@/lib/site-url"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { safeInternalPath } from "@/lib/safe-redirect"
+import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
+import { brand } from "@/config/brand"
 
 /** Best-effort caller IP for throttling unauthenticated auth attempts. */
 async function callerIp(): Promise<string> {
@@ -183,10 +186,52 @@ export async function requestPasswordReset(
     return { error: parsed.error.issues[0]?.message ?? "Enter a valid email" }
   }
   const supabase = await createClient()
-  // Ignore the result: surfacing an error here would reveal account existence.
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${getSiteUrl()}/auth/callback?next=/auth/reset-password`,
-  })
+  const email = parsed.data.email
+  const redirectTo = `${getSiteUrl()}/auth/callback?next=/auth/reset-password`
+
+  // Prefer a from-us BRANDED email: a stock, Supabase-signed reset reads like
+  // phishing for a gun-licensing account. We mint the recovery link with the
+  // service role so Supabase does NOT auto-send, then send it through our own
+  // template. If Resend isn't configured yet (EMAIL_ENABLED false), or the link
+  // can't be minted, we fall back to Supabase's native send so reset never
+  // breaks — this upgrades to the branded mail automatically once Resend is live.
+  if (EMAIL_ENABLED) {
+    try {
+      // Service role required to generate an action link without auto-sending.
+      const admin = createAdminClient()
+      const { data, error } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: { redirectTo },
+      })
+      const actionLink = data?.properties?.action_link
+      if (!error && actionLink) {
+        const { html, text } = renderEmail({
+          preheader: `Reset your ${brand.name} password — this link expires in 60 minutes.`,
+          eyebrow: "Account security",
+          heading: "Reset your password",
+          paragraphs: [
+            `We received a request to reset the password for your ${brand.name} account. Choose a new password with the button below.`,
+          ],
+          cta: { label: "Choose a new password", url: actionLink },
+          footnote:
+            `This link expires in 60 minutes. If you didn't request a reset, you can ignore this email — ` +
+            `your password won't change. Questions? Contact ${brand.contact.email}.`,
+        })
+        const res = await sendEmail({ to: email, subject: `Reset your ${brand.name} password`, html, text })
+        // Delivered (or console-logged in a non-Resend env) → done. Only a hard
+        // send error drops us to the Supabase fallback below.
+        if (!("error" in res)) return { sent: true }
+      }
+    } catch {
+      // Any failure (unknown account, link error, transient) → neutral fallback.
+    }
+  }
+
+  // Fallback: Supabase generates + sends its own recovery email. Kept as the
+  // default until Resend is verified. Ignore the result: surfacing an error
+  // here would reveal account existence.
+  await supabase.auth.resetPasswordForEmail(email, { redirectTo })
   return { sent: true }
 }
 
