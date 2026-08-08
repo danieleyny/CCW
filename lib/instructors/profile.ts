@@ -110,15 +110,70 @@ export function evaluateProfile(instructor: InstructorProfileInput): ProfileComp
   }
 }
 
+type LiveInput = InstructorProfileInput & Pick<InstructorRow, "verified" | "active" | "onboarding_completed_at">
+
 /** Can this instructor be shown to applicants / send offers right now? */
-export function isLiveEligible(
-  instructor: InstructorProfileInput & Pick<InstructorRow, "verified" | "active" | "onboarding_completed_at">
-): boolean {
+export function isLiveEligible(instructor: LiveInput): boolean {
   // VERIFIED (who they are) + ONBOARDED (they know the rules) + ACTIVE + a
   // COMPLETE profile. Onboarding is Phase 13: the privacy firewall, candor, and
   // applicant-files-their-own-app must be acknowledged before reaching anyone.
   if (!instructor.verified || !instructor.active || !instructor.onboarding_completed_at) return false
   return evaluateProfile(instructor).complete
+}
+
+export interface GoLiveStep {
+  key: string
+  label: string
+  why: string
+  done: boolean
+  /** Where the instructor goes to fix it themselves (self-serve steps). */
+  fixHref?: string
+  /** True when completion is gated on an admin, not the instructor. */
+  waiting?: boolean
+}
+
+/**
+ * The ONE list of everything standing between an instructor and going live —
+ * the same conditions `isLiveEligible` enforces, unrolled into a checklist so
+ * the dashboard can show exactly what's left (and who has to do it). Order:
+ * agree to the rules → complete the profile → admin verification.
+ */
+export function goLiveSteps(instructor: LiveInput): { steps: GoLiveStep[]; live: boolean; remaining: number } {
+  const profile = evaluateProfile(instructor)
+  const steps: GoLiveStep[] = [
+    {
+      key: "onboarding",
+      label: "Agree to the platform rules",
+      why: "The privacy firewall, candor, and applicants-file-their-own-application — a two-minute read.",
+      done: !!instructor.onboarding_completed_at,
+      fixHref: "/instructor/onboarding",
+    },
+    ...profile.checks.map((c) => ({
+      key: `profile_${c.key}`,
+      label: c.label,
+      why: c.why,
+      done: c.done,
+      fixHref: "/instructor/profile",
+    })),
+    {
+      key: "verified",
+      label: "DCJS credential verified by an admin",
+      why: "We check your credential before you appear to applicants. This is the badge they trust.",
+      done: !!instructor.verified,
+      waiting: true,
+    },
+  ]
+  if (!instructor.active) {
+    steps.push({
+      key: "active",
+      label: "Account active",
+      why: "Your account is currently inactive — contact support to reactivate.",
+      done: false,
+      waiting: true,
+    })
+  }
+  const remaining = steps.filter((s) => !s.done).length
+  return { steps, live: isLiveEligible(instructor), remaining }
 }
 
 /**

@@ -1,18 +1,17 @@
 import Link from "next/link"
 import {
   ShieldCheck,
-  ShieldAlert,
   MapPin,
   Star,
   ArrowRight,
-  ClipboardCheck,
   ListChecks,
   Users,
   CalendarClock,
   Inbox,
 } from "lucide-react"
 import { getMyInstructor, getMyTrainingLocations } from "@/lib/instructor"
-import { evaluateProfile } from "@/lib/instructors/profile"
+import { goLiveSteps } from "@/lib/instructors/profile"
+import { GoLiveChecklist } from "@/components/instructor/go-live-checklist"
 import { getTrainerCases, getTrainerRequirements, progressOf } from "@/lib/trainer/queries"
 import { computeTrainerNextStep } from "@/lib/trainer/next-steps"
 import { createClient } from "@/lib/supabase/server"
@@ -43,7 +42,7 @@ export default async function InstructorDashboard() {
 
   const supabase = await createClient()
   const locations = await getMyTrainingLocations(me.id)
-  const completeness = evaluateProfile({ ...me, locations })
+  const { steps: liveSteps, live, remaining } = goLiveSteps({ ...me, locations })
 
   // The book of business (same source + sort as /instructor/cases).
   const cases = await getTrainerCases(supabase)
@@ -81,17 +80,14 @@ export default async function InstructorDashboard() {
         </Link>
       </div>
 
-      {/* Onboarding gate — required before going live. */}
-      {!me.onboarding_completed_at && (
-        <Link
-          href="/instructor/onboarding"
-          className="flex items-center justify-between gap-2 rounded-md border border-brass/40 bg-brass/10 px-4 py-3 text-sm text-brass-bright transition-colors hover:bg-brass/15"
-        >
-          <span className="flex items-center gap-2">
-            <ClipboardCheck className="size-4" /> Complete your platform onboarding to go live — a few minutes.
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
+      {/* The single source of go-live truth: one red checklist while not live,
+          a quiet green confirmation once every step is done. */}
+      {live ? (
+        <div className="flex items-center gap-2 rounded-md border border-ok/30 bg-ok/10 px-4 py-3 text-sm text-ok">
+          <ShieldCheck className="size-4" /> You&apos;re live — applicants in your service area can see and request you.
+        </div>
+      ) : (
+        <GoLiveChecklist steps={liveSteps} remaining={remaining} />
       )}
 
       {/* ── LEAD: needs-your-review + book of business ─────────────────────── */}
@@ -188,53 +184,7 @@ export default async function InstructorDashboard() {
         )}
       </section>
 
-      {/* ── DEMOTED: setup / profile / verification ────────────────────────── */}
-      {!completeness.complete && (
-        <Card className="border-brass/40 bg-brass/5">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <ListChecks className="size-4 text-brass-bright" />
-                <h2 className="text-sm font-semibold text-brass-bright">
-                  Complete your profile to start getting matched
-                </h2>
-              </div>
-              <span className="font-mono text-[11px] tabular-nums text-text-low">
-                {completeness.percent}%
-              </span>
-            </div>
-            <p className="mt-1.5 text-sm text-text-mid">
-              Applicants only see trainers with a complete profile. Still needed:
-            </p>
-            <ul className="mt-2 space-y-1 text-sm text-text-mid">
-              {completeness.missing.map((c) => (
-                <li key={c.key} className="flex items-start gap-2">
-                  <span className="mt-1 size-1.5 shrink-0 rounded-full bg-brass" />
-                  {c.label}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/instructor/profile"
-              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
-            >
-              Finish your profile <ArrowRight className="size-4" />
-            </Link>
-          </CardContent>
-        </Card>
-      )}
-
-      {me.verified ? (
-        <div className="flex items-center gap-2 rounded-md border border-ok/30 bg-ok/10 px-4 py-3 text-sm text-ok">
-          <ShieldCheck className="size-4" /> Verified — you appear to clients in your service area.
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn">
-          <ShieldAlert className="size-4" /> Pending verification — an admin reviews your DCJS
-          credential before you appear to clients.
-        </div>
-      )}
-
+      {/* ── DEMOTED: quick stats (setup/verification now live in the checklist above) ── */}
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Service radius" value={`${me.service_radius_mi} mi`} />
         <Stat label="18-hr price" value={me.price_18h_cents ? money(me.price_18h_cents) : "—"} />

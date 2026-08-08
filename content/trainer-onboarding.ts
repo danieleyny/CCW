@@ -1,10 +1,9 @@
 /**
  * PART C / Phase 13 — trainer onboarding content.
  *
- * The rules a trainer must acknowledge before reaching applicants. These are the
- * platform's non-negotiables, phrased plainly. The acknowledgements are the
- * checklist; the quiz confirms they actually read the two that most often go
- * wrong (the privacy firewall and no-legal-advice).
+ * The rules a trainer must agree to before reaching applicants — the platform's
+ * non-negotiables, phrased plainly. A trainer reads each and acknowledges it;
+ * agreeing to all of them is the gate to go live (no graded quiz).
  */
 
 export interface Acknowledgement {
@@ -45,52 +44,5 @@ export const ONBOARDING_ACKNOWLEDGEMENTS: Acknowledgement[] = [
   },
 ]
 
-export interface QuizQuestion {
-  key: string
-  q: string
-  options: string[]
-  /** Index of the correct option. */
-  answer: number
-  /** Shown if they pick wrong — teaches, doesn't just fail. */
-  explain: string
-}
-
-export const ONBOARDING_QUIZ: QuizQuestion[] = [
-  {
-    key: "sees_disclosures",
-    q: "An applicant you're helping mentions they have an old arrest and asks if it will be a problem. What do you do?",
-    options: [
-      "Give them your read on how it'll affect their application.",
-      "Tell them that's outside what you handle, and route them back to Gun License NYC / the attorney seam.",
-      "Ask them to upload the arrest record so you can review it.",
-    ],
-    answer: 1,
-    explain:
-      "You never see disclosures and you don't advise on records. Route it back — that's both the firewall and the no-legal-advice rule.",
-  },
-  {
-    key: "who_files",
-    q: "Who submits the application to the NYPD License Division?",
-    options: [
-      "You, the instructor, on the applicant's behalf, once their documents are ready.",
-      "Either the applicant files it (Self-Guided) or Gun License NYC files it for them (Full Concierge) — never the instructor.",
-      "The applicant always files it themselves, no matter the plan.",
-    ],
-    answer: 1,
-    explain: "Filing depends on the applicant's plan — they file it on Self-Guided, or Gun License NYC files it for them on Full Concierge. As the instructor, you never file, submit, or represent anyone; you teach the 18-hour course.",
-  },
-  {
-    key: "outcome",
-    q: "An applicant asks you to guarantee they'll be approved if they take your course. You:",
-    options: [
-      "Say your students have a high approval rate.",
-      "Explain that no one can promise an outcome — the decision is the NYPD's.",
-      "Tell them it's very likely if their paperwork is clean.",
-    ],
-    answer: 1,
-    explain: "No guarantees, no approval-rate claims. The decision belongs to the NYPD, and saying otherwise is an overclaim we don't make.",
-  },
-]
-
 export const ONBOARDING_INTRO =
-  "A few minutes before you go live. These are the rules that keep applicants safe and keep this platform trustworthy — the privacy firewall, candor, and the fact that applicants file their own applications. Read each, acknowledge it, and answer three short questions."
+  "A few minutes before you go live. These are the rules that keep applicants safe and keep this platform trustworthy — the privacy firewall, candor, and the fact that applicants file their own applications. Read each and agree to it."
