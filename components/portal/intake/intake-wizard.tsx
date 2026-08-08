@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react"
+import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil } from "lucide-react"
 import {
   INTAKE_STEPS,
   QUESTIONNAIRE,
@@ -69,6 +69,9 @@ export function IntakeWizard({
   const [generating, setGenerating] = useState(false)
   const [eligReasons, setEligReasons] = useState<string[] | null>(null)
   const [attorneyReview, setAttorneyReview] = useState(false)
+  // F5 — a completed applicant re-opening their answers to review/edit. Saving a
+  // step is non-destructive; only finishing (generate → completeIntake) rebuilds.
+  const [editing, setEditing] = useState(false)
   const [guardOverride, setGuardOverride] = useState<SubmissionGuard | null>(null)
   const [narrativeEdits, setNarrativeEdits] = useState<Record<string, string>>({})
   const [stepErrors, setStepErrors] = useState<string[]>([])
@@ -175,7 +178,7 @@ export function IntakeWizard({
   const effGuard = guardOverride ?? guard
 
   // ── Completed: review + pre-submission gate ────────────────────────────────
-  if (completed && !attorneyReview) {
+  if (completed && !attorneyReview && !editing) {
     return (
       <div className="space-y-5">
         <StepRail step={6} />
@@ -259,11 +262,22 @@ export function IntakeWizard({
           </div>
         )}
 
-        <Button asChild variant="outline">
-          <Link href="/portal/checklist">
-            View my checklist <ArrowRight className="size-4" />
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/portal/checklist">
+              View my checklist <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditing(true)
+              setStep(1)
+            }}
+          >
+            <Pencil className="size-4" /> Review &amp; edit my answers
+          </Button>
+        </div>
       </div>
     )
   }
@@ -292,6 +306,21 @@ export function IntakeWizard({
   return (
     <div className="space-y-5">
       <StepRail step={step} />
+
+      {editing && (
+        <div className="rounded-md border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
+          <div className="flex items-center gap-2 font-medium">
+            <ShieldAlert className="size-4" /> You&apos;re editing answers you already submitted.
+          </div>
+          <p className="mt-1 text-xs">
+            When you finish, we rebuild your checklist from these answers — that can reset
+            household-affidavit progress and clear disclosure explanations. Change only what you need to.
+          </p>
+          <Button variant="ghost" size="sm" className="mt-2" onClick={() => setEditing(false)}>
+            Cancel — keep my current answers
+          </Button>
+        </div>
+      )}
 
       <div className="rounded-lg border bg-card p-5">
         {step === 1 && (
