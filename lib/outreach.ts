@@ -106,7 +106,7 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
     heading: applicant ? `${applicant} listed you as a character reference` : "Confirm your character reference",
     paragraphs: [
       `Hi ${ref.name},`,
-      `${applicant ?? "An applicant"} listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build a ready-to-notarize letter from your answers.`,
+      `${applicant ?? "An applicant"} listed you as a character reference for their NYC concealed-carry license. Please confirm and attest — it takes a minute, and no account is needed. We'll build the letter from your answers and show you how to get it notarized — you'll sign it in front of the notary, not before.`,
     ],
     cta: { label: "Confirm your reference →", url: link },
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
@@ -149,8 +149,8 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
     paragraphs: [
       `Hi ${cohab.name},`,
       applicant
-        ? `${applicant} listed you as a household member on their NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.`
-        : "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed, and we'll build a ready-to-notarize document for you.",
+        ? `${applicant} listed you as a household member on their NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed. We'll build the document for you and show you how to get it notarized — you'll sign it in front of the notary, not before.`
+        : "You were listed as a household member on a NYC concealed-carry license application. Please confirm and complete a short affidavit — no account needed. We'll build the document for you and show you how to get it notarized — you'll sign it in front of the notary, not before.",
     ],
     cta: { label: "Complete your affidavit →", url: link },
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",

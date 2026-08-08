@@ -1,7 +1,6 @@
 import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
-import { getSignaturePng } from "@/lib/signatures"
 import { tokenActive } from "@/lib/references/process"
 import { rateLimit } from "@/lib/rate-limit"
 
@@ -22,14 +21,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", cohab.case_id).single()
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
-  const sig = await getSignaturePng(admin, cohab.case_id, `cohabitant:${cohab.id}`)
 
+  // Deliberately UNSIGNED: a jurat requires the cohabitant to sign in front of the
+  // notary, so the affidavit is generated with a blank signature rule (no pre-fill).
   const pdf = await generateCohabitantAffidavitPdf({
     applicantName: applicant,
     cohabitantName: cohab.name ?? "Cohabitant",
     relationship: cohab.relationship,
     dateStr: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
-    signaturePng: sig,
   })
 
   return new Response(Buffer.from(pdf), {

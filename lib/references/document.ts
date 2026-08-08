@@ -9,6 +9,11 @@ export interface ReferenceLetterInput {
   contactPhone?: string | null
   answers: ReferenceAnswers
   dateStr: string
+  /**
+   * A rendered signature. Omit it (the invited-reference token flow always does)
+   * so the letter goes out UNSIGNED with a blank rule the reference signs in the
+   * notary's presence — a jurat can't be sworn over a pre-placed signature.
+   */
   signaturePng?: Uint8Array
 }
 
@@ -37,7 +42,14 @@ export async function generateReferenceLetterPdf(input: ReferenceLetterInput): P
         `they should not be licensed.`,
       { gap: 16 }
     )
-    c.signatureImage(`Printed name: ${input.referenceName}`)
+    // A jurat requires the signature to be made in the notary's presence. When no
+    // signature is supplied (the invited-reference token flow), render a BLANK rule
+    // the reference signs at the notary — never a pre-placed signature.
+    if (input.signaturePng) {
+      c.signatureImage(`Printed name: ${input.referenceName}`)
+    } else {
+      c.signatureLine("Signature of reference — sign in the presence of the notary", input.referenceName)
+    }
     const contact = [input.contactEmail, input.contactPhone].filter(Boolean).join("  ·  ")
     if (contact) c.para(`Contact: ${contact}`, { size: 10, color: "muted", gap: 16 })
     c.notaryBlock(input.referenceName)

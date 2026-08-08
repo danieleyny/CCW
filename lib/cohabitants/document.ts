@@ -6,6 +6,11 @@ export interface CohabitantAffidavitInput {
   relationship?: string | null
   liveAlone?: boolean
   dateStr: string
+  /**
+   * A rendered signature. Omit it (the invited-cohabitant token flow always does)
+   * so the affidavit goes out UNSIGNED with a blank rule the signer completes in
+   * the notary's presence — a jurat can't be sworn over a pre-placed signature.
+   */
   signaturePng?: Uint8Array
   /** Short case reference for the letterhead. */
   caseRef?: string
@@ -27,7 +32,8 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
           `secured in an approved safe or lock-box.`,
         { gap: 16 }
       )
-      c.signatureImage("Applicant signature", input.applicantName)
+      if (input.signaturePng) c.signatureImage("Applicant signature", input.applicantName)
+      else c.signatureLine("Signature — sign in the presence of the notary", input.applicantName)
       c.notaryBlock(input.applicantName)
       return
     }
@@ -47,8 +53,11 @@ export async function generateCohabitantAffidavitPdf(input: CohabitantAffidavitI
       { gap: 16 }
     )
     // Executed by the cohabitant — their name goes under the rule, not the
-    // applicant's, even though the letterhead is the applicant's case.
-    c.signatureImage("Cohabitant signature", input.cohabitantName)
+    // applicant's, even though the letterhead is the applicant's case. A jurat
+    // requires signing before the notary, so when no signature is supplied (the
+    // token flow) the rule stays BLANK until then — never a pre-placed signature.
+    if (input.signaturePng) c.signatureImage("Cohabitant signature", input.cohabitantName)
+    else c.signatureLine("Signature — sign in the presence of the notary", input.cohabitantName)
     c.notaryBlock(input.cohabitantName)
   }, {
     signaturePng: input.signaturePng,

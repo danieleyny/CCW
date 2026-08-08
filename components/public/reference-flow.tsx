@@ -2,17 +2,16 @@
 
 import { useState, useTransition, useRef } from "react"
 import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp, Video } from "lucide-react"
-import { submitReferenceAnswers, uploadNotarizedReference, saveReferenceSignature } from "@/app/r/actions"
+import { submitReferenceAnswers, uploadNotarizedReference } from "@/app/r/actions"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
 import { notaryOptions, ronOptions } from "@/lib/references/notary"
 import { compressImageFile } from "@/lib/files/compress"
-import { SignaturePad } from "@/components/sign/signature-pad"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
-type Phase = "answers" | "sign" | "notarize" | "done"
+type Phase = "answers" | "notarize" | "done"
 
 export function ReferenceFlow({
   token,
@@ -51,15 +50,6 @@ export function ReferenceFlow({
     start(async () => {
       const res = await submitReferenceAnswers(token, answers, area, email.trim())
       if (res.error) setError(res.error)
-      else setPhase("sign")
-    })
-  }
-
-  function sign(b64: string) {
-    setError("")
-    start(async () => {
-      const res = await saveReferenceSignature(token, b64)
-      if (res.error) setError(res.error)
       else setPhase("notarize")
     })
   }
@@ -90,31 +80,14 @@ export function ReferenceFlow({
     )
   }
 
-  if (phase === "sign") {
-    return (
-      <div className="mt-6 space-y-4">
-        <div className="rounded-lg border bg-card p-4 text-sm">
-          Add your signature and we&apos;ll place it on your reference letter. (You can also skip and sign by hand.)
-        </div>
-        <div className="max-w-md">
-          <SignaturePad onSave={sign} saving={pending} label="Sign &amp; continue" />
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => setPhase("notarize")} disabled={pending}>
-          Skip — I&apos;ll sign by hand
-        </Button>
-        {error && <p className="text-sm text-danger">{error}</p>}
-      </div>
-    )
-  }
-
   if (phase === "notarize") {
     const opts = notaryOptions(area)
     const ron = ronOptions()
     return (
       <div className="mt-6 space-y-5">
         <div className="rounded-lg border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
-          <CheckCircle2 className="mr-1 inline size-4" /> Your answers are saved. Two steps left:
-          download your letter, get it notarized, and upload it here.
+          <CheckCircle2 className="mr-1 inline size-4" /> Your answers are saved. Here&apos;s the order to
+          follow — the notary has to watch you sign, so leave the signature line blank until then.
         </div>
 
         <div className="rounded-lg border bg-card p-4">
@@ -122,7 +95,7 @@ export function ReferenceFlow({
             <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">1</span>
             Download your reference letter
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">A ready-to-sign PDF built from your answers, with a notary block.</p>
+          <p className="mt-1 text-xs text-muted-foreground">A PDF built from your answers, with a notary block at the bottom.</p>
           <Button asChild size="sm" className="mt-3">
             <a href={`/r/${token}/document`} target="_blank" rel="noreferrer">
               <Download className="size-4" /> Download PDF
@@ -130,12 +103,25 @@ export function ReferenceFlow({
           </Button>
         </div>
 
+        <div className="rounded-lg border border-brass/40 bg-brass/10 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-brass-bright">
+            <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">2</span>
+            Don&apos;t sign it yet
+          </div>
+          <p className="mt-1 text-xs text-text-low">
+            A notary has to watch you sign. If you sign beforehand, they can&apos;t notarize it and you&apos;ll
+            have to start over. You&apos;ll sign at the notary — in person, or during your online notary session.
+          </p>
+        </div>
+
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">2</span>
-            <Stamp className="size-4 text-brass" /> Get it notarized
+            <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">3</span>
+            <Stamp className="size-4 text-brass" /> Take it to a notary — bring photo ID
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Notary options near you:</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sign it <b>in front of the notary</b>, who then completes and stamps the certificate. Notary options near you:
+          </p>
           <ul className="mt-2 space-y-1.5">
             {opts.map((o) => (
               <li key={o.label} className="text-sm">
@@ -150,10 +136,11 @@ export function ReferenceFlow({
 
         <div className="rounded-lg border border-signal/30 bg-signal/5 p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <Video className="size-4 text-signal" /> Prefer not to travel? Notarize online
+            <Video className="size-4 text-signal" /> Prefer not to travel? Notarize online instead
           </div>
           <p className="mt-1 text-xs text-text-low">
-            New York allows Remote Online Notarization — notarize by live video in minutes. Upload the same PDF to any of these:
+            New York allows Remote Online Notarization — you sign by live video while the notary watches, in minutes.
+            Upload the same unsigned PDF to any of these:
           </p>
           <ul className="mt-2 space-y-1.5">
             {ron.map((o) => (
@@ -169,9 +156,10 @@ export function ReferenceFlow({
 
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">3</span>
+            <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">4</span>
             Upload the notarized copy
           </div>
+          <p className="mt-1 text-xs text-muted-foreground">A clear photo or scan of the signed, stamped document.</p>
           <input ref={fileRef} type="file" accept="image/*,application/pdf" className="mt-3 block w-full text-sm" />
           <Button onClick={uploadFile} disabled={pending} size="sm" className="mt-3">
             <Upload className="size-4" /> {pending ? "Uploading…" : "Upload notarized reference"}
