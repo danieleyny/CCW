@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useTransition, useRef } from "react"
-import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp, Video } from "lucide-react"
+import { useState, useTransition } from "react"
+import { CheckCircle2, Download, MapPin, ExternalLink, Stamp, Video } from "lucide-react"
 import { submitCohabitantAnswers, uploadNotarizedCohabitant } from "@/app/c/actions"
 import { notaryOptions, ronOptions } from "@/lib/references/notary"
-import { compressImageFile } from "@/lib/files/compress"
+import { NotarizedTokenUpload } from "@/components/public/notarized-token-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,7 +34,6 @@ export function CohabitantFlow({
   const [attest, setAttest] = useState(false)
   const [error, setError] = useState("")
   const [pending, start] = useTransition()
-  const fileRef = useRef<HTMLInputElement>(null)
 
   function confirm() {
     setError("")
@@ -44,19 +43,6 @@ export function CohabitantFlow({
       const res = await submitCohabitantAnswers(token, {}, area, email.trim())
       if (res.error) setError(res.error)
       else setPhase("notarize")
-    })
-  }
-  function uploadFile() {
-    setError("")
-    const f = fileRef.current?.files?.[0]
-    if (!f) return setError("Choose the notarized file to upload.")
-    start(async () => {
-      const compressed = await compressImageFile(f) // HEIC→JPEG + downscale
-      const fd = new FormData()
-      fd.set("file", compressed)
-      const res = await uploadNotarizedCohabitant(token, fd)
-      if (res.error) setError(res.error)
-      else setPhase("done")
     })
   }
 
@@ -146,11 +132,11 @@ export function CohabitantFlow({
             Upload the notarized copy
           </div>
           <p className="mt-1 text-xs text-muted-foreground">A clear photo or scan of the signed, stamped document.</p>
-          <input ref={fileRef} type="file" accept="image/*,application/pdf" className="mt-3 block w-full text-sm" />
-          <Button onClick={uploadFile} disabled={pending} size="sm" className="mt-3">
-            <Upload className="size-4" /> {pending ? "Uploading…" : "Upload notarized affidavit"}
-          </Button>
-          {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+          <NotarizedTokenUpload
+            upload={(fd) => uploadNotarizedCohabitant(token, fd)}
+            noun="affidavit"
+            onDone={() => setPhase("done")}
+          />
         </div>
       </div>
     )

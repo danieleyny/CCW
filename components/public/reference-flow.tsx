@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useTransition, useRef } from "react"
-import { CheckCircle2, Download, MapPin, Upload, ExternalLink, Stamp, Video } from "lucide-react"
+import { useState, useTransition } from "react"
+import { CheckCircle2, Download, MapPin, ExternalLink, Stamp, Video } from "lucide-react"
 import { submitReferenceAnswers, uploadNotarizedReference } from "@/app/r/actions"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
 import { notaryOptions, ronOptions } from "@/lib/references/notary"
-import { compressImageFile } from "@/lib/files/compress"
+import { NotarizedTokenUpload } from "@/components/public/notarized-token-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,7 +37,6 @@ export function ReferenceFlow({
   const [attest, setAttest] = useState(false)
   const [error, setError] = useState("")
   const [pending, start] = useTransition()
-  const fileRef = useRef<HTMLInputElement>(null)
 
   function setA(k: string, v: string) {
     setAnswers((a) => ({ ...a, [k]: v }))
@@ -51,20 +50,6 @@ export function ReferenceFlow({
       const res = await submitReferenceAnswers(token, answers, area, email.trim())
       if (res.error) setError(res.error)
       else setPhase("notarize")
-    })
-  }
-
-  function uploadFile() {
-    setError("")
-    const f = fileRef.current?.files?.[0]
-    if (!f) return setError("Choose the notarized file to upload.")
-    start(async () => {
-      const compressed = await compressImageFile(f) // HEIC→JPEG + downscale
-      const fd = new FormData()
-      fd.set("file", compressed)
-      const res = await uploadNotarizedReference(token, fd)
-      if (res.error) setError(res.error)
-      else setPhase("done")
     })
   }
 
@@ -160,11 +145,11 @@ export function ReferenceFlow({
             Upload the notarized copy
           </div>
           <p className="mt-1 text-xs text-muted-foreground">A clear photo or scan of the signed, stamped document.</p>
-          <input ref={fileRef} type="file" accept="image/*,application/pdf" className="mt-3 block w-full text-sm" />
-          <Button onClick={uploadFile} disabled={pending} size="sm" className="mt-3">
-            <Upload className="size-4" /> {pending ? "Uploading…" : "Upload notarized reference"}
-          </Button>
-          {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+          <NotarizedTokenUpload
+            upload={(fd) => uploadNotarizedReference(token, fd)}
+            noun="reference"
+            onDone={() => setPhase("done")}
+          />
         </div>
       </div>
     )
