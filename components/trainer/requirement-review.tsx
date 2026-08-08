@@ -17,8 +17,12 @@ export interface ReviewItem {
   status: string
   blocking: boolean
   scope: "progress" | "full"
+  /** "What makes it acceptable" — the registry description (full-scope only). */
+  acceptance?: string | null
   documentId: string | null
   documentName: string | null
+  documentVersion?: number | null
+  notarized?: boolean
   /** Counts for the third-party items — never the people behind them. */
   progress?: { done: number; required: number | null } | null
   /** The trainer's own last decision on this item. */
@@ -249,7 +253,18 @@ function ReviewRow({
             {item.blocking && (
               <span className="text-[10px] uppercase tracking-wide text-brass">required</span>
             )}
+            {item.notarized && (
+              <span className="rounded bg-brass/15 px-1.5 py-0.5 text-[10px] font-medium text-brass-bright">notarized</span>
+            )}
+            {item.documentVersion && item.documentVersion > 1 && (
+              <span className="text-[10px] text-text-low">v{item.documentVersion}</span>
+            )}
           </div>
+          {item.acceptance && (
+            <p className="mt-1 text-xs text-text-low">
+              <span className="font-medium text-text-mid">Accept when:</span> {item.acceptance}
+            </p>
+          )}
           {item.documentName && (
             <button
               type="button"

@@ -71,8 +71,13 @@ export default async function InstructorCaseDetail({
         status: r.status,
         blocking: r.blocking,
         scope: r.scope,
+        // "What makes it acceptable" — the registry description, same source the
+        // admin document review uses. Firewall-safe: `full`-scope items only.
+        acceptance: r.description,
         documentId: doc?.documentId ?? null,
         documentName: doc?.fileName ?? doc?.type ?? null,
+        documentVersion: doc?.version ?? null,
+        notarized: doc?.notarized ?? false,
         progress: p ? { done: p.doneCount, required: p.requiredCount } : null,
         lastReview: last ? { decision: last.decision, note: last.note, at: last.createdAt } : null,
       }

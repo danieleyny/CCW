@@ -16,7 +16,7 @@ import { RecordLicenseControl } from "@/components/admin/record-license-control"
 import { DisclosureReview, type DisclosureRow } from "@/components/admin/disclosure-review"
 import { CaseNotes, type NoteRow } from "@/components/admin/case-notes"
 import { CaseTasks, type CaseTaskRow, type StaffOption } from "@/components/admin/case-tasks"
-import { AssignControl } from "@/components/admin/assign-control"
+import { AssignControl, AssignTrainerControl } from "@/components/admin/assign-control"
 import { QaGateCard } from "@/components/admin/qa-gate-card"
 import { IntakeReview, type IntakeData } from "@/components/admin/intake-review"
 import { MarkMessagesRead } from "@/components/admin/mark-read"
@@ -108,7 +108,7 @@ export default async function CaseFilePage({
     supabase.from("reference_requests").select("reference_id, status, sent_at, opened_at, answered_at, notarized_at, revoked_at, expires_at").eq("case_id", id),
     supabase.from("cohabitants").select("*").eq("case_id", id),
     supabase.from("training_sessions").select("*, instructors(name)").eq("case_id", id),
-    supabase.from("engagements").select("id, status, scope_full_assist, created_at, instructors(name, email)").eq("case_id", id),
+    supabase.from("engagements").select("id, status, scope_full_assist, created_at, instructor_id, instructors(name, email)").eq("case_id", id),
     supabase.from("bookings").select("id, type, status, starts_at, ends_at, instructors(name)").eq("case_id", id).order("starts_at"),
     supabase.from("case_offers").select("id, status, created_at").eq("case_id", id),
     supabase.from("payments").select("*").eq("case_id", id).order("created_at"),
@@ -309,6 +309,7 @@ export default async function CaseFilePage({
   const activeEngagementId = activeEngagement?.id ?? null
   const activeInstructorName =
     (activeEngagement?.instructors as unknown as { name: string } | null)?.name ?? null
+  const activeInstructorId = activeEngagement?.instructor_id ?? null
   const verifiedInstructors = (verifiedInstructorsRes.data ?? []).map((i) => ({
     id: i.id,
     name: i.name,
@@ -379,9 +380,11 @@ export default async function CaseFilePage({
                 {client.email ?? "no email"} · {client.phone ?? "no phone"} · {client.borough ?? "—"} ·{" "}
                 <span className="capitalize">{client.track.replace(/_/g, " ")}</span>
               </div>
-              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Assigned</span>
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span>Consultant</span>
                 <AssignControl caseId={id} clientId={client.id} current={client.assigned_staff} staff={staff} />
+                <span>· Trainer</span>
+                <AssignTrainerControl caseId={id} current={activeInstructorId} instructors={verifiedInstructors} />
                 <span>· Opened {formatDate(kase.opened_at)}{kase.nypd_app_ref && ` · NYPD ${kase.nypd_app_ref}`}</span>
               </div>
             </div>
