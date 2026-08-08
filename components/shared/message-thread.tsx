@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useTransition } from "react"
+import { useState, useRef, useTransition, useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,6 +26,7 @@ export function MessageThread({
   send,
   placeholder = "Write a message…",
   templates,
+  markRead,
 }: {
   caseId: string
   messages: MessageRow[]
@@ -33,10 +34,20 @@ export function MessageThread({
   placeholder?: string
   /** V3-P2.5 — canned starters inserted for editing, never auto-sent. */
   templates?: { label: string; body: string }[]
+  /** Fired once on mount — marks the other party's messages read so the
+   *  "unopened for an hour" nudge doesn't fire once you've seen the thread. */
+  markRead?: () => Promise<void>
 }) {
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLTextAreaElement>(null)
   const [value, setValue] = useState("")
+  const marked = useRef(false)
+
+  useEffect(() => {
+    if (marked.current || !markRead) return
+    marked.current = true
+    markRead().catch(() => {})
+  }, [markRead])
 
   function submit() {
     const body = value.trim()

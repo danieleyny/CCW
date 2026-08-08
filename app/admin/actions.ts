@@ -856,7 +856,10 @@ export async function requestBetterNarrative(formData: FormData): Promise<{ ok?:
   return { ok: true }
 }
 
-/** V3-P2.5 — opening a case file marks the client's messages read (inbox unread state). */
+/** V3-P2.5 — opening a case file marks the client's messages read (inbox unread state).
+ *  Scoped to the staff↔client lane (engagement_id IS NULL): staff opening a case
+ *  must NOT mark the applicant↔instructor lane read, or it would suppress the
+ *  "unopened for an hour" nudge for messages the actual recipient never saw. */
 export async function markCaseMessagesRead(caseId: string) {
   const { userId } = await requireStaff()
   const supabase = await createClient()
@@ -864,6 +867,7 @@ export async function markCaseMessagesRead(caseId: string) {
     .from("messages")
     .update({ read: true })
     .eq("case_id", caseId)
+    .is("engagement_id", null)
     .eq("read", false)
     .neq("sender_id", userId)
   revalidatePath("/admin/inbox")

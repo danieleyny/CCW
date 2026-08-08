@@ -317,3 +317,29 @@ export async function sendEngagementMessage(engagementId: string, body: string) 
   revalidatePath("/portal/marketplace")
   revalidatePath(`/instructor/cases/${eng.case_id}`)
 }
+
+/**
+ * Mark the OTHER party's messages in this engagement's applicant↔instructor
+ * lane as read — called when a party opens the thread (both the applicant
+ * marketplace and the instructor case view). Powers the "unopened for an hour
+ * → email" nudge: a read message never nudges.
+ */
+export async function markEngagementMessagesRead(engagementId: string) {
+  const { userId } = await requireRole(["client", "instructor"])
+  if (!engagementId) return
+  const supabase = await createClient()
+  // RLS confirms the caller may see this engagement (both parties can).
+  const { data: eng } = await supabase.from("engagements").select("id").eq("id", engagementId).maybeSingle()
+  if (!eng) return
+  // Service role to flip `read` across the lane (instructors have no messages
+  // UPDATE grant); scoped to THIS engagement's non-staff lane and to messages
+  // the caller did NOT send.
+  const admin = createAdminClient()
+  await admin
+    .from("messages")
+    .update({ read: true })
+    .eq("engagement_id", engagementId)
+    .eq("staff_only", false)
+    .eq("read", false)
+    .neq("sender_id", userId)
+}

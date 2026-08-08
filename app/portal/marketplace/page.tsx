@@ -12,7 +12,7 @@ import { ChooseButton } from "@/components/portal/choose-instructor"
 import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { cancelOffer } from "./actions"
-import { sendEngagementMessage } from "@/app/portal/actions"
+import { sendEngagementMessage, markEngagementMessagesRead } from "@/app/portal/actions"
 
 export const metadata = { title: "Find an instructor" }
 
@@ -262,6 +262,7 @@ export default async function MarketplacePage() {
                       caseId={e.id}
                       messages={msgByEng.get(e.id) ?? []}
                       send={sendEngagementMessage}
+                      markRead={markEngagementMessagesRead.bind(null, e.id)}
                       placeholder={`Message ${inst?.name ?? "your instructor"}…`}
                     />
                   </div>

@@ -18,7 +18,7 @@ import { StaffInstructorThread } from "@/components/admin/training-controls"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { confirmBooking, completeBooking, cancelBooking, sendStaffMessage } from "../actions"
-import { sendEngagementMessage } from "@/app/portal/actions"
+import { sendEngagementMessage, markEngagementMessagesRead } from "@/app/portal/actions"
 import { TRAINER_MESSAGE_TEMPLATES } from "@/config/message-templates"
 
 export const metadata = { title: "Applicant" }
@@ -239,6 +239,7 @@ export default async function InstructorCaseDetail({
             caseId={kase.engagementId}
             messages={chat}
             send={sendEngagementMessage}
+            markRead={markEngagementMessagesRead.bind(null, kase.engagementId)}
             placeholder="Message your applicant…"
             templates={TRAINER_MESSAGE_TEMPLATES}
           />

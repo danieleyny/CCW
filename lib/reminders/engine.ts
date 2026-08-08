@@ -100,6 +100,39 @@ async function caseContacts(admin: DB, caseIds: string[]): Promise<Map<string, C
 
 const DAY = 86400000
 
+export interface MsgNudge {
+  engagementId: string
+  messageId: string
+  /** Who to nudge — the party that did NOT send the message. */
+  recipient: "client" | "instructor"
+}
+
+/**
+ * From unread applicant↔instructor messages (passed OLDEST-FIRST) pick the
+ * oldest unread message per (engagement, recipient direction) — one nudge per
+ * unread run per direction. `roleOf` resolves a message's SENDER to a role;
+ * the recipient is the other party. Pure + exported so the direction/dedup
+ * logic is unit-tested without a database.
+ */
+export function pickUnansweredNudges(
+  unreadOldestFirst: { id: string; engagement_id: string | null; sender_id: string | null }[],
+  roleOf: (engagementId: string, senderId: string | null) => "client" | "instructor" | null
+): MsgNudge[] {
+  const out: MsgNudge[] = []
+  const seen = new Set<string>()
+  for (const m of unreadOldestFirst) {
+    if (!m.engagement_id) continue
+    const senderRole = roleOf(m.engagement_id, m.sender_id)
+    if (!senderRole) continue
+    const recipient = senderRole === "client" ? "instructor" : "client"
+    const key = `${m.engagement_id}:${recipient}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ engagementId: m.engagement_id, messageId: m.id, recipient })
+  }
+  return out
+}
+
 /** Run every rule once. Returns the notifications that actually fired this run. */
 export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fired[]> {
   const fired: Fired[] = []
@@ -595,6 +628,83 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       body: "A local applicant near you requested help. Review it in your feed.",
       link: "/instructor/feed",
     }))
+  }
+
+  // ── Rule: an applicant↔instructor message sat unread for an hour ──────────
+  // A message is "unopened" until the recipient views the thread (mark-read on
+  // mount), so read=false + age≥1h means it's been sitting. One nudge per unread
+  // run per direction (windowKey = the oldest unread message for that recipient);
+  // once they catch up, a NEW message starts a fresh run. Both directions.
+  const anHourAgo = new Date(now.getTime() - 3600_000).toISOString()
+  const { data: unreadMsgs } = await admin
+    .from("messages")
+    .select("id, engagement_id, case_id, sender_id, created_at")
+    .eq("staff_only", false)
+    .not("engagement_id", "is", null)
+    .eq("read", false)
+    .lte("created_at", anHourAgo)
+    .order("created_at", { ascending: true })
+  if (unreadMsgs && unreadMsgs.length) {
+    const msgEngIds = [...new Set(unreadMsgs.map((m) => m.engagement_id).filter((x): x is string => !!x))]
+    const { data: msgEngs } = await admin
+      .from("engagements")
+      .select("id, case_id, instructor_id")
+      .in("id", msgEngIds)
+    const msgEngById = new Map((msgEngs ?? []).map((e) => [e.id, e]))
+    const msgClientContacts = await caseContacts(admin, (msgEngs ?? []).map((e) => e.case_id))
+    const msgInstrIds = [...new Set((msgEngs ?? []).map((e) => e.instructor_id))]
+    const { data: msgInstrs } = msgInstrIds.length
+      ? await admin.from("instructors").select("id, profile_id, email, name").in("id", msgInstrIds)
+      : { data: [] as { id: string; profile_id: string | null; email: string | null; name: string }[] }
+    const msgInstrById = new Map((msgInstrs ?? []).map((i) => [i.id, i]))
+
+    // Resolve a message's SENDER to a role, for the pure direction/dedup picker.
+    const roleOf = (engId: string, senderId: string | null): "client" | "instructor" | null => {
+      const eng = msgEngById.get(engId)
+      if (!eng) return null
+      const client = msgClientContacts.get(eng.case_id)
+      const instr = msgInstrById.get(eng.instructor_id)
+      if (senderId && client?.profileId && senderId === client.profileId) return "client"
+      if (senderId && instr?.profile_id && senderId === instr.profile_id) return "instructor"
+      return null
+    }
+
+    for (const n of pickUnansweredNudges(unreadMsgs, roleOf)) {
+      const eng = msgEngById.get(n.engagementId)
+      if (!eng) continue
+      const client = msgClientContacts.get(eng.case_id)
+      const instr = msgInstrById.get(eng.instructor_id)
+      if (!client || !instr) continue
+      if (n.recipient === "client") {
+        push(await fireOnce(admin, {
+          ruleKey: "message_unanswered",
+          target: client.profileId ?? client.email ?? client.clientId,
+          windowKey: n.messageId,
+          caseId: eng.case_id,
+          recipient: client.profileId,
+          email: client.email,
+          kind: "info",
+          title: "Your instructor sent you a message",
+          body: `${instr.name} messaged you about an hour ago and hasn't heard back. Open the conversation to reply.`,
+          link: "/portal/marketplace",
+          cta: { label: "Reply to your instructor", url: `${siteBase()}/portal/marketplace` },
+        }))
+      } else {
+        push(await fireOnce(admin, {
+          ruleKey: "message_unanswered",
+          target: instr.profile_id ?? instr.email ?? instr.id,
+          windowKey: n.messageId,
+          caseId: eng.case_id,
+          recipient: instr.profile_id,
+          email: instr.email,
+          kind: "info",
+          title: "Your applicant sent you a message",
+          body: `${client.name} messaged you about an hour ago and hasn't heard back. Open the conversation to reply.`,
+          link: "/instructor/cases",
+          cta: { label: "Reply to your applicant", url: `${siteBase()}/instructor/cases` },
+        }))
+      }
+    }
   }
 
   // ── V5b-A Rule: Law Watch — a registry rule change is a dated data edit, so a
