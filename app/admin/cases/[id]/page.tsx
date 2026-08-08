@@ -99,7 +99,7 @@ export default async function CaseFilePage({
   ] = await Promise.all([
     supabase
       .from("case_requirements")
-      .select("id, req_code, status, notes, document_id, requirements!inner(title, authority, severity, blocking)")
+      .select("id, req_code, status, notes, document_id, requirements!inner(title, description, authority, severity, blocking)")
       .eq("case_id", id)
       .order("req_code"),
     supabase.from("disclosures").select("*").eq("case_id", id).order("type"),
@@ -160,6 +160,25 @@ export default async function CaseFilePage({
     supabase.from("instructors").select("id, name, verified").order("verified", { ascending: false }).order("name"),
   ])
 
+  // Map every upload to the requirement it answers, so the reviewer sees WHAT a
+  // file is meant to satisfy — not just "ID.jpg". The registry (requirements) is
+  // the single source of the label + acceptance line; nothing is duplicated here.
+  type ReqInfo = { reqCode: string; title: string; acceptance: string | null; blocking: boolean; severity: string; status: string }
+  const reqByCode = new Map<string, ReqInfo>()
+  const reqCodeByDocId = new Map<string, string>() // the doc bound as a requirement's satisfying evidence
+  const docIdToReqCodes = new Map<string, string[]>() // one upload can satisfy several requirements
+  for (const r of reqsRes.data ?? []) {
+    const req = r.requirements as unknown as { title: string; description: string | null; blocking: boolean; severity: string }
+    reqByCode.set(r.req_code, {
+      reqCode: r.req_code, title: req.title, acceptance: req.description,
+      blocking: req.blocking, severity: req.severity, status: r.status,
+    })
+    if (r.document_id) {
+      reqCodeByDocId.set(r.document_id, r.req_code)
+      docIdToReqCodes.set(r.document_id, [...(docIdToReqCodes.get(r.document_id) ?? []), r.req_code])
+    }
+  }
+
   // Signed URLs for uploaded documents.
   const docs: DocRow[] = await Promise.all(
     (docsRes.data ?? []).map(async (d) => {
@@ -168,10 +187,23 @@ export default async function CaseFilePage({
         const { data } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 300)
         signedUrl = data?.signedUrl ?? null
       }
+      // req_code is the per-upload binding (what the uploader was answering);
+      // fall back to the satisfying-doc binding for legacy rows with no req_code.
+      const reqCode = (d.req_code && reqByCode.has(d.req_code)) ? d.req_code : (reqCodeByDocId.get(d.id) ?? null)
+      const req = reqCode ? reqByCode.get(reqCode) ?? null : null
+      // If this exact upload also satisfies other requirements, name them so the
+      // reviewer isn't fooled into thinking it's a separate document each time.
+      const alsoTitles = (docIdToReqCodes.get(d.id) ?? [])
+        .filter((c) => c !== reqCode)
+        .map((c) => reqByCode.get(c)?.title)
+        .filter((t): t is string => Boolean(t))
       return {
         id: d.id, type: d.type, status: d.status, notarized: d.notarized,
         version: d.version, review_notes: d.review_notes, file_name: d.file_name, signedUrl,
-        generated: d.generated, signed_at: d.signed_at,
+        generated: d.generated, signed_at: d.signed_at, created_at: d.created_at,
+        reqCode, reqTitle: req?.title ?? null, acceptance: req?.acceptance ?? null,
+        reqBlocking: req?.blocking ?? false, reqStatus: req?.status ?? null,
+        sameFileAs: alsoTitles,
       }
     })
   )
