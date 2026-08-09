@@ -2,8 +2,10 @@
 
 import { revalidatePath, revalidateTag } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
+import { backfillMatchesForInstructor } from "@/lib/marketplace/offers"
 import { CACHE_TAGS } from "@/lib/public-data"
 
 const NYC_BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"]
@@ -21,6 +23,19 @@ export async function setInstructorVerified(formData: FormData) {
     .update({ verified, verified_at: verified ? new Date().toISOString() : null })
     .eq("id", id)
   if (error) throw error
+
+  // Approval is a persistent-scan trigger: the moment we verify a trainer, match
+  // them to every OPEN request already waiting in their area (and fire auto-offer
+  // if they enabled it), instead of leaving it until they happen to open their
+  // feed. No-op if they aren't yet profile-complete/live-eligible. Service role:
+  // system-generated match rows, exactly as the marketplace flow intends.
+  if (verified) {
+    try {
+      await backfillMatchesForInstructor(createAdminClient(), id)
+    } catch (e) {
+      console.error("backfill matches on verify failed", e)
+    }
+  }
 
   await logActivity({
     action: verified ? "instructor.verified" : "instructor.unverified",
