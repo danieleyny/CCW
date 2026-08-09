@@ -206,7 +206,7 @@ export async function backfillMatchesForInstructor(
 ): Promise<number> {
   const { data: instr } = await admin
     .from("instructors")
-    .select("id, verified, lat, lng, jurisdictions")
+    .select("id, verified, lat, lng, jurisdictions, service_radius_mi")
     .eq("id", instructorId)
     .maybeSingle()
   if (!instr || !instr.verified) return 0
@@ -228,12 +228,11 @@ export async function backfillMatchesForInstructor(
     if (o.expires_at && new Date(o.expires_at).getTime() <= now) return false
     // Offer has no precise geo (client hasn't set a borough) → jurisdiction-wide.
     if (o.lat == null || o.lng == null) return true
-    // Both located → within the offer's requested radius.
+    // Both located → match if within EITHER party's radius: the applicant's
+    // requested radius OR the instructor's own "how far I'll travel" radius.
     if (instr.lat == null || instr.lng == null) return false
-    return (
-      milesBetween({ lat: instr.lat, lng: instr.lng }, { lat: o.lat, lng: o.lng }) <=
-      (o.radius_mi ?? 25)
-    )
+    const reach = Math.max(o.radius_mi ?? 25, instr.service_radius_mi ?? 25)
+    return milesBetween({ lat: instr.lat, lng: instr.lng }, { lat: o.lat, lng: o.lng }) <= reach
   })
   if (qualifying.length === 0) return 0
 

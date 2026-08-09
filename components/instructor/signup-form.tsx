@@ -37,7 +37,7 @@ export function InstructorSignupForm() {
           <Input id="dcjsId" name="dcjsId" placeholder="DAI-…" className="mt-auto" />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="borough" className="text-xs">Service-area center</Label>
+          <Label htmlFor="borough" className="text-xs">Service-area center (borough)</Label>
           <select
             id="borough"
             name="borough"
@@ -50,10 +50,18 @@ export function InstructorSignupForm() {
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
+          <Label htmlFor="zip" className="text-xs">ZIP code (precise center — recommended)</Label>
+          <Input id="zip" name="zip" inputMode="numeric" maxLength={5} placeholder="e.g. 11215" className="mt-auto" />
+        </div>
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="radiusMi" className="text-xs">Service radius (miles)</Label>
           <Input id="radiusMi" name="radiusMi" type="number" min={1} max={100} defaultValue={25} className="mt-auto" />
         </div>
       </div>
+      <p className="text-xs text-text-low">
+        We match you with applicants within your <b>service radius</b>, measured from your ZIP code
+        (or the center of the borough if you skip the ZIP). Your ZIP is only used to compute distance.
+      </p>
       <div className="space-y-1.5">
         <Label htmlFor="bio" className="text-xs">Short bio (optional — applicants read this)</Label>
         <textarea

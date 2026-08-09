@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
-import { geocodeNyc, BOROUGHS } from "@/lib/geo/nyc"
+import { geocodeNyc, boroughFromLatLng, BOROUGHS } from "@/lib/geo/nyc"
 import {
   findVirtualCourseClaim,
   findBannedClaim,
@@ -27,6 +27,8 @@ const registerSchema = z.object({
   bio: z.string().max(1000).optional().or(z.literal("")),
   dcjsId: z.string().optional().or(z.literal("")),
   borough: boroughEnum,
+  // Optional ZIP for a precise radius origin; borough is the coarse fallback.
+  zip: z.string().max(10).optional().or(z.literal("")),
   radiusMi: z.coerce.number().int().min(1).max(100).default(25),
   price18hCents: z.coerce.number().int().min(0).optional(),
 })
@@ -45,6 +47,7 @@ export async function registerInstructor(
     bio: formData.get("bio") ?? "",
     dcjsId: formData.get("dcjsId") ?? "",
     borough: formData.get("borough"),
+    zip: formData.get("zip") ?? "",
     radiusMi: formData.get("radiusMi") ?? 25,
     price18hCents: formData.get("price18hDollars")
       ? Math.round(Number(formData.get("price18hDollars")) * 100)
@@ -76,7 +79,8 @@ export async function registerInstructor(
     return { error: "Could not finish creating your instructor account." }
   }
 
-  const geo = geocodeNyc({ borough: input.borough })
+  // ZIP wins (finer origin); borough is the coarse fallback if no/unknown ZIP.
+  const geo = geocodeNyc({ zip: input.zip || undefined, borough: input.borough })
   const { error: insErr } = await admin.from("instructors").insert({
     profile_id: created.user.id,
     name: input.name,
@@ -113,6 +117,7 @@ const profileSchema = z.object({
   phone: z.string().max(30).optional().or(z.literal("")),
   dcjsId: z.string().optional().or(z.literal("")),
   borough: boroughEnum,
+  zip: z.string().max(10).optional().or(z.literal("")),
   radiusMi: z.coerce.number().int().min(1).max(100),
   price18hDollars: z.coerce.number().min(0).optional(),
 
@@ -191,6 +196,7 @@ export async function updateInstructorProfile(
     phone: get("phone"),
     dcjsId: get("dcjsId"),
     borough: formData.get("borough"),
+    zip: formData.get("zip") ?? "",
     radiusMi: formData.get("radiusMi"),
     price18hDollars: formData.get("price18hDollars") || undefined,
     websiteUrl: get("websiteUrl"),
@@ -250,8 +256,17 @@ export async function updateInstructorProfile(
   const id = await myInstructorId()
   if (!id) return { error: "Instructor profile not found" }
 
-  const geo = geocodeNyc({ borough: input.borough })
   const supabase = await createClient()
+  // ZIP wins for a precise radius origin. Without a ZIP, keep the point already on
+  // file when the borough is unchanged — so editing an unrelated profile field
+  // doesn't quietly snap a ZIP-precise center back to the borough centroid.
+  let geo = geocodeNyc({ zip: input.zip || undefined, borough: input.borough })
+  if (!input.zip) {
+    const { data: cur } = await supabase.from("instructors").select("lat, lng").eq("id", id).maybeSingle()
+    if (cur?.lat != null && cur?.lng != null && boroughFromLatLng(cur.lat, cur.lng) === input.borough) {
+      geo = { lat: cur.lat, lng: cur.lng }
+    }
+  }
   const { error } = await supabase
     .from("instructors")
     .update({

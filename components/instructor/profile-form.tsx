@@ -130,8 +130,13 @@ export function InstructorProfileForm({
           </select>
         </div>
         <div className="space-y-1.5">
+          <Label htmlFor="zip" className="text-xs">ZIP code (refine your center)</Label>
+          <Input id="zip" name="zip" inputMode="numeric" maxLength={5} placeholder="enter a ZIP to update" />
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="radiusMi" className="text-xs">Service radius (miles)</Label>
           <Input id="radiusMi" name="radiusMi" type="number" min={1} max={100} defaultValue={initial.radiusMi} />
+          <p className="text-[11px] text-text-low">We match you with applicants within this many miles of your ZIP (or borough).</p>
         </div>
         <div id="field-price" className="space-y-1.5 scroll-mt-24">
           <Label htmlFor="price18hDollars" className="text-xs">18-hr course price (USD)</Label>
