@@ -81,6 +81,20 @@ export async function captureLead(
     .limit(1)
     .maybeSingle()
 
+  // Someone who ALREADY HAS AN ACCOUNT (a claimed client) submitting this public
+  // form must NOT spawn a duplicate client + lead case — that's how an applicant
+  // ends up with two cases, and a trainer/consultant can get assigned to the empty
+  // one by mistake. Attach the inquiry to their existing case, and never overwrite
+  // a real account's record from an unauthenticated form.
+  const { data: claimed } = await admin
+    .from("clients")
+    .select("id")
+    .ilike("email", v.email)
+    .not("profile_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   const clientFields = {
     full_name: v.name,
     email: v.email,
@@ -93,7 +107,10 @@ export async function captureLead(
   }
 
   let client: { id: string }
-  if (existing?.id) {
+  if (claimed?.id) {
+    // Existing account — attach the inquiry to it, never update it from here.
+    client = claimed
+  } else if (existing?.id) {
     const { data, error } = await admin.from("clients").update(clientFields).eq("id", existing.id).select("id").single()
     if (error || !data) return { error: error?.message ?? "Could not save your details" }
     client = data
@@ -103,16 +120,22 @@ export async function captureLead(
     client = data
   }
 
-  // Reuse the lead's existing case if it already has one.
+  // Reuse the client's existing case (oldest, the real one). A claimed account
+  // always has one, so no new case is ever created for them; only a brand-new
+  // unclaimed lead gets a fresh lead case.
   const { data: existingCase } = await admin
     .from("cases")
     .select("id")
     .eq("client_id", client.id)
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle()
   const kase =
     existingCase ??
-    (await admin.from("cases").insert({ client_id: client.id, stage: "lead", status: "active" }).select("id").single()).data
+    (claimed
+      ? null
+      : (await admin.from("cases").insert({ client_id: client.id, stage: "lead", status: "active" }).select("id").single())
+          .data)
 
   // V3-P2.1 — baseline checklist from the versioned registry, day one.
   if (!existingCase && kase) {
