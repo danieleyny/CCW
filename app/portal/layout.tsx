@@ -1,5 +1,9 @@
 import Link from "next/link"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 import { requireRole } from "@/lib/auth"
+import { getMyCase } from "@/lib/portal"
+import { shouldForceIntake } from "@/lib/portal/intake-gate"
 import { brand } from "@/config/brand"
 import { LogoMark } from "@/components/brand/logo"
 import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
@@ -15,6 +19,16 @@ export default async function PortalLayout({
   children: React.ReactNode
 }) {
   const { profile } = await requireRole(["client"])
+
+  // Soft intake gate — carry a brand-new applicant into intake before they can
+  // wander a half-empty portal. Gentle: only early-stage + intake-incomplete
+  // cases, and intake/profile/privacy + attorney-review cases are exempt.
+  const pathname = (await headers()).get("x-pathname") ?? ""
+  const myCase = await getMyCase()
+  if (myCase && (await shouldForceIntake(pathname, myCase))) {
+    redirect("/portal/intake")
+  }
+
   const [locale, t] = await Promise.all([getLocale(), getMessages()])
 
   return (

@@ -16,7 +16,11 @@ import { NextResponse, type NextRequest } from "next/server"
  * from the public feed at /api/public/pricing, which is the only coupling left.
  */
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request })
+  // Forward the pathname to server components (layouts can't read it otherwise).
+  // The portal intake soft-gate reads this to exempt /portal/intake itself.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-pathname", request.nextUrl.pathname)
+  let response = NextResponse.next({ request: { headers: requestHeaders } })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +34,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          response = NextResponse.next({ request })
+          response = NextResponse.next({ request: { headers: requestHeaders } })
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           )

@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil } from "lucide-react"
+import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil, Users, ClipboardList } from "lucide-react"
 import {
   INTAKE_STEPS,
   QUESTIONNAIRE,
@@ -19,6 +19,8 @@ import {
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
 import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
+import { HeightField } from "@/components/portal/intake/height-field"
+import { DateOfBirthField } from "@/components/portal/intake/dob-field"
 import {
   eligibilityStepIssues,
   disclosureStepIssues,
@@ -188,13 +190,16 @@ export function IntakeWizard({
             <h2 className="text-lg font-semibold">Requirements generated</h2>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your personalized checklist is ready under{" "}
-            <Link href="/portal/checklist" className="text-signal underline">
-              Your checklist
-            </Link>
-            . Before we can assemble and file, finish the items below.
+            Your personalized checklist is ready. Before we can assemble and file,
+            finish the items below.
           </p>
         </div>
+
+        {/* ONE obvious next move, branched on what they just told us about
+            training. Training is the long pole, so an applicant who hasn't done
+            it is pointed at an instructor first; a trained applicant goes
+            straight to the document checklist. */}
+        <NextStepHandoff trainingCompleted={a.trainingStatus === "completed"} />
 
         {effGuard && (
           <div
@@ -263,11 +268,6 @@ export function IntakeWizard({
         )}
 
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link href="/portal/checklist">
-              View my checklist <ArrowRight className="size-4" />
-            </Link>
-          </Button>
           <Button
             variant="outline"
             onClick={() => {
@@ -364,6 +364,61 @@ export function IntakeWizard({
             {generating ? "Generating…" : "Generate my requirements"}
           </Button>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── Post-intake hand-off ───────────────────────────────────────────────────
+/**
+ * The ONE thing to do next, right after generation. Training is the long pole
+ * on a carry application, so someone who hasn't trained is steered to an
+ * instructor first (documents proceed in parallel); a trained applicant goes
+ * straight to the document checklist. Full-width and unmissable — never a row of
+ * equal ghost links.
+ */
+function NextStepHandoff({ trainingCompleted }: { trainingCompleted: boolean }) {
+  const primary = trainingCompleted
+    ? {
+        href: "/portal/checklist",
+        label: "Start your checklist",
+        Icon: ClipboardList,
+        title: "Work your checklist",
+        detail:
+          "Your training's done. Everything left — documents, references, forms — is in one place, worst-first.",
+      }
+    : {
+        href: "/portal/marketplace",
+        label: "Get matched with an instructor",
+        Icon: Users,
+        title: "Get your training booked",
+        detail:
+          "The 16+2-hour course is the long pole. Get matched with a verified local instructor now — your documents move in parallel.",
+      }
+  const secondary = trainingCompleted
+    ? { href: "/portal/marketplace", label: "Find an instructor" }
+    : { href: "/portal/checklist", label: "Or start your checklist" }
+
+  return (
+    <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-5">
+      <div className="engraved text-brass">Your next step</div>
+      <div className="mt-2 flex items-start gap-3">
+        <primary.Icon className="mt-0.5 size-5 shrink-0 text-brass" />
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">{primary.title}</h2>
+          <p className="mt-1 text-sm text-text-mid">{primary.detail}</p>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Link
+          href={primary.href}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
+        >
+          {primary.label} <ArrowRight className="size-4" />
+        </Link>
+        <Link href={secondary.href} className="text-sm text-signal underline">
+          {secondary.label}
+        </Link>
       </div>
     </div>
   )
@@ -504,13 +559,8 @@ function StepEligibility({
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Date of birth" required>
-          <Input
-            type="date"
-            value={a.dob ?? ""}
-            onChange={(e) => patch({ dob: e.target.value })}
-            {...invalidAttrs(dobBad)}
-          />
+        <Field label="Date of birth" required hint="Type your birth year — no scrolling back through decades.">
+          <DateOfBirthField value={a.dob ?? ""} onChange={(dob) => patch({ dob })} invalid={dobBad} />
         </Field>
         <Field label="Residence" required>
           <select
@@ -640,10 +690,10 @@ function StepIdentity({ a, patch }: StepProps) {
       <Field label="Place of birth" hint="City, State, Country (form field 4).">
         <Input value={a.placeOfBirth ?? ""} placeholder="Brooklyn, NY, USA" onChange={(e) => patch({ placeOfBirth: e.target.value })} />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-5">
-        <Field label="Height (in)">
-          <Input type="number" inputMode="numeric" value={a.heightInches ?? ""} onChange={(e) => numPatch("heightInches")(e.target.value)} />
-        </Field>
+      <Field label="Height">
+        <HeightField value={a.heightInches} onChange={(inches) => patch({ heightInches: inches })} />
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-4">
         <Field label="Weight (lb)">
           <Input type="number" inputMode="numeric" value={a.weightLbs ?? ""} onChange={(e) => numPatch("weightLbs")(e.target.value)} />
         </Field>

@@ -128,10 +128,13 @@ export async function signUp(
     }
   }
 
-  // Confirm-email OFF → signUp returns a live session; go straight into the app.
-  // If confirmation is ever turned back on, there's no session yet, so send them
-  // to sign in (they'll confirm via the email link first).
-  if (data.session) redirect("/dashboard")
+  // Confirm-email OFF → signUp returns a live session; drop them straight into
+  // intake (not the generic dashboard). Intake is what personalizes the whole
+  // checklist, so the fastest first hour starts there — and the portal soft-gate
+  // keeps a brand-new applicant from wandering a half-empty portal before it's
+  // done. If confirmation is ever turned back on, there's no session yet, so
+  // send them to sign in (they'll confirm via the email link first).
+  if (data.session) redirect("/portal/intake")
   redirect("/auth/login")
 }
 
