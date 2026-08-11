@@ -13,6 +13,7 @@ import { DocumentExample } from "@/components/portal/document-example"
 import { DmvFallback } from "@/components/portal/dmv-fallback"
 import type { DmvApplicant } from "@/lib/portal/requirement-view"
 import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
+import { smartDocumentsForRequirement } from "@/lib/requirements/smart-documents"
 import { FeePanel, type FeeReceipts } from "@/components/portal/fee-panel"
 import type { FeeSummary } from "@/lib/fees"
 import { Button } from "@/components/ui/button"
@@ -243,6 +244,7 @@ export function RequirementAction({
             label={action.actionLabel}
             current={current ?? null}
             photoSpec={reqCode === "IDN-04"}
+            smartKinds={smartDocumentsForRequirement(reqCode)}
           />
         )}
       </div>

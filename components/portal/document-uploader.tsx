@@ -12,12 +12,20 @@ import { normalizeApplicantPhoto } from "@/lib/files/photo-spec"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import type { DocumentType } from "@/lib/doc-types"
+import type { SmartDocument } from "@/lib/requirements/smart-documents"
 
 export interface CurrentDoc {
   status: string
   review_notes: string | null
   version: number
   signedUrl: string | null
+  /**
+   * Smart documents: set when this requirement is answered by a file the
+   * applicant uploaded for a DIFFERENT requirement (a passport uploaded for
+   * photo ID that also covers this date-of-birth item). Names that file so we
+   * show "provided from …" instead of asking for the same document again.
+   */
+  sharedFromName?: string | null
 }
 
 export function DocumentUploader({
@@ -29,6 +37,7 @@ export function DocumentUploader({
   description,
   current,
   photoSpec = false,
+  smartKinds,
 }: {
   caseId: string
   clientId: string
@@ -41,10 +50,17 @@ export function DocumentUploader({
   current: CurrentDoc | null
   /** V3-P4.2 — validate against the NYPD photo spec (square, 600–1200px). */
   photoSpec?: boolean
+  /** Smart documents: kinds this requirement can be answered by. When present,
+   *  the applicant picks what the file IS, and it's attached to every requirement
+   *  that kind covers (a passport → photo ID + DOB + citizenship, uploaded once). */
+  smartKinds?: SmartDocument[]
 }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const hasSmart = !!smartKinds && smartKinds.length > 0
+  const [kind, setKind] = useState<string>(hasSmart ? smartKinds![0].kind : "")
+  const selectedKind = hasSmart ? smartKinds!.find((k) => k.kind === kind) : undefined
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     let file = e.target.files?.[0]
@@ -87,7 +103,19 @@ export function DocumentUploader({
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: true })
       if (upErr) throw upErr
 
-      await recordDocument({ documentId, caseId, type, reqCode, path, fileName: check.sanitizedName })
+      // When a smart-document kind is chosen, the file's stored type follows the
+      // kind (so a passport tagged under a residence item can't mis-store), and
+      // documentKind drives the multi-attach on the server.
+      const uploadType = selectedKind ? selectedKind.documentType : type
+      await recordDocument({
+        documentId,
+        caseId,
+        type: uploadType,
+        reqCode,
+        documentKind: selectedKind?.kind,
+        path,
+        fileName: check.sanitizedName,
+      })
       toast.success(`Uploaded — ${label} is now pending review.`)
       router.refresh()
     } catch (err) {
@@ -99,6 +127,9 @@ export function DocumentUploader({
   }
 
   const needsFix = current?.status === "rejected"
+  // Smart documents: this requirement is already covered by a file uploaded for
+  // another requirement. Show that, with a link — not an empty "upload it again".
+  const sharedProvided = !!current?.sharedFromName && !needsFix
 
   return (
     <div className="rounded-lg border bg-card p-4">
@@ -120,6 +151,42 @@ export function DocumentUploader({
         </p>
       )}
 
+      {sharedProvided && (
+        <div className="mt-3 rounded-md border border-ok/25 bg-ok/8 p-2.5">
+          <p className="text-xs text-ok">
+            Provided from <span className="font-medium">{current!.sharedFromName}</span> — the
+            document you already uploaded also covers this. No need to send it again.
+          </p>
+        </div>
+      )}
+
+      {hasSmart && !sharedProvided && (
+        <div className="mt-3 space-y-1.5">
+          <label htmlFor={`kind-${reqCode}`} className="text-xs text-muted-foreground">
+            What is this document?
+          </label>
+          <select
+            id={`kind-${reqCode}`}
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+            disabled={busy}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40"
+          >
+            {smartKinds!.map((k) => (
+              <option key={k.kind} value={k.kind}>
+                {k.label}
+              </option>
+            ))}
+          </select>
+          {selectedKind && selectedKind.reqCodes.length > 1 && (
+            <p className="rounded-md border border-ok/25 bg-ok/8 p-2 text-[11px] text-ok">
+              One {selectedKind.label} covers your {selectedKind.covers} — upload it
+              once and we&apos;ll attach it to each of those, no need to send it again.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input
           ref={inputRef}
@@ -131,7 +198,7 @@ export function DocumentUploader({
         />
         <Button
           size="sm"
-          variant={current ? "outline" : "default"}
+          variant={sharedProvided ? "ghost" : current ? "outline" : "default"}
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
@@ -140,7 +207,7 @@ export function DocumentUploader({
           ) : (
             <Upload className="size-4" />
           )}
-          {current ? (needsFix ? "Re-upload" : "Replace") : "Upload"}
+          {sharedProvided ? "Upload a different file" : current ? (needsFix ? "Re-upload" : "Replace") : "Upload"}
         </Button>
         {current?.signedUrl && (
           <Button asChild size="sm" variant="ghost">
@@ -149,7 +216,7 @@ export function DocumentUploader({
             </a>
           </Button>
         )}
-        {current && <span className="text-xs text-muted-foreground">v{current.version}</span>}
+        {current && !sharedProvided && <span className="text-xs text-muted-foreground">v{current.version}</span>}
       </div>
     </div>
   )

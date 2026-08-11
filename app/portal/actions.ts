@@ -11,6 +11,7 @@ import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
+import { smartDocument } from "@/lib/requirements/smart-documents"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -30,6 +31,13 @@ export async function recordDocument(input: {
   type: DocumentType
   /** The requirement this upload answers, when the UI knows it. */
   reqCode?: string
+  /**
+   * Smart documents: what the applicant tagged this file as (e.g. "us_passport").
+   * When set, the SAME uploaded file binds to every outstanding requirement that
+   * kind legitimately covers — a passport answers photo ID, date of birth, and
+   * citizenship at once, so they never upload it three times.
+   */
+  documentKind?: string
   path: string
   fileName: string
 }) {
@@ -72,28 +80,50 @@ export async function recordDocument(input: {
   })
   if (error) throw error
 
-  // V3-P2.1 — bind the upload to its matching requirement(s) so the consultant
-  // sees the evidence attached. Status stays pending until staff review
-  // approves it (satisfaction is a review decision, not an upload event).
+  // Bind the upload to its matching requirement(s) so the consultant sees the
+  // evidence attached. Status stays pending until staff review approves it —
+  // satisfaction is a review decision, not an upload event. Nothing here
+  // auto-satisfies or bypasses the CP-5 QA gate; it only sets document_id.
   //
-  // Prefer the req_code the UI gave us: IDN-01/02/03 all declare document type
-  // "id", so binding by type alone attaches proof of citizenship to the photo-ID
-  // row and calls it evidence.
-  const { data: matchingReqs } = input.reqCode
-    ? await supabase
-        .from("case_requirements")
-        .select("id")
-        .eq("case_id", input.caseId)
-        .eq("req_code", input.reqCode)
-        .neq("status", "satisfied")
-    : await supabase
-        .from("case_requirements")
-        .select("id, requirements!inner(document_type)")
-        .eq("case_id", input.caseId)
-        .eq("requirements.document_type", input.type)
-        .neq("status", "satisfied")
-  for (const r of matchingReqs ?? []) {
-    await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
+  // Three ways to resolve which requirement(s) this file answers:
+  //  1. SMART DOCUMENT — the applicant tagged a kind (e.g. passport). Fan the
+  //     same file across every OUTSTANDING requirement that kind covers on this
+  //     case (a passport → IDN-01/02/03). Upload once, all attached.
+  //  2. A specific req_code from the UI — bind that single requirement.
+  //  3. Neither — fall back to matching the registry document_type. (IDN-01/02/03
+  //     all declare type "id", so this is the coarse path used only when the UI
+  //     couldn't name the requirement.)
+  const smart = input.documentKind ? smartDocument(input.documentKind) : undefined
+  const boundReqCodes: string[] = []
+  if (smart) {
+    const { data: rows } = await supabase
+      .from("case_requirements")
+      .select("id, req_code")
+      .eq("case_id", input.caseId)
+      .in("req_code", smart.reqCodes)
+      .neq("status", "satisfied")
+    for (const r of rows ?? []) {
+      await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
+      boundReqCodes.push(r.req_code)
+    }
+  } else {
+    const { data: matchingReqs } = input.reqCode
+      ? await supabase
+          .from("case_requirements")
+          .select("id, req_code")
+          .eq("case_id", input.caseId)
+          .eq("req_code", input.reqCode)
+          .neq("status", "satisfied")
+      : await supabase
+          .from("case_requirements")
+          .select("id, req_code, requirements!inner(document_type)")
+          .eq("case_id", input.caseId)
+          .eq("requirements.document_type", input.type)
+          .neq("status", "satisfied")
+    for (const r of matchingReqs ?? []) {
+      await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
+      boundReqCodes.push(r.req_code)
+    }
   }
 
   // FMT-01 is a control we run, not a box the customer ticks: the upload just
@@ -110,7 +140,14 @@ export async function recordDocument(input: {
     clientId: kase.client_id,
     entity: "document",
     entityId: input.documentId,
-    detail: { type: input.type, version },
+    // Record the multi-attach so the audit trail shows one file answered several
+    // requirements (e.g. a passport → IDN-01, IDN-02, IDN-03).
+    detail: {
+      type: input.type,
+      version,
+      ...(input.documentKind ? { documentKind: input.documentKind } : {}),
+      ...(boundReqCodes.length ? { boundReqCodes } : {}),
+    },
   })
 
   revalidatePath("/portal/documents")

@@ -141,6 +141,9 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   // of a perpetual "Not uploaded".
   const currentByReq: Record<string, CurrentDoc> = {}
   const looseFiles: LibraryFile[] = []
+  // Signed URL per document id, so the smart-document shared-binding pass below
+  // can reuse a link instead of signing the same file twice.
+  const urlByDocId = new Map<string, string | null>()
 
   for (const d of docs ?? []) {
     let url: string | null = null
@@ -151,6 +154,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       const { data } = await db.storage.from("documents").createSignedUrl(d.file_path, 300)
       url = data?.signedUrl ?? null
     }
+    urlByDocId.set(d.id, url)
     const file: LibraryFile = {
       id: d.id,
       name: d.file_name ?? d.type,
@@ -180,6 +184,28 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       }
     } else {
       looseFiles.push(file)
+    }
+  }
+
+  // Smart documents: a requirement can be answered by a file the applicant
+  // uploaded for a DIFFERENT requirement (a passport uploaded for IDN-01 that
+  // also covers IDN-02/IDN-03 via case_requirements.document_id). currentByReq is
+  // keyed on the document's OWN req_code, so those siblings have no entry and
+  // would otherwise show an empty uploader. Surface the shared file as their
+  // "current" — named — so the card says "provided from …" instead of asking
+  // again. Only for real (non-generated) uploads bound to another requirement.
+  const docById = new Map((docs ?? []).map((d) => [d.id, d]))
+  for (const row of reqRows) {
+    if (currentByReq[row.req_code]) continue
+    if (!row.document_id) continue
+    const d = docById.get(row.document_id)
+    if (!d || d.generated || d.req_code === row.req_code) continue
+    currentByReq[row.req_code] = {
+      status: d.status,
+      review_notes: d.review_notes ?? null,
+      version: d.version,
+      signedUrl: urlByDocId.get(d.id) ?? null,
+      sharedFromName: d.file_name ?? "your uploaded document",
     }
   }
 
