@@ -70,25 +70,18 @@ const nextConfig: NextConfig = {
    *    the Vercel project and no-ops until then — see DOMAIN_STRATEGY.md
    *    "Deployment". Brand aliases preserve the path; exact-match keyword domains
    *    send all their traffic to the single best-matching page.
-   * 4. SATELLITE hosts → www to apex ONLY. Their apex must NOT be redirected:
-   *    they are real, distinct sites served from this deployment via the host
-   *    rewrite in proxy.ts.
    *
-   * ⚠️ ORDERING TRAP. Next runs these `redirects()` BEFORE Proxy/Middleware. Any
-   * host listed in BRAND_ALIAS_HOSTS or KEYWORD_REDIRECTS therefore 301s away
-   * before proxy.ts ever sees it — which silently kills a satellite site the
-   * moment its domain is attached in Vercel. nycgunlaws.com was previously in
-   * BRAND_ALIAS_HOSTS for exactly this reason and has been moved to
-   * SATELLITE_HOSTS below. Keep the two lists disjoint.
+   * ⚠️ NEVER list a SATELLITE domain here. firearmlicensenyc.com and
+   * nycgunlaws.com are independent deployments with their own Vercel projects;
+   * they must not be attached to this project and must not appear in either list
+   * below. They were briefly in BRAND_ALIAS_HOSTS, which 301'd them here — an
+   * easy mistake to repeat, because Next runs redirects() before Proxy so the
+   * 301 wins silently.
    */
   async redirects() {
     const CANONICAL = "gunlicensenyc.com"
     const host = (value: string) => ({ type: "host" as const, value })
     const withWww = (hosts: string[]) => hosts.flatMap((h) => [h, `www.${h}`])
-
-    // Real satellite sites (see SATELLITE_SITES in proxy.ts). Only the www form
-    // is redirected, to its own apex — never to the canonical site.
-    const SATELLITE_HOSTS = ["nycgunlaws.com"]
 
     // Owned brand-variant domains → canonical, path-preserving. (concealedknowledge.*
     // is intentionally omitted — it's reserved to become a real content property,
@@ -120,14 +113,8 @@ const nextConfig: NextConfig = {
       { source: "/blog/nyc-ccw-requirements-2026", destination: "/requirements", permanent: true },
       { source: "/blog/how-long-does-nyc-ccw-take", destination: "/timeline", permanent: true },
       { source: "/blog/documents-you-need-for-nyc-ccw", destination: "/requirements", permanent: true },
-      // 2. www → apex (canonical site, then each satellite to ITS OWN apex)
+      // 2. www → apex
       { source: "/:path*", has: [host(`www.${CANONICAL}`)], destination: `https://${CANONICAL}/:path*`, permanent: true },
-      ...SATELLITE_HOSTS.map((h) => ({
-        source: "/:path*",
-        has: [host(`www.${h}`)],
-        destination: `https://${h}/:path*`,
-        permanent: true,
-      })),
       // 3a. brand aliases → canonical (path preserved)
       ...withWww(BRAND_ALIAS_HOSTS).map((h) => ({
         source: "/:path*",
