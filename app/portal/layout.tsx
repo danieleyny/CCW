@@ -2,6 +2,7 @@ import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { requireRole } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { shouldForceIntake } from "@/lib/portal/intake-gate"
 import { brand } from "@/config/brand"
@@ -29,13 +30,29 @@ export default async function PortalLayout({
     redirect("/portal/intake")
   }
 
+  // Unread count for the bottom-nav "More" pill (Messages lives there on mobile).
+  // RLS-scoped to this user, same source the NotificationBell reads.
+  const supabase = await createClient()
+  const { count: unread } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("read", false)
+
   const [locale, t] = await Promise.all([getLocale(), getMessages()])
 
   return (
-    <div className="dark flex min-h-svh flex-col bg-background text-foreground">
+    <div
+      className="dark flex min-h-svh flex-col bg-background text-foreground"
+      // The tab bar's height, exposed so pages with their own sticky action bar
+      // (intake) can extend their bottom padding past it.
+      style={{ "--shell-bottom": "calc(60px + env(safe-area-inset-bottom))" } as React.CSSProperties}
+    >
       <DarkBackdrop />
-      <header className="glass-bar sticky top-0 z-20 border-b border-hairline">
-        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
+      <header
+        className="glass-bar sticky top-0 z-20 border-b border-hairline"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 md:h-16">
           {/* The wordmark never wraps: at 390px the language selector squeezed
               it onto three lines, so the lockup shrinks a step instead. */}
           <Link href="/portal" className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold tracking-tight text-foreground sm:text-lg">
@@ -57,12 +74,14 @@ export default async function PortalLayout({
         <PortalTopNav />
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 pb-24 md:pb-8">
+      {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
+          room. The old layout applied pb-24 on BOTH main and footer, doubling it. */}
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 pb-[calc(var(--shell-bottom)+24px)] md:pb-8">
         {children}
       </main>
 
-      {/* Not a nav tab — this is rarely-needed but must always be findable. */}
-      <footer className="mx-auto flex w-full max-w-3xl gap-4 px-4 pb-24 text-xs text-text-low md:pb-6">
+      {/* Desktop only — on mobile these live in the More sheet (Profile & your data). */}
+      <footer className="mx-auto hidden w-full max-w-3xl gap-4 px-4 pb-6 text-xs text-text-low md:flex">
         <Link href="/portal/profile" className="underline hover:text-text-mid">
           Profile
         </Link>
@@ -71,7 +90,7 @@ export default async function PortalLayout({
         </Link>
       </footer>
 
-      <PortalBottomNav />
+      <PortalBottomNav unread={unread ?? 0} />
     </div>
   )
 }
