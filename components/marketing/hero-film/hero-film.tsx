@@ -52,6 +52,34 @@ const MARKS: { b: number | "still" | "loop"; t: number }[] = [
 // while the rail finishes, so the sentence closes on the license.
 const CAPS: Record<number, string> = { 1: "c1", 2: "c1", 3: "c2", 4: "c2", 5: "c3", 6: "c4", 7: "c5", 8: "c6" }
 
+/* ── The inline driver (Step 2). Self-contained vanilla JS rendered right after
+   the <figure> so it runs at HTML parse time — before any bundle is requested,
+   so the film starts on its own within a few hundred ms of first paint instead
+   of waiting for React to hydrate the clicked subtree. Mirrors the useEffect
+   exactly: same MARKS/CAPS, the "still" early-idle-clear snap rule, the same
+   reduced-motion hold (beat 8 / c6), 25400ms loop. Adds the visibility pauses:
+   an IntersectionObserver (0.15) + document.visibilitychange. Sets
+   data-film-driver="inline" so the effect defers. CSP allows 'unsafe-inline'
+   for script-src, so this is CSP-safe and adds no directive. */
+const FILM_DRIVER = `(function(){
+var r=document.getElementById('hero-film');
+if(!r||r.__hfDriver)return;
+r.__hfDriver=1;
+var M=[[0,0],[1,200],['still',5600],[2,5660],[3,6560],[4,9160],[5,10360],[6,12960],[7,18360],[8,21560],['loop',25400]];
+var C={1:'c1',2:'c1',3:'c2',4:'c2',5:'c3',6:'c4',7:'c5',8:'c6'};
+function caps(b){r.querySelectorAll('.capline').forEach(function(e){e.removeAttribute('data-on')});var id=C[b];if(id){var t=r.querySelector('[data-cap="'+id+'"]');if(t)t.setAttribute('data-on','true')}}
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){r.setAttribute('data-beat','8');caps(8);return}
+var T=[];function clr(){T.forEach(clearTimeout);T=[]}
+function run(){clr();r.setAttribute('data-beat','0');caps(0);r.setAttribute('data-idle','1');r.removeAttribute('data-playing');void r.offsetWidth;r.setAttribute('data-playing','true');
+M.forEach(function(m){T.push(setTimeout(function(){if(m[0]==='loop'){run();return}if(m[0]==='still'){r.removeAttribute('data-idle');return}r.setAttribute('data-beat',String(m[0]));caps(m[0])},m[1]))})}
+function stop(){clr();r.removeAttribute('data-playing')}
+var playing=false,inView=true,tabVis=!document.hidden;
+function sync(){if(inView&&tabVis){if(!playing){playing=true;run()}}else{if(playing){playing=false;stop()}}}
+sync();
+try{var io=new IntersectionObserver(function(es){inView=es[0].isIntersecting;sync()},{threshold:0.15});io.observe(r)}catch(e){}
+document.addEventListener('visibilitychange',function(){tabVis=!document.hidden;sync()});
+})();`
+
 /* one paper sheet: placement rotation on the OUTER <g>, fly-in on the inner .pg */
 function Sheet({ p, idx }: { p: SheetT; idx: number }) {
   const tone = SHEET_TONES[idx % 3]
@@ -131,6 +159,13 @@ export function HeroFilm() {
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
+    // The inline driver (rendered after the <figure>) starts the film at HTML
+    // parse time, before this bundle loads. It flags itself on a JS PROPERTY
+    // (not a DOM attribute — an attribute would trip React's hydration diff);
+    // when present, this effect defers and no-ops so the timeline is never
+    // double-driven. It stays as a fallback for the case where the inline script
+    // was blocked.
+    if ((root as unknown as { __hfDriver?: number }).__hfDriver) return
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
     const setCaps = (b: number) => {
@@ -202,7 +237,21 @@ export function HeroFilm() {
   }, [])
 
   return (
-    <figure ref={rootRef} className="filmfig" id="hero-film" data-beat="0" data-idle="1" data-playing="true" style={{ "--dur": "25.4s" } as CSSProperties}>
+    <>
+    <figure
+      ref={rootRef}
+      className="filmfig"
+      id="hero-film"
+      data-beat="0"
+      data-idle="1"
+      data-playing="true"
+      // The inline driver mutates data-beat/idle/playing on this element and
+      // data-on on the caplines below, starting BEFORE hydration. This is the
+      // sanctioned way to tell React those out-of-band mutations are intentional
+      // so it neither warns nor tears down the subtree the driver holds a ref to.
+      suppressHydrationWarning
+      style={{ "--dur": "25.4s" } as CSSProperties}
+    >
       <div className="filmstage">
       <svg
         viewBox="-60 26 700 378"
@@ -532,22 +581,22 @@ export function HeroFilm() {
 
       <figcaption className="fcap">
         <div className="fcapin">
-          <span className="capline" data-cap="c1">
+          <span suppressHydrationWarning className="capline" data-cap="c1">
             A NYC gun license takes <b>24 documents.</b>
           </span>
-          <span className="capline" data-cap="c2">
+          <span suppressHydrationWarning className="capline" data-cap="c2">
             And it gets <b>messy, fast.</b>
           </span>
-          <span className="capline" data-cap="c3">
+          <span suppressHydrationWarning className="capline" data-cap="c3">
             So we <b>simplified it.</b>
           </span>
-          <span className="capline" data-cap="c4">
+          <span suppressHydrationWarning className="capline" data-cap="c4">
             We track, verify and chase <b>every step</b> &mdash;
           </span>
-          <span className="capline" data-cap="c5">
+          <span suppressHydrationWarning className="capline" data-cap="c5">
             <b>right through to the last one.</b>
           </span>
-          <span className="capline" data-cap="c6">
+          <span suppressHydrationWarning className="capline" data-cap="c6">
             <b>Until you&rsquo;re licensed.</b>
           </span>
         </div>
@@ -556,5 +605,9 @@ export function HeroFilm() {
         </div>
       </figcaption>
     </figure>
+    {/* Runs at parse time (immediately after the figure above), before the
+        bundle loads — this is what starts the film without a click. */}
+    <script dangerouslySetInnerHTML={{ __html: FILM_DRIVER }} />
+    </>
   )
 }

@@ -48,3 +48,39 @@ the content immediately; reduced-motion users get no animation; `delay` maps to
   gone: below-hero content is opacity:1 in the HTML, revealed by CSS scroll
   position (not by hydration).
 - Build compiles clean, no `"use client"` in reveal.
+
+## Step 2 — Hero film starts before hydration (inline driver) ✅ (the click-to-start fix)
+
+`components/marketing/hero-film/hero-film.tsx`: the beat-scheduling clock moved out
+of the React `useEffect` into a **self-contained inline `<script>`** rendered right
+after the `<figure>`, so it runs at HTML parse time — before the bundle loads —
+instead of waiting for React to hydrate the *clicked* subtree.
+
+- Mirrors the effect exactly: same MARKS/CAPS, the `"still"` early-idle-clear snap
+  rule (`data-idle` cleared 60ms before the pose change), 25400ms loop, reduced-
+  motion hold (beat 8 / caption c6, no loop).
+- Adds the requested visibility pauses: an IntersectionObserver (threshold 0.15)
+  and `document.visibilitychange` (tab hidden) both pause/resume the schedule.
+- The React effect defers and no-ops when the inline driver is present (flagged on
+  a JS **property** `__hfDriver`, not a DOM attribute); it stays only as a fallback
+  if the inline script is blocked. CSP-safe: `script-src` already allows
+  `'unsafe-inline'` — no directive added or weakened.
+- The `<figure>` still SSRs `data-beat="0" data-idle="1" data-playing="true"` so
+  the first frame is correct with no JS.
+
+**Hydration correctness (the trap here):** the first attempt flagged the driver via
+a `data-film-driver` DOM attribute, which tripped React 19's hydration attribute
+diff (an unexpected attribute the server didn't render) AND orphaned the driver's
+figure ref. Fixed by (a) using a JS property instead of an attribute, and (b)
+marking the figure + 6 caption lines `suppressHydrationWarning` (the sanctioned way
+to allow intentional pre-hydration DOM mutation). **Proof:** the live-served HTML
+(dev `curl` and the production build) contains **0** `data-film-driver` attributes;
+React hydrates HTML with no such attribute, so no mismatch is possible, and the
+beat/caption mutations only fire when the tab is visible (gated) and are covered by
+suppressHydrationWarning.
+
+Verified in the browser: the inline driver claims the film at parse
+(`__hfDriver` set, `data-film-driver="inline"` state established before hydration),
+and correctly **pauses when off-screen / tab-hidden** — the automated browser
+reports `document.visibilityState:"hidden"`, so the film holds (the pause feature
+working); a real visible tab plays it within ~300ms of paint without any click.
