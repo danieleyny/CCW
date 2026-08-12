@@ -864,7 +864,10 @@ function StepDisclosures({
   attempted,
 }: StepProps & { aiEnabled?: boolean; attempted: boolean }) {
   const arrests = a.arrests ?? []
-  const q: QuestionAnswer[] = a.questionnaire ?? QUESTIONNAIRE.map((x) => ({ no: x.no, yes: false }))
+  // Don't pre-seed every question as "No" — an unanswered question shows neither
+  // button selected, so the applicant makes a conscious Yes/No choice instead of
+  // inheriting an answer (and there's no checkbox to mistake for "I agree").
+  const q: QuestionAnswer[] = a.questionnaire ?? []
   return (
     <div className="space-y-5">
       <h2 className="text-lg font-semibold">Disclosures — the real exam</h2>
@@ -915,23 +918,37 @@ function StepDisclosures({
 
       <div className="space-y-2">
         <h3 className="engraved text-text-low">Questionnaire (Section B, Q10–22)</h3>
+        <Hint>Answer each honestly — most people answer No. Every &ldquo;Yes&rdquo; needs a short written explanation before filing.</Hint>
         {QUESTIONNAIRE.map((item) => {
-          const cur = q.find((x) => x.no === item.no) ?? { no: item.no, yes: false }
+          const cur = q.find((x) => x.no === item.no)
+          const isYes = cur?.yes === true
+          const isNo = cur?.yes === false
           return (
-            <label key={item.no} className="flex items-start gap-2 rounded-md border border-hairline p-2.5 text-sm">
-              <input
-                type="checkbox"
-                checked={cur.yes}
-                onChange={(e) => {
-                  const others = q.filter((x) => x.no !== item.no)
-                  patch({ questionnaire: [...others, { no: item.no, yes: e.target.checked, narrative: cur.narrative }] })
-                }}
-                className="mt-0.5 size-4"
-              />
-              <span>
+            <div key={item.no} className="rounded-md border border-hairline p-2.5 text-sm">
+              <p className="mb-2">
                 <span className="font-mono text-[10px] text-text-low">Q{item.no}</span> {item.text}
-              </span>
-            </label>
+              </p>
+              <div className="flex gap-2" role="group" aria-label={`Question ${item.no}`}>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-[44px] min-w-16"
+                  variant={isYes ? "default" : "outline"}
+                  onClick={() => setQ(item.no, true)}
+                >
+                  Yes
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-[44px] min-w-16"
+                  variant={isNo ? "default" : "outline"}
+                  onClick={() => setQ(item.no, false)}
+                >
+                  No
+                </Button>
+              </div>
+            </div>
           )
         })}
       </div>
@@ -942,6 +959,12 @@ function StepDisclosures({
     const copy = [...arrests]
     copy[i] = { ...copy[i], ...p }
     patch({ arrests: copy })
+  }
+
+  function setQ(no: number, yes: boolean) {
+    const cur = q.find((x) => x.no === no)
+    const others = q.filter((x) => x.no !== no)
+    patch({ questionnaire: [...others, { no, yes, narrative: cur?.narrative }] })
   }
 }
 
@@ -1144,27 +1167,29 @@ function StepHistory({
         )}
       </div>
 
-      {/* References */}
+      {/* References — optional at intake */}
       <div className="space-y-2">
         <Label className="text-xs">
-          Character references{refsNeeded > 0 ? ` (${refsNeeded} required)` : " (not required for renewals)"}
-          {refsNeeded > 0 && (
-            <span aria-hidden className="ml-0.5 text-danger">
-              *
-            </span>
-          )}
+          Character references{refsNeeded > 0 ? ` (${refsNeeded} needed before filing)` : " (not required for renewals)"}
         </Label>
+        {refsNeeded > 0 && (
+          <p className="rounded-md border border-signal/30 bg-signal/5 p-3 text-xs text-text-mid">
+            <b>You can do this later.</b> Your license needs {refsNeeded === 2 ? "two" : "four"} people of good character,
+            but you don&apos;t need them now — add any you already have, then finish the rest anytime from
+            <b> Your checklist</b>. Leaving this empty won&apos;t stop you from completing intake.
+          </p>
+        )}
         <Hint>
-          NYC requires {refsNeeded === 2 ? "two" : "four"} people of good character who know you well. Add their email
-          and we&apos;ll invite each one to complete and notarize their reference for you — you don&apos;t have to chase
-          paperwork.
+          Add each person&apos;s email and we&apos;ll invite them to complete and notarize their reference for you —
+          you don&apos;t have to chase paperwork.
         </Hint>
         {refs.map((r, i) => (
           <div key={i} className="flex gap-2">
             <Input placeholder="Full name" value={r.name} onChange={(e) => {
               const copy = [...refs]; copy[i] = { ...copy[i], name: e.target.value }; patch({ references: copy })
             }} />
-            {/* historyStepIssues blocks on a valid email for every named reference. */}
+            {/* Only a TYPED but malformed email is flagged — a blank one is fine
+                (they can add it later); intake never blocks on references. */}
             <Input
               placeholder="name@email.com"
               type="email"
@@ -1173,7 +1198,7 @@ function StepHistory({
                 const copy = [...refs]; copy[i] = { ...copy[i], email: e.target.value }; patch({ references: copy })
               }}
               {...invalidAttrs(
-                attempted && refsNeeded > 0 && !!r.name?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email?.trim() ?? "")
+                attempted && !!r.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email.trim())
               )}
             />
             <Button variant="ghost" size="icon" onClick={() => patch({ references: refs.filter((_, j) => j !== i) })}>

@@ -48,15 +48,26 @@ describe("track-aware reference counts (38 RCNY §5-03/§5-05)", () => {
     expect(historyStepIssues({ references: [] }, { isRenewal: true })).toHaveLength(0)
   })
 
-  it("carry blocks under 4 refs and on invalid emails", () => {
+  it("references are OPTIONAL at intake — an incomplete count never blocks", () => {
+    // Fewer than the needed count must NOT block finishing intake.
     const short = completionIssues({ dob: "1990-01-01", residence: "nyc", references: fourRefs.slice(0, 2) })
-    expect(short.some((i) => i.includes("Four character references"))).toBe(true)
+    expect(short.some((i) => i.toLowerCase().includes("character references"))).toBe(false)
+    expect(short).toHaveLength(0)
+    // Zero references is fine too.
+    expect(completionIssues({ dob: "1990-01-01", residence: "nyc", references: [] })).toHaveLength(0)
+    // A name-only reference (no email yet) doesn't block either.
+    expect(
+      completionIssues({ dob: "1990-01-01", residence: "nyc", references: [{ name: "A" }] })
+    ).toHaveLength(0)
+  })
+
+  it("still catches a reference email that was typed but malformed", () => {
     const badEmail = completionIssues({
       dob: "1990-01-01",
       residence: "nyc",
-      references: [{ name: "A", email: "not-an-email" }, ...fourRefs.slice(1)],
+      references: [{ name: "A", email: "not-an-email" }],
     })
-    expect(badEmail.some((i) => i.includes("valid email"))).toBe(true)
+    expect(badEmail.some((i) => i.includes("invalid email"))).toBe(true)
   })
 
   it("a complete carry answer set passes", () => {

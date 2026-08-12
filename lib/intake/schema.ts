@@ -171,21 +171,23 @@ export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}):
   return REQUIRED_REFERENCES
 }
 
-/** Step-5 rules: track-aware reference count, valid emails, training-date coherence. */
+/**
+ * Step-5 rules. References are OPTIONAL at intake — an applicant often doesn't
+ * have them yet, so intake NEVER blocks on the reference count. The references
+ * requirement (REF-01/REF-02) still lives on the checklist, and the CP-5
+ * pre-filing gate enforces the full notarized set before anything is filed
+ * (lib/qa-gate.ts). Here we only catch a reference whose email was TYPED but
+ * malformed — so the invite can actually send — and the training-date coherence
+ * rule. A blank reference (name only, or nothing) is fine; add it later.
+ */
 export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   const issues: string[] = []
+  void opts // reference count is no longer enforced at intake; kept for signature parity
 
-  const needed = requiredReferences(a, opts)
-  const refs = (a.references ?? []).filter((r) => r.name?.trim())
-  if (refs.length < needed) {
-    const word = needed === 4 ? "Four" : "Two"
-    issues.push(`${word} character references are required for your license type — you've listed ${refs.length}.`)
-  }
-  if (needed > 0) {
-    for (const r of refs) {
-      if (!r.email?.trim() || !EMAIL_RE.test(r.email.trim())) {
-        issues.push(`Reference "${r.name.trim()}" needs a valid email so we can send their letter link.`)
-      }
+  for (const r of a.references ?? []) {
+    if (r.email?.trim() && !EMAIL_RE.test(r.email.trim())) {
+      const who = r.name?.trim() || r.email.trim()
+      issues.push(`Reference "${who}" has an invalid email — fix it or clear it (you can add references later).`)
     }
   }
 
