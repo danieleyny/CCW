@@ -1,11 +1,24 @@
-"use client"
-
-import { useEffect, useRef, useState } from "react"
+import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * Fade + rise on scroll-into-view (IntersectionObserver). Instant under
- * prefers-reduced-motion. Pass `delay` (ms) to stagger items in a grid.
+ * Fade + rise as the element scrolls into view — CSS-only, SERVER component.
+ *
+ * The content is ALWAYS present and visible in the server HTML; this component
+ * never gates visibility on JavaScript (that was the black-page bug — it used to
+ * server-render children at opacity-0 and only reveal them inside a useEffect).
+ *
+ * The motion now lives in `app/globals.css` (`.reveal`), driven by a scroll
+ * timeline (`animation-timeline: view()`) inside `@supports` + a
+ * `prefers-reduced-motion: no-preference` guard:
+ *   - Browsers that support scroll-driven animations play the same fade/rise as
+ *     the element scrolls in.
+ *   - Browsers that don't (the hidden `from` keyframe only exists inside
+ *     `@supports`) show the content immediately, unanimated — the safe path.
+ *   - Reduced-motion users get no animation at all.
+ *
+ * `delay` staggers grid items via the `--reveal-delay` custom property. Public
+ * API (children / className / delay) is unchanged, so no call site changes.
  */
 export function Reveal({
   children,
@@ -16,56 +29,10 @@ export function Reveal({
   className?: string
   delay?: number
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [shown, setShown] = useState(false)
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // Intentional: reveal immediately when motion is reduced.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShown(true)
-      return
-    }
-    const el = ref.current
-    if (!el) return
-
-    // Already on screen at mount (above the fold) → reveal now.
-    if (el.getBoundingClientRect().top < window.innerHeight) {
-      setShown(true)
-      return
-    }
-
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setShown(true)
-          io.disconnect()
-        }
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
-    )
-    io.observe(el)
-    // Safety net: never let content stay hidden if the observer never fires
-    // (some engines/automation don't fire on programmatic scroll).
-    const fallback = setTimeout(() => {
-      setShown(true)
-      io.disconnect()
-    }, 2500)
-    return () => {
-      io.disconnect()
-      clearTimeout(fallback)
-    }
-  }, [])
-
   return (
     <div
-      ref={ref}
-      className={cn(
-        "transition-all duration-700 ease-out will-change-transform motion-reduce:transition-none",
-        shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
-        className
-      )}
-      style={{ transitionDelay: shown ? `${delay}ms` : "0ms" }}
+      className={cn("reveal", className)}
+      style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}
     >
       {children}
     </div>

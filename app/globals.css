@@ -365,6 +365,35 @@
   scroll-margin-top: 9rem;
 }
 
+/* ── Reveal (marketing) — CSS-only scroll-driven fade + rise ───────────────────
+   The <Reveal> component (components/marketing/reveal.tsx) is a server component
+   that renders its children VISIBLE by default. Motion is added here, never
+   there — content is never gated on JS. The hidden `from` keyframe exists ONLY
+   inside @supports, so a browser without scroll-driven-animation support shows
+   the content immediately and unanimated (the safe degradation). Reduced-motion
+   users get no animation. `delay` staggers via --reveal-delay. No will-change:
+   scroll-timeline compositing is already cheap. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+      animation-delay: var(--reveal-delay, 0ms);
+    }
+    @keyframes reveal-rise {
+      from {
+        opacity: 0;
+        transform: translateY(1rem);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  }
+}
+
 /* A slightly larger, quieter sibling of .engraved for section-header ROWS on a
    phone (mono eyebrow + fading rule + count). .engraved itself is an 11px micro
    label — legible as a section header only on desktop. */
