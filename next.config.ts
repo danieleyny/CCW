@@ -52,6 +52,10 @@ const nextConfig: NextConfig = {
     // The public reference page uploads a notarized PDF/scan through a server
     // action (anonymous users can't write Storage directly), so allow up to ~6MB.
     serverActions: { bodySizeLimit: "6mb" },
+    // radix-ui is imported as a barrel in ~12 files and isn't tree-shaken by
+    // default; lucide-react is on Next's default list but listing it makes the
+    // intent legible. Trims dead imports out of the shared chunks.
+    optimizePackageImports: ["radix-ui", "lucide-react"],
   },
 
   async headers() {
