@@ -1031,7 +1031,7 @@ function StepDisclosures({
           <h2 className="font-display text-base font-semibold">Tell us everything</h2>
         </div>
         <p className="mt-1.5 text-[13px] leading-relaxed text-text-mid">
-          Disclose <b>every</b> matter — even sealed or dismissed. An item we didn&apos;t disclose
+          Disclose{" "}<b>every</b>{" "}matter — even sealed or dismissed. An item we didn&apos;t disclose
           that turns up in the background check is far more damaging than the event itself.
         </p>
       </div>
