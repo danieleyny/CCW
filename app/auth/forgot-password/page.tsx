@@ -55,14 +55,17 @@ export default function ForgotPasswordPage() {
       <form action={formAction}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-[13px]">Email</Label>
             <Input
               id="email"
               name="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
               autoComplete="email"
               placeholder="you@example.com"
               required
+              className="h-12"
             />
           </div>
           {state.error && (
@@ -72,7 +75,7 @@ export default function ForgotPasswordPage() {
           )}
         </CardContent>
         <CardFooter className="mt-2 flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" className="h-[52px] w-full" disabled={pending}>
             {pending ? "Sending…" : "Send reset link"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">

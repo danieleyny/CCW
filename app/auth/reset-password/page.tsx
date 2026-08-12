@@ -11,9 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { PasswordField } from "@/components/auth/password-field"
 
 /**
  * Landing for the recovery link. The callback route (type=recovery) establishes
@@ -35,27 +34,8 @@ export default function ResetPasswordPage() {
       </CardHeader>
       <form action={formAction}>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">New password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="At least 8 characters"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm">Confirm new password</Label>
-            <Input
-              id="confirm"
-              name="confirm"
-              type="password"
-              autoComplete="new-password"
-              required
-            />
-          </div>
+          <PasswordField id="password" name="password" label="New password" autoComplete="new-password" required showStrength />
+          <PasswordField id="confirm" name="confirm" label="Confirm new password" autoComplete="new-password" required />
           {state.error && (
             <p className="text-sm text-destructive" role="alert">
               {state.error}
@@ -63,7 +43,7 @@ export default function ResetPasswordPage() {
           )}
         </CardContent>
         <CardFooter className="mt-2 flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" className="h-[52px] w-full" disabled={pending}>
             {pending ? "Saving…" : "Save new password"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">

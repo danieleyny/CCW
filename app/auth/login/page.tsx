@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { PasswordField } from "@/components/auth/password-field"
 
 export default function LoginPage() {
   return (
@@ -54,26 +55,20 @@ function LoginForm() {
             </p>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-[13px]">Email</Label>
             <Input
               id="email"
               name="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
               autoComplete="email"
               placeholder="you@example.com"
               required
+              className="h-12"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
+          <PasswordField name="password" autoComplete="current-password" required />
           {state.error && (
             <p className="text-sm text-destructive" role="alert">
               {state.error}
@@ -81,7 +76,7 @@ function LoginForm() {
           )}
         </CardContent>
         <CardFooter className="mt-2 flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" className="h-[52px] w-full" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
