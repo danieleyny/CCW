@@ -185,6 +185,21 @@
     0 26px 52px -26px rgba(0, 0, 0, 0.9);
 }
 
+/* A lighter sibling of .card-raised for dense lists (the disclosure question
+   cards) where the elevated card is too heavy — same gradient + inset highlight,
+   a smaller shadow, 14px radius. Separation comes from SURFACE, not a 1px line.
+   Relative + clip so a corner .glow-* can sit inside it. */
+.card-soft {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 24px -20px rgba(0, 0, 0, 0.8);
+}
+
 /* The card's visual anchor: a 44px graphite tile holding the category icon. */
 .icon-tile {
   display: grid;

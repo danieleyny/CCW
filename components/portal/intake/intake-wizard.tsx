@@ -22,6 +22,7 @@ import type { SubmissionGuard } from "@/lib/intake/process"
 import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
 import { HeightField } from "@/components/portal/intake/height-field"
 import { DateOfBirthField } from "@/components/portal/intake/dob-field"
+import { SectionHeader } from "@/components/portal/section-header"
 import {
   eligibilityStepIssues,
   disclosureStepIssues,
@@ -1019,90 +1020,200 @@ function StepDisclosures({
   // button selected, so the applicant makes a conscious Yes/No choice instead of
   // inheriting an answer (and there's no checkbox to mistake for "I agree").
   const q: QuestionAnswer[] = a.questionnaire ?? []
+  const answeredNos = new Set(q.filter((x) => typeof x.yes === "boolean").map((x) => x.no))
+  const answeredCount = QUESTIONNAIRE.filter((i) => answeredNos.has(i.no)).length
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold">Disclosures — the real exam</h2>
-      <p className="text-sm text-muted-foreground">
-        Disclose everything, even sealed or dismissed matters. A non-disclosed
-        item found in the background check is far more damaging than the event.
-        Every &ldquo;yes&rdquo; needs a written explanation before filing.
-      </p>
-
-      <div className="space-y-2">
-        <h3 className="engraved text-text-low">Arrests / summonses</h3>
-        {arrests.map((ar: ArrestEntry, i) => (
-          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
-            <div className="grid gap-2 sm:grid-cols-3">
-              <Input type="date" value={ar.occurredOn ?? ""} onChange={(e) => upd(i, { occurredOn: e.target.value })} />
-              {/* Court + disposition are what disclosureStepIssues blocks on. */}
-              <Input
-                placeholder="Court / jurisdiction *"
-                value={ar.jurisdiction ?? ""}
-                onChange={(e) => upd(i, { jurisdiction: e.target.value })}
-                {...invalidAttrs(attempted && !ar.jurisdiction?.trim())}
-              />
-              <Input
-                placeholder="Disposition (e.g. dismissed) *"
-                value={ar.disposition ?? ""}
-                onChange={(e) => upd(i, { disposition: e.target.value })}
-                {...invalidAttrs(attempted && !ar.disposition?.trim())}
-              />
-            </div>
-            <Textarea rows={2} placeholder="Written explanation (you can finish this at the review step)" value={ar.narrative ?? ""} onChange={(e) => upd(i, { narrative: e.target.value })} />
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => patch({ arrests: arrests.filter((_, j) => j !== i) })}>
-                <Trash2 className="size-4" /> Remove
-              </Button>
-              {aiEnabled && (
-                <DisclosureAssistant
-                  arrest={ar}
-                  onDraft={(draft) => upd(i, { narrative: draft })}
-                />
-              )}
-            </div>
-          </div>
-        ))}
-        <Button variant="outline" size="sm" onClick={() => patch({ arrests: [...arrests, {}] })}>
-          <Plus className="size-4" /> Add arrest / summons
-        </Button>
+      {/* Candor callout — the intro is doing legal work, so give it the weight. */}
+      <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-4">
+        <div className="flex items-center gap-2 text-brass">
+          <ShieldAlert className="size-5 shrink-0" />
+          <h2 className="font-display text-base font-semibold">Tell us everything</h2>
+        </div>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-text-mid">
+          Disclose <b>every</b> matter — even sealed or dismissed. An item we didn&apos;t disclose
+          that turns up in the background check is far more damaging than the event itself.
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="engraved text-text-low">Questionnaire (Section B, Q10–22)</h3>
-        <Hint>Answer each honestly — most people answer No. Every &ldquo;Yes&rdquo; needs a short written explanation before filing.</Hint>
-        {QUESTIONNAIRE.map((item) => {
-          const cur = q.find((x) => x.no === item.no)
-          const isYes = cur?.yes === true
-          const isNo = cur?.yes === false
-          return (
-            <div key={item.no} className="rounded-md border border-hairline p-2.5 text-sm">
-              <p className="mb-2">
-                <span className="font-mono text-[10px] text-text-low">Q{item.no}</span> {item.text}
-              </p>
-              <div className="flex gap-2" role="group" aria-label={`Question ${item.no}`}>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="min-h-[44px] min-w-16"
-                  variant={isYes ? "default" : "outline"}
-                  onClick={() => setQ(item.no, true)}
-                >
-                  Yes
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="min-h-[44px] min-w-16"
-                  variant={isNo ? "default" : "outline"}
-                  onClick={() => setQ(item.no, false)}
-                >
-                  No
+      {/* Arrests & summonses — real labels above every field, not placeholder-only. */}
+      <section>
+        <SectionHeader label="Arrests & summonses" count={arrests.length ? String(arrests.length) : undefined} />
+        <div className="space-y-3">
+          {arrests.map((ar: ArrestEntry, i) => (
+            <div key={i} className="card-soft p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">Matter {i + 1}</span>
+                <Button variant="ghost" size="sm" className="h-8 text-text-mid" onClick={() => patch({ arrests: arrests.filter((_, j) => j !== i) })}>
+                  <Trash2 className="size-4" /> Remove
                 </Button>
               </div>
+              <div className="mt-3 space-y-3 sm:grid sm:grid-cols-3 sm:gap-3 sm:space-y-0">
+                <Field label="Date it happened">
+                  <Input type="date" value={ar.occurredOn ?? ""} onChange={(e) => upd(i, { occurredOn: e.target.value })} />
+                </Field>
+                {/* Court + disposition are what disclosureStepIssues blocks on. */}
+                <Field label="Court or jurisdiction" required>
+                  <Input
+                    placeholder="e.g. Kings County"
+                    value={ar.jurisdiction ?? ""}
+                    onChange={(e) => upd(i, { jurisdiction: e.target.value })}
+                    {...invalidAttrs(attempted && !ar.jurisdiction?.trim())}
+                  />
+                </Field>
+                <Field label="How it ended" required>
+                  <Input
+                    placeholder="e.g. dismissed, ACD"
+                    value={ar.disposition ?? ""}
+                    onChange={(e) => upd(i, { disposition: e.target.value })}
+                    {...invalidAttrs(attempted && !ar.disposition?.trim())}
+                  />
+                </Field>
+              </div>
+              <div className="mt-3 space-y-1.5">
+                <Label className="text-xs">What happened, in your words</Label>
+                <Textarea rows={2} placeholder="You can finish this at the review step." value={ar.narrative ?? ""} onChange={(e) => upd(i, { narrative: e.target.value })} />
+              </div>
+              {aiEnabled && (
+                <div className="mt-2">
+                  <DisclosureAssistant arrest={ar} onDraft={(draft) => upd(i, { narrative: draft })} />
+                </div>
+              )}
             </div>
-          )
-        })}
-      </div>
+          ))}
+          {arrests.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => patch({ arrests: [{}] })}
+              className="flex min-h-[58px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-hairline-strong px-3 text-sm text-text-mid transition-colors hover:text-foreground"
+            >
+              <span className="flex items-center gap-1.5"><Plus className="size-4" /> Add arrest / summons</span>
+              <span className="text-[11px] text-text-low">Most people have none. If you do, sealed and dismissed matters count.</span>
+            </button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => patch({ arrests: [...arrests, {}] })}>
+              <Plus className="size-4" /> Add another matter
+            </Button>
+          )}
+        </div>
+      </section>
+
+      {/* Section B — a card per question, a full-width segmented Yes/No, and the
+          explanation revealed inline on "Yes". Separation comes from surface, not
+          a 1px line, so thirteen questions read as discrete objects. */}
+      <section>
+        <SectionHeader label="Section B · Q10–22" count={`${answeredCount} / ${QUESTIONNAIRE.length}`} />
+        <div className="mb-3 rounded-md border border-hairline bg-surface-2 p-2.5">
+          <div className="text-[12px] text-text-mid">{answeredCount} of {QUESTIONNAIRE.length} answered</div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
+            <div
+              className="h-full rounded-full bg-brass transition-[width] duration-300 motion-reduce:transition-none"
+              style={{ width: `${(answeredCount / QUESTIONNAIRE.length) * 100}%` }}
+            />
+          </div>
+        </div>
+        <div className="space-y-3">
+          {QUESTIONNAIRE.map((item) => {
+            const cur = q.find((x) => x.no === item.no)
+            const isYes = cur?.yes === true
+            const isNo = cur?.yes === false
+            const answered = isYes || isNo
+            // Split the verbatim PD 643-041 wording into the question and its
+            // parenthetical instruction — same words, the instruction just quieted.
+            const m = /^(.*?)(\(.*\))\s*$/.exec(item.text)
+            const main = m ? m[1].trim() : item.text
+            const paren = m ? m[2] : ""
+            return (
+              <div
+                key={item.no}
+                role="radiogroup"
+                aria-label={`Q${item.no}: ${item.text}`}
+                className={cn(
+                  "card-soft p-3.5 transition-opacity",
+                  isYes && "border-l-[3px] border-l-brass bg-brass/[0.04] glow-neutral",
+                  isNo && "opacity-[0.72]",
+                  !answered && "ring-1 ring-signal/25"
+                )}
+              >
+                <div className="flex items-start gap-2.5">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "mt-0.5 flex h-[22px] min-w-[30px] items-center justify-center rounded-md border font-mono text-[10.5px]",
+                      isNo ? "border-hairline text-text-low" : "border-brass/25 bg-brass/10 text-brass"
+                    )}
+                  >
+                    Q{item.no}
+                  </span>
+                  <p className="text-[14.5px] leading-[1.52] [text-wrap:pretty]">
+                    {main} {paren && <span className="text-[13px] text-text-low">{paren}</span>}
+                  </p>
+                </div>
+
+                {/* Full-width segmented control — a 50/50 grid, each half IS the
+                    target. No leftover track to the right of "No". */}
+                <div
+                  className={cn(
+                    "relative mt-3 grid grid-cols-2 overflow-hidden rounded-[11px] border",
+                    answered ? "border-hairline-strong bg-surface-3" : "border-dashed border-signal/30 bg-surface-3"
+                  )}
+                >
+                  {answered && (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute inset-y-[3px] w-[calc(50%-6px)] rounded-lg transition-[left] duration-200 ease-out motion-reduce:transition-none",
+                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1"
+                      )}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isYes}
+                    onClick={() => setQ(item.no, true)}
+                    className={cn(
+                      "relative z-10 flex h-12 items-center justify-center text-sm font-semibold transition-colors",
+                      isYes ? "text-brand-foreground" : "text-text-mid"
+                    )}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isNo}
+                    onClick={() => setQ(item.no, false)}
+                    className={cn(
+                      "relative z-10 flex h-12 items-center justify-center border-l border-hairline text-sm font-semibold transition-colors",
+                      isNo ? "text-text-hi" : "text-text-mid"
+                    )}
+                  >
+                    No
+                  </button>
+                </div>
+
+                {/* The answer has a visible consequence in the moment. */}
+                {isYes && (
+                  <div aria-live="polite" className="mt-3 border-t border-dashed border-hairline pt-3">
+                    <label htmlFor={`q-narr-${item.no}`} className="engraved-sm text-warn">
+                      Your explanation · required before filing
+                    </label>
+                    <Textarea
+                      id={`q-narr-${item.no}`}
+                      rows={2}
+                      className="mt-1.5"
+                      placeholder="What happened, when, and how it resolved."
+                      value={cur?.narrative ?? ""}
+                      onChange={(e) => setQNarrative(item.no, e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </section>
     </div>
   )
 
@@ -1116,6 +1227,13 @@ function StepDisclosures({
     const cur = q.find((x) => x.no === no)
     const others = q.filter((x) => x.no !== no)
     patch({ questionnaire: [...others, { no, yes, narrative: cur?.narrative }] })
+  }
+
+  /** Persist the explanation to the SAME place the review step reads. */
+  function setQNarrative(no: number, narrative: string) {
+    const cur = q.find((x) => x.no === no)
+    const others = q.filter((x) => x.no !== no)
+    patch({ questionnaire: [...others, { no, yes: cur?.yes ?? true, narrative }] })
   }
 }
 
