@@ -264,8 +264,19 @@ export function RequirementsChecklist({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      {/* The count, progress and filters used to scroll away immediately. On a
+          phone they dock under the app bar so you can always see where you stand
+          and re-filter; on desktop they sit in the normal flow. */}
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 -mx-4 space-y-2.5 border-b border-hairline bg-surface-2 px-4 py-3 sm:static sm:mx-0 sm:space-y-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+        {/* Mobile: a compact title + count (the page h1 is desktop-only). */}
+        <div className="flex items-center justify-between gap-3 sm:hidden">
+          <span className="font-display text-base font-semibold">Your checklist</span>
+          <span className="shrink-0 font-mono text-[12px] tabular-nums text-text-mid">
+            {satisfied} / {applicable.length} done
+          </span>
+        </div>
+        {/* Desktop label row. */}
+        <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
           <ShieldCheck className="size-4 text-ok" />
           <span>
             {satisfied} of {applicable.length} requirements satisfied
@@ -278,7 +289,7 @@ export function RequirementsChecklist({
           aria-valuemin={0}
           aria-valuemax={applicable.length}
           aria-valuenow={satisfied}
-          className="h-1 w-full overflow-hidden rounded-full bg-surface-2"
+          className="h-1 w-full overflow-hidden rounded-full bg-surface-3 sm:bg-surface-2"
         >
           <div
             className="h-full rounded-full bg-ok transition-[width] duration-300 motion-reduce:transition-none"
@@ -286,7 +297,13 @@ export function RequirementsChecklist({
           />
         </div>
 
-        <div role="group" aria-label="Filter your checklist" className="flex flex-wrap gap-2">
+        {/* Horizontally-scrollable filter rail on mobile with an edge fade so it's
+            obvious there's more; wraps on desktop. */}
+        <div
+          role="group"
+          aria-label="Filter your checklist"
+          className="-mb-1 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,#000_88%,transparent)] sm:mb-0 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:[mask-image:none]"
+        >
           {FILTERS.map((f) => {
             const count = groups[f.key].length
             if (f.key === "notarizing" && count === 0) return null
@@ -298,7 +315,7 @@ export function RequirementsChecklist({
                 aria-pressed={active}
                 onClick={() => setFilter(f.key)}
                 className={cn(
-                  "inline-flex min-h-[var(--tap)] items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors sm:min-h-[36px] sm:text-xs",
+                  "inline-flex min-h-[var(--tap)] shrink-0 items-center whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition-colors sm:min-h-[36px] sm:text-xs",
                   "focus-visible:ring-2 focus-visible:ring-signal/40 focus-visible:outline-none",
                   active
                     ? "border-brass/50 bg-brass/15 text-brass-bright"
@@ -342,7 +359,22 @@ export function RequirementsChecklist({
                     key={item.id}
                     className={cn("card-raised p-5", GLOW_BY_TONE[tone] ?? "glow-neutral")}
                   >
-                    <div className="flex items-start gap-3.5">
+                    {/* Badge gets its OWN row above the title so it never drops to
+                        a second line and orphans the title at 390px; req_code is
+                        demoted to the far right (present for support, quiet). */}
+                    <div className="mb-2.5 flex items-center justify-between gap-2">
+                      {isUnenforced(item.legalStatus) ? (
+                        <span className="shrink-0 rounded-full bg-signal-dim px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
+                          Not required
+                        </span>
+                      ) : (
+                        <LadderBadge item={item} />
+                      )}
+                      <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-wide text-text-low/70">
+                        {item.reqCode}
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3">
                       <div className="relative shrink-0" aria-hidden>
                         <div className="icon-tile">
                           <Icon className={cn("size-5", ICON_TONE[tone] ?? "text-text-mid")} />
@@ -363,21 +395,12 @@ export function RequirementsChecklist({
                             Priority: {item.severity.replace(/_/g, " ")}
                           </span>
                         )}
-                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-                          {/* Plain words first; the registry title lives in Details. */}
-                          <h4 className="min-w-0 text-[15px] font-semibold leading-snug">
-                            {actionFor(item.reqCode)?.customerTitle ?? item.title}
-                          </h4>
-                          {isUnenforced(item.legalStatus) ? (
-                            <span className="shrink-0 rounded-full bg-signal-dim px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
-                              Not required
-                            </span>
-                          ) : (
-                            <LadderBadge item={item} />
-                          )}
-                        </div>
+                        {/* Plain words first; the registry title lives in Details. */}
+                        <h4 className="font-display text-base font-semibold leading-[1.3]">
+                          {actionFor(item.reqCode)?.customerTitle ?? item.title}
+                        </h4>
                         {item.description && (
-                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                          <p className="mt-1 line-clamp-3 text-[13px] leading-[1.55] text-muted-foreground [text-wrap:pretty]">
                             {item.description}
                           </p>
                         )}

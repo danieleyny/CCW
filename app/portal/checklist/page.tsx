@@ -39,7 +39,8 @@ export default async function ChecklistPage() {
 function Header({ intakeDone }: { intakeDone: boolean }) {
   return (
     <div className="mb-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Your checklist</h1>
+      {/* Desktop heading — on mobile the sticky checklist header carries the title. */}
+      <h1 className="hidden text-2xl font-semibold tracking-tight sm:block">Your checklist</h1>
       {intakeDone ? (
         <>
           <div className="mt-3 flex items-center gap-2 rounded-md border border-ok/30 bg-ok/8 px-3 py-2 text-sm text-ok">
