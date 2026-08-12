@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil, Users, ClipboardList } from "lucide-react"
+import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil, Users, ClipboardList, Check as CheckIcon, ChevronDown, LogOut } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   INTAKE_STEPS,
   QUESTIONNAIRE,
@@ -105,19 +106,29 @@ export function IntakeWizard({
     }
   }
 
+  // Physically send the user to the first offending field (it renders red once
+  // stepErrors is non-empty). setTimeout, not rAF: rAF is throttled in hidden
+  // tabs and can fire before React commits the invalid markers. The field's
+  // scroll-margin-top (globals.css) keeps it clear of the sticky header.
+  function scrollToFirstError() {
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>("[data-intake-invalid]")
+      el?.scrollIntoView({ behavior: "smooth", block: "center" })
+      el?.focus({ preventScroll: true })
+    }, 50)
+  }
+
+  /** Jump back to an already-completed step from the "All steps" sheet. */
+  function goToStep(n: number) {
+    setStepErrors([])
+    if (n <= step) setStep(n)
+  }
+
   async function next() {
     const issues = issuesForStep(step)
     if (issues.length > 0) {
       setStepErrors(issues)
-      // Don't just list the problems — physically send the user back to the
-      // first offending field (it renders red once stepErrors is non-empty).
-      // setTimeout, not rAF: rAF is throttled in hidden tabs and can fire
-      // before React commits the invalid markers.
-      setTimeout(() => {
-        const el = document.querySelector<HTMLElement>("[data-intake-invalid]")
-        el?.scrollIntoView({ behavior: "smooth", block: "center" })
-        el?.focus({ preventScroll: true })
-      }, 50)
+      scrollToFirstError()
       return
     }
     setStepErrors([])
@@ -183,7 +194,6 @@ export function IntakeWizard({
   if (completed && !attorneyReview && !editing) {
     return (
       <div className="space-y-5">
-        <StepRail step={6} />
         <div className="rounded-lg border bg-card p-5">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-5 text-ok" />
@@ -305,65 +315,97 @@ export function IntakeWizard({
   // ── Wizard steps ───────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-      <StepRail step={step} />
+      <StepHeader step={step} onJump={goToStep} />
 
-      {editing && (
-        <div className="rounded-md border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
-          <div className="flex items-center gap-2 font-medium">
-            <ShieldAlert className="size-4" /> You&apos;re editing answers you already submitted.
+      <div className="space-y-5 pt-4">
+        {editing && (
+          <div className="rounded-md border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
+            <div className="flex items-center gap-2 font-medium">
+              <ShieldAlert className="size-4" /> You&apos;re editing answers you already submitted.
+            </div>
+            <p className="mt-1 text-xs">
+              When you finish, we rebuild your checklist from these answers — that can reset
+              household-affidavit progress and clear disclosure explanations. Change only what you need to.
+            </p>
+            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setEditing(false)}>
+              Cancel — keep my current answers
+            </Button>
           </div>
-          <p className="mt-1 text-xs">
-            When you finish, we rebuild your checklist from these answers — that can reset
-            household-affidavit progress and clear disclosure explanations. Change only what you need to.
-          </p>
-          <Button variant="ghost" size="sm" className="mt-2" onClick={() => setEditing(false)}>
-            Cancel — keep my current answers
-          </Button>
-        </div>
-      )}
+        )}
 
-      <div className="rounded-lg border bg-card p-5">
-        {step === 1 && (
-          <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
-        )}
-        {step === 2 && <StepIdentity a={a} patch={patch} />}
-        {step === 3 && <StepHousehold a={a} patch={patch} />}
-        {step === 4 && (
-          <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
-        )}
-        {step === 5 && (
-          <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} />
-        )}
-        {step === 6 && <StepReview a={a} />}
+        <div className="rounded-lg border bg-card p-5">
+          {step === 1 && (
+            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
+          )}
+          {step === 2 && <StepIdentity a={a} patch={patch} />}
+          {step === 3 && <StepHousehold a={a} patch={patch} />}
+          {step === 4 && (
+            <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
+          )}
+          {step === 5 && (
+            <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} />
+          )}
+          {step === 6 && <StepReview a={a} />}
+        </div>
       </div>
 
-      {stepErrors.length > 0 && (
-        <div role="alert" className="rounded-md border border-warn/30 bg-warn/10 p-3 text-sm text-warn">
-          <div className="flex items-center gap-2 font-medium">
-            <ShieldAlert className="size-4" /> Before you continue:
-          </div>
-          <ul className="mt-1 list-disc pl-6">
-            {stepErrors.map((e) => (
-              <li key={e}>{e}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={back} disabled={step === 1 || saving || generating}>
-          <ArrowLeft className="size-4" /> Back
-        </Button>
-        {step < 6 ? (
-          <Button onClick={next} disabled={saving}>
-            {saving ? "Saving…" : "Next"} <ArrowRight className="size-4" />
-          </Button>
-        ) : (
-          <Button onClick={generate} disabled={generating}>
-            <Sparkles className="size-4" />
-            {generating ? "Generating…" : "Generate my requirements"}
-          </Button>
+      {/* Sticky action bar — sticky (not fixed) so the iOS keyboard shoves it up
+          correctly. Names the next step for momentum. The error list docks here as
+          a compact pill that stays announced (role=alert) and expands on tap. */}
+      <div
+        className="sticky bottom-0 z-10 -mx-4 mt-5 border-t border-hairline bg-surface-2 px-4 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+      >
+        {stepErrors.length > 0 && (
+          <details role="alert" className="mb-2.5 overflow-hidden rounded-md border border-warn/30 bg-warn/10 text-warn">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-2.5 text-sm">
+              <span className="flex items-center gap-2 font-medium">
+                <ShieldAlert className="size-4 shrink-0" />
+                {stepErrors.length} {stepErrors.length === 1 ? "thing needs" : "things need"} attention
+              </span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.preventDefault(); scrollToFirstError() }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); scrollToFirstError() } }}
+                className="shrink-0 rounded bg-warn/20 px-2.5 py-1 text-xs font-semibold"
+              >
+                Jump →
+              </span>
+            </summary>
+            <ul className="list-disc px-2.5 pb-2.5 pl-7 text-sm">
+              {stepErrors.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </details>
         )}
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={back}
+            disabled={step === 1 || saving || generating}
+            aria-label="Back"
+            className="size-[52px] shrink-0 p-0"
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
+          {step < 6 ? (
+            <Button onClick={next} disabled={saving} className="h-[52px] flex-1">
+              {saving ? "Saving…" : (
+                <>
+                  Next: {INTAKE_STEPS[step]?.label} <ArrowRight className="size-4" />
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button onClick={generate} disabled={generating} className="h-[52px] flex-1">
+              <Sparkles className="size-4" />
+              {generating ? "Generating…" : "Generate my requirements"}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -424,27 +466,136 @@ function NextStepHandoff({ trainingCompleted }: { trainingCompleted: boolean }) 
   )
 }
 
-// ── Step rail ────────────────────────────────────────────────────────────────
-function StepRail({ step }: { step: number }) {
+// ── Step header ───────────────────────────────────────────────────────────────
+/**
+ * Two presentations of the same six INTAKE_STEPS. On a phone: a compact sticky
+ * header that docks under the app bar (STEP n OF 6 · label · 6 progress segments)
+ * with an "All steps" sheet and a "Save & exit" out — the six labeled chips
+ * wrapped to three ragged rows and ate ~110px before any content. On desktop:
+ * the original labeled chip rail, unchanged. The <ol> carries the meaning for a
+ * screen reader; the segments are aria-hidden decoration.
+ */
+function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => void }) {
+  const [open, setOpen] = useState(false)
+  const current = INTAKE_STEPS[step - 1]
+
   return (
-    <ol className="flex flex-wrap gap-1.5 text-xs" aria-label="Intake progress">
-      {INTAKE_STEPS.map((s) => (
-        <li
-          key={s.n}
-          aria-current={s.n === step ? "step" : undefined}
-          className={cn(
-            "rounded-md border px-2.5 py-1",
-            s.n === step
-              ? "border-brass/40 bg-brass/10 text-brass"
-              : s.n < step
-                ? "border-ok/30 bg-ok/10 text-ok"
-                : "border-hairline text-text-low"
-          )}
-        >
-          {s.n}. {s.label}
-        </li>
-      ))}
-    </ol>
+    <>
+      {/* MOBILE — sticky under the app bar (h-14 = 3.5rem + safe area). */}
+      <div
+        className="sticky z-10 -mx-4 border-b border-hairline bg-surface-2 px-4 py-2.5 sm:hidden"
+        style={{ top: "calc(3.5rem + env(safe-area-inset-top))" }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="engraved-sm text-brass">Step {step} of 6</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-expanded={open}
+              aria-haspopup="dialog"
+              className="inline-flex items-center gap-1 text-xs text-text-mid hover:text-foreground"
+            >
+              All steps <ChevronDown className="size-3.5" />
+            </button>
+            <Link href="/portal" className="inline-flex items-center gap-1 text-xs text-text-low hover:text-text-mid">
+              <LogOut className="size-3.5" /> Save &amp; exit
+            </Link>
+          </div>
+        </div>
+        <div className="mt-0.5 font-display text-[17px] font-semibold tracking-tight">{current?.label}</div>
+        <div aria-hidden className="mt-2 flex gap-1">
+          {INTAKE_STEPS.map((s) => (
+            <span
+              key={s.n}
+              className={cn(
+                "h-[3px] flex-1 rounded-full",
+                s.n < step
+                  ? "bg-brass/60"
+                  : s.n === step
+                    ? "bg-signal shadow-[0_0_6px_var(--signal)]"
+                    : "bg-hairline"
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* DESKTOP — the labeled chip rail, unchanged. */}
+      <ol className="hidden flex-wrap gap-1.5 text-xs sm:flex" aria-label="Intake progress">
+        {INTAKE_STEPS.map((s) => (
+          <li
+            key={s.n}
+            aria-current={s.n === step ? "step" : undefined}
+            className={cn(
+              "rounded-md border px-2.5 py-1",
+              s.n === step
+                ? "border-brass/40 bg-brass/10 text-brass"
+                : s.n < step
+                  ? "border-ok/30 bg-ok/10 text-ok"
+                  : "border-hairline text-text-low"
+            )}
+          >
+            {s.n}. {s.label}
+          </li>
+        ))}
+      </ol>
+
+      {/* All-steps sheet (mobile). Completed steps jump; the wizard validates
+          forward, so future steps are listed but not tappable. */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" className="gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]">
+          <SheetHeader>
+            <SheetTitle className="engraved-sm text-left text-text-mid">All steps</SheetTitle>
+          </SheetHeader>
+          <ol className="px-3 pb-6" aria-label="Intake steps">
+            {INTAKE_STEPS.map((s) => {
+              const done = s.n < step
+              const cur = s.n === step
+              const future = s.n > step
+              return (
+                <li key={s.n}>
+                  <button
+                    type="button"
+                    disabled={future}
+                    aria-current={cur ? "step" : undefined}
+                    onClick={() => {
+                      if (!future) {
+                        onJump(s.n)
+                        setOpen(false)
+                      }
+                    }}
+                    className={cn(
+                      "flex min-h-[52px] w-full items-center gap-3 rounded-lg px-2 text-left transition-colors",
+                      future ? "opacity-50" : "hover:bg-surface-2"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex size-7 shrink-0 items-center justify-center rounded-full border font-mono text-xs",
+                        done
+                          ? "border-ok/40 bg-ok/10 text-ok"
+                          : cur
+                            ? "border-brass/50 bg-brass/10 text-brass"
+                            : "border-hairline text-text-low"
+                      )}
+                    >
+                      {done ? <CheckIcon className="size-3.5" /> : s.n}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{s.label}</span>
+                      <span className="block text-[12px] text-text-low">
+                        {done ? "Completed — tap to review" : cur ? "You're here" : "Not yet"}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 

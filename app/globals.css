@@ -343,6 +343,13 @@
   font-size: 0.6875rem;
 }
 
+/* When the intake wizard scrolls a bad field into view, keep it clear of the
+   sticky app bar + step header (they'd otherwise cover the field it just jumped
+   to). ~9rem = app bar (3.5rem) + step header (~4.5rem) + a little breathing. */
+[data-intake-invalid] {
+  scroll-margin-top: 9rem;
+}
+
 /* A slightly larger, quieter sibling of .engraved for section-header ROWS on a
    phone (mono eyebrow + fading rule + count). .engraved itself is an 11px micro
    label — legible as a section header only on desktop. */

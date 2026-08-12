@@ -75,8 +75,14 @@ export default async function PortalLayout({
       </header>
 
       {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
-          room. The old layout applied pb-24 on BOTH main and footer, doubling it. */}
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 pb-[calc(var(--shell-bottom)+24px)] md:pb-8">
+          room. The old layout applied pb-24 on BOTH main and footer, doubling it.
+          On intake the tab bar is hidden and the wizard's own sticky action bar
+          carries the safe area, so we don't reserve tab-bar space there. */}
+      <main
+        className={`mx-auto w-full max-w-3xl flex-1 px-4 py-6 md:pb-8 ${
+          pathname.startsWith("/portal/intake") ? "pb-0" : "pb-[calc(var(--shell-bottom)+24px)]"
+        }`}
+      >
         {children}
       </main>
 
@@ -90,7 +96,10 @@ export default async function PortalLayout({
         </Link>
       </footer>
 
-      <PortalBottomNav unread={unread ?? 0} />
+      {/* Intake is a focused task flow with its own sticky action bar — two
+          stacked bottom bars is one too many. The soft intake gate already keeps
+          a new applicant here, and the wizard has a "Save & exit" out. */}
+      {!pathname.startsWith("/portal/intake") && <PortalBottomNav unread={unread ?? 0} />}
     </div>
   )
 }
