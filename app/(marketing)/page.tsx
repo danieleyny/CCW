@@ -1,4 +1,5 @@
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { ArrowRight } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
@@ -11,14 +12,29 @@ import { HeroAura } from "@/components/marketing/hero-aura"
 import { Magnetic } from "@/components/marketing/magnetic"
 import { Reveal } from "@/components/marketing/reveal"
 import { ProductFeature } from "@/components/marketing/product-feature"
-import { ProcessStepper } from "@/components/marketing/process-stepper"
-import { CostCard } from "@/components/marketing/cost-card"
-import { StickyCta } from "@/components/marketing/sticky-cta"
 import { RefilePromise } from "@/components/marketing/refile-promise"
 import { PlacemakingBand } from "@/components/marketing/placemaking-band"
 import { HeroSkyline } from "@/components/marketing/hero-skyline"
 import { HeroFilm } from "@/components/marketing/hero-film/hero-film"
-import { TheCount } from "@/components/marketing/showcase/the-count"
+
+// Step 5 — below-fold client components loaded as their own chunks so their JS
+// leaves the initial waterfall. ssr: true keeps the HTML server-rendered (the
+// emitted markup is identical, so crawlers and what a visitor sees don't change);
+// only the client JS is deferred. HeroFilm/HeroAura/HeroSkyline stay eager —
+// they're above the fold.
+const ProcessStepper = dynamic(
+  () => import("@/components/marketing/process-stepper").then((m) => m.ProcessStepper),
+  { ssr: true }
+)
+const CostCard = dynamic(() => import("@/components/marketing/cost-card").then((m) => m.CostCard), {
+  ssr: true,
+})
+const TheCount = dynamic(() => import("@/components/marketing/showcase/the-count").then((m) => m.TheCount), {
+  ssr: true,
+})
+const StickyCta = dynamic(() => import("@/components/marketing/sticky-cta").then((m) => m.StickyCta), {
+  ssr: true,
+})
 
 /**
  * The home page owns the head term ("NYC gun license"). The root layout's title
@@ -274,7 +290,7 @@ export default async function Home() {
 
       {/* ── CLOSING ──────────────────────────────────────────────────────── */}
       <section id="closing" className="section-void relative overflow-hidden border-t border-hairline">
-        <HeroAura />
+        <HeroAura variant="still" />
         <div className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
           <Reveal>
             <h2 className="mx-auto max-w-xl font-display text-3xl font-semibold tracking-tight sm:text-5xl">

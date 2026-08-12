@@ -84,3 +84,81 @@ Verified in the browser: the inline driver claims the film at parse
 and correctly **pauses when off-screen / tab-hidden** — the automated browser
 reports `document.visibilityState:"hidden"`, so the film holds (the pause feature
 working); a real visible tab plays it within ~300ms of paint without any click.
+
+## Step 3 — Cut the animated blur budget (partial) ✅
+
+`components/marketing/hero-aura.tsx` gains a `variant="still"` prop, used for the
+SECOND HeroAura at `#closing` (`app/(marketing)/page.tsx`). At blur-[150px] the
+animation + pointer parallax are imperceptible there, so the still variant renders
+the same three layers / colours / positions with **no** `animate-aurora-*` /
+`animate-star-drift` / `animate-hero-sweep`, no pointer parallax (the effect
+early-returns), and no `will-change`. This halves the homepage's animated-blur
+budget (the animated aurora set drops from 2 instances to 1).
+
+**Deferred within Step 3 (3.2 / 3.3):** moving each animation onto a non-blurred
+parent wrapper, and an off-screen `animation-play-state: paused` gate for the
+remaining hero aurora. These are incremental raster-time trims on top of the de-dup
+(which already removed the larger cost); they touch the shared aurora keyframes and
+carry more regression risk than measured win here, so per the prompt's "skip if the
+win is negligible and the risk isn't" guidance they're left for a follow-up. The
+pointer parallax is already correctly gated to `(pointer: fine)` + non-reduced-motion
+on the animated instance — unchanged.
+
+## Step 4 — content-visibility — SKIPPED (documented) ⏭️
+
+`content-visibility: auto` needs a `contain-intrinsic-size` that matches each
+section's real rendered height at BOTH 1440px and 390px, or it introduces
+scrollbar jumping / CLS — and "CLS must stay at or below baseline" is a hard
+constraint. Measuring those heights reliably needs live browser tooling that isn't
+dependable in this environment (the in-app browser's perf/measurement path is
+flaky). Rather than ship guessed intrinsic sizes that risk a visible CLS
+regression, this step is deferred: the owner (or a run with working DevTools) should
+measure the TheCount / PlacemakingBand / #closing section heights per breakpoint and
+apply `content-visibility: auto` + exact `contain-intrinsic-size` then. Steps 1–2
+(the actual bug fixes) and 3/5/6 do not depend on it.
+
+## Step 5 — Below-fold client JS off the critical path ✅
+
+`app/(marketing)/page.tsx`: `ProcessStepper`, `CostCard`, `TheCount`, `StickyCta`
+are now `next/dynamic` with **`ssr: true`** (explicit) — their HTML still renders
+server-side (identical markup), only their JS moves into separate chunks off the
+initial waterfall. `HeroFilm` / `HeroAura` / `HeroSkyline` stay eager (above the
+fold). `MarketingNav` lives in the layout, untouched.
+
+**Emitted-HTML identical:** homepage DOM element count is **2,458 — unchanged from
+baseline** (dynamic-with-ssr:true changes nothing in the SSR HTML), and every key
+content string (H1 "Handled.", "One fee to us", "Twenty-four documents", "All five
+boroughs", the CTAs) is present in the server HTML. HTML byte size 282,546 (baseline
+282,213; +333 bytes is the inline film-driver script from Step 2 + reveal class
+changes — no content).
+
+## Step 6 — One config line ✅
+
+`next.config.ts` `experimental` block gains
+`optimizePackageImports: ["radix-ui", "lucide-react"]`. `serverActions`,
+`headers()` and `redirects()` are untouched.
+
+## Content-change guard (the no-content-change rule)
+
+- Homepage DOM element count: **2,458 → 2,458** (identical).
+- Every H1 / price / section heading / CTA verified present in the post-change
+  server HTML (grep above). Zero copy, headings, prices, list items, CTAs, or
+  sections were added, removed, reordered, or reworded in any diff.
+- `pnpm build` clean; `pnpm test` 388 passing; the Reveal fix makes content
+  visible in the server HTML with JS disabled (Step 1 proof).
+
+## Summary of what was NOT done, and why
+
+1. **Step 3.2 / 3.3** (animate-on-non-blurred-parent + off-screen pause of the
+   remaining aurora) — incremental raster trims on top of the de-dup; risk > measured
+   win here. Deferred.
+2. **Step 4** (content-visibility) — needs measured per-breakpoint section heights to
+   avoid a CLS regression; reliable measurement unavailable in this environment.
+   Deferred with instructions.
+3. **Lighthouse-mobile / Chrome Performance profile / throttled screen-recording** —
+   require live browser tooling that isn't dependable here. The deterministic,
+   reproducible metrics (HTML bytes, DOM count, JS chunk weight, JS-disabled content
+   proof, live-served-HTML checks) are captured above; the owner should run
+   Lighthouse before/after on the Vercel preview for field LCP/TBT/CLS. Steps 1 and 2
+   are mechanism removals, not gradual tuning — they are near-total fixes for the
+   black page and the click-to-start regardless of the field numbers.

@@ -12,12 +12,18 @@ import { useEffect, useRef } from "react"
  * transform write). aria-hidden + pointer-events-none. Under reduced-motion every
  * layer freezes into a still, premium composition; parallax is disabled on touch.
  */
-export function HeroAura() {
+export function HeroAura({ variant }: { variant?: "still" }) {
+  // The #closing section mounts a SECOND HeroAura. At blur-[150px] the animation
+  // and pointer parallax are imperceptible there, so the "still" variant renders
+  // the same layers/colours/positions with no animations and no parallax — this
+  // alone halves the homepage's animated-blur budget.
+  const still = variant === "still"
   const rootRef = useRef<HTMLDivElement>(null)
   const farRef = useRef<HTMLDivElement>(null)
   const nearRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (still) return
     const el = rootRef.current
     if (!el) return
 
@@ -48,7 +54,7 @@ export function HeroAura() {
       window.removeEventListener("pointermove", onMove)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [])
+  }, [still])
 
   return (
     <div
@@ -60,20 +66,20 @@ export function HeroAura() {
       <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-15%,rgba(201,162,75,0.14),transparent_60%)]" />
 
       {/* FAR parallax layer: the slow aurora gradient-mesh */}
-      <div ref={farRef} className="absolute inset-0 will-change-transform">
-        <div className="animate-aurora-a absolute -top-1/3 left-1/2 h-[68rem] w-[68rem] -translate-x-1/2 rounded-full bg-brass/[0.10] blur-[150px]" />
-        <div className="animate-aurora-b absolute top-1/4 -right-56 h-[46rem] w-[46rem] rounded-full bg-signal/[0.07] blur-[150px]" />
-        <div className="animate-aura-3 absolute -bottom-56 -left-40 h-[48rem] w-[48rem] rounded-full bg-ice/[0.05] blur-[150px]" />
+      <div ref={farRef} className={`absolute inset-0${still ? "" : " will-change-transform"}`}>
+        <div className={`${still ? "" : "animate-aurora-a "}absolute -top-1/3 left-1/2 h-[68rem] w-[68rem] -translate-x-1/2 rounded-full bg-brass/[0.10] blur-[150px]`} />
+        <div className={`${still ? "" : "animate-aurora-b "}absolute top-1/4 -right-56 h-[46rem] w-[46rem] rounded-full bg-signal/[0.07] blur-[150px]`} />
+        <div className={`${still ? "" : "animate-aura-3 "}absolute -bottom-56 -left-40 h-[48rem] w-[48rem] rounded-full bg-ice/[0.05] blur-[150px]`} />
       </div>
 
       {/* Starfield / floating dust — two tiled radial-gradient layers, slow drift,
           masked so it's densest mid-hero and fades at the edges. CSS-only. */}
       <div
-        className="animate-star-drift absolute inset-0 opacity-50 [background-image:radial-gradient(1px_1px_at_20%_30%,rgba(255,255,255,0.7),transparent),radial-gradient(1px_1px_at_75%_60%,rgba(191,216,230,0.6),transparent),radial-gradient(1px_1px_at_45%_85%,rgba(255,255,255,0.5),transparent),radial-gradient(1px_1px_at_85%_20%,rgba(255,255,255,0.45),transparent)] [background-size:240px_240px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"
+        className={`${still ? "" : "animate-star-drift "}absolute inset-0 opacity-50 [background-image:radial-gradient(1px_1px_at_20%_30%,rgba(255,255,255,0.7),transparent),radial-gradient(1px_1px_at_75%_60%,rgba(191,216,230,0.6),transparent),radial-gradient(1px_1px_at_45%_85%,rgba(255,255,255,0.5),transparent),radial-gradient(1px_1px_at_85%_20%,rgba(255,255,255,0.45),transparent)] [background-size:240px_240px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]`}
       />
 
       {/* NEAR parallax layer: a couple of brighter signal/ice motes for depth */}
-      <div ref={nearRef} className="absolute inset-0 will-change-transform">
+      <div ref={nearRef} className={`absolute inset-0${still ? "" : " will-change-transform"}`}>
         <div className="absolute left-[22%] top-[28%] size-1 rounded-full bg-signal/60 blur-[1px]" />
         <div className="absolute right-[26%] top-[44%] size-1 rounded-full bg-ice/60 blur-[1px]" />
         <div className="absolute left-[60%] top-[64%] size-[3px] rounded-full bg-brass/50 blur-[1px]" />
