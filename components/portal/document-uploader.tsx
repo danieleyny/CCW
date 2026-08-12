@@ -162,7 +162,7 @@ export function DocumentUploader({
 
       {hasSmart && !sharedProvided && (
         <div className="mt-3 space-y-1.5">
-          <label htmlFor={`kind-${reqCode}`} className="text-xs text-muted-foreground">
+          <label htmlFor={`kind-${reqCode}`} className="text-[13px] text-muted-foreground sm:text-xs">
             What is this document?
           </label>
           <select
@@ -170,7 +170,7 @@ export function DocumentUploader({
             value={kind}
             onChange={(e) => setKind(e.target.value)}
             disabled={busy}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40"
+            className="h-[var(--tap)] w-full rounded-md border border-input bg-background px-3 text-base outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 sm:h-10 sm:text-sm"
           >
             {smartKinds!.map((k) => (
               <option key={k.kind} value={k.kind}>

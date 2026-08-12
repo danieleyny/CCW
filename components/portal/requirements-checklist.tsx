@@ -298,7 +298,7 @@ export function RequirementsChecklist({
                 aria-pressed={active}
                 onClick={() => setFilter(f.key)}
                 className={cn(
-                  "min-h-[36px] rounded-full border px-3 text-xs font-medium transition-colors",
+                  "inline-flex min-h-[var(--tap)] items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors sm:min-h-[36px] sm:text-xs",
                   "focus-visible:ring-2 focus-visible:ring-signal/40 focus-visible:outline-none",
                   active
                     ? "border-brass/50 bg-brass/15 text-brass-bright"

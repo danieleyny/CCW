@@ -167,7 +167,7 @@ export function QuestionnaireDialog({
             id={id}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
-            className="h-11 w-full rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40"
+            className="h-[var(--tap)] w-full rounded-md border border-hairline-strong bg-surface-3 px-3 text-base text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 sm:h-11 sm:text-sm"
           >
             <option value="">Select…</option>
             {(f.options ?? []).map((o) => (
@@ -177,7 +177,7 @@ export function QuestionnaireDialog({
         ) : (
           <Input
             id={id}
-            className="h-11"
+            className="h-[var(--tap)] sm:h-11"
             type={f.type === "date" ? "date" : "text"}
             maxLength={f.maxLength}
             placeholder={f.placeholder}
