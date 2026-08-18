@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gun License NYC — V6 visual mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ── surface ladder (the fix) ───────────────────────── */
+  --sec-0:#06070A; --sec-1:#0E1117; --sec-2:#171C26; --sec-3:#222834;
+  --paper:#F4F2EE; --ink:#0B0A07;
+  /* ── brand ───────────────────────────────────────────── */
+  --brass:#C9A24B; --brass-bright:#E7C77A; --brass-deep:#8E6F2E;
+  --ice:#BFD8E6; --signal:#5FD0E0;
+  --hi:#F2F3F5; --mid:#A8AEB8; --low:#6B7280;
+  --hair:rgba(255,255,255,.10); --hair-strong:rgba(255,255,255,.18);
+  /* ── rhythm: three tiers, never adjacent-repeated ───── */
+  --pad-sm:clamp(56px,6vw,80px);
+  --pad-md:clamp(88px,9vw,128px);
+  --pad-lg:clamp(128px,14vw,192px);
+  /* ── type: five steps, big jumps ────────────────────── */
+  --t-display:clamp(2.5rem,5.4vw,4.5rem);
+  --t-chapter:clamp(1.75rem,3.1vw,2.75rem);
+  --t-section:1.375rem;
+  --t-lead:1.1875rem;
+  --t-body:1.0625rem;
+  --t-micro:.6875rem;
+  --w-prose:68ch; --w-content:1200px; --w-wide:1440px;
+  --disp:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --sans:"Inter",ui-sans-serif,-apple-system,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--sec-0);color:var(--hi);font:var(--t-body)/1.72 var(--sans);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--disp);margin:0;text-wrap:balance}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+
+/* ── section surfaces + the two-signal rule ───────────── */
+.sec{position:relative}
+.sec-0{background:var(--sec-0)}
+.sec-1{background:var(--sec-1)}
+.sec-2{background:var(--sec-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 -1px 0 rgba(0,0,0,.65)}
+.sec-3{background:var(--sec-3);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 -1px 0 rgba(0,0,0,.7)}
+.pad-sm{padding-block:var(--pad-sm)}
+.pad-md{padding-block:var(--pad-md)}
+.pad-lg{padding-block:var(--pad-lg)}
+.wash-brass::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% 0%,rgba(201,162,75,.075),transparent 62%)}
+.divider-horizon{height:1px;border:0;margin:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.14) 18%,rgba(201,162,75,.38) 50%,rgba(255,255,255,.14) 82%,transparent)}
+.wrap{max-width:var(--w-content);margin:0 auto;padding-inline:32px;position:relative}
+.wrap-wide{max-width:var(--w-wide);margin:0 auto;padding-inline:32px;position:relative}
+
+/* ── type utilities ───────────────────────────────────── */
+.display{font-size:var(--t-display);line-height:.95;letter-spacing:-.03em;font-weight:500}
+.chapter{font-size:var(--t-chapter);line-height:1.05;letter-spacing:-.022em;font-weight:600}
+.h3{font-size:var(--t-section);line-height:1.25;letter-spacing:-.01em;font-weight:600}
+.lead{font-size:var(--t-lead);line-height:1.62;color:var(--mid);text-wrap:pretty}
+.muted{color:var(--mid)}
+.low{color:var(--low)}
+.eyebrow{font:500 var(--t-micro)/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--brass);
+  display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--brass);flex:none}
+
+/* ── card tiers ───────────────────────────────────────── */
+.card-raised{display:flex;flex-direction:column;background:var(--sec-2);border:1px solid var(--hair-strong);border-radius:12px;padding:26px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 32px -18px rgba(0,0,0,.85)}
+.card-feature{display:flex;flex-direction:column;position:relative;background:var(--sec-3);border:1px solid rgba(201,162,75,.34);border-radius:14px;padding:32px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px -24px rgba(0,0,0,.9)}
+.card-inset{background:rgba(0,0,0,.34);border:1px solid var(--hair);border-radius:10px;padding:18px 20px;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.55);color:var(--mid);font-size:.9375rem}
+/* the ledger — replaces 24 identical boxes */
+.ledger{border-top:1px solid var(--hair)}
+.ledger li{list-style:none;border-bottom:1px solid var(--hair);padding:20px 0 20px 22px;position:relative}
+.ledger li::before{content:"";position:absolute;left:0;top:20px;bottom:20px;width:2px;background:var(--brass);opacity:.75}
+.ledger li.key::before{opacity:1;width:3px;box-shadow:0 0 18px rgba(201,162,75,.5)}
+.src{font:400 .75rem/1.5 var(--mono);color:var(--low);margin-top:7px}
+.src a{color:var(--signal)}
+
+/* ── brass band ───────────────────────────────────────── */
+.band-brass{background:linear-gradient(180deg,var(--brass-bright),var(--brass) 42%,var(--brass-deep));color:var(--ink)}
+.band-brass .lead{color:rgba(11,10,7,.72)}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 24px;border-radius:8px;
+  font:600 .9375rem/1 var(--sans);border:1px solid transparent;transition:.18s}
+.btn-brass{background:var(--brass);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.24)}
+.btn-ink{background:var(--ink);color:var(--brass-bright)}
+.btn-ghost{border-color:var(--hair-strong);background:rgba(255,255,255,.03);color:var(--hi)}
+
+/* ── nav ──────────────────────────────────────────────── */
+.nav{position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);background:rgba(14,17,23,.86);
+  border-bottom:1px solid var(--hair)}
+.nav-in{max-width:var(--w-wide);margin:0 auto;padding:14px 32px;display:flex;align-items:center;gap:34px}
+.logo{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:600;font-size:1.0625rem;letter-spacing:-.015em}
+.nav a.l{color:var(--mid);font-size:.9375rem;font-weight:500}
+.nav a.l:hover{color:var(--hi)}
+.progress{height:2px;background:linear-gradient(90deg,var(--brass),var(--brass-bright));width:38%}
+
+/* ── guide shell ──────────────────────────────────────── */
+.guide{display:grid;grid-template-columns:248px minmax(0,var(--w-prose)) 220px;gap:56px;align-items:start}
+.rail{position:sticky;top:96px;font-size:.875rem}
+.toc{list-style:none;margin:14px 0 0;padding:0;border-left:1px solid var(--hair)}
+.toc li{padding:7px 0 7px 16px;color:var(--low);border-left:2px solid transparent;margin-left:-1px}
+.toc li.on{color:var(--brass);border-left-color:var(--brass)}
+.gutter{position:sticky;top:96px;font-size:.8125rem;color:var(--low)}
+.pull{border-left:2px solid var(--ice);padding-left:14px;color:var(--ice);font-size:.9375rem;line-height:1.55}
+
+/* ── product artifact ─────────────────────────────────── */
+.artifact{border-radius:14px;overflow:hidden;border:1px solid var(--hair-strong);background:var(--sec-1);
+  box-shadow:0 40px 80px -40px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.07);
+  transform:perspective(2200px) rotateY(-3.5deg) rotateX(1.2deg)}
+.chrome{display:flex;align-items:center;gap:7px;padding:11px 14px;background:var(--sec-2);border-bottom:1px solid var(--hair)}
+.dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16)}
+.mini{font:400 .8125rem/1.5 var(--sans)}
+.mrow{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1px solid var(--hair);border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:9px}
+.tick{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--brass);flex:none;position:relative}
+.tick::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--brass)}
+.stat{flex:1;text-align:center;padding:15px 8px;border:1px solid var(--hair);border-radius:8px;background:rgba(255,255,255,.02)}
+.stat b{display:block;font:600 1.5rem/1 var(--disp);color:var(--brass);font-variant-numeric:tabular-nums}
+.stat span{font:400 .625rem/1 var(--mono);letter-spacing:.14em;color:var(--low);text-transform:uppercase}
+
+/* ── pricing ──────────────────────────────────────────── */
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:stretch}
+.tier{display:flex;flex-direction:column}
+.tier .cta{margin-top:auto;padding-top:24px}
+.price{font:600 var(--t-chapter)/1 var(--disp);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.price.sm{font-size:1.75rem;color:var(--mid)}
+.ribbon{position:absolute;top:-11px;left:32px;background:var(--brass);color:var(--ink);
+  font:600 .625rem/1 var(--mono);letter-spacing:.14em;padding:6px 11px;border-radius:4px;text-transform:uppercase}
+.feat{list-style:none;margin:20px 0 0;padding:0;font-size:.9375rem;color:var(--mid)}
+.feat li{padding:7px 0 7px 22px;position:relative}
+.feat li::before{content:"";position:absolute;left:0;top:14px;width:11px;height:2px;background:var(--brass)}
+
+/* ── footer ───────────────────────────────────────────── */
+.fcols{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:36px}
+.fcols h4{font:600 .8125rem/1 var(--sans);letter-spacing:.04em;margin-bottom:14px}
+.fcols a{display:block;color:var(--low);font-size:.875rem;padding:5px 0}
+.fcols a:hover{color:var(--mid)}
+
+/* ── spec overlay ─────────────────────────────────────── */
+.spec{position:absolute;left:12px;top:12px;z-index:5;font:500 .625rem/1 var(--mono);letter-spacing:.1em;
+  color:var(--signal);background:rgba(6,7,10,.9);border:1px solid rgba(95,208,224,.4);
+  padding:6px 9px;border-radius:4px;display:none;text-transform:uppercase}
+body.show-spec .spec{display:block}
+.toggle{position:fixed;right:20px;bottom:20px;z-index:90;cursor:pointer;
+  font:500 .75rem/1 var(--mono);letter-spacing:.1em;color:var(--ink);background:var(--brass);
+  border:0;padding:13px 17px;border-radius:8px;text-transform:uppercase;box-shadow:0 12px 30px -12px rgba(0,0,0,.9)}
+.note{font:500 .6875rem/1.5 var(--mono);letter-spacing:.1em;color:var(--signal);text-transform:uppercase;
+  border:1px dashed rgba(95,208,224,.35);border-radius:6px;padding:9px 13px;display:inline-block}
+
+@media(max-width:1180px){.guide{grid-template-columns:1fr}.rail,.gutter{position:static}.tiers{grid-template-columns:repeat(2,1fr)}.fcols{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.tiers{grid-template-columns:1fr}.wrap,.wrap-wide{padding-inline:20px}}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══════════════════════════════════════════════ -->
+<div class="nav">
+  <div class="nav-in">
+    <div class="logo">
+      <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true">
+        <circle cx="256" cy="256" r="196" fill="none" stroke="#C9A24B" stroke-width="14"/>
+        <g transform="rotate(29 256 256)">
+          <line x1="116" y1="198" x2="396" y2="198" stroke="#BFD8E6" stroke-width="7" opacity=".75"/>
+          <line x1="116" y1="314" x2="396" y2="314" stroke="#BFD8E6" stroke-width="7" opacity=".75"/>
+        </g>
+        <line x1="235.5" y1="61" x2="276.5" y2="451" stroke="#0E1117" stroke-width="34"/>
+        <line x1="235.5" y1="61" x2="276.5" y2="451" stroke="#C9A24B" stroke-width="18"/>
+        <g stroke="#C9A24B" stroke-width="16">
+          <line x1="452" y1="256" x2="499" y2="256"/><line x1="13" y1="256" x2="60" y2="256"/>
+          <line x1="256" y1="452" x2="256" y2="499"/><line x1="256" y1="13" x2="256" y2="60"/>
+        </g>
+        <circle cx="256" cy="256" r="44" fill="#0E1117"/><circle cx="256" cy="256" r="30" fill="#C9A24B"/>
+      </svg>
+      Gun License NYC
+    </div>
+    <div style="display:flex;gap:26px;margin-left:12px">
+      <a class="l" href="#process">How it works</a>
+      <a class="l" href="#req">Requirements</a>
+      <a class="l" href="#timeline">Timeline</a>
+      <a class="l" href="#pricing">Pricing</a>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:18px">
+      <a class="l" href="#">Sign in</a>
+      <a class="btn btn-brass" style="height:40px;padding:0 18px" href="#">Check your eligibility</a>
+    </div>
+  </div>
+  <div class="progress"></div>
+</div>
+
+<!-- ══ HERO — sec-0 · pad-lg · wash-brass ═══════════════ -->
+<section class="sec sec-0 pad-lg wash-brass">
+  <span class="spec">sec-0 · pad-lg · wash-brass</span>
+  <div class="wrap-wide" style="display:grid;grid-template-columns:1.08fr .92fr;gap:80px;align-items:center;max-width:1340px">
+    <div>
+      <div class="eyebrow">NYC · Gun license, handled</div>
+      <h1 class="display" style="margin:26px 0 0">
+        <span style="display:block;white-space:nowrap">The whole NYC</span>
+        <span style="display:block;white-space:nowrap">gun license process.</span>
+        <span style="display:block;color:var(--brass)">Handled.</span>
+      </h1>
+      <p class="lead" style="margin-top:26px;max-width:46ch">
+        Getting a gun license in New York City is slow and strict. One team tracks every document,
+        deadline and requirement — from your first question to the day you're licensed.
+      </p>
+      <div style="display:flex;gap:14px;margin-top:34px">
+        <a class="btn btn-brass" href="#">Check your eligibility →</a>
+        <a class="btn btn-ghost" href="#req">See what it takes</a>
+      </div>
+      <div class="card-inset" style="margin-top:34px;max-width:52ch">
+        We are not attorneys and are not affiliated with or endorsed by the NYPD.
+        You review and submit your own application.
+      </div>
+    </div>
+    <div class="artifact">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span style="margin-left:10px;font:400 .6875rem/1 var(--mono);color:var(--low);letter-spacing:.1em">CASE FILE · NYC CARRY</span>
+        <span style="margin-left:auto;font:500 .625rem/1 var(--mono);color:var(--ink);background:var(--ice);padding:4px 8px;border-radius:3px;letter-spacing:.1em">STAGE 06</span>
+      </div>
+      <div style="padding:22px">
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <div class="stat"><b>17/24</b><span>Requirements</span></div>
+          <div class="stat"><b>71%</b><span>Complete</span></div>
+          <div class="stat"><b>1</b><span>Needs a fix</span></div>
+        </div>
+        <div class="mrow mini"><span class="tick"></span>Character references — notarized</div>
+        <div class="mrow mini"><span class="tick"></span>Statement from everyone you live with</div>
+        <div class="mrow mini" style="border-color:rgba(201,162,75,.4);background:rgba(201,162,75,.07)">
+          <span class="tick"></span><span>18-hour safety course — <span style="color:var(--brass)">certificate ages out in 31 days</span></span>
+        </div>
+        <div class="mrow mini" style="margin-bottom:0"><span class="tick"></span>Safe storage photos</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-horizon">
+
+<!-- ══ TICKER — sec-2 · pad-sm ══════════════════════════ -->
+<section class="sec sec-2 pad-sm" style="padding-block:22px;overflow:hidden">
+  <span class="spec">sec-2 · pad-sm</span>
+  <div class="wrap-wide" style="display:flex;gap:52px;justify-content:center;flex-wrap:wrap;
+       font:400 var(--t-micro)/1 var(--mono);letter-spacing:.16em;color:var(--low);text-transform:uppercase">
+    <span>All five boroughs</span><span style="color:var(--brass)">◈</span>
+    <span>State-certified instructors</span><span style="color:var(--brass)">◈</span>
+    <span>~6 month typical NYPD timeline</span><span style="color:var(--brass)">◈</span>
+    <span>You file it — or, with full concierge, we do</span>
+  </div>
+</section>
+
+<hr class="divider-horizon">
+
+<!-- ══ CHAPTER — sec-1 · pad-lg ═════════════════════════ -->
+<section class="sec sec-1 pad-lg" id="process">
+  <span class="spec">sec-1 · pad-lg</span>
+  <div class="wrap">
+    <div style="max-width:60ch">
+      <div class="eyebrow">What you actually get</div>
+      <h2 class="chapter" style="margin:22px 0 0">You'll never wonder what's next.</h2>
+      <p class="lead" style="margin-top:20px">
+        Five phases, one file, one team. Every requirement carries its own clock — and the platform
+        watches all of them so you don't have to.
+      </p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:52px;align-items:stretch">
+      <div class="card-raised">
+        <div style="font:500 .6875rem/1 var(--mono);letter-spacing:.16em;color:var(--brass)">PHASE 01</div>
+        <h3 class="h3" style="margin:14px 0 10px">Qualify &amp; enroll</h3>
+        <p class="muted" style="font-size:.9375rem">A two-minute eligibility check tells you exactly where you stand. No payment to start.</p>
+      </div>
+      <div class="card-feature">
+        <div class="ribbon">The long pole</div>
+        <div style="font:500 .6875rem/1 var(--mono);letter-spacing:.16em;color:var(--brass)">PHASE 02</div>
+        <h3 class="h3" style="margin:14px 0 10px">Train — on day one</h3>
+        <p class="muted" style="font-size:.9375rem">Your certificate expires six months after completion. Start it first, or you take the course twice.</p>
+      </div>
+      <div class="card-raised">
+        <div style="font:500 .6875rem/1 var(--mono);letter-spacing:.16em;color:var(--brass)">PHASE 03</div>
+        <h3 class="h3" style="margin:14px 0 10px">Assemble the file</h3>
+        <p class="muted" style="font-size:.9375rem">Twenty-four documents, four notarized references, and every adult in your household.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-horizon">
+
+<!-- ══ GUIDE SHELL — sec-2 · pad-md ═════════════════════ -->
+<section class="sec sec-2 pad-md" id="req">
+  <span class="spec">sec-2 · pad-md · GuideShell</span>
+  <div class="wrap-wide">
+    <p class="note" style="margin-bottom:34px">/requirements — same content, restructured: rail + ledger instead of one narrow column of 24 boxes</p>
+    <div class="guide">
+      <aside class="rail">
+        <div style="font:500 var(--t-micro)/1 var(--mono);letter-spacing:.16em;color:var(--low);text-transform:uppercase">On this page</div>
+        <ul class="toc">
+          <li class="on">Are you eligible?</li>
+          <li>The training</li>
+          <li>The documents</li>
+          <li>The interview</li>
+          <li>After you're approved</li>
+        </ul>
+        <div class="card-raised" style="margin-top:28px;padding:20px">
+          <div class="h3" style="font-size:1rem">Not sure you qualify?</div>
+          <p class="muted" style="font-size:.875rem;margin:8px 0 16px">Two minutes, no payment.</p>
+          <a class="btn btn-brass" style="height:40px;padding:0 16px;font-size:.875rem" href="#">Check eligibility</a>
+        </div>
+        <div style="margin-top:22px;font:400 .75rem/1.6 var(--mono);color:var(--low)">
+          Reviewed by a NY-licensed attorney<br>Last verified 2026-07-14
+        </div>
+      </aside>
+
+      <div>
+        <div class="eyebrow">What it takes</div>
+        <h2 class="chapter" style="margin:20px 0 0">NYC gun license requirements</h2>
+        <div class="card-feature" style="margin-top:28px">
+          <p style="font-size:var(--t-lead);line-height:1.6">
+            A NYC gun license comes down to four things: you must be <b>at least 21</b>, complete
+            <b>18 hours of state-approved training</b>, assemble <b>about 24 documents</b>, and
+            <b>file the application yourself</b> with the NYPD License Division. None of it is hard on
+            its own. All of it together is why people stall.
+          </p>
+        </div>
+
+        <h3 class="h3" style="margin:44px 0 10px">First: are you eligible?</h3>
+        <p class="muted">Before you spend a dollar on training, find out whether you can apply at all.</p>
+        <ul class="ledger" style="margin:22px 0 0;padding:0">
+          <li class="key">
+            <div>You must be at least 21 years old to apply.</div>
+            <div class="src">Set by NYPD License Division · <a href="#">source</a> · verified 2026-07-14</div>
+          </li>
+          <li>
+            <div>Sealed and dismissed arrests are still disclosed on a New York firearms application.</div>
+            <div class="src">Set by CPL Article 160 · <a href="#">source</a> · verified 2026-07-14</div>
+          </li>
+          <li>
+            <div>Your training certificate must be dated within 6 months of when you file.</div>
+            <div class="src">Set by New York State (CCIA) · <a href="#">source</a> · verified 2026-07-14</div>
+          </li>
+          <li style="border-bottom:0">
+            <div>Four character references, each notarized, none of them relatives.</div>
+            <div class="src">Set by 38 RCNY §5-03(a)(1) · <a href="#">source</a> · verified 2026-07-14</div>
+          </li>
+        </ul>
+        <div class="card-inset" style="margin-top:26px">
+          We can explain a rule. We can't tell you what your specific arrest means for your specific
+          application — that's legal advice, and it takes a lawyer.
+        </div>
+      </div>
+
+      <aside class="gutter">
+        <div class="pull">Lack of candor is a more common denial ground than the underlying conduct.</div>
+        <div style="margin-top:30px;font:500 var(--t-micro)/1 var(--mono);letter-spacing:.16em;color:var(--low);text-transform:uppercase">Related</div>
+        <div style="margin-top:12px;line-height:1.9">
+          <a href="#" style="color:var(--signal);display:block">Disqualifiers →</a>
+          <a href="#" style="color:var(--signal);display:block">Premises vs. carry →</a>
+          <a href="#" style="color:var(--signal);display:block">Do I need a lawyer? →</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-horizon">
+
+<!-- ══ DIAGRAM — sec-1 · pad-lg ═════════════════════════ -->
+<section class="sec sec-1 pad-lg" id="timeline">
+  <span class="spec">sec-1 · pad-lg · custom diagram</span>
+  <div class="wrap">
+    <div style="max-width:58ch">
+      <div class="eyebrow">The clock</div>
+      <h2 class="chapter" style="margin:22px 0 0">Six months, and two of them are yours to lose.</h2>
+      <p class="lead" style="margin-top:18px">Training expires. References take weeks. Start both on day one and the NYPD's clock is the only one you're waiting on.</p>
+    </div>
+    <svg viewBox="0 0 1120 250" style="width:100%;margin-top:52px" role="img" aria-label="Six-month application timeline">
+      <defs>
+        <linearGradient id="tl" x1="0" x2="1"><stop offset="0" stop-color="#8E6F2E"/><stop offset=".55" stop-color="#C9A24B"/><stop offset="1" stop-color="#E7C77A"/></linearGradient>
+      </defs>
+      <line x1="40" y1="150" x2="1080" y2="150" stroke="rgba(255,255,255,.10)" stroke-width="2"/>
+      <rect x="40" y="146" width="1040" height="8" rx="4" fill="url(#tl)" opacity=".22"/>
+      <rect x="40" y="146" width="560" height="8" rx="4" fill="url(#tl)"/>
+      <g font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="1.6" fill="#6B7280">
+        <text x="40" y="196">DAY 0</text><text x="288" y="196">MONTH 1</text>
+        <text x="560" y="196">MONTH 3</text><text x="1004" y="196">MONTH 6</text>
+      </g>
+      <g>
+        <rect x="40" y="86" width="248" height="34" rx="6" fill="#171C26" stroke="rgba(201,162,75,.45)"/>
+        <text x="58" y="108" font-family="Inter, sans-serif" font-size="13" fill="#F2F3F5">18-hour training · starts day one</text>
+        <rect x="40" y="42" width="392" height="34" rx="6" fill="#171C26" stroke="rgba(191,216,230,.35)"/>
+        <text x="58" y="64" font-family="Inter, sans-serif" font-size="13" fill="#BFD8E6">References &amp; affidavits · in parallel</text>
+        <rect x="440" y="86" width="248" height="34" rx="6" fill="#171C26" stroke="rgba(255,255,255,.12)"/>
+        <text x="458" y="108" font-family="Inter, sans-serif" font-size="13" fill="#A8AEB8">Documents assembled</text>
+        <rect x="700" y="42" width="380" height="34" rx="6" fill="#171C26" stroke="rgba(255,255,255,.12)"/>
+        <text x="718" y="64" font-family="Inter, sans-serif" font-size="13" fill="#A8AEB8">NYPD investigation &amp; interview</text>
+      </g>
+      <g>
+        <circle cx="600" cy="150" r="7" fill="#C9A24B"/>
+        <line x1="600" y1="150" x2="600" y2="222" stroke="#C9A24B" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <text x="600" y="240" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#C9A24B" letter-spacing="1.4">YOU FILE</text>
+      </g>
+    </svg>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;align-items:stretch">
+      <div class="card-raised"><div class="price sm" style="color:var(--brass)">6 months</div>
+        <p class="muted" style="font-size:.9375rem;margin-top:8px">Your training certificate's shelf life. Miss it and you pay for the course twice.</p></div>
+      <div class="card-raised"><div class="price sm" style="color:var(--brass)">4 people</div>
+        <p class="muted" style="font-size:.9375rem;margin-top:8px">Character references, each notarized. The piece that depends most on other people.</p></div>
+      <div class="card-raised"><div class="price sm" style="color:var(--brass)">~24 docs</div>
+        <p class="muted" style="font-size:.9375rem;margin-top:8px">Tracked individually, each with its own clock. Nothing files until it's all ready.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-horizon">
+
+<!-- ══ PRICING — sec-2 · pad-md ═════════════════════════ -->
+<section class="sec sec-2 pad-md" id="pricing">
+  <span class="spec">sec-2 · pad-md</span>
+  <div class="wrap">
+    <div style="max-width:52ch">
+      <div class="eyebrow">Membership</div>
+      <h2 class="chapter" style="margin:22px 0 0">Pick how much you want us to handle.</h2>
+    </div>
+    <div class="tiers" style="margin-top:48px">
+      <div class="card-raised tier">
+        <div class="h3">Self-Guided</div>
+        <div class="price sm" style="margin:12px 0 6px">$499</div>
+        <p class="muted" style="font-size:.875rem">Portal access, full checklist, filing guidance.</p>
+        <ul class="feat"><li>Client portal</li><li>Full document checklist</li><li>Filing guidance</li><li>Email support</li></ul>
+        <div class="cta"><a class="btn btn-ghost" style="width:100%;justify-content:center" href="#">Start</a></div>
+      </div>
+      <div class="card-feature tier" style="transform:scale(1.04)">
+        <div class="ribbon">Most chosen</div>
+        <div class="h3">Full Concierge</div>
+        <div class="price" style="margin:12px 0 6px">$1,000</div>
+        <p class="muted" style="font-size:.875rem">End to end — we prepare, review and file.</p>
+        <ul class="feat"><li>Everything in Self-Guided</li><li>Training coordination</li><li>Document prep + notarization</li><li>Assembly + filing</li><li>Interview preparation</li></ul>
+        <div class="cta"><a class="btn btn-brass" style="width:100%;justify-content:center" href="#">Get started</a></div>
+      </div>
+      <div class="card-raised tier">
+        <div class="h3">Non-Resident</div>
+        <div class="price sm" style="margin:12px 0 6px">Custom</div>
+        <p class="muted" style="font-size:.875rem">Dedicated track for out-of-area applicants.</p>
+        <ul class="feat"><li>Special Carry track</li><li>Out-of-area logistics</li><li>Document prep + filing</li></ul>
+        <div class="cta"><a class="btn btn-ghost" style="width:100%;justify-content:center" href="#">Talk to us</a></div>
+      </div>
+      <div class="card-raised tier">
+        <div class="h3">Renewal</div>
+        <div class="price sm" style="margin:12px 0 6px">$399</div>
+        <p class="muted" style="font-size:.875rem">Recurring service every three years.</p>
+        <ul class="feat"><li>3-year renewal</li><li>Document refresh</li><li>Re-filing support</li></ul>
+        <div class="cta"><a class="btn btn-ghost" style="width:100%;justify-content:center" href="#">Set a reminder</a></div>
+      </div>
+    </div>
+    <div class="card-inset" style="margin-top:26px;display:grid;grid-template-columns:1.6fr 1fr;gap:28px;align-items:center">
+      <div><b style="color:var(--hi)">All-in estimate: $1,935 – $2,215.</b> Concierge fee + 18-hour course ($500–650) + notarization ($25–100) + government fees.</div>
+      <div style="color:var(--low);font-size:.875rem">Only the concierge fee is paid to us. We never mark up the rest.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ BRASS BAND — one per page ════════════════════════ -->
+<section class="sec band-brass pad-lg">
+  <span class="spec" style="color:var(--ink);border-color:rgba(11,10,7,.4);background:rgba(244,242,238,.8)">band-brass · pad-lg · one per page</span>
+  <div class="wrap" style="display:flex;gap:44px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+    <div style="max-width:44ch">
+      <h2 class="chapter">Find out where you stand in two minutes.</h2>
+      <p class="lead" style="margin-top:14px">No payment, no account. Just an honest answer about whether you can apply — and what it will take.</p>
+    </div>
+    <a class="btn btn-ink" style="height:56px;padding:0 32px;font-size:1.0625rem" href="#">Check your eligibility →</a>
+  </div>
+</section>
+
+<!-- ══ FOOTER — sec-0 · pad-md ══════════════════════════ -->
+<footer class="sec sec-0 pad-md">
+  <span class="spec">sec-0 · pad-md · sitemap footer</span>
+  <div class="wrap">
+    <div class="fcols">
+      <div>
+        <div class="logo" style="margin-bottom:14px">
+          <svg width="26" height="26" viewBox="0 0 512 512" aria-hidden="true">
+            <circle cx="256" cy="256" r="196" fill="none" stroke="#C9A24B" stroke-width="14"/>
+            <g transform="rotate(29 256 256)"><line x1="116" y1="198" x2="396" y2="198" stroke="#BFD8E6" stroke-width="7" opacity=".7"/><line x1="116" y1="314" x2="396" y2="314" stroke="#BFD8E6" stroke-width="7" opacity=".7"/></g>
+            <line x1="235.5" y1="61" x2="276.5" y2="451" stroke="#06070A" stroke-width="34"/>
+            <line x1="235.5" y1="61" x2="276.5" y2="451" stroke="#C9A24B" stroke-width="18"/>
+            <circle cx="256" cy="256" r="44" fill="#06070A"/><circle cx="256" cy="256" r="30" fill="#C9A24B"/>
+          </svg>
+          Gun License NYC
+        </div>
+        <p class="low" style="font-size:.875rem;max-width:30ch">Concealed carry, handled with precision. New York, NY · (929) 352-5961</p>
+      </div>
+      <div><h4>Process</h4><a href="#">How it works</a><a href="#">Timeline</a><a href="#">The interview</a><a href="#">After approval</a></div>
+      <div><h4>Requirements</h4><a href="#">Full requirements</a><a href="#">Disqualifiers</a><a href="#">Costs &amp; fees</a><a href="#">Premises vs. carry</a></div>
+      <div><h4>Boroughs</h4><a href="#">Manhattan</a><a href="#">Brooklyn</a><a href="#">Queens</a><a href="#">Bronx</a><a href="#">Staten Island</a></div>
+      <div><h4>Company</h4><a href="#">About</a><a href="#">Instructors</a><a href="#">Guides</a><a href="#">Contact</a></div>
+    </div>
+    <hr class="divider-horizon" style="margin:40px 0 24px">
+    <div class="card-inset" style="font-size:.8125rem">
+      Gun License NYC is a private document-preparation and case-management service. We are not attorneys
+      and do not represent you before the NYPD License Division; only a New York-licensed attorney may.
+      We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD
+      or any government agency.
+    </div>
+  </div>
+</footer>
+
+<button class="toggle" onclick="document.body.classList.toggle('show-spec')">Show spec overlay</button>
+</body>
+</html>

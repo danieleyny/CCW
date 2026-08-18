@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gun License NYC — Mobile V1 mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOKENS — copied verbatim from config/brand.ts paletteDark.
+   Nothing in this mockup invents a color.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#07080B;
+  --surface-1:#0E1015;
+  --surface-2:#14171D;
+  --surface-3:#1C2027;
+  --sec-raised:#0E1117;
+  --hairline:rgba(255,255,255,0.08);
+  --hairline-strong:rgba(255,255,255,0.14);
+  --text-hi:#F2F3F5;
+  --text-mid:#A8AEB8;
+  --text-low:#6B7280;
+  --brass:#C9A24B;
+  --brass-bright:#E7C77A;
+  --brass-deep:#8E6F2E;
+  --brass-glow:rgba(201,162,75,0.28);
+  --ice:#BFD8E6;
+  --signal:#5FD0E0;
+  --signal-dim:rgba(95,208,224,0.16);
+  --ok:#4ADE80;
+  --warn:#F2B45A;
+  --danger:#F2555A;
+  --ink:#0B0A07;
+
+  --font-sans:'Geist',system-ui,sans-serif;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+
+  /* NEW mobile rhythm tokens this upgrade introduces */
+  --tap:48px;            /* minimum comfortable tap target */
+  --gutter:16px;         /* phone page gutter */
+  --stack:12px;          /* gap between sibling cards in a list */
+  --stack-lg:20px;       /* gap between SECTIONS */
+  --r-card:14px;
+  --r-lg:18px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{
+  background:#050609;
+  color:var(--text-hi);
+  font-family:var(--font-sans);
+  padding:44px 24px 96px;
+}
+
+/* ── Gallery chrome ─────────────────────────────────────────────────────── */
+.gallery-head{max-width:1180px;margin:0 auto 44px}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass)}
+.gallery-head h1{font-family:var(--font-display);font-size:clamp(1.7rem,3.4vw,2.4rem);font-weight:600;letter-spacing:-.025em;margin-top:12px;line-height:1.08}
+.gallery-head p{color:var(--text-mid);font-size:15px;line-height:1.6;margin-top:14px;max-width:66ch}
+.gallery-head .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.legend span{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--hairline);border-radius:999px;padding:6px 12px;color:var(--text-mid)}
+
+.rail{display:flex;gap:36px;overflow-x:auto;padding:0 0 28px;max-width:1180px;margin:0 auto;scrollbar-width:thin}
+.rail::-webkit-scrollbar{height:8px}
+.rail::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:99px}
+
+.slot{flex:0 0 auto;width:390px}
+.slot-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-low);margin-bottom:6px}
+.slot-title{font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:4px}
+.slot-note{font-size:12.5px;color:var(--text-mid);line-height:1.55;margin-bottom:14px;min-height:52px}
+.slot-note b{color:var(--brass-bright);font-weight:500}
+.slot.is-before .slot-label{color:var(--danger)}
+.slot.is-after .slot-label{color:var(--ok)}
+
+/* ── The phone ──────────────────────────────────────────────────────────── */
+.phone{
+  width:390px;height:844px;position:relative;
+  border-radius:34px;border:1px solid var(--hairline-strong);
+  background:var(--bg);overflow:hidden;
+  box-shadow:0 40px 90px -50px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ── App header (56px, safe-area aware) ─────────────────────────────────── */
+.appbar{
+  flex:0 0 auto;height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--gutter);border-bottom:1px solid var(--hairline);
+  background:var(--surface-2);position:relative;z-index:5;
+}
+.wordmark{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:-.01em}
+.mark{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;border:1px solid color-mix(in oklab,var(--brass) 45%,transparent);background:linear-gradient(180deg,rgba(201,162,75,.18),rgba(201,162,75,.05))}
+.mark svg{width:14px;height:14px;stroke:var(--brass);fill:none;stroke-width:1.7}
+.appbar-right{display:flex;align-items:center;gap:6px}
+.iconbtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid transparent;color:var(--text-mid);position:relative}
+.iconbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dot-badge{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:99px;background:var(--signal);box-shadow:0 0 6px var(--signal)}
+.avatar{width:30px;height:30px;border-radius:99px;display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--brass-bright);background:var(--surface-3);border:1px solid var(--hairline-strong)}
+
+/* ═══ NEW: sticky step header (replaces the wrapping chip rail) ═══════════ */
+.stephead{
+  flex:0 0 auto;background:var(--surface-2);border-bottom:1px solid var(--hairline);
+  padding:11px var(--gutter) 12px;position:relative;z-index:4;
+}
+.stephead-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.step-count{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
+.step-name{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-.015em;margin-top:3px}
+.step-jump{
+  display:flex;align-items:center;gap:5px;height:32px;padding:0 11px;border-radius:99px;
+  border:1px solid var(--hairline-strong);background:var(--surface-3);
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);
+}
+.step-jump svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* the 6-segment progress meter */
+.segbar{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:11px}
+.seg{height:3px;border-radius:99px;background:var(--hairline)}
+.seg.done{background:color-mix(in oklab,var(--brass) 62%,transparent)}
+.seg.cur{background:var(--signal);box-shadow:0 0 8px color-mix(in oklab,var(--signal) 70%,transparent)}
+
+/* ── Page body ──────────────────────────────────────────────────────────── */
+.body{padding:var(--gutter) var(--gutter) 150px}
+
+/* ── Section header: mono label + fading rule + count ───────────────────── */
+.sechead{display:flex;align-items:center;gap:11px;margin:var(--stack-lg) 0 12px}
+.sechead:first-child{margin-top:0}
+.sechead h3{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-mid);white-space:nowrap}
+.sechead .rule{height:1px;flex:1;min-width:14px;background:linear-gradient(90deg,var(--hairline),transparent)}
+.sechead .count{font-family:var(--font-mono);font-size:10px;color:var(--text-low);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.card{
+  position:relative;overflow:hidden;border-radius:var(--r-card);
+  border:1px solid var(--hairline);
+  background:linear-gradient(180deg,var(--surface-2),var(--surface-1));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 18px 34px -24px rgba(0,0,0,.9);
+}
+.card.raised{border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 22px 44px -26px rgba(0,0,0,.85)}
+.glow::before{content:'';position:absolute;top:-2.5rem;right:-2.5rem;width:7rem;height:7rem;border-radius:99px;filter:blur(32px);pointer-events:none}
+.glow-brass::before{background:color-mix(in oklab,var(--brass) 13%,transparent)}
+.glow-signal::before{background:color-mix(in oklab,var(--signal) 15%,transparent)}
+.glow-ok::before{background:color-mix(in oklab,var(--ok) 15%,transparent)}
+.glow-warn::before{background:color-mix(in oklab,var(--warn) 15%,transparent)}
+
+/* ── The candor callout ─────────────────────────────────────────────────── */
+.candor{
+  border-radius:var(--r-lg);padding:16px;
+  border:1px solid color-mix(in oklab,var(--brass) 34%,transparent);
+  background:linear-gradient(180deg,rgba(201,162,75,.10),rgba(201,162,75,.03));
+  box-shadow:0 0 0 1px color-mix(in oklab,var(--brass) 12%,transparent), 0 12px 40px -26px var(--brass-glow);
+  display:flex;gap:12px;
+}
+.candor svg{width:19px;height:19px;flex:0 0 auto;margin-top:1px;stroke:var(--brass);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.candor h2{font-family:var(--font-display);font-size:16.5px;font-weight:600;letter-spacing:-.012em}
+.candor p{font-size:13.5px;line-height:1.62;color:var(--text-mid);margin-top:6px;text-wrap:pretty}
+.candor b{color:var(--brass-bright);font-weight:500}
+
+/* ═══ NEW: questionnaire card ════════════════════════════════════════════ */
+.qlist{display:flex;flex-direction:column;gap:var(--stack)}
+.q{padding:14px 14px 14px 13px;border-left:3px solid transparent;transition:opacity .2s}
+.q .qtop{display:flex;gap:11px}
+.qno{
+  flex:0 0 auto;width:30px;height:22px;border-radius:6px;display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--brass);background:color-mix(in oklab,var(--brass) 12%,transparent);
+  border:1px solid color-mix(in oklab,var(--brass) 22%,transparent);
+}
+.qtext{font-size:14.5px;line-height:1.52;color:var(--text-hi);text-wrap:pretty}
+.qtext .paren{color:var(--text-low);font-size:13px}
+
+/* the segmented Yes/No control — full width, 48px, sliding thumb */
+.yn{
+  margin-top:13px;display:grid;grid-template-columns:1fr 1fr;gap:0;position:relative;
+  height:var(--tap);border-radius:11px;border:1px solid var(--hairline-strong);
+  background:var(--surface-3);overflow:hidden;
+}
+.yn::after{
+  content:'';position:absolute;inset:3px auto 3px 3px;width:calc(50% - 4px);border-radius:8px;
+  transition:transform .18s cubic-bezier(.22,1,.36,1),background .18s;opacity:0;
+}
+.yn button{
+  position:relative;z-index:2;background:none;border:0;font:inherit;font-size:14px;font-weight:600;
+  color:var(--text-mid);font-family:var(--font-sans);letter-spacing:.01em;cursor:pointer;
+}
+.yn .divider{position:absolute;left:50%;top:9px;bottom:9px;width:1px;background:var(--hairline);z-index:1}
+
+/* state: unanswered — dashed hint ring on the whole card */
+.q.unanswered{border-color:color-mix(in oklab,var(--signal) 22%,transparent)}
+.q.unanswered .yn{border-style:dashed;border-color:color-mix(in oklab,var(--signal) 30%,transparent)}
+
+/* state: answered NO — calm, recedes */
+.q.no{opacity:.72}
+.q.no .yn::after{opacity:1;transform:translateX(100%);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline-strong)}
+.q.no .yn button:last-child{color:var(--text-hi)}
+.q.no .qno{color:var(--text-low);background:transparent;border-color:var(--hairline)}
+
+/* state: answered YES — brass edge + revealed explanation */
+.q.yes{border-left-color:var(--brass);background:linear-gradient(180deg,rgba(201,162,75,.07),var(--surface-1))}
+.q.yes .yn::after{opacity:1;transform:translateX(0);background:var(--brass);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.q.yes .yn button:first-child{color:var(--ink)}
+.reveal{margin-top:12px;padding-top:12px;border-top:1px dashed var(--hairline-strong)}
+.reveal-label{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+.reveal-label .req{color:var(--warn)}
+textarea.ta,input.tf{
+  width:100%;font-family:var(--font-sans);font-size:16px;color:var(--text-hi);
+  background:var(--surface-3);border:1px solid var(--hairline-strong);border-radius:10px;
+  padding:11px 12px;outline:none;resize:none;line-height:1.5;
+}
+textarea.ta{margin-top:8px;min-height:76px}
+textarea.ta::placeholder,input.tf::placeholder{color:var(--text-low)}
+.assist{margin-top:9px;display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;width:max-content;border-radius:99px;border:1px solid var(--hairline-strong);background:var(--surface-2);font-size:12.5px;color:var(--signal)}
+.assist svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+/* ── Questionnaire progress meter ───────────────────────────────────────── */
+.qmeter{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;background:var(--surface-2);border:1px solid var(--hairline);margin-bottom:12px}
+.qmeter .txt{font-size:12.5px;color:var(--text-mid);white-space:nowrap}
+.qmeter .txt b{color:var(--text-hi);font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.qmeter .bar{flex:1;height:3px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.qmeter .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--brass-deep),var(--brass))}
+
+/* ── Add-a-matter tile ──────────────────────────────────────────────────── */
+.addtile{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:58px;border-radius:var(--r-card);
+  border:1px dashed var(--hairline-strong);background:rgba(255,255,255,.012);
+  font-size:14px;font-weight:500;color:var(--text-mid);
+}
+.addtile svg{width:16px;height:16px;stroke:var(--brass);fill:none;stroke-width:2;stroke-linecap:round}
+.emptyline{font-size:12.5px;color:var(--text-low);line-height:1.55;margin-top:9px;text-align:center;text-wrap:pretty}
+
+/* ── Labelled field (arrest card) ───────────────────────────────────────── */
+.field{margin-top:12px}
+.field:first-child{margin-top:0}
+.field label{display:block;font-size:11.5px;font-weight:500;letter-spacing:.02em;color:var(--text-mid);margin-bottom:6px}
+.field label .star{color:var(--warn)}
+input.tf{height:var(--tap)}
+.matter-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.matter-head .n{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass)}
+.matter-head .rm{display:flex;align-items:center;gap:5px;height:32px;padding:0 10px;border-radius:8px;font-size:12px;color:var(--text-low)}
+.matter-head .rm svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7}
+
+/* ═══ NEW: sticky action bar ═════════════════════════════════════════════ */
+.actionbar{
+  position:absolute;left:0;right:0;bottom:0;z-index:8;
+  background:var(--surface-2);border-top:1px solid var(--hairline);
+  padding:10px var(--gutter) calc(10px + env(safe-area-inset-bottom,0px));
+  display:flex;align-items:center;gap:10px;
+}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;height:52px;border-radius:12px;
+  font-family:var(--font-sans);font-size:15px;font-weight:600;border:1px solid transparent;letter-spacing:.005em;
+}
+.btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-primary{background:var(--brass);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 10px 30px -14px var(--brass-glow);flex:1}
+.btn-ghost{background:var(--surface-3);border-color:var(--hairline-strong);color:var(--text-mid);width:52px;flex:0 0 auto}
+.btn-block{width:100%}
+.btn-outline{background:var(--surface-2);border-color:var(--hairline-strong);color:var(--text-hi)}
+.btn-sm{height:40px;font-size:13.5px;border-radius:10px;padding:0 14px}
+.errpill{
+  position:absolute;left:var(--gutter);right:var(--gutter);bottom:calc(100% + 9px);
+  display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:11px;
+  border:1px solid color-mix(in oklab,var(--warn) 36%,transparent);background:rgba(242,180,90,.13);
+  color:var(--warn);font-size:12.5px;font-weight:500;
+  box-shadow:0 14px 34px -22px rgba(0,0,0,.9);
+}
+.errpill svg{width:15px;height:15px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.9}
+.errpill .go{margin-left:auto;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+
+/* ═══ NEW: 5-tab bottom nav ══════════════════════════════════════════════ */
+.tabbar{
+  position:absolute;left:0;right:0;bottom:0;z-index:9;
+  background:var(--surface-2);border-top:1px solid var(--hairline);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:60px;position:relative;color:var(--text-low)}
+.tab .ic{width:34px;height:26px;border-radius:8px;display:grid;place-items:center;transition:background .18s}
+.tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.tab span{font-size:10px;font-weight:500;letter-spacing:.005em}
+.tab.on{color:var(--brass-bright)}
+.tab.on .ic{background:color-mix(in oklab,var(--brass) 14%,transparent)}
+.tab .nub{position:absolute;top:0;width:22px;height:2px;border-radius:99px;background:var(--brass);box-shadow:0 0 8px var(--brass-glow)}
+.tab .cnt{position:absolute;top:7px;left:calc(50% + 5px);min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--signal);color:var(--ink);font-family:var(--font-mono);font-size:9px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface-2)}
+
+/* ── Checklist bits ─────────────────────────────────────────────────────── */
+.progresshead{padding:13px var(--gutter);background:var(--surface-2);border-bottom:1px solid var(--hairline);flex:0 0 auto}
+.progresshead .row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.progresshead h1{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-.018em}
+.progresshead .frac{font-family:var(--font-mono);font-size:12px;color:var(--text-mid);font-variant-numeric:tabular-nums}
+.progresshead .frac b{color:var(--ok)}
+.pbar{height:3px;border-radius:99px;background:var(--surface-3);margin-top:10px;overflow:hidden}
+.pbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,color-mix(in oklab,var(--ok) 55%,transparent),var(--ok))}
+.chiprail{display:flex;gap:8px;margin-top:11px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.chiprail::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:99px;border:1px solid var(--hairline);background:var(--surface-1);font-size:13px;font-weight:500;color:var(--text-mid);white-space:nowrap}
+.chip b{font-family:var(--font-mono);font-size:11px;font-weight:600;opacity:.75;font-variant-numeric:tabular-nums}
+.chip.on{border-color:color-mix(in oklab,var(--brass) 50%,transparent);background:color-mix(in oklab,var(--brass) 14%,transparent);color:var(--brass-bright)}
+
+.rcard{padding:15px}
+.rcard .toprow{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.badge{display:inline-flex;align-items:center;height:21px;padding:0 8px;border-radius:99px;font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase}
+.badge.muted{background:var(--surface-3);color:var(--text-mid)}
+.badge.signal{background:var(--signal-dim);color:var(--signal)}
+.badge.ok{background:rgba(74,222,128,.12);color:var(--ok)}
+.badge.warn{background:rgba(242,180,90,.13);color:var(--warn)}
+.rcard .code{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;color:rgba(107,114,128,.72);letter-spacing:.06em}
+.rcard .main{display:flex;gap:12px}
+.tile{flex:0 0 auto;width:42px;height:42px;border-radius:11px;display:grid;place-items:center;border:1px solid var(--hairline);background:linear-gradient(180deg,var(--surface-3),var(--surface-2));box-shadow:inset 0 1px 0 rgba(255,255,255,.06);position:relative}
+.tile svg{width:19px;height:19px;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tile .pdot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:99px;box-shadow:0 0 0 2px var(--surface-1)}
+.rcard h4{font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:-.012em;line-height:1.3}
+.rcard .desc{font-size:13px;line-height:1.55;color:var(--text-mid);margin-top:5px;text-wrap:pretty}
+.rcard .acts{margin-top:13px;display:flex;gap:8px}
+.rcard .acts .btn{flex:1}
+.rcard .foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--hairline);display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--text-low)}
+.rcard .foot svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.notice{margin-top:11px;display:flex;gap:8px;padding:10px 11px;border-radius:10px;font-size:12.5px;line-height:1.5}
+.notice.warn{border:1px solid color-mix(in oklab,var(--warn) 30%,transparent);background:rgba(242,180,90,.09);color:var(--warn)}
+.notice svg{width:14px;height:14px;flex:0 0 auto;margin-top:2px;stroke:currentColor;fill:none;stroke-width:1.9}
+.notice b{font-weight:600}
+
+/* ── Auth screen ────────────────────────────────────────────────────────── */
+.auth{padding:26px var(--gutter) 32px;display:flex;flex-direction:column;min-height:100%}
+.auth .lock{display:flex;flex-direction:column;align-items:center;gap:11px;margin-bottom:24px}
+.auth .lock .mark{width:44px;height:44px;border-radius:12px}
+.auth .lock .mark svg{width:23px;height:23px}
+.auth .lock .wm{font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:-.02em}
+.journey{display:flex;align-items:center;gap:0;margin-bottom:22px}
+.jstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}
+.jstep .bead{width:9px;height:9px;border-radius:99px;background:var(--hairline-strong);z-index:2}
+.jstep.on .bead{background:var(--brass);box-shadow:0 0 0 4px color-mix(in oklab,var(--brass) 16%,transparent)}
+.jstep .lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-low)}
+.jstep.on .lbl{color:var(--brass)}
+.jstep::before{content:'';position:absolute;top:4px;left:-50%;width:100%;height:1px;background:var(--hairline)}
+.jstep:first-child::before{display:none}
+.auth h1{font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.022em;line-height:1.15}
+.auth .sub{font-size:14px;line-height:1.6;color:var(--text-mid);margin-top:8px;text-wrap:pretty}
+.auth form{margin-top:22px}
+.pw-wrap{position:relative}
+.pw-wrap .eye{position:absolute;right:6px;top:6px;width:36px;height:36px;border-radius:8px;display:grid;place-items:center;color:var(--text-low)}
+.pw-wrap .eye svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7}
+.pwhint{display:flex;gap:6px;margin-top:9px;align-items:center}
+.pwhint .seg{height:3px;flex:1;border-radius:99px;background:var(--surface-3)}
+.pwhint .seg.on{background:var(--ok)}
+.pwhint .t{font-size:11px;color:var(--text-low);margin-left:2px;white-space:nowrap}
+.trust{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.trust span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-low);border:1px solid var(--hairline);border-radius:99px;padding:5px 10px}
+.trust svg{width:11px;height:11px;stroke:var(--ok);fill:none;stroke-width:2.2}
+.auth .alt{text-align:center;font-size:13.5px;color:var(--text-mid);margin-top:16px}
+.auth .alt a{color:var(--brass-bright);font-weight:500}
+.legal{margin-top:auto;padding-top:22px}
+.legal details{border-top:1px solid var(--hairline);padding-top:12px}
+.legal summary{font-size:11.5px;color:var(--text-low);display:flex;align-items:center;gap:6px;list-style:none}
+.legal summary::-webkit-details-marker{display:none}
+.legal summary svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.legal p{font-size:10.5px;line-height:1.65;color:var(--text-low);margin-top:9px}
+
+/* ── "More" sheet ───────────────────────────────────────────────────────── */
+.scrim{position:absolute;inset:0;background:rgba(3,4,6,.66);backdrop-filter:blur(3px);z-index:10}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:11;border-radius:20px 20px 0 0;
+  background:var(--surface-2);border-top:1px solid var(--hairline-strong);
+  box-shadow:0 -24px 60px -30px rgba(0,0,0,.95);
+  padding:10px var(--gutter) calc(20px + env(safe-area-inset-bottom,0px));
+}
+.grabber{width:38px;height:4px;border-radius:99px;background:var(--hairline-strong);margin:0 auto 16px}
+.sheet h3{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-low);margin-bottom:12px}
+.srow{display:flex;align-items:center;gap:13px;height:56px;border-bottom:1px solid var(--hairline)}
+.srow:last-of-type{border-bottom:0}
+.srow .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--surface-3);border:1px solid var(--hairline)}
+.srow .ic svg{width:18px;height:18px;stroke:var(--text-mid);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.srow .tx{flex:1}
+.srow .tx b{display:block;font-size:14.5px;font-weight:500}
+.srow .tx i{display:block;font-size:11.5px;color:var(--text-low);font-style:normal;margin-top:2px}
+.srow .chev{color:var(--text-low)}
+.srow .chev svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── BEFORE screen (faithful reproduction of today's code) ──────────────── */
+.b-rail{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;margin-bottom:20px}
+.b-rail li{list-style:none;border:1px solid var(--hairline);border-radius:6px;padding:4px 10px;color:var(--text-low)}
+.b-rail li.cur{border-color:color-mix(in oklab,var(--brass) 40%,transparent);background:color-mix(in oklab,var(--brass) 10%,transparent);color:var(--brass)}
+.b-rail li.past{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.1);color:var(--ok)}
+.b-card{border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);padding:20px}
+.b-card h2{font-family:var(--font-display);font-size:18px;font-weight:600}
+.b-card>p{font-size:14px;color:var(--text-mid);line-height:1.5;margin-top:8px}
+.b-eng{font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-mid);margin:20px 0 8px}
+.b-btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:6px;border:1px solid var(--hairline-strong);background:rgba(20,23,29,.4);font-size:12.8px;color:var(--text-hi)}
+.b-q{border:1px solid var(--hairline);border-radius:6px;padding:10px;font-size:14px;margin-bottom:8px}
+.b-q p{line-height:1.45}
+.b-q .n{font-family:var(--font-mono);font-size:10px;color:var(--text-low)}
+/* Faithful repro of today's StepDisclosures: two bare buttons in a plain flex row —
+   NO container, no fill. Explicitly reset every property the new .yn control sets,
+   so the "after" styling can't leak into the "before". */
+.b-q .yn{display:flex;gap:8px;margin-top:8px;height:auto;border:0;border-radius:0;background:none;overflow:visible;position:static}
+.b-q .yn::after{display:none}
+.b-q .yn button{min-height:44px;min-width:64px;padding:0 14px;border-radius:6px;border:1px solid var(--hairline-strong);background:rgba(20,23,29,.4);color:var(--text-hi);font:inherit;font-family:var(--font-sans);font-size:12.8px;font-weight:500}
+.b-tabbar{position:absolute;left:0;right:0;bottom:0;z-index:9;background:var(--surface-2);border-top:1px solid var(--hairline);display:grid;grid-template-columns:repeat(7,1fr)}
+.b-tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:52px;color:var(--text-mid);font-size:11px;overflow:hidden}
+.b-tabbar a.on{color:var(--signal)}
+.b-tabbar a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.b-tabbar a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+
+.callouts{max-width:1180px;margin:56px auto 0;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.callout{border:1px solid var(--hairline);border-radius:14px;padding:18px;background:linear-gradient(180deg,var(--surface-2),var(--surface-1))}
+.callout h4{font-family:var(--font-display);font-size:14.5px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.callout h4 i{width:6px;height:6px;border-radius:99px;background:var(--brass);font-style:normal}
+.callout p{font-size:13px;line-height:1.6;color:var(--text-mid)}
+.callout code{font-family:var(--font-mono);font-size:11.5px;color:var(--signal);background:var(--surface-3);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="gallery-head">
+  <div class="eyebrow">Gun License NYC · Mobile V1</div>
+  <h1>The applicant's phone is the product surface.</h1>
+  <p>Every screen below is 390&nbsp;px — an iPhone 14/15 — drawn with the real <code style="font-family:var(--font-mono);font-size:13px;color:var(--signal)">paletteDark</code> tokens from <b style="color:var(--brass-bright);font-weight:500">config/brand.ts</b> and the shipped type stack (Geist / Space&nbsp;Grotesk / JetBrains&nbsp;Mono). Nothing here invents a color or a font. Scroll each phone; the rail scrolls sideways.</p>
+  <div class="legend">
+    <span>390 × 844</span>
+    <span>48px minimum tap target</span>
+    <span>Brass = done · Signal = active · Warn = needs you</span>
+    <span>Tokens only</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ROW 1 — THE DISCLOSURES FIX (before / after)
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="rail">
+
+  <!-- ─────────────── BEFORE ─────────────── -->
+  <div class="slot is-before">
+    <div class="slot-label">Before — today's build</div>
+    <div class="slot-title">Intake · Disclosures</div>
+    <div class="slot-note">Six full-label chips wrap to <b>three ragged rows</b> and eat 110px before any content. Thirteen questions render as 8%-white hairline rows on 8px gaps — they read as one grey mass. Next is ~2,400px down the scroll.</div>
+    <div class="phone"><div class="screen">
+      <div class="appbar">
+        <div class="wordmark"><div class="mark"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>Gun License NYC</div>
+        <div class="appbar-right"><div class="iconbtn"><svg viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 14 0c0 7 3 9 3 9H2s3-2 3-9"/><path d="M10 21h4"/></svg><i class="dot-badge"></i></div><div class="avatar">DE</div></div>
+      </div>
+      <div class="scroll"><div class="body" style="padding-bottom:110px">
+        <ol class="b-rail">
+          <li class="past">1. Eligibility</li><li class="past">2. Identity &amp; residence</li>
+          <li class="past">3. Household &amp; safeguard</li><li class="cur">4. Disclosures</li>
+          <li>5. Carry &amp; history</li><li>6. Review &amp; generate</li>
+        </ol>
+        <div class="b-card">
+          <h2>Disclosures — the real exam</h2>
+          <p>Disclose everything, even sealed or dismissed matters. A non-disclosed item found in the background check is far more damaging than the event. Every "yes" needs a written explanation before filing.</p>
+          <div class="b-eng">Arrests / summonses</div>
+          <div class="b-btn"><svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add arrest / summons</div>
+          <div class="b-eng">Questionnaire (Section B, Q10–22)</div>
+          <div class="b-q"><p><span class="n">Q10</span> Had or ever applied for a Handgun License issued by any Licensing Authority in N.Y.S.?</p><div class="yn"><button>Yes</button><button>No</button></div></div>
+          <div class="b-q"><p><span class="n">Q11</span> Been discharged from any employment?</p><div class="yn"><button>Yes</button><button>No</button></div></div>
+          <div class="b-q"><p><span class="n">Q12</span> Used narcotics or tranquilizers? (List doctor's name, address, telephone number in your explanation.)</p><div class="yn"><button>Yes</button><button>No</button></div></div>
+          <div class="b-q"><p><span class="n">Q13</span> Been subpoenaed to, or testified at, a hearing or inquiry conducted by any executive, legislative or judicial body?</p><div class="yn"><button>Yes</button><button>No</button></div></div>
+        </div>
+      </div></div>
+      <nav class="b-tabbar">
+        <a class="on"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg><span>Home</span></a>
+        <a><svg viewBox="0 0 24 24"><path d="M9 5h11M9 12h11M9 19h11M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/></svg><span>Checklist</span></a>
+        <a><svg viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg><span>Documents</span></a>
+        <a><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M18 20a6.5 6.5 0 0 0-2-4.5"/></svg><span>People</span></a>
+        <a><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Messages</span></a>
+        <a><svg viewBox="0 0 24 24"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span>License</span></a>
+        <a><svg viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M7 7l-3 7h6zM17 7l-3 7h6z"/></svg><span>Appeal</span></a>
+      </nav>
+    </div></div>
+  </div>
+
+  <!-- ─────────────── AFTER ─────────────── -->
+  <div class="slot is-after">
+    <div class="slot-label">After — Mobile V1</div>
+    <div class="slot-title">Intake · Disclosures</div>
+    <div class="slot-note">Rail collapses to a <b>sticky step header</b> with a 6-segment meter (20px, always visible). Each question is a real card with a brass index rail and a full-width 48px Yes/No. <b>Yes reveals its explanation inline.</b> Next is always under the thumb.</div>
+    <div class="phone"><div class="screen">
+      <div class="appbar">
+        <div class="wordmark"><div class="mark"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>Gun License NYC</div>
+        <div class="appbar-right"><div class="iconbtn"><svg viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 14 0c0 7 3 9 3 9H2s3-2 3-9"/><path d="M10 21h4"/></svg><i class="dot-badge"></i></div><div class="avatar">DE</div></div>
+      </div>
+
+      <!-- sticky step header -->
+      <div class="stephead">
+        <div class="stephead-top">
+          <div>
+            <div class="step-count">Step 4 of 6</div>
+            <div class="step-name">Disclosures</div>
+          </div>
+          <div class="step-jump">All steps <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+        </div>
+        <div class="segbar">
+          <i class="seg done"></i><i class="seg done"></i><i class="seg done"></i>
+          <i class="seg cur"></i><i class="seg"></i><i class="seg"></i>
+        </div>
+      </div>
+
+      <div class="scroll" id="discScroll"><div class="body">
+
+        <div class="candor">
+          <svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="M12 8v4M12 16h.01"/></svg>
+          <div>
+            <h2>Tell us everything</h2>
+            <p>Disclose <b>every</b> matter — even sealed or dismissed. An item we didn't disclose that turns up in the background check is far more damaging than the event itself.</p>
+          </div>
+        </div>
+
+        <div class="sechead"><h3>Arrests &amp; summonses</h3><div class="rule"></div><span class="count">1</span></div>
+
+        <div class="card" style="padding:15px">
+          <div class="matter-head">
+            <span class="n">Matter 1</span>
+            <span class="rm"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg> Remove</span>
+          </div>
+          <div class="field"><label>Date it happened</label><input class="tf" value="2018-04-22" readonly></div>
+          <div class="field"><label>Court or jurisdiction <span class="star">*</span></label><input class="tf" placeholder="e.g. Kings County Criminal Court" readonly></div>
+          <div class="field"><label>How it ended <span class="star">*</span></label><input class="tf" placeholder="e.g. dismissed, ACD, convicted" readonly></div>
+          <div class="field"><label>What happened, in your words</label><textarea class="ta" placeholder="You can finish this at the review step."></textarea></div>
+          <div class="assist"><svg viewBox="0 0 24 24"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Help me draft this</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="addtile"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add another matter</div>
+        </div>
+
+        <div class="sechead"><h3>Section B · Q10–22</h3><div class="rule"></div><span class="count">3 / 13</span></div>
+
+        <div class="qmeter">
+          <span class="txt"><b>3</b> of <b>13</b> answered</span>
+          <span class="bar"><i style="width:23%"></i></span>
+        </div>
+
+        <div class="qlist">
+
+          <!-- answered NO — recedes -->
+          <div class="card q no">
+            <div class="qtop">
+              <span class="qno">Q10</span>
+              <p class="qtext">Had or ever applied for a Handgun License issued by any Licensing Authority in N.Y.S.?</p>
+            </div>
+            <div class="yn"><span class="divider"></span><button>Yes</button><button>No</button></div>
+          </div>
+
+          <!-- answered YES — brass edge + revealed explanation -->
+          <div class="card q yes glow glow-brass">
+            <div class="qtop">
+              <span class="qno">Q11</span>
+              <p class="qtext">Been discharged from any employment?</p>
+            </div>
+            <div class="yn"><span class="divider"></span><button>Yes</button><button>No</button></div>
+            <div class="reveal">
+              <div class="reveal-label">Your explanation <span class="req">· required before filing</span></div>
+              <textarea class="ta" placeholder="What happened, when, and how it resolved.">Laid off in a 2019 restructuring at Harlow &amp; Co. — position eliminated, not for cause. Reference letter from my supervisor available.</textarea>
+              <div class="assist"><svg viewBox="0 0 24 24"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Help me draft this</div>
+            </div>
+          </div>
+
+          <!-- answered NO -->
+          <div class="card q no">
+            <div class="qtop">
+              <span class="qno">Q12</span>
+              <p class="qtext">Used narcotics or tranquilizers? <span class="paren">(List your doctor's name, address and phone in the explanation.)</span></p>
+            </div>
+            <div class="yn"><span class="divider"></span><button>Yes</button><button>No</button></div>
+          </div>
+
+          <!-- unanswered — signal dashed ring -->
+          <div class="card q unanswered glow glow-signal">
+            <div class="qtop">
+              <span class="qno">Q13</span>
+              <p class="qtext">Been subpoenaed to, or testified at, a hearing or inquiry conducted by any executive, legislative or judicial body?</p>
+            </div>
+            <div class="yn"><span class="divider"></span><button>Yes</button><button>No</button></div>
+          </div>
+
+          <div class="card q unanswered">
+            <div class="qtop">
+              <span class="qno">Q14</span>
+              <p class="qtext">Been denied appointment in a civil service system — Federal, State, or Local?</p>
+            </div>
+            <div class="yn"><span class="divider"></span><button>Yes</button><button>No</button></div>
+          </div>
+
+        </div>
+      </div></div>
+
+      <!-- sticky action bar -->
+      <div class="actionbar">
+        <div class="errpill">
+          <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+          10 questions still unanswered
+          <span class="go">Jump →</span>
+        </div>
+        <button class="btn btn-ghost"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <button class="btn btn-primary">Next: Carry &amp; history <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ─────────────── STEP DRAWER ─────────────── -->
+  <div class="slot is-after">
+    <div class="slot-label">After — step drawer</div>
+    <div class="slot-title">Intake · jump between steps</div>
+    <div class="slot-note">The six labels don't disappear — they move into a sheet behind "All steps". Full names, completion state, and a 56px row each. Nothing wraps, nothing shrinks to 12px.</div>
+    <div class="phone"><div class="screen">
+      <div class="appbar">
+        <div class="wordmark"><div class="mark"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>Gun License NYC</div>
+        <div class="appbar-right"><div class="iconbtn"><svg viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 14 0c0 7 3 9 3 9H2s3-2 3-9"/><path d="M10 21h4"/></svg></div><div class="avatar">DE</div></div>
+      </div>
+      <div class="stephead">
+        <div class="stephead-top">
+          <div><div class="step-count">Step 4 of 6</div><div class="step-name">Disclosures</div></div>
+          <div class="step-jump" style="border-color:color-mix(in oklab,var(--brass) 40%,transparent);color:var(--brass)">All steps <svg viewBox="0 0 24 24" style="transform:rotate(180deg)"><path d="m6 9 6 6 6-6"/></svg></div>
+        </div>
+        <div class="segbar"><i class="seg done"></i><i class="seg done"></i><i class="seg done"></i><i class="seg cur"></i><i class="seg"></i><i class="seg"></i></div>
+      </div>
+      <div class="scroll"><div class="body">
+        <div class="candor">
+          <svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="M12 8v4M12 16h.01"/></svg>
+          <div><h2>Tell us everything</h2><p>Disclose <b>every</b> matter — even sealed or dismissed.</p></div>
+        </div>
+      </div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <h3>Application intake</h3>
+        <div class="srow"><div class="ic" style="background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.28)"><svg viewBox="0 0 24 24" style="stroke:var(--ok)"><path d="m5 12 5 5L20 7"/></svg></div><div class="tx"><b>1 · Eligibility</b><i>Complete</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow"><div class="ic" style="background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.28)"><svg viewBox="0 0 24 24" style="stroke:var(--ok)"><path d="m5 12 5 5L20 7"/></svg></div><div class="tx"><b>2 · Identity &amp; residence</b><i>Complete</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow"><div class="ic" style="background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.28)"><svg viewBox="0 0 24 24" style="stroke:var(--ok)"><path d="m5 12 5 5L20 7"/></svg></div><div class="tx"><b>3 · Household &amp; safeguard</b><i>Complete</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow" style="background:color-mix(in oklab,var(--brass) 8%,transparent);border-radius:10px;margin:0 -8px;padding:0 8px"><div class="ic" style="background:color-mix(in oklab,var(--brass) 16%,transparent);border-color:color-mix(in oklab,var(--brass) 34%,transparent)"><svg viewBox="0 0 24 24" style="stroke:var(--brass)"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8.5"/></svg></div><div class="tx"><b style="color:var(--brass-bright)">4 · Disclosures</b><i style="color:var(--brass)">You're here · 3 of 13 answered</i></div></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/></svg></div><div class="tx"><b style="color:var(--text-mid)">5 · Carry &amp; history</b><i>Not started</i></div></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/></svg></div><div class="tx"><b style="color:var(--text-mid)">6 · Review &amp; generate</b><i>Not started</i></div></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ROW 2 — SIGNUP · CHECKLIST · NAV
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="rail" style="margin-top:52px">
+
+  <!-- ─────────────── SIGN UP ─────────────── -->
+  <div class="slot is-after">
+    <div class="slot-label">After — account creation</div>
+    <div class="slot-title">Create your account</div>
+    <div class="slot-note">Top-aligned (a centred card jumps when the keyboard opens). A <b>3-bead journey strip</b> makes signup feel like step 1 of something, not a dead end. 48px fields, 16px text (no iOS zoom), show/hide password, disclaimer folded away.</div>
+    <div class="phone"><div class="screen">
+      <div class="scroll"><div class="auth">
+        <div class="lock">
+          <div class="mark"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>
+          <div class="wm">Gun License NYC</div>
+        </div>
+
+        <div class="journey">
+          <div class="jstep on"><span class="bead"></span><span class="lbl">Account</span></div>
+          <div class="jstep"><span class="bead"></span><span class="lbl">Intake</span></div>
+          <div class="jstep"><span class="bead"></span><span class="lbl">Checklist</span></div>
+        </div>
+
+        <h1>Create your account</h1>
+        <p class="sub">Two minutes here, then a guided interview builds your personalized document checklist.</p>
+
+        <form>
+          <div class="field"><label>Full name</label><input class="tf" value="Daniel Eyny" readonly></div>
+          <div class="field"><label>Email</label><input class="tf" value="you@example.com" readonly></div>
+          <div class="field">
+            <label>Password</label>
+            <div class="pw-wrap">
+              <input class="tf" type="text" value="••••••••••" readonly style="padding-right:48px">
+              <span class="eye"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            </div>
+            <div class="pwhint"><i class="seg on"></i><i class="seg on"></i><i class="seg on"></i><i class="seg"></i><span class="t">Strong</span></div>
+          </div>
+
+          <div style="margin-top:20px"><button class="btn btn-primary btn-block">Create account <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+
+          <div class="trust">
+            <span><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg> Encrypted</span>
+            <span><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg> No card required</span>
+            <span><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg> You always file your own application</span>
+          </div>
+
+          <p class="alt">Already have an account? <a>Sign in</a></p>
+        </form>
+
+        <div class="legal">
+          <details>
+            <summary><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg> Important legal notice — read before you continue</summary>
+            <p>We are not attorneys and do not provide legal advice or representation before the NYPD License Division. We do not file on your behalf, cannot expedite, and are not endorsed by or affiliated with the NYPD. You always submit your own application.</p>
+          </details>
+        </div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- ─────────────── CHECKLIST ─────────────── -->
+  <div class="slot is-after">
+    <div class="slot-label">After — the checklist</div>
+    <div class="slot-title">Your checklist</div>
+    <div class="slot-note">Progress + filters become a <b>sticky header</b> that never scrolls away. Badge moves to its own top row so titles never orphan. Body copy rises 12→13px, the primary action becomes a full-width 48px button, and the registry code retreats to a footer line.</div>
+    <div class="phone"><div class="screen">
+      <div class="appbar">
+        <div class="wordmark"><div class="mark"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>Gun License NYC</div>
+        <div class="appbar-right"><div class="iconbtn"><svg viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 14 0c0 7 3 9 3 9H2s3-2 3-9"/><path d="M10 21h4"/></svg><i class="dot-badge"></i></div><div class="avatar">DE</div></div>
+      </div>
+
+      <div class="progresshead">
+        <div class="row"><h1>Your checklist</h1><span class="frac"><b>7</b> / 19 done</span></div>
+        <div class="pbar"><i style="width:37%"></i></div>
+        <div class="chiprail">
+          <span class="chip on">To do <b>12</b></span>
+          <span class="chip">All <b>19</b></span>
+          <span class="chip">Completed <b>7</b></span>
+          <span class="chip">Needs notary <b>3</b></span>
+        </div>
+      </div>
+
+      <div class="scroll"><div class="body" style="padding-top:14px">
+
+        <div class="sechead" style="margin-top:0"><h3>Identity &amp; residence</h3><div class="rule"></div><span class="count">2 / 4</span></div>
+
+        <div class="qlist">
+
+          <div class="card raised rcard glow glow-warn">
+            <div class="toprow"><span class="badge warn">Fix needed</span><span class="code">RES-01</span></div>
+            <div class="main">
+              <div class="tile"><svg viewBox="0 0 24 24" style="stroke:var(--warn)"><path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/></svg><i class="pdot" style="background:var(--warn)"></i></div>
+              <div style="min-width:0;flex:1">
+                <h4>Prove where you live</h4>
+                <p class="desc">A utility bill, lease or bank statement in your name, dated within the last 60 days.</p>
+              </div>
+            </div>
+            <div class="notice warn">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span><b>Our reviewer asked for a fix:</b> the bill you sent is from March — we need one from the last 60 days.</span>
+            </div>
+            <div class="acts"><button class="btn btn-primary btn-sm" style="height:48px;font-size:14.5px"><svg viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg> Replace document</button></div>
+            <div class="foot"><span>Official requirement</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+          </div>
+
+          <div class="card raised rcard glow glow-signal">
+            <div class="toprow"><span class="badge signal">In review</span><span class="code">IDN-01</span></div>
+            <div class="main">
+              <div class="tile"><svg viewBox="0 0 24 24" style="stroke:var(--signal)"><rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8.5" cy="11.5" r="2"/><path d="M14 10h4M14 14h4M5.5 16.5c.6-1.6 1.8-2.2 3-2.2s2.4.6 3 2.2"/></svg></div>
+              <div style="min-width:0;flex:1">
+                <h4>Government photo ID</h4>
+                <p class="desc">Your passport also covered your date of birth and citizenship — we checked those off too.</p>
+              </div>
+            </div>
+            <div class="acts"><button class="btn btn-outline btn-sm" style="height:48px;font-size:14.5px"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> View passport.pdf</button></div>
+            <div class="foot"><span>Official requirement</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+          </div>
+
+          <div class="card raised rcard glow glow-ok">
+            <div class="toprow"><span class="badge ok">Accepted</span><span class="code">IDN-02</span></div>
+            <div class="main">
+              <div class="tile"><svg viewBox="0 0 24 24" style="stroke:var(--ok)"><path d="M12 2.5 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
+              <div style="min-width:0;flex:1">
+                <h4>Proof of date of birth</h4>
+                <p class="desc">Reviewed and accepted — provided from your passport.</p>
+              </div>
+            </div>
+            <div class="foot"><span>Official requirement</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+          </div>
+
+        </div>
+      </div></div>
+
+      <nav class="tabbar">
+        <a class="tab"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg></span><span>Home</span></a>
+        <a class="tab on"><i class="nub"></i><span class="ic"><svg viewBox="0 0 24 24"><path d="M9 5h11M9 12h11M9 19h11M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/></svg></span><span>Checklist</span></a>
+        <a class="tab"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg></span><span>Documents</span></a>
+        <a class="tab"><span class="cnt">2</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M18 20a6.5 6.5 0 0 0-2-4.5"/></svg></span><span>People</span></a>
+        <a class="tab"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span><span>More</span></a>
+      </nav>
+    </div></div>
+  </div>
+
+  <!-- ─────────────── MORE SHEET ─────────────── -->
+  <div class="slot is-after">
+    <div class="slot-label">After — the "More" sheet</div>
+    <div class="slot-title">5 tabs, nothing lost</div>
+    <div class="slot-note">Seven tabs at 390px gave each one ~55px and truncated labels. Five primaries get a real target and an active pill; <b>Messages, License, Appeal, Payments</b> and the rest live one tap away with full names and status lines.</div>
+    <div class="phone"><div class="screen">
+      <div class="appbar">
+        <div class="wordmark"><div class="mark"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>Gun License NYC</div>
+        <div class="appbar-right"><div class="iconbtn"><svg viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 14 0c0 7 3 9 3 9H2s3-2 3-9"/><path d="M10 21h4"/></svg><i class="dot-badge"></i></div><div class="avatar">DE</div></div>
+      </div>
+      <div class="progresshead">
+        <div class="row"><h1>Your checklist</h1><span class="frac"><b>7</b> / 19 done</span></div>
+        <div class="pbar"><i style="width:37%"></i></div>
+      </div>
+      <div class="scroll"><div class="body"></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <h3>More</h3>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="tx"><b>Messages</b><i>1 unread from your case team</i></div><span class="cnt" style="position:static;background:var(--signal)">1</span></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="tx"><b>Prepared forms</b><i>7 documents, pre-filled from intake</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></div><div class="tx"><b>Payments</b><i>Filing fees &amp; receipts</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></div><div class="tx"><b style="color:var(--text-mid)">Your license</b><i>Available after issuance</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M7 7l-3 7h6zM17 7l-3 7h6z"/></svg></div><div class="tx"><b style="color:var(--text-mid)">Appeal</b><i>Only if your application is denied</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+        <div class="srow"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div class="tx"><b>Profile &amp; your data</b><i>Account, language, privacy</i></div><div class="chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></div></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     Design notes
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="callouts">
+  <div class="callout">
+    <h4><i></i>Separation comes from surface, not from lines</h4>
+    <p>Today's questionnaire rows are a 1px <code>rgba(255,255,255,.08)</code> border on an 8px gap — at 390px that reads as one grey mass. Every list item becomes a <code>card</code>: a surface-2 → surface-1 gradient, an inset top highlight, a wide soft shadow, and a 12px gap. Same trick <code>.card-raised</code> already uses on the checklist.</p>
+  </div>
+  <div class="callout">
+    <h4><i></i>State is felt before it's read</h4>
+    <p>Unanswered = dashed signal ring. Answered No = the card recedes to 72% so your eye skips it. Answered Yes = brass left edge, brass glow, and the explanation textarea unfolds right there. You can tell where you are in thirteen questions without reading one.</p>
+  </div>
+  <div class="callout">
+    <h4><i></i>The primary action never scrolls away</h4>
+    <p>Step 4 is ~2,400px tall on a phone. Back/Next move into a sticky <code>.glass-bar</code> footer above the safe area, and the validation summary becomes a tap-to-jump pill docked to it — so "3 things to fix" is actionable instead of a list 2,000px from the field.</p>
+  </div>
+  <div class="callout">
+    <h4><i></i>Nothing new in the palette</h4>
+    <p>Every value here comes from <code>paletteDark</code>. What's new is rhythm: <code>--tap:48px</code>, <code>--gutter:16px</code>, <code>--stack:12px</code>, <code>--stack-lg:20px</code>, and a mobile type floor — body copy never below 13px, inputs at 16px so iOS never zooms.</p>
+  </div>
+</div>
+
+<script>
+/* Park the disclosures phone on the questionnaire block — that's the part of the
+   screen this upgrade is really about. Scroll up inside the phone to see the
+   candor callout and the arrest card. */
+window.addEventListener('load', function () {
+  var s = document.getElementById('discScroll')
+  if (s) s.scrollTop = 795
+})
+</script>
+</body>
+</html>

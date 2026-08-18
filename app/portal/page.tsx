@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2 } from "lucide-react"
+import { redirect } from "next/navigation"
+import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2, Compass } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase, getTrainingState } from "@/lib/portal"
 import {
@@ -65,6 +66,17 @@ export default async function PortalHome() {
   const hasPackage = (payments ?? []).some((p) => p.package_key)
   const isLicensed = stage === "licensed"
   const isDenied = myCase.status === "denied"
+
+  // CONCIERGE Phase 1 — a paid concierge applicant lives on the concierge
+  // control tower, not this self-guided home. The fork records service_mode;
+  // once the concierge package is paid, this is where the two experiences part.
+  const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
+  const paidConcierge = (payments ?? []).some(
+    (p) => p.package_key === "full_concierge" && p.status === "paid"
+  )
+  if (serviceMode === "concierge" && paidConcierge) redirect("/portal/concierge")
+  // Post-intake, pre-fork: the one decision left is HOW we work together.
+  const needsPathChoice = intakeDone && !serviceMode && !isLicensed && !isDenied
 
   // V3-P2.1 — to-dos come from the requirements engine (the one checklist).
   const outstanding = (reqs ?? []).filter((r) => r.status === "pending").length
@@ -156,10 +168,24 @@ export default async function PortalHome() {
         </Link>
       )}
 
-      {/* V3-P3.1 — no package yet: close the enrollment loop */}
-      {!hasPackage && !isLicensed && !isDenied && (
+      {/* CONCIERGE Phase 1 — the fork, surfaced on home until they pick a path */}
+      {needsPathChoice && (
         <Link
-          href="/portal/enroll"
+          href="/portal/choose-path"
+          className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <Compass className="size-4" />
+            Choose how we&apos;ll work together — Self-Guided or Full Concierge
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
+
+      {/* V3-P3.1 — path chosen but not paid: close the enrollment loop */}
+      {!hasPackage && !needsPathChoice && !isLicensed && !isDenied && (
+        <Link
+          href={serviceMode ? "/portal/choose-path" : "/portal/enroll"}
           className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
         >
           <span className="text-sm font-medium">Choose your package — start your engagement</span>

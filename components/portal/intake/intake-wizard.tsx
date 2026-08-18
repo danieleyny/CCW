@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil, Users, ClipboardList, Check as CheckIcon, ChevronDown, LogOut } from "lucide-react"
+import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil, Compass, Check as CheckIcon, ChevronDown, LogOut } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   INTAKE_STEPS,
@@ -206,11 +206,11 @@ export function IntakeWizard({
           </p>
         </div>
 
-        {/* ONE obvious next move, branched on what they just told us about
-            training. Training is the long pole, so an applicant who hasn't done
-            it is pointed at an instructor first; a trained applicant goes
-            straight to the document checklist. */}
-        <NextStepHandoff trainingCompleted={a.trainingStatus === "completed"} />
+        {/* CONCIERGE Phase 1 — the fork. With the personalized checklist in hand,
+            the ONE next move is deciding HOW we work together: Self-Guided (you
+            drive) or Full Concierge (we drive). Everything downstream flows from
+            that choice, so it comes before the checklist itself. */}
+        <ChoosePathCta />
 
         {effGuard && (
           <div
@@ -412,55 +412,34 @@ export function IntakeWizard({
   )
 }
 
-// ── Post-intake hand-off ───────────────────────────────────────────────────
+// ── Post-intake hand-off (the fork) ─────────────────────────────────────────
 /**
- * The ONE thing to do next, right after generation. Training is the long pole
- * on a carry application, so someone who hasn't trained is steered to an
- * instructor first (documents proceed in parallel); a trained applicant goes
- * straight to the document checklist. Full-width and unmissable — never a row of
- * equal ghost links.
+ * CONCIERGE Phase 1 — with the personalized checklist generated, the ONE next
+ * move is choosing HOW we work together: Self-Guided (you drive) or Full
+ * Concierge (we drive). Everything downstream flows from that decision, so it
+ * comes before the checklist. Full-width and unmissable — never a row of equal
+ * ghost links. /portal/choose-path reflects real state (already-paid → routed on).
  */
-function NextStepHandoff({ trainingCompleted }: { trainingCompleted: boolean }) {
-  const primary = trainingCompleted
-    ? {
-        href: "/portal/checklist",
-        label: "Start your checklist",
-        Icon: ClipboardList,
-        title: "Work your checklist",
-        detail:
-          "Your training's done. Everything left — documents, references, forms — is in one place, worst-first.",
-      }
-    : {
-        href: "/portal/marketplace",
-        label: "Get matched with an instructor",
-        Icon: Users,
-        title: "Get your training booked",
-        detail:
-          "The 16+2-hour course is the long pole. Get matched with a verified local instructor now — your documents move in parallel.",
-      }
-  const secondary = trainingCompleted
-    ? { href: "/portal/marketplace", label: "Find an instructor" }
-    : { href: "/portal/checklist", label: "Or start your checklist" }
-
+function ChoosePathCta() {
   return (
     <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-5">
       <div className="engraved text-brass">Your next step</div>
       <div className="mt-2 flex items-start gap-3">
-        <primary.Icon className="mt-0.5 size-5 shrink-0 text-brass" />
+        <Compass className="mt-0.5 size-5 shrink-0 text-brass" />
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">{primary.title}</h2>
-          <p className="mt-1 text-sm text-text-mid">{primary.detail}</p>
+          <h2 className="text-lg font-semibold tracking-tight">Choose how we&apos;ll work together</h2>
+          <p className="mt-1 text-sm text-text-mid">
+            Same finish line, two ways to get there. Drive it yourself with our full playbook, or hand us
+            the chores and watch us assemble everything. Either way, you file your own application.
+          </p>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-4">
         <Link
-          href={primary.href}
+          href="/portal/choose-path"
           className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
         >
-          {primary.label} <ArrowRight className="size-4" />
-        </Link>
-        <Link href={secondary.href} className="text-sm text-signal underline">
-          {secondary.label}
+          See both paths <ArrowRight className="size-4" />
         </Link>
       </div>
     </div>
