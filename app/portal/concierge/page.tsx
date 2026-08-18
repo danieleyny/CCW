@@ -1,16 +1,20 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight, ConciergeBell } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
+import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
+import { BookCall } from "@/components/portal/concierge/book-call"
 
 export const metadata = { title: "Your concierge" }
 
 /**
- * CONCIERGE — the done-for-you home. Phase 1 ships this as a guarded landing;
- * Phases 2–4 fill it with the agreements gate, the booked intro call, the secure
- * vault, and the live control tower. Access requires a paid concierge package.
+ * CONCIERGE — the done-for-you home. Access requires a paid concierge package.
+ * First run is a strict order: the agreements gate blocks everything until it's
+ * signed; then the intro call. Phases 3–4 add the secure vault and the live
+ * control tower into this same page.
  */
 export default async function ConciergeHome() {
   const myCase = await getMyCase()
@@ -27,11 +31,15 @@ export default async function ConciergeHome() {
     .eq("status", "paid")
     .eq("package_key", "full_concierge")
     .limit(1)
-  const paidConcierge = (paid ?? []).length > 0
-  // Chose concierge but hasn't paid yet — send them to finish enrolling.
-  if (!paidConcierge) redirect("/portal/choose-path")
+  if ((paid ?? []).length === 0) redirect("/portal/choose-path")
 
+  const onboarding = await loadConciergeOnboarding(supabase, myCase.id)
   const firstName = myCase.client.full_name.split(" ")[0]
+
+  // The gate blocks everything until the engagement is signed.
+  if (!onboarding.agreementsSigned) {
+    return <AgreementsGate defaultName={myCase.client.full_name} />
+  }
 
   return (
     <div className="space-y-6">
@@ -39,27 +47,25 @@ export default async function ConciergeHome() {
         <SectionEyebrow>Full Concierge</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Welcome, {firstName}.</h1>
         <p className="mt-1 max-w-prose text-sm text-text-mid">
-          You&apos;re on the done-for-you path. From here we prepare and assemble everything — you review it
-          at the end and file your own application. We&apos;ll walk you through each step.
+          You&apos;re on the done-for-you path. We prepare and assemble everything — you review it at the
+          end and file your own application. First, let&apos;s get your intro call on the calendar.
         </p>
       </div>
 
-      <div className="brass-edge flex items-start gap-3 rounded-lg border border-brass/40 bg-brass/8 p-5">
-        <ConciergeBell className="mt-0.5 size-5 shrink-0 text-brass" />
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Your concierge is being set up</h2>
-          <p className="mt-1 text-sm text-text-mid">
-            We&apos;re getting your engagement ready. In the meantime you can keep working your checklist —
-            nothing you&apos;ve done is lost.
-          </p>
-          <Link
-            href="/portal/checklist"
-            className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
-          >
-            View your checklist <ArrowRight className="size-4" />
-          </Link>
-        </div>
-      </div>
+      <BookCall
+        calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
+        caseId={myCase.id}
+        introCall={onboarding.introCall}
+      />
+
+      {/* Phase 3 (secure vault) and Phase 4 (control tower) render below here. */}
+      <Link
+        href="/portal/checklist"
+        className="flex items-center justify-between rounded-md border border-hairline bg-surface-2/40 px-4 py-3.5 text-text-mid transition-colors hover:text-foreground"
+      >
+        <span className="text-sm font-medium">Meanwhile, you can add documents anytime</span>
+        <ArrowRight className="size-4" />
+      </Link>
     </div>
   )
 }

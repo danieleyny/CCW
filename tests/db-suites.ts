@@ -19,6 +19,7 @@ export const DB_TEST_FILES = [
   "tests/stripe-invoicing.test.ts",
   "tests/upload-enforcement.test.ts",
   "tests/rls/client-writable-evidence.test.ts",
+  "tests/rls/concierge-onboarding-scope.test.ts",
   "tests/rls/instructor-escalation.test.ts",
   "tests/rls/instructor-public-directory.test.ts",
   "tests/rls/matrix.test.ts",
