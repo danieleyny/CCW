@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { requireStaff } from "@/lib/auth"
+import { requireStaff, requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { notifyClient } from "@/lib/email"
 import { notifyCaseParties } from "@/lib/notify"
@@ -978,4 +978,31 @@ export async function createClientWithCase(
   revalidatePath("/admin/pipeline")
   revalidatePath("/admin/cases")
   redirect(`/admin/cases/${kase.id}`)
+}
+
+// ── CONCIERGE Phase 8 — concierge-agent marker ───────────────────────────────
+/**
+ * Toggle a staff member's concierge-agent status. Admin-only (the DB guard
+ * freezes the column for non-admins too, so this is defence in depth). It's a
+ * label, not a permission — every staff member already has full case access.
+ */
+export async function setConciergeAgent(
+  profileId: string,
+  on: boolean
+): Promise<{ error?: string; ok?: boolean }> {
+  await requireAdmin()
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("profiles")
+    .update({ is_concierge_agent: on })
+    .eq("id", profileId)
+  if (error) return { error: error.message }
+  await logActivity({
+    action: "concierge.agent_set",
+    entity: "profile",
+    entityId: profileId,
+    detail: { is_concierge_agent: on },
+  })
+  revalidatePath("/admin/concierge")
+  return { ok: true }
 }

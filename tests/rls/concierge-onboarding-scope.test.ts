@@ -20,17 +20,19 @@ describe.skipIf(!reachable)("concierge onboarding tables are client-own + staff-
   let clientB: DB
   let instructor: DB
   let staff: DB
+  let adminUser: DB
 
   let caseId: string
   let agreementId: string
   const cleanup = { case: "" }
 
   beforeAll(async () => {
-    ;[clientA, clientB, instructor, staff] = await Promise.all([
+    ;[clientA, clientB, instructor, staff, adminUser] = await Promise.all([
       anonClientFor("client1@carrypath.test"),
       anonClientFor("client2@carrypath.test"),
       anonClientFor("instructor@carrypath.test"),
       anonClientFor("staff@carrypath.test"),
+      anonClientFor("admin@carrypath.test"),
     ])
 
     const { data: c1 } = await admin
@@ -98,5 +100,25 @@ describe.skipIf(!reachable)("concierge onboarding tables are client-own + staff-
     expect(ag ?? []).toHaveLength(1)
     const { data: ic } = await staff.from("intro_calls").select("case_id").eq("case_id", caseId)
     expect(ic ?? []).toHaveLength(1)
+  })
+
+  // ── Phase 8: the concierge-agent marker is admin-set only ──────────────────
+  it("a staff member cannot self-promote to concierge agent (guard trigger)", async () => {
+    const staffUid = (await staff.auth.getUser()).data.user!.id
+    // profiles_update lets them touch their OWN row, but guard_profile_role()
+    // freezes is_concierge_agent for non-admins.
+    const { error } = await staff.from("profiles").update({ is_concierge_agent: true }).eq("id", staffUid)
+    expect(error, "guard must reject a non-admin flipping the flag").not.toBeNull()
+    const { data } = await admin.from("profiles").select("is_concierge_agent").eq("id", staffUid).single()
+    expect(data!.is_concierge_agent, "flag stays false").toBe(false)
+  })
+
+  it("an admin CAN set a staff member's concierge-agent flag", async () => {
+    const staffUid = (await staff.auth.getUser()).data.user!.id
+    const { error } = await adminUser.from("profiles").update({ is_concierge_agent: true }).eq("id", staffUid)
+    expect(error, error?.message).toBeNull()
+    const { data } = await admin.from("profiles").select("is_concierge_agent").eq("id", staffUid).single()
+    expect(data!.is_concierge_agent).toBe(true)
+    await admin.from("profiles").update({ is_concierge_agent: false }).eq("id", staffUid) // reset
   })
 })

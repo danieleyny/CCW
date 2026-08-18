@@ -15,6 +15,7 @@ import {
   Scale,
   ShieldCheck,
   ListChecks,
+  ConciergeBell,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -26,6 +27,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/admin/queue", label: "Filing queue", icon: ListChecks },
   { href: "/admin/cases", label: "Cases", icon: FolderOpen },
+  { href: "/admin/concierge", label: "Concierge", icon: ConciergeBell },
   { href: "/admin/inbox", label: "Inbox", icon: Inbox },
   { href: "/admin/requirements", label: "Requirements", icon: ScrollText },
   { href: "/admin/legal", label: "Legal review", icon: Scale },
