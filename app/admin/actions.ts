@@ -881,6 +881,10 @@ const createClientSchema = z.object({
   borough: z.enum(BOROUGHS as unknown as [string, ...string[]]).optional().or(z.literal("")),
   track: z.enum(CLIENT_TRACKS.map((t) => t.key) as unknown as [string, ...string[]]),
   createAccount: z.string().optional(),
+  // CONCIERGE Phase 5 — pre-stage a done-for-you case. Leave the account OFF and
+  // the applicant CLAIMS this exact client+case on signup (email match in
+  // ensureClientCaseForProfile), so the concierge case is already set up for them.
+  serviceMode: z.enum(["self_guided", "concierge"]).optional().or(z.literal("")),
 })
 
 export type CreateClientState = { error?: string }
@@ -898,6 +902,7 @@ export async function createClientWithCase(
     borough: formData.get("borough") ?? "",
     track: formData.get("track"),
     createAccount: formData.get("createAccount") ?? undefined,
+    serviceMode: formData.get("serviceMode") ?? "",
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
@@ -941,7 +946,12 @@ export async function createClientWithCase(
 
   const { data: kase, error: caseErr } = await supabase
     .from("cases")
-    .insert({ client_id: client.id, stage: "lead", status: "active" })
+    .insert({
+      client_id: client.id,
+      stage: "lead",
+      status: "active",
+      service_mode: input.serviceMode || null,
+    })
     .select("id")
     .single()
   if (caseErr) return { error: caseErr.message }
@@ -962,7 +972,7 @@ export async function createClientWithCase(
     clientId: client.id,
     entity: "client",
     entityId: client.id,
-    detail: { manual: true },
+    detail: { manual: true, service_mode: input.serviceMode || null },
   })
 
   revalidatePath("/admin/pipeline")

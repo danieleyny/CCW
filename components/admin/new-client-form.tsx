@@ -84,6 +84,23 @@ export function NewClientForm() {
               </select>
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="serviceMode">Path</Label>
+            <select
+              id="serviceMode"
+              name="serviceMode"
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+              defaultValue=""
+            >
+              <option value="">Not chosen yet (applicant picks at the fork)</option>
+              <option value="self_guided">Self-Guided</option>
+              <option value="concierge">Full Concierge (done-for-you)</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Pre-stage a concierge case here, leave the account off, and the applicant claims this exact
+              case when they sign up with the same email.
+            </p>
+          </div>
           <div className="flex items-center gap-2 pt-1">
             <Checkbox id="createAccount" name="createAccount" />
             <Label htmlFor="createAccount" className="text-sm font-normal">

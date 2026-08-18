@@ -12,6 +12,7 @@ import { money, formatDate, formatDateTime, daysSince, daysUntil } from "@/lib/f
 import { StageControl } from "@/components/admin/stage-control"
 import { DocumentReview, type DocRow } from "@/components/admin/document-review"
 import { RequirementsReview, type CaseReqRow } from "@/components/admin/requirements-review"
+import { ConciergeCockpit } from "@/components/admin/concierge-cockpit"
 import { RecordLicenseControl } from "@/components/admin/record-license-control"
 import { DisclosureReview, type DisclosureRow } from "@/components/admin/disclosure-review"
 import { CaseNotes, type NoteRow } from "@/components/admin/case-notes"
@@ -453,6 +454,11 @@ export default async function CaseFilePage({
           <ReticleProgress currentStage={stage} className="mt-6" />
         </CardContent>
       </Card>
+
+      {/* CONCIERGE Phase 5 — the done-for-you cockpit, only for concierge cases */}
+      {kase.service_mode === "concierge" && (
+        <ConciergeCockpit caseId={kase.id} clientName={client.full_name} stage={stage} />
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="requirements">
