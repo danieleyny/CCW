@@ -1,12 +1,13 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight } from "lucide-react"
 import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
+import { loadRequirementView } from "@/lib/portal/requirement-view"
+import { buildVaultItems } from "@/lib/concierge/vault"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
 import { BookCall } from "@/components/portal/concierge/book-call"
+import { DocumentVault } from "@/components/portal/concierge/document-vault"
 
 export const metadata = { title: "Your concierge" }
 
@@ -41,6 +42,9 @@ export default async function ConciergeHome() {
     return <AgreementsGate defaultName={myCase.client.full_name} />
   }
 
+  const view = await loadRequirementView(supabase, myCase)
+  const vaultItems = buildVaultItems(view.items, view.currentByReq)
+
   return (
     <div className="space-y-6">
       <div>
@@ -58,14 +62,15 @@ export default async function ConciergeHome() {
         introCall={onboarding.introCall}
       />
 
-      {/* Phase 3 (secure vault) and Phase 4 (control tower) render below here. */}
-      <Link
-        href="/portal/checklist"
-        className="flex items-center justify-between rounded-md border border-hairline bg-surface-2/40 px-4 py-3.5 text-text-mid transition-colors hover:text-foreground"
-      >
-        <span className="text-sm font-medium">Meanwhile, you can add documents anytime</span>
-        <ArrowRight className="size-4" />
-      </Link>
+      <DocumentVault
+        caseId={myCase.id}
+        clientId={myCase.client_id}
+        items={vaultItems}
+        referenceProgress={view.referenceProgress}
+        cohabitantProgress={view.cohabitantProgress}
+      />
+
+      {/* Phase 4 (control tower) renders below here. */}
     </div>
   )
 }
