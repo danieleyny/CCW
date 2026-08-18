@@ -5,6 +5,7 @@ import { type CaseStageKey, isNypdControlled } from "@/config/stages"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { buildVaultItems } from "@/lib/concierge/vault"
+import { buildReviewItems, readyToFile } from "@/lib/concierge/review"
 import { computeNextStep } from "@/lib/portal/next-step"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
@@ -12,6 +13,7 @@ import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
 import { BookCall } from "@/components/portal/concierge/book-call"
 import { DocumentVault } from "@/components/portal/concierge/document-vault"
+import { ReviewAndFile } from "@/components/portal/concierge/review-and-file"
 import { ControlTower } from "@/components/portal/concierge/control-tower"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Card, CardContent } from "@/components/ui/card"
@@ -62,6 +64,7 @@ export default async function ConciergeHome() {
   ])
 
   const vaultItems = buildVaultItems(view.items, view.currentByReq)
+  const reviewItems = buildReviewItems(view)
 
   // Milestone state — REAL signals only, never cosmetic.
   const applicable = view.items.filter((i) => i.status !== "na")
@@ -113,6 +116,8 @@ export default async function ConciergeHome() {
         referenceProgress={view.referenceProgress}
         cohabitantProgress={view.cohabitantProgress}
       />
+
+      <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} />
 
       <section className="space-y-3">
         <div>
