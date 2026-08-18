@@ -835,12 +835,19 @@ export default async function CaseFilePage({
             )}
             {(activityRes.data ?? []).map((a) => {
               const actor = (a.profiles as unknown as { full_name: string } | null)?.full_name
+              // CONCIERGE Phase 9 — flag staff work done on the applicant's behalf.
+              const onBehalf = (a.detail as { on_behalf?: boolean } | null)?.on_behalf === true
               return (
                 <li key={a.id} className="flex items-start gap-3 text-sm">
                   <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
                   <div>
                     <span className="font-medium">{a.action.replace(/[._]/g, " ")}</span>
                     {actor && <span className="text-muted-foreground"> · {actor}</span>}
+                    {onBehalf && (
+                      <span className="ml-1.5 rounded-full bg-brass/15 px-1.5 py-0.5 text-[10px] font-medium text-brass-bright">
+                        on behalf
+                      </span>
+                    )}
                     <span className="ml-2 text-xs text-muted-foreground">{formatDateTime(a.created_at)}</span>
                   </div>
                 </li>

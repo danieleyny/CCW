@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff, requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
+import { withOnBehalf } from "@/lib/concierge/on-behalf"
 import { notifyClient } from "@/lib/email"
 import { notifyCaseParties } from "@/lib/notify"
 import { reviewUrl } from "@/lib/review"
@@ -71,7 +72,7 @@ export async function setCaseStage(caseId: string, stage: CaseStageKey): Promise
     clientId: kase.client_id,
     entity: "case",
     entityId: caseId,
-    detail: { to: stage },
+    detail: await withOnBehalf(supabase, caseId, { to: stage }),
   })
 
   // Notify the client (stubbed until email keys are set).
@@ -359,7 +360,11 @@ export async function reviewDocument(input: {
     clientId: input.clientId,
     entity: "document",
     entityId: input.documentId,
-    detail: { type: doc.type, notes: input.notes ?? null, by: profile.full_name },
+    detail: await withOnBehalf(supabase, input.caseId, {
+      type: doc.type,
+      notes: input.notes ?? null,
+      by: profile.full_name,
+    }),
   })
 
   const client = doc.clients as unknown as { full_name: string; email: string | null }
@@ -769,7 +774,7 @@ export async function setCaseRequirementStatus(
     caseId,
     entity: "case_requirement",
     entityId: caseReqId,
-    detail: { status },
+    detail: await withOnBehalf(supabase, caseId, { status }),
   })
   revalidatePath(`/admin/cases/${caseId}`)
   revalidatePath("/portal/checklist")
