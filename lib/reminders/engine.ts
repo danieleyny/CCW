@@ -11,6 +11,7 @@ import { computeFeeSummary } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { newReferenceToken } from "@/lib/references/process"
+import { REQUIRED_AGREEMENT_KINDS } from "@/config/agreements"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -703,6 +704,80 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
           link: "/instructor/cases",
           cta: { label: "Reply to your applicant", url: `${siteBase()}/instructor/cases` },
         }))
+      }
+    }
+  }
+
+  // ── CONCIERGE Phase 7 — done-for-you nudges ──────────────────────────────
+  // A paid concierge applicant only has a few moments that are truly theirs; if
+  // one stalls, a gentle nudge keeps the whole engagement moving. Both rules are
+  // scoped to PAID concierge cases so an unpaid pre-fork chooser is never nudged
+  // toward a dashboard they can't reach.
+  const { data: conciergeCases } = await admin
+    .from("cases")
+    .select("id, opened_at, stage, stage_entered_at")
+    .eq("status", "active")
+    .eq("service_mode", "concierge")
+  const ccIds = (conciergeCases ?? []).map((c) => c.id)
+  if (ccIds.length) {
+    const [{ data: ccPaid }, { data: ccAgreements }] = await Promise.all([
+      admin
+        .from("payments")
+        .select("case_id")
+        .eq("status", "paid")
+        .eq("package_key", "full_concierge")
+        .in("case_id", ccIds),
+      admin.from("case_agreements").select("case_id").in("case_id", ccIds),
+    ])
+    const paidSet = new Set((ccPaid ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
+    const agCount = new Map<string, number>()
+    for (const a of ccAgreements ?? []) agCount.set(a.case_id, (agCount.get(a.case_id) ?? 0) + 1)
+    const ccContacts = await caseContacts(admin, [...paidSet])
+
+    for (const k of conciergeCases ?? []) {
+      if (!paidSet.has(k.id)) continue // paid concierge only
+      const c = ccContacts.get(k.id)
+      if (!c) continue
+
+      // Rule 1: agreements gate still not signed → the dashboard stays locked.
+      if ((agCount.get(k.id) ?? 0) < REQUIRED_AGREEMENT_KINDS.length && k.opened_at) {
+        const days = (now.getTime() - new Date(k.opened_at).getTime()) / DAY
+        const bucket = days >= 7 ? "7d" : days >= 3 ? "3d" : null
+        if (bucket) {
+          push(await fireOnce(admin, {
+            ruleKey: "concierge_agreements_pending",
+            target: c.profileId ?? c.email ?? c.clientId,
+            windowKey: `${k.id}:${bucket}`,
+            caseId: k.id,
+            recipient: c.profileId,
+            email: c.email,
+            kind: "action_required",
+            title: "Sign your concierge agreements to get started",
+            body: "Your concierge is ready — it just needs your signature on a few short agreements to unlock. It takes a minute, and then we take it from there.",
+            link: "/portal/concierge",
+          }))
+        }
+      }
+
+      // Rule 2: packet assembled + QA-passed, but the applicant hasn't filed yet.
+      // The last step is theirs — by law we can't file — so nudge them to it.
+      if (k.stage === "application_assembled" && k.stage_entered_at) {
+        const days = (now.getTime() - new Date(k.stage_entered_at).getTime()) / DAY
+        const bucket = days >= 7 ? "7d" : days >= 3 ? "3d" : null
+        if (bucket) {
+          push(await fireOnce(admin, {
+            ruleKey: "concierge_ready_to_file",
+            target: c.profileId ?? c.email ?? c.clientId,
+            windowKey: `${k.id}:${bucket}`,
+            caseId: k.id,
+            recipient: c.profileId,
+            email: c.email,
+            kind: "action_required",
+            title: "Your packet is ready — the last step is yours",
+            body: "We've prepared, assembled, and checked everything. All that's left is for you to file your own application on the NYPD portal — we can't file for you, but your dashboard walks you through it step by step.",
+            link: "/portal/concierge",
+          }))
+        }
       }
     }
   }
