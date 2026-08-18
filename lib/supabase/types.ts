@@ -391,6 +391,71 @@ export type Database = {
           },
         ]
       }
+      case_agreements: {
+        Row: {
+          case_id: string
+          created_at: string
+          document_id: string | null
+          id: string
+          kind: string
+          signed_at: string
+          signed_ip: string | null
+          signer_name: string
+          version: number
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          kind: string
+          signed_at?: string
+          signed_ip?: string | null
+          signer_name: string
+          version: number
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          kind?: string
+          signed_at?: string
+          signed_ip?: string | null
+          signer_name?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_agreements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_agreements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_agreements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_agreements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
       case_notes: {
         Row: {
           author: string | null
@@ -686,6 +751,7 @@ export type Database = {
           opened_at: string
           qa_signed_off_at: string | null
           qa_signed_off_by: string | null
+          service_mode: Database["public"]["Enums"]["service_mode"] | null
           stage: Database["public"]["Enums"]["case_stage"]
           stage_entered_at: string
           status: Database["public"]["Enums"]["case_status"]
@@ -707,6 +773,7 @@ export type Database = {
           opened_at?: string
           qa_signed_off_at?: string | null
           qa_signed_off_by?: string | null
+          service_mode?: Database["public"]["Enums"]["service_mode"] | null
           stage?: Database["public"]["Enums"]["case_stage"]
           stage_entered_at?: string
           status?: Database["public"]["Enums"]["case_status"]
@@ -728,6 +795,7 @@ export type Database = {
           opened_at?: string
           qa_signed_off_at?: string | null
           qa_signed_off_by?: string | null
+          service_mode?: Database["public"]["Enums"]["service_mode"] | null
           stage?: Database["public"]["Enums"]["case_stage"]
           stage_entered_at?: string
           status?: Database["public"]["Enums"]["case_status"]
@@ -1691,6 +1759,67 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
+          },
+        ]
+      }
+      intro_calls: {
+        Row: {
+          case_id: string
+          created_at: string
+          external_event_id: string | null
+          id: string
+          join_url: string | null
+          provider: string
+          rep_id: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          external_event_id?: string | null
+          id?: string
+          join_url?: string | null
+          provider?: string
+          rep_id?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          external_event_id?: string | null
+          id?: string
+          join_url?: string | null
+          provider?: string
+          rep_id?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intro_calls_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_calls_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "intro_calls_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4502,6 +4631,7 @@ export type Database = {
         | "notarized"
       requirement_sev: "critical" | "high" | "watch" | "long_lead"
       review_decision: "approved" | "changes_requested"
+      service_mode: "self_guided" | "concierge"
       slot_type: "classroom_16h" | "live_fire_2h" | "combined_18h" | "consult"
       stage_status: "not_started" | "in_progress" | "complete"
       task_status: "open" | "in_progress" | "done"
@@ -4777,6 +4907,7 @@ export const Constants = {
       ],
       requirement_sev: ["critical", "high", "watch", "long_lead"],
       review_decision: ["approved", "changes_requested"],
+      service_mode: ["self_guided", "concierge"],
       slot_type: ["classroom_16h", "live_fire_2h", "combined_18h", "consult"],
       stage_status: ["not_started", "in_progress", "complete"],
       task_status: ["open", "in_progress", "done"],
