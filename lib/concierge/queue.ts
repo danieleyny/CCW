@@ -1,0 +1,107 @@
+import "server-only"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@/lib/supabase/types"
+import { type CaseStageKey, stageIndex, isNypdControlled } from "@/config/stages"
+import { REQUIRED_AGREEMENT_KINDS } from "@/config/agreements"
+
+type DB = SupabaseClient<Database>
+
+export type QueueTone = "attention" | "progress" | "waiting"
+
+export interface ConciergeQueueRow {
+  caseId: string
+  clientName: string
+  agentName: string | null
+  stage: CaseStageKey
+  label: string
+  tone: QueueTone
+  /** Lower sorts first. */
+  priority: number
+}
+
+/**
+ * CONCIERGE Phase 10 — the concierge work-queue. One glance at every done-for-you
+ * case and the single next thing it needs, derived from real state with BATCHED
+ * queries (no per-case gate calls). Attention items (blocked on us or the
+ * applicant) sort to the top; NYPD-clock cases sink to the bottom.
+ */
+export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
+  const { data: cases } = await db
+    .from("cases")
+    .select("id, stage, clients(full_name, assigned_staff)")
+    .eq("status", "active")
+    .eq("service_mode", "concierge")
+  if (!cases || cases.length === 0) return []
+
+  const ids = cases.map((c) => c.id)
+  const [{ data: paid }, { data: agreements }, { data: intros }, { data: pendingReqs }] =
+    await Promise.all([
+      db.from("payments").select("case_id").eq("status", "paid").eq("package_key", "full_concierge").in("case_id", ids),
+      db.from("case_agreements").select("case_id").in("case_id", ids),
+      db.from("intro_calls").select("case_id, status, scheduled_at").in("case_id", ids),
+      db.from("case_requirements").select("case_id").eq("status", "pending").in("case_id", ids),
+    ])
+
+  const paidSet = new Set((paid ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
+  const agCount = new Map<string, number>()
+  for (const a of agreements ?? []) agCount.set(a.case_id, (agCount.get(a.case_id) ?? 0) + 1)
+  const introByCase = new Map((intros ?? []).map((i) => [i.case_id, i]))
+  const pendingCount = new Map<string, number>()
+  for (const r of pendingReqs ?? []) pendingCount.set(r.case_id, (pendingCount.get(r.case_id) ?? 0) + 1)
+
+  // Resolve assigned-staff names in one batch.
+  const staffIds = [
+    ...new Set(
+      cases
+        .map((c) => (c.clients as unknown as { assigned_staff: string | null } | null)?.assigned_staff)
+        .filter((x): x is string => !!x)
+    ),
+  ]
+  const { data: staff } = staffIds.length
+    ? await db.from("profiles").select("id, full_name").in("id", staffIds)
+    : { data: [] as { id: string; full_name: string }[] }
+  const staffName = new Map((staff ?? []).map((s) => [s.id, s.full_name]))
+
+  const rows: ConciergeQueueRow[] = cases.map((c) => {
+    const client = c.clients as unknown as { full_name: string; assigned_staff: string | null } | null
+    const stage = c.stage as CaseStageKey
+    const intro = introByCase.get(c.id)
+    const signal = deriveSignal({
+      stage,
+      paid: paidSet.has(c.id),
+      agreementsComplete: (agCount.get(c.id) ?? 0) >= REQUIRED_AGREEMENT_KINDS.length,
+      introBooked: !!intro?.scheduled_at,
+      introRequested: intro?.status === "requested",
+      pending: pendingCount.get(c.id) ?? 0,
+    })
+    return {
+      caseId: c.id,
+      clientName: client?.full_name ?? "—",
+      agentName: client?.assigned_staff ? (staffName.get(client.assigned_staff) ?? null) : null,
+      stage,
+      ...signal,
+    }
+  })
+
+  return rows.sort((a, b) => a.priority - b.priority || a.clientName.localeCompare(b.clientName))
+}
+
+export function deriveSignal(s: {
+  stage: CaseStageKey
+  paid: boolean
+  agreementsComplete: boolean
+  introBooked: boolean
+  introRequested: boolean
+  pending: number
+}): { label: string; tone: QueueTone; priority: number } {
+  if (!s.paid) return { label: "Awaiting payment", tone: "waiting", priority: 90 }
+  if (!s.agreementsComplete) return { label: "Needs to sign agreements", tone: "attention", priority: 10 }
+  if (s.introRequested) return { label: "Intro call requested — schedule it", tone: "attention", priority: 15 }
+  if (!s.introBooked) return { label: "Book the intro call", tone: "attention", priority: 20 }
+  if (isNypdControlled(s.stage)) return { label: "With the NYPD — their clock", tone: "waiting", priority: 80 }
+  if (s.pending > 0)
+    return { label: `${s.pending} document${s.pending === 1 ? "" : "s"} outstanding`, tone: "progress", priority: 30 }
+  if (stageIndex(s.stage) >= stageIndex("application_assembled"))
+    return { label: "Ready for their review & filing", tone: "attention", priority: 25 }
+  return { label: "All documents in — review for QA", tone: "attention", priority: 22 }
+}
