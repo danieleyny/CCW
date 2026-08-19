@@ -26,7 +26,7 @@ const csp = [
   `base-uri 'self'`,
   `frame-ancestors 'none'`,
   `form-action 'self' https://checkout.stripe.com`,
-  `frame-src 'self' https://checkout.stripe.com`,
+  `frame-src 'self' https://checkout.stripe.com https://calendly.com https://*.calendly.com`,
   // Supabase (REST + realtime), Google Analytics, and — in dev — local Supabase + HMR sockets.
   `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com https://analytics.google.com${
     isDev ? " http://127.0.0.1:54321 http://localhost:* ws://127.0.0.1:* ws://localhost:*" : ""
