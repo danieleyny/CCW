@@ -98,7 +98,7 @@ export function DocumentVault({
             )}
           </ul>
           <Link
-            href="/portal/checklist"
+            href="/portal/people"
             className="mt-3 inline-flex items-center gap-1.5 text-sm text-signal underline"
           >
             Add or update their details <ArrowRight className="size-3.5" />

@@ -1,4 +1,5 @@
-import { CheckCircle2 } from "lucide-react"
+import Link from "next/link"
+import { CheckCircle2, ArrowRight, ConciergeBell } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
@@ -14,9 +15,30 @@ export default async function ChecklistPage() {
   // the same function /portal/documents uses so the two views cannot disagree.
   const supabase = await createClient()
   const view = await loadRequirementView(supabase, myCase)
+  const isConcierge = myCase.service_mode === "concierge"
 
   return (
     <div>
+      {/* CONCIERGE QA Phase 4 — a concierge applicant who lands here by URL is on
+          the done-for-you path; this list is ours to run, not their to-do list. */}
+      {isConcierge && (
+        <div className="brass-edge mb-5 flex items-start gap-3 rounded-lg border border-brass/40 bg-brass/8 p-4">
+          <ConciergeBell className="mt-0.5 size-5 shrink-0 text-brass" />
+          <div>
+            <p className="text-sm font-medium">You&apos;re on the done-for-you path.</p>
+            <p className="mt-0.5 text-sm text-text-mid">
+              We&apos;re handling this list for you — no need to work it yourself. Your dashboard shows what
+              we&apos;re doing and the few things we need from you.
+            </p>
+            <Link
+              href="/portal/concierge"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-brass-bright underline"
+            >
+              Go to your concierge dashboard <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
       <Header intakeDone={view.intakeDone} />
       <RequirementsChecklist
         items={view.items}

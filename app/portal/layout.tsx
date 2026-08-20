@@ -39,6 +39,8 @@ export default async function PortalLayout({
     .eq("read", false)
 
   const [locale, t] = await Promise.all([getLocale(), getMessages()])
+  // CONCIERGE QA Phase 4 — the done-for-you path gets its own nav (no checklist).
+  const isConcierge = myCase?.service_mode === "concierge"
 
   return (
     <div
@@ -71,7 +73,7 @@ export default async function PortalLayout({
             <AccountActions signOutLabel={t.common.signOut} />
           </div>
         </div>
-        <PortalTopNav />
+        <PortalTopNav concierge={isConcierge} />
       </header>
 
       {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
@@ -99,7 +101,9 @@ export default async function PortalLayout({
       {/* Intake is a focused task flow with its own sticky action bar — two
           stacked bottom bars is one too many. The soft intake gate already keeps
           a new applicant here, and the wizard has a "Save & exit" out. */}
-      {!pathname.startsWith("/portal/intake") && <PortalBottomNav unread={unread ?? 0} />}
+      {!pathname.startsWith("/portal/intake") && (
+        <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} />
+      )}
     </div>
   )
 }

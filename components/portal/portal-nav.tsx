@@ -16,6 +16,7 @@ import {
   Scale,
   ShieldCheck,
   ChevronRight,
+  ConciergeBell,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -54,18 +55,40 @@ const DESKTOP: Item[] = [
   { href: "/portal/appeal", label: "Appeal", icon: Scale },
 ]
 
+// CONCIERGE QA Phase 4 — the done-for-you nav. NO Checklist (no to-do list is
+// ever presented to a concierge applicant); their home is the concierge
+// dashboard. Documents, Messages, Payments stay.
+const PRIMARY_CONCIERGE: Item[] = [
+  { href: "/portal/concierge", label: "Concierge", icon: ConciergeBell },
+  { href: "/portal/documents", label: "Documents", icon: Upload },
+  { href: "/portal/messages", label: "Messages", icon: MessageCircle },
+  { href: "/portal/forms", label: "Forms", icon: FileText },
+]
+const MORE_CONCIERGE: MoreItem[] = [
+  { href: "/portal/payments", label: "Payments", icon: CreditCard, status: "Invoices & receipts" },
+  { href: "/portal/license", label: "Your license", icon: BadgeCheck, status: "Available after issuance", conditional: true },
+  { href: "/portal/appeal", label: "Appeal", icon: Scale, status: "Only if your application is denied", conditional: true },
+  { href: "/portal/profile", label: "Profile & your data", icon: ShieldCheck, status: "Account, password & privacy" },
+]
+const DESKTOP_CONCIERGE: Item[] = [
+  ...PRIMARY_CONCIERGE,
+  { href: "/portal/payments", label: "Payments", icon: CreditCard },
+  { href: "/portal/license", label: "License", icon: BadgeCheck },
+  { href: "/portal/appeal", label: "Appeal", icon: Scale },
+]
+
 function useActive() {
   const pathname = usePathname()
   return (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href))
 }
 
 /** Desktop: a horizontal tab row under the header. */
-export function PortalTopNav() {
+export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
   const isActive = useActive()
   return (
     <nav aria-label="Primary" className="hidden border-b border-hairline md:block">
       <div className="mx-auto flex max-w-3xl flex-wrap gap-1 px-4">
-        {DESKTOP.map(({ href, label, icon: Icon, exact }) => {
+        {(concierge ? DESKTOP_CONCIERGE : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           return (
             <Link
@@ -92,11 +115,13 @@ export function PortalTopNav() {
  * tab that opens a bottom sheet with everything else. Brass is the "you are here"
  * color (signal is reserved for "needs your attention"). Safe-area aware.
  */
-export function PortalBottomNav({ unread = 0 }: { unread?: number }) {
+export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: number; concierge?: boolean }) {
   const pathname = usePathname()
   const isActive = useActive()
   const [moreOpen, setMoreOpen] = useState(false)
-  const moreActive = MORE.some((m) => pathname.startsWith(m.href))
+  const primary = concierge ? PRIMARY_CONCIERGE : PRIMARY
+  const more = concierge ? MORE_CONCIERGE : MORE
+  const moreActive = more.some((m) => pathname.startsWith(m.href))
 
   return (
     <nav
@@ -105,7 +130,7 @@ export function PortalBottomNav({ unread = 0 }: { unread?: number }) {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex min-h-[60px] max-w-3xl items-stretch justify-around">
-        {PRIMARY.map(({ href, label, icon: Icon, exact }) => {
+        {primary.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           return (
             <Link
@@ -177,7 +202,7 @@ export function PortalBottomNav({ unread = 0 }: { unread?: number }) {
             <SheetTitle className="engraved-sm text-left text-text-mid">More</SheetTitle>
           </SheetHeader>
           <ul className="px-3 pb-4">
-            {MORE.map((item) => {
+            {more.map((item) => {
               const Icon = item.icon
               const active = pathname.startsWith(item.href)
               const status =

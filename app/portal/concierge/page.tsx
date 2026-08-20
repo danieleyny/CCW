@@ -6,7 +6,7 @@ import { type CaseStageKey, isNypdControlled } from "@/config/stages"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { buildVaultItems } from "@/lib/concierge/vault"
-import { buildReviewItems, readyToFile } from "@/lib/concierge/review"
+import { buildReviewItems, readyToFile, conciergeSignable } from "@/lib/concierge/review"
 import { computeNextStep } from "@/lib/portal/next-step"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
@@ -71,7 +71,18 @@ export default async function ConciergeHome() {
       : true,
     guardOk: gate.ok,
   }
-  const nextStep = computeNextStep({ items: view.items, intakeDone: view.intakeDone, stage })
+  // CONCIERGE QA Phase 4 — "the one thing we need from you" is reserved for what
+  // ONLY the applicant can supply: a document we don't have, their intake, their
+  // references. Generate-and-sign items (AFF-01, SAF-01, sole-occupancy…) are OUR
+  // work to prepare — they live in Review & file, not here — so filter them out.
+  const applicantItems = view.items.filter((i) => !conciergeSignable(i.reqCode))
+  const rawNext = computeNextStep({ items: applicantItems, intakeDone: view.intakeDone, stage })
+  // Keep intake on its own page; route every other ask INTO the concierge surface
+  // (the vault / roster) instead of the self-guided checklist.
+  const nextStep = {
+    ...rawNext,
+    href: rawNext.href === "/portal/intake" ? rawNext.href : "/portal/concierge#vault",
+  }
 
   const messages: MessageRow[] = (msgs ?? []).map((m) => {
     const p = m.profiles as unknown as { full_name: string; role: string } | null
@@ -103,13 +114,15 @@ export default async function ConciergeHome() {
         introCall={onboarding.introCall}
       />
 
-      <DocumentVault
-        caseId={myCase.id}
-        clientId={myCase.client_id}
-        items={vaultItems}
-        referenceProgress={view.referenceProgress}
-        cohabitantProgress={view.cohabitantProgress}
-      />
+      <div id="vault" className="scroll-mt-20">
+        <DocumentVault
+          caseId={myCase.id}
+          clientId={myCase.client_id}
+          items={vaultItems}
+          referenceProgress={view.referenceProgress}
+          cohabitantProgress={view.cohabitantProgress}
+        />
+      </div>
 
       <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} />
 
