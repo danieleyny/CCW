@@ -27,16 +27,20 @@ export default async function ConciergeHubPage() {
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name, role, is_concierge_agent")
-    .in("role", ["staff", "admin"])
+    .in("role", ["staff", "admin", "instructor"])
     .order("full_name")
 
-  const staff: StaffMember[] = (profiles ?? []).map((p) => ({
+  const members: StaffMember[] = (profiles ?? []).map((p) => ({
     id: p.id,
     name: p.full_name,
     role: p.role,
     isAgent: p.is_concierge_agent,
   }))
-  const agentCount = staff.filter((s) => s.isAgent).length
+  // CONCIERGE QA Phase 8 — the lead trainer can be a concierge agent, so the
+  // roster includes instructors, sectioned separately from staff.
+  const staff = members.filter((m) => m.role === "staff" || m.role === "admin")
+  const trainers = members.filter((m) => m.role === "instructor")
+  const agentCount = members.filter((s) => s.isAgent).length
 
   return (
     <div className="space-y-6">
@@ -87,7 +91,7 @@ export default async function ConciergeHubPage() {
         )}
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-text-low">
             Concierge team
@@ -96,12 +100,34 @@ export default async function ConciergeHubPage() {
             {agentCount} agent{agentCount === 1 ? "" : "s"}
           </span>
         </div>
-        <p className="max-w-prose text-sm text-text-mid">
-          Concierge agents are the staff who run done-for-you cases. It&apos;s a label for assignment and
-          the work-queue — not a permission change; every staff member can already work any case.
-          {!canEdit && " Only an admin can change the roster."}
-        </p>
-        <ConciergeTeam staff={staff} canEdit={canEdit} />
+
+        <div className="space-y-2">
+          <h3 className="engraved text-text-low">Staff</h3>
+          <p className="max-w-prose text-sm text-text-mid">
+            For staff, concierge-agent is a label for assignment and the work-queue — not a permission
+            change; every staff member can already work any case.
+            {!canEdit && " Only an admin can change the roster."}
+          </p>
+          {staff.length > 0 ? (
+            <ConciergeTeam staff={staff} canEdit={canEdit} />
+          ) : (
+            <p className="text-sm text-text-low">No staff members.</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="engraved text-text-low">Trainers</h3>
+          <p className="max-w-prose text-sm text-text-mid">
+            The lead trainer can be marked a concierge agent for assignment. Today this is a label ONLY —
+            it does <b>not</b> grant a trainer access to disclosures, notes, or client PII; the privacy
+            firewall is unchanged. Scoped access for trainer-agents is a planned follow-up.
+          </p>
+          {trainers.length > 0 ? (
+            <ConciergeTeam staff={trainers} canEdit={canEdit} />
+          ) : (
+            <p className="text-sm text-text-low">No trainers.</p>
+          )}
+        </div>
       </section>
     </div>
   )

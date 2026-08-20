@@ -121,4 +121,23 @@ describe.skipIf(!reachable)("concierge onboarding tables are client-own + staff-
     expect(data!.is_concierge_agent).toBe(true)
     await admin.from("profiles").update({ is_concierge_agent: false }).eq("id", staffUid) // reset
   })
+
+  // ── Phase 8 SAFETY: the flag is roster-only; it must NOT widen instructor access.
+  it("marking a TRAINER as concierge-agent does not widen their access (firewall holds)", async () => {
+    const instrUid = (await instructor.auth.getUser()).data.user!.id
+    await admin.from("profiles").update({ is_concierge_agent: true }).eq("id", instrUid)
+    // Seed the classic firewall targets on the concierge case.
+    await admin.from("case_notes").insert({ case_id: caseId, body: "staff-only note" })
+    await admin.from("disclosures").insert({ case_id: caseId, type: "arrest", narrative: "sensitive" })
+
+    // With the flag set, the trainer STILL sees none of it.
+    const { data: ag } = await instructor.from("case_agreements").select("id").eq("case_id", caseId)
+    expect(ag ?? [], "agreements still hidden").toHaveLength(0)
+    const { data: notes } = await instructor.from("case_notes").select("id").eq("case_id", caseId)
+    expect(notes ?? [], "notes still hidden").toHaveLength(0)
+    const { data: disc } = await instructor.from("disclosures").select("id").eq("case_id", caseId)
+    expect(disc ?? [], "disclosures still hidden").toHaveLength(0)
+
+    await admin.from("profiles").update({ is_concierge_agent: false }).eq("id", instrUid) // reset
+  })
 })
