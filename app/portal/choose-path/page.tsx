@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
-import { getActivePackages } from "@/lib/packages"
+import { getActivePackages, hasPaidPackage } from "@/lib/packages"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -30,15 +30,10 @@ export default async function ChoosePathPage() {
   const supabase = await createClient()
 
   // Already paid? Don't sell again — route to what they bought.
-  const { data: paid } = await supabase
-    .from("payments")
-    .select("package_key")
-    .eq("case_id", myCase.id)
-    .eq("status", "paid")
-    .not("package_key", "is", null)
-    .limit(5)
-  const paidConcierge = (paid ?? []).some((p) => p.package_key === "full_concierge")
-  const paidSelf = (paid ?? []).some((p) => p.package_key === "self_guided")
+  const [paidConcierge, paidSelf] = await Promise.all([
+    hasPaidPackage(supabase, myCase.id, "full_concierge"),
+    hasPaidPackage(supabase, myCase.id, "self_guided"),
+  ])
   if (paidConcierge) redirect("/portal/concierge")
   if (paidSelf) redirect("/portal")
 

@@ -11,6 +11,7 @@
 export const DB_TEST_FILES = [
   "tests/concierge-reminders.test.ts",
   "tests/concierge-scope.test.ts",
+  "tests/concierge-unlock.test.ts",
   "tests/fees.test.ts",
   "tests/instructor-feed.test.ts",
   "tests/qa-gate.test.ts",

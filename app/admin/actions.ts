@@ -543,6 +543,9 @@ export async function requestPayment(input: {
   amountCents: number
   type: "deposit" | "full" | "installment"
   description: string
+  /** CONCIERGE QA Phase 3 — persist so a staff-issued invoice, once paid, unlocks
+   *  the matching package (concierge) exactly like self-serve checkout does. */
+  packageKey?: string
 }): Promise<RequestPaymentResult> {
   await requireStaff()
   if (!input.amountCents || input.amountCents < 50) return { ok: false, error: "Enter a valid amount" }
@@ -567,6 +570,7 @@ export async function requestPayment(input: {
       type: input.type,
       status: "pending",
       description,
+      package_key: input.packageKey || null,
     })
     .select("id")
     .single()
@@ -1028,5 +1032,70 @@ export async function setConciergeAgent(
     detail: { is_concierge_agent: on },
   })
   revalidatePath("/admin/concierge")
+  return { ok: true }
+}
+
+// ── CONCIERGE QA Phase 3 — record an offline payment ─────────────────────────
+/**
+ * Record money that arrived outside Stripe (check / transfer / cash) so a client
+ * sold on a call or pre-staged by email can be UNLOCKED without paying again.
+ * Writes a paid payments row with package_key, so hasPaidPackage() returns true
+ * everywhere. Admin-only and fully logged — it's a money record, it must be
+ * attributable. Amount is caller-entered here (offline), unlike Stripe flows.
+ */
+export type OfflinePaymentResult = { ok?: boolean; error?: string }
+
+export async function recordOfflinePayment(input: {
+  caseId: string
+  amountCents: number
+  packageKey: string
+  method: "check" | "transfer" | "cash" | "other"
+  reference?: string
+}): Promise<OfflinePaymentResult> {
+  const { profile } = await requireAdmin()
+  if (!input.amountCents || input.amountCents < 50) return { error: "Enter a valid amount" }
+  if (!input.packageKey) return { error: "Choose a package" }
+
+  const supabase = await createClient()
+  const { data: kase } = await supabase.from("cases").select("client_id").eq("id", input.caseId).single()
+  const clientId = kase?.client_id ?? null
+  const methodLabel =
+    { check: "check", transfer: "bank transfer", cash: "cash", other: "other" }[input.method] ?? input.method
+  const description = `Offline payment recorded (${methodLabel}${
+    input.reference ? ` · ref ${input.reference}` : ""
+  }) by ${profile.full_name}`
+
+  const { data: payment, error } = await supabase
+    .from("payments")
+    .insert({
+      case_id: input.caseId,
+      client_id: clientId,
+      amount_cents: input.amountCents,
+      type: "full",
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      package_key: input.packageKey,
+      description,
+    })
+    .select("id")
+    .single()
+  if (error || !payment) return { error: error?.message ?? "Could not record the payment" }
+
+  await logActivity({
+    action: "payment.offline_recorded",
+    caseId: input.caseId,
+    clientId,
+    entity: "payment",
+    entityId: payment.id,
+    detail: {
+      amount_cents: input.amountCents,
+      package: input.packageKey,
+      method: input.method,
+      reference: input.reference ?? null,
+      by: profile.full_name,
+    },
+  })
+  revalidatePath("/admin/payments")
+  revalidatePath(`/admin/cases/${input.caseId}`)
   return { ok: true }
 }

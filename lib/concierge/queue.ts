@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { type CaseStageKey, stageIndex, isNypdControlled } from "@/config/stages"
 import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
+import { paidPackageCaseIds } from "@/lib/packages"
 
 type DB = SupabaseClient<Database>
 
@@ -34,15 +35,14 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
   if (!cases || cases.length === 0) return []
 
   const ids = cases.map((c) => c.id)
-  const [{ data: paid }, { data: agreements }, { data: intros }, { data: pendingReqs }] =
+  const [paidSet, { data: agreements }, { data: intros }, { data: pendingReqs }] =
     await Promise.all([
-      db.from("payments").select("case_id").eq("status", "paid").eq("package_key", "full_concierge").in("case_id", ids),
+      paidPackageCaseIds(db, ids, "full_concierge"),
       db.from("case_agreements").select("case_id, kind, version").in("case_id", ids),
       db.from("intro_calls").select("case_id, status, scheduled_at").in("case_id", ids),
       db.from("case_requirements").select("case_id").eq("status", "pending").in("case_id", ids),
     ])
 
-  const paidSet = new Set((paid ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
   // Group agreement rows per case → the shared current-version predicate.
   const agRows = new Map<string, { kind: string; version: number }[]>()
   for (const a of agreements ?? []) {

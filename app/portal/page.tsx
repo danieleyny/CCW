@@ -16,6 +16,7 @@ import { CaseTimeline } from "@/components/portal/case-timeline"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { WelcomeCard } from "@/components/portal/welcome-card"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
+import { hasPaidPackage } from "@/lib/packages"
 import { computeNextStep } from "@/lib/portal/next-step"
 import { getMessages } from "@/lib/i18n"
 
@@ -71,9 +72,7 @@ export default async function PortalHome() {
   // control tower, not this self-guided home. The fork records service_mode;
   // once the concierge package is paid, this is where the two experiences part.
   const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
-  const paidConcierge = (payments ?? []).some(
-    (p) => p.package_key === "full_concierge" && p.status === "paid"
-  )
+  const paidConcierge = await hasPaidPackage(supabase, myCase.id, "full_concierge")
   if (serviceMode === "concierge" && paidConcierge) redirect("/portal/concierge")
   // Post-intake, pre-fork: the one decision left is HOW we work together.
   const needsPathChoice = intakeDone && !serviceMode && !isLicensed && !isDenied

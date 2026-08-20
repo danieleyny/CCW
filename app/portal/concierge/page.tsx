@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { getMyCase } from "@/lib/portal"
+import { hasPaidPackage } from "@/lib/packages"
 import { createClient } from "@/lib/supabase/server"
 import { type CaseStageKey, isNypdControlled } from "@/config/stages"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
@@ -34,14 +35,7 @@ export default async function ConciergeHome() {
   if (serviceMode !== "concierge") redirect("/portal/choose-path")
 
   const supabase = await createClient()
-  const { data: paid } = await supabase
-    .from("payments")
-    .select("package_key")
-    .eq("case_id", myCase.id)
-    .eq("status", "paid")
-    .eq("package_key", "full_concierge")
-    .limit(1)
-  if ((paid ?? []).length === 0) redirect("/portal/choose-path")
+  if (!(await hasPaidPackage(supabase, myCase.id, "full_concierge"))) redirect("/portal/choose-path")
 
   const onboarding = await loadConciergeOnboarding(supabase, myCase.id)
   const firstName = myCase.client.full_name.split(" ")[0]

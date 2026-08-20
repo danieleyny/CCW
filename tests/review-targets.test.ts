@@ -4,7 +4,7 @@
  * an end-to-end DB proof that approving a passport satisfies IDN-01/02/03 (and a
  * license satisfies only IDN-01/02, leaving IDN-03 untouched).
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, describe, expect, it } from "vitest"
 import { resolveReviewTargets } from "@/lib/requirements/review-targets"
 import { smartDocument } from "@/lib/requirements/smart-documents"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"

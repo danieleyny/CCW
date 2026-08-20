@@ -1,9 +1,11 @@
 import { ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { requireStaff } from "@/lib/auth"
 import { PageHeader } from "@/components/shared/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { RequestPaymentForm } from "@/components/admin/request-payment-form"
+import { RecordOfflinePaymentForm } from "@/components/admin/record-offline-payment-form"
 import { money, formatDate } from "@/lib/format"
 import {
   Table,
@@ -17,6 +19,8 @@ import {
 export const metadata = { title: "Payments" }
 
 export default async function AdminPayments() {
+  const auth = await requireStaff()
+  const isAdmin = auth.profile.role === "admin"
   const supabase = await createClient()
 
   const [{ data: payments }, { data: cases }] = await Promise.all([
@@ -26,7 +30,7 @@ export default async function AdminPayments() {
       .order("created_at", { ascending: false }),
     supabase
       .from("cases")
-      .select("id, clients(full_name)")
+      .select("id, service_mode, clients(full_name)")
       .neq("status", "closed")
       .order("created_at", { ascending: false }),
   ])
@@ -51,6 +55,7 @@ export default async function AdminPayments() {
   const caseOptions = (cases ?? []).map((c) => ({
     id: c.id,
     name: (c.clients as unknown as { full_name: string } | null)?.full_name ?? "Unknown",
+    serviceMode: (c.service_mode as string | null) ?? null,
   }))
 
   return (
@@ -89,6 +94,19 @@ export default async function AdminPayments() {
           <RequestPaymentForm cases={caseOptions} />
         </CardContent>
       </Card>
+
+      {isAdmin && (
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="engraved mb-1">Record an offline payment</div>
+            <p className="mb-4 text-xs text-text-low">
+              Money that arrived outside Stripe (check, transfer, cash). Records it paid and unlocks the
+              chosen package for this case — no Stripe round-trip.
+            </p>
+            <RecordOfflinePaymentForm cases={caseOptions} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="rounded-lg border border-hairline bg-card">
         <Table>

@@ -20,20 +20,41 @@ type Result =
   | { kind: "fallback" }
   | null
 
-export function RequestPaymentForm({ cases }: { cases: { id: string; name: string }[] }) {
+const modeToPackage = (m: string | null | undefined) =>
+  m === "concierge" ? "full_concierge" : m === "self_guided" ? "self_guided" : ""
+
+export function RequestPaymentForm({
+  cases,
+}: {
+  cases: { id: string; name: string; serviceMode?: string | null }[]
+}) {
   const [pending, start] = useTransition()
   const [caseId, setCaseId] = useState("")
   const [amount, setAmount] = useState("")
   const [type, setType] = useState<"deposit" | "full" | "installment">("deposit")
   const [description, setDescription] = useState("")
+  const [packageKey, setPackageKey] = useState("")
   const [result, setResult] = useState<Result>(null)
+
+  // Default the package to the case's chosen path so an invoice, once paid,
+  // unlocks the right thing.
+  function pickCase(id: string) {
+    setCaseId(id)
+    setPackageKey(modeToPackage(cases.find((c) => c.id === id)?.serviceMode))
+  }
 
   function submit() {
     const cents = Math.round(parseFloat(amount) * 100)
     if (!caseId) return toast.error("Pick a client")
     if (!cents || cents < 50) return toast.error("Enter a valid amount")
     start(async () => {
-      const res = await requestPayment({ caseId, amountCents: cents, type, description })
+      const res = await requestPayment({
+        caseId,
+        amountCents: cents,
+        type,
+        description,
+        packageKey: packageKey || undefined,
+      })
       if (!res.ok) {
         toast.error(res.error ?? "Failed")
         return
@@ -92,7 +113,7 @@ export function RequestPaymentForm({ cases }: { cases: { id: string; name: strin
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1.5">
         <Label>Client</Label>
-        <Select value={caseId} onValueChange={setCaseId}>
+        <Select value={caseId} onValueChange={pickCase}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
@@ -102,6 +123,19 @@ export function RequestPaymentForm({ cases }: { cases: { id: string; name: strin
                 {c.name}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Package (unlocks on payment)</Label>
+        <Select value={packageKey || "none"} onValueChange={(v) => setPackageKey(v === "none" ? "" : v)}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="self_guided">Self-Guided</SelectItem>
+            <SelectItem value="full_concierge">Full Concierge</SelectItem>
           </SelectContent>
         </Select>
       </div>

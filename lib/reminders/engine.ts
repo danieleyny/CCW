@@ -12,6 +12,7 @@ import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { newReferenceToken } from "@/lib/references/process"
 import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
+import { paidPackageCaseIds } from "@/lib/packages"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -720,16 +721,10 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     .eq("service_mode", "concierge")
   const ccIds = (conciergeCases ?? []).map((c) => c.id)
   if (ccIds.length) {
-    const [{ data: ccPaid }, { data: ccAgreements }] = await Promise.all([
-      admin
-        .from("payments")
-        .select("case_id")
-        .eq("status", "paid")
-        .eq("package_key", "full_concierge")
-        .in("case_id", ccIds),
+    const [paidSet, { data: ccAgreements }] = await Promise.all([
+      paidPackageCaseIds(admin, ccIds, "full_concierge"),
       admin.from("case_agreements").select("case_id, kind, version").in("case_id", ccIds),
     ])
-    const paidSet = new Set((ccPaid ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
     const agRows = new Map<string, { kind: string; version: number }[]>()
     for (const a of ccAgreements ?? []) {
       const list = agRows.get(a.case_id) ?? []
