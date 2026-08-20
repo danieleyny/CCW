@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff, requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { withOnBehalf } from "@/lib/concierge/on-behalf"
+import { resolveReviewTargets } from "@/lib/requirements/review-targets"
 import { notifyClient } from "@/lib/email"
 import { notifyCaseParties } from "@/lib/notify"
 import { reviewUrl } from "@/lib/review"
@@ -319,6 +320,19 @@ export async function reviewDocument(input: {
   // the registry requirements.document_type. The registry column is NULL for
   // some reqs (IDN-03), so the old fallback couldn't match them and an approved
   // document was left with its requirement stuck unsatisfied + unbound.
+  // CONCIERGE QA Phase 1 — resolve the FULL SET of requirements this document is
+  // evidence for, not just one. A smart upload (a passport) fans document_id
+  // across IDN-01/02/03 at upload time; approving only doc.req_code (IDN-01) left
+  // IDN-02/03 stranded forever. Resolve:
+  //   (a) every requirement already BOUND to this document (the smart fan-out), UNION
+  //   (b) the target req_code (doc.req_code, else the documentType fallback) — for
+  //       legacy docs and uploads that never went through a smart kind.
+  const { data: boundReqs } = await supabase
+    .from("case_requirements")
+    .select("id, status, req_code")
+    .eq("case_id", input.caseId)
+    .eq("document_id", input.documentId)
+
   let targetReqCode: string | null = doc.req_code ?? null
   if (!targetReqCode) {
     const { data: crs } = await supabase
@@ -327,15 +341,18 @@ export async function reviewDocument(input: {
       .eq("case_id", input.caseId)
     targetReqCode = (crs ?? []).find((r) => actionFor(r.req_code)?.documentType === doc.type)?.req_code ?? null
   }
-  const { data: matchingReqs } = targetReqCode
+  const { data: targetReqs } = targetReqCode
     ? await supabase
         .from("case_requirements")
-        .select("id, status")
+        .select("id, status, req_code")
         .eq("case_id", input.caseId)
         .eq("req_code", targetReqCode)
-    : { data: [] as Array<{ id: string; status: string }> }
-  for (const r of matchingReqs ?? []) {
-    if (r.status === "na") continue
+    : { data: [] as Array<{ id: string; status: string; req_code: string }> }
+
+  // UNION by id; never widen beyond what the upload bound + the target code.
+  const resolved = resolveReviewTargets(boundReqs ?? [], targetReqs ?? [])
+
+  for (const r of resolved) {
     await supabase
       .from("case_requirements")
       .update(
@@ -353,6 +370,7 @@ export async function reviewDocument(input: {
       )
       .eq("id", r.id)
   }
+  const resolvedReqCodes = resolved.map((r) => r.req_code)
 
   await logActivity({
     action: input.status === "approved" ? "document.approved" : "document.rejected",
@@ -364,6 +382,7 @@ export async function reviewDocument(input: {
       type: doc.type,
       notes: input.notes ?? null,
       by: profile.full_name,
+      reqCodes: resolvedReqCodes,
     }),
   })
 

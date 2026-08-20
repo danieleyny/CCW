@@ -15,6 +15,7 @@ export const DB_TEST_FILES = [
   "tests/instructor-feed.test.ts",
   "tests/qa-gate.test.ts",
   "tests/requirement-actions.test.ts",
+  "tests/review-targets.test.ts",
   "tests/roster.test.ts",
   "tests/stage-advance.test.ts",
   "tests/stripe-invoicing.test.ts",
