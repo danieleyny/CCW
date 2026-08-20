@@ -104,20 +104,28 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
     }
   })
 
-  it("first run: agreements-pending fires for the paid case only; ready-to-file fires when assembled", async () => {
+  it("first run: agreements-pending (paid only), payment-pending (unpaid only), ready-to-file (assembled)", async () => {
     const fired = await runReminderEngine(admin, new Date())
     const pending = fired.filter((f) => f.ruleKey === "concierge_agreements_pending")
     expect(pending.some((f) => f.caseId === paidPending), "paid + incomplete → fires").toBe(true)
-    expect(pending.some((f) => f.caseId === unpaid), "unpaid → never fires").toBe(false)
+    expect(pending.some((f) => f.caseId === unpaid), "unpaid → no agreements nudge").toBe(false)
+
+    // Phase 2: the unpaid concierge case gets the payment-limbo nudge instead.
+    const payment = fired.filter((f) => f.ruleKey === "concierge_payment_pending")
+    expect(payment.some((f) => f.caseId === unpaid), "unpaid → payment nudge fires").toBe(true)
+    expect(payment.some((f) => f.caseId === paidPending), "paid → never payment-nudged").toBe(false)
 
     const ready = fired.filter((f) => f.ruleKey === "concierge_ready_to_file")
     expect(ready.some((f) => f.caseId === assembled), "assembled + paid → fires").toBe(true)
   })
 
-  it("second run: neither rule re-fires (idempotent)", async () => {
+  it("second run: nothing re-fires (idempotent)", async () => {
     const fired = await runReminderEngine(admin, new Date())
     expect(
       fired.some((f) => f.ruleKey === "concierge_agreements_pending" && f.caseId === paidPending)
+    ).toBe(false)
+    expect(
+      fired.some((f) => f.ruleKey === "concierge_payment_pending" && f.caseId === unpaid)
     ).toBe(false)
     expect(fired.some((f) => f.ruleKey === "concierge_ready_to_file" && f.caseId === assembled)).toBe(
       false

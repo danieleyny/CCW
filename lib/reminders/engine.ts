@@ -709,11 +709,10 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }
   }
 
-  // ── CONCIERGE Phase 7 — done-for-you nudges ──────────────────────────────
-  // A paid concierge applicant only has a few moments that are truly theirs; if
-  // one stalls, a gentle nudge keeps the whole engagement moving. Both rules are
-  // scoped to PAID concierge cases so an unpaid pre-fork chooser is never nudged
-  // toward a dashboard they can't reach.
+  // ── CONCIERGE Phases 2 + 7 — done-for-you nudges ─────────────────────────
+  // The concierge journey has a few moments that are the applicant's; if one
+  // stalls, a gentle nudge keeps it moving. The PAYMENT nudge fires for unpaid
+  // concierge cases (limbo); the rest are scoped to PAID cases.
   const { data: conciergeCases } = await admin
     .from("cases")
     .select("id, opened_at, stage, stage_entered_at")
@@ -731,12 +730,34 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       list.push({ kind: a.kind, version: a.version })
       agRows.set(a.case_id, list)
     }
-    const ccContacts = await caseContacts(admin, [...paidSet])
+    const ccContacts = await caseContacts(admin, ccIds)
 
     for (const k of conciergeCases ?? []) {
-      if (!paidSet.has(k.id)) continue // paid concierge only
       const c = ccContacts.get(k.id)
       if (!c) continue
+
+      // Phase 2 Rule: chose concierge but never paid → payment limbo. Warm, no
+      // pressure. Fires for UNPAID cases only; paid cases fall through below.
+      if (!paidSet.has(k.id)) {
+        if (!k.opened_at) continue
+        const days = (now.getTime() - new Date(k.opened_at).getTime()) / DAY
+        const bucket = days >= 3 ? "3d" : days >= 1 ? "1d" : null
+        if (bucket) {
+          push(await fireOnce(admin, {
+            ruleKey: "concierge_payment_pending",
+            target: c.profileId ?? c.email ?? c.clientId,
+            windowKey: `${k.id}:${bucket}`,
+            caseId: k.id,
+            recipient: c.profileId,
+            email: c.email,
+            kind: "reminder",
+            title: "Finish setting up your Full Concierge",
+            body: "You chose the done-for-you path — one payment away from unlocking it. Whenever you're ready, pick up right where you left off. You can still switch to Self-Guided if you'd prefer.",
+            link: "/portal/choose-path",
+          }))
+        }
+        continue // unpaid: nothing else to nudge
+      }
 
       // Rule 1: agreements gate still not signed → the dashboard stays locked.
       if (!agreementsCurrentFor(agRows.get(k.id) ?? []).complete && k.opened_at) {

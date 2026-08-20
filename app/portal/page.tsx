@@ -76,6 +76,10 @@ export default async function PortalHome() {
   if (serviceMode === "concierge" && paidConcierge) redirect("/portal/concierge")
   // Post-intake, pre-fork: the one decision left is HOW we work together.
   const needsPathChoice = intakeDone && !serviceMode && !isLicensed && !isDenied
+  // CONCIERGE QA Phase 2 — payment limbo: chose concierge, abandoned checkout.
+  // Without this they landed on the self-guided home with no way back to pay.
+  const needsConciergePayment =
+    intakeDone && serviceMode === "concierge" && !paidConcierge && !isLicensed && !isDenied
 
   // V3-P2.1 — to-dos come from the requirements engine (the one checklist).
   const outstanding = (reqs ?? []).filter((r) => r.status === "pending").length
@@ -94,10 +98,34 @@ export default async function PortalHome() {
         <p className="mt-1 text-sm text-text-mid">{t.portal.tagline}</p>
       </div>
 
+      {/* CONCIERGE QA Phase 2 — chose Full Concierge, hasn't paid: a warm,
+          recoverable card, ABOVE the fold, instead of the silent self-guided
+          fallthrough. It replaces the next-step card for this state. */}
+      {needsConciergePayment && (
+        <Card className="brass-edge">
+          <CardContent className="p-5">
+            <SectionEyebrow>Almost there</SectionEyebrow>
+            <h2 className="mt-2 text-lg font-semibold tracking-tight">
+              You chose Full Concierge — finish your payment to unlock it
+            </h2>
+            <p className="mt-1 text-sm text-text-mid">
+              Once your payment is in, your done-for-you dashboard opens and we take it from there. You
+              can still switch to Self-Guided before you pay.
+            </p>
+            <Link
+              href="/portal/choose-path"
+              className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
+            >
+              Finish enrolling <ArrowRight className="size-4" />
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Phase 10 — WHAT TO DO NEXT, first thing, above the fold on a phone.
           A returning applicant shouldn't have to hunt three screens down for
           their own to-do list. */}
-      {!isLicensed && !isDenied && (
+      {!isLicensed && !isDenied && !needsConciergePayment && (
         <Card className={nextStep.waiting ? "" : "brass-edge"}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between gap-3">
