@@ -38,7 +38,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
 ]
 
-export function Sidebar() {
+export function Sidebar({ conciergeCount = 0 }: { conciergeCount?: number }) {
   const pathname = usePathname()
 
   return (
@@ -66,6 +66,11 @@ export function Sidebar() {
               )}
               <Icon className={cn("size-4", active ? "text-brass" : "text-sidebar-foreground")} />
               {label}
+              {href === "/admin/concierge" && conciergeCount > 0 && (
+                <span className="ml-auto min-w-5 rounded-full bg-brass px-1.5 py-0.5 text-center text-[11px] font-semibold text-brand-foreground">
+                  {conciergeCount}
+                </span>
+              )}
             </Link>
           )
         })}

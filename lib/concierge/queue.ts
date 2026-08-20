@@ -29,7 +29,7 @@ export interface ConciergeQueueRow {
 export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
   const { data: cases } = await db
     .from("cases")
-    .select("id, stage, clients(full_name, assigned_staff)")
+    .select("id, stage, clients(full_name, assigned_staff, lead_source, profile_id)")
     .eq("status", "active")
     .eq("service_mode", "concierge")
   if (!cases || cases.length === 0) return []
@@ -68,7 +68,12 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
   const staffName = new Map((staff ?? []).map((s) => [s.id, s.full_name]))
 
   const rows: ConciergeQueueRow[] = cases.map((c) => {
-    const client = c.clients as unknown as { full_name: string; assigned_staff: string | null } | null
+    const client = c.clients as unknown as {
+      full_name: string
+      assigned_staff: string | null
+      lead_source: string | null
+      profile_id: string | null
+    } | null
     const stage = c.stage as CaseStageKey
     const intro = introByCase.get(c.id)
     const signal = deriveSignal({
@@ -78,6 +83,8 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
       introBooked: !!intro?.scheduled_at,
       introRequested: intro?.status === "requested",
       pending: pendingCount.get(c.id) ?? 0,
+      staffCreated: client?.lead_source === "admin_manual",
+      hasAccount: !!client?.profile_id,
     })
     return {
       caseId: c.id,
@@ -91,6 +98,12 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
   return rows.sort((a, b) => a.priority - b.priority || a.clientName.localeCompare(b.clientName))
 }
 
+/** How many concierge cases need a hand right now — for the nav badge. */
+export async function conciergeAttentionCount(db: DB): Promise<number> {
+  const rows = await loadConciergeQueue(db)
+  return rows.filter((r) => r.tone === "attention").length
+}
+
 export function deriveSignal(s: {
   stage: CaseStageKey
   paid: boolean
@@ -98,8 +111,21 @@ export function deriveSignal(s: {
   introBooked: boolean
   introRequested: boolean
   pending: number
+  /** Case was created by staff (lead_source = admin_manual), not self-serve. */
+  staffCreated?: boolean
+  /** The applicant has claimed a portal account (client.profile_id set). */
+  hasAccount?: boolean
 }): { label: string; tone: QueueTone; priority: number } {
-  if (!s.paid) return { label: "Awaiting payment", tone: "waiting", priority: 90 }
+  // CONCIERGE QA Phase 6 — an unpaid concierge case is the operation's own
+  // pipeline, not passive noise. Split it by whose court the ball is in, so
+  // staff-created and self-serve unpaid cases surface as ATTENTION, worst first.
+  if (!s.paid) {
+    if (s.staffCreated && !s.hasAccount)
+      return { label: "Invite them", tone: "attention", priority: 12 }
+    if (s.staffCreated && s.hasAccount)
+      return { label: "Awaiting payment — chase", tone: "attention", priority: 18 }
+    return { label: "Chose concierge, hasn't paid", tone: "attention", priority: 19 }
+  }
   if (!s.agreementsComplete) return { label: "Needs to sign agreements", tone: "attention", priority: 10 }
   if (s.introRequested) return { label: "Intro call requested — schedule it", tone: "attention", priority: 15 }
   if (!s.introBooked) return { label: "Book the intro call", tone: "attention", priority: 20 }

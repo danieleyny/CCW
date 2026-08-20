@@ -1,4 +1,6 @@
 import { requireStaff } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
+import { conciergeAttentionCount } from "@/lib/concierge/queue"
 import { Sidebar } from "@/components/admin/sidebar"
 import { Topbar } from "@/components/admin/topbar"
 import { DarkBackdrop } from "@/components/theme/dark-backdrop"
@@ -10,11 +12,14 @@ export default async function AdminLayout({
 }) {
   // Real authorization (proxy only does the optimistic signed-in check).
   const { profile } = await requireStaff()
+  // Best-effort concierge attention badge — never block the shell on it.
+  const supabase = await createClient()
+  const conciergeCount = await conciergeAttentionCount(supabase).catch(() => 0)
 
   return (
     <div className="dark flex min-h-svh bg-background text-foreground">
       <DarkBackdrop />
-      <Sidebar />
+      <Sidebar conciergeCount={conciergeCount} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar name={profile.full_name || "Staff"} role={profile.role} />
         <main className="flex-1 overflow-x-hidden p-4 md:p-6">

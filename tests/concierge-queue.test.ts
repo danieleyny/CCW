@@ -16,10 +16,22 @@ const base = {
 }
 
 describe("deriveSignal — concierge queue prioritization", () => {
-  it("unpaid sinks to the bottom", () => {
-    const s = deriveSignal({ ...base, paid: false })
-    expect(s.label).toBe("Awaiting payment")
-    expect(s.tone).toBe("waiting")
+  it("unpaid is ATTENTION, split by whose court the ball is in", () => {
+    const invite = deriveSignal({ ...base, paid: false, staffCreated: true, hasAccount: false })
+    expect(invite.label).toBe("Invite them")
+    expect(invite.tone).toBe("attention")
+
+    const chase = deriveSignal({ ...base, paid: false, staffCreated: true, hasAccount: true })
+    expect(chase.label).toBe("Awaiting payment — chase")
+    expect(chase.tone).toBe("attention")
+
+    const selfServe = deriveSignal({ ...base, paid: false, staffCreated: false })
+    expect(selfServe.label).toBe("Chose concierge, hasn't paid")
+    expect(selfServe.tone).toBe("attention")
+
+    // "Invite them" (no account yet) is the most urgent unpaid state.
+    expect(invite.priority).toBeLessThan(chase.priority)
+    expect(chase.priority).toBeLessThan(selfServe.priority)
   })
 
   it("unsigned agreements is the top attention item", () => {
