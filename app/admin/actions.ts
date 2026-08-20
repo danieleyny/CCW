@@ -9,6 +9,11 @@ import { requireStaff, requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { withOnBehalf } from "@/lib/concierge/on-behalf"
 import { resolveReviewTargets } from "@/lib/requirements/review-targets"
+import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
+import { getSiteUrl } from "@/lib/site-url"
+import { brand } from "@/config/brand"
+import { rateLimit } from "@/lib/rate-limit"
 import { notifyClient } from "@/lib/email"
 import { notifyCaseParties } from "@/lib/notify"
 import { reviewUrl } from "@/lib/review"
@@ -1003,6 +1008,13 @@ export async function createClientWithCase(
     detail: { manual: true, service_mode: input.serviceMode || null },
   })
 
+  // CONCIERGE QA Phase 5 — if we provisioned an account, send them a way in.
+  // Best-effort: never block case creation on the invite (staff can resend from
+  // the case header).
+  if (profileId) {
+    await sendClientInvite(kase.id).catch(() => {})
+  }
+
   revalidatePath("/admin/pipeline")
   revalidatePath("/admin/cases")
   redirect(`/admin/cases/${kase.id}`)
@@ -1098,4 +1110,73 @@ export async function recordOfflinePayment(input: {
   revalidatePath("/admin/payments")
   revalidatePath(`/admin/cases/${input.caseId}`)
   return { ok: true }
+}
+
+// ── CONCIERGE QA Phase 5 — invite / set-password link for a provisioned account ─
+/**
+ * A staff-provisioned account is created with a random password and no way in.
+ * This mints a fresh set-password link, emails it branded when Resend is on, and
+ * ALWAYS returns the link so staff can copy-paste it otherwise — no provisioned
+ * account is ever left with no route in. Rate-limited + logged.
+ */
+export type InviteResult = { ok?: boolean; link?: string; sent?: boolean; error?: string }
+
+export async function sendClientInvite(caseId: string): Promise<InviteResult> {
+  await requireStaff()
+  if (!rateLimit(`client-invite:${caseId}`, 3, 60_000)) {
+    return { error: "Too many invites just now — give it a minute." }
+  }
+  const supabase = await createClient()
+  const { data: kase } = await supabase
+    .from("cases")
+    .select("client_id, service_mode, clients(email, full_name, profile_id)")
+    .eq("id", caseId)
+    .single()
+  const client = kase?.clients as unknown as {
+    email: string | null
+    full_name: string
+    profile_id: string | null
+  } | null
+  if (!client?.email) return { error: "This client has no email on file." }
+  if (!client.profile_id) return { error: "This client doesn't have a portal account yet." }
+
+  const admin = createAdminClient()
+  const redirectTo = `${getSiteUrl()}/auth/callback?next=/auth/reset-password`
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email: client.email,
+    options: { redirectTo },
+  })
+  const link = data?.properties?.action_link
+  if (error || !link) return { error: "Couldn't create the invite link." }
+
+  let sent = false
+  if (EMAIL_ENABLED) {
+    const concierge = kase?.service_mode === "concierge"
+    const { html, text } = renderEmail({
+      preheader: `Set up your ${brand.name} account`,
+      eyebrow: concierge ? "Full Concierge" : "Your application",
+      heading: "Set up your account",
+      paragraphs: concierge
+        ? [
+            `Your ${brand.name} concierge is ready. Set your password below — then you'll sign a few short agreements, book your intro call, and send us your documents. We take it from there.`,
+          ]
+        : [
+            `Your ${brand.name} account is ready. Choose a password below to sign in and pick up your application.`,
+          ],
+      cta: { label: "Set your password", url: link },
+      footnote: `This link expires in 60 minutes. Questions? Contact ${brand.contact.email}.`,
+    })
+    const res = await sendEmail({ to: client.email, subject: `Set up your ${brand.name} account`, html, text })
+    sent = !("error" in res)
+  }
+
+  await logActivity({
+    action: "client.invite_sent",
+    caseId,
+    clientId: kase?.client_id ?? null,
+    entity: "client",
+    detail: { sent, method: EMAIL_ENABLED ? "email" : "copy_link" },
+  })
+  return { ok: true, link, sent }
 }

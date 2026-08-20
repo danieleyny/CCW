@@ -42,7 +42,7 @@ export function StageControl({
                 })
                 return
               }
-              toast.success("Stage updated · client notified")
+              toast.success("Stage updated")
             } catch {
               toast.error("Couldn't update stage")
             }

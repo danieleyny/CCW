@@ -13,6 +13,7 @@ import { StageControl } from "@/components/admin/stage-control"
 import { DocumentReview, type DocRow } from "@/components/admin/document-review"
 import { RequirementsReview, type CaseReqRow } from "@/components/admin/requirements-review"
 import { ConciergeCockpit } from "@/components/admin/concierge-cockpit"
+import { InviteClientButton } from "@/components/admin/invite-client-button"
 import { RecordLicenseControl } from "@/components/admin/record-license-control"
 import { DisclosureReview, type DisclosureRow } from "@/components/admin/disclosure-review"
 import { CaseNotes, type NoteRow } from "@/components/admin/case-notes"
@@ -73,6 +74,7 @@ export default async function CaseFilePage({
     track: string
     assigned_staff: string | null
     license_type: string | null
+    profile_id: string | null
   }
 
   const [
@@ -418,6 +420,9 @@ export default async function CaseFilePage({
                 />
               )}
               {stage === "licensed" && !kase.is_renewal && <AdminStartRenewal caseId={kase.id} />}
+              {/* CONCIERGE QA Phase 5 — a provisioned account is never left with
+                  no route in: send or copy a set-password invite. */}
+              {client.profile_id && client.email && <InviteClientButton caseId={kase.id} />}
             </div>
           </div>
 
