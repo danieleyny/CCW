@@ -11,7 +11,7 @@ import { computeFeeSummary } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { newReferenceToken } from "@/lib/references/process"
-import { REQUIRED_AGREEMENT_KINDS } from "@/config/agreements"
+import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -727,11 +727,15 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
         .eq("status", "paid")
         .eq("package_key", "full_concierge")
         .in("case_id", ccIds),
-      admin.from("case_agreements").select("case_id").in("case_id", ccIds),
+      admin.from("case_agreements").select("case_id, kind, version").in("case_id", ccIds),
     ])
     const paidSet = new Set((ccPaid ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
-    const agCount = new Map<string, number>()
-    for (const a of ccAgreements ?? []) agCount.set(a.case_id, (agCount.get(a.case_id) ?? 0) + 1)
+    const agRows = new Map<string, { kind: string; version: number }[]>()
+    for (const a of ccAgreements ?? []) {
+      const list = agRows.get(a.case_id) ?? []
+      list.push({ kind: a.kind, version: a.version })
+      agRows.set(a.case_id, list)
+    }
     const ccContacts = await caseContacts(admin, [...paidSet])
 
     for (const k of conciergeCases ?? []) {
@@ -740,7 +744,7 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       if (!c) continue
 
       // Rule 1: agreements gate still not signed → the dashboard stays locked.
-      if ((agCount.get(k.id) ?? 0) < REQUIRED_AGREEMENT_KINDS.length && k.opened_at) {
+      if (!agreementsCurrentFor(agRows.get(k.id) ?? []).complete && k.opened_at) {
         const days = (now.getTime() - new Date(k.opened_at).getTime()) / DAY
         const bucket = days >= 7 ? "7d" : days >= 3 ? "3d" : null
         if (bucket) {

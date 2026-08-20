@@ -19,9 +19,25 @@ export interface ConciergeOnboardingState {
 }
 
 /**
- * The concierge onboarding gate state, read from real rows. Agreements are
- * "signed" only when EVERY required kind has a row at its current config version
- * — a version bump automatically re-opens the gate for that agreement.
+ * CONCIERGE QA Phase 7 — THE single definition of "agreements signed". Agreements
+ * are complete only when EVERY required kind has a row at its CURRENT config
+ * version, so a version bump (which config/agreements.ts is explicitly built for,
+ * and which attorney review will cause) re-opens the gate. The gate, the work
+ * queue, and the reminders engine ALL call this — never a raw row count, which
+ * would report a stale-version case as signed while its dashboard is locked.
+ */
+export function agreementsCurrentFor(
+  rows: { kind: string; version: number }[]
+): { complete: boolean; missing: string[] } {
+  const signed = new Set(rows.map((a) => `${a.kind}@${a.version}`))
+  const missing = REQUIRED_AGREEMENT_KINDS.filter(
+    (kind) => !signed.has(`${kind}@${currentAgreementVersion(kind)}`)
+  )
+  return { complete: missing.length === 0, missing }
+}
+
+/**
+ * The concierge onboarding gate state, read from real rows.
  */
 export async function loadConciergeOnboarding(
   db: DB,
@@ -36,14 +52,11 @@ export async function loadConciergeOnboarding(
       .maybeSingle(),
   ])
 
-  const signed = new Set((agreements ?? []).map((a) => `${a.kind}@${a.version}`))
-  const missingKinds = REQUIRED_AGREEMENT_KINDS.filter(
-    (kind) => !signed.has(`${kind}@${currentAgreementVersion(kind)}`)
-  )
+  const { complete, missing } = agreementsCurrentFor(agreements ?? [])
 
   return {
-    agreementsSigned: missingKinds.length === 0,
-    missingKinds,
+    agreementsSigned: complete,
+    missingKinds: missing,
     introCall: intro
       ? { status: intro.status, scheduledAt: intro.scheduled_at, joinUrl: intro.join_url }
       : null,

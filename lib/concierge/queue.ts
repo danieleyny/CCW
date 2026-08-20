@@ -2,7 +2,7 @@ import "server-only"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { type CaseStageKey, stageIndex, isNypdControlled } from "@/config/stages"
-import { REQUIRED_AGREEMENT_KINDS } from "@/config/agreements"
+import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
 
 type DB = SupabaseClient<Database>
 
@@ -37,14 +37,19 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
   const [{ data: paid }, { data: agreements }, { data: intros }, { data: pendingReqs }] =
     await Promise.all([
       db.from("payments").select("case_id").eq("status", "paid").eq("package_key", "full_concierge").in("case_id", ids),
-      db.from("case_agreements").select("case_id").in("case_id", ids),
+      db.from("case_agreements").select("case_id, kind, version").in("case_id", ids),
       db.from("intro_calls").select("case_id, status, scheduled_at").in("case_id", ids),
       db.from("case_requirements").select("case_id").eq("status", "pending").in("case_id", ids),
     ])
 
   const paidSet = new Set((paid ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
-  const agCount = new Map<string, number>()
-  for (const a of agreements ?? []) agCount.set(a.case_id, (agCount.get(a.case_id) ?? 0) + 1)
+  // Group agreement rows per case → the shared current-version predicate.
+  const agRows = new Map<string, { kind: string; version: number }[]>()
+  for (const a of agreements ?? []) {
+    const list = agRows.get(a.case_id) ?? []
+    list.push({ kind: a.kind, version: a.version })
+    agRows.set(a.case_id, list)
+  }
   const introByCase = new Map((intros ?? []).map((i) => [i.case_id, i]))
   const pendingCount = new Map<string, number>()
   for (const r of pendingReqs ?? []) pendingCount.set(r.case_id, (pendingCount.get(r.case_id) ?? 0) + 1)
@@ -69,7 +74,7 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
     const signal = deriveSignal({
       stage,
       paid: paidSet.has(c.id),
-      agreementsComplete: (agCount.get(c.id) ?? 0) >= REQUIRED_AGREEMENT_KINDS.length,
+      agreementsComplete: agreementsCurrentFor(agRows.get(c.id) ?? []).complete,
       introBooked: !!intro?.scheduled_at,
       introRequested: intro?.status === "requested",
       pending: pendingCount.get(c.id) ?? 0,
