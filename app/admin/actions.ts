@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff, requireAdmin } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { withOnBehalf } from "@/lib/concierge/on-behalf"
+import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
 import { resolveReviewTargets } from "@/lib/requirements/review-targets"
 import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
@@ -1092,6 +1093,10 @@ export async function recordOfflinePayment(input: {
     .select("id")
     .single()
   if (error || !payment) return { error: error?.message ?? "Could not record the payment" }
+
+  if (input.packageKey === "full_concierge") {
+    await autoAssignConciergeAgent(supabase, input.caseId)
+  }
 
   await logActivity({
     action: "payment.offline_recorded",

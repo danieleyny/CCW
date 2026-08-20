@@ -12,11 +12,12 @@ import type { IntroCallState } from "@/lib/concierge/onboarding"
  */
 export function BookCall({
   calendlyUrl,
-  caseId,
+  introToken,
   introCall,
 }: {
   calendlyUrl: string | null
-  caseId: string
+  /** Opaque per-case token passed to Calendly (never the internal case id). */
+  introToken: string
   introCall: IntroCallState | null
 }) {
   // Booked + timed → show the confirmed call, nothing to do.
@@ -55,7 +56,7 @@ export function BookCall({
           <iframe
             title="Schedule your concierge intro call"
             src={`${calendlyUrl}${calendlyUrl.includes("?") ? "&" : "?"}utm_content=${encodeURIComponent(
-              caseId
+              introToken
             )}&hide_gdpr_banner=1`}
             className="h-[640px] w-full rounded-md border border-hairline"
             loading="lazy"

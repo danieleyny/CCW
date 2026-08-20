@@ -739,6 +739,7 @@ export type Database = {
       }
       cases: {
         Row: {
+          calendly_token: string
           client_id: string
           closed_at: string | null
           county_license_expires_on: string | null
@@ -761,6 +762,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          calendly_token?: string
           client_id: string
           closed_at?: string | null
           county_license_expires_on?: string | null
@@ -783,6 +785,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          calendly_token?: string
           client_id?: string
           closed_at?: string | null
           county_license_expires_on?: string | null

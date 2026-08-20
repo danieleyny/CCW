@@ -234,10 +234,34 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     id: "disclosure-addendum",
     title: "Disclosure questions",
     intro:
-      "The NYPD application asks a series of history questions (10–28). Every 'yes' needs its own written explanation, which goes on the Handgun License Application Addendum (PD 643-041A). Answer honestly — this is the part of the application people get wrong.",
+      "We've carried over what you told us in intake — confirm each answer and add any explanation the addendum needs. Every 'yes' needs its own written explanation on the Handgun License Application Addendum (PD 643-041A). Answer honestly — this is the part of the application people get wrong.",
     notice: CANDOR_NOTICE,
     attorneySeam: true,
     submitLabel: "Generate my addendum",
+    // QA Phase 9 — prefill from intake so this is CONFIRMATION, not a second
+    // interrogation. Only the items intake collects DIRECTLY (arrests, orders of
+    // protection, domestic incidents) are carried over — including a 'no' the
+    // applicant themselves gave. Mental-health and prior-denial are deliberately
+    // NOT pre-answered: intake's prohibitor flag is narrower than the addendum's
+    // question, and pre-filling 'no' there could suppress a disclosure (candor).
+    prefill: (ctx) => {
+      const joinNarr = (rows: { occurredOn?: string; jurisdiction?: string; narrative?: string }[]) =>
+        rows
+          .map((r) => [r.occurredOn, r.jurisdiction, r.narrative].filter(Boolean).join(" — "))
+          .filter(Boolean)
+          .join("\n\n")
+      const arrests = ctx.intake.arrests ?? []
+      const oops = ctx.intake.ordersOfProtection ?? []
+      const dirs = ctx.intake.domesticIncidents ?? []
+      return {
+        everArrested: arrests.length > 0 ? "yes" : "no",
+        arrestExplanation: joinNarr(arrests),
+        orderOfProtection: oops.length > 0 ? "yes" : "no",
+        oopExplanation: joinNarr(oops),
+        domesticIncident: dirs.length > 0 ? "yes" : "no",
+        dirExplanation: joinNarr(dirs),
+      }
+    },
     fields: [
       {
         name: "everArrested",

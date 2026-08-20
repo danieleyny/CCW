@@ -24,7 +24,9 @@ export function DocumentVault({
   referenceProgress: ReferenceProgress | null
   cohabitantProgress: ReferenceProgress | null
 }) {
-  const done = items.filter((i) => i.status === "satisfied").length
+  // QA Phase 9 — count RECEIVED (uploaded, awaiting our check) separately from
+  // approved, so sending a file visibly moves the counter before staff review.
+  const received = items.filter((i) => i.current != null || i.status === "satisfied").length
   const total = items.length
 
   return (
@@ -34,7 +36,7 @@ export function DocumentVault({
           <h2 className="text-lg font-semibold tracking-tight">Your document vault</h2>
           {total > 0 && (
             <span className="font-mono text-[11px] tabular-nums text-text-low">
-              {done} of {total} in
+              {received} of {total} in
             </span>
           )}
         </div>
@@ -59,6 +61,7 @@ export function DocumentVault({
               current={item.current}
               photoSpec={item.photoSpec}
               smartKinds={item.smartKinds.length > 0 ? item.smartKinds : undefined}
+              conciergeVoice
             />
           ))}
         </div>

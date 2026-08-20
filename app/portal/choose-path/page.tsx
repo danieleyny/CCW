@@ -39,6 +39,13 @@ export default async function ChoosePathPage() {
 
   const packages = await getActivePackages(supabase)
   const alreadyMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
+  // QA Phase 9 — don't attribute a STAFF-set path to the applicant.
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("lead_source")
+    .eq("id", myCase.client_id)
+    .maybeSingle()
+  const staffProvisioned = clientRow?.lead_source === "admin_manual"
 
   return (
     <div className="space-y-6">
@@ -53,7 +60,7 @@ export default async function ChoosePathPage() {
         </p>
       </div>
 
-      <ChoosePathCards packages={packages} alreadyMode={alreadyMode} />
+      <ChoosePathCards packages={packages} alreadyMode={alreadyMode} staffProvisioned={staffProvisioned} />
 
       <p className="text-xs text-text-low">
         Service fees only — the NYPD&apos;s application fee and the fingerprint fee are paid separately at

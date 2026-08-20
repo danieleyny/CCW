@@ -54,10 +54,13 @@ const NARRATIVE: Record<
 export function ChoosePathCards({
   packages,
   alreadyMode,
+  staffProvisioned = false,
 }: {
   packages: ServicePackage[]
   /** If the applicant already chose but hasn't paid, highlight that card. */
   alreadyMode: "self_guided" | "concierge" | null
+  /** The path was set by STAFF (admin_manual) — don't attribute the choice to them. */
+  staffProvisioned?: boolean
 }) {
   // Only render the two real fork options, in a deliberate order.
   const order: PathId[] = ["self_guided", "full_concierge"]
@@ -75,13 +78,22 @@ export function ChoosePathCards({
             (pkg.key === "full_concierge" && alreadyMode === "concierge") ||
             (pkg.key === "self_guided" && alreadyMode === "self_guided")
           }
+          staffProvisioned={staffProvisioned}
         />
       ))}
     </div>
   )
 }
 
-function PathCard({ pkg, selected }: { pkg: ServicePackage; selected: boolean }) {
+function PathCard({
+  pkg,
+  selected,
+  staffProvisioned,
+}: {
+  pkg: ServicePackage
+  selected: boolean
+  staffProvisioned: boolean
+}) {
   const [state, action, pending] = useActionState<EnrollResult, FormData>(choosePath, {})
   const n = NARRATIVE[pkg.key as PathId]
   const concierge = pkg.key === "full_concierge"
@@ -137,7 +149,10 @@ function PathCard({ pkg, selected }: { pkg: ServicePackage; selected: boolean })
 
       {selected && (
         <p className="mb-2 flex items-center gap-1.5 rounded-md border border-brass/30 bg-brass/8 p-2 text-xs text-brass-bright">
-          <Check className="size-3.5 shrink-0" /> You picked this — finish payment to begin.
+          <Check className="size-3.5 shrink-0" />
+          {staffProvisioned
+            ? "Your case is set up on this path — finish payment to begin."
+            : "You picked this — finish payment to begin."}
         </p>
       )}
 

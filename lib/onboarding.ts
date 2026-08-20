@@ -49,7 +49,10 @@ export async function ensureClientCaseForProfile(
     }
   }
 
-  // 3. No prior record — create a fresh client.
+  // 3. No prior record — create a fresh client. QA Phase 9: a double-clicked
+  // signup fires two concurrent provisioning calls; both can pass steps 1–2 and
+  // race the partial unique index on profile_id. Catch the 23505 and adopt the
+  // row the winner inserted, so the loser doesn't crash the intake page.
   if (!clientId) {
     const { data: created, error } = await admin
       .from("clients")
@@ -63,8 +66,21 @@ export async function ensureClientCaseForProfile(
       })
       .select("id")
       .single()
-    if (error || !created) throw new Error(error?.message ?? "Could not create client")
-    clientId = created.id
+    if (error) {
+      if (error.code === "23505") {
+        const { data: raced } = await admin
+          .from("clients")
+          .select("id")
+          .eq("profile_id", opts.profileId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        clientId = raced?.id
+      }
+      if (!clientId) throw new Error(error.message ?? "Could not create client")
+    } else {
+      clientId = created?.id
+    }
   }
 
   // 4. Ensure an active case exists.

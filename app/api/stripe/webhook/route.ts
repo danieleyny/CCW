@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getStripe, STRIPE_ENABLED } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
+import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
 
 /**
  * Stripe webhook handler — scaffolded behind the STRIPE_ENABLED flag. When
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
         // harmless. Never advance on a short payment (SEC-23).
         if (paid?.case_id && amountOk) {
           await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "payment.paid")
+          await autoAssignConciergeAgent(supabase, paid.case_id)
         }
       }
       // Marketplace booking deposit (Connect) — reconcile by booking_id.
@@ -154,6 +156,7 @@ export async function POST(request: NextRequest) {
         : await query.eq("stripe_invoice_id", invoice.id).maybeSingle()
       if (paid?.case_id && amountOk) {
         await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "invoice.paid")
+        await autoAssignConciergeAgent(supabase, paid.case_id)
       }
       break
     }

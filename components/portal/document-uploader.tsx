@@ -38,6 +38,7 @@ export function DocumentUploader({
   current,
   photoSpec = false,
   smartKinds,
+  conciergeVoice = false,
 }: {
   caseId: string
   clientId: string
@@ -54,6 +55,9 @@ export function DocumentUploader({
    *  the applicant picks what the file IS, and it's attached to every requirement
    *  that kind covers (a passport → photo ID + DOB + citizenship, uploaded once). */
   smartKinds?: SmartDocument[]
+  /** CONCIERGE QA Phase 9 — warm done-for-you voice: a pending upload reads
+   *  "Got it — we're checking this", not a raw PENDING chip. */
+  conciergeVoice?: boolean
 }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -139,7 +143,11 @@ export function DocumentUploader({
           {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
         </div>
         {current ? (
-          <StatusBadge status={current.status} />
+          conciergeVoice && current.status === "pending" ? (
+            <span className="whitespace-nowrap text-xs font-medium text-ok">Got it — we&apos;re checking this</span>
+          ) : (
+            <StatusBadge status={current.status} />
+          )
         ) : (
           <span className="text-xs text-muted-foreground">Not uploaded</span>
         )}

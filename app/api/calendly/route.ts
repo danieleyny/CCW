@@ -59,14 +59,22 @@ export async function POST(req: Request) {
   }
 
   const p = body.payload ?? {}
-  const caseId = p.tracking?.utm_content
-  if (!caseId) return NextResponse.json({ ok: true, skipped: "no case mapping" })
+  // QA Phase 9 — utm_content is an OPAQUE per-case token, not the internal id.
+  // Validate its shape and confirm the case exists; otherwise 200 + a skipped
+  // reason, so a malformed/unknown token never 500s into Calendly's retry loop.
+  const token = p.tracking?.utm_content
+  if (!token || !UUID_RE.test(token)) {
+    return NextResponse.json({ ok: true, skipped: "no or malformed case token" })
+  }
+
+  const admin = createAdminClient()
+  const { data: kase } = await admin.from("cases").select("id").eq("calendly_token", token).maybeSingle()
+  if (!kase) return NextResponse.json({ ok: true, skipped: "case not found" })
 
   const canceled = body.event === "invitee.canceled"
-  const admin = createAdminClient()
-  await admin.from("intro_calls").upsert(
+  const { error } = await admin.from("intro_calls").upsert(
     {
-      case_id: caseId,
+      case_id: kase.id,
       provider: "calendly",
       status: canceled ? "canceled" : "booked",
       scheduled_at: canceled ? null : (p.scheduled_event?.start_time ?? null),
@@ -75,6 +83,12 @@ export async function POST(req: Request) {
     },
     { onConflict: "case_id" }
   )
+  if (error) {
+    console.error("[calendly] intro_calls upsert failed:", error.message)
+    return NextResponse.json({ error: "record failed" }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

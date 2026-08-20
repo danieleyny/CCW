@@ -20,7 +20,11 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
   const [state, action, pending] = useActionState<ConciergeResult, FormData>(signAgreements, {})
   const [name, setName] = useState(defaultName)
   const [png, setPng] = useState("")
-  const canSubmit = name.trim().length >= 2 && png.length > 0
+  // QA Phase 9 — the recorded consent says "I have read the agreements above", so
+  // each must actually be OPENED before we let them sign. We record which.
+  const [opened, setOpened] = useState<Set<string>>(new Set([AGREEMENTS[0].kind]))
+  const allOpened = opened.size >= AGREEMENTS.length
+  const canSubmit = name.trim().length >= 2 && png.length > 0 && allOpened
 
   return (
     <div className="space-y-6">
@@ -36,10 +40,22 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
       <ul className="space-y-2">
         {AGREEMENTS.map((a, i) => (
           <li key={a.kind}>
-            <details className="group rounded-lg border border-hairline bg-card" open={i === 0}>
+            <details
+              className="group rounded-lg border border-hairline bg-card"
+              open={i === 0}
+              onToggle={(e) => {
+                if ((e.currentTarget as HTMLDetailsElement).open) {
+                  setOpened((prev) => new Set(prev).add(a.kind))
+                }
+              }}
+            >
               <summary className="flex cursor-pointer list-none items-start gap-3 p-4">
-                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-brass/40 font-mono text-xs text-brass">
-                  {i + 1}
+                <span
+                  className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs ${
+                    opened.has(a.kind) ? "border-ok/50 bg-ok/10 text-ok" : "border-brass/40 text-brass"
+                  }`}
+                >
+                  {opened.has(a.kind) ? <Check className="size-3.5" /> : i + 1}
                 </span>
                 <span className="flex-1">
                   <span className="block font-medium">{a.title}</span>
@@ -55,6 +71,14 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
 
       <form action={action} className="space-y-4 rounded-lg border border-brass/30 bg-brass/[0.04] p-4 sm:p-5">
         <input type="hidden" name="base64Png" value={png} />
+        <input type="hidden" name="openedKinds" value={[...opened].join(",")} />
+
+        {!allOpened && (
+          <p className="rounded-md border border-warn/30 bg-warn/10 p-2.5 text-xs text-warn">
+            Open and read all {AGREEMENTS.length} agreements above to continue ({opened.size}/
+            {AGREEMENTS.length} read).
+          </p>
+        )}
 
         <div>
           <label htmlFor="signerName" className="engraved mb-1.5 block text-text-low">

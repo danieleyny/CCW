@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react"
 import { Eraser, PenLine, Type } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -86,7 +87,10 @@ export function SignaturePad({
 
   function save() {
     if (mode === "type") renderTyped(typed)
-    if (!dirty.current) return
+    if (!dirty.current) {
+      toast.error("Draw or type your signature first.")
+      return
+    }
     const data = canvasRef.current!.toDataURL("image/png")
     onSave(data.split(",")[1])
   }

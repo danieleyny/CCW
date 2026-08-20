@@ -95,6 +95,15 @@ export default async function ConciergeHome() {
     }
   })
 
+  // QA Phase 9 — surface the assigned concierge (auto-assigned on payment).
+  const { data: agentRow } = await supabase
+    .from("clients")
+    .select("profiles:assigned_staff(full_name)")
+    .eq("id", myCase.client_id)
+    .maybeSingle()
+  const agentFirst =
+    (agentRow?.profiles as unknown as { full_name: string } | null)?.full_name?.split(" ")[0] ?? null
+
   return (
     <div className="space-y-6">
       <div>
@@ -103,6 +112,12 @@ export default async function ConciergeHome() {
         <p className="mt-1 max-w-prose text-sm text-text-mid">
           You&apos;re on the done-for-you path. We prepare and assemble everything — you review it at the
           end and file your own application.
+          {agentFirst && (
+            <>
+              {" "}
+              <span className="text-foreground">{agentFirst} is your concierge.</span>
+            </>
+          )}
         </p>
       </div>
 
@@ -110,7 +125,7 @@ export default async function ConciergeHome() {
 
       <BookCall
         calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
-        caseId={myCase.id}
+        introToken={myCase.calendly_token}
         introCall={onboarding.introCall}
       />
 
