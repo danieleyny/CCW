@@ -220,6 +220,7 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
             name: "isFamily",
             label: "Related to you?",
             type: "select",
+            help: "At least two of your references must not be family — so up to two can be relatives, the rest cannot.",
             options: [
               { value: "no", label: "Not related" },
               { value: "yes", label: "Family member" },

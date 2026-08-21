@@ -224,6 +224,23 @@ export async function submitRequirementRoster(
       return { error: "Add at least one person, or tell us you live alone." }
     }
 
+    // NYPD rule: at least TWO character references must not be related to you.
+    // So the family cap is (required count − 2): carry (4) → up to 2 family;
+    // premises (2) → none. Block before we invite anyone.
+    if (action.roster === "references") {
+      const refs = Array.isArray(answers.references) ? (answers.references as { isFamily?: string }[]) : []
+      const familyCount = refs.filter((r) => r?.isFamily === "yes").length
+      const maxFamily = Math.max(0, (action.minimum ?? 4) - 2)
+      if (familyCount > maxFamily) {
+        return {
+          error:
+            maxFamily === 0
+              ? "None of your references can be family — the NYPD requires that all be people not related to you."
+              : `At least two of your references must not be family, so at most ${maxFamily} can be a family member. You've marked ${familyCount} as family — please change one.`,
+        }
+      }
+    }
+
     const sync =
       action.roster === "references"
         ? await syncReferences(admin, myCase.id, people)

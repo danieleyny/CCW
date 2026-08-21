@@ -74,6 +74,23 @@ export function QuestionnaireDialog({
       // submission creates them and sends each their private link — there is no
       // PDF to generate, which is what used to dead-end here.
       if (actionFor(reqCode)?.mode === "roster") {
+        // References: at least 2 must not be family (NYPD). Cap family at
+        // (required − 2). Block with an alert before any invite goes out.
+        const rosterAction = actionFor(reqCode)
+        if (rosterAction?.mode === "roster" && rosterAction.roster === "references") {
+          const refs = Array.isArray(values.references) ? (values.references as Values[]) : []
+          const familyCount = refs.filter((r) => (r as { isFamily?: string }).isFamily === "yes").length
+          const maxFamily = Math.max(0, (rosterAction.minimum ?? 4) - 2)
+          if (familyCount > maxFamily) {
+            toast.error(
+              maxFamily === 0
+                ? "None of your references can be family — all must be people not related to you."
+                : `At least two references must not be family, so at most ${maxFamily} can be a family member. You've marked ${familyCount}.`,
+              { duration: 8000 }
+            )
+            return
+          }
+        }
         const r = await submitRequirementRoster(reqCode, values)
         if (r.error) {
           toast.error(r.error)
