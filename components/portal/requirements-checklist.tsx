@@ -66,6 +66,9 @@ export interface ReqChecklistItem {
   legalStatus: string
   /** The case or statute behind a non-enforced status. Never fabricated. */
   legalCitation: string | null
+  /** party='sponsor' — the sponsoring company owns this row. The applicant sees
+   *  status only (progress), never an uploader or the file. */
+  sponsorManaged?: boolean
 }
 
 type FilterKey = "all" | "todo" | "done" | "notarizing"
@@ -439,9 +442,18 @@ export function RequirementsChecklist({
                           </p>
                         )}
 
-                        {/* No call to action on something we're telling them not to do.
-                            They may still upload it voluntarily from Documents. */}
-                        {!isUnenforced(item.legalStatus) && (
+                        {/* Sponsor-owned rows: the applicant sees status only —
+                            never an uploader or the file. This item is the
+                            sponsoring company's to provide. */}
+                        {item.sponsorManaged ? (
+                          <p className="mt-2 rounded-md border border-hairline bg-surface-2/40 px-3 py-2 text-xs text-text-mid">
+                            Your sponsor handles this — we&apos;ll show it as done once they&apos;ve sent it.
+                            Nothing for you to do here.
+                          </p>
+                        ) : (
+                          /* No call to action on something we're telling them not to do.
+                             They may still upload it voluntarily from Documents. */
+                          !isUnenforced(item.legalStatus) && (
                           <RequirementAction
                             reqCode={item.reqCode}
                             status={item.status}
@@ -457,6 +469,7 @@ export function RequirementsChecklist({
                             feeReceipts={feeReceipts}
                             dmvApplicant={item.reqCode === "DMV-01" ? dmvApplicant : null}
                           />
+                          )
                         )}
 
                         {/* The record, off the card face: official title + citation

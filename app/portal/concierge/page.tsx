@@ -18,6 +18,7 @@ import { DocumentVault } from "@/components/portal/concierge/document-vault"
 import { ReviewAndFile } from "@/components/portal/concierge/review-and-file"
 import { DisclosuresSection } from "@/components/portal/concierge/disclosures-section"
 import { ControlTower } from "@/components/portal/concierge/control-tower"
+import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -137,6 +138,8 @@ export default async function ConciergeHome() {
           )}
         </p>
       </div>
+
+      <SponsorBanner caseId={myCase.id} />
 
       {!callBooked && bookCall}
 

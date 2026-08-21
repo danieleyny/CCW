@@ -109,6 +109,11 @@ export interface WizardAnswers {
   occupation?: string
   // Out-of-city licence (Special Carry — form field 9)
   outOfCityLicenseNumber?: string
+  // Sponsored armed-guard (Carry Guard) — shown only for a sponsored case.
+  // The track is DERIVED from these + residence by resolveArmedTrack().
+  homeCountyPistolLicense?: "yes" | "no" | "unsure" // Q1 (NY outside NYC only)
+  nycAssignment?: boolean // Q2 — ISS post located in NYC (the §400.00(3) employment hook)
+  otherPistolLicense?: boolean // Q3 — holds any other pistol licence/permit, any state
   outOfCityIssuedBy?: string
   outOfCityCounty?: string
   outOfCityIssuedOn?: string
@@ -238,7 +243,11 @@ export function eligibilityGate(a: WizardAnswers): EligibilityResult {
  */
 export function toGeneratorAnswers(
   a: WizardAnswers,
-  opts: { isRenewal?: boolean } = {}
+  opts: {
+    isRenewal?: boolean
+    /** Derived armed-guard flags from resolveArmedTrack(); absent for non-sponsored cases. */
+    armed?: { isArmedGuard: boolean; needsPreLicenseExemption: boolean; needsCountyLicenseDoc: boolean }
+  } = {}
 ): GeneratorAnswers {
   const premises = a.licenseType === "premises"
   return {
@@ -254,5 +263,8 @@ export function toGeneratorAnswers(
     isVeteran: !!a.isVeteran,
     hasNameChange: !!a.hasNameChange,
     anyQuestionYes: (a.questionnaire ?? []).some((q) => q.yes),
+    isArmedGuard: !!opts.armed?.isArmedGuard,
+    needsPreLicenseExemption: !!opts.armed?.needsPreLicenseExemption,
+    needsCountyLicenseDoc: !!opts.armed?.needsCountyLicenseDoc,
   }
 }

@@ -10,7 +10,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { runIntakeSystemChecks } from "@/lib/requirements/system-checks"
-import { materializeCaseRequirements } from "@/lib/requirements/materialize"
+import { materializeCaseRequirements, materializeSponsorPacket } from "@/lib/requirements/materialize"
+import { resolveArmedTrack, type ArmedTrackResult } from "@/lib/requirements/track"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
 
 type DB = SupabaseClient<Database>
@@ -101,12 +102,40 @@ export async function processIntake(
   if (kase?.client_id) {
     await admin.from("clients").update({ track: trackFromAnswers(answers, jurisdictionKey) }).eq("id", kase.client_id)
   }
-  const result = await materializeCaseRequirements(
-    admin,
-    caseId,
-    jurisdictionKey,
-    toGeneratorAnswers(answers, { isRenewal })
-  )
+
+  // ── Sponsored armed-guard (Carry Guard) track — DERIVED, never typed ───────
+  // A case with a sponsorship gets its licence category from resolveArmedTrack();
+  // everyone else stays concealed_carry. The sponsor packet proceeds regardless,
+  // but the applicant's NYPD set is seeded only once the track has RESOLVED — an
+  // 'sponsored_unresolved' case must not work a checklist we're not sure about.
+  const { data: sponsorship } = await admin
+    .from("case_sponsorships")
+    .select("id")
+    .eq("case_id", caseId)
+    .limit(1)
+    .maybeSingle()
+  const isSponsored = !!sponsorship
+  let armed: ArmedTrackResult | null = null
+  if (isSponsored) {
+    armed = resolveArmedTrack(answers)
+    await admin.from("cases").update({ license_track: armed.track }).eq("id", caseId)
+  }
+
+  let result: { applicable: number }
+  if (isSponsored && !armed!.isArmedGuard) {
+    // Unresolved — seed only the company packet, hold the applicant NYPD set.
+    result = { applicable: 0 }
+  } else {
+    result = await materializeCaseRequirements(
+      admin,
+      caseId,
+      jurisdictionKey,
+      toGeneratorAnswers(answers, { isRenewal, armed: armed ?? undefined })
+    )
+  }
+  if (isSponsored) {
+    await materializeSponsorPacket(admin, caseId)
+  }
 
   // ── V3-P1: training is a decaying asset (≤6 months before submission) ──────
   if (answers.trainingStatus === "completed" && answers.trainingDate) {

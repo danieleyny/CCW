@@ -35,11 +35,57 @@ export async function getActiveRequirements(db: DB, jurisdictionKey: string) {
     .from("requirements")
     .select("id, req_code, title, authority, severity, trigger_cond, document_type, effective_from")
     .eq("jurisdiction_id", jur.id)
+    // Sponsor-owned rows are the company packet — seeded by materializeSponsorPacket(),
+    // never by the generic applicant generator. Keep the two paths disjoint.
+    .neq("party", "sponsor")
     .lte("effective_from", t)
     .or(`effective_to.is.null,effective_to.gte.${t}`)
     .order("req_code", { ascending: true })
 
   return data ?? []
+}
+
+/**
+ * Seed the SPONSOR company packet (SPN-*) for a case that has a sponsorship,
+ * independent of the applicant's resolved jurisdiction/track — so the packet can
+ * proceed even while the applicant's category is 'sponsored_unresolved'. The rows
+ * live under the `nyc` jurisdiction as the canonical carrier (party='sponsor').
+ * Idempotent; never disturbs a satisfied/rejected packet row or its evidence.
+ */
+export async function materializeSponsorPacket(admin: DB, caseId: string): Promise<MaterializeResult> {
+  const t = today()
+  const { data: jur } = await admin
+    .from("jurisdiction_profiles")
+    .select("id")
+    .eq("key", "nyc")
+    .maybeSingle()
+  if (!jur) return { inserted: 0, updated: 0, applicable: 0, total: 0 }
+
+  const { data: spn } = await admin
+    .from("requirements")
+    .select("id, req_code")
+    .eq("jurisdiction_id", jur.id)
+    .eq("party", "sponsor")
+    .lte("effective_from", t)
+    .or(`effective_to.is.null,effective_to.gte.${t}`)
+  const rows = spn ?? []
+
+  const { data: existing } = await admin
+    .from("case_requirements")
+    .select("id, requirement_id, status")
+    .eq("case_id", caseId)
+  const byReq = new Map((existing ?? []).map((r) => [r.requirement_id, r]))
+
+  const inserts: Database["public"]["Tables"]["case_requirements"]["Insert"][] = []
+  for (const r of rows) {
+    if (byReq.has(r.id)) continue // leave any existing packet row (incl. satisfied) intact
+    inserts.push({ case_id: caseId, requirement_id: r.id, req_code: r.req_code, status: "pending" })
+  }
+  if (inserts.length) {
+    const { error } = await admin.from("case_requirements").insert(inserts)
+    if (error) throw error
+  }
+  return { inserted: inserts.length, updated: 0, applicable: rows.length, total: rows.length }
 }
 
 export interface MaterializeResult {
@@ -129,6 +175,8 @@ export interface CaseRequirementRow {
     /** Enforcement status — 'enjoined_not_enforced'/'repealed' can never block. */
     legal_status: string
     legal_citation: string | null
+    /** 'applicant' (default) | 'sponsor' — sponsor rows are the company packet. */
+    party: string
   } | null
 }
 
@@ -143,7 +191,7 @@ export async function getCaseRequirements(db: DB, caseId: string): Promise<CaseR
     .from("case_requirements")
     .select(
       "id, req_code, status, document_id, reference_id, cohabitant_id, notes, " +
-        "requirement:requirements(id, title, description, authority, severity, trigger_cond, document_type, effective_from, legal_status, legal_citation)"
+        "requirement:requirements(id, title, description, authority, severity, trigger_cond, document_type, effective_from, legal_status, legal_citation, party)"
     )
     .eq("case_id", caseId)
     .order("req_code", { ascending: true })

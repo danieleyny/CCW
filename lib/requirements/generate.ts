@@ -22,6 +22,17 @@ export type TriggerCond =
   | "if_veteran"
   | "if_name_change"
   | "if_any_q_yes"
+  // ── Sponsored armed-guard (Carry Guard) track ──
+  // `sponsor_packet` never fires in the generic generator — sponsor-owned rows
+  // are seeded by materializeSponsorPacket(), and party='sponsor' rows are
+  // filtered out of the generic active set entirely (see materialize.ts).
+  | "sponsor_packet"
+  | "carry_guard_only"
+  | "carry_not_renewal_not_armed" // REF-01 / TRN-01: carry, non-renewal, NOT armed
+  | "two_refs_not_renewal" // REF-02: premises OR armed guard, non-renewal
+  | "unless_armed" // SOC-01: everyone except an armed guard
+  | "if_pre_license_exemption" // PLE-01
+  | "if_county_license_doc" // SCG-01 (Branch B)
 
 /**
  * Minimum truthful answer set that drives generation. Disclosures default to
@@ -45,6 +56,12 @@ export interface IntakeAnswers {
   isVeteran?: boolean
   hasNameChange?: boolean
   anyQuestionYes?: boolean
+  // Sponsored armed-guard track — derived by resolveArmedTrack(), never typed in.
+  // isArmedGuard is only ever true once the track has RESOLVED to carry_guard or
+  // special_carry_guard; an unresolved case seeds only the sponsor packet.
+  isArmedGuard?: boolean
+  needsPreLicenseExemption?: boolean // PLE-01: armed AND holds no other pistol licence
+  needsCountyLicenseDoc?: boolean // SCG-01: Branch B AND holds a county licence
 }
 
 /** Does a requirement's trigger condition fire for these answers? */
@@ -80,6 +97,21 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
       return !!a.hasNameChange
     case "if_any_q_yes":
       return !!a.anyQuestionYes
+    // ── Sponsored armed-guard track ──
+    case "sponsor_packet":
+      return false // never generic — seeded by materializeSponsorPacket()
+    case "carry_guard_only":
+      return !!a.isArmedGuard
+    case "carry_not_renewal_not_armed":
+      return a.isCarry !== false && !a.isPremises && !a.isRenewal && !a.isArmedGuard
+    case "two_refs_not_renewal":
+      return (!!a.isPremises || !!a.isArmedGuard) && !a.isRenewal
+    case "unless_armed":
+      return !a.isArmedGuard
+    case "if_pre_license_exemption":
+      return !!a.needsPreLicenseExemption
+    case "if_county_license_doc":
+      return !!a.needsCountyLicenseDoc
     default:
       return false // unknown trigger → conservative: do not apply
   }

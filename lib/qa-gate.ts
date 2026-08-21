@@ -27,6 +27,7 @@ export interface GateBlocker {
     | "references_short"
     | "photo_spec"
     | "sign_off_missing"
+    | "track_unresolved"
   detail: string
 }
 
@@ -45,7 +46,7 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
     await Promise.all([
       db
         .from("cases")
-        .select("is_renewal, training_expires_on, qa_signed_off_by")
+        .select("is_renewal, training_expires_on, qa_signed_off_by, license_track")
         .eq("id", caseId)
         .single(),
       db
@@ -65,6 +66,17 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
         .order("created_at", { ascending: false }),
     ])
   if (!kase) return { ok: false, blockers: [{ kind: "blocking_requirements", detail: "Case not found." }], readyForSignOff: false }
+
+  // 0. A sponsored armed-guard case whose category has not RESOLVED cannot be
+  //    assembled or filed — we do not yet know the correct requirement set. This
+  //    is a first-class state (the sponsor packet still proceeds), not an error.
+  if (kase.license_track === "sponsored_unresolved") {
+    blockers.push({
+      kind: "track_unresolved",
+      detail:
+        "This armed-guard case's licence category is not yet resolved. Confirm the applicant's category (home-county licence, or the License Division for a non-resident) before assembling or filing.",
+    })
+  }
 
   // 1. Every BLOCKING requirement satisfied (advisory rows can never block).
   //    `pending` AND `rejected` both count as open — a rejected blocking doc is
@@ -111,7 +123,10 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
 
   // 4. Track-aware reference count, notarization met (renewals need none).
   const answers = ((session?.answers ?? {}) as WizardAnswers) || {}
-  const needed = requiredReferences(answers, { isRenewal: !!kase.is_renewal })
+  const needed = requiredReferences(answers, {
+    isRenewal: !!kase.is_renewal,
+    licenseTrack: kase.license_track ?? undefined,
+  })
   const notarized = (refs ?? []).filter((r) => r.notarized).length
   if (notarized < needed) {
     blockers.push({

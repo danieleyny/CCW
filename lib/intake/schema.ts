@@ -159,14 +159,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export interface CompletionOpts {
   /** From cases.is_renewal — renewals are exempt from references (38 RCNY §5-05(c)). */
   isRenewal?: boolean
+  /** From cases.license_track — armed-guard (Carry Guard) needs the base two only. */
+  licenseTrack?: "concealed_carry" | "carry_guard" | "special_carry_guard" | "sponsored_unresolved"
 }
 
 /**
  * Track- and renewal-aware reference count: carry/special = 4 (≥2 non-family),
- * premises = 2 (non-family), renewals = 0 (exempt, §5-05(c)).
+ * premises = 2 (non-family), armed guard (Carry Guard) = 2, renewals = 0
+ * (exempt, §5-05(c)).
  */
 export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}): number {
   if (opts.isRenewal) return 0
+  if (opts.licenseTrack === "carry_guard" || opts.licenseTrack === "special_carry_guard") return 2
   if (a.licenseType === "premises") return 2
   return REQUIRED_REFERENCES
 }

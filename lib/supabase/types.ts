@@ -87,6 +87,13 @@ export type Database = {
             foreignKeyName: "activity_log_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "activity_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -140,6 +147,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "appointments_case_id_fkey"
@@ -274,6 +288,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "bookings_case_id_fkey"
@@ -437,6 +458,13 @@ export type Database = {
             foreignKeyName: "case_agreements_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_agreements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -446,6 +474,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_agreements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "case_agreements_document_id_fkey"
@@ -498,6 +533,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_notes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "case_notes_case_id_fkey"
@@ -572,6 +614,13 @@ export type Database = {
             foreignKeyName: "case_offers_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -635,6 +684,13 @@ export type Database = {
             foreignKeyName: "case_requirements_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -651,6 +707,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "case_requirements_document_id_fkey"
@@ -685,6 +748,90 @@ export type Database = {
             columns: ["disclosure_id"]
             isOneToOne: false
             referencedRelation: "disclosures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_sponsorships: {
+        Row: {
+          applicant_consent_version: string | null
+          applicant_consented_at: string | null
+          case_id: string
+          created_at: string
+          id: string
+          invite_token: string | null
+          invited_email: string
+          invited_name: string | null
+          rep_profile_id: string | null
+          revoked_at: string | null
+          scope: Database["public"]["Enums"]["sponsorship_scope"]
+          sponsor_id: string
+          status: string
+        }
+        Insert: {
+          applicant_consent_version?: string | null
+          applicant_consented_at?: string | null
+          case_id: string
+          created_at?: string
+          id?: string
+          invite_token?: string | null
+          invited_email: string
+          invited_name?: string | null
+          rep_profile_id?: string | null
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          sponsor_id: string
+          status?: string
+        }
+        Update: {
+          applicant_consent_version?: string | null
+          applicant_consented_at?: string | null
+          case_id?: string
+          created_at?: string
+          id?: string
+          invite_token?: string | null
+          invited_email?: string
+          invited_name?: string | null
+          rep_profile_id?: string | null
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          sponsor_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_sponsorships_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_sponsorships_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_sponsorships_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_sponsorships_rep_profile_id_fkey"
+            columns: ["rep_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_sponsorships_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
         ]
@@ -732,6 +879,13 @@ export type Database = {
             foreignKeyName: "case_stages_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_stages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -749,6 +903,7 @@ export type Database = {
           is_renewal: boolean
           license_expires_on: string | null
           license_issued_on: string | null
+          license_track: Database["public"]["Enums"]["license_track"]
           nypd_app_ref: string | null
           opened_at: string
           qa_signed_off_at: string | null
@@ -773,6 +928,7 @@ export type Database = {
           is_renewal?: boolean
           license_expires_on?: string | null
           license_issued_on?: string | null
+          license_track?: Database["public"]["Enums"]["license_track"]
           nypd_app_ref?: string | null
           opened_at?: string
           qa_signed_off_at?: string | null
@@ -797,6 +953,7 @@ export type Database = {
           is_renewal?: boolean
           license_expires_on?: string | null
           license_issued_on?: string | null
+          license_track?: Database["public"]["Enums"]["license_track"]
           nypd_app_ref?: string | null
           opened_at?: string
           qa_signed_off_at?: string | null
@@ -879,6 +1036,13 @@ export type Database = {
             foreignKeyName: "character_references_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "character_references_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -940,6 +1104,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "checklist_items_case_id_fkey"
@@ -1107,6 +1278,13 @@ export type Database = {
             foreignKeyName: "cohabitants_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "cohabitants_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -1116,6 +1294,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohabitants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "cohabitants_document_id_fkey"
@@ -1239,6 +1424,13 @@ export type Database = {
             foreignKeyName: "data_requests_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "data_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -1306,8 +1498,98 @@ export type Database = {
             foreignKeyName: "disclosures_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "disclosures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
+          },
+        ]
+      }
+      document_access_log: {
+        Row: {
+          action: string
+          case_id: string
+          created_at: string
+          document_id: string | null
+          id: string
+          req_code: string | null
+          viewer_profile_id: string | null
+          viewer_role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Insert: {
+          action: string
+          case_id: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          req_code?: string | null
+          viewer_profile_id?: string | null
+          viewer_role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Update: {
+          action?: string
+          case_id?: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          req_code?: string | null
+          viewer_profile_id?: string | null
+          viewer_role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_access_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "document_access_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "document_access_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_access_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_access_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_access_log_viewer_profile_id_fkey"
+            columns: ["viewer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1376,6 +1658,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "documents_case_id_fkey"
@@ -1451,6 +1740,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "engagements_case_id_fkey"
@@ -1763,6 +2059,13 @@ export type Database = {
             foreignKeyName: "intake_sessions_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "intake_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -1812,6 +2115,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_calls_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "intro_calls_case_id_fkey"
@@ -1912,6 +2222,13 @@ export type Database = {
             foreignKeyName: "license_reports_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "license_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -1962,6 +2279,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "messages_case_id_fkey"
@@ -2048,6 +2372,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "notifications_case_id_fkey"
@@ -2226,6 +2557,13 @@ export type Database = {
             foreignKeyName: "payments_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -2275,6 +2613,7 @@ export type Database = {
           is_concierge_agent: boolean
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          sponsor_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2285,6 +2624,7 @@ export type Database = {
           is_concierge_agent?: boolean
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          sponsor_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2295,9 +2635,18 @@ export type Database = {
           is_concierge_agent?: boolean
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          sponsor_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_authorizations: {
         Row: {
@@ -2346,6 +2695,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_authorizations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "purchase_authorizations_case_id_fkey"
@@ -2439,6 +2795,13 @@ export type Database = {
             foreignKeyName: "reference_requests_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "reference_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -2448,6 +2811,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "reference_requests_document_id_fkey"
@@ -2502,6 +2872,13 @@ export type Database = {
             foreignKeyName: "reminder_log_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "reminder_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -2542,6 +2919,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_answers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "requirement_answers_case_id_fkey"
@@ -2601,6 +2985,13 @@ export type Database = {
             foreignKeyName: "requirement_reviews_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -2610,6 +3001,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "case_requirements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
             foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
@@ -2631,6 +3036,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "requirement_reviews_document_id_fkey"
@@ -2678,6 +3090,7 @@ export type Database = {
       }
       requirements: {
         Row: {
+          applicant_scope: Database["public"]["Enums"]["concierge_scope"]
           authority: string | null
           blocking: boolean
           concierge_scope: Database["public"]["Enums"]["concierge_scope"]
@@ -2692,6 +3105,7 @@ export type Database = {
           legal_status: Database["public"]["Enums"]["legal_status"]
           legal_status_note: string | null
           needs_legal_review: boolean
+          party: Database["public"]["Enums"]["req_party"]
           req_code: string
           severity: Database["public"]["Enums"]["requirement_sev"]
           source_url: string | null
@@ -2703,6 +3117,7 @@ export type Database = {
           verified_on: string | null
         }
         Insert: {
+          applicant_scope?: Database["public"]["Enums"]["concierge_scope"]
           authority?: string | null
           blocking?: boolean
           concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
@@ -2717,6 +3132,7 @@ export type Database = {
           legal_status?: Database["public"]["Enums"]["legal_status"]
           legal_status_note?: string | null
           needs_legal_review?: boolean
+          party?: Database["public"]["Enums"]["req_party"]
           req_code: string
           severity?: Database["public"]["Enums"]["requirement_sev"]
           source_url?: string | null
@@ -2728,6 +3144,7 @@ export type Database = {
           verified_on?: string | null
         }
         Update: {
+          applicant_scope?: Database["public"]["Enums"]["concierge_scope"]
           authority?: string | null
           blocking?: boolean
           concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
@@ -2742,6 +3159,7 @@ export type Database = {
           legal_status?: Database["public"]["Enums"]["legal_status"]
           legal_status_note?: string | null
           needs_legal_review?: boolean
+          party?: Database["public"]["Enums"]["req_party"]
           req_code?: string
           severity?: Database["public"]["Enums"]["requirement_sev"]
           source_url?: string | null
@@ -2911,6 +3329,13 @@ export type Database = {
             foreignKeyName: "signature_events_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "signature_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -2920,6 +3345,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signature_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "signature_events_document_id_fkey"
@@ -2976,6 +3408,13 @@ export type Database = {
             foreignKeyName: "signatures_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -3002,6 +3441,42 @@ export type Database = {
           proj4text?: string | null
           srid?: number
           srtext?: string | null
+        }
+        Relationships: []
+      }
+      sponsors: {
+        Row: {
+          agency_license_expires: string | null
+          agency_license_number: string | null
+          created_at: string
+          custodian_email: string | null
+          custodian_license_number: string | null
+          custodian_name: string | null
+          custodian_phone: string | null
+          id: string
+          legal_name: string
+        }
+        Insert: {
+          agency_license_expires?: string | null
+          agency_license_number?: string | null
+          created_at?: string
+          custodian_email?: string | null
+          custodian_license_number?: string | null
+          custodian_name?: string | null
+          custodian_phone?: string | null
+          id?: string
+          legal_name: string
+        }
+        Update: {
+          agency_license_expires?: string | null
+          agency_license_number?: string | null
+          created_at?: string
+          custodian_email?: string | null
+          custodian_license_number?: string | null
+          custodian_name?: string | null
+          custodian_phone?: string | null
+          id?: string
+          legal_name?: string
         }
         Relationships: []
       }
@@ -3110,6 +3585,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "tasks_case_id_fkey"
@@ -3229,6 +3711,13 @@ export type Database = {
             foreignKeyName: "training_sessions_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "training_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -3294,6 +3783,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "case_offers_case_id_fkey"
@@ -3424,6 +3920,13 @@ export type Database = {
             foreignKeyName: "requirement_reviews_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -3438,6 +3941,20 @@ export type Database = {
             foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
             columns: ["case_requirement_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
+          },
+          {
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
             referencedRelation: "trainer_document_feed"
             referencedColumns: ["case_requirement_id"]
           },
@@ -3447,6 +3964,162 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_requirement_feed"
             referencedColumns: ["case_requirement_id"]
+          },
+        ]
+      }
+      sponsor_case_scope: {
+        Row: {
+          applicant_name: string | null
+          case_id: string | null
+          license_track: Database["public"]["Enums"]["license_track"] | null
+          scope: Database["public"]["Enums"]["sponsorship_scope"] | null
+          sponsor_id: string | null
+          sponsorship_id: string | null
+          stage: Database["public"]["Enums"]["case_stage"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_sponsorships_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_document_feed: {
+        Row: {
+          case_id: string | null
+          case_requirement_id: string | null
+          created_at: string | null
+          document_id: string | null
+          file_name: string | null
+          generated: boolean | null
+          notarized: boolean | null
+          party: Database["public"]["Enums"]["req_party"] | null
+          req_code: string | null
+          signed_at: string | null
+          sponsorship_id: string | null
+          status: Database["public"]["Enums"]["document_status"] | null
+          type: Database["public"]["Enums"]["document_type"] | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+        ]
+      }
+      sponsor_requirement_feed: {
+        Row: {
+          authority: string | null
+          blocking: boolean | null
+          case_id: string | null
+          case_requirement_id: string | null
+          description: string | null
+          document_id: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          party: Database["public"]["Enums"]["req_party"] | null
+          req_code: string | null
+          scope: Database["public"]["Enums"]["concierge_scope"] | null
+          severity: Database["public"]["Enums"]["requirement_sev"] | null
+          sponsorship_id: string | null
+          status: Database["public"]["Enums"]["case_req_status"] | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
+      sponsor_roster_progress: {
+        Row: {
+          case_id: string | null
+          done_count: number | null
+          invited_count: number | null
+          req_code: string | null
+          required_count: number | null
+          sponsorship_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -3493,6 +4166,13 @@ export type Database = {
             foreignKeyName: "documents_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -3526,6 +4206,13 @@ export type Database = {
             foreignKeyName: "case_requirements_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
           },
@@ -3535,6 +4222,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "case_requirements_document_id_fkey"
@@ -3868,6 +4562,14 @@ export type Database = {
       is_staff_or_admin: { Args: never; Returns: boolean }
       longtransactionsenabled: { Args: never; Returns: boolean }
       mark_instructor_feed_seen: { Args: never; Returns: string }
+      party_scope: {
+        Args: {
+          p_requirement_id: string
+          p_scope: Database["public"]["Enums"]["sponsorship_scope"]
+          p_viewer: Database["public"]["Enums"]["req_party"]
+        }
+        Returns: Database["public"]["Enums"]["concierge_scope"]
+      }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -3908,6 +4610,20 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      sponsor_accept_invite: { Args: { p_token: string }; Returns: string }
+      sponsor_active_scope: {
+        Args: { p_case_id: string }
+        Returns: Database["public"]["Enums"]["sponsorship_scope"]
+      }
+      sponsor_open_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
+      }
+      sponsor_record_consent: {
+        Args: { p_sponsorship_id: string; p_version: string }
+        Returns: undefined
+      }
+      sponsor_revoke: { Args: { p_sponsorship_id: string }; Returns: undefined }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown
@@ -4609,6 +5325,20 @@ export type Database = {
         | "nypd_fee_receipt"
         | "fingerprint_fee_receipt"
         | "fee_sheet"
+        | "carry_guard_company_form"
+        | "letter_of_necessity"
+        | "sponsor_hours_worksheet"
+        | "wgp_agency_license"
+        | "sponsored_position_confirmation"
+        | "firearm_specification"
+        | "security_guard_registration"
+        | "guard_preassignment_cert"
+        | "guard_ojt_cert"
+        | "guard_inservice_cert"
+        | "prelicense_exemption"
+        | "firearms_course_cert"
+        | "child_support_cert"
+        | "county_pistol_license"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -4621,6 +5351,11 @@ export type Database = {
         | "enjoined_not_enforced"
         | "contested"
         | "repealed"
+      license_track:
+        | "concealed_carry"
+        | "carry_guard"
+        | "special_carry_guard"
+        | "sponsored_unresolved"
       notification_kind:
         | "info"
         | "action_required"
@@ -4638,13 +5373,15 @@ export type Database = {
         | "opened"
         | "submitted"
         | "notarized"
+      req_party: "applicant" | "sponsor"
       requirement_sev: "critical" | "high" | "watch" | "long_lead"
       review_decision: "approved" | "changes_requested"
       service_mode: "self_guided" | "concierge"
       slot_type: "classroom_16h" | "live_fire_2h" | "combined_18h" | "consult"
+      sponsorship_scope: "packet_only" | "assist" | "full"
       stage_status: "not_started" | "in_progress" | "complete"
       task_status: "open" | "in_progress" | "done"
-      user_role: "client" | "staff" | "admin" | "instructor"
+      user_role: "client" | "staff" | "admin" | "instructor" | "sponsor"
     }
     CompositeTypes: {
       geometry_dump: {
@@ -4880,6 +5617,20 @@ export const Constants = {
         "nypd_fee_receipt",
         "fingerprint_fee_receipt",
         "fee_sheet",
+        "carry_guard_company_form",
+        "letter_of_necessity",
+        "sponsor_hours_worksheet",
+        "wgp_agency_license",
+        "sponsored_position_confirmation",
+        "firearm_specification",
+        "security_guard_registration",
+        "guard_preassignment_cert",
+        "guard_ojt_cert",
+        "guard_inservice_cert",
+        "prelicense_exemption",
+        "firearms_course_cert",
+        "child_support_cert",
+        "county_pistol_license",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [
@@ -4894,6 +5645,12 @@ export const Constants = {
         "enjoined_not_enforced",
         "contested",
         "repealed",
+      ],
+      license_track: [
+        "concealed_carry",
+        "carry_guard",
+        "special_carry_guard",
+        "sponsored_unresolved",
       ],
       notification_kind: [
         "info",
@@ -4914,13 +5671,15 @@ export const Constants = {
         "submitted",
         "notarized",
       ],
+      req_party: ["applicant", "sponsor"],
       requirement_sev: ["critical", "high", "watch", "long_lead"],
       review_decision: ["approved", "changes_requested"],
       service_mode: ["self_guided", "concierge"],
       slot_type: ["classroom_16h", "live_fire_2h", "combined_18h", "consult"],
+      sponsorship_scope: ["packet_only", "assist", "full"],
       stage_status: ["not_started", "in_progress", "complete"],
       task_status: ["open", "in_progress", "done"],
-      user_role: ["client", "staff", "admin", "instructor"],
+      user_role: ["client", "staff", "admin", "instructor", "sponsor"],
     },
   },
 } as const
