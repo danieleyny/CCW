@@ -16,6 +16,7 @@ import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
 import { BookCall } from "@/components/portal/concierge/book-call"
 import { DocumentVault } from "@/components/portal/concierge/document-vault"
 import { ReviewAndFile } from "@/components/portal/concierge/review-and-file"
+import { DisclosuresSection } from "@/components/portal/concierge/disclosures-section"
 import { ControlTower } from "@/components/portal/concierge/control-tower"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Card, CardContent } from "@/components/ui/card"
@@ -152,6 +153,8 @@ export default async function ConciergeHome() {
           cohabitantProgress={view.cohabitantProgress}
         />
       </div>
+
+      <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
 
       <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} />
 
