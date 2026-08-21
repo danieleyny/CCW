@@ -94,9 +94,9 @@ export async function signAgreements(
     .upsert(rows, { onConflict: "case_id,kind,version", ignoreDuplicates: true })
   if (agErr) return { error: "Couldn't record your agreements. Try again." }
 
-  // QA Phase 9 — record which agreements the applicant actually opened, so the
-  // "I have read the agreements above" consent has evidence behind it.
-  const openedKinds = String(formData.get("openedKinds") ?? "")
+  // Record which agreements the applicant explicitly agreed to (each an
+  // in-panel "I agree"), so the recorded consent has evidence behind it.
+  const agreedKinds = String(formData.get("openedKinds") ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
@@ -106,7 +106,7 @@ export async function signAgreements(
     clientId: myCase.client_id,
     entity: "case",
     entityId: myCase.id,
-    detail: { kinds: REQUIRED_AGREEMENT_KINDS, opened: openedKinds, signer_name: signerName },
+    detail: { kinds: REQUIRED_AGREEMENT_KINDS, agreed: agreedKinds, signer_name: signerName },
   })
 
   revalidatePath("/portal/concierge")

@@ -45,6 +45,14 @@ export interface Field {
   placeholder?: string
   /** For `yesno`: when answered yes, these follow-up fields become required. */
   revealOnYes?: Field[]
+  /**
+   * For `yesno`: a "yes" here is a federal per-se firearms prohibitor, so we do
+   * NOT let the applicant self-prepare a document around it — generation is
+   * blocked and this message routes them to a NY firearms attorney. States a
+   * rule + refers out; it never renders a verdict on their specific record
+   * (that's the practice of law). Use only for genuine §922(g) prohibitors.
+   */
+  blockOnYes?: string
   maxLength?: number
 }
 
@@ -303,6 +311,8 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
         label:
           "Have you ever been involuntarily committed, or adjudicated as lacking mental capacity?",
         type: "yesno",
+        blockOnYes:
+          "An involuntary commitment or an adjudication of mental incapacity is a federal firearms prohibitor (18 U.S.C. §922(g)(4)). This isn't something we can prepare an explanation around — you should speak with a New York firearms attorney about your eligibility and any restoration of rights before you file. Message your concierge and we'll refer you.",
         revealOnYes: [
           { name: "mhExplanation", label: "Explain the circumstances", type: "textarea", required: true, maxLength: 4000 },
         ],

@@ -44,8 +44,15 @@ export function QuestionnaireDialog({
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
   const [step, setStep] = useState<"answers" | "sign">("answers")
   const [pending, startTransition] = useTransition()
+  /** A persistent block (e.g. a disqualifying answer) that stops generation. */
+  const [blockMsg, setBlockMsg] = useState<string | null>(null)
 
-  const set = (name: string, v: unknown) => setValues((s) => ({ ...s, [name]: v }))
+  // Editing any answer clears a standing block so a corrected answer isn't
+  // haunted by the old message.
+  const set = (name: string, v: unknown) => {
+    setBlockMsg(null)
+    setValues((s) => ({ ...s, [name]: v }))
+  }
 
   // Same-kind address suggestions: every address-ish value the prefill already
   // knows becomes a native datalist entry on address text fields, so an address
@@ -104,6 +111,26 @@ export function QuestionnaireDialog({
         onOpenChange(false)
         return
       }
+
+      // GENERATE: every yes/no question must be answered before we produce the
+      // document, and a "yes" on a per-se prohibitor blocks generation and routes
+      // to an attorney instead. yesno fields are always top-level in our schemas.
+      const yesNoFields = (questionnaire.fields ?? []).filter((f) => f.type === "yesno")
+      const answered = (v: unknown) => v === "yes" || v === "no" || v === true || v === false
+      const isYes = (v: unknown) => v === "yes" || v === true
+
+      if (yesNoFields.some((f) => !answered(values[f.name]))) {
+        toast.error("Please answer yes or no to every question before we generate your document.", {
+          duration: 7000,
+        })
+        return
+      }
+      const blocker = yesNoFields.find((f) => f.blockOnYes && isYes(values[f.name]))
+      if (blocker) {
+        setBlockMsg(blocker.blockOnYes!)
+        return
+      }
+      setBlockMsg(null)
 
       const saved = await saveRequirementAnswers(reqCode, values)
       if (saved.error) {
@@ -306,6 +333,13 @@ export function QuestionnaireDialog({
                 record means for your application. That&apos;s legal advice, and only a licensed New
                 York attorney can give it. Ask us and we&apos;ll refer you.
               </span>
+            </div>
+          )}
+
+          {blockMsg && (
+            <div className="flex gap-2 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger" role="alert">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+              <span>{blockMsg}</span>
             </div>
           )}
 
