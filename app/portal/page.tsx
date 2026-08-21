@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 import { CaseTimeline } from "@/components/portal/case-timeline"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { WelcomeCard } from "@/components/portal/welcome-card"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { hasPaidPackage } from "@/lib/packages"
@@ -92,6 +93,7 @@ export default async function PortalHome() {
 
   return (
     <div className="space-y-6">
+      <ScrollToTop />
       <div>
         <SectionEyebrow>Your Application</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">

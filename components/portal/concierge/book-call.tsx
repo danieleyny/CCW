@@ -1,7 +1,15 @@
 import { CalendarCheck2, Video } from "lucide-react"
 import { formatDateTime } from "@/lib/format"
 import { RequestCallButton } from "@/components/portal/concierge/request-call-button"
+import { CalendlyInline } from "@/components/portal/concierge/calendly-inline"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
+
+/** Build the embed URL: opaque token (must survive for the webhook to match),
+ *  no duplicate Calendly header, no GDPR banner. */
+function embedUrl(base: string, token: string): string {
+  const sep = base.includes("?") ? "&" : "?"
+  return `${base}${sep}utm_content=${encodeURIComponent(token)}&hide_event_type_details=1&hide_gdpr_banner=1`
+}
 
 /**
  * CONCIERGE Phase 2 — book the intro call. Provider is behind an env var so a
@@ -48,19 +56,16 @@ export function BookCall({
       <h2 className="text-lg font-semibold tracking-tight">Book your intro call</h2>
       <p className="mt-1 max-w-prose text-sm text-text-mid">
         A quick call with your concierge to walk through your case, answer questions, and set the plan.
-        Fifteen minutes — no prep needed.
+        About 30 minutes — no prep needed.
       </p>
 
       <div className="mt-4">
         {calendlyUrl ? (
-          <iframe
-            title="Schedule your concierge intro call"
-            src={`${calendlyUrl}${calendlyUrl.includes("?") ? "&" : "?"}utm_content=${encodeURIComponent(
-              introToken
-            )}&hide_gdpr_banner=1`}
-            className="h-[640px] w-full rounded-md border border-hairline"
-            loading="lazy"
-          />
+          // Calendly renders light; wrap it in a white panel so it reads as a
+          // deliberate inset rather than a pasted-in white box on the dark card.
+          <div className="rounded-xl bg-white p-1.5 sm:p-3">
+            <CalendlyInline url={embedUrl(calendlyUrl, introToken)} />
+          </div>
         ) : (
           <RequestCallButton alreadyRequested={introCall?.status === "requested"} />
         )}

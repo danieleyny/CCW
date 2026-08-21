@@ -6,6 +6,7 @@ import { accessCodesEnabled } from "@/lib/access-codes"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { ScrollToTop } from "@/components/shared/scroll-to-top"
 
 export const metadata = { title: "Choose how we'll work together" }
 
@@ -51,6 +52,7 @@ export default async function ChoosePathPage() {
 
   return (
     <div className="space-y-6">
+      <ScrollToTop />
       <div>
         <SectionEyebrow>One decision</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">

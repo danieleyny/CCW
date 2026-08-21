@@ -11,6 +11,7 @@ import { computeNextStep } from "@/lib/portal/next-step"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
 import { BookCall } from "@/components/portal/concierge/book-call"
 import { DocumentVault } from "@/components/portal/concierge/document-vault"
@@ -106,8 +107,21 @@ export default async function ConciergeHome() {
   const agentFirst =
     (agentRow?.profiles as unknown as { full_name: string } | null)?.full_name?.split(" ")[0] ?? null
 
+  // UX 1.3 — an UNBOOKED call is the single most valuable action → put the
+  // scheduler above the fold, before the tower. A BOOKED call is a fact, not a
+  // task → show it as a compact strip beneath the tower, not a full calendar.
+  const callBooked = !!onboarding.introCall?.scheduledAt
+  const bookCall = (
+    <BookCall
+      calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
+      introToken={myCase.calendly_token}
+      introCall={onboarding.introCall}
+    />
+  )
+
   return (
     <div className="space-y-6">
+      <ScrollToTop />
       <div>
         <SectionEyebrow>Full Concierge</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Welcome, {firstName}.</h1>
@@ -123,13 +137,11 @@ export default async function ConciergeHome() {
         </p>
       </div>
 
+      {!callBooked && bookCall}
+
       <ControlTower state={controlState} nextStep={nextStep} nypdControlled={isNypdControlled(stage)} />
 
-      <BookCall
-        calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
-        introToken={myCase.calendly_token}
-        introCall={onboarding.introCall}
-      />
+      {callBooked && bookCall}
 
       <div id="vault" className="scroll-mt-20">
         <DocumentVault
