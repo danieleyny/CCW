@@ -36,6 +36,9 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const title = (searchParams.get("title") ?? brand.tagline).slice(0, 110)
   const eyebrow = (searchParams.get("eyebrow") ?? "NYC · gun license, handled").slice(0, 60)
+  // The brand mark, fetched from this origin (the dark-surface logo reads on the
+  // obsidian card).
+  const logoUrl = new URL("/logo.png", request.url).href
 
   return new ImageResponse(
     (
@@ -84,19 +87,8 @@ export async function GET(request: Request) {
         {/* wordmark + seal */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <svg width="46" height="46" viewBox="0 0 48 48" fill="none">
-              <circle cx="24" cy="24" r="21" stroke={BRASS} strokeWidth="1.8" />
-              <circle cx="24" cy="24" r="17.5" stroke={BRASS} strokeWidth="0.7" opacity="0.45" />
-              <g fill={BRASS}>
-                <rect x="13" y="25" width="3" height="6" />
-                <rect x="16.5" y="20" width="3" height="11" />
-                <rect x="20" y="13" width="3.5" height="18" />
-                <rect x="24" y="17" width="3" height="14" />
-                <rect x="27.5" y="22" width="3" height="9" />
-                <rect x="31" y="25.5" width="3" height="5.5" />
-              </g>
-              <line x1="9" y1="31" x2="39" y2="31" stroke={BRASS} strokeWidth="1.6" />
-            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoUrl} width={50} height={59} alt="" style={{ objectFit: "contain" }} />
             <div
               style={{
                 display: "flex",

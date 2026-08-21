@@ -116,8 +116,8 @@ ${preheaderHtml}
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:${C.card};border-radius:14px;overflow:hidden;border:1px solid ${C.hairline};">
 
       <!-- Header -->
-      <tr><td style="background-color:${C.obsidian};padding:22px 32px;">
-        <span style="font-family:${FONT};font-size:20px;line-height:1;color:${C.brass};vertical-align:middle;">&#9678;</span>
+      <tr><td style="background-color:${C.obsidian};padding:20px 32px;">
+        <img src="${brand.url}/logo.png" width="30" height="35" alt="" style="vertical-align:middle;display:inline-block;border:0;" />
         <span style="font-family:${FONT};font-size:17px;font-weight:600;letter-spacing:0.2px;color:${C.headerText};vertical-align:middle;padding-left:8px;">${esc(brand.name)}</span>
       </td></tr>
       <!-- Brass rule -->
@@ -137,7 +137,7 @@ ${preheaderHtml}
       <!-- Footer -->
       <tr><td style="background-color:${C.footerBg};padding:22px 32px;border-top:1px solid ${C.hairline};">
         <p style="font-family:${FONT};font-size:13px;font-weight:600;color:${C.heading};margin:0 0 8px;">
-          <span style="color:${C.brassDeep};">&#9678;</span> ${esc(brand.name)}
+          <img src="${brand.url}/logo.png" width="18" height="21" alt="" style="vertical-align:middle;display:inline-block;border:0;" /> ${esc(brand.name)}
         </p>
         ${reasonHtml}
         <p style="font-family:${FONT};font-size:11px;line-height:1.55;color:${C.faint};margin:0;">${esc(brand.disclaimer)}</p>
