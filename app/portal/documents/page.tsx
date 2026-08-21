@@ -4,8 +4,11 @@ import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { actionFor } from "@/lib/requirements/actions"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { DocumentLibrary, type LibraryEntry } from "@/components/portal/document-library"
+import { buildApplicationReview } from "@/lib/concierge/application-review"
+import { ApplicationReview } from "@/components/portal/concierge/application-review"
+import { ScrollToTop } from "@/components/shared/scroll-to-top"
 
-export const metadata = { title: "Documents" }
+export const metadata = { title: "Your application" }
 
 /**
  * The full document library — still needed + completed — driven off the SAME
@@ -26,6 +29,23 @@ export default async function DocumentsPage() {
 
   const supabase = await createClient()
   const view = await loadRequirementView(supabase, myCase)
+
+  // CONCIERGE UX Phase 3 — a concierge applicant gets a READ-ONLY application
+  // review, not the self-serve upload library. Self-guided is unchanged.
+  if (myCase.service_mode === "concierge") {
+    const { data: reqs } = await supabase
+      .from("case_requirements")
+      .select("req_code, updated_at")
+      .eq("case_id", myCase.id)
+    const lastActivity: Record<string, string> = {}
+    for (const r of reqs ?? []) if (r.updated_at) lastActivity[r.req_code] = r.updated_at
+    return (
+      <div>
+        <ScrollToTop />
+        <ApplicationReview groups={buildApplicationReview(view, lastActivity)} />
+      </div>
+    )
+  }
 
   const entries: LibraryEntry[] = view.items
     // `na` doesn't apply to this case; system controls aren't the customer's job.

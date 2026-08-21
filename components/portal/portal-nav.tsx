@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ConciergeBell,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -60,7 +61,7 @@ const DESKTOP: Item[] = [
 // dashboard. Documents, Messages, Payments stay.
 const PRIMARY_CONCIERGE: Item[] = [
   { href: "/portal/concierge", label: "Concierge", icon: ConciergeBell },
-  { href: "/portal/documents", label: "Documents", icon: Upload },
+  { href: "/portal/documents", label: "Your application", icon: FolderOpen },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle },
   { href: "/portal/forms", label: "Forms", icon: FileText },
 ]
