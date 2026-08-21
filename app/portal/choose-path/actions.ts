@@ -1,5 +1,6 @@
 "use server"
 
+import { redirect } from "next/navigation"
 import { z } from "zod"
 import { requireRole } from "@/lib/auth"
 import { getMyCase } from "@/lib/portal"
@@ -51,8 +52,15 @@ export async function choosePath(_prev: EnrollResult, formData: FormData): Promi
     detail: { service_mode: serviceMode, package: packageKey },
   })
 
-  // Hand off to the existing checkout (Stripe → Checkout redirect on success;
-  // Stripe-off / custom price → recorded invoice-request fallback). It re-reads
-  // packageKey + mode from the same formData, so nothing is duplicated here.
+  // Self-Guided: straight to intake, low-friction — they pay when ready (the
+  // portal's soft enroll nudge). Full Concierge: pay first ($1,000), then the
+  // paid dashboard opens — and they NEVER see intake (we fill it out for them).
+  if (serviceMode === "self_guided") {
+    redirect("/portal/intake")
+  }
+
+  // Concierge → the existing checkout (Stripe → Checkout redirect on success,
+  // whose success_url routes a paid concierge case to /portal/concierge;
+  // Stripe-off / custom price → recorded invoice-request fallback).
   return startCheckout(_prev, formData)
 }

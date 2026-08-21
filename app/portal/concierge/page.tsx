@@ -76,7 +76,9 @@ export default async function ConciergeHome() {
   // references. Generate-and-sign items (AFF-01, SAF-01, sole-occupancy…) are OUR
   // work to prepare — they live in Review & file, not here — so filter them out.
   const applicantItems = view.items.filter((i) => !conciergeSignable(i.reqCode))
-  const rawNext = computeNextStep({ items: applicantItems, intakeDone: view.intakeDone, stage })
+  // intakeDone: true always — concierge NEVER does intake themselves (we fill it
+  // on their behalf), so the tower must never surface "finish your intake".
+  const rawNext = computeNextStep({ items: applicantItems, intakeDone: true, stage })
   // Keep intake on its own page; route every other ask INTO the concierge surface
   // (the vault / roster) instead of the self-guided checklist.
   const nextStep = {

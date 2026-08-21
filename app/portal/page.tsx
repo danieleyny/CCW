@@ -74,8 +74,10 @@ export default async function PortalHome() {
   const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
   const paidConcierge = await hasPaidPackage(supabase, myCase.id, "full_concierge")
   if (serviceMode === "concierge" && paidConcierge) redirect("/portal/concierge")
-  // Post-intake, pre-fork: the one decision left is HOW we work together.
-  const needsPathChoice = intakeDone && !serviceMode && !isLicensed && !isDenied
+  // Not yet forked: the one decision that comes first is HOW we work together.
+  // (The onboarding gate already carries brand-new cases to the fork; this covers
+  // anyone who lands on /portal without a path set.)
+  const needsPathChoice = !serviceMode && !isLicensed && !isDenied
   // CONCIERGE QA Phase 2 — payment limbo: chose concierge, abandoned checkout.
   // Without this they landed on the self-guided home with no way back to pay.
   const needsConciergePayment =
@@ -209,10 +211,12 @@ export default async function PortalHome() {
         </Link>
       )}
 
-      {/* V3-P3.1 — path chosen but not paid: close the enrollment loop */}
-      {!hasPackage && !needsPathChoice && !isLicensed && !isDenied && (
+      {/* Self-Guided chosen but not paid → close the enrollment loop at checkout.
+          (Concierge-unpaid is handled by the payment card above; null path by the
+          fork nudge above.) */}
+      {!hasPackage && serviceMode === "self_guided" && !isLicensed && !isDenied && (
         <Link
-          href={serviceMode ? "/portal/choose-path" : "/portal/enroll"}
+          href="/portal/enroll"
           className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
         >
           <span className="text-sm font-medium">Choose your package — start your engagement</span>

@@ -412,13 +412,10 @@ export function IntakeWizard({
   )
 }
 
-// ── Post-intake hand-off (the fork) ─────────────────────────────────────────
+// ── Post-intake hand-off ────────────────────────────────────────────────────
 /**
- * CONCIERGE Phase 1 — with the personalized checklist generated, the ONE next
- * move is choosing HOW we work together: Self-Guided (you drive) or Full
- * Concierge (we drive). Everything downstream flows from that decision, so it
- * comes before the checklist. Full-width and unmissable — never a row of equal
- * ghost links. /portal/choose-path reflects real state (already-paid → routed on).
+ * The path fork now comes BEFORE intake, so only Self-Guided applicants reach
+ * this completed state — hand them straight to their personalized checklist.
  */
 function ChoosePathCta() {
   return (
@@ -427,19 +424,19 @@ function ChoosePathCta() {
       <div className="mt-2 flex items-start gap-3">
         <Compass className="mt-0.5 size-5 shrink-0 text-brass" />
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Choose how we&apos;ll work together</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Your checklist is ready</h2>
           <p className="mt-1 text-sm text-text-mid">
-            Same finish line, two ways to get there. Drive it yourself with our full playbook, or hand us
-            the chores and watch us assemble everything. Either way, you file your own application.
+            We&apos;ve built your personalized document set from your answers. Work it top-down — it&apos;s
+            ordered worst-first, so the longest-lead items come up early.
           </p>
         </div>
       </div>
       <div className="mt-4">
         <Link
-          href="/portal/choose-path"
+          href="/portal/checklist"
           className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
         >
-          See both paths <ArrowRight className="size-4" />
+          View your checklist <ArrowRight className="size-4" />
         </Link>
       </div>
     </div>

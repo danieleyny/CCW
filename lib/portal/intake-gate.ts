@@ -5,46 +5,69 @@ import type { MyCase } from "@/lib/portal"
 import type { CaseStageKey } from "@/config/stages"
 
 /**
- * Soft intake gate. A brand-new applicant who hasn't finished intake should be
- * carried straight into it — not dropped onto a half-empty portal whose checklist
- * hasn't been personalized yet. This is a GENTLE nudge, not a trap:
+ * Soft onboarding gate. A brand-new applicant is carried straight to the ONE
+ * decision that shapes everything — the path fork — and then, for Self-Guided
+ * only, into intake. A GENTLE nudge, not a trap:
  *
- *  - It only fires on EARLY-stage cases with no completed intake. Once intake is
- *    done (or the case has moved past screening), it never fires again.
- *  - Account-safety pages (intake itself, profile, privacy) are always reachable.
- *  - A case flagged for attorney review is exempt — they may legitimately be
- *    waiting on us rather than able to finish, so we never trap them in intake.
+ *  - Fires only on EARLY-stage cases that haven't finished onboarding. Once a
+ *    path is chosen (concierge) or intake is done, it never fires again.
+ *  - Not yet forked → /portal/choose-path (the fork is the first thing they see).
+ *  - Self-Guided, intake incomplete → /portal/intake.
+ *  - FULL CONCIERGE → never forced into intake: we fill it out on their behalf,
+ *    so a concierge applicant goes straight to their dashboard.
+ *  - Account-safety pages (the fork, intake, profile, privacy) always reachable;
+ *    an attorney-review case is never trapped.
  *
- * Returns true when the current request should be redirected to /portal/intake.
+ * Returns the path to redirect to, or null to let the request through.
  */
 
-// Stages where the applicant hasn't meaningfully started the guided work yet.
-// Completing intake advances the case to `eligibility_screened`, so a case still
-// sitting at `lead` with no intake is the exact "wandered off too early" case.
+// Stages where the applicant hasn't meaningfully started yet. Completing intake
+// advances past `lead`, so a case still at `lead` is the "just signed up" case.
 const EARLY_STAGES: CaseStageKey[] = ["lead"]
 
-// Never gate these — intake is the destination, and profile/privacy are
+// Never gate these — the fork + intake are destinations, and profile/privacy are
 // account-safety pages that must always be reachable.
-const EXEMPT_PREFIXES = ["/portal/intake", "/portal/profile", "/portal/privacy"]
+const EXEMPT_PREFIXES = ["/portal/choose-path", "/portal/intake", "/portal/profile", "/portal/privacy"]
 
-export async function shouldForceIntake(pathname: string, myCase: MyCase): Promise<boolean> {
-  if (EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return false
-  if (!EARLY_STAGES.includes(myCase.stage as CaseStageKey)) return false
+/** Pure routing decision — the DB reads live in resolveOnboardingRedirect. */
+export function decideOnboardingRedirect(input: {
+  pathname: string
+  serviceMode: string | null
+  stage: CaseStageKey
+  intakeCompleted: boolean
+  hasAttorneyReview: boolean
+}): string | null {
+  const { pathname, serviceMode, stage, intakeCompleted, hasAttorneyReview } = input
+  if (EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
+  // Concierge never does intake — they go straight to their dashboard.
+  if (serviceMode === "concierge") return null
+  // Only nudge brand-new cases; anything that's moved on is left alone (this also
+  // keeps legacy pre-fork cases mid-flight from being yanked to the fork).
+  if (!EARLY_STAGES.includes(stage)) return null
+  if (intakeCompleted) return null
+  if (hasAttorneyReview) return null
+  // Not yet forked → the fork is the first thing. Self-Guided → intake.
+  return serviceMode ? "/portal/intake" : "/portal/choose-path"
+}
+
+export async function resolveOnboardingRedirect(
+  pathname: string,
+  myCase: MyCase
+): Promise<string | null> {
+  // Cheap, pure short-circuits first — avoid the DB reads when we already know.
+  if (EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
+  if (myCase.service_mode === "concierge") return null
+  if (!EARLY_STAGES.includes(myCase.stage as CaseStageKey)) return null
 
   const supabase = await createClient()
-
-  // Already finished intake? Then there's nothing to force.
   const { data: session } = await supabase
     .from("intake_sessions")
     .select("completed_at")
     .eq("case_id", myCase.id)
     .maybeSingle()
-  if (session?.completed_at) return false
 
-  // Attorney-review track: don't trap them. Completing intake with a prohibitor
-  // routes here and logs this action; if it's present they may be waiting on us.
-  // activity_log is staff/admin-read only (RLS), so this routing check uses the
-  // service role — a read of the applicant's own case, nothing exposed to them.
+  // Attorney-review track: don't trap them (activity_log is staff-read RLS, so
+  // this routing check reads the applicant's own case via the service role).
   const admin = createAdminClient()
   const { data: review } = await admin
     .from("activity_log")
@@ -53,7 +76,12 @@ export async function shouldForceIntake(pathname: string, myCase: MyCase): Promi
     .eq("action", "intake.attorney_review_required")
     .limit(1)
     .maybeSingle()
-  if (review) return false
 
-  return true
+  return decideOnboardingRedirect({
+    pathname,
+    serviceMode: myCase.service_mode ?? null,
+    stage: myCase.stage as CaseStageKey,
+    intakeCompleted: !!session?.completed_at,
+    hasAttorneyReview: !!review,
+  })
 }
