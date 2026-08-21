@@ -54,4 +54,18 @@ describe("buildVaultItems", () => {
     expect(vault[0].smartKinds.length).toBeGreaterThan(0)
     expect(vault[1].reqCode).toBe("RES-01")
   })
+
+  it("UX 2.4 — outstanding sorts above approved even against ORDER", () => {
+    // IDN-01 is earlier in ORDER, but it's APPROVED; RES-01 is OUTSTANDING → RES-01
+    // (the next thing to do) must be first.
+    const vault = buildVaultItems([item("IDN-01", "satisfied"), item("RES-01")], {})
+    expect(vault[0].reqCode).toBe("RES-01")
+    expect(vault[1].reqCode).toBe("IDN-01")
+  })
+
+  it("UX 2.1 — carries the registry how-to guide for each obtain item", () => {
+    const vault = buildVaultItems([item("RES-01")], {})
+    expect(vault[0].guide?.steps.length).toBeGreaterThan(0)
+    expect(vault[0].guide?.sourceUrl).toBeTruthy()
+  })
 })

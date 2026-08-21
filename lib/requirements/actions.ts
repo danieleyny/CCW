@@ -361,10 +361,17 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "proof_residence",
     customerTitle: "Proof that you live at your NYC address",
     example: "proof-of-address",
-    help: "Proof you live at your NYC address. Note: cell phone bills are NOT accepted.",
+    // Per the NYPD License Division required-documents checklist (verified 21 Aug
+    // 2026): a current utility bill (electric/gas/cable/internet/landline), OR a
+    // current lease / co-op-condo ownership docs TOGETHER WITH a filed NYS income
+    // tax return at the same address. Bank statements and general government mail
+    // are NOT on the NYPD list; cell phone bills are explicitly excluded.
+    help: "Proof you live at your NYC address, showing your full name and current NYC address. Cell phone bills are NOT accepted.",
     steps: [
-      "Use a utility bill, lease, bank statement, or government correspondence showing your name and NYC address.",
-      "A cell phone bill will not be accepted — pick another document.",
+      "Use a CURRENT utility bill — electric, gas, cable/internet, or landline telephone.",
+      "Or a current residential lease (or co-op/condo ownership documents) TOGETHER WITH a signed, filed New York State income tax return showing the same address.",
+      "Whichever you use, it must show your full name and your NYC address, and be current.",
+      "Cell phone bills are not accepted — pick another document.",
       "Upload it here.",
     ],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -378,10 +385,14 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     customerTitle: "Your lifetime driving record — one for every state you've lived in",
     help: "A LIFETIME driving abstract from every state you've lived in over the past five years — not just New York (38 RCNY §5-05(b)(12)).",
     steps: [
-      "Order your New York lifetime abstract online from the NYS DMV (about $7).",
-      "Choose the LIFETIME abstract — not the standard 3-year one.",
-      "If the online MyDMV / NY.gov ID login errors out, use the offline options below — by mail with form MV-15C ($10), or in person at a DMV office.",
-      "If you've lived in another state in the past five years, request that state's abstract too.",
+      "Go to the NYS DMV driving-records page and scroll to “Order Your Driver Abstract”.",
+      "Sign in with a NY.gov ID — or create one. You'll need your Client ID number OR the document number from the back of your licence, your date of birth, the state and ZIP on file with the DMV, and the last four digits of your Social Security number.",
+      "New account: set up two-factor authentication and three security questions.",
+      "Choose LIFETIME — NOT Standard. Standard covers only three years and the NYPD will reject it. This is the single most common mistake.",
+      "Pay the fee (about $7).",
+      "Download the PDF IMMEDIATELY — the DMV only keeps it available in MyDMV for five days after purchase.",
+      "Lived in another state in the past five years? Order that state's lifetime abstract too — the NYPD requires one per state (38 RCNY §5-05(b)(12)).",
+      "If the online login won't work, use the offline options below — by mail with form MV-15C ($10), or in person at a DMV office.",
       "Upload each abstract here.",
     ],
     sourceUrl: "https://dmv.ny.gov/records/get-my-own-driving-record-abstract",

@@ -11,6 +11,14 @@ import { smartDocumentsForRequirement, type SmartDocument } from "@/lib/requirem
 import type { ReqChecklistItem } from "@/components/portal/requirements-checklist"
 import type { CurrentDoc } from "@/components/portal/document-uploader"
 
+export interface VaultGuide {
+  steps: string[]
+  sourceUrl: string
+  sourceLabel?: string
+  example?: string
+  multiple?: boolean
+}
+
 export interface VaultItem {
   reqCode: string
   documentType: string
@@ -21,6 +29,8 @@ export interface VaultItem {
   current: CurrentDoc | null
   smartKinds: SmartDocument[]
   photoSpec: boolean
+  /** UX 2.1 — the registry's how-to, rendered as a collapsible in the card. */
+  guide: VaultGuide | null
 }
 
 // Warmer titles for the handful of near-universal asks; track-specific documents
@@ -68,9 +78,19 @@ export function buildVaultItems(items: ReqChecklistItem[], currentByReq: Record<
       const action = actionFor(i.reqCode)
       return action?.mode === "obtain" && !!action.documentType
     })
-    .map((i) => {
+    .map((i): VaultItem => {
       const action = actionFor(i.reqCode)!
       const friendly = FRIENDLY[i.reqCode]
+      const guide: VaultGuide | null =
+        action.mode === "obtain"
+          ? {
+              steps: action.steps,
+              sourceUrl: action.sourceUrl,
+              sourceLabel: action.sourceLabel,
+              example: action.example,
+              multiple: action.multiple,
+            }
+          : null
       return {
         reqCode: i.reqCode,
         documentType: action.documentType as string,
@@ -80,15 +100,22 @@ export function buildVaultItems(items: ReqChecklistItem[], currentByReq: Record<
         current: currentByReq[i.reqCode] ?? null,
         smartKinds: smartDocumentsForRequirement(i.reqCode),
         photoSpec: action.documentType === "applicant_photo",
+        guide,
       }
     })
 
-  return vault.sort((a, b) => {
-    const ai = ORDER.indexOf(a.reqCode)
-    const bi = ORDER.indexOf(b.reqCode)
-    if (ai === -1 && bi === -1) return 0
-    if (ai === -1) return 1
-    if (bi === -1) return -1
-    return ai - bi
-  })
+  // UX 2.4 — the next thing to do is always at the top: OUTSTANDING first (in the
+  // ORDER), then RECEIVED, then APPROVED.
+  const orderIdx = (code: string) => {
+    const i = ORDER.indexOf(code)
+    return i === -1 ? ORDER.length : i
+  }
+  return vault.sort((a, b) => vaultStateRank(a) - vaultStateRank(b) || orderIdx(a.reqCode) - orderIdx(b.reqCode))
+}
+
+/** 0 = outstanding, 1 = received (uploaded, unreviewed), 2 = approved. */
+export function vaultStateRank(item: VaultItem): number {
+  if (item.status === "satisfied") return 2
+  if (item.current) return 1
+  return 0
 }

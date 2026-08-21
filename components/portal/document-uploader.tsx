@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Upload, ExternalLink, Loader2 } from "lucide-react"
+import { Upload, ExternalLink, Loader2, CheckCircle2, ChevronDown, HelpCircle } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
@@ -10,7 +10,9 @@ import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
 import { normalizeApplicantPhoto } from "@/lib/files/photo-spec"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { DocumentExample } from "@/components/portal/document-example"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { DocumentType } from "@/lib/doc-types"
 import type { SmartDocument } from "@/lib/requirements/smart-documents"
 
@@ -39,6 +41,7 @@ export function DocumentUploader({
   photoSpec = false,
   smartKinds,
   conciergeVoice = false,
+  guide = null,
 }: {
   caseId: string
   clientId: string
@@ -58,6 +61,14 @@ export function DocumentUploader({
   /** CONCIERGE QA Phase 9 — warm done-for-you voice: a pending upload reads
    *  "Got it — we're checking this", not a raw PENDING chip. */
   conciergeVoice?: boolean
+  /** CONCIERGE UX 2.1 — the registry's how-to, shown as a collapsible in the card. */
+  guide?: {
+    steps: string[]
+    sourceUrl: string
+    sourceLabel?: string
+    example?: string
+    multiple?: boolean
+  } | null
 }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -135,16 +146,32 @@ export function DocumentUploader({
   // another requirement. Show that, with a link — not an empty "upload it again".
   const sharedProvided = !!current?.sharedFromName && !needsFix
 
+  // UX 2.4 — three visual states in the concierge vault. RECEIVED is a distinct,
+  // obviously-positive BRASS state (never green — green means a human approved it).
+  const approved = current?.status === "approved"
+  const received = !!current && current.status === "pending"
+  const stateClass = conciergeVoice
+    ? approved
+      ? "border-ok/50 bg-gradient-to-br from-ok/10 to-transparent ring-1 ring-ok/15"
+      : received
+        ? "border-brass/50 bg-gradient-to-br from-brass/10 to-transparent ring-1 ring-brass/15"
+        : "border-hairline bg-card"
+    : "border bg-card"
+
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className={cn("rounded-lg p-4 transition-colors", stateClass)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium">{label}</div>
           {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
         </div>
         {current ? (
-          conciergeVoice && current.status === "pending" ? (
-            <span className="whitespace-nowrap text-xs font-medium text-ok">Got it — we&apos;re checking this</span>
+          conciergeVoice && approved ? (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-ok">
+              <CheckCircle2 className="size-3.5" /> Approved
+            </span>
+          ) : conciergeVoice && received ? (
+            <span className="whitespace-nowrap text-xs font-medium text-brass-bright">Received — we&apos;re checking this</span>
           ) : (
             <StatusBadge status={current.status} />
           )
@@ -226,6 +253,37 @@ export function DocumentUploader({
         )}
         {current && !sharedProvided && <span className="text-xs text-muted-foreground">v{current.version}</span>}
       </div>
+
+      {/* UX 2.1 — the registry's how-to, collapsed by default so the vault stays short */}
+      {guide && guide.steps.length > 0 && (
+        <details className="group mt-3 border-t border-hairline pt-3">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-signal">
+            <HelpCircle className="size-3.5" /> How to get this
+            <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+          </summary>
+          <ol className="mt-2 space-y-1.5 text-xs text-text-mid">
+            {guide.steps.map((s, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="font-mono text-[10px] text-text-low">{i + 1}</span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ol>
+          {guide.example && (
+            <div className="mt-3 max-w-[220px]">
+              <DocumentExample id={guide.example as never} />
+            </div>
+          )}
+          <a
+            href={guide.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-hairline px-2.5 py-1.5 text-xs font-medium text-signal transition-colors hover:bg-surface-2"
+          >
+            {guide.sourceLabel ?? "Official source"} <ExternalLink className="size-3" />
+          </a>
+        </details>
+      )}
     </div>
   )
 }

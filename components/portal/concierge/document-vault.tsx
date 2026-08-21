@@ -24,9 +24,10 @@ export function DocumentVault({
   referenceProgress: ReferenceProgress | null
   cohabitantProgress: ReferenceProgress | null
 }) {
-  // QA Phase 9 — count RECEIVED (uploaded, awaiting our check) separately from
-  // approved, so sending a file visibly moves the counter before staff review.
+  // UX 2.4 — count RECEIVED (uploaded) and APPROVED (a human checked it) as two
+  // numbers, so the header tells the same story the cards do.
   const received = items.filter((i) => i.current != null || i.status === "satisfied").length
+  const approved = items.filter((i) => i.status === "satisfied").length
   const total = items.length
 
   return (
@@ -36,7 +37,7 @@ export function DocumentVault({
           <h2 className="text-lg font-semibold tracking-tight">Your document vault</h2>
           {total > 0 && (
             <span className="font-mono text-[11px] tabular-nums text-text-low">
-              {received} of {total} in
+              {received !== approved ? `${received} received · ${approved} approved` : `${received} of ${total} in`}
             </span>
           )}
         </div>
@@ -62,6 +63,7 @@ export function DocumentVault({
               photoSpec={item.photoSpec}
               smartKinds={item.smartKinds.length > 0 ? item.smartKinds : undefined}
               conciergeVoice
+              guide={item.guide}
             />
           ))}
         </div>
