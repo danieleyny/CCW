@@ -375,6 +375,11 @@ export default async function CaseFilePage({
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-semibold tracking-tight">{client.full_name}</h2>
                 <StatusBadge status={kase.status} />
+                {kase.is_demo && (
+                  <span className="rounded bg-warn/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-warn">
+                    Demo
+                  </span>
+                )}
                 {kase.is_renewal && (
                   <span className="rounded bg-brass/15 px-2 py-0.5 text-xs font-medium text-brass-bright">Renewal</span>
                 )}

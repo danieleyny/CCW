@@ -11,7 +11,9 @@ export const metadata = { title: "Reports" }
 export default async function Reports() {
   const supabase = await createClient()
   const [{ data: cases }, { data: stages }, { data: payments }] = await Promise.all([
-    supabase.from("cases").select("stage"),
+    // ACCESS CODES — demo cases are excluded from the funnel + conversion so a
+    // comped presentation never inflates the numbers.
+    supabase.from("cases").select("stage").eq("is_demo", false),
     supabase.from("case_stages").select("stage, entered_at, completed_at"),
     supabase.from("payments").select("amount_cents, status, paid_at, created_at"),
   ])

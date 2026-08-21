@@ -1048,6 +1048,32 @@ export async function setConciergeAgent(
   return { ok: true }
 }
 
+// ── ACCESS CODES — one-click demo cleanup ────────────────────────────────────
+/**
+ * Hard-delete every demo case (and its children, via FK cascade) so cleanup after
+ * a presentation is one click. Admin-only, logged.
+ */
+export async function deleteDemoCases(): Promise<{ ok?: boolean; deleted?: number; error?: string }> {
+  const { profile } = await requireAdmin()
+  const admin = createAdminClient()
+  const { data: demos } = await admin.from("cases").select("id").eq("is_demo", true)
+  const ids = (demos ?? []).map((c) => c.id)
+  if (ids.length === 0) return { ok: true, deleted: 0 }
+
+  const { error } = await admin.from("cases").delete().in("id", ids)
+  if (error) return { error: error.message }
+
+  await logActivity({
+    action: "demo.cases_deleted",
+    entity: "case",
+    detail: { count: ids.length, by: profile.full_name },
+  })
+  revalidatePath("/admin/concierge")
+  revalidatePath("/admin/pipeline")
+  revalidatePath("/admin/cases")
+  return { ok: true, deleted: ids.length }
+}
+
 // ── CONCIERGE QA Phase 3 — record an offline payment ─────────────────────────
 /**
  * Record money that arrived outside Stripe (check / transfer / cash) so a client

@@ -44,9 +44,14 @@ interface FireInput {
   cta?: { label: string; url: string }
 }
 
+// ACCESS CODES — a demo case never receives a reminder. Populated once per
+// runReminderEngine call; every fireOnce checks it centrally.
+let demoCaseIds = new Set<string>()
+
 /** Gate on reminder_log; on first occurrence write the in-app notification. */
 async function fireOnce(admin: DB, input: FireInput): Promise<Fired | null> {
   if (!input.recipient && !input.email) return null
+  if (input.caseId && demoCaseIds.has(input.caseId)) return null // demo case → silent
   const { data: inserted } = await admin
     .from("reminder_log")
     .upsert(
@@ -137,6 +142,10 @@ export function pickUnansweredNudges(
 
 /** Run every rule once. Returns the notifications that actually fired this run. */
 export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fired[]> {
+  // Demo cases are silent — resolve them once so every fireOnce can skip them.
+  const { data: demos } = await admin.from("cases").select("id").eq("is_demo", true)
+  demoCaseIds = new Set((demos ?? []).map((c) => c.id))
+
   const fired: Fired[] = []
   const push = (f: Fired | null) => { if (f) fired.push(f) }
 

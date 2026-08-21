@@ -10,7 +10,7 @@ export default async function PipelinePage() {
   const supabase = await createClient()
   const { data } = await supabase
     .from("cases")
-    .select("id, stage, status, is_renewal, stage_entered_at, updated_at, clients(full_name, borough)")
+    .select("id, stage, status, is_renewal, is_demo, stage_entered_at, updated_at, clients(full_name, borough)")
     .order("created_at", { ascending: false })
 
   // V3-P2.5 — blocking counts for the stall signal, one query for the board.
@@ -36,6 +36,7 @@ export default async function PipelinePage() {
       stage: c.stage as CaseStageKey,
       status: c.status,
       isRenewal: c.is_renewal,
+      isDemo: c.is_demo,
       clientName: client?.full_name ?? "Unknown",
       borough: client?.borough ?? null,
       daysInStage: daysSince(c.stage_entered_at ?? c.updated_at) ?? 0,

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { getActivePackages, hasPaidPackage } from "@/lib/packages"
+import { accessCodesEnabled } from "@/lib/access-codes"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -39,6 +40,7 @@ export default async function ChoosePathPage() {
 
   const packages = await getActivePackages(supabase)
   const alreadyMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
+  const codesEnabled = accessCodesEnabled()
   // QA Phase 9 — don't attribute a STAFF-set path to the applicant.
   const { data: clientRow } = await supabase
     .from("clients")
@@ -60,7 +62,12 @@ export default async function ChoosePathPage() {
         </p>
       </div>
 
-      <ChoosePathCards packages={packages} alreadyMode={alreadyMode} staffProvisioned={staffProvisioned} />
+      <ChoosePathCards
+        packages={packages}
+        alreadyMode={alreadyMode}
+        staffProvisioned={staffProvisioned}
+        codesEnabled={codesEnabled}
+      />
 
       <p className="text-xs text-text-low">
         Service fees only — the NYPD&apos;s application fee and the fingerprint fee are paid separately at

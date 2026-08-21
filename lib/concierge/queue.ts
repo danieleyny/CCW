@@ -32,6 +32,7 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
     .select("id, stage, clients(full_name, assigned_staff, lead_source, profile_id)")
     .eq("status", "active")
     .eq("service_mode", "concierge")
+    .eq("is_demo", false) // demo cases never appear in the work queue
   if (!cases || cases.length === 0) return []
 
   const ids = cases.map((c) => c.id)

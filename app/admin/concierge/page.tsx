@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { loadConciergeQueue, type QueueTone } from "@/lib/concierge/queue"
 import { stageMeta } from "@/config/stages"
 import { ConciergeTeam, type StaffMember } from "@/components/admin/concierge-team"
+import { DeleteDemoCasesButton } from "@/components/admin/delete-demo-cases-button"
 
 export const metadata = { title: "Concierge" }
 
@@ -24,6 +25,10 @@ export default async function ConciergeHubPage() {
 
   const supabase = await createClient()
   const queue = await loadConciergeQueue(supabase)
+  const { count: demoCount } = await supabase
+    .from("cases")
+    .select("id", { count: "exact", head: true })
+    .eq("is_demo", true)
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name, role, is_concierge_agent")
@@ -44,11 +49,14 @@ export default async function ConciergeHubPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Concierge</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          The done-for-you operation — which cases need a hand, and who runs them.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Concierge</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            The done-for-you operation — which cases need a hand, and who runs them.
+          </p>
+        </div>
+        {canEdit && <DeleteDemoCasesButton count={demoCount ?? 0} />}
       </div>
 
       {/* Phase 10 — the work-queue */}

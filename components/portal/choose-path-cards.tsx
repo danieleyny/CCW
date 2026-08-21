@@ -5,6 +5,7 @@ import { ArrowRight, Check, Loader2, Compass, ConciergeBell } from "lucide-react
 import { choosePath } from "@/app/portal/choose-path/actions"
 import type { EnrollResult } from "@/app/portal/enroll/actions"
 import type { ServicePackage } from "@/lib/packages"
+import { AccessCodeField } from "@/components/portal/access-code-field"
 import { Button } from "@/components/ui/button"
 
 /**
@@ -55,12 +56,15 @@ export function ChoosePathCards({
   packages,
   alreadyMode,
   staffProvisioned = false,
+  codesEnabled = false,
 }: {
   packages: ServicePackage[]
   /** If the applicant already chose but hasn't paid, highlight that card. */
   alreadyMode: "self_guided" | "concierge" | null
   /** The path was set by STAFF (admin_manual) — don't attribute the choice to them. */
   staffProvisioned?: boolean
+  /** ACCESS CODES — whether to show the "Have an access code?" field. */
+  codesEnabled?: boolean
 }) {
   // Only render the two real fork options, in a deliberate order.
   const order: PathId[] = ["self_guided", "full_concierge"]
@@ -79,6 +83,7 @@ export function ChoosePathCards({
             (pkg.key === "self_guided" && alreadyMode === "self_guided")
           }
           staffProvisioned={staffProvisioned}
+          codesEnabled={codesEnabled}
         />
       ))}
     </div>
@@ -89,10 +94,12 @@ function PathCard({
   pkg,
   selected,
   staffProvisioned,
+  codesEnabled,
 }: {
   pkg: ServicePackage
   selected: boolean
   staffProvisioned: boolean
+  codesEnabled: boolean
 }) {
   const [state, action, pending] = useActionState<EnrollResult, FormData>(choosePath, {})
   const n = NARRATIVE[pkg.key as PathId]
@@ -190,6 +197,8 @@ function PathCard({
           {state.error}
         </p>
       )}
+
+      {codesEnabled && <AccessCodeField packageKey={pkg.key} />}
     </div>
   )
 }

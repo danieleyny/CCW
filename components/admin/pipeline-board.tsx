@@ -28,6 +28,7 @@ export interface PipelineCase {
   clientName: string
   borough: string | null
   isRenewal: boolean
+  isDemo?: boolean
   /** V3-P2.5 — stall signal on the card. */
   daysInStage: number
   blockingCount: number
@@ -64,10 +65,16 @@ function Card({ c }: { c: PipelineCase }) {
     >
       <div className="flex items-start justify-between gap-2">
         <span className="text-sm font-medium leading-tight">{c.clientName}</span>
-        {c.isRenewal && (
-          <span className="rounded bg-brass/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-brass-bright">
-            Renewal
+        {c.isDemo ? (
+          <span className="rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-warn">
+            Demo
           </span>
+        ) : (
+          c.isRenewal && (
+            <span className="rounded bg-brass/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-brass-bright">
+              Renewal
+            </span>
+          )
         )}
       </div>
       <div className="engraved mt-1.5">

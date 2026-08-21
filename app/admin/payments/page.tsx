@@ -136,7 +136,15 @@ export default async function AdminPayments() {
                   <TableCell className="font-medium">{client?.full_name ?? "—"}</TableCell>
                   <TableCell className="text-text-mid">{p.description ?? "—"}</TableCell>
                   <TableCell className="capitalize text-text-mid">{p.type}</TableCell>
-                  <TableCell className="font-mono tabular-nums">{money(p.amount_cents)}</TableCell>
+                  <TableCell className="font-mono tabular-nums">
+                    {p.amount_cents === 0 && p.status === "paid" ? (
+                      <span className="rounded bg-warn/15 px-2 py-0.5 text-xs font-medium not-italic text-warn">
+                        Comped
+                      </span>
+                    ) : (
+                      money(p.amount_cents)
+                    )}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={p.status} />
                   </TableCell>

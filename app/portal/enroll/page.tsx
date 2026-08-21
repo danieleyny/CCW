@@ -5,6 +5,8 @@ import { getActivePackages } from "@/lib/packages"
 import { getFees } from "@/lib/fees"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { EnrollButtons } from "@/components/portal/enroll-buttons"
+import { AccessCodeField } from "@/components/portal/access-code-field"
+import { accessCodesEnabled } from "@/lib/access-codes"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata = { title: "Choose your package" }
@@ -24,6 +26,7 @@ export default async function EnrollPage({
   const supabase = await createClient()
   const packages = await getActivePackages(supabase)
   const fees = await getFees(supabase)
+  const codesEnabled = accessCodesEnabled()
 
   // Already paid for a package? Show that instead of selling again.
   const { data: paid } = myCase
@@ -75,6 +78,9 @@ export default async function EnrollPage({
                 stripeOn={STRIPE_ENABLED}
                 featured={p.featured}
               />
+              {codesEnabled && (p.key === "self_guided" || p.key === "full_concierge") && (
+                <AccessCodeField packageKey={p.key} />
+              )}
             </CardContent>
           </Card>
         ))}

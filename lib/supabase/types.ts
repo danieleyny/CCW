@@ -745,6 +745,7 @@ export type Database = {
           county_license_expires_on: string | null
           created_at: string
           id: string
+          is_demo: boolean
           is_renewal: boolean
           license_expires_on: string | null
           license_issued_on: string | null
@@ -768,6 +769,7 @@ export type Database = {
           county_license_expires_on?: string | null
           created_at?: string
           id?: string
+          is_demo?: boolean
           is_renewal?: boolean
           license_expires_on?: string | null
           license_issued_on?: string | null
@@ -791,6 +793,7 @@ export type Database = {
           county_license_expires_on?: string | null
           created_at?: string
           id?: string
+          is_demo?: boolean
           is_renewal?: boolean
           license_expires_on?: string | null
           license_issued_on?: string | null

@@ -21,6 +21,7 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
   let paidPending = ""
   let unpaid = ""
   let assembled = ""
+  let demo = ""
 
   const iso = (daysAgo: number) => new Date(Date.now() - daysAgo * DAY).toISOString()
 
@@ -29,6 +30,7 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
     stage: string
     openedDaysAgo: number
     completeAgreements?: boolean
+    isDemo?: boolean
   }): Promise<string> {
     const email = `ccrem_${Math.random().toString(36).slice(2)}@example.test`
     const { data: client } = await admin
@@ -58,7 +60,11 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
     // overwrite stage_entered_at with now().
     await admin
       .from("cases")
-      .update({ opened_at: iso(opts.openedDaysAgo), stage_entered_at: iso(opts.openedDaysAgo) })
+      .update({
+        opened_at: iso(opts.openedDaysAgo),
+        stage_entered_at: iso(opts.openedDaysAgo),
+        ...(opts.isDemo ? { is_demo: true } : {}),
+      })
       .eq("id", kase!.id)
 
     if (opts.paid) {
@@ -95,6 +101,8 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
       openedDaysAgo: 4,
       completeAgreements: true,
     })
+    // A DEMO case in the exact state that would otherwise fire agreements-pending.
+    demo = await makeCase({ paid: true, stage: "document_collection", openedDaysAgo: 4, isDemo: true })
   })
 
   afterAll(async () => {
@@ -117,6 +125,9 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
 
     const ready = fired.filter((f) => f.ruleKey === "concierge_ready_to_file")
     expect(ready.some((f) => f.caseId === assembled), "assembled + paid → fires").toBe(true)
+
+    // DEMO isolation: a demo case never gets ANY reminder, even in a firing state.
+    expect(fired.some((f) => f.caseId === demo), "demo case → silent").toBe(false)
   })
 
   it("second run: nothing re-fires (idempotent)", async () => {
