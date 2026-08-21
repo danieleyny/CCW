@@ -17,12 +17,16 @@ export function DocumentVault({
   items,
   referenceProgress,
   cohabitantProgress,
+  ask,
 }: {
   caseId: string
   clientId: string
   items: VaultItem[]
   referenceProgress: ReferenceProgress | null
   cohabitantProgress: ReferenceProgress | null
+  /** The single most-important outstanding ask, spotlighted above the drop zones
+   *  it belongs to. Null when we're not waiting on the applicant for anything. */
+  ask: { title: string; detail: string } | null
 }) {
   // UX 2.4 — count RECEIVED (uploaded) and APPROVED (a human checked it) as two
   // numbers, so the header tells the same story the cards do.
@@ -47,6 +51,15 @@ export function DocumentVault({
           file — we take it from there.
         </p>
       </div>
+
+      {ask && (
+        <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-5">
+          <div className="engraved text-brass">The one thing we need from you</div>
+          <h3 className="mt-2 text-lg font-semibold tracking-tight">{ask.title}</h3>
+          {ask.detail && <p className="mt-1 text-sm text-text-mid">{ask.detail}</p>}
+          <p className="mt-2 text-xs text-text-low">You&apos;ll find it just below — add it and we take it from there.</p>
+        </div>
+      )}
 
       {total > 0 ? (
         <div className="space-y-3">

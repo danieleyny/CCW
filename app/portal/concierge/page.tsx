@@ -151,6 +151,14 @@ export default async function ConciergeHome() {
           items={vaultItems}
           referenceProgress={view.referenceProgress}
           cohabitantProgress={view.cohabitantProgress}
+          // The single "one thing we need from you" ask, spotlighted at the top of
+          // the vault — right where the applicant acts on it — instead of floating
+          // in the progress narrative above.
+          ask={
+            !nextStep.waiting && nextStep.total > 0
+              ? { title: nextStep.title, detail: nextStep.detail }
+              : null
+          }
         />
       </div>
 

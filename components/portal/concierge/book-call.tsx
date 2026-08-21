@@ -1,6 +1,7 @@
 import { CalendarCheck2, Video } from "lucide-react"
 import { formatDateTime } from "@/lib/format"
 import { RequestCallButton } from "@/components/portal/concierge/request-call-button"
+import { CalendlyEmbed } from "@/components/portal/concierge/calendly-embed"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
 
 /** Build the embed URL: opaque token (must survive for the webhook to match),
@@ -61,16 +62,10 @@ export function BookCall({
       <div className="mt-4">
         {calendlyUrl ? (
           // Calendly renders light; wrap it in a white panel so it reads as a
-          // deliberate inset. A tall fixed height fits the whole flow (calendar →
-          // time slots → the confirmation form) so the embed never clips or scrolls
-          // internally — hide_event_type_details reclaims the header space.
+          // deliberate inset. The embed autosizes to its content, so the panel
+          // hugs the calendar with no dead white space.
           <div className="overflow-hidden rounded-xl bg-white">
-            <iframe
-              title="Schedule your concierge intro call"
-              src={embedUrl(calendlyUrl, introToken)}
-              className="h-[1080px] w-full border-0 sm:h-[920px]"
-              loading="lazy"
-            />
+            <CalendlyEmbed url={embedUrl(calendlyUrl, introToken)} />
           </div>
         ) : (
           <RequestCallButton alreadyRequested={introCall?.status === "requested"} />

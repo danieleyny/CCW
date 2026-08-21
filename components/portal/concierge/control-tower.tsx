@@ -1,5 +1,4 @@
-import Link from "next/link"
-import { Check, Loader2, Clock, ArrowRight, Landmark } from "lucide-react"
+import { Check, Loader2, Clock, Landmark } from "lucide-react"
 import { deriveMilestones, type ConciergeCaseState } from "@/config/concierge-milestones"
 import type { NextStep } from "@/lib/portal/next-step"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -21,8 +20,10 @@ export function ControlTower({
   nypdControlled: boolean
 }) {
   const milestones = deriveMilestones(state)
-  // Surface the ask only when we're truly waiting on the applicant (a real,
-  // client-actionable requirement) — never nag when the ball is in our court.
+  // We're truly waiting on the applicant (a real, client-actionable requirement)
+  // vs. the ball being in our court. The actual "one thing we need" card now
+  // lives at the top of the document vault, right where they act on it — here we
+  // only use this to decide the reassuring "nothing needed" note below.
   const showAsk = !nextStep.waiting && nextStep.total > 0
 
   return (
@@ -31,20 +32,6 @@ export function ControlTower({
         <SectionEyebrow>Where things stand</SectionEyebrow>
         <h2 className="mt-2 text-lg font-semibold tracking-tight">What we&apos;re doing for you</h2>
       </div>
-
-      {showAsk && (
-        <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-5">
-          <div className="engraved text-brass">The one thing we need from you</div>
-          <h3 className="mt-2 text-lg font-semibold tracking-tight">{nextStep.title}</h3>
-          {nextStep.detail && <p className="mt-1 text-sm text-text-mid">{nextStep.detail}</p>}
-          <Link
-            href={nextStep.href}
-            className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
-          >
-            {nextStep.cta} <ArrowRight className="size-4" />
-          </Link>
-        </div>
-      )}
 
       <ol className="rounded-lg border border-hairline bg-card p-5">
         {milestones.map((m, i) => {
