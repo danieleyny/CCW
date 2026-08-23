@@ -69,6 +69,9 @@ export interface ReqChecklistItem {
   /** party='sponsor' — the sponsoring company owns this row. The applicant sees
    *  status only (progress), never an uploader or the file. */
   sponsorManaged?: boolean
+  /** The draft was prepared by a full-scope sponsor, not the applicant — so the
+   *  applicant's card can say "review and sign" (adoption is theirs alone). */
+  preparedBySponsor?: boolean
 }
 
 type FilterKey = "all" | "todo" | "done" | "notarizing"
@@ -470,6 +473,12 @@ export function RequirementsChecklist({
                             dmvApplicant={item.reqCode === "DMV-01" ? dmvApplicant : null}
                           />
                           )
+                        )}
+
+                        {item.preparedBySponsor && !item.sponsorManaged && item.ladder !== "approved" && (
+                          <p className="mt-2 rounded-md border border-brass/30 bg-brass/[0.06] px-3 py-2 text-xs text-text-mid">
+                            Your sponsor prepared this for you. Review it and sign — only you can sign.
+                          </p>
                         )}
 
                         {/* The record, off the card face: official title + citation

@@ -15,6 +15,7 @@ export type TriggerCond =
   | "if_renewal"
   | "if_retired_leo"
   | "if_cohabitants"
+  | "unless_cohabitants"
   | "if_arrest_hx"
   | "if_oop_hx"
   | "if_dir_hx"
@@ -83,6 +84,8 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
       return !!a.isRetiredLeo
     case "if_cohabitants":
       return !!a.hasCohabitants
+    case "unless_cohabitants":
+      return !a.hasCohabitants
     case "if_arrest_hx":
       return !!a.hasArrestHistory
     case "if_oop_hx":

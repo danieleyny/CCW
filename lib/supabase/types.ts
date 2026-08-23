@@ -1609,6 +1609,8 @@ export type Database = {
           reviewer: string | null
           signed_at: string | null
           status: Database["public"]["Enums"]["document_status"]
+          template_key: string | null
+          template_sha256: string | null
           type: Database["public"]["Enums"]["document_type"]
           updated_at: string
           version: number
@@ -1628,6 +1630,8 @@ export type Database = {
           reviewer?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["document_status"]
+          template_key?: string | null
+          template_sha256?: string | null
           type: Database["public"]["Enums"]["document_type"]
           updated_at?: string
           version?: number
@@ -1647,6 +1651,8 @@ export type Database = {
           reviewer?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["document_status"]
+          template_key?: string | null
+          template_sha256?: string | null
           type?: Database["public"]["Enums"]["document_type"]
           updated_at?: string
           version?: number
@@ -1830,6 +1836,92 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      form_template_checks: {
+        Row: {
+          checked_at: string
+          fetched_sha256: string | null
+          id: string
+          matched: boolean
+          note: string | null
+          template_key: string
+        }
+        Insert: {
+          checked_at?: string
+          fetched_sha256?: string | null
+          id?: string
+          matched: boolean
+          note?: string | null
+          template_key: string
+        }
+        Update: {
+          checked_at?: string
+          fetched_sha256?: string | null
+          id?: string
+          matched?: boolean
+          note?: string | null
+          template_key?: string
+        }
+        Relationships: []
+      }
+      form_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          form_number: string | null
+          id: string
+          is_fillable: boolean
+          issuing_authority: string
+          key: string
+          official_title: string
+          revision: string | null
+          sha256: string
+          source_url: string
+          storage_path: string
+          superseded_by: string | null
+          verified_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          form_number?: string | null
+          id?: string
+          is_fillable?: boolean
+          issuing_authority: string
+          key: string
+          official_title: string
+          revision?: string | null
+          sha256: string
+          source_url: string
+          storage_path: string
+          superseded_by?: string | null
+          verified_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          form_number?: string | null
+          id?: string
+          is_fillable?: boolean
+          issuing_authority?: string
+          key?: string
+          official_title?: string
+          revision?: string | null
+          sha256?: string
+          source_url?: string
+          storage_path?: string
+          superseded_by?: string | null
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_templates_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       instructors: {
         Row: {
@@ -2890,6 +2982,7 @@ export type Database = {
           case_id: string
           completed_at: string | null
           created_at: string
+          drafted_by: string | null
           id: string
           req_code: string
           updated_at: string
@@ -2899,6 +2992,7 @@ export type Database = {
           case_id: string
           completed_at?: string | null
           created_at?: string
+          drafted_by?: string | null
           id?: string
           req_code: string
           updated_at?: string
@@ -2908,6 +3002,7 @@ export type Database = {
           case_id?: string
           completed_at?: string | null
           created_at?: string
+          drafted_by?: string | null
           id?: string
           req_code?: string
           updated_at?: string
@@ -2933,6 +3028,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "requirement_answers_drafted_by_fkey"
+            columns: ["drafted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }

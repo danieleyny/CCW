@@ -187,6 +187,14 @@ export function ReviewAndFile({
               </a>
             </Button>
           </div>
+
+          {/* Phase 4 — set expectations for the investigation phase so a later
+              request isn't a surprise. These forms aren't part of the packet. */}
+          <p className="mt-4 border-t border-brass/20 pt-3 text-xs text-text-low">
+            After you file, the NYPD investigator may ask you to sign a medical release (HIPAA) or an
+            employment authorization. That&apos;s a normal part of the review — we hold those official
+            forms and can prepare them for you if you&apos;re asked.
+          </p>
         </div>
       ) : (
         items.length > 0 && (

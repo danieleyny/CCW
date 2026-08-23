@@ -48,6 +48,12 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // The form-fill engine (lib/forms/fill.ts) reads the official NYPD PDFs from
+  // assets/form-templates/ at runtime; make sure they're traced into the
+  // serverless bundle (same as the fonts the PDF builder reads).
+  outputFileTracingIncludes: {
+    "/**": ["./assets/form-templates/**", "./assets/fonts/**"],
+  },
   experimental: {
     // The public reference page uploads a notarized PDF/scan through a server
     // action (anonymous users can't write Storage directly), so allow up to ~6MB.

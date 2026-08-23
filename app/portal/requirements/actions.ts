@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
+import { authorizeCaseActor } from "@/lib/case-actor"
+import { fillTemplate, signTemplate } from "@/lib/forms/fill"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
@@ -37,18 +39,27 @@ export interface RosterResult extends Result {
 /** Save (or update) a requirement's questionnaire answers. Client-owned via RLS. */
 export async function saveRequirementAnswers(
   reqCode: string,
-  answers: Record<string, unknown>
+  answers: Record<string, unknown>,
+  /** Sponsor parity: a full-scope rep passes the case they're drafting for. Omitted
+   *  by the applicant (derived from their own case). */
+  caseId?: string
 ): Promise<Result> {
-  await requireRole(["client"])
-  const myCase = await getMyCase()
-  if (!myCase) return { error: "No case found" }
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "No case found" }
   if (!actionFor(reqCode)) return { error: "Unknown requirement" }
 
-  const supabase = await createClient()
-  const { error } = await supabase
+  const { error } = await actor.db
     .from("requirement_answers")
     .upsert(
-      { case_id: myCase.id, req_code: reqCode, answers: answers as never, completed_at: new Date().toISOString() },
+      {
+        case_id: actor.caseId,
+        req_code: reqCode,
+        answers: answers as never,
+        completed_at: new Date().toISOString(),
+        // Attribution: who prepared this draft. A sworn document is still not
+        // final until the APPLICANT signs it (adoption), regardless of who drafted.
+        drafted_by: actor.profileId,
+      },
       { onConflict: "case_id,req_code" }
     )
   if (error) return { error: error.message }
@@ -73,10 +84,15 @@ export async function saveRequirementAnswers(
  *    copy (staff review / recompute) can satisfy it. Generation must never slip a
  *    notarized item past the CP-5 gate.
  */
-export async function generateRequirementDocument(reqCode: string): Promise<Result> {
-  await requireRole(["client"])
-  const myCase = await getMyCase()
-  if (!myCase) return { error: "No case found" }
+export async function generateRequirementDocument(
+  reqCode: string,
+  caseId?: string,
+  /** Transient values (e.g. SSN) filled into the PDF but NEVER persisted — see the
+   *  SSN decision. Merged at fill time only. */
+  ephemeral?: Record<string, unknown>
+): Promise<Result> {
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "No case found" }
 
   const action = actionFor(reqCode)
   // A cohabitants roster reaches here only for the sole-occupancy statement —
@@ -85,11 +101,14 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
   if (!action || !generates) return { error: "That requirement isn't generated on-platform." }
   const signable = isSignable(action)
 
-  const supabase = await createClient()
-  const { data: saved } = await supabase
+  // Admin for the answers read + generated-document provenance (works for both
+  // the owner and a full-scope sponsor, who has no direct table grants). The
+  // ACTOR was authorized above.
+  const admin = createAdminClient()
+  const { data: saved } = await admin
     .from("requirement_answers")
     .select("answers")
-    .eq("case_id", myCase.id)
+    .eq("case_id", actor.caseId)
     .eq("req_code", reqCode)
     .maybeSingle()
   const answers = (saved?.answers ?? {}) as Record<string, unknown>
@@ -97,23 +116,41 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
   let documentId: string
   try {
     // No signedAt ⇒ the renderer produces the DRAFT rendering. A signature image
-    // on file is deliberately NOT applied here: signing is an act the applicant
-    // performs on specific bytes, not a stamp we reuse behind their back.
-    const doc = await renderRequirementDocument({
-      reqCode,
-      applicantName: myCase.client.full_name,
-      answers,
-      caseRef: myCase.id.slice(0, 8),
-    })
-    // Service role: server-derived provenance (path, generated flag) on a
-    // staff-reviewed table; ownership was proven by getMyCase above.
-    const admin = createAdminClient()
-    documentId = await storeGeneratedDocument(admin, {
-      caseId: myCase.id,
-      clientId: myCase.client.id,
-      reqCode,
-      doc,
-    })
+    // on file is deliberately NOT applied here: signing is an act the APPLICANT
+    // performs on specific bytes — never something a sponsor (or a reused stamp)
+    // can do. This is the draft/adopt line: anyone with write access may DRAFT;
+    // only the applicant ADOPTS by signing.
+    if (action.mode === "generate" && action.templateKey) {
+      // COMPLETE: fill the REAL official PDF (never a facsimile). The transient
+      // SSN is merged here at fill time and never saved.
+      const filled = await fillTemplate(action.templateKey, { ...answers, ...(ephemeral ?? {}) })
+      documentId = await storeGeneratedDocument(admin, {
+        caseId: actor.caseId,
+        clientId: actor.clientId,
+        reqCode,
+        doc: {
+          bytes: filled.bytes,
+          fileName: `${action.templateKey}.pdf`,
+          documentType: action.documentType as never,
+          label: filled.template.officialTitle,
+        },
+        templateKey: action.templateKey,
+        templateSha256: filled.sha256,
+      })
+    } else {
+      const doc = await renderRequirementDocument({
+        reqCode,
+        applicantName: actor.clientName,
+        answers,
+        caseRef: actor.caseId.slice(0, 8),
+      })
+      documentId = await storeGeneratedDocument(admin, {
+        caseId: actor.caseId,
+        clientId: actor.clientId,
+        reqCode,
+        doc,
+      })
+    }
 
     if (signable) {
       // Unsigned draft — bind it so the applicant can find it, but push the
@@ -126,7 +163,7 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
           document_id: documentId,
           notes: "Draft prepared — review and sign it to complete this.",
         })
-        .eq("case_id", myCase.id)
+        .eq("case_id", actor.caseId)
         .eq("req_code", reqCode)
         .in("status", ["pending", "satisfied", "na"])
     } else if (action.notarize) {
@@ -136,16 +173,16 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
           document_id: documentId,
           notes: "Generated — have it notarized, then upload the signed copy to complete this.",
         })
-        .eq("case_id", myCase.id)
+        .eq("case_id", actor.caseId)
         .eq("req_code", reqCode)
         .in("status", ["pending"])
       // Waiting on a notary is a stage of its own, and the customer can see it.
-      await maybeAdvanceStage(admin, myCase.id, "notarization", "requirement.notarized_document_generated")
+      await maybeAdvanceStage(admin, actor.caseId, "notarization", "requirement.notarized_document_generated")
     } else {
       await admin
         .from("case_requirements")
         .update({ status: "satisfied", document_id: documentId, notes: "Completed on platform." })
-        .eq("case_id", myCase.id)
+        .eq("case_id", actor.caseId)
         .eq("req_code", reqCode)
         .in("status", ["pending", "na"])
     }
@@ -158,7 +195,7 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
 
   await logActivity({
     action: "requirement.document_generated",
-    caseId: myCase.id,
+    caseId: actor.caseId,
     entity: "document",
     entityId: documentId,
     detail: { req_code: reqCode, notarize: !!action.notarize, draft: signable },
@@ -183,24 +220,30 @@ export async function generateRequirementDocument(reqCode: string): Promise<Resu
  */
 export async function submitRequirementRoster(
   reqCode: string,
-  answers: Record<string, unknown>
+  answers: Record<string, unknown>,
+  /** Sponsor parity: a full-scope rep passes the case; the applicant omits it. */
+  caseId?: string
 ): Promise<RosterResult> {
-  await requireRole(["client"])
-  const myCase = await getMyCase()
-  if (!myCase) return { error: "No case found" }
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "No case found" }
 
   const action = actionFor(reqCode)
   if (action?.mode !== "roster") return { error: "That requirement isn't a list of people." }
 
   // Keep the answers so re-opening the questionnaire shows what they entered.
-  const supabase = await createClient()
-  await supabase.from("requirement_answers").upsert(
-    { case_id: myCase.id, req_code: reqCode, answers: answers as never, completed_at: new Date().toISOString() },
+  await actor.db.from("requirement_answers").upsert(
+    {
+      case_id: actor.caseId,
+      req_code: reqCode,
+      answers: answers as never,
+      completed_at: new Date().toISOString(),
+      drafted_by: actor.profileId,
+    },
     { onConflict: "case_id,req_code" }
   )
 
   // Service role: creating people rows + minting capability tokens on tables the
-  // client may not arbitrarily write. Ownership proven by getMyCase above.
+  // client may not arbitrarily write. The ACTOR was authorized above.
   const admin = createAdminClient()
 
   try {
@@ -208,8 +251,8 @@ export async function submitRequirementRoster(
       // Living alone → their OWN statement, signed then notarized. Any household
       // rows from a previous answer that carry no evidence are cleared, so the
       // case doesn't claim both "I live alone" and a roster of housemates.
-      await syncCohabitants(admin, myCase.id, [])
-      const gen = await generateRequirementDocument(reqCode)
+      await syncCohabitants(admin, actor.caseId, [])
+      const gen = await generateRequirementDocument(reqCode, actor.caseId)
       if (gen.error) return gen
       return {
         ok: true,
@@ -243,16 +286,16 @@ export async function submitRequirementRoster(
 
     const sync =
       action.roster === "references"
-        ? await syncReferences(admin, myCase.id, people)
-        : await syncCohabitants(admin, myCase.id, people)
+        ? await syncReferences(admin, actor.caseId, people)
+        : await syncCohabitants(admin, actor.caseId, people)
 
     // Recompute from evidence — never from the fact that a list was submitted.
-    if (action.roster === "references") await recomputeReferenceRequirement(admin, myCase.id)
-    else await recomputeCohabitantRequirement(admin, myCase.id)
+    if (action.roster === "references") await recomputeReferenceRequirement(admin, actor.caseId)
+    else await recomputeCohabitantRequirement(admin, actor.caseId)
 
     await logActivity({
       action: "requirement.roster_submitted",
-      caseId: myCase.id,
+      caseId: actor.caseId,
       entity: "case_requirement",
       detail: { req_code: reqCode, ...sync },
     })
@@ -343,21 +386,33 @@ export async function signRequirementDocument(
   if (draft.signed_at) return { error: "This document is already signed. Regenerate it if you need to change something." }
 
   const signedAt = new Date()
+  const admin = createAdminClient()
   try {
-    const doc = await renderRequirementDocument({
-      reqCode,
-      applicantName: myCase.client.full_name,
-      answers: (saved?.answers ?? {}) as Record<string, unknown>,
-      signaturePng,
-      signedAt,
-      caseRef: myCase.id.slice(0, 8),
-    })
+    let signedBytes: Uint8Array
+    if (action.mode === "generate" && action.templateKey) {
+      // Adopt onto the REAL official PDF: overlay the applicant's signature on the
+      // form's own signature field. Operates on the stored draft bytes so the
+      // transient SSN already rendered into the draft isn't recollected.
+      const { data: blob } = await admin.storage.from("documents").download(draft.file_path)
+      if (!blob) return { error: "Couldn't open the draft to sign." }
+      const filled = await signTemplate(new Uint8Array(await blob.arrayBuffer()), action.templateKey, signaturePng, signedAt)
+      signedBytes = filled.bytes
+    } else {
+      const doc = await renderRequirementDocument({
+        reqCode,
+        applicantName: myCase.client.full_name,
+        answers: (saved?.answers ?? {}) as Record<string, unknown>,
+        signaturePng,
+        signedAt,
+        caseRef: myCase.id.slice(0, 8),
+      })
+      signedBytes = doc.bytes
+    }
 
-    const admin = createAdminClient()
     await markGeneratedDocumentSigned(admin, {
       documentId: draft.id,
       filePath: draft.file_path,
-      bytes: doc.bytes,
+      bytes: signedBytes,
       signedAt,
     })
 
@@ -369,7 +424,7 @@ export async function signRequirementDocument(
       signerKey: "applicant",
       documentId: draft.id,
       reqCode,
-      bytes: doc.bytes,
+      bytes: signedBytes,
       ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
       userAgent: h.get("user-agent"),
     })

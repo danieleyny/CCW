@@ -58,10 +58,14 @@ export async function uploadSponsorDocument(formData: FormData): Promise<{ ok?: 
     .eq("req_code", reqCode)
     .maybeSingle()
   const requirement = req?.requirement as unknown as { party: string; document_type: string | null } | null
-  if (!req || requirement?.party !== "sponsor") {
-    return { error: "That item isn't part of your company packet." }
+  if (!req) return { error: "That requirement isn't on this case." }
+  if (!requirement?.document_type) return { error: "This item is completed as a form, not an upload." }
+  // The company packet (party='sponsor') is always the rep's to upload. Uploading
+  // the APPLICANT's own paperwork is parity that only full scope grants
+  // ("Pamela uploaded your utility bill"). Never a signature or a submit.
+  if (requirement.party === "applicant" && scope.scope !== "full") {
+    return { error: "Your access is limited to your company packet." }
   }
-  if (!requirement.document_type) return { error: "This item is completed as a form, not an upload." }
 
   const { data: kase } = await admin.from("cases").select("client_id").eq("id", caseId).maybeSingle()
   if (!kase?.client_id) return { error: "Case not found." }
