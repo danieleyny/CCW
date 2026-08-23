@@ -11,6 +11,7 @@ import { formTemplate } from "@/lib/forms/templates"
 import { factDef } from "@/lib/facts/registry"
 import { sponsorItemState } from "@/lib/sponsor/status"
 import { isArmedTrack } from "@/lib/dos"
+import { decideOnboardingRedirect } from "@/lib/portal/intake-gate"
 
 describe("PLE-01 §5-09 instructor block", () => {
   const t = formTemplate("nypd_prelicense_exemption")!
@@ -84,5 +85,15 @@ describe("sponsor three-state (R3) + armed track", () => {
     expect(isArmedTrack("special_carry_guard")).toBe(true)
     expect(isArmedTrack("concealed_carry")).toBe(false)
     expect(isArmedTrack(null)).toBe(false)
+  })
+})
+
+describe("nav bug — /portal/details is reachable during onboarding (3E)", () => {
+  const brandNew = { serviceMode: null, stage: "lead" as const, intakeCompleted: false, hasAttorneyReview: false }
+  it("does NOT bounce /portal/details to intake for a brand-new applicant", () => {
+    expect(decideOnboardingRedirect({ pathname: "/portal/details", ...brandNew })).toBeNull()
+  })
+  it("still bounces a non-exempt page (regression guard)", () => {
+    expect(decideOnboardingRedirect({ pathname: "/portal/checklist", ...brandNew })).toBe("/portal/choose-path")
   })
 })
