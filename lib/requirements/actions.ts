@@ -605,10 +605,11 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     templateKey: "nypd_prelicense_exemption",
     questionnaireId: "prelicense-exemption",
     documentType: "prelicense_exemption",
-    notarize: true, // generate the pre-filled official form; the AUTHORISED INSTRUCTOR signs it, then upload
+    notarize: true, // the form says "MUST BE TYPED AND NOTARIZED" — filled + UNSIGNED, then notary
+    signable: false, // never digitally signed on-platform
     actionLabel: "Complete this form",
     customerTitle: "Your pre-licence exemption request (§5-09)",
-    help: "We fill the official NYPD Request for License Pre-Exemption with your details. Your authorised instructor completes and signs their section — then upload the signed form. Only needed if you don't already hold a pistol licence.",
+    help: "We fill your part of the official NYPD Request for License Pre-Exemption. It has to be signed in front of a notary, so we'll set that up after you review it — and your authorised instructor completes and signs their own section on paper.",
   },
   "SCG-01": {
     mode: "obtain",
