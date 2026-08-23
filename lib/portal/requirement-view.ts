@@ -315,6 +315,13 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     // same type-fallback the widget uses). Its status is what the upload widget
     // shows, so the ladder derives from it too — the card and the widget agree.
     const currentDoc = currentByReq[row.req_code]
+    // Multi-part uploads (e.g. the guard card front + back): count the uploaded
+    // (non-generated) files bound to this req against the fixed part count so the
+    // card can say "1 of 2 uploaded" and never read as fully in until both parts
+    // are present.
+    const act = actionFor(row.req_code)
+    const needFiles = act && act.mode === "obtain" ? act.minFiles : undefined
+    const haveFiles = (filesByReq[row.req_code] ?? []).filter((f) => !f.generated).length
     return {
     id: row.id,
     reqCode: row.req_code,
@@ -345,6 +352,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     // here why we aren't asking for it.
     legalStatus: row.requirement?.legal_status ?? "enforced",
     legalCitation: row.requirement?.legal_citation ?? null,
+    parts: needFiles ? { have: haveFiles, need: needFiles } : undefined,
     sponsorManaged: row.requirement?.party === "sponsor",
     preparedBySponsor: draftedBySponsor.get(row.req_code) ?? false,
     }

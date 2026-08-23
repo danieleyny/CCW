@@ -178,6 +178,30 @@ export async function generateRequirementDocument(
           }
         }
       }
+      // §5-09 — the PLE-01 instructor block is collected in-platform from the
+      // ASSIGNED instructor (prelicense_instructor_statements), never authored by
+      // the applicant. Merge it into the fill so the official form carries the
+      // verified statement; the completeness gate flags it if it isn't in yet.
+      if (action.templateKey === "nypd_prelicense_exemption") {
+        const { data: st } = await admin
+          .from("prelicense_instructor_statements")
+          .select("met_applicant, no_danger, credentials, instructor_name, instructor_address, instructor_phone, range_name, training_location")
+          .eq("case_id", actor.caseId)
+          .maybeSingle()
+        if (st) {
+          fillValues = {
+            ...fillValues,
+            instructorName: st.instructor_name ?? "",
+            instructorCredentials: st.credentials ?? "",
+            instructorRangeName: st.range_name ?? "",
+            instructorAddress: st.instructor_address ?? "",
+            instructorPhone: st.instructor_phone ?? "",
+            trainingLocation: st.training_location ?? "",
+            metApplicant: !!st.met_applicant,
+            noDanger: !!st.no_danger,
+          }
+        }
+      }
       const filled = await fillTemplate(action.templateKey, fillValues)
       incompleteFields = filled.missingRequired
       // Phase 4 — fill failures are LOUD. A field that didn't land is a mapping

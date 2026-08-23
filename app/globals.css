@@ -218,6 +218,7 @@
    the card's overflow, and out of the a11y tree (pseudo-element). */
 .glow-neutral::before,
 .glow-review::before,
+.glow-received::before,
 .glow-ok::before,
 .glow-fix::before {
   content: "";
@@ -232,6 +233,11 @@
 }
 .glow-neutral::before {
   background: color-mix(in oklab, var(--brass) 13%, transparent);
+}
+/* Received — a document is in, server-confirmed, awaiting a human's approval.
+   Brass (never green): green is reserved for staff acceptance. */
+.glow-received::before {
+  background: color-mix(in oklab, var(--brass) 22%, transparent);
 }
 .glow-review::before {
   background: color-mix(in oklab, var(--signal) 15%, transparent);
@@ -255,6 +261,7 @@
   /* Scale the glow down so it never bleeds past a full-width phone card. */
   .glow-neutral::before,
   .glow-review::before,
+  .glow-received::before,
   .glow-ok::before,
   .glow-fix::before {
     width: 7rem;

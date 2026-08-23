@@ -11,6 +11,7 @@ import {
   progressOf,
 } from "@/lib/trainer/queries"
 import { TrainerRequirementReview, type ReviewItem } from "@/components/trainer/requirement-review"
+import { PrelicenseStatementForm, type InstructorStatement } from "@/components/instructor/prelicense-statement-form"
 import { computeTrainerNextStep } from "@/lib/trainer/next-steps"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
@@ -82,6 +83,20 @@ export default async function InstructorCaseDetail({
         lastReview: last ? { decision: last.decision, note: last.note, at: last.createdAt } : null,
       }
     })
+
+  // §5-09 — this case needs the instructor's verified statement only when the
+  // pre-licence exemption (PLE-01) is on the file (armed-guard, no other pistol
+  // licence). PLE-01 is a full-scope item, so it surfaces in the trainer feed.
+  const needsPrelicenseStatement = reqs.some((r) => r.reqCode === "PLE-01")
+  let prelicenseStatement: InstructorStatement | null = null
+  if (needsPrelicenseStatement) {
+    const { data } = await supabase
+      .from("prelicense_instructor_statements")
+      .select("met_applicant, no_danger, credentials, instructor_name, instructor_address, instructor_phone, range_name, training_location, notes, submitted_at")
+      .eq("case_id", id)
+      .maybeSingle()
+    prelicenseStatement = data ?? null
+  }
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -184,6 +199,8 @@ export default async function InstructorCaseDetail({
       </div>
 
       <TrainerRequirementReview items={reviewItems} />
+
+      {needsPrelicenseStatement && <PrelicenseStatementForm caseId={id} statement={prelicenseStatement} />}
 
       <div>
         <h2 className="engraved mb-2 text-text-low">Sessions</h2>

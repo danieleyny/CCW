@@ -50,8 +50,11 @@ export function deriveLadder(input: LadderInput): LadderState {
   return "pending"
 }
 
-/** Warm, specific copy — this is the applicant's whole sense of where they are. */
-export const LADDER_COPY: Record<LadderState, { label: string; hint: string; tone: "muted" | "signal" | "ok" | "warn" }> = {
+/** Warm, specific copy — this is the applicant's whole sense of where they are.
+ *  Three-state completed treatment (R3): outstanding → muted (no accent),
+ *  received → BRASS (server-confirmed, "we're checking this"), approved → green.
+ *  Green is earned only by staff acceptance; a received document is never green. */
+export const LADDER_COPY: Record<LadderState, { label: string; hint: string; tone: "muted" | "signal" | "brass" | "ok" | "warn" }> = {
   pending: {
     label: "Not started",
     hint: "We still need this one.",
@@ -63,9 +66,9 @@ export const LADDER_COPY: Record<LadderState, { label: string; hint: string; ton
     tone: "signal",
   },
   submitted: {
-    label: "In review",
-    hint: "You've sent this in — your instructor is checking it.",
-    tone: "signal",
+    label: "Received",
+    hint: "We've got it — a reviewer is checking it. Nothing more to do here for now.",
+    tone: "brass",
   },
   approved: {
     label: "Approved",

@@ -110,3 +110,51 @@ export async function sendStaffMessage(caseId: string, engagementId: string, bod
   if (error) throw error
   revalidatePath(`/instructor/cases/${caseId}`)
 }
+
+/**
+ * §5-09 — the instructor's pre-licence exemption verified statement, collected
+ * in-platform. RLS (instructor_engaged) lets only the ASSIGNED instructor write
+ * it. This is not a signature: the official form (PLE-01) is still filled +
+ * printed + notarised on paper. Saving with submit=1 marks the statement ready
+ * so the applicant's PLE-01 fill carries it.
+ */
+export async function saveInstructorStatement(formData: FormData) {
+  const { userId } = await requireRole(["instructor"])
+  const caseId = String(formData.get("caseId") ?? "")
+  if (!caseId) return
+  const str = (v: FormDataEntryValue | null) => {
+    const s = String(v ?? "").trim()
+    return s || null
+  }
+  const supabase = await createClient()
+  const { data: instr } = await supabase.from("instructors").select("id").eq("profile_id", userId).maybeSingle()
+  const submitted = formData.get("submit") === "1"
+  const { error } = await supabase.from("prelicense_instructor_statements").upsert(
+    {
+      case_id: caseId,
+      instructor_id: instr?.id ?? null,
+      met_applicant: formData.get("metApplicant") === "on",
+      no_danger: formData.get("noDanger") === "on",
+      credentials: str(formData.get("credentials")),
+      instructor_name: str(formData.get("instructorName")),
+      instructor_address: str(formData.get("instructorAddress")),
+      instructor_phone: str(formData.get("instructorPhone")),
+      range_name: str(formData.get("rangeName")),
+      training_location: str(formData.get("trainingLocation")),
+      notes: str(formData.get("notes")),
+      submitted_at: submitted ? new Date().toISOString() : null,
+      updated_by: userId,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "case_id" }
+  )
+  if (error) throw error
+  await logActivity({
+    action: "instructor.prelicense_statement_saved",
+    caseId,
+    entity: "case",
+    entityId: caseId,
+    detail: { submitted },
+  })
+  revalidatePath(`/instructor/cases/${caseId}`)
+}

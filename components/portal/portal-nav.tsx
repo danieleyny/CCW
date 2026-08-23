@@ -51,6 +51,7 @@ const MORE: MoreItem[] = [
  *  affordance, not an information-architecture cut. */
 const DESKTOP: Item[] = [
   ...PRIMARY,
+  { href: "/portal/details", label: "Your details", icon: IdCard },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle },
   { href: "/portal/forms", label: "Forms", icon: FileText },
   { href: "/portal/payments", label: "Payments", icon: CreditCard },
@@ -76,6 +77,7 @@ const MORE_CONCIERGE: MoreItem[] = [
 ]
 const DESKTOP_CONCIERGE: Item[] = [
   ...PRIMARY_CONCIERGE,
+  { href: "/portal/details", label: "Your details", icon: IdCard },
   { href: "/portal/payments", label: "Payments", icon: CreditCard },
   { href: "/portal/license", label: "License", icon: BadgeCheck },
   { href: "/portal/appeal", label: "Appeal", icon: Scale },

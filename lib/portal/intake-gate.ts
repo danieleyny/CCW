@@ -25,9 +25,16 @@ import type { CaseStageKey } from "@/config/stages"
 // advances past `lead`, so a case still at `lead` is the "just signed up" case.
 const EARLY_STAGES: CaseStageKey[] = ["lead"]
 
-// Never gate these — the fork + intake are destinations, and profile/privacy are
-// account-safety pages that must always be reachable.
-const EXEMPT_PREFIXES = ["/portal/choose-path", "/portal/intake", "/portal/profile", "/portal/privacy"]
+// Never gate these — the fork + intake are destinations, and details/profile/privacy
+// are account-data pages that must always be reachable (a new applicant may open
+// "Your details" to enter their facts before, or instead of stepping through, intake).
+const EXEMPT_PREFIXES = [
+  "/portal/choose-path",
+  "/portal/intake",
+  "/portal/details",
+  "/portal/profile",
+  "/portal/privacy",
+]
 
 /** Pure routing decision — the DB reads live in resolveOnboardingRedirect. */
 export function decideOnboardingRedirect(input: {
