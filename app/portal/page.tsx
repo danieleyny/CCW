@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2, Compass } from "lucide-react"
+import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase, getTrainingState } from "@/lib/portal"
 import {
@@ -101,6 +102,8 @@ export default async function PortalHome() {
         </h1>
         <p className="mt-1 text-sm text-text-mid">{t.portal.tagline}</p>
       </div>
+
+      <SponsorBanner caseId={myCase.id} />
 
       {/* CONCIERGE QA Phase 2 — chose Full Concierge, hasn't paid: a warm,
           recoverable card, ABOVE the fold, instead of the silent self-guided

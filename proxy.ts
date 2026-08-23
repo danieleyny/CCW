@@ -55,7 +55,11 @@ export async function proxy(request: NextRequest) {
     // The instructor APP surface (singular) — NOT the public "/instructors"
     // marketing directory (plural), which must stay reachable signed-out.
     path === "/instructor" ||
-    path.startsWith("/instructor/")
+    path.startsWith("/instructor/") ||
+    // The (unlisted) sponsor surface. /invite/[token] stays UNGATED — it's a
+    // public capability link that carries the sign-in prompt itself.
+    path === "/sponsor" ||
+    path.startsWith("/sponsor/")
 
   if (!user && isGated) {
     const url = request.nextUrl.clone()

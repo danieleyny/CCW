@@ -134,6 +134,15 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     if (t && !byType.has(t)) byType.set(t, row.req_code)
   }
 
+  // FIREWALL (reverse direction): sponsor-owned rows (party='sponsor', the company
+  // packet) are 'progress' to the applicant — row + status, NEVER the file. Their
+  // documents are uploaded by the sponsor; the applicant's payload must carry NO
+  // file_path, NO signed URL, NO filename for them. We skip signing and surfacing
+  // those docs entirely below.
+  const sponsorReqCodes = new Set(
+    reqRows.filter((r) => r.requirement?.party === "sponsor").map((r) => r.req_code)
+  )
+
   const generated: Record<string, GeneratedDoc> = {}
   const filesByReq: Record<string, LibraryFile[]> = {}
   // The latest UPLOADED (non-generated) doc per req_code — what the inline upload
@@ -146,6 +155,11 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   const urlByDocId = new Map<string, string | null>()
 
   for (const d of docs ?? []) {
+    // Sponsor packet documents never reach the applicant's payload — not even a
+    // signed URL is minted for them.
+    const dReqCode = d.req_code ?? byType.get(d.type) ?? null
+    if (dReqCode && sponsorReqCodes.has(dReqCode)) continue
+
     let url: string | null = null
     if (d.file_path) {
       // 5 minutes, not an hour. A signed URL is a bearer token for a document
@@ -196,6 +210,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   // again. Only for real (non-generated) uploads bound to another requirement.
   const docById = new Map((docs ?? []).map((d) => [d.id, d]))
   for (const row of reqRows) {
+    if (sponsorReqCodes.has(row.req_code)) continue // firewall: never surface a sponsor file
     if (currentByReq[row.req_code]) continue
     if (!row.document_id) continue
     const d = docById.get(row.document_id)
@@ -306,6 +321,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     // here why we aren't asking for it.
     legalStatus: row.requirement?.legal_status ?? "enforced",
     legalCitation: row.requirement?.legal_citation ?? null,
+    sponsorManaged: row.requirement?.party === "sponsor",
     }
   })
 

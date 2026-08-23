@@ -9,6 +9,8 @@ export default async function DashboardPage() {
       ? "/portal"
       : profile.role === "instructor"
         ? "/instructor"
-        : "/admin"
+        : profile.role === "sponsor"
+          ? "/sponsor"
+          : "/admin"
   )
 }

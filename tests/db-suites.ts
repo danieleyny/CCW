@@ -27,5 +27,7 @@ export const DB_TEST_FILES = [
   "tests/rls/instructor-public-directory.test.ts",
   "tests/rls/matrix.test.ts",
   "tests/rls/signup-role.test.ts",
+  "tests/sponsor-intake.test.ts",
+  "tests/rls/sponsor-scope.test.ts",
   "tests/rls/trainer-scope.test.ts",
 ]

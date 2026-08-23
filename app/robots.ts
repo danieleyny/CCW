@@ -15,6 +15,11 @@ const PRIVATE = [
   "/style-guide",
   "/c/",
   "/r/",
+  // The unlisted two-party sponsor surfaces — render a real applicant's name to
+  // anyone holding the link, and exist as a product decision about discoverability,
+  // never as authorization. Never crawled or indexed.
+  "/sponsor",
+  "/invite/",
 ]
 
 /**
