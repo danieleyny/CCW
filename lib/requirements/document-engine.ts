@@ -312,7 +312,16 @@ export async function renderCompanionDocument(input: RenderInput): Promise<Rende
  */
 export async function storeGeneratedDocument(
   admin: DB,
-  args: { caseId: string; clientId: string; reqCode: string; doc: RenderedDocument; signedAt?: Date }
+  args: {
+    caseId: string
+    clientId: string
+    reqCode: string
+    doc: RenderedDocument
+    signedAt?: Date
+    /** Traceability: which official template + hash produced this document. */
+    templateKey?: string
+    templateSha256?: string
+  }
 ): Promise<string> {
   const { caseId, clientId, reqCode, doc, signedAt } = args
 
@@ -327,6 +336,8 @@ export async function storeGeneratedDocument(
       req_code: reqCode,
       generated: true,
       signed_at: signedAt?.toISOString() ?? null,
+      template_key: args.templateKey ?? null,
+      template_sha256: args.templateSha256 ?? null,
     })
     .select("id")
     .single()

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import { authorizeCaseActor } from "@/lib/case-actor"
+import { fillTemplate, signTemplate } from "@/lib/forms/fill"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
@@ -83,7 +84,13 @@ export async function saveRequirementAnswers(
  *    copy (staff review / recompute) can satisfy it. Generation must never slip a
  *    notarized item past the CP-5 gate.
  */
-export async function generateRequirementDocument(reqCode: string, caseId?: string): Promise<Result> {
+export async function generateRequirementDocument(
+  reqCode: string,
+  caseId?: string,
+  /** Transient values (e.g. SSN) filled into the PDF but NEVER persisted — see the
+   *  SSN decision. Merged at fill time only. */
+  ephemeral?: Record<string, unknown>
+): Promise<Result> {
   const actor = await authorizeCaseActor(caseId)
   if (!actor) return { error: "No case found" }
 
@@ -113,18 +120,37 @@ export async function generateRequirementDocument(reqCode: string, caseId?: stri
     // performs on specific bytes — never something a sponsor (or a reused stamp)
     // can do. This is the draft/adopt line: anyone with write access may DRAFT;
     // only the applicant ADOPTS by signing.
-    const doc = await renderRequirementDocument({
-      reqCode,
-      applicantName: actor.clientName,
-      answers,
-      caseRef: actor.caseId.slice(0, 8),
-    })
-    documentId = await storeGeneratedDocument(admin, {
-      caseId: actor.caseId,
-      clientId: actor.clientId,
-      reqCode,
-      doc,
-    })
+    if (action.mode === "generate" && action.templateKey) {
+      // COMPLETE: fill the REAL official PDF (never a facsimile). The transient
+      // SSN is merged here at fill time and never saved.
+      const filled = await fillTemplate(action.templateKey, { ...answers, ...(ephemeral ?? {}) })
+      documentId = await storeGeneratedDocument(admin, {
+        caseId: actor.caseId,
+        clientId: actor.clientId,
+        reqCode,
+        doc: {
+          bytes: filled.bytes,
+          fileName: `${action.templateKey}.pdf`,
+          documentType: action.documentType as never,
+          label: filled.template.officialTitle,
+        },
+        templateKey: action.templateKey,
+        templateSha256: filled.sha256,
+      })
+    } else {
+      const doc = await renderRequirementDocument({
+        reqCode,
+        applicantName: actor.clientName,
+        answers,
+        caseRef: actor.caseId.slice(0, 8),
+      })
+      documentId = await storeGeneratedDocument(admin, {
+        caseId: actor.caseId,
+        clientId: actor.clientId,
+        reqCode,
+        doc,
+      })
+    }
 
     if (signable) {
       // Unsigned draft — bind it so the applicant can find it, but push the
@@ -360,21 +386,33 @@ export async function signRequirementDocument(
   if (draft.signed_at) return { error: "This document is already signed. Regenerate it if you need to change something." }
 
   const signedAt = new Date()
+  const admin = createAdminClient()
   try {
-    const doc = await renderRequirementDocument({
-      reqCode,
-      applicantName: myCase.client.full_name,
-      answers: (saved?.answers ?? {}) as Record<string, unknown>,
-      signaturePng,
-      signedAt,
-      caseRef: myCase.id.slice(0, 8),
-    })
+    let signedBytes: Uint8Array
+    if (action.mode === "generate" && action.templateKey) {
+      // Adopt onto the REAL official PDF: overlay the applicant's signature on the
+      // form's own signature field. Operates on the stored draft bytes so the
+      // transient SSN already rendered into the draft isn't recollected.
+      const { data: blob } = await admin.storage.from("documents").download(draft.file_path)
+      if (!blob) return { error: "Couldn't open the draft to sign." }
+      const filled = await signTemplate(new Uint8Array(await blob.arrayBuffer()), action.templateKey, signaturePng, signedAt)
+      signedBytes = filled.bytes
+    } else {
+      const doc = await renderRequirementDocument({
+        reqCode,
+        applicantName: myCase.client.full_name,
+        answers: (saved?.answers ?? {}) as Record<string, unknown>,
+        signaturePng,
+        signedAt,
+        caseRef: myCase.id.slice(0, 8),
+      })
+      signedBytes = doc.bytes
+    }
 
-    const admin = createAdminClient()
     await markGeneratedDocumentSigned(admin, {
       documentId: draft.id,
       filePath: draft.file_path,
-      bytes: doc.bytes,
+      bytes: signedBytes,
       signedAt,
     })
 
@@ -386,7 +424,7 @@ export async function signRequirementDocument(
       signerKey: "applicant",
       documentId: draft.id,
       reqCode,
-      bytes: doc.bytes,
+      bytes: signedBytes,
       ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
       userAgent: h.get("user-agent"),
     })

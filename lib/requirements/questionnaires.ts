@@ -46,6 +46,11 @@ export interface Field {
   /** For `yesno`: when answered yes, these follow-up fields become required. */
   revealOnYes?: Field[]
   /**
+   * Collected only to fill a form and NEVER persisted (the SSN). The dialog keeps
+   * it out of the saved answers and passes it transiently to generation.
+   */
+  ephemeral?: boolean
+  /**
    * For `yesno`: a "yes" here is a federal per-se firearms prohibitor, so we do
    * NOT let the applicant self-prepare a document around it — generation is
    * blocked and this message routes them to a NY firearms attorney. States a
@@ -402,6 +407,115 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
       { name: "agency", label: "Which police agency?", type: "text", required: true },
       { name: "outcome", label: "What was the outcome?", type: "text", required: true, placeholder: "No charges filed" },
       { name: "explanation", label: "Explain the circumstances", type: "textarea", required: true, maxLength: 4000 },
+    ],
+  },
+
+  // ── Template-backed (Phase 3) — we FILL the official PDF from these answers ──
+  "child-support-cert": {
+    id: "child-support-cert",
+    title: "Child support certification",
+    intro:
+      "We fill the official NYPD/HRA certification (Form M-522) for you. Most of this is carried over from your intake — just pick the declaration that applies to you. Your Social Security number is used only to fill the form and is never stored.",
+    submitLabel: "Fill my form",
+    prefill: (ctx) => {
+      const parts = (ctx.clientName ?? "").trim().split(/\s+/)
+      return {
+        firstName: parts[0] ?? "",
+        lastName: parts.length > 1 ? parts[parts.length - 1] : "",
+        street: ctx.intake.legalStreet ?? "",
+        apt: ctx.intake.legalApt ?? "",
+        city: ctx.intake.legalCity ?? "",
+        state: ctx.intake.legalState ?? "NY",
+        empName: ctx.intake.businessName ?? "",
+        empStreet: ctx.intake.businessStreet ?? "",
+        empCity: ctx.intake.businessCity ?? "",
+        empState: ctx.intake.businessState ?? "",
+        empZip: ctx.intake.businessZip ?? "",
+      }
+    },
+    fields: [
+      { name: "firstName", label: "First name", type: "text", required: true },
+      { name: "lastName", label: "Last name", type: "text", required: true },
+      {
+        name: "ssn",
+        label: "Social Security number or ITIN",
+        type: "text",
+        required: true,
+        ephemeral: true,
+        help: "Used only to fill this form — never saved. You'll see it on the generated PDF; write it in by hand instead if you prefer to leave it blank.",
+      },
+      { name: "street", label: "Street address", type: "text", required: true },
+      { name: "apt", label: "Apt #", type: "text" },
+      { name: "city", label: "City", type: "text", required: true },
+      { name: "state", label: "State", type: "text", required: true },
+      { name: "zip", label: "ZIP", type: "text", required: true },
+      { name: "empName", label: "Employer name", type: "text" },
+      { name: "empStreet", label: "Employer street", type: "text" },
+      { name: "empCity", label: "Employer city", type: "text" },
+      { name: "empState", label: "Employer state", type: "text" },
+      { name: "empZip", label: "Employer ZIP", type: "text" },
+      {
+        name: "obligated",
+        label: "Are you under a court or administrative order to pay child support?",
+        type: "yesno",
+        revealOnYes: [
+          { name: "acctNumbers", label: "Your child support account number(s)", type: "text" },
+          {
+            name: "obligBranch",
+            label: "Which is true?",
+            type: "select",
+            required: true,
+            options: [
+              { value: "a", label: "I have no arrears of four or more months" },
+              { value: "b", label: "I have 4+ months arrears, but a payment plan / pending case / public assistance applies" },
+              { value: "c", label: "I have 4+ months arrears and none of those apply" },
+            ],
+          },
+          {
+            name: "bCondition",
+            label: "If the middle option: which applies?",
+            type: "select",
+            options: [
+              { value: "income_exec", label: "Paying by income execution or court-approved plan" },
+              { value: "pending", label: "My obligation is the subject of a pending court proceeding" },
+              { value: "public_assist", label: "I receive Public Assistance or SSI" },
+            ],
+          },
+          { name: "caseNumber", label: "My case number is", type: "text" },
+        ],
+      },
+    ],
+  },
+
+  "sole-occupancy-form": {
+    id: "sole-occupancy-form",
+    title: "Sole-occupancy attestation",
+    intro:
+      "You live alone, so the official cohabitant affidavit's solo-resident section applies. We fill it from your details — review and sign. Under penalty of perjury; no notary needed.",
+    submitLabel: "Fill my form",
+    prefill: (ctx) => ({ fullName: ctx.clientName, address: formatLegalAddress(ctx.intake) }),
+    fields: [
+      { name: "fullName", label: "Your full name", type: "text", required: true },
+      { name: "address", label: "Your full address", type: "text", required: true },
+    ],
+  },
+
+  "prelicense-exemption": {
+    id: "prelicense-exemption",
+    title: "Pre-licence exemption (§5-09)",
+    intro:
+      "We fill the official NYPD Request for License Pre-Exemption with your details. Your authorised instructor completes and signs their section, then you upload the signed form.",
+    submitLabel: "Fill my form",
+    prefill: (ctx) => ({
+      fullName: ctx.clientName,
+      address: formatLegalAddress(ctx.intake),
+      dob: ctx.intake.dob ?? "",
+    }),
+    fields: [
+      { name: "fullName", label: "Your full name", type: "text", required: true },
+      { name: "address", label: "Your full address", type: "text", required: true },
+      { name: "dob", label: "Date of birth", type: "date", required: true },
+      { name: "age", label: "Age", type: "text" },
     ],
   },
 }

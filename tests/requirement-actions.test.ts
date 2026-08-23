@@ -59,7 +59,9 @@ describe("requirement → action map", () => {
    */
   it("no generated document files itself as a Government photo ID", async () => {
     const generated = Object.entries(REQUIREMENT_ACTIONS)
-      .filter(([, a]) => a.mode === "generate")
+      // Template-backed generate items fill an official PDF (lib/forms/fill), not
+      // renderRequirementDocument — they're covered by tests/form-fill.test.ts.
+      .filter(([, a]) => a.mode === "generate" && !a.templateKey)
       .map(([code]) => code)
       // These route through the token outreach flows, not renderRequirementDocument.
       .filter((c) => !["COH-01", "REF-01", "REF-02"].includes(c))

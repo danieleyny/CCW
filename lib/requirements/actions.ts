@@ -88,6 +88,12 @@ interface GenerateAction extends ActionBase {
   mode: "generate"
   /** The questionnaire schema id (lib/requirements/questionnaires). */
   questionnaireId: string
+  /**
+   * Present ⇒ this requirement is COMPLETED by filling an official PDF we hold
+   * (lib/forms/templates), not by rendering our own layout. Its presence is what
+   * switches the card from OBTAIN ("go get this") to COMPLETE ("fill it here").
+   */
+  templateKey?: string
   /** A document we prepare that HELPS obtain the external one (court request letter). */
   companion?: { questionnaireId: string; label: string }
   /**
@@ -234,6 +240,16 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "cohabitant_affidavit",
     notarize: true,
     help: "Every household member 18 or older signs a short affidavit acknowledging a licensed firearm in the home, and has it notarized. We send each of them a private link — nothing for you to chase by hand. If you live alone, we prepare a sole-occupancy statement for you to sign instead.",
+  },
+  "COH-02": {
+    mode: "generate",
+    templateKey: "nypd_cohabitant_affidavit",
+    questionnaireId: "sole-occupancy-form",
+    documentType: "cohabitant_affidavit",
+    signable: true,
+    actionLabel: "Complete this form",
+    customerTitle: "Your sole-occupancy attestation",
+    help: "You live alone, so the official NYPD cohabitant affidavit's solo-resident section applies. We fill it from your details for you to review and sign — under penalty of perjury, no notary needed.",
   },
   "REF-01": {
     conciergeScope: "progress",
@@ -575,24 +591,24 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     sourceLabel: "NYS DOS — armed guard",
   },
   "CSC-01": {
-    mode: "obtain",
+    mode: "generate",
+    templateKey: "nypd_child_support_cert",
+    questionnaireId: "child-support-cert",
     documentType: "child_support_cert",
-    actionLabel: "Upload the form",
-    customerTitle: "Your child support certification form",
-    help: "The child support certification form filed with the application.",
-    steps: ["Complete the child support certification form.", "Upload it here."],
-    sourceUrl: NYPD_REQUIRED_DOCS,
-    sourceLabel: "NYPD required documents",
+    signable: true,
+    actionLabel: "Complete this form",
+    customerTitle: "Your child support certification",
+    help: "We fill the official NYPD/HRA child-support certification (Form M-522) from your details — you pick the declaration that applies and sign it. Your Social Security number is used only to fill the form and is never stored.",
   },
   "PLE-01": {
-    mode: "obtain",
+    mode: "generate",
+    templateKey: "nypd_prelicense_exemption",
+    questionnaireId: "prelicense-exemption",
     documentType: "prelicense_exemption",
-    actionLabel: "Upload the statement",
-    customerTitle: "Your pre-licence exemption statement (instructor-signed)",
-    help: "An authorised instructor's signed statement supporting the 38 RCNY §5-09 pre-licence exemption, so you can take the 47-hour course before the licence issues. Only needed if you don't already hold a pistol licence.",
-    steps: ["Ask your authorised instructor for the signed §5-09 pre-licence exemption statement.", "Upload it here."],
-    sourceUrl: "https://licensing.nypdonline.org/",
-    sourceLabel: "NYPD License Division",
+    notarize: true, // generate the pre-filled official form; the AUTHORISED INSTRUCTOR signs it, then upload
+    actionLabel: "Complete this form",
+    customerTitle: "Your pre-licence exemption request (§5-09)",
+    help: "We fill the official NYPD Request for License Pre-Exemption with your details. Your authorised instructor completes and signs their section — then upload the signed form. Only needed if you don't already hold a pistol licence.",
   },
   "SCG-01": {
     mode: "obtain",

@@ -144,12 +144,26 @@ export function QuestionnaireDialog({
       }
       setBlockMsg(null)
 
-      const saved = await saveRequirementAnswers(reqCode, values, caseId)
+      // Ephemeral fields (e.g. SSN) are filled into the PDF but NEVER saved: split
+      // them out of the persisted answers and pass them transiently to generation.
+      const ephemeralNames = new Set<string>()
+      for (const f of questionnaire.fields ?? []) {
+        if (f.ephemeral) ephemeralNames.add(f.name)
+        for (const sub of f.revealOnYes ?? []) if (sub.ephemeral) ephemeralNames.add(sub.name)
+      }
+      const persisted: Values = {}
+      const ephemeral: Values = {}
+      for (const [k, v] of Object.entries(values)) {
+        if (ephemeralNames.has(k)) ephemeral[k] = v
+        else persisted[k] = v
+      }
+
+      const saved = await saveRequirementAnswers(reqCode, persisted, caseId)
       if (saved.error) {
         toast.error(saved.error)
         return
       }
-      const gen = await generateRequirementDocument(reqCode, caseId)
+      const gen = await generateRequirementDocument(reqCode, caseId, ephemeral)
       if (gen.error) {
         toast.error(gen.error)
         return
