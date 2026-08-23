@@ -4,13 +4,17 @@ import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import { authorizeCaseActor } from "@/lib/case-actor"
 import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
+import { formTemplate } from "@/lib/forms/templates"
+import { resolveFacts } from "@/lib/facts/resolve"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
 import { getMyCase } from "@/lib/portal"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
-import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
+import { questionnaireFor, type Field } from "@/lib/requirements/questionnaires"
+import { factDef } from "@/lib/facts/registry"
+import { setCaseSsn, getCaseSsn, ssnConfigured } from "@/lib/facts/ssn"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { toUserFacingError } from "@/lib/schema-health"
 import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
@@ -28,7 +32,7 @@ import {
 } from "@/lib/requirements/document-engine"
 import { headers } from "next/headers"
 
-type Result = { error?: string; ok?: boolean; documentId?: string; needsSignature?: boolean }
+type Result = { error?: string; ok?: boolean; documentId?: string; needsSignature?: boolean; incomplete?: string[] }
 
 export interface RosterResult extends Result {
   /** Human-readable summary of what the submission actually did. */
@@ -65,8 +69,41 @@ export async function saveRequirementAnswers(
     )
   if (error) return { error: error.message }
 
+  // Propagate fact-backed fields to case_facts — entered once, reused everywhere.
+  // Derived facts are read-only; the SSN is handled at fill time (encrypted store).
+  await propagateFacts(actor, reqCode, answers)
+
   revalidatePath("/portal/checklist")
   return { ok: true }
+}
+
+/** Write a questionnaire's fact-backed answers to the shared case_facts. */
+async function propagateFacts(
+  actor: { caseId: string; profileId: string; actor: string },
+  reqCode: string,
+  answers: Record<string, unknown>
+) {
+  const act = actionFor(reqCode)
+  const qid = act && (act.mode === "generate" || act.mode === "roster") ? act.questionnaireId : null
+  const q = qid ? questionnaireFor(qid) : null
+  if (!q) return
+  const rows: { case_id: string; key: string; value: string; sensitive: boolean; source: string; updated_by: string; override_req_code: string }[] = []
+  const collect = (fields?: Field[]) => {
+    for (const f of fields ?? []) {
+      if (!f.fact || f.fact === "applicant.ssn") continue
+      const def = factDef(f.fact)
+      if (!def || def.derive) continue // derived facts are read-only
+      if (!(f.name in answers)) continue
+      const v = answers[f.name]
+      if (v == null || v === "") continue
+      rows.push({ case_id: actor.caseId, key: f.fact, value: String(v), sensitive: !!def.sensitive, source: actor.actor, updated_by: actor.profileId, override_req_code: "" })
+    }
+  }
+  collect(q.fields)
+  for (const g of q.groups ?? []) collect(g.fields)
+  if (rows.length) {
+    await createAdminClient().from("case_facts").upsert(rows, { onConflict: "case_id,key,override_req_code" })
+  }
 }
 
 /**
@@ -115,6 +152,7 @@ export async function generateRequirementDocument(
   const answers = (saved?.answers ?? {}) as Record<string, unknown>
 
   let documentId: string
+  let incompleteFields: string[] = []
   try {
     // No signedAt ⇒ the renderer produces the DRAFT rendering. A signature image
     // on file is deliberately NOT applied here: signing is an act the APPLICANT
@@ -122,9 +160,26 @@ export async function generateRequirementDocument(
     // can do. This is the draft/adopt line: anyone with write access may DRAFT;
     // only the applicant ADOPTS by signing.
     if (action.mode === "generate" && action.templateKey) {
-      // COMPLETE: fill the REAL official PDF (never a facsimile). The transient
-      // SSN is merged here at fill time and never saved.
-      const filled = await fillTemplate(action.templateKey, { ...answers, ...(ephemeral ?? {}) })
+      // COMPLETE: fill the REAL official PDF (never a facsimile).
+      // SSN: only an APPLICANT-triggered fill ever handles it. Provided ⇒ stored
+      // encrypted (case_ssn) and used; not provided ⇒ fetched from the encrypted
+      // store (logged). A SPONSOR fill never sets or reads the SSN.
+      let fillValues: Record<string, unknown> = { ...answers }
+      if (actor.actor === "client") {
+        const { ssn: providedSsn, ...restEphemeral } = ephemeral ?? {}
+        fillValues = { ...fillValues, ...restEphemeral }
+        if (formTemplate(action.templateKey)?.ephemeral?.includes("ssn")) {
+          const provided = providedSsn != null ? String(providedSsn).trim() : ""
+          if (provided) {
+            await setCaseSsn(admin, actor.caseId, provided, actor.profileId)
+            fillValues.ssn = provided
+          } else if (ssnConfigured()) {
+            fillValues.ssn = (await getCaseSsn(admin, actor.caseId, `fill ${reqCode}`)) ?? ""
+          }
+        }
+      }
+      const filled = await fillTemplate(action.templateKey, fillValues)
+      incompleteFields = filled.missingRequired
       // Phase 4 — fill failures are LOUD. A field that didn't land is a mapping
       // bug: fail fast off-prod; in prod, complete the fill but flag it for review
       // and raise a task so a partially-filled government form never presents as done.
@@ -157,6 +212,14 @@ export async function generateRequirementDocument(
           status: "open",
         })
       }
+      // Completeness gate — a required value is empty. The doc is NOT ready to
+      // sign; record which values are outstanding so the applicant is told exactly.
+      if (incompleteFields.length) {
+        await admin
+          .from("documents")
+          .update({ review_notes: `Not ready to sign — still needs: ${incompleteFields.join(", ")}.` })
+          .eq("id", documentId)
+      }
       // Fill summary to the activity trail — answers "was this form complete when
       // he signed it?" months later.
       await logActivity({
@@ -164,7 +227,7 @@ export async function generateRequirementDocument(
         caseId: actor.caseId,
         entity: "document",
         entityId: documentId,
-        detail: { templateKey: action.templateKey, sha256: filled.sha256, ...filled.summary, missing: filled.missing },
+        detail: { templateKey: action.templateKey, sha256: filled.sha256, ...filled.summary, missing: filled.missing, missingRequired: incompleteFields },
       })
     } else {
       const doc = await renderRequirementDocument({
@@ -231,7 +294,8 @@ export async function generateRequirementDocument(
   })
   revalidatePath("/portal/checklist")
   revalidatePath("/portal/documents")
-  return { ok: true, documentId, needsSignature: signable }
+  // Never route to signing an incomplete form — the caller shows what's missing.
+  return { ok: true, documentId, needsSignature: signable && incompleteFields.length === 0, incomplete: incompleteFields.length ? incompleteFields : undefined }
 }
 
 /**
@@ -713,13 +777,8 @@ export async function prepareInvestigationForms(
   if (!actor) return { error: "No case found" }
 
   const admin = createAdminClient()
-  const { data: intake } = await admin
-    .from("intake_sessions")
-    .select("answers")
-    .eq("case_id", actor.caseId)
-    .maybeSingle()
-  const a = (intake?.answers ?? {}) as WizardAnswers
-  const vals = { fullName: actor.clientName, address: formatLegalAddress(a), dob: a.dob ?? "" }
+  const f = await resolveFacts(admin, actor.caseId)
+  const vals = { fullName: f["applicant.fullName"] || actor.clientName, address: f["applicant.fullAddress"], dob: f["applicant.dob"] }
 
   // The employment form is fillable; the HIPAA release is encrypted (no fields for
   // pdf-lib) so we hand over the blank official PDF to complete by hand.

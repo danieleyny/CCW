@@ -12,6 +12,7 @@ import type { Database } from "@/lib/supabase/types"
 import { runIntakeSystemChecks } from "@/lib/requirements/system-checks"
 import { materializeCaseRequirements, materializeSponsorPacket } from "@/lib/requirements/materialize"
 import { resolveArmedTrack, type ArmedTrackResult } from "@/lib/requirements/track"
+import { backfillCaseFacts } from "@/lib/facts/resolve"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
 
 type DB = SupabaseClient<Database>
@@ -200,6 +201,11 @@ export async function processIntake(
       .eq("case_id", caseId)
       .eq("req_code", reqCode)
   }
+
+  // Seed the canonical fact layer from the interview record (idempotent). Facts
+  // resolve from intake as a fallback anyway, but backfilling gives them a home
+  // so the "Your details" screen and propagation work from the start.
+  await backfillCaseFacts(admin, caseId)
 
   // ── System-verified controls ──────────────────────────────────────────────
   // The eligibility items were already answered here — asking the applicant to

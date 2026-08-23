@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ConciergeBell,
   FolderOpen,
+  IdCard,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -37,6 +38,7 @@ type MoreItem = Item & { status: string; conditional?: boolean }
 /** Everything else — reachable in ≤2 taps via the More sheet. We don't hide the
  *  map; stage-gated destinations render muted but stay tappable. */
 const MORE: MoreItem[] = [
+  { href: "/portal/details", label: "Your details", icon: IdCard, status: "Entered once, reused on every form" },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle, status: "Your case team & instructor" },
   { href: "/portal/forms", label: "Prepared forms", icon: FileText, status: "Documents we filled out for you" },
   { href: "/portal/payments", label: "Payments", icon: CreditCard, status: "Invoices & receipts" },
@@ -66,6 +68,7 @@ const PRIMARY_CONCIERGE: Item[] = [
   { href: "/portal/forms", label: "Forms", icon: FileText },
 ]
 const MORE_CONCIERGE: MoreItem[] = [
+  { href: "/portal/details", label: "Your details", icon: IdCard, status: "Entered once, reused on every form" },
   { href: "/portal/payments", label: "Payments", icon: CreditCard, status: "Invoices & receipts" },
   { href: "/portal/license", label: "Your license", icon: BadgeCheck, status: "Available after issuance", conditional: true },
   { href: "/portal/appeal", label: "Appeal", icon: Scale, status: "Only if your application is denied", conditional: true },

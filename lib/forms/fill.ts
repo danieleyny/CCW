@@ -47,6 +47,8 @@ export interface FilledDocument {
   template: FormTemplate
   /** Field names build() produced that DON'T exist on the PDF — a mapping error. */
   missing: string[]
+  /** Declared-required fields that came out empty — the form is NOT complete. */
+  missingRequired: string[]
   /** Fill summary for the activity trail. */
   summary: { textAttempted: number; textApplied: number; checksAttempted: number; checksApplied: number }
 }
@@ -101,8 +103,14 @@ export async function fillTemplate(key: string, values: Record<string, unknown>)
     }
   }
 
+  // Completeness: which declared-required fields ended up empty?
+  const missingRequired = (t.requires ?? []).filter((r) => {
+    const v = filled.text?.[r]
+    return v == null || v === ""
+  })
+
   const out = await pdf.save()
-  return { bytes: out, sha256, template: t, missing, summary: { textAttempted, textApplied, checksAttempted, checksApplied } }
+  return { bytes: out, sha256, template: t, missing, missingRequired, summary: { textAttempted, textApplied, checksAttempted, checksApplied } }
 }
 
 /**
@@ -182,5 +190,5 @@ export async function signTemplate(
   }
   const { sha256 } = templateBytes(t)
   const out = await pdf.save()
-  return { bytes: out, sha256, template: t, missing: [], summary: { textAttempted: 0, textApplied: 0, checksAttempted: 0, checksApplied: 0 } }
+  return { bytes: out, sha256, template: t, missing: [], missingRequired: [], summary: { textAttempted: 0, textApplied: 0, checksAttempted: 0, checksApplied: 0 } }
 }
