@@ -15,6 +15,7 @@ import { SponsorUploader } from "@/components/sponsor/sponsor-uploader"
 import { CustodianForm } from "@/components/sponsor/custodian-form"
 import { OpenDocumentButton } from "@/components/sponsor/open-document-button"
 import { SponsorApplicantFile, type SponsorFileRow } from "@/components/sponsor/sponsor-applicant-file"
+import { PrepareCompanyFormButton } from "@/components/sponsor/prepare-company-form-button"
 
 export const metadata = { title: "Sponsored file", robots: { index: false, follow: false } }
 
@@ -129,12 +130,15 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                     )}
                   </div>
                   {r.req_code === "SPN-05" ? null : (
-                    <SponsorUploader
-                      caseId={caseId}
-                      reqCode={r.req_code}
-                      satisfied={satisfied}
-                      fileName={doc?.file_name ?? null}
-                    />
+                    <div className="flex shrink-0 items-center gap-2">
+                      {r.req_code === "SPN-01" && <PrepareCompanyFormButton caseId={caseId} />}
+                      <SponsorUploader
+                        caseId={caseId}
+                        reqCode={r.req_code}
+                        satisfied={satisfied}
+                        fileName={doc?.file_name ?? null}
+                      />
+                    </div>
                   )}
                 </div>
                 {r.req_code === "SPN-05" && (

@@ -5441,6 +5441,8 @@ export type Database = {
         | "firearms_course_cert"
         | "child_support_cert"
         | "county_pistol_license"
+        | "employment_authorization"
+        | "hipaa_release"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -5733,6 +5735,8 @@ export const Constants = {
         "firearms_course_cert",
         "child_support_cert",
         "county_pistol_license",
+        "employment_authorization",
+        "hipaa_release",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

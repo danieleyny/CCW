@@ -54,6 +54,33 @@ describe("fillTemplate — official NYPD/HRA forms", () => {
     expect(form.getTextField("My case number is").getText()).toBe("CASE-9")
   })
 
+  it("company form: pre-fills applicant identity + company licence/custodian", async () => {
+    const { bytes } = await fillTemplate("nypd_company_application", {
+      applicantName: "Chery Gimps",
+      applicantAddress: "742 Evergreen Terrace, Brooklyn, NY",
+      dob: "1990-01-01",
+      companyName: "ISS Action, Inc.",
+      wgpLicenseNumber: "WGP-12345",
+      custodian: "Pat Custodian",
+    })
+    const form = (await PDFDocument.load(bytes)).getForm()
+    expect(form.getTextField("Name of Applicant Last Name First Name MI").getText()).toBe("Chery Gimps")
+    expect(form.getTextField("Name of Company Seeking Permit for Applicant").getText()).toBe("ISS Action, Inc.")
+    expect(form.getTextField("License Number").getText()).toBe("WGP-12345")
+    expect(form.getTextField("Gun Custodian").getText()).toBe("Pat Custodian")
+  })
+
+  it("employment authorization: fills name/address, SSN left blank when omitted", async () => {
+    const { bytes } = await fillTemplate("nypd_employment_authorization", {
+      fullName: "Chery Gimps",
+      address: "742 Evergreen Terrace, Brooklyn, NY",
+      dob: "1990-01-01",
+    })
+    const form = (await PDFDocument.load(bytes)).getForm()
+    expect(form.getTextField("Name").getText()).toBe("Chery Gimps")
+    expect(form.getTextField("Social Security No").getText() ?? "").toBe("")
+  })
+
   it("solo-occupancy: fills the official cohabitant affidavit's solo section", async () => {
     const { bytes } = await fillTemplate("nypd_cohabitant_affidavit", {
       fullName: "Chery Gimps",

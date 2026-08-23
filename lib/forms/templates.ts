@@ -145,11 +145,25 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/forms-company`,
     isFillable: true,
+    ephemeral: ["ssn"],
+    // Pre-fill everything we hold (applicant identity from the case + company
+    // licence/custodian from the sponsors record). The officer names, business
+    // details, position/duties and the four notarised signature blocks are left
+    // for the company to complete on the real form.
     build: (v) => ({
       text: {
         "Name of Applicant Last Name First Name MI": s(v.applicantName),
+        "Address Street City or Town Slate Zip Code": s(v.applicantAddress),
         "Date of Birth": s(v.dob),
-        "Address Street City or Town Slate Zip Code": s(v.address),
+        "Social Security No": s(v.ssn),
+        "Name of Company Seeking Permit for Applicant": s(v.companyName),
+        "License Type": s(v.wgpLicenseType),
+        "License Number": s(v.wgpLicenseNumber),
+        "License Expiration Date": s(v.wgpExpire),
+        "Gun Custodian": s(v.custodian),
+        "Pistol License No": s(v.custodianLicenseNo),
+        Position: s(v.position),
+        "If License Is Granted What Position Will Applicant Hold": s(v.position),
       },
     }),
   },
