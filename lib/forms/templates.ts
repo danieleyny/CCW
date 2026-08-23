@@ -4,21 +4,20 @@
  * module maps our questionnaire answers onto each form's REAL AcroForm fields.
  * We fill the official document — never a facsimile.
  *
- * `build(v)` returns the fields to set on the real form. The child-support
- * declarations are conditional, which is exactly why the map lives in code and
- * not a flat jsonb column. `ephemeral` names fields collected only to fill the
- * PDF and NEVER persisted (the SSN — see the SSN decision in the build prompt).
+ * The STATIC descriptors (signatureField, dateField, dateSplit, signable,
+ * notarize, fontSize) are plain template properties, NOT returned by build() —
+ * so signing can't accidentally depend on data values. `build(v)` returns only
+ * the data to write. `ephemeral` names fields collected only to fill the PDF and
+ * NEVER persisted (the SSN). `downloadOnly` templates have no build() — we hold
+ * them but do not fill them.
+ *
+ * INVARIANTS (enforced by scripts/verify-form-templates.ts):
+ *  - isFillable true ⇒ the PDF actually exposes AcroForm fields to pdf-lib.
+ *  - every field build() emits (and every declared signature/date field) exists
+ *    on the PDF, across every conditional branch.
+ *  - a template never declares both signable and notarize.
+ *  - no two templates share a file/sha256.
  */
-
-export interface FilledFields {
-  text?: Record<string, string | undefined>
-  checks?: Record<string, boolean>
-  /** AcroForm signature field → where the applicant's adopted signature is drawn. */
-  signatureField?: string
-  /** AcroForm date field(s) filled at signing (MM/DD/YYYY split when present). */
-  dateField?: string
-  dateSplit?: { mm: string; dd: string; yyyy: string }
-}
 
 export interface FormTemplate {
   key: string
@@ -27,21 +26,44 @@ export interface FormTemplate {
   formNumber?: string
   revision?: string
   issuingAuthority: string
+  /** Where we fetched it. Some forms are served at more than one slug (same file). */
   sourceUrl: string
+  sourceUrls?: string[]
   isFillable: boolean
   /** Collected to fill the PDF, never saved to requirement_answers. */
   ephemeral?: string[]
-  /** Present ⇒ this template is a filled-and-signed sworn document (applicant adopts). */
+  /** Filled-and-signed sworn document — the APPLICANT adopts (mutually excl. notarize). */
   signable?: boolean
-  build?: (v: Record<string, unknown>) => FilledFields
+  /** The form's own instructions require a notary — generate filled + UNSIGNED. */
+  notarize?: boolean
+  /** Held only — no build(), not reachable from a "Complete this form" control. */
+  downloadOnly?: boolean
+  /** AcroForm signature field the adopted signature is drawn onto (signable forms). */
+  signatureField?: string
+  /** SIGNING-date field (a single field). Never a data date. */
+  dateField?: string
+  /** SIGNING-date split fields, by NAME (only where the form splits the signing date). */
+  dateSplit?: { mm: string; dd: string; yyyy: string }
+  /** Explicit font size so values match the form's own type and don't clip (M4). */
+  fontSize?: number
+  /** Data to write onto the real fields. Absent ⇒ download-only. */
+  build?: (v: Record<string, unknown>) => { text?: Record<string, string | undefined>; checks?: Record<string, boolean> }
 }
 
 const s = (v: unknown): string => (v == null ? "" : String(v))
+/** Intake stores DOB as YYYY-MM-DD → the three parts, or "" when absent. */
+function dobParts(v: unknown): { mm: string; dd: string; yyyy: string } {
+  const [yyyy = "", mm = "", dd = ""] = s(v).split("-")
+  return { mm, dd, yyyy }
+}
 
 const BASE = "https://licensing.nypdonline.org/additional-forms"
 
 export const FORM_TEMPLATES: Record<string, FormTemplate> = {
   // ── Child Support Certification (HRA M-522) — sworn, NOT notarised ──────────
+  // The MM/DD/YYYY fields on THIS form are the DATE OF BIRTH (top identity block);
+  // the signing date is the bottom `Date` field. build() writes DOB into MM/DD/YYYY;
+  // signing writes only `Date`. They must never share a code path.
   nypd_child_support_cert: {
     key: "nypd_child_support_cert",
     file: "forms-childsupport.pdf",
@@ -51,9 +73,13 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYC HRA",
     sourceUrl: `${BASE}/forms-childsupport`,
     isFillable: true,
-    ephemeral: ["ssn"], // SSN is rendered into the PDF but never persisted as an answer
+    ephemeral: ["ssn"],
     signable: true,
+    signatureField: "Signature",
+    dateField: "Date", // the signing date, bottom of the form
+    fontSize: 9,
     build: (v) => {
+      const dob = dobParts(v.dob)
       const checks: Record<string, boolean> = {}
       const text: Record<string, string | undefined> = {
         "Last name": s(v.lastName),
@@ -64,6 +90,10 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         City: s(v.city),
         State: s(v.state),
         "Zip code": s(v.zip),
+        // Date of birth — application data, into the top MM/DD/YYYY boxes.
+        MM: dob.mm,
+        DD: dob.dd,
+        YYYY: dob.yyyy,
         "Business name": s(v.empName),
         "Street address_2": s(v.empStreet),
         City_2: s(v.empCity),
@@ -92,29 +122,61 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
           ] = true
         }
       }
-      return { text, checks, signatureField: "Signature", dateField: "Date" }
+      return { text, checks }
     },
   },
 
-  // ── Cohabitant Affidavit — solo-resident section (COH-02) ───────────────────
-  // Filled: Text15 (name), Text16 (address); Signature17 + Date18 at signing.
+  // ── Cohabitant Affidavit — SOLO-resident section (COH-02) ───────────────────
   nypd_cohabitant_affidavit: {
     key: "nypd_cohabitant_affidavit",
     file: "forms-cohab.pdf",
-    officialTitle: "Affidavit of Co-Habitant",
+    officialTitle: "Affidavit of Co-Habitant (solo-resident section)",
     revision: "Rev 11/16/2023",
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/forms-cohab`,
     isFillable: true,
-    signable: true,
+    signable: true, // the solo section is signed by the applicant; NOT notarised
+    signatureField: "Signature17",
+    dateField: "Date18_af_date",
+    fontSize: 9,
+    build: (v) => ({ text: { Text15: s(v.fullName), Text16: s(v.address) } }),
+  },
+
+  // ── Cohabitant Affidavit — HOUSEHOLD section, one per adult (COH-01) ─────────
+  // Its own instructions: a SEPARATE notarised affidavit per adult cohabitant.
+  // Generated filled + UNSIGNED; each person signs before a notary (app/c/[token]).
+  nypd_cohabitant_affidavit_household: {
+    key: "nypd_cohabitant_affidavit_household",
+    file: "forms-cohab.pdf",
+    officialTitle: "Affidavit of Co-Habitant (household section)",
+    revision: "Rev 11/16/2023",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/forms-cohab`,
+    isFillable: true,
+    notarize: true, // each cohabitant signs before a notary — never digitally signed
+    fontSize: 9,
+    // Field placement verified against the form's own sentence structure:
+    //   "I, <Text2 name>, <Date19 DOB>, residing at <Text4 address>, do hereby
+    //    affirm that <Text5 applicant> ... My relationship ... is <Text6> ...
+    //    (H)<Text7> (C)<Text8> (W)<Text9>". Signature10 is the cohabitant's (notary).
     build: (v) => ({
-      text: { Text15: s(v.fullName), Text16: s(v.address) },
-      signatureField: "Signature17",
-      dateField: "Date18_af_date",
+      text: {
+        Text2: s(v.name),
+        Date19_af_date: s(v.dob),
+        Text4: s(v.address),
+        Text5: s(v.applicantName),
+        Text6: s(v.relationship),
+        Text7: s(v.phoneHome),
+        Text8: s(v.phoneCell),
+        Text9: s(v.phoneWork),
+      },
     }),
   },
 
-  // ── Request for License Pre-Exemption (38 RCNY §5-09) — instructor signs ────
+  // ── Request for License Pre-Exemption (38 RCNY §5-09) — NOTARISED ───────────
+  // The form states "THIS FORM MUST BE TYPED AND NOTARIZED." Generated filled +
+  // UNSIGNED; the applicant + instructor sign before a notary. The instructor's
+  // section is completed on paper (M1) — we do not present it as finished.
   nypd_prelicense_exemption: {
     key: "nypd_prelicense_exemption",
     file: "request-pre-exemption.pdf",
@@ -122,7 +184,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/request-pre-exemption`,
     isFillable: true,
-    signable: true, // the APPLICANT signs their part; the instructor signs off-platform
+    notarize: true,
+    fontSize: 9,
     build: (v) => ({
       text: {
         "Applicants Name": s(v.fullName),
@@ -131,13 +194,10 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         "Birth Date": s(v.dob),
         "Type of License": "Carry Guard",
       },
-      signatureField: "Applicants Signature",
     }),
   },
 
   // ── Company / Carry Guard application (SPN-01) — sponsor completes ──────────
-  // 71 fields; we pre-fill the applicant identity we know and leave the rest for
-  // the company to complete on the real form.
   nypd_company_application: {
     key: "nypd_company_application",
     file: "forms-company.pdf",
@@ -146,10 +206,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     sourceUrl: `${BASE}/forms-company`,
     isFillable: true,
     ephemeral: ["ssn"],
-    // Pre-fill everything we hold (applicant identity from the case + company
-    // licence/custodian from the sponsors record). The officer names, business
-    // details, position/duties and the four notarised signature blocks are left
-    // for the company to complete on the real form.
+    fontSize: 9,
     build: (v) => ({
       text: {
         "Name of Applicant Last Name First Name MI": s(v.applicantName),
@@ -157,6 +214,9 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         "Date of Birth": s(v.dob),
         "Social Security No": s(v.ssn),
         "Name of Company Seeking Permit for Applicant": s(v.companyName),
+        "Business Address": s(v.businessAddress),
+        "Business Telephone Number": s(v.businessPhone),
+        "Type of Business": s(v.businessType),
         "License Type": s(v.wgpLicenseType),
         "License Number": s(v.wgpLicenseNumber),
         "License Expiration Date": s(v.wgpExpire),
@@ -168,14 +228,19 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     }),
   },
 
-  // ── Investigation-phase forms (Phase 4) — held; pre-prepared on request ─────
-  nypd_employment_authorization: {
-    key: "nypd_employment_authorization",
+  // ── Request for Applicant's Employment Record (investigation, Phase 4) ──────
+  // NYPD serves the SAME file at /forms-auth-rel and /form-req-app-emp-rec — one
+  // template, both URLs. Filled + printed; the applicant signs on paper.
+  nypd_employment_record_request: {
+    key: "nypd_employment_record_request",
     file: "forms-auth-rel.pdf",
-    officialTitle: "Authorization for Employment Release / Request for Employment Record",
+    officialTitle: "Request for Applicant's Employment Record",
     issuingAuthority: "NYPD License Division",
-    sourceUrl: `${BASE}/forms-auth-rel`,
+    sourceUrl: `${BASE}/form-req-app-emp-rec`,
+    sourceUrls: [`${BASE}/form-req-app-emp-rec`, `${BASE}/forms-auth-rel`],
     isFillable: true,
+    ephemeral: ["ssn"],
+    fontSize: 9,
     build: (v) => ({
       text: {
         Name: s(v.fullName),
@@ -184,22 +249,20 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         "Social Security No": s(v.ssn),
       },
     }),
-    ephemeral: ["ssn"],
   },
+
+  // ── HIPAA medical release — ENCRYPTED, no fields for pdf-lib → download only ─
   nypd_hipaa_release: {
     key: "nypd_hipaa_release",
     file: "hippa-med.pdf",
     officialTitle: "H.I.P.P.A. Medical Release",
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/hippa-med`,
-    isFillable: true,
-    build: (v) => ({
-      text: { Name: s(v.fullName), Address: s(v.address), SS: s(v.ssn) },
-    }),
-    ephemeral: ["ssn"],
+    isFillable: false,
+    downloadOnly: true,
   },
 
-  // ── Post-issuance / payment forms — held only (not packet items) ────────────
+  // ── Post-issuance / payment forms — held only (download-only) ────────────────
   nypd_change_address: {
     key: "nypd_change_address",
     file: "change-addr-employ.pdf",
@@ -207,6 +270,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/change-addr-employ`,
     isFillable: false,
+    downloadOnly: true,
   },
   nypd_request_to_sell: {
     key: "nypd_request_to_sell",
@@ -215,6 +279,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/forms-requesttosell`,
     isFillable: true,
+    downloadOnly: true,
   },
   nypd_credit_card_auth: {
     key: "nypd_credit_card_auth",
@@ -223,6 +288,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/credit-card-auth`,
     isFillable: true,
+    downloadOnly: true,
   },
   nypd_purchase_auth: {
     key: "nypd_purchase_auth",
@@ -231,6 +297,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/purchase-auth`,
     isFillable: false,
+    downloadOnly: true,
   },
 }
 

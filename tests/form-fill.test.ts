@@ -6,7 +6,15 @@
  */
 import { describe, expect, it } from "vitest"
 import { PDFDocument } from "pdf-lib"
-import { fillTemplate, templateSha256 } from "@/lib/forms/fill"
+import { fillTemplate, signTemplate, templateSha256 } from "@/lib/forms/fill"
+
+// A minimal valid 1×1 PNG for the signature overlay.
+const PNG = Uint8Array.from(
+  atob(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  ),
+  (c) => c.charCodeAt(0)
+)
 
 describe("fillTemplate — official NYPD/HRA forms", () => {
   it("child support (M-522): fills name/SSN/address and ticks the 'not obligated' declaration", async () => {
@@ -70,8 +78,8 @@ describe("fillTemplate — official NYPD/HRA forms", () => {
     expect(form.getTextField("Gun Custodian").getText()).toBe("Pat Custodian")
   })
 
-  it("employment authorization: fills name/address, SSN left blank when omitted", async () => {
-    const { bytes } = await fillTemplate("nypd_employment_authorization", {
+  it("employment record request: fills name/address, SSN left blank when omitted", async () => {
+    const { bytes } = await fillTemplate("nypd_employment_record_request", {
       fullName: "Chery Gimps",
       address: "742 Evergreen Terrace, Brooklyn, NY",
       dob: "1990-01-01",
@@ -89,5 +97,43 @@ describe("fillTemplate — official NYPD/HRA forms", () => {
     const form = (await PDFDocument.load(bytes)).getForm()
     expect(form.getTextField("Text15").getText()).toBe("Chery Gimps")
     expect(form.getTextField("Text16").getText()).toBe("123 Test St, New York, NY")
+  })
+
+  // ── CRITICAL (Phase 1): signing must NEVER overwrite the date of birth ──────
+  it("M-522: DOB lands in MM/DD/YYYY, and signing fills only the bottom Date", async () => {
+    const draft = await fillTemplate("nypd_child_support_cert", {
+      firstName: "Chery",
+      lastName: "Gimps",
+      dob: "1985-07-15",
+      obligated: "no",
+    })
+    const df = (await PDFDocument.load(draft.bytes)).getForm()
+    expect(df.getTextField("MM").getText()).toBe("07")
+    expect(df.getTextField("DD").getText()).toBe("15")
+    expect(df.getTextField("YYYY").getText()).toBe("1985")
+    expect(df.getTextField("Date").getText() ?? "").toBe("") // no signing date on the draft
+
+    const signed = await signTemplate(draft.bytes, "nypd_child_support_cert", PNG, new Date(2026, 7, 23))
+    const sf = (await PDFDocument.load(signed.bytes)).getForm()
+    // Flattened → a signed sworn document can't be edited, and the DOB boxes were
+    // never touched by the sign step (no blind MM/DD/YYYY loop remains).
+    expect(sf.getFields().length).toBe(0)
+  })
+
+  it("a NOTARISED form is never digitally signed", async () => {
+    await expect(
+      signTemplate(new Uint8Array([1]), "nypd_prelicense_exemption", PNG, new Date())
+    ).rejects.toThrow(/notaris/i)
+  })
+
+  it("a download-only template cannot be filled", async () => {
+    await expect(fillTemplate("nypd_hipaa_release", {})).rejects.toThrow(/download-only/i)
+  })
+
+  it("fillTemplate reports missing fields loudly (no silent swallow)", async () => {
+    // A correct fill has zero missing.
+    const ok = await fillTemplate("nypd_cohabitant_affidavit", { fullName: "A", address: "B" })
+    expect(ok.missing).toEqual([])
+    expect(ok.summary.textApplied).toBe(2)
   })
 })

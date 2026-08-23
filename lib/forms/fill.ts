@@ -10,13 +10,15 @@ import { formTemplate, type FormTemplate } from "./templates"
  * Fill the REAL official PDF. Reads the bundled template (assets/form-templates/,
  * the same readFileSync mechanism the fonts use), applies our values onto its
  * actual AcroForm fields, and returns the bytes + the template's sha256 for
- * traceability. We NEVER regenerate a look-alike — this is the official artifact
- * with our values in it.
+ * traceability. We NEVER regenerate a look-alike.
  *
- * Signing is a SEPARATE step (signTemplate): the filled draft is left editable so
- * the applicant can review it, then their adopted signature is drawn onto the
- * form's real signature field and the whole thing is flattened. Only the applicant
- * ever signs.
+ * HARD RULES (see FORM_ENGINE_FIXES_PROMPT):
+ *  - NEVER write to a field because its name looks like a date. The signing date
+ *    goes ONLY to the template's declared dateField/dateSplit; application data
+ *    (incl. date of birth) is written by build() like any other value.
+ *  - Fill failures are LOUD: fillTemplate reports every attempted field that isn't
+ *    on the form so a partially-filled government form can never present as done.
+ *  - A form its own instructions say must be NOTARISED is never digitally signed.
  */
 function templateBytes(t: FormTemplate): { bytes: Buffer; sha256: string } {
   const bytes = readFileSync(join(process.cwd(), "assets", "form-templates", t.file))
@@ -31,51 +33,83 @@ export function templateSha256(key: string): string | null {
   return templateBytes(t).sha256
 }
 
+/** The raw (blank) official PDF bytes + sha — for a download-only template. */
+export function rawTemplate(key: string): { bytes: Uint8Array; sha256: string; title: string } | null {
+  const t = formTemplate(key)
+  if (!t) return null
+  const { bytes, sha256 } = templateBytes(t)
+  return { bytes, sha256, title: t.officialTitle }
+}
+
 export interface FilledDocument {
   bytes: Uint8Array
   sha256: string
   template: FormTemplate
+  /** Field names build() produced that DON'T exist on the PDF — a mapping error. */
+  missing: string[]
+  /** Fill summary for the activity trail. */
+  summary: { textAttempted: number; textApplied: number; checksAttempted: number; checksApplied: number }
 }
 
-/** Fill a template with values. Signable forms are left UNFLATTENED (the draft),
- *  so signTemplate can find the signature field afterwards. */
+function applyFont(field: { setFontSize: (n: number) => void }, size?: number) {
+  try {
+    field.setFontSize(size ?? 9)
+  } catch {
+    /* some fields resist an explicit size — leave the default */
+  }
+}
+
+/**
+ * Fill a template with values. Left UNFLATTENED: signable forms wait for the
+ * applicant's signature (signTemplate flattens then), and the company/investigation
+ * pre-fills are completed by the recipient. Throws for a download-only template.
+ */
 export async function fillTemplate(key: string, values: Record<string, unknown>): Promise<FilledDocument> {
   const t = formTemplate(key)
   if (!t) throw new Error(`Unknown form template: ${key}`)
+  if (!t.build) throw new Error(`Template ${key} is download-only and cannot be filled`)
   const { bytes, sha256 } = templateBytes(t)
-  const pdf = await PDFDocument.load(bytes)
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true })
   const form = pdf.getForm()
-  const filled = t.build ? t.build(values) : {}
+  const filled = t.build(values)
+  const missing: string[] = []
+  let textAttempted = 0
+  let textApplied = 0
+  let checksAttempted = 0
+  let checksApplied = 0
 
   for (const [name, val] of Object.entries(filled.text ?? {})) {
     if (val == null || val === "") continue
+    textAttempted++
     try {
-      form.getTextField(name).setText(String(val))
+      const tf = form.getTextField(name)
+      applyFont(tf, t.fontSize)
+      tf.setText(String(val))
+      textApplied++
     } catch {
-      /* field absent / not a text field — skip rather than fail the whole fill */
+      missing.push(name)
     }
   }
   for (const [name, on] of Object.entries(filled.checks ?? {})) {
     if (!on) continue
+    checksAttempted++
     try {
       form.getCheckBox(name).check()
+      checksApplied++
     } catch {
-      /* skip */
+      missing.push(name)
     }
   }
 
-  // Deliberately NOT flattened: signable forms wait for the applicant's signature
-  // (signTemplate flattens then), and the company/investigation forms are pre-fills
-  // the recipient COMPLETES on the real form — flattening would remove the fields
-  // they still need to fill. The set values render via pdf-lib's appearances.
   const out = await pdf.save()
-  return { bytes: out, sha256, template: t }
+  return { bytes: out, sha256, template: t, missing, summary: { textAttempted, textApplied, checksAttempted, checksApplied } }
 }
 
 /**
  * The ADOPT step — draw the applicant's signature onto the form's REAL signature
- * field, stamp the date, and flatten. Operates on the already-filled draft bytes
- * so nothing (e.g. a transient SSN already rendered into the draft) is recollected.
+ * field, stamp the SIGNING date (only into the template's declared date fields),
+ * and flatten. Operates on the already-filled draft bytes so application data
+ * (e.g. the date of birth build() wrote) is preserved untouched.
  */
 export async function signTemplate(
   draftBytes: Uint8Array,
@@ -85,45 +119,51 @@ export async function signTemplate(
 ): Promise<FilledDocument> {
   const t = formTemplate(key)
   if (!t) throw new Error(`Unknown form template: ${key}`)
-  const filled = t.build ? t.build({}) : {}
-  const pdf = await PDFDocument.load(draftBytes)
+  if (t.notarize) throw new Error(`Template ${key} must be notarised — it is never digitally signed`)
+  const pdf = await PDFDocument.load(draftBytes, { ignoreEncryption: true })
   const form = pdf.getForm()
 
-  // Date fields — a single "Date" and/or a MM/DD/YYYY split, whichever the form has.
   const mm = String(signedAt.getMonth() + 1).padStart(2, "0")
   const dd = String(signedAt.getDate()).padStart(2, "0")
   const yyyy = String(signedAt.getFullYear())
-  const dateStr = `${mm}/${dd}/${yyyy}`
-  if (filled.dateField) {
+
+  // The SIGNING date — ONLY into fields the template explicitly declares as such.
+  if (t.dateField) {
     try {
-      form.getTextField(filled.dateField).setText(dateStr)
+      const f = form.getTextField(t.dateField)
+      applyFont(f, t.fontSize)
+      f.setText(`${mm}/${dd}/${yyyy}`)
     } catch {
-      /* skip */
+      /* declared but absent — a mapping error the validator catches */
     }
   }
-  for (const [n, val] of [["MM", mm], ["DD", dd], ["YYYY", yyyy]] as const) {
-    try {
-      form.getTextField(n).setText(val)
-    } catch {
-      /* not all forms split the date */
+  if (t.dateSplit) {
+    for (const [name, val] of [
+      [t.dateSplit.mm, mm],
+      [t.dateSplit.dd, dd],
+      [t.dateSplit.yyyy, yyyy],
+    ] as const) {
+      try {
+        const f = form.getTextField(name)
+        applyFont(f, t.fontSize)
+        f.setText(val)
+      } catch {
+        /* absent — validator catches */
+      }
     }
   }
 
-  // Draw the adopted signature onto the real signature field's rectangle.
-  if (filled.signatureField) {
+  if (t.signatureField) {
     try {
-      const field = form.getFields().find((f) => f.getName() === filled.signatureField)
+      const field = form.getFields().find((f) => f.getName() === t.signatureField)
       if (field) {
         const widget = field.acroField.getWidgets()[0]
         const rect = widget.getRectangle()
         const ref = widget.P()
         const page = pdf.getPages().find((p) => p.ref === ref) ?? pdf.getPages()[0]
         const png = await pdf.embedPng(signaturePng)
-        // Fit the signature within the field box, keeping aspect.
         const scale = Math.min(rect.width / png.width, rect.height / png.height, 1)
-        const w = png.width * scale
-        const h = png.height * scale
-        page.drawImage(png, { x: rect.x + 2, y: rect.y + 2, width: w, height: h })
+        page.drawImage(png, { x: rect.x + 2, y: rect.y + 2, width: png.width * scale, height: png.height * scale })
         try {
           form.removeField(field)
         } catch {
@@ -131,7 +171,7 @@ export async function signTemplate(
         }
       }
     } catch {
-      /* signature overlay is best-effort; the filled+dated form still stands */
+      /* signature overlay is best-effort; the filled + dated form still stands */
     }
   }
 
@@ -142,5 +182,5 @@ export async function signTemplate(
   }
   const { sha256 } = templateBytes(t)
   const out = await pdf.save()
-  return { bytes: out, sha256, template: t }
+  return { bytes: out, sha256, template: t, missing: [], summary: { textAttempted: 0, textApplied: 0, checksAttempted: 0, checksApplied: 0 } }
 }

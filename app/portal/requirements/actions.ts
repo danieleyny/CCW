@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import { authorizeCaseActor } from "@/lib/case-actor"
-import { fillTemplate, signTemplate } from "@/lib/forms/fill"
+import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
@@ -125,6 +125,12 @@ export async function generateRequirementDocument(
       // COMPLETE: fill the REAL official PDF (never a facsimile). The transient
       // SSN is merged here at fill time and never saved.
       const filled = await fillTemplate(action.templateKey, { ...answers, ...(ephemeral ?? {}) })
+      // Phase 4 — fill failures are LOUD. A field that didn't land is a mapping
+      // bug: fail fast off-prod; in prod, complete the fill but flag it for review
+      // and raise a task so a partially-filled government form never presents as done.
+      if (filled.missing.length && process.env.NODE_ENV !== "production") {
+        throw new Error(`Fill mapping error on ${action.templateKey}: unresolved fields → ${filled.missing.join(", ")}`)
+      }
       documentId = await storeGeneratedDocument(admin, {
         caseId: actor.caseId,
         clientId: actor.clientId,
@@ -137,6 +143,28 @@ export async function generateRequirementDocument(
         },
         templateKey: action.templateKey,
         templateSha256: filled.sha256,
+      })
+      if (filled.missing.length) {
+        await admin
+          .from("documents")
+          .update({ review_notes: `Auto-fill could not place: ${filled.missing.join(", ")}. Review before use.` })
+          .eq("id", documentId)
+        await admin.from("tasks").insert({
+          case_id: actor.caseId,
+          title: `Form fill incomplete: ${reqCode}`,
+          description: `Fields not placed on ${action.templateKey}: ${filled.missing.join(", ")}. The document is flagged for review.`,
+          priority: 1,
+          status: "open",
+        })
+      }
+      // Fill summary to the activity trail — answers "was this form complete when
+      // he signed it?" months later.
+      await logActivity({
+        action: "form.template_filled",
+        caseId: actor.caseId,
+        entity: "document",
+        entityId: documentId,
+        detail: { templateKey: action.templateKey, sha256: filled.sha256, ...filled.summary, missing: filled.missing },
       })
     } else {
       const doc = await renderRequirementDocument({
@@ -693,9 +721,11 @@ export async function prepareInvestigationForms(
   const a = (intake?.answers ?? {}) as WizardAnswers
   const vals = { fullName: actor.clientName, address: formatLegalAddress(a), dob: a.dob ?? "" }
 
+  // The employment form is fillable; the HIPAA release is encrypted (no fields for
+  // pdf-lib) so we hand over the blank official PDF to complete by hand.
   const specs = [
-    { key: "nypd_employment_authorization", type: "employment_authorization" as const, file: "employment-authorization.pdf", label: "Employment authorization" },
-    { key: "nypd_hipaa_release", type: "hipaa_release" as const, file: "hipaa-medical-release.pdf", label: "HIPAA medical release" },
+    { key: "nypd_employment_record_request", type: "employment_authorization" as const, file: "employment-record-request.pdf", label: "Employment record request", fill: true },
+    { key: "nypd_hipaa_release", type: "hipaa_release" as const, file: "hipaa-medical-release.pdf", label: "HIPAA medical release (blank — complete by hand)", fill: false },
   ]
 
   // Clear any prior copies so re-preparing doesn't pile up duplicates.
@@ -707,12 +737,14 @@ export async function prepareInvestigationForms(
 
   const out: { name: string; url: string }[] = []
   for (const spec of specs) {
-    const filled = await fillTemplate(spec.key, vals) // SSN intentionally omitted → blank on the form
+    // SSN intentionally omitted → blank on the form (write by hand).
+    const doc = spec.fill ? await fillTemplate(spec.key, vals) : rawTemplate(spec.key)
+    if (!doc) continue
     const id = crypto.randomUUID()
     const path = `clients/${actor.clientId}/${id}/${spec.file}`
     const { error: upErr } = await admin.storage
       .from("documents")
-      .upload(path, Buffer.from(filled.bytes), { contentType: "application/pdf", upsert: true })
+      .upload(path, Buffer.from(doc.bytes), { contentType: "application/pdf", upsert: true })
     if (upErr) continue
     await admin.from("documents").insert({
       id,
@@ -724,7 +756,7 @@ export async function prepareInvestigationForms(
       status: "pending",
       generated: true,
       template_key: spec.key,
-      template_sha256: filled.sha256,
+      template_sha256: doc.sha256,
     })
     const { data: signed } = await admin.storage.from("documents").createSignedUrl(path, 300)
     if (signed?.signedUrl) out.push({ name: spec.label, url: signed.signedUrl })
