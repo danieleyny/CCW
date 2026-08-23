@@ -112,6 +112,20 @@ export async function validateFormTemplates(): Promise<ValidatorResult> {
     // A fillable template with a build() and no fixture is untested — flag it.
     if (t.build && !(FIXTURES[t.key]?.length)) errors.push(`${t.key}: has build() but no validator fixture`)
 
+    // Completeness: every `requires` entry must exist on the PDF AND be produced
+    // by build() from a full fixture — a required field with no mapping fails CI.
+    for (const req of t.requires ?? []) {
+      if (!pdfFields.has(req)) errors.push(`${t.key}: requires "${req}" which is not a field on the PDF`)
+    }
+    const full = (FIXTURES[t.key] ?? [])[0]
+    if (t.requires && t.build && full) {
+      const f = t.build(full)
+      for (const req of t.requires) {
+        const v = f.text?.[req]
+        if (v == null || v === "") errors.push(`${t.key}: required field "${req}" is not produced by build() from a full fixture`)
+      }
+    }
+
     rows.push({ key: t.key, pdfFields: pdfFields.size, mapped: emitted.size, missing })
   }
 

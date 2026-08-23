@@ -25,6 +25,7 @@ import { computeFeeSummary, type FeeSummary } from "@/lib/fees"
 import { deriveLadder } from "@/lib/requirements/ladder"
 import { requiredReferences } from "@/lib/intake/schema"
 import { cohabitantState } from "@/lib/cohabitants/process"
+import { resolveFacts } from "@/lib/facts/resolve"
 
 type DB = SupabaseClient<Database>
 
@@ -122,6 +123,9 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   const draftedBySponsor = new Map(
     (savedAnswers ?? []).map((r) => [r.req_code, !!r.drafted_by && r.drafted_by !== ownProfileId])
   )
+  // The canonical fact layer: a fact-backed field prefills from case_facts (one
+  // home, reused everywhere) rather than a per-questionnaire prefill function.
+  const facts = await resolveFacts(db, myCase.id)
   const prefills: Record<string, Record<string, unknown>> = {}
   for (const row of reqRows) {
     const a = actionFor(row.req_code)
@@ -132,7 +136,17 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     if ((a?.mode !== "generate" && a?.mode !== "roster") || !a.questionnaireId) continue
     const q = questionnaireFor(a.questionnaireId)
     if (!q) continue
-    prefills[row.req_code] = { ...prefillFor(q, prefillCtx), ...(savedByCode.get(row.req_code) ?? {}) }
+    // fact-backed fields (top-level + group fields), resolved from case_facts.
+    const factPrefill: Record<string, unknown> = {}
+    const collect = (fields: { name: string; fact?: string }[] | undefined) => {
+      for (const f of fields ?? []) {
+        // The SSN is never sent to the client — it's used server-side at fill time.
+        if (f.fact && f.fact !== "applicant.ssn" && facts[f.fact]) factPrefill[f.name] = facts[f.fact]
+      }
+    }
+    collect(q.fields)
+    for (const g of q.groups ?? []) collect(g.fields)
+    prefills[row.req_code] = { ...prefillFor(q, prefillCtx), ...factPrefill, ...(savedByCode.get(row.req_code) ?? {}) }
   }
 
   // Which requirement does an untagged upload belong to? Older uploads predate

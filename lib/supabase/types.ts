@@ -491,6 +491,71 @@ export type Database = {
           },
         ]
       }
+      case_facts: {
+        Row: {
+          case_id: string
+          id: string
+          key: string
+          override_req_code: string
+          sensitive: boolean
+          source: string
+          updated_at: string
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          case_id: string
+          id?: string
+          key: string
+          override_req_code?: string
+          sensitive?: boolean
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          case_id?: string
+          id?: string
+          key?: string
+          override_req_code?: string
+          sensitive?: boolean
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_facts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_facts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_facts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_facts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_notes: {
         Row: {
           author: string | null
@@ -832,6 +897,62 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_ssn: {
+        Row: {
+          auth_tag: string
+          case_id: string
+          ciphertext: string
+          iv: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auth_tag: string
+          case_id: string
+          ciphertext: string
+          iv: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auth_tag?: string
+          case_id?: string
+          ciphertext?: string
+          iv?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_ssn_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_ssn_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_ssn_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_ssn_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1608,6 +1729,7 @@ export type Database = {
           review_notes: string | null
           reviewer: string | null
           signed_at: string | null
+          stale: boolean
           status: Database["public"]["Enums"]["document_status"]
           template_key: string | null
           template_sha256: string | null
@@ -1629,6 +1751,7 @@ export type Database = {
           review_notes?: string | null
           reviewer?: string | null
           signed_at?: string | null
+          stale?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           template_key?: string | null
           template_sha256?: string | null
@@ -1650,6 +1773,7 @@ export type Database = {
           review_notes?: string | null
           reviewer?: string | null
           signed_at?: string | null
+          stale?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           template_key?: string | null
           template_sha256?: string | null

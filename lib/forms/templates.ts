@@ -46,6 +46,11 @@ export interface FormTemplate {
   dateSplit?: { mm: string; dd: string; yyyy: string }
   /** Explicit font size so values match the form's own type and don't clip (M4). */
   fontSize?: number
+  /** PDF field names that MUST be non-empty for the form to count as complete. */
+  requires?: string[]
+  /** Fields legitimately blank until signing / assigned by the agency (signature,
+   *  signing date, notary blocks, control numbers). Documentation of the third bucket. */
+  signatureOnly?: string[]
   /** Data to write onto the real fields. Absent ⇒ download-only. */
   build?: (v: Record<string, unknown>) => { text?: Record<string, string | undefined>; checks?: Record<string, boolean> }
 }
@@ -77,6 +82,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     signable: true,
     signatureField: "Signature",
     dateField: "Date", // the signing date, bottom of the form
+    requires: ["First name", "Last name", "MM", "DD", "YYYY", "Street address", "City", "State", "Zip code"],
+    signatureOnly: ["Signature", "Date"],
     fontSize: 9,
     build: (v) => {
       const dob = dobParts(v.dob)
@@ -139,6 +146,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     signatureField: "Signature17",
     dateField: "Date18_af_date",
     fontSize: 9,
+    requires: ["Text15", "Text16"],
+    signatureOnly: ["Signature17", "Date18_af_date"],
     build: (v) => ({ text: { Text15: s(v.fullName), Text16: s(v.address) } }),
   },
 
@@ -155,6 +164,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     isFillable: true,
     notarize: true, // each cohabitant signs before a notary — never digitally signed
     fontSize: 9,
+    requires: ["Text2", "Date19_af_date", "Text4", "Text5", "Text6"],
+    signatureOnly: ["Signature10", "Signature11", "Text12", "Text13", "Text14"],
     // Field placement verified against the form's own sentence structure:
     //   "I, <Text2 name>, <Date19 DOB>, residing at <Text4 address>, do hereby
     //    affirm that <Text5 applicant> ... My relationship ... is <Text6> ...
@@ -186,6 +197,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     isFillable: true,
     notarize: true,
     fontSize: 9,
+    requires: ["Applicants Name", "Applicants Address", "Birth Date", "Type of License"],
+    signatureOnly: ["Applicants Signature", "Instructors Signature"],
     build: (v) => ({
       text: {
         "Applicants Name": s(v.fullName),
@@ -207,6 +220,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     isFillable: true,
     ephemeral: ["ssn"],
     fontSize: 9,
+    requires: ["Name of Applicant Last Name First Name MI", "Address Street City or Town Slate Zip Code", "Date of Birth", "Name of Company Seeking Permit for Applicant"],
+    signatureOnly: ["INVESTIGATING OFFICERS SIGNATURE", "SUPERVISORS SIGNATURE", "CO LICENSE DIVISION SIGNATURE", "Signature4", "Signature5", "Signature6", "Signature7", "Notary Public", "Application No"],
     build: (v) => ({
       text: {
         "Name of Applicant Last Name First Name MI": s(v.applicantName),
@@ -241,6 +256,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     isFillable: true,
     ephemeral: ["ssn"],
     fontSize: 9,
+    requires: ["Name", "Address", "Date Of Birth"],
+    signatureOnly: ["Applicants Signature"],
     build: (v) => ({
       text: {
         Name: s(v.fullName),

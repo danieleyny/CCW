@@ -14,7 +14,7 @@
  * nullified matters ARE disclosed (CPL Article 160), and that non-disclosure is
  * more damaging than the underlying event. Nothing here may suggest omitting.
  */
-import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
+import { type WizardAnswers } from "@/lib/intake/answers"
 
 /**
  * Everything we already know about the applicant. Name/borough/ZIP live on the
@@ -41,6 +41,12 @@ export interface Field {
   type: FieldType
   help?: string
   required?: boolean
+  /**
+   * A canonical fact key (lib/facts/registry). Fact-backed fields prefill from
+   * case_facts (entered once, reused everywhere) and write back on save. A field
+   * with no `fact` is form-specific (a case number, an explanation).
+   */
+  fact?: string
   options?: { value: string; label: string }[]
   placeholder?: string
   /** For `yesno`: when answered yes, these follow-up fields become required. */
@@ -99,10 +105,9 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "A short statement that you understand where a NYC carry license does and doesn't let you carry. We fill in what we already know — read it, correct anything, and sign.",
     submitLabel: "Generate my affirmation",
-    prefill: (ctx) => ({ fullName: ctx.clientName, address: formatLegalAddress(ctx.intake) }),
     fields: [
-      { name: "fullName", label: "Your full legal name", type: "text", required: true },
-      { name: "address", label: "Your NYC address", type: "text", required: true },
+      { name: "fullName", label: "Your full legal name", type: "text", required: true, fact: "applicant.fullName" },
+      { name: "address", label: "Your NYC address", type: "text", required: true, fact: "applicant.fullAddress" },
       {
         name: "acknowledgesSensitive",
         label:
@@ -126,15 +131,10 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "How you'll store the handgun at home. NYC requires secure storage (P.L. §265.45; NYC Admin. Code §10-312). You'll also add photos of your safe — open and closed.",
     submitLabel: "Generate my statement",
-    // Same-kind prefill only: the storage ADDRESS defaults to the home address
-    // the intake already knows. The make/model field previously (wrongly)
-    // shared the key `safeguardName` with the intake "person who will safeguard
-    // the handgun" custodian, so it prefilled a PERSON'S NAME into the
-    // make/model box. The field is now `safeStorageMakeModel` and starts empty
-    // — there is no intake source for a safe's make/model.
-    prefill: (ctx) => ({ address: formatLegalAddress(ctx.intake) }),
+    // The storage ADDRESS defaults to the applicant's home address (a fact). The
+    // make/model field has no fact source and starts empty.
     fields: [
-      { name: "address", label: "Address where the firearm will be stored", type: "text", required: true },
+      { name: "address", label: "Address where the firearm will be stored", type: "text", required: true, fact: "applicant.fullAddress" },
       {
         name: "storageType",
         label: "How will it be stored?",
@@ -415,47 +415,30 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     id: "child-support-cert",
     title: "Child support certification",
     intro:
-      "We fill the official NYPD/HRA certification (Form M-522) for you. Most of this is carried over from your intake — just pick the declaration that applies to you. Your Social Security number is used only to fill the form and is never stored.",
+      "We fill the official NYPD/HRA certification (Form M-522) for you. Almost everything is already known — just pick the declaration that applies. Your Social Security number is stored encrypted and used only to fill your forms; your sponsor can never see it.",
     submitLabel: "Fill my form",
-    prefill: (ctx) => {
-      const parts = (ctx.clientName ?? "").trim().split(/\s+/)
-      return {
-        firstName: parts[0] ?? "",
-        lastName: parts.length > 1 ? parts[parts.length - 1] : "",
-        dob: ctx.intake.dob ?? "",
-        street: ctx.intake.legalStreet ?? "",
-        apt: ctx.intake.legalApt ?? "",
-        city: ctx.intake.legalCity ?? "",
-        state: ctx.intake.legalState ?? "NY",
-        zip: ctx.zip ?? "",
-        empName: ctx.intake.businessName ?? "",
-        empStreet: ctx.intake.businessStreet ?? "",
-        empCity: ctx.intake.businessCity ?? "",
-        empState: ctx.intake.businessState ?? "",
-        empZip: ctx.intake.businessZip ?? "",
-      }
-    },
     fields: [
-      { name: "firstName", label: "First name", type: "text", required: true },
-      { name: "lastName", label: "Last name", type: "text", required: true },
-      { name: "dob", label: "Date of birth", type: "date", required: true },
+      { name: "firstName", label: "First name", type: "text", required: true, fact: "applicant.legalFirstName" },
+      { name: "lastName", label: "Last name", type: "text", required: true, fact: "applicant.legalLastName" },
+      { name: "dob", label: "Date of birth", type: "date", required: true, fact: "applicant.dob" },
       {
         name: "ssn",
         label: "Social Security number or ITIN (optional)",
         type: "text",
         ephemeral: true,
-        help: "Used only to fill this form — never saved. Leave it blank to write it in by hand at signing.",
+        fact: "applicant.ssn",
+        help: "Stored encrypted and reused on your other forms — never visible to your sponsor. Leave blank if it's already on file.",
       },
-      { name: "street", label: "Street address", type: "text", required: true },
-      { name: "apt", label: "Apt #", type: "text" },
-      { name: "city", label: "City", type: "text", required: true },
-      { name: "state", label: "State", type: "text", required: true },
-      { name: "zip", label: "ZIP", type: "text", required: true },
-      { name: "empName", label: "Employer name", type: "text" },
-      { name: "empStreet", label: "Employer street", type: "text" },
-      { name: "empCity", label: "Employer city", type: "text" },
-      { name: "empState", label: "Employer state", type: "text" },
-      { name: "empZip", label: "Employer ZIP", type: "text" },
+      { name: "street", label: "Street address", type: "text", required: true, fact: "applicant.address.street" },
+      { name: "apt", label: "Apt #", type: "text", fact: "applicant.address.apt" },
+      { name: "city", label: "City", type: "text", required: true, fact: "applicant.address.city" },
+      { name: "state", label: "State", type: "text", required: true, fact: "applicant.address.state" },
+      { name: "zip", label: "ZIP", type: "text", required: true, fact: "applicant.address.zip" },
+      { name: "empName", label: "Employer name", type: "text", fact: "employer.name" },
+      { name: "empStreet", label: "Employer street", type: "text", fact: "employer.address.street" },
+      { name: "empCity", label: "Employer city", type: "text", fact: "employer.address.city" },
+      { name: "empState", label: "Employer state", type: "text", fact: "employer.address.state" },
+      { name: "empZip", label: "Employer ZIP", type: "text", fact: "employer.address.zip" },
       {
         name: "obligated",
         label: "Are you under a court or administrative order to pay child support?",
@@ -495,10 +478,9 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "You live alone, so the official cohabitant affidavit's solo-resident section applies. We fill it from your details — review and sign. Under penalty of perjury; no notary needed.",
     submitLabel: "Fill my form",
-    prefill: (ctx) => ({ fullName: ctx.clientName, address: formatLegalAddress(ctx.intake) }),
     fields: [
-      { name: "fullName", label: "Your full name", type: "text", required: true },
-      { name: "address", label: "Your full address", type: "text", required: true },
+      { name: "fullName", label: "Your full name", type: "text", required: true, fact: "applicant.fullName" },
+      { name: "address", label: "Your full address", type: "text", required: true, fact: "applicant.fullAddress" },
     ],
   },
 
@@ -508,16 +490,11 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "We fill the official NYPD Request for License Pre-Exemption with your details. Your authorised instructor completes and signs their section, then you upload the signed form.",
     submitLabel: "Fill my form",
-    prefill: (ctx) => ({
-      fullName: ctx.clientName,
-      address: formatLegalAddress(ctx.intake),
-      dob: ctx.intake.dob ?? "",
-    }),
     fields: [
-      { name: "fullName", label: "Your full name", type: "text", required: true },
-      { name: "address", label: "Your full address", type: "text", required: true },
-      { name: "dob", label: "Date of birth", type: "date", required: true },
-      { name: "age", label: "Age", type: "text" },
+      { name: "fullName", label: "Your full name", type: "text", required: true, fact: "applicant.fullName" },
+      { name: "address", label: "Your full address", type: "text", required: true, fact: "applicant.fullAddress" },
+      { name: "dob", label: "Date of birth", type: "date", required: true, fact: "applicant.dob" },
+      { name: "age", label: "Age", type: "text", fact: "applicant.age" },
     ],
   },
 }

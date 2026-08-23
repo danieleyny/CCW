@@ -1,4 +1,7 @@
-import { Building2, FileText, Landmark, Mail } from "lucide-react"
+import { Building2, FileText, Landmark, Mail, IdCard } from "lucide-react"
+import { resolveFacts } from "@/lib/facts/resolve"
+import { FactGroups } from "@/components/portal/facts/fact-groups"
+import type { FactGroup } from "@/lib/facts/registry"
 import {
   loadSponsorCase,
   loadSponsorRequirements,
@@ -91,6 +94,13 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   }
 
   const title = (code: string, fallback: string) => actionFor(code)?.customerTitle ?? fallback
+
+  // Shared details — the ONE fact layer, editable here through the same resolver
+  // and setCaseFact the applicant uses (attributed as a sponsor edit). Only at full
+  // scope: setCaseFact authorizes a sponsor write solely at full scope, so we show
+  // the editable surface only there. The SSN is NEVER shown to a sponsor.
+  const facts = scope.scope === "full" ? await resolveFacts(createAdminClient(), caseId) : null
+  const detailGroups: FactGroup[] = ["sponsor", "you", "address", "contact", "physical", "employer", "safeguard"]
 
   return (
     <div className="space-y-6">
@@ -194,6 +204,21 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
           </div>
         )}
       </section>
+
+      {/* Shared details — entered once, reused on every form (full scope only). */}
+      {facts && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <IdCard className="size-4 text-brass" />
+            <h2 className="text-lg font-semibold tracking-tight">Shared details</h2>
+          </div>
+          <p className="text-sm text-text-mid">
+            Fix any of these once and it&apos;s corrected on every form that uses it. The applicant&apos;s
+            Social Security number is never shown here.
+          </p>
+          <FactGroups caseId={caseId} facts={facts} hasSsn={false} groups={detailGroups} />
+        </section>
+      )}
 
       {scope.license_track === "sponsored_unresolved" && (
         <p className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/10 p-4 text-sm text-warn">

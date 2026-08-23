@@ -168,6 +168,12 @@ export function QuestionnaireDialog({
         toast.error(gen.error)
         return
       }
+      if (gen.incomplete?.length) {
+        toast.error(`This form isn't complete yet — it still needs: ${gen.incomplete.join(", ")}. Add those, then generate again.`, {
+          duration: 9000,
+        })
+        return
+      }
       if (gen.needsSignature) {
         if (canAdopt) {
           setStep("sign")

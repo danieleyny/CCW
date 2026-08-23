@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { loadSponsorCase } from "@/lib/sponsor/queries"
 import { logActivity } from "@/lib/activity"
 import { fillTemplate } from "@/lib/forms/fill"
-import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
+import { resolveFacts } from "@/lib/facts/resolve"
 
 /**
  * Sponsor write paths. A sponsor has NO direct table grants — every mutation runs
@@ -136,33 +136,25 @@ export async function prepareSponsorForm(caseId: string): Promise<{ url?: string
   if (!scope) return { error: "You don't have access to this case." }
 
   const admin = createAdminClient()
-  const [{ data: kase }, { data: sponsor }] = await Promise.all([
-    admin.from("cases").select("client_id, clients:client_id(full_name)").eq("id", caseId).maybeSingle(),
-    admin
-      .from("sponsors")
-      .select("legal_name, agency_license_number, agency_license_expires, custodian_name, custodian_license_number")
-      .eq("id", scope.sponsor_id)
-      .maybeSingle(),
-  ])
+  const { data: kase } = await admin.from("cases").select("client_id").eq("id", caseId).maybeSingle()
   if (!kase?.client_id) return { error: "Case not found." }
-  const { data: intake } = await admin
-    .from("intake_sessions")
-    .select("answers")
-    .eq("case_id", caseId)
-    .maybeSingle()
-  const a = (intake?.answers ?? {}) as WizardAnswers
-  const applicantName = (kase.clients as unknown as { full_name: string } | null)?.full_name ?? scope.applicant_name
 
+  // Everything we hold, from the ONE fact layer (applicant identity + company
+  // licence/custodian + employer). The SSN is NEVER resolved for a sponsor fill.
+  const f = await resolveFacts(admin, caseId)
   const filled = await fillTemplate("nypd_company_application", {
-    applicantName,
-    applicantAddress: formatLegalAddress(a),
-    dob: a.dob ?? "",
-    companyName: sponsor?.legal_name ?? "",
+    applicantName: f["applicant.fullName"],
+    applicantAddress: f["applicant.fullAddress"],
+    dob: f["applicant.dob"],
+    companyName: f["sponsor.legalName"],
     wgpLicenseType: "Watch, Guard or Patrol Agency",
-    wgpLicenseNumber: sponsor?.agency_license_number ?? "",
-    wgpExpire: sponsor?.agency_license_expires ?? "",
-    custodian: sponsor?.custodian_name ?? "",
-    custodianLicenseNo: sponsor?.custodian_license_number ?? "",
+    wgpLicenseNumber: f["sponsor.agencyLicenseNumber"],
+    wgpExpire: f["sponsor.agencyLicenseExpiry"],
+    custodian: f["sponsor.custodianName"],
+    custodianLicenseNo: f["sponsor.custodianLicenseNumber"],
+    businessAddress: f["employer.address.street"],
+    businessPhone: f["employer.phone"],
+    businessType: f["employer.type"],
   })
 
   const path = `clients/${kase.client_id}/sponsor-prefill/company-form-${Date.now()}.pdf`
