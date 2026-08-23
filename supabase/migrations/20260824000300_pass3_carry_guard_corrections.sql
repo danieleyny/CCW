@@ -39,14 +39,14 @@ begin
        effective_to, blocking, needs_legal_review, concierge_scope, party, applicant_scope)
     values
       (r.jurisdiction_id, r.req_code, r.title, r.description, r.authority, r.source_url,
-       r.validation_rule, 'unless_armed', r.severity, r.document_type, date '2026-08-24',
+       r.validation_rule, 'unless_armed', r.severity, r.document_type, date '2026-08-23',
        null, r.blocking, r.needs_legal_review, r.concierge_scope, r.party, r.applicant_scope);
   end loop;
 
-  update public.requirements set effective_to = date '2026-08-23'
+  update public.requirements set effective_to = date '2026-08-22'
    where req_code = 'SAF-01'
      and effective_to is null
-     and effective_from < date '2026-08-24';
+     and effective_from < date '2026-08-23';
 end $$;
 
 -- ── 3A · Add §5-04 / §5-06 citations to the sponsor packet ────────────────────
@@ -71,12 +71,12 @@ begin
        effective_to, blocking, needs_legal_review, concierge_scope, party, applicant_scope)
     values
       (r.jurisdiction_id, r.req_code, r.title, r.description, new_authority, r.source_url,
-       r.validation_rule, r.trigger_cond, r.severity, r.document_type, date '2026-08-24',
+       r.validation_rule, r.trigger_cond, r.severity, r.document_type, date '2026-08-23',
        null, r.blocking, r.needs_legal_review, r.concierge_scope, r.party, r.applicant_scope);
   end loop;
 
-  update public.requirements set effective_to = date '2026-08-23'
+  update public.requirements set effective_to = date '2026-08-22'
    where req_code in ('SPN-02','SPN-04','SPN-05','SPN-06')
      and effective_to is null
-     and effective_from < date '2026-08-24';
+     and effective_from < date '2026-08-23';
 end $$;

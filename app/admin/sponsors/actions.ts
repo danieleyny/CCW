@@ -7,6 +7,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { logActivity } from "@/lib/activity"
 import { materializeSponsorPacket } from "@/lib/requirements/materialize"
+import { resolveFacts } from "@/lib/facts/resolve"
+import { identityResolved } from "@/lib/facts/identity"
+import { seedOperatorBlockers } from "@/lib/sponsor/operator-blockers"
 
 /**
  * Staff provisions a sponsorship: the company, a rep account (role='sponsor',
@@ -19,14 +22,21 @@ import { materializeSponsorPacket } from "@/lib/requirements/materialize"
 export async function provisionSponsor(
   formData: FormData
 ): Promise<{ inviteUrl?: string; tempPassword?: string; error?: string }> {
-  await requireStaff()
+  const { userId } = await requireStaff()
   const companyName = String(formData.get("companyName") ?? "").trim()
   const repName = String(formData.get("repName") ?? "").trim()
   const repEmail = String(formData.get("repEmail") ?? "").trim().toLowerCase()
   const applicantEmail = String(formData.get("applicantEmail") ?? "").trim().toLowerCase()
   const scope = String(formData.get("scope") ?? "packet_only") as "packet_only" | "assist" | "full"
+  // Operator blocker #2 (§5-06): the designated gun custodian gates the whole
+  // case, so it must be confirmed BEFORE a live invitation goes out.
+  const custodianName = String(formData.get("custodianName") ?? "").trim()
+  const custodianLicense = String(formData.get("custodianLicenseNumber") ?? "").trim()
   if (!companyName || !repName || !repEmail || !applicantEmail) {
     return { error: "Company, rep name, rep email, and applicant email are all required." }
+  }
+  if (!custodianName || !custodianLicense) {
+    return { error: "Confirm the designated NYPD gun custodian (name + licence number) before inviting — §5-06 gates the case." }
   }
 
   const admin = createAdminClient()
@@ -43,10 +53,17 @@ export async function provisionSponsor(
     .maybeSingle()
   if (!kase) return { error: "That applicant has no case yet." }
 
-  // The company.
+  // Operator blocker #9: the applicant's exact legal name must be resolved (never
+  // inferred from a display name / email) before a form or an invite carries it.
+  const facts = await resolveFacts(admin, kase.id)
+  if (!identityResolved(facts)) {
+    return { error: "Confirm the applicant's exact legal name (from their photo ID) before inviting — a wrong legal name is a rejection." }
+  }
+
+  // The company, with its confirmed gun custodian.
   const { data: sponsor, error: sErr } = await admin
     .from("sponsors")
-    .insert({ legal_name: companyName })
+    .insert({ legal_name: companyName, custodian_name: custodianName, custodian_license_number: custodianLicense })
     .select("id")
     .single()
   if (sErr || !sponsor) return { error: "Couldn't create the company record." }
@@ -87,6 +104,10 @@ export async function provisionSponsor(
   // Seed the company packet now, so the rep can start immediately (even before the
   // applicant's category resolves).
   await materializeSponsorPacket(admin, kase.id)
+
+  // Surface the operator blockers as OUR staff tasks (owned by the provisioner) —
+  // never applicant failures. Custodian + legal name are already confirmed above.
+  await seedOperatorBlockers(admin, kase.id, userId)
 
   await logActivity({
     action: "sponsor.provisioned",
