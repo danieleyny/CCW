@@ -7,10 +7,14 @@ import {
 } from "@/lib/sponsor/queries"
 import { actionFor, conciergeScopeFor } from "@/lib/requirements/actions"
 import { brand } from "@/config/brand"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { loadRequirementView } from "@/lib/portal/requirement-view"
+import type { MyCase } from "@/lib/portal"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { SponsorUploader } from "@/components/sponsor/sponsor-uploader"
 import { CustodianForm } from "@/components/sponsor/custodian-form"
 import { OpenDocumentButton } from "@/components/sponsor/open-document-button"
+import { SponsorApplicantFile, type SponsorFileRow } from "@/components/sponsor/sponsor-applicant-file"
 
 export const metadata = { title: "Sponsored file", robots: { index: false, follow: false } }
 
@@ -52,6 +56,38 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
 
   const packet = reqs.filter((r) => r.party === "sponsor")
   const applicant = reqs.filter((r) => r.party === "applicant")
+
+  // At full scope the rep gets execution parity on the applicant's file — upload +
+  // prepare drafts through the SAME actions the applicant uses. We load the
+  // requirement view (admin — the rep is already authorized for full scope) only
+  // for the prefills; the scoped feed above still governs what rows exist.
+  let fileRows: SponsorFileRow[] | null = null
+  if (scope.scope === "full") {
+    const admin = createAdminClient()
+    const { data: cl } = await admin
+      .from("cases")
+      .select("client_id, clients:client_id(full_name, borough, zip)")
+      .eq("id", caseId)
+      .single()
+    if (cl?.client_id) {
+      const client = cl.clients as unknown as { full_name: string; borough: string | null; zip: string | null } | null
+      const myCase = {
+        id: caseId,
+        client_id: cl.client_id,
+        stage: scope.stage,
+        client: { full_name: client?.full_name ?? scope.applicant_name, borough: client?.borough ?? null, zip: client?.zip ?? null },
+      } as unknown as MyCase
+      const view = await loadRequirementView(admin, myCase)
+      fileRows = applicant.map((r) => ({
+        reqCode: r.req_code,
+        title: r.title,
+        status: r.status,
+        hasDoc: !!docByReq.get(r.req_code),
+        documentId: docByReq.get(r.req_code)?.document_id ?? null,
+        prefill: view.prefills[r.req_code] ?? {},
+      }))
+    }
+  }
 
   const title = (code: string, fallback: string) => actionFor(code)?.customerTitle ?? fallback
 
@@ -118,13 +154,19 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
           <FileText className="size-4 text-brass" />
           <h2 className="text-lg font-semibold tracking-tight">The applicant&apos;s file</h2>
         </div>
-        {applicant.length === 0 ? (
+        {scope.scope === "packet_only" ? (
           <p className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">
-            {scope.scope === "packet_only"
-              ? "Your access covers your company packet only."
-              : "Nothing to show yet — the applicant's documents will appear here as they're added."}
+            Your access covers your company packet only.
+          </p>
+        ) : fileRows ? (
+          // Full scope → execution parity (upload + prepare drafts).
+          <SponsorApplicantFile caseId={caseId} rows={fileRows} />
+        ) : applicant.length === 0 ? (
+          <p className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">
+            Nothing to show yet — the applicant&apos;s documents will appear here as they&apos;re added.
           </p>
         ) : (
+          // assist scope → read-only view of the non-disclosure paperwork.
           <div className="space-y-2">
             {applicant.map((r) => {
               const doc = docByReq.get(r.req_code)

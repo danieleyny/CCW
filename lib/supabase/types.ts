@@ -2890,6 +2890,7 @@ export type Database = {
           case_id: string
           completed_at: string | null
           created_at: string
+          drafted_by: string | null
           id: string
           req_code: string
           updated_at: string
@@ -2899,6 +2900,7 @@ export type Database = {
           case_id: string
           completed_at?: string | null
           created_at?: string
+          drafted_by?: string | null
           id?: string
           req_code: string
           updated_at?: string
@@ -2908,6 +2910,7 @@ export type Database = {
           case_id?: string
           completed_at?: string | null
           created_at?: string
+          drafted_by?: string | null
           id?: string
           req_code?: string
           updated_at?: string
@@ -2933,6 +2936,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "requirement_answers_drafted_by_fkey"
+            columns: ["drafted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }

@@ -31,6 +31,8 @@ export function QuestionnaireDialog({
   questionnaire,
   initial,
   signatureOnFile,
+  caseId,
+  canAdopt = true,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -39,6 +41,11 @@ export function QuestionnaireDialog({
   initial: Values
   /** Base64 PNG already captured for this case — offered as "use my signature". */
   signatureOnFile: string | null
+  /** Sponsor parity: the case being drafted for. Omitted by the applicant. */
+  caseId?: string
+  /** Whether THIS actor may adopt (sign). False for a sponsor — a drafted sworn
+   *  document waits for the applicant to review and sign. */
+  canAdopt?: boolean
 }) {
   const [values, setValues] = useState<Values>(initial)
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
@@ -98,13 +105,18 @@ export function QuestionnaireDialog({
             return
           }
         }
-        const r = await submitRequirementRoster(reqCode, values)
+        const r = await submitRequirementRoster(reqCode, values, caseId)
         if (r.error) {
           toast.error(r.error)
           return
         }
         if (r.needsSignature) {
-          setStep("sign")
+          if (canAdopt) {
+            setStep("sign")
+          } else {
+            toast.success("Draft prepared — the applicant will review and sign it.", { duration: 9000 })
+            onOpenChange(false)
+          }
           return
         }
         toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
@@ -132,18 +144,25 @@ export function QuestionnaireDialog({
       }
       setBlockMsg(null)
 
-      const saved = await saveRequirementAnswers(reqCode, values)
+      const saved = await saveRequirementAnswers(reqCode, values, caseId)
       if (saved.error) {
         toast.error(saved.error)
         return
       }
-      const gen = await generateRequirementDocument(reqCode)
+      const gen = await generateRequirementDocument(reqCode, caseId)
       if (gen.error) {
         toast.error(gen.error)
         return
       }
       if (gen.needsSignature) {
-        setStep("sign")
+        if (canAdopt) {
+          setStep("sign")
+        } else {
+          // A sponsor drafted a sworn document — it stays a draft until the
+          // applicant reviews and signs. The sponsor never adopts.
+          toast.success("Draft prepared — the applicant will review and sign it.", { duration: 9000 })
+          onOpenChange(false)
+        }
         return
       }
       toast.success("Your document is ready to download.")

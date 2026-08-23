@@ -82,7 +82,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   ] = await Promise.all([
       getCaseRequirements(db, myCase.id),
       db.from("intake_sessions").select("completed_at, answers").eq("case_id", myCase.id).maybeSingle(),
-      db.from("requirement_answers").select("req_code, answers").eq("case_id", myCase.id),
+      db.from("requirement_answers").select("req_code, answers, drafted_by").eq("case_id", myCase.id),
       db
         .from("documents")
         .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at, review_notes, version")
@@ -112,6 +112,16 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     zip: myCase.client.zip,
   }
   const savedByCode = new Map((savedAnswers ?? []).map((r) => [r.req_code, r.answers as Record<string, unknown>]))
+  // Attribution: a draft whose drafted_by is NOT the applicant's own profile was
+  // prepared by their full-scope sponsor. We surface "your sponsor prepared this —
+  // review and sign" so nothing is done in the applicant's name silently. The
+  // sponsor's NAME is intentionally not joined (profiles RLS hides it, and the
+  // applicant already knows who their sponsor is).
+  const { data: ownClient } = await db.from("clients").select("profile_id").eq("id", myCase.client_id).maybeSingle()
+  const ownProfileId = ownClient?.profile_id ?? null
+  const draftedBySponsor = new Map(
+    (savedAnswers ?? []).map((r) => [r.req_code, !!r.drafted_by && r.drafted_by !== ownProfileId])
+  )
   const prefills: Record<string, Record<string, unknown>> = {}
   for (const row of reqRows) {
     const a = actionFor(row.req_code)
@@ -322,6 +332,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     legalStatus: row.requirement?.legal_status ?? "enforced",
     legalCitation: row.requirement?.legal_citation ?? null,
     sponsorManaged: row.requirement?.party === "sponsor",
+    preparedBySponsor: draftedBySponsor.get(row.req_code) ?? false,
     }
   })
 

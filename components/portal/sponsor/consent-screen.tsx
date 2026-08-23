@@ -46,8 +46,10 @@ export function ConsentScreen({
             {rep} of {company} wants to help with your file
           </h2>
           <p className="mt-1 text-sm text-text-mid">
-            To sponsor your armed-guard licence, {rep} needs to see the documents on your application —
-            including sensitive records. Read exactly what that means, then decide.
+            To sponsor your armed-guard licence, {rep} will help complete your application — uploading
+            documents and preparing forms on your behalf — which means seeing sensitive records. Anything
+            sworn stays a draft until <span className="text-foreground">you</span> sign it. Read exactly
+            what this means, then decide.
           </p>
         </div>
       </div>
