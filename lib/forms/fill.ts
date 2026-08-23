@@ -64,16 +64,10 @@ export async function fillTemplate(key: string, values: Record<string, unknown>)
     }
   }
 
-  // Non-signable forms are the finished artifact (or a form the recipient
-  // completes) — flatten what we filled. Signable forms stay editable until signed.
-  if (!t.signable) {
-    try {
-      form.flatten()
-    } catch {
-      /* some official forms carry a signature field that resists flatten — leave as-is */
-    }
-  }
-
+  // Deliberately NOT flattened: signable forms wait for the applicant's signature
+  // (signTemplate flattens then), and the company/investigation forms are pre-fills
+  // the recipient COMPLETES on the real form — flattening would remove the fields
+  // they still need to fill. The set values render via pdf-lib's appearances.
   const out = await pdf.save()
   return { bytes: out, sha256, template: t }
 }

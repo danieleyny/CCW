@@ -10,6 +10,7 @@ import { logActivity } from "@/lib/activity"
 import { getMyCase } from "@/lib/portal"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
+import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { toUserFacingError } from "@/lib/schema-health"
 import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
@@ -668,4 +669,73 @@ export async function confirmAttestation(reqCode: string): Promise<Result> {
   })
   revalidatePath("/portal/checklist")
   return { ok: true }
+}
+
+/**
+ * PHASE 4 — pre-prepare the investigation-phase forms (employment authorization,
+ * HIPAA medical release). These are NOT packet requirements; the investigator may
+ * request them after filing, so we fill the official forms with the applicant's
+ * identity ahead of time. SSN is left BLANK to write in by hand (PII minimisation).
+ * Either the applicant or a full-scope sponsor may trigger it. Idempotent.
+ */
+export async function prepareInvestigationForms(
+  caseId?: string
+): Promise<{ forms?: { name: string; url: string }[]; error?: string }> {
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "No case found" }
+
+  const admin = createAdminClient()
+  const { data: intake } = await admin
+    .from("intake_sessions")
+    .select("answers")
+    .eq("case_id", actor.caseId)
+    .maybeSingle()
+  const a = (intake?.answers ?? {}) as WizardAnswers
+  const vals = { fullName: actor.clientName, address: formatLegalAddress(a), dob: a.dob ?? "" }
+
+  const specs = [
+    { key: "nypd_employment_authorization", type: "employment_authorization" as const, file: "employment-authorization.pdf", label: "Employment authorization" },
+    { key: "nypd_hipaa_release", type: "hipaa_release" as const, file: "hipaa-medical-release.pdf", label: "HIPAA medical release" },
+  ]
+
+  // Clear any prior copies so re-preparing doesn't pile up duplicates.
+  await admin
+    .from("documents")
+    .delete()
+    .eq("case_id", actor.caseId)
+    .in("template_key", specs.map((sp) => sp.key))
+
+  const out: { name: string; url: string }[] = []
+  for (const spec of specs) {
+    const filled = await fillTemplate(spec.key, vals) // SSN intentionally omitted → blank on the form
+    const id = crypto.randomUUID()
+    const path = `clients/${actor.clientId}/${id}/${spec.file}`
+    const { error: upErr } = await admin.storage
+      .from("documents")
+      .upload(path, Buffer.from(filled.bytes), { contentType: "application/pdf", upsert: true })
+    if (upErr) continue
+    await admin.from("documents").insert({
+      id,
+      case_id: actor.caseId,
+      client_id: actor.clientId,
+      type: spec.type,
+      file_name: spec.file,
+      file_path: path,
+      status: "pending",
+      generated: true,
+      template_key: spec.key,
+      template_sha256: filled.sha256,
+    })
+    const { data: signed } = await admin.storage.from("documents").createSignedUrl(path, 300)
+    if (signed?.signedUrl) out.push({ name: spec.label, url: signed.signedUrl })
+  }
+
+  await logActivity({
+    action: "investigation.forms_prepared",
+    caseId: actor.caseId,
+    entity: "case",
+    entityId: actor.caseId,
+    detail: { count: out.length },
+  })
+  return { forms: out }
 }

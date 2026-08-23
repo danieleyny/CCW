@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { loadSponsorCase } from "@/lib/sponsor/queries"
 import { logActivity } from "@/lib/activity"
+import { fillTemplate } from "@/lib/forms/fill"
+import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
 
 /**
  * Sponsor write paths. A sponsor has NO direct table grants — every mutation runs
@@ -119,6 +121,58 @@ export async function uploadSponsorDocument(formData: FormData): Promise<{ ok?: 
 
   revalidatePath(`/sponsor/${caseId}`)
   return { ok: true }
+}
+
+/**
+ * SPN-01 — produce the OFFICIAL company pistol-licence form pre-filled with the
+ * applicant identity (from the case) and the company licence/custodian (from the
+ * sponsors record). The company completes the officer/business/position fields and
+ * the four notarised signatures on the real form, then uploads it. This is a
+ * download helper, not the satisfying document.
+ */
+export async function prepareSponsorForm(caseId: string): Promise<{ url?: string; error?: string }> {
+  await requireRole(["sponsor"])
+  const scope = await loadSponsorCase(caseId)
+  if (!scope) return { error: "You don't have access to this case." }
+
+  const admin = createAdminClient()
+  const [{ data: kase }, { data: sponsor }] = await Promise.all([
+    admin.from("cases").select("client_id, clients:client_id(full_name)").eq("id", caseId).maybeSingle(),
+    admin
+      .from("sponsors")
+      .select("legal_name, agency_license_number, agency_license_expires, custodian_name, custodian_license_number")
+      .eq("id", scope.sponsor_id)
+      .maybeSingle(),
+  ])
+  if (!kase?.client_id) return { error: "Case not found." }
+  const { data: intake } = await admin
+    .from("intake_sessions")
+    .select("answers")
+    .eq("case_id", caseId)
+    .maybeSingle()
+  const a = (intake?.answers ?? {}) as WizardAnswers
+  const applicantName = (kase.clients as unknown as { full_name: string } | null)?.full_name ?? scope.applicant_name
+
+  const filled = await fillTemplate("nypd_company_application", {
+    applicantName,
+    applicantAddress: formatLegalAddress(a),
+    dob: a.dob ?? "",
+    companyName: sponsor?.legal_name ?? "",
+    wgpLicenseType: "Watch, Guard or Patrol Agency",
+    wgpLicenseNumber: sponsor?.agency_license_number ?? "",
+    wgpExpire: sponsor?.agency_license_expires ?? "",
+    custodian: sponsor?.custodian_name ?? "",
+    custodianLicenseNo: sponsor?.custodian_license_number ?? "",
+  })
+
+  const path = `clients/${kase.client_id}/sponsor-prefill/company-form-${Date.now()}.pdf`
+  const { error: upErr } = await admin.storage
+    .from("documents")
+    .upload(path, Buffer.from(filled.bytes), { contentType: "application/pdf", upsert: true })
+  if (upErr) return { error: "Couldn't prepare the form." }
+  const { data: signed } = await admin.storage.from("documents").createSignedUrl(path, 300)
+  await logActivity({ action: "sponsor.company_form_prefilled", caseId, entity: "case", entityId: caseId })
+  return { url: signed?.signedUrl }
 }
 
 /** SPN-05 — the gun custodian is structured company data, not a file. */

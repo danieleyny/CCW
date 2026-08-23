@@ -17,6 +17,7 @@ import { signRequirementDocument } from "@/app/portal/requirements/actions"
 import type { ReviewItem } from "@/lib/concierge/review"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { PrepareInvestigationForms } from "@/components/portal/concierge/prepare-investigation-forms"
 
 // The applicant files on the NYPD portal — we never submit for them. Same URLs
 // the fee sheet and worksheet already point to (lib/fees, document-engine).
@@ -190,11 +191,14 @@ export function ReviewAndFile({
 
           {/* Phase 4 — set expectations for the investigation phase so a later
               request isn't a surprise. These forms aren't part of the packet. */}
-          <p className="mt-4 border-t border-brass/20 pt-3 text-xs text-text-low">
-            After you file, the NYPD investigator may ask you to sign a medical release (HIPAA) or an
-            employment authorization. That&apos;s a normal part of the review — we hold those official
-            forms and can prepare them for you if you&apos;re asked.
-          </p>
+          <div className="mt-4 border-t border-brass/20 pt-3">
+            <p className="text-xs text-text-low">
+              After you file, the NYPD investigator may ask you to sign a medical release (HIPAA) or an
+              employment authorization. That&apos;s a normal part of the review — we hold those official
+              forms and can fill them with your details now so they&apos;re ready if you&apos;re asked.
+            </p>
+            <PrepareInvestigationForms />
+          </div>
         </div>
       ) : (
         items.length > 0 && (
