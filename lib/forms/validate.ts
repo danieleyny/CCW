@@ -29,7 +29,22 @@ const FIXTURES: Record<string, Record<string, unknown>[]> = {
   nypd_cohabitant_affidavit_household: [
     { name: "A", dob: "1990-01-01", address: "B", applicantName: "C", relationship: "R", phoneHome: "1", phoneCell: "2", phoneWork: "3" },
   ],
-  nypd_prelicense_exemption: [{ fullName: "A", address: "B", age: "30", dob: "1990-01-01" }],
+  nypd_prelicense_exemption: [
+    {
+      fullName: "A",
+      address: "B",
+      age: "30",
+      dob: "1990-01-01",
+      instructorName: "Inst",
+      instructorCredentials: "DCJS-certified",
+      instructorRangeName: "Range",
+      instructorAddress: "Range Addr",
+      instructorPhone: "555-0100",
+      trainingLocation: "Range, NY",
+      metApplicant: true,
+      noDanger: true,
+    },
+  ],
   nypd_company_application: [
     { applicantName: "A", applicantAddress: "B", dob: "1990-01-01", ssn: "1", companyName: "Co", businessAddress: "BA", businessPhone: "BP", businessType: "BT", wgpLicenseType: "W", wgpLicenseNumber: "N", wgpExpire: "2030", custodian: "Cu", custodianLicenseNo: "L", position: "P" },
   ],

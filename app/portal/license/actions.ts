@@ -187,3 +187,31 @@ export async function submitLicenseReport(formData: FormData): Promise<{ error?:
   revalidatePath("/portal/license")
   return { ok: true }
 }
+
+/**
+ * DOS armed-status upgrade — the applicant marks the two actions that are theirs:
+ * returning the current guard-card (surrendering the working credential) and
+ * paying the $25 DOS fee. RLS (case_visible) lets the owning applicant write their
+ * own row. Never a CP-5 concern.
+ */
+export async function setDosGuardCardReturned(returned: boolean): Promise<{ ok?: boolean; error?: string }> {
+  return updateDos({ guard_card_returned: returned })
+}
+export async function setDosFeePaid(paid: boolean): Promise<{ ok?: boolean; error?: string }> {
+  return updateDos({ dos_fee_paid: paid })
+}
+
+async function updateDos(patch: Record<string, unknown>): Promise<{ ok?: boolean; error?: string }> {
+  const { userId } = await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found." }
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("dos_armed_upgrade")
+    .update({ ...patch, updated_by: userId, updated_at: new Date().toISOString() })
+    .eq("case_id", myCase.id)
+  if (error) return { error: "Couldn't save that." }
+  await logActivity({ action: "case.dos_updated", caseId: myCase.id, entity: "case", entityId: myCase.id, detail: patch })
+  revalidatePath("/portal/license")
+  return { ok: true }
+}

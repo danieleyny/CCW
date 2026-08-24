@@ -8,6 +8,7 @@ import { conciergeScopeFor } from "@/lib/requirements/actions"
 import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SponsorUploader } from "@/components/sponsor/sponsor-uploader"
 import { OpenDocumentButton } from "@/components/sponsor/open-document-button"
+import { sponsorItemState, SPONSOR_ITEM_COPY } from "@/lib/sponsor/status"
 import { Button } from "@/components/ui/button"
 
 export interface SponsorFileRow {
@@ -17,13 +18,6 @@ export interface SponsorFileRow {
   hasDoc: boolean
   documentId: string | null
   prefill: Record<string, unknown>
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Outstanding",
-  satisfied: "Received",
-  rejected: "Needs another version",
-  na: "Not needed",
 }
 
 /**
@@ -61,7 +55,10 @@ export function SponsorApplicantFile({ caseId, rows }: { caseId: string; rows: S
             <div className="min-w-0">
               <div className="text-sm font-medium">{action?.customerTitle ?? r.title}</div>
               <div className="mt-0.5 text-xs text-text-mid">
-                {r.reqCode} · {STATUS_LABEL[r.status] ?? r.status}
+                {r.reqCode} ·{" "}
+                <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, r.hasDoc)].className}>
+                  {SPONSOR_ITEM_COPY[sponsorItemState(r.status, r.hasDoc)].label}
+                </span>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">

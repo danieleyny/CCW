@@ -584,6 +584,68 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }
   }
 
+  // ── Pass 3 Rule: DOS armed-status annual obligations (in-service + firearms) ─
+  // Armed status carries an 8-hour annual in-service AND an 8-hour annual firearms
+  // course. Each is due 12 months after the last; the window_key carries the DUE
+  // DATE, so each annual cycle fires exactly once with no separate scheduler.
+  // Fires the applicant AND their assigned staff. Parallel to the NYPD licence;
+  // never a filing concern.
+  const dosHorizon = new Date(now.getTime() + 60 * DAY).toISOString().slice(0, 10)
+  const dosToday = now.toISOString().slice(0, 10)
+  const { data: dosRows } = await admin
+    .from("dos_armed_upgrade")
+    .select("case_id, inservice_due_on, firearms_annual_due_on")
+  const dosDue = (dosRows ?? []).flatMap((d) => {
+    const out: { caseId: string; kind: string; due: string; label: string }[] = []
+    if (d.inservice_due_on && d.inservice_due_on >= dosToday && d.inservice_due_on <= dosHorizon)
+      out.push({ caseId: d.case_id, kind: "dos_inservice_due", due: d.inservice_due_on, label: "8-hour annual in-service course" })
+    if (d.firearms_annual_due_on && d.firearms_annual_due_on >= dosToday && d.firearms_annual_due_on <= dosHorizon)
+      out.push({ caseId: d.case_id, kind: "dos_firearms_due", due: d.firearms_annual_due_on, label: "8-hour annual firearms course" })
+    return out
+  })
+  if (dosDue.length) {
+    const dosContacts = await caseContacts(admin, dosDue.map((d) => d.caseId))
+    const { data: dosCases } = await admin
+      .from("cases")
+      .select("id, clients(assigned_staff)")
+      .in("id", dosDue.map((d) => d.caseId))
+    const staffByCase = new Map(
+      (dosCases ?? []).map((k) => [k.id, (k.clients as unknown as { assigned_staff: string | null } | null)?.assigned_staff ?? null])
+    )
+    for (const d of dosDue) {
+      const daysLeft = Math.max(0, Math.ceil((new Date(`${d.due}T00:00:00Z`).getTime() - now.getTime()) / DAY))
+      const c = dosContacts.get(d.caseId)
+      if (c && (c.profileId || c.email)) {
+        push(await fireOnce(admin, {
+          ruleKey: d.kind,
+          target: c.profileId ?? c.email ?? c.clientId,
+          windowKey: `${d.caseId}:${d.due}`,
+          caseId: d.caseId,
+          recipient: c.profileId,
+          email: c.email,
+          kind: "action_required",
+          title: "Your armed-status training is coming due",
+          body: `To keep your NYS DOS armed status, your ${d.label} is due ${d.due} (~${daysLeft} days). Book it in time so your registration stays current.`,
+          link: "/portal/license",
+        }))
+      }
+      const staffId = staffByCase.get(d.caseId)
+      if (staffId) {
+        push(await fireOnce(admin, {
+          ruleKey: d.kind,
+          target: staffId,
+          windowKey: `${d.caseId}:${d.due}`,
+          caseId: d.caseId,
+          recipient: staffId,
+          kind: "action_required",
+          title: "A case's armed-status training is coming due",
+          body: `This armed-guard case's ${d.label} is due ${d.due} (~${daysLeft} days) to keep DOS armed status current.`,
+          link: `/admin/cases/${d.caseId}`,
+        }))
+      }
+    }
+  }
+
   // ── V3-P3.2 Rule: Special Carry county-license dependency (≤60 days) ──────
   const { data: countyExpiring } = await admin
     .from("cases")

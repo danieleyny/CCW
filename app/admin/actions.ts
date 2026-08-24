@@ -20,6 +20,7 @@ import { notifyCaseParties } from "@/lib/notify"
 import { reviewUrl } from "@/lib/review"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { sendBookingInvites } from "@/lib/calendar/invites"
+import { isArmedTrack, openDosUpgrade, grantDosArmedStatus } from "@/lib/dos"
 import { getStripe } from "@/lib/stripe"
 import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing"
 import { STAGE_KEYS, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
@@ -177,12 +178,19 @@ export async function recordLicenseIssued(
       stage_entered_at: new Date().toISOString(),
     })
     .eq("id", caseId)
-    .select("id, client_id, clients(full_name, email)")
+    .select("id, client_id, license_track, clients(full_name, email)")
     .single()
   if (error) throw error
 
   // license_type lives on the client record (the applicant, not the case).
   await supabase.from("clients").update({ license_type: licenseType }).eq("id", kase.client_id)
+
+  // Armed-guard cases get their DOS armed-status upgrade opened as a parallel
+  // post-issuance sub-lifecycle (never a CP-5 blocker). Service role: a system
+  // write of the applicant's own follow-on obligations.
+  if (isArmedTrack(kase.license_track)) {
+    await openDosUpgrade(createAdminClient(), caseId)
+  }
 
   await logActivity({
     action: "case.license_issued",
@@ -1210,4 +1218,30 @@ export async function sendClientInvite(caseId: string): Promise<InviteResult> {
     detail: { sent, method: EMAIL_ENABLED ? "email" : "copy_link" },
   })
   return { ok: true, link, sent }
+}
+
+/**
+ * Staff records that NYS DOS granted armed status. Sets the recurring 8-hour
+ * annual in-service + firearms due dates and the 2-year registration expiry from
+ * the grant date — these drive the DOS reminders. Parallel to the NYPD licence;
+ * never a CP-5 concern.
+ */
+export async function recordDosArmedStatusGranted(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireStaff()
+  const caseId = String(formData.get("caseId") ?? "")
+  const grantedOn = String(formData.get("grantedOn") ?? "")
+  if (!caseId || !grantedOn) return { ok: false, error: "Provide the case and the grant date." }
+  const admin = createAdminClient()
+  await grantDosArmedStatus(admin, caseId, grantedOn, null)
+  await logActivity({
+    action: "case.dos_armed_status_granted",
+    caseId,
+    entity: "case",
+    entityId: caseId,
+    detail: { grantedOn },
+  })
+  revalidatePath(`/admin/cases/${caseId}`)
+  return { ok: true }
 }

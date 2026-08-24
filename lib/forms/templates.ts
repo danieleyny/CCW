@@ -197,17 +197,61 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     isFillable: true,
     notarize: true,
     fontSize: 9,
-    requires: ["Applicants Name", "Applicants Address", "Birth Date", "Type of License"],
-    signatureOnly: ["Applicants Signature", "Instructors Signature"],
-    build: (v) => ({
-      text: {
-        "Applicants Name": s(v.fullName),
-        "Applicants Address": s(v.address),
-        Age: s(v.age),
-        "Birth Date": s(v.dob),
-        "Type of License": "Carry Guard",
-      },
-    }),
+    // The applicant identity + the §5-09 instructor block must ALL be filled — the
+    // form is blank only at the two signatures (notarised on paper). The instructor
+    // fields are collected in-platform (prelicense_instructor_statements) and
+    // composed into the four verified-statement lines here.
+    requires: [
+      "Applicants Name",
+      "Applicants Address",
+      "Birth Date",
+      "Type of License",
+      "Name oflnstructor",
+      "Name of Range Address Telephone Number",
+      "lnstmctors Verified Statement 1",
+      "lnstmctors Verified Statement 2",
+      "lnstmctors Verified Statement 3",
+      "lnstmctors Verified Statement 4",
+    ],
+    signatureOnly: ["Applicants Signature", "Instructors Signature", "Application Control Number"],
+    build: (v) => {
+      // §5-09 verified statement, composed from the instructor's structured answers.
+      // Each line is asserted only when the instructor actually attested it, so a
+      // missing answer leaves the line blank and the completeness gate flags it —
+      // we never fabricate the instructor's sworn statement.
+      const instrName = s(v.instructorName)
+      const met = v.metApplicant === true || v.metApplicant === "yes"
+      const noDanger = v.noDanger === true || v.noDanger === "yes"
+      const credentials = s(v.instructorCredentials)
+      const location = s(v.trainingLocation)
+      const phone = s(v.instructorPhone)
+      const line1 =
+        instrName && met
+          ? `I, ${instrName}, have personally met the applicant and am certified and authorized to provide the required firearms instruction${credentials ? ` (${credentials})` : ""}.`
+          : ""
+      const line2 = noDanger
+        ? "In my professional assessment the applicant poses no danger to himself/herself or to others."
+        : ""
+      const line3 = location ? `The instruction will take place at: ${location}.` : ""
+      const line4 = instrName ? `This statement is verified by me as true and correct.${phone ? ` Instructor telephone: ${phone}.` : ""}` : ""
+      // "Range name — address — telephone", where training takes place.
+      const rangeLine = [s(v.instructorRangeName), s(v.instructorAddress), phone].filter(Boolean).join(" — ")
+      return {
+        text: {
+          "Applicants Name": s(v.fullName),
+          "Applicants Address": s(v.address),
+          Age: s(v.age),
+          "Birth Date": s(v.dob),
+          "Type of License": "Carry Guard",
+          "Name oflnstructor": instrName,
+          "Name of Range Address Telephone Number": rangeLine,
+          "lnstmctors Verified Statement 1": line1,
+          "lnstmctors Verified Statement 2": line2,
+          "lnstmctors Verified Statement 3": line3,
+          "lnstmctors Verified Statement 4": line4,
+        },
+      }
+    },
   },
 
   // ── Company / Carry Guard application (SPN-01) — sponsor completes ──────────

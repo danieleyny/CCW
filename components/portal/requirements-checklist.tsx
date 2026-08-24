@@ -66,6 +66,9 @@ export interface ReqChecklistItem {
   legalStatus: string
   /** The case or statute behind a non-enforced status. Never fabricated. */
   legalCitation: string | null
+  /** Multi-part uploads (e.g. the guard card's front AND back): how many parts
+   *  are in vs. required. The item never reads as fully in until have >= need. */
+  parts?: { have: number; need: number }
   /** party='sponsor' — the sponsoring company owns this row. The applicant sees
    *  status only (progress), never an uploader or the file. */
   sponsorManaged?: boolean
@@ -86,6 +89,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 const LADDER_TONE: Record<string, string> = {
   muted: "bg-surface-2 text-text-mid",
   signal: "bg-signal-dim text-signal",
+  brass: "bg-brass/12 text-brass-bright",
   ok: "bg-ok/10 text-ok",
   warn: "bg-warn/10 text-warn",
 }
@@ -110,6 +114,7 @@ function LadderBadge({ item }: { item: ReqChecklistItem }) {
 const GLOW_BY_TONE: Record<string, string> = {
   muted: "glow-neutral",
   signal: "glow-review",
+  brass: "glow-received",
   ok: "glow-ok",
   warn: "glow-fix",
 }
@@ -118,6 +123,7 @@ const GLOW_BY_TONE: Record<string, string> = {
 const ICON_TONE: Record<string, string> = {
   muted: "text-text-mid",
   signal: "text-signal",
+  brass: "text-brass-bright",
   ok: "text-ok",
   warn: "text-warn",
 }
@@ -473,6 +479,15 @@ export function RequirementsChecklist({
                             dmvApplicant={item.reqCode === "DMV-01" ? dmvApplicant : null}
                           />
                           )
+                        )}
+
+                        {/* Multi-part uploads: one part is in, but not all of them.
+                            The item is not complete until every part is present. */}
+                        {item.parts && item.parts.have > 0 && item.parts.have < item.parts.need && !item.sponsorManaged && (
+                          <p className="mt-2 rounded-md border border-brass/30 bg-brass/[0.06] px-3 py-2 text-xs text-brass-bright">
+                            {item.parts.have} of {item.parts.need} uploaded — add the{" "}
+                            {item.parts.need - item.parts.have === 1 ? "remaining part" : "remaining parts"} to complete this.
+                          </p>
                         )}
 
                         {item.preparedBySponsor && !item.sponsorManaged && item.ladder !== "approved" && (

@@ -9,6 +9,7 @@ import {
   type LegalStatusKey,
 } from "@/components/admin/legal-status-editor"
 import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
+import { staleTemplateWarnings } from "@/lib/forms/drift"
 import { markRequirementVerified, flagRequirementForReview } from "./actions"
 
 export const metadata = { title: "Legal verification" }
@@ -55,6 +56,9 @@ export default async function LegalPage() {
   const staleCutoff = cutoffDate.toISOString().slice(0, 10)
   const stale = verified.filter((r) => !r.verified_on || r.verified_on < staleCutoff)
   const unenforced = all.filter((r) => r.legal_status !== "enforced")
+  // Template drift (3G): official PDFs change without notice; surface a warning,
+  // never an auto-swap.
+  const templateWarnings = await staleTemplateWarnings(supabase)
 
   return (
     <div className="space-y-6">
@@ -78,6 +82,23 @@ export default async function LegalPage() {
             {stale.length > 8 && `, and ${stale.length - 8} more`}. A confirmation from last quarter
             can be overtaken by litigation — re-check and re-save the status to renew the date.
           </p>
+        </div>
+      )}
+
+      {templateWarnings.length > 0 && (
+        <div className="rounded-lg border border-warn/30 bg-warn/8 p-3 text-sm">
+          <div className="flex items-center gap-2 font-semibold text-warn">
+            <ShieldAlert className="size-4" /> {templateWarnings.length} official form
+            {templateWarnings.length === 1 ? "" : "s"} need re-verification
+          </div>
+          <ul className="mt-1 space-y-0.5 text-xs text-text-mid">
+            {templateWarnings.map((w) => (
+              <li key={w.key}>
+                <b>{w.formNumber ?? w.key}</b>
+                {w.revision ? ` (${w.revision})` : ""} — {w.reason}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

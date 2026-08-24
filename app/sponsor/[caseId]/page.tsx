@@ -2,6 +2,7 @@ import { Building2, FileText, Landmark, Mail, IdCard } from "lucide-react"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
 import type { FactGroup } from "@/lib/facts/registry"
+import { sponsorItemState, SPONSOR_ITEM_COPY } from "@/lib/sponsor/status"
 import {
   loadSponsorCase,
   loadSponsorRequirements,
@@ -27,12 +28,6 @@ const TRACK_LABEL: Record<string, string> = {
   special_carry_guard: "NYPD Special Carry Guard",
   sponsored_unresolved: "NYPD armed guard — category being confirmed",
   concealed_carry: "NYPD licence",
-}
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Outstanding",
-  satisfied: "Received",
-  rejected: "Needs another version",
-  na: "Not needed",
 }
 
 export default async function SponsorCasePage({ params }: { params: Promise<{ caseId: string }> }) {
@@ -126,13 +121,19 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
           {packet.map((r) => {
             const doc = docByReq.get(r.req_code)
             const satisfied = r.status === "satisfied"
+            const state = r.status === "na" ? null : sponsorItemState(r.status, !!doc)
             return (
               <div key={r.case_requirement_id} className="rounded-lg border border-hairline bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-sm font-medium">{title(r.req_code, r.title)}</div>
                     <div className="mt-0.5 text-xs text-text-mid">
-                      {r.req_code} · {STATUS_LABEL[r.status] ?? r.status}
+                      {r.req_code} ·{" "}
+                      {state ? (
+                        <span className={SPONSOR_ITEM_COPY[state].className}>{SPONSOR_ITEM_COPY[state].label}</span>
+                      ) : (
+                        "Not needed"
+                      )}
                       {!r.blocking && " · optional"}
                     </div>
                     {actionFor(r.req_code)?.help && (
@@ -191,7 +192,14 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                   <div className="min-w-0">
                     <div className="text-sm font-medium">{title(r.req_code, r.title)}</div>
                     <div className="mt-0.5 text-xs text-text-mid">
-                      {r.req_code} · {STATUS_LABEL[r.status] ?? r.status}
+                      {r.req_code} ·{" "}
+                      {r.status === "na" ? (
+                        "Not needed"
+                      ) : (
+                        <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, !!doc)].className}>
+                          {SPONSOR_ITEM_COPY[sponsorItemState(r.status, !!doc)].label}
+                        </span>
+                      )}
                       {prog && prog.required_count != null && ` · ${prog.done_count ?? 0} of ${prog.required_count} back`}
                     </div>
                   </div>

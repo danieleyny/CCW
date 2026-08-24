@@ -42,3 +42,37 @@ export async function runFormTemplateDriftCheck(admin: DB): Promise<{ checked: n
 
   return { checked: rows?.length ?? 0, drifted }
 }
+
+export interface TemplateWarning {
+  key: string
+  formNumber: string | null
+  revision: string | null
+  reason: string
+}
+
+/**
+ * Staff-facing template warnings (3G): a template whose latest drift check found
+ * the official source changed, or one not re-verified in a long time. Surfaced as
+ * a visible warning — never an automatic swap. Already-finalised documents keep
+ * the template sha256 they were made from, so this never invalidates them.
+ */
+export async function staleTemplateWarnings(db: DB): Promise<TemplateWarning[]> {
+  const STALE_DAYS = 180
+  const [{ data: templates }, { data: checks }] = await Promise.all([
+    db.from("form_templates").select("key, form_number, revision, verified_at").eq("active", true),
+    db.from("form_template_checks").select("template_key, matched, checked_at").order("checked_at", { ascending: false }),
+  ])
+  const latest = new Map<string, boolean>()
+  for (const c of checks ?? []) if (!latest.has(c.template_key)) latest.set(c.template_key, c.matched)
+  const now = Date.now()
+  const out: TemplateWarning[] = []
+  for (const t of templates ?? []) {
+    const base = { key: t.key, formNumber: t.form_number, revision: t.revision }
+    if (latest.get(t.key) === false) {
+      out.push({ ...base, reason: "The official source changed since we last verified this form. Re-fetch and re-verify before filing." })
+    } else if (t.verified_at && (now - new Date(t.verified_at).getTime()) / 86_400_000 > STALE_DAYS) {
+      out.push({ ...base, reason: `Not re-verified in over ${STALE_DAYS} days — confirm it against the live source before filing.` })
+    }
+  }
+  return out
+}

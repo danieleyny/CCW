@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { LicenseHub, type AuthRow, type ReportRow } from "@/components/portal/license-hub"
 import { StartRenewalButton } from "@/components/portal/start-renewal-button"
+import { DosUpgradePanel, type DosUpgrade } from "@/components/portal/dos-upgrade-panel"
 import { formatDate, daysUntil } from "@/lib/format"
 import { RENEWAL_RUNWAY_DAYS } from "@/lib/license"
 import { reviewUrl } from "@/lib/review"
@@ -44,6 +45,14 @@ export default async function LicensePage() {
       .order("reported_at", { ascending: false })
       .limit(10),
   ])
+
+  // The DOS armed-status upgrade sub-lifecycle (armed-guard cases only; opened at
+  // NYPD issuance). Absent → the panel doesn't render.
+  const { data: dos } = await supabase
+    .from("dos_armed_upgrade")
+    .select("dos_1619f_status, firearms_47hr_status, guard_card_returned, dos_fee_paid, inservice_due_on, firearms_annual_due_on, registration_expires_on")
+    .eq("case_id", myCase.id)
+    .maybeSingle()
 
   const expires = kase?.license_expires_on ?? null
   const expiresIn = daysUntil(expires)
@@ -123,6 +132,8 @@ export default async function LicensePage() {
           )}
         </CardContent>
       </Card>
+
+      {dos && <DosUpgradePanel dos={dos as DosUpgrade} />}
 
       {/* The review ASK — only once licensed AND a real review URL is configured
           (NEXT_PUBLIC_REVIEW_URL). Never a rating display, never fabricated. */}

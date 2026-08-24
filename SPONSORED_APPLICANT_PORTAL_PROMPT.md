@@ -129,12 +129,107 @@ Mirror the instructor policies exactly. A sponsor rep may read a `case_requireme
 
 ---
 
-## PHASE 2 — The Carry Guard track and its requirements
+## PHASE 2 — Track resolution, then the requirements
+
+### 2A. The system decides the track. Nobody types it in.
+
+We do not know where this applicant lives, and we should never have to. The track
+is **derived** from intake answers and recomputed whenever they change — the same
+way `ELG-02` is already system-verified from the intake address rather than
+asserted by a human.
 
 ```
-1. cases.license_track enum: 'concealed_carry' | 'carry_guard' | 'special_carry_guard'
-   (default 'concealed_carry' so every existing case is unchanged).
-   Requirement seeding keys off it.
+cases.license_track enum:
+  'concealed_carry'      (default — every existing case is unchanged)
+  'carry_guard'
+  'special_carry_guard'
+  'sponsored_unresolved' (armed-guard case whose category is not yet determinable)
+
+resolveArmedTrack({ residenceState, residenceCity, hasCountyPistolLicense,
+                    principalEmploymentInNYC }) →
+  { track, blockers[], mustConfirmWithLicenseDivision }
+```
+
+**The branch logic, from NY Penal Law § 400.00(3):** an application is filed with
+the licensing officer where the applicant *"resides, is principally employed or has
+his or her principal place of business."* Employment in NYC is a real jurisdictional
+hook, which is what makes branches B and C possible at all.
+
+```
+BRANCH A — lives in one of the five boroughs
+  track = 'carry_guard'
+  No extra requirements beyond the Carry Guard set. This is the clean path.
+
+BRANCH B — lives in New York State, outside the five boroughs
+  track = 'special_carry_guard'
+  ASK: do you currently hold an active pistol licence from your home county?
+    YES → add SCG-01 (county licence, front and back, must be active).
+          Otherwise identical to Branch A.
+    NO  → BLOCKED, and say so plainly. Special Carry Guard is built on top of an
+          existing county licence. He must first apply to his OWN county's
+          licensing officer — a different authority, a different process, its own
+          timeline, and not something we file with the NYPD.
+          Set track='sponsored_unresolved', raise a blocker, and surface a card
+          explaining the prerequisite and what we can and cannot do about it.
+          Do NOT seed the NYPD requirement set and let him work a file that
+          cannot be submitted.
+
+BRANCH C — lives outside New York State
+  track = 'sponsored_unresolved', mustConfirmWithLicenseDivision = true
+  The § 400.00(3) principal-employment hook plausibly gives the NYPD jurisdiction
+  because the ISS post is in NYC, but the correct CATEGORY for a non-resident
+  armed guard is not something to infer from published pages. Surface a staff task
+  to confirm with the License Division before any filing fee is paid, and show the
+  applicant an honest "we're confirming your category" state rather than a
+  checklist we are not sure about.
+```
+
+**Rules for the resolver:**
+
+```
+1. It is a pure function with unit tests, not logic sprinkled through components.
+   Test all four outcomes plus the recompute-on-change case.
+2. It runs on intake completion AND on any later edit to address or county-licence
+   answers. If the answer changes, the track changes and the requirement set is
+   re-seeded — satisfied requirements that survive the change keep their status
+   and their documents. Never orphan an approved document because a track flipped.
+3. 'sponsored_unresolved' is a first-class state, not an error. The portal works,
+   the sponsor packet proceeds (ISS's documents are the same in every branch), and
+   only the applicant's NYPD-specific requirements wait.
+4. Never let a case reach the CP-5 gate on 'sponsored_unresolved'. Add it to the
+   gate's blocker list with a clear reason.
+5. Staff can override the resolved track from admin — with a required note and a
+   logActivity entry. The License Division's answer beats our inference, and when
+   staff override, the note records what they were told and by whom.
+```
+
+### 2B. The intake questions that feed it
+
+```
+Address already exists in intake — derive residenceState and residenceCity from it
+and do NOT ask again. Add only what is genuinely new, and only for armed-guard cases:
+
+  Q1 (conditional — only when the address is in NY State outside the five boroughs)
+     "Do you currently hold a pistol licence issued by your home county?"
+     Yes / No / I'm not sure
+     "Not sure" behaves as No for gating but raises a staff task rather than
+     showing him the hard blocker — plenty of people don't know what they hold.
+
+  Q2 (all armed-guard cases)
+     "Will your ISS Action assignment be located in New York City?"
+     This establishes the principal-employment hook and matters most in Branch C.
+
+  Q3 (all armed-guard cases)
+     "Do you already hold any other pistol licence or permit, in any state?"
+     Drives the PLE-01 pre-licence exemption branch — a person who already holds a
+     licence does not need the 38 RCNY § 5-09 exemption to enrol in the 47-hour
+     course, which is the difference between Workflow A and Workflow B.
+```
+
+### 2C. The requirement set
+
+```
+1. Requirement seeding keys off the resolved track.
 
 2. SPONSOR-OWNED codes (party='sponsor', applicant_scope='progress'):
    SPN-01  Carry Guard company form — notarised where required
@@ -158,6 +253,8 @@ Mirror the instructor policies exactly. A sponsor rep may read a `case_requireme
            application; needs an authorised instructor's signed statement.
    FRM-01  47-hour firearms course certificate
    CSC-01  Child support certification form
+   SCG-01  Home-county pistol licence, front and back — BRANCH B ONLY, and only
+           when the applicant answered Yes to holding one
 
 4. REMOVE for this track — these are Concealed/Special Carry requirements and do
    NOT belong on a Carry Guard file:
@@ -289,9 +386,14 @@ Nearly unchanged, which is the point.
 Sponsor:    ISS Action, Inc. — 158-12 Rockaway Blvd, Suite 200, Queens, NY 11434
 Rep:        Pamela Newman <pnewman@issaction.com>   role='sponsor'
 Applicant:  Chery Gimps <gimpschery@gmail.com>      role='client'
-Case:       license_track = 'carry_guard'  (confirm his residence first — if he
-            lives outside the five boroughs it is 'special_carry_guard')
+Case:       license_track = 'sponsored_unresolved'
 Scope:      case_sponsorships.scope = 'full', status='invited' until he consents
+
+DO NOT seed a track. We do not know where Chery lives, and guessing produces a
+checklist that is confidently wrong. Seed him unresolved, let intake ask, and let
+resolveArmedTrack() decide. Pamela's packet is identical in every branch, so ISS
+can start immediately while his category settles — which is exactly the behaviour
+the unresolved state exists to give us.
 
 Leave agency_license_number, expiry and all custodian fields NULL. They get
 populated from what Pamela supplies through SPN-04 and SPN-05 — never from a
@@ -323,16 +425,30 @@ walked each person through what they are about to see.
    rows, requires exactly TWO character references, and does NOT require the
    16-hour course or the social media list. A concealed_carry case is byte-for-byte
    unchanged from today.
-5. EXISTING PRODUCT UNTOUCHED: every current concierge and self-guided case
+5. TRACK RESOLUTION — unit-test resolveArmedTrack() on all four outcomes:
+   • Brooklyn address                        → carry_guard, no blockers
+   • Westchester + holds county licence      → special_carry_guard, SCG-01 seeded
+   • Westchester + no county licence         → sponsored_unresolved, blocker names
+                                               the county prerequisite
+   • New Jersey address, NYC assignment      → sponsored_unresolved,
+                                               mustConfirmWithLicenseDivision
+   Then test the RECOMPUTE path: flip the county-licence answer and confirm the
+   requirement set re-seeds while already-approved documents keep their status and
+   stay attached. An approved driving abstract must survive a track change.
+6. UNRESOLVED IS NOT A DEAD END: on a sponsored_unresolved case the sponsor portal
+   works fully and Pamela's packet can be completed, while the applicant sees an
+   honest "we're confirming your category" state. The CP-5 gate refuses to advance
+   such a case and names the reason.
+7. EXISTING PRODUCT UNTOUCHED: every current concierge and self-guided case
    behaves identically. Instructor visibility is unchanged — party_scope must not
    have altered trainer_scope's answers anywhere.
-6. AUDIT: opening a sensitive document writes a document_access_log row, and that
+8. AUDIT: opening a sensitive document writes a document_access_log row, and that
    row surfaces on the applicant's read trail.
-7. UNLISTED: build, then grep the output and sitemap for /sponsor and /invite —
+9. UNLISTED: build, then grep the output and sitemap for /sponsor and /invite —
    no nav entry, no sitemap row, noindex present on every route.
-8. CONSENT COPY: the consent screen names the actual categories. Read it aloud and
+10. CONSENT COPY: the consent screen names the actual categories. Read it aloud and
    ask whether Chery would feel informed or ambushed.
-9. pnpm build && pnpm test green; 390px on both new surfaces.
+11. pnpm build && pnpm test green; 390px on both new surfaces.
 ```
 
 ## DO NOT

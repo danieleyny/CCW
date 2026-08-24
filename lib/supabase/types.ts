@@ -1826,6 +1826,77 @@ export type Database = {
           },
         ]
       }
+      dos_armed_upgrade: {
+        Row: {
+          case_id: string
+          dos_1619f_status: string
+          dos_fee_paid: boolean
+          firearms_47hr_status: string
+          firearms_annual_due_on: string | null
+          guard_card_returned: boolean
+          inservice_due_on: string | null
+          opened_at: string
+          registration_expires_on: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          case_id: string
+          dos_1619f_status?: string
+          dos_fee_paid?: boolean
+          firearms_47hr_status?: string
+          firearms_annual_due_on?: string | null
+          guard_card_returned?: boolean
+          inservice_due_on?: string | null
+          opened_at?: string
+          registration_expires_on?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          case_id?: string
+          dos_1619f_status?: string
+          dos_fee_paid?: boolean
+          firearms_47hr_status?: string
+          firearms_annual_due_on?: string | null
+          guard_card_returned?: boolean
+          inservice_due_on?: string | null
+          opened_at?: string
+          registration_expires_on?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dos_armed_upgrade_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dos_armed_upgrade_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "dos_armed_upgrade_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "dos_armed_upgrade_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engagements: {
         Row: {
           case_id: string
@@ -2817,6 +2888,100 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_requirement_feed"
             referencedColumns: ["engagement_id"]
+          },
+        ]
+      }
+      prelicense_instructor_statements: {
+        Row: {
+          case_id: string
+          credentials: string | null
+          instructor_address: string | null
+          instructor_id: string | null
+          instructor_name: string | null
+          instructor_phone: string | null
+          met_applicant: boolean
+          no_danger: boolean
+          notes: string | null
+          range_name: string | null
+          submitted_at: string | null
+          training_location: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          case_id: string
+          credentials?: string | null
+          instructor_address?: string | null
+          instructor_id?: string | null
+          instructor_name?: string | null
+          instructor_phone?: string | null
+          met_applicant?: boolean
+          no_danger?: boolean
+          notes?: string | null
+          range_name?: string | null
+          submitted_at?: string | null
+          training_location?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          case_id?: string
+          credentials?: string | null
+          instructor_address?: string | null
+          instructor_id?: string | null
+          instructor_name?: string | null
+          instructor_phone?: string | null
+          met_applicant?: boolean
+          no_danger?: boolean
+          notes?: string | null
+          range_name?: string | null
+          submitted_at?: string | null
+          training_location?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prelicense_instructor_statements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prelicense_instructor_statements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "prelicense_instructor_statements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "prelicense_instructor_statements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prelicense_instructor_statements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
+          },
+          {
+            foreignKeyName: "prelicense_instructor_statements_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }

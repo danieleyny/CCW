@@ -119,6 +119,14 @@ interface ObtainAction extends ActionBase {
   sourceLabel?: string
   /** Several files are legitimate (e.g. one abstract per state lived in). */
   multiple?: boolean
+  /**
+   * A FIXED number of parts that must ALL be present before the item can be
+   * considered complete — the guard card's front AND back (2). The checklist
+   * shows "1 of 2 uploaded" and never reads the item as fully in until every
+   * part is present. `multiple` (unknown count, e.g. one DMV abstract per state)
+   * is a separate, softer signal — no fixed target to hit.
+   */
+  minFiles?: number
 }
 
 interface AttestAction extends ActionBase {
@@ -545,6 +553,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     steps: ["Find your NYS security guard registration card.", "Photograph or scan the front and back.", "Upload both here."],
     sourceUrl: "https://dos.ny.gov/security-guard",
     sourceLabel: "NYS DOS — security guard",
+    minFiles: 2,
   },
   "GRD-02": {
     mode: "obtain",

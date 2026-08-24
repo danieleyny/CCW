@@ -49,6 +49,14 @@ export function ProvisionSponsorForm() {
             <Input id="applicantEmail" name="applicantEmail" type="email" className="mt-1" required />
           </div>
           <div>
+            <Label htmlFor="custodianName" className="text-xs">Gun custodian name (§5-06)</Label>
+            <Input id="custodianName" name="custodianName" className="mt-1" required />
+          </div>
+          <div>
+            <Label htmlFor="custodianLicenseNumber" className="text-xs">Custodian NYPD licence #</Label>
+            <Input id="custodianLicenseNumber" name="custodianLicenseNumber" className="mt-1" required />
+          </div>
+          <div>
             <Label htmlFor="scope" className="text-xs">Scope</Label>
             <select
               id="scope"

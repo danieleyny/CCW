@@ -40,7 +40,14 @@ export interface FactDef {
   derive?: (get: (k: string) => string) => string
 }
 
-const nameParts = (full: string) => full.trim().split(/\s+/)
+// The legal name is NEVER inferred from a display name or an email address
+// (3F). clients.full_name can carry whatever was set at sign-up — including an
+// email — so a value that looks email-like yields no name at all. The real legal
+// name comes from case_facts, confirmed against an identity document / the
+// applicant; until then legalFirstName/legalLastName resolve empty and the
+// completeness gate + the details screen show them as still-needed.
+const looksLikeEmail = (v: string) => /\S+@\S+\.\S+/.test(v) || v.includes("@")
+const nameParts = (full: string) => (looksLikeEmail(full) ? [] : full.trim().split(/\s+/).filter(Boolean))
 
 export const FACTS: FactDef[] = [
   // ── You ──
