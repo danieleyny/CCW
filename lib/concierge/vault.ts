@@ -75,6 +75,13 @@ export function buildVaultItems(items: ReqChecklistItem[], currentByReq: Record<
     .filter((i) => {
       if (i.status === "na") return false
       if (idFamilyCollapsed.has(i.reqCode)) return false
+      // FIREWALL: the sponsoring company's packet (party='sponsor', e.g. SPN-01
+      // "Carry Guard company form") is NEVER the applicant's to upload — it belongs
+      // on the sponsor portal. It also can't reflect here (requirement-view skips
+      // sponsor docs from currentByReq), so a leaked slot would read "Not uploaded"
+      // forever after an upload. The applicant sees these only as progress in
+      // "Your application".
+      if (i.sponsorManaged) return false
       const action = actionFor(i.reqCode)
       return action?.mode === "obtain" && !!action.documentType
     })
