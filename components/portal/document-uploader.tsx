@@ -146,15 +146,16 @@ export function DocumentUploader({
   // another requirement. Show that, with a link — not an empty "upload it again".
   const sharedProvided = !!current?.sharedFromName && !needsFix
 
-  // UX 2.4 — three visual states in the concierge vault. RECEIVED is a distinct,
-  // obviously-positive BRASS state (never green — green means a human approved it).
+  // Three visual states in the concierge vault. An uploaded doc turns GREEN so it
+  // clearly reads as "in" (owner's call); staff acceptance shows a stronger green
+  // gradient + an "Approved" label, so the two stay distinguishable.
   const approved = current?.status === "approved"
   const received = !!current && current.status === "pending"
   const stateClass = conciergeVoice
     ? approved
-      ? "border-ok/50 bg-gradient-to-br from-ok/10 to-transparent ring-1 ring-ok/15"
+      ? "border-ok/60 bg-gradient-to-br from-ok/15 to-transparent ring-1 ring-ok/25"
       : received
-        ? "border-brass/50 bg-gradient-to-br from-brass/10 to-transparent ring-1 ring-brass/15"
+        ? "border-ok/40 bg-gradient-to-br from-ok/8 to-transparent ring-1 ring-ok/15"
         : "border-hairline bg-card"
     : "border bg-card"
 
@@ -171,7 +172,9 @@ export function DocumentUploader({
               <CheckCircle2 className="size-3.5" /> Approved
             </span>
           ) : conciergeVoice && received ? (
-            <span className="whitespace-nowrap text-xs font-medium text-brass-bright">Received — we&apos;re checking this</span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-ok">
+              <CheckCircle2 className="size-3.5" /> Uploaded — we&apos;re checking this
+            </span>
           ) : (
             <StatusBadge status={current.status} />
           )
