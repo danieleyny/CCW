@@ -90,7 +90,8 @@ export function ReviewAndFile({
           {items.map((item) => (
             <div
               key={item.reqCode}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline bg-card p-4"
+              id={item.reqCode}
+              className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline bg-card p-4"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">

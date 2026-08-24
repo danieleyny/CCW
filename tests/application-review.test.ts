@@ -42,11 +42,11 @@ describe("buildApplicationReview", () => {
     expect(keys).toEqual(["identity", "training"])
   })
 
-  it("an outstanding document is theirs to do → 'You' + a link back to the vault", () => {
+  it("an outstanding document is theirs to do → 'You' + a per-item link into the vault", () => {
     const [g] = buildApplicationReview(view({ items: [item("RES-01")] }), {})
     const row = g.rows[0]
     expect(row.whoHasIt).toBe("You")
-    expect(row.actionHref).toBe("/portal/concierge#vault")
+    expect(row.actionHref).toBe("/portal/concierge#RES-01") // deep-links to THIS card, not the whole vault
     expect(row.tone).toBe("todo")
   })
 
@@ -55,6 +55,17 @@ describe("buildApplicationReview", () => {
     const row = buildApplicationReview(v, {})[0].rows[0]
     expect(row.whoHasIt).toBe("Your concierge")
     expect(row.actionHref).toBeNull()
+  })
+
+  it("the collapsed ID family points at the photo-ID card, not its own", () => {
+    // IDN-02/03 are covered by the IDN-01 vault card, so their Go targets IDN-01.
+    const rows = buildApplicationReview(view({ items: [item("IDN-02"), item("IDN-03")] }), {}).flatMap((g) => g.rows)
+    for (const r of rows) expect(r.actionHref).toBe("/portal/concierge#IDN-01")
+  })
+
+  it("a system-verified / attest item has no Go button (no landing spot)", () => {
+    const row = buildApplicationReview(view({ items: [item("ELG-01"), item("FEE-01")] }), {}).flatMap((g) => g.rows)
+    for (const r of row) expect(r.actionHref).toBeNull()
   })
 
   it("references belong to the references, shown as progress", () => {
