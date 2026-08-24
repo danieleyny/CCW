@@ -153,6 +153,10 @@ export async function recordDocument(input: {
   revalidatePath("/portal/documents")
   revalidatePath("/portal/checklist")
   revalidatePath("/portal")
+  // The concierge applicant's vault lives on /portal/concierge — without this, a
+  // concierge upload's router.refresh() served the stale (pre-upload) route and
+  // the card never flipped to "Received".
+  revalidatePath("/portal/concierge")
 }
 
 // ── References collector ──────────────────────────────────────────────────────

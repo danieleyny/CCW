@@ -51,20 +51,24 @@ export function DocumentVault({
       {total > 0 ? (
         <div className="space-y-3">
           {items.map((item) => (
-            <DocumentUploader
-              key={item.reqCode}
-              caseId={caseId}
-              clientId={clientId}
-              type={item.documentType as DocumentType}
-              reqCode={item.reqCode}
-              label={item.title}
-              description={item.help}
-              current={item.current}
-              photoSpec={item.photoSpec}
-              smartKinds={item.smartKinds.length > 0 ? item.smartKinds : undefined}
-              conciergeVoice
-              guide={item.guide}
-            />
+            // id = req code so a "Go" deep-link (e.g. #DMV-01) scrolls to and
+            // highlights THIS card, not the whole vault. scroll-mt clears the
+            // sticky header.
+            <div key={item.reqCode} id={item.reqCode} className="scroll-mt-24">
+              <DocumentUploader
+                caseId={caseId}
+                clientId={clientId}
+                type={item.documentType as DocumentType}
+                reqCode={item.reqCode}
+                label={item.title}
+                description={item.help}
+                current={item.current}
+                photoSpec={item.photoSpec}
+                smartKinds={item.smartKinds.length > 0 ? item.smartKinds : undefined}
+                conciergeVoice
+                guide={item.guide}
+              />
+            </div>
           ))}
         </div>
       ) : (

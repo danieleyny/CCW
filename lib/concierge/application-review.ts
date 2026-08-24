@@ -34,6 +34,16 @@ export function applicantGroup(reqCode: string): ApplicantGroup {
   return "filing"
 }
 
+/**
+ * The concierge-page anchor a "Go" link should land on for a requirement. The
+ * vault collapses the ID family (IDN-02/03 are covered by the IDN-01 photo-ID
+ * card), so those point at IDN-01; everything else is its own card by req code.
+ */
+export function vaultAnchor(reqCode: string): string {
+  if (reqCode === "IDN-02" || reqCode === "IDN-03") return "IDN-01"
+  return reqCode
+}
+
 export type ReviewTone = "ok" | "progress" | "todo" | "waiting"
 
 export interface ReviewRow {
@@ -82,25 +92,34 @@ function derive(
     if (satisfied) return { status: "Signed", tone: "ok", whoHasIt: "Your concierge", actionHref: null }
     const draft = view.generated[item.reqCode]
     if (draft) {
+      // Land on THIS item in Review & file, not the top of the section.
       return {
         status: "Prepared — needs your signature",
         tone: "todo",
         whoHasIt: "You",
-        actionHref: "/portal/concierge#review",
+        actionHref: `/portal/concierge#${item.reqCode}`,
       }
     }
     return { status: "We're preparing this", tone: "waiting", whoHasIt: "Your concierge", actionHref: null }
   }
 
-  // obtain / everything else — a document to gather
-  if (satisfied) return { status: "Approved", tone: "ok", whoHasIt: "Your concierge", actionHref: null }
-  if (rejected) {
-    return { status: "Needs a fix", tone: "todo", whoHasIt: "You", actionHref: "/portal/concierge#vault" }
+  // obtain — a document the applicant gathers, so it has a vault card to land on.
+  // Deep-link to THIS card (collapsed ID family → the photo-ID card).
+  if (action?.mode === "obtain") {
+    if (satisfied) return { status: "Approved", tone: "ok", whoHasIt: "Your concierge", actionHref: null }
+    if (rejected) {
+      return { status: "Needs a fix", tone: "todo", whoHasIt: "You", actionHref: `/portal/concierge#${vaultAnchor(item.reqCode)}` }
+    }
+    if (view.currentByReq[item.reqCode]) {
+      return { status: "Received — we're checking it", tone: "progress", whoHasIt: "Your concierge", actionHref: null }
+    }
+    return { status: "We still need this from you", tone: "todo", whoHasIt: "You", actionHref: `/portal/concierge#${vaultAnchor(item.reqCode)}` }
   }
-  if (view.currentByReq[item.reqCode]) {
-    return { status: "Received — we're checking it", tone: "progress", whoHasIt: "Your concierge", actionHref: null }
-  }
-  return { status: "We still need this from you", tone: "todo", whoHasIt: "You", actionHref: "/portal/concierge#vault" }
+
+  // attest / system-verified / anything else — nothing for the applicant to open,
+  // so no "Go" button (it would point at a section that doesn't exist).
+  if (satisfied) return { status: "Done", tone: "ok", whoHasIt: "Your concierge", actionHref: null }
+  return { status: "We're handling this", tone: "waiting", whoHasIt: "Your concierge", actionHref: null }
 }
 
 /**
