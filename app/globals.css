@@ -257,6 +257,40 @@
   }
 }
 
+/* Deep-link attention pulse — a blue (signal) ring drawn around the section a
+   "Go" link points at, so the eye lands where the click meant to go. Applied +
+   removed by DeepLinkHighlight. Uses box-shadow (paints outside the box, no
+   layout shift) and its own rounding so the ring hugs the card. */
+@keyframes deep-link-flash {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--signal) 70%, transparent);
+  }
+  20% {
+    box-shadow:
+      0 0 0 3px var(--signal),
+      0 0 26px 4px color-mix(in oklab, var(--signal) 45%, transparent);
+  }
+  75% {
+    box-shadow:
+      0 0 0 3px color-mix(in oklab, var(--signal) 55%, transparent),
+      0 0 20px 3px color-mix(in oklab, var(--signal) 22%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.deep-link-flash {
+  border-radius: 0.85rem;
+  animation: deep-link-flash 2.4s ease-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No pulse — but still mark the target with a steady ring briefly. */
+  .deep-link-flash {
+    animation: deep-link-flash 0.01s linear 1;
+    box-shadow: 0 0 0 2px var(--signal);
+  }
+}
+
 @media (max-width: 480px) {
   /* Scale the glow down so it never bleeds past a full-width phone card. */
   .glow-neutral::before,

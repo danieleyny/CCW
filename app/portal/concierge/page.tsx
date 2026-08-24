@@ -12,6 +12,7 @@ import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
+import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
 import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
 import { BookCall } from "@/components/portal/concierge/book-call"
 import { DocumentVault } from "@/components/portal/concierge/document-vault"
@@ -124,6 +125,7 @@ export default async function ConciergeHome() {
   return (
     <div className="space-y-6">
       <ScrollToTop />
+      <DeepLinkHighlight />
       <div>
         <SectionEyebrow>Full Concierge</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Welcome, {firstName}.</h1>
@@ -159,7 +161,9 @@ export default async function ConciergeHome() {
 
       <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
 
-      <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} />
+      <div id="review" className="scroll-mt-20">
+        <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} />
+      </div>
 
       <section className="space-y-3">
         <div>
