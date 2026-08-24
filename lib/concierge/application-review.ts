@@ -73,6 +73,14 @@ function derive(
   const satisfied = item.status === "satisfied"
   const rejected = item.status === "rejected"
 
+  // The sponsoring company's packet is theirs to provide, not the applicant's —
+  // status only, never an upload slot or a "Go" (there's nothing here for the
+  // applicant to open). The file itself stays firewalled.
+  if (item.sponsorManaged) {
+    if (satisfied) return { status: "Received", tone: "ok", whoHasIt: "Your sponsor", actionHref: null }
+    return { status: "Your sponsor is handling this", tone: "waiting", whoHasIt: "Your sponsor", actionHref: null }
+  }
+
   if (action?.mode === "roster") {
     const isCohab = action.roster === "cohabitants"
     const prog = isCohab ? view.cohabitantProgress : view.referenceProgress

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Check, Loader2, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { uploadSponsorDocument } from "@/app/sponsor/actions"
@@ -23,6 +24,7 @@ export function SponsorUploader({
   satisfied: boolean
   fileName: string | null
 }) {
+  const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [pending, start] = useTransition()
   const [done, setDone] = useState(satisfied)
@@ -42,6 +44,9 @@ export function SponsorUploader({
       }
       setDone(true)
       toast.success("Uploaded — your Gun License NYC team will review it.")
+      // Refresh so the status flips to "Received" and the document appears — the
+      // server action revalidates, but the current page needs the refetch too.
+      router.refresh()
     })
     if (inputRef.current) inputRef.current.value = ""
   }
