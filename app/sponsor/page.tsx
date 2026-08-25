@@ -1,9 +1,18 @@
 import Link from "next/link"
-import { ArrowRight, FolderOpen } from "lucide-react"
+import { ArrowRight, FolderOpen, UserPlus } from "lucide-react"
 import { loadSponsorCases } from "@/lib/sponsor/queries"
+import { brand } from "@/config/brand"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 
 export const metadata = { title: "Your sponsored files", robots: { index: false, follow: false } }
+
+// Adding an applicant is an operator step (we provision the case + invite), so the
+// button opens a pre-written email to our team rather than a self-serve form.
+const ADD_APPLICANT_MAILTO = `mailto:${brand.contact.email}?subject=${encodeURIComponent(
+  "New sponsored applicant"
+)}&body=${encodeURIComponent(
+  "Hi Gun License NYC team,\n\nI'd like to sponsor another applicant. Their details:\n\nApplicant full name:\nApplicant email:\nCompany:\nAssignment / role:\n\nThanks,"
+)}`
 
 const TRACK_LABEL: Record<string, string> = {
   carry_guard: "NYPD Carry Guard",
@@ -22,9 +31,17 @@ export default async function SponsorHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <SectionEyebrow>Sponsor portal</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your sponsored files</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <SectionEyebrow>Sponsor portal</SectionEyebrow>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your sponsored files</h1>
+        </div>
+        <a
+          href={ADD_APPLICANT_MAILTO}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
+        >
+          <UserPlus className="size-4" /> Add another applicant
+        </a>
       </div>
 
       {cases.length === 0 ? (

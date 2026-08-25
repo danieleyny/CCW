@@ -265,12 +265,13 @@
   0% {
     box-shadow: 0 0 0 0 color-mix(in oklab, var(--signal) 70%, transparent);
   }
-  20% {
+  10% {
     box-shadow:
       0 0 0 3px var(--signal),
       0 0 26px 4px color-mix(in oklab, var(--signal) 45%, transparent);
   }
-  75% {
+  /* Hold the ring bright through the middle so the eye has time to land. */
+  85% {
     box-shadow:
       0 0 0 3px color-mix(in oklab, var(--signal) 55%, transparent),
       0 0 20px 3px color-mix(in oklab, var(--signal) 22%, transparent);
@@ -281,7 +282,7 @@
 }
 .deep-link-flash {
   border-radius: 0.85rem;
-  animation: deep-link-flash 2.4s ease-out 1;
+  animation: deep-link-flash 5s ease-out 1;
 }
 @media (prefers-reduced-motion: reduce) {
   /* No pulse — but still mark the target with a steady ring briefly. */

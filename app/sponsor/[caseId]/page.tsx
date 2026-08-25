@@ -53,8 +53,10 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   for (const d of docs) if (!docByReq.has(d.req_code)) docByReq.set(d.req_code, d)
   const rosterByReq = new Map(roster.map((r) => [r.req_code, r]))
 
-  const packet = reqs.filter((r) => r.party === "sponsor")
-  const applicant = reqs.filter((r) => r.party === "applicant")
+  // Hide not-applicable items entirely (e.g. REF-01 doesn't apply to the armed
+  // track) so the rep never sees a "Four references" row that isn't real.
+  const packet = reqs.filter((r) => r.party === "sponsor" && r.status !== "na")
+  const applicant = reqs.filter((r) => r.party === "applicant" && r.status !== "na")
 
   // At full scope the rep gets execution parity on the applicant's file — upload +
   // prepare drafts through the SAME actions the applicant uses. We load the
@@ -143,6 +145,8 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                   {r.req_code === "SPN-05" ? null : (
                     <div className="flex shrink-0 items-center gap-2">
                       {r.req_code === "SPN-01" && <PrepareCompanyFormButton caseId={caseId} />}
+                      {/* View what was uploaded — the rep couldn't see their own file before. */}
+                      {doc?.document_id && <OpenDocumentButton documentId={doc.document_id} sensitive={false} />}
                       <SponsorUploader
                         caseId={caseId}
                         reqCode={r.req_code}

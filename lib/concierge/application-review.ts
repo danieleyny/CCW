@@ -118,7 +118,13 @@ function derive(
     if (rejected) {
       return { status: "Needs a fix", tone: "todo", whoHasIt: "You", actionHref: `/portal/concierge#${vaultAnchor(item.reqCode)}` }
     }
-    if (view.currentByReq[item.reqCode]) {
+    const cur = view.currentByReq[item.reqCode]
+    if (cur) {
+      // Covered by a document uploaded for another requirement (a passport that
+      // also proves DOB + citizenship) — it's done, nothing to open or send again.
+      if (cur.sharedFromName) {
+        return { status: "Provided — covered by your ID", tone: "ok", whoHasIt: "You", actionHref: null }
+      }
       return { status: "Received — we're checking it", tone: "progress", whoHasIt: "Your concierge", actionHref: null }
     }
     return { status: "We still need this from you", tone: "todo", whoHasIt: "You", actionHref: `/portal/concierge#${vaultAnchor(item.reqCode)}` }

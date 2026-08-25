@@ -8,6 +8,8 @@ import {
   type ReferenceRow,
   type CohabitantRow,
 } from "@/components/portal/collectors"
+import { requiredReferences } from "@/lib/intake/schema"
+import type { WizardAnswers } from "@/lib/intake/answers"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { NotarizedUpload } from "@/components/portal/notarized-upload"
@@ -49,6 +51,16 @@ export default async function PeoplePage({
   }
 
   const supabase = await createClient()
+  // Track-aware reference count: carry_guard / special_carry_guard need TWO, not four.
+  const [{ data: kase }, { data: intake }] = await Promise.all([
+    supabase.from("cases").select("license_track, is_renewal").eq("id", myCase.id).maybeSingle(),
+    supabase.from("intake_sessions").select("answers").eq("case_id", myCase.id).maybeSingle(),
+  ])
+  const requiredRefs = requiredReferences((intake?.answers ?? {}) as WizardAnswers, {
+    isRenewal: kase?.is_renewal ?? false,
+    licenseTrack: (kase?.license_track as "carry_guard" | "special_carry_guard" | undefined) ?? undefined,
+  })
+
   const [refs, cohabs, reqs] = await Promise.all([
     supabase
       .from("character_references")
@@ -82,7 +94,7 @@ export default async function PeoplePage({
           <TabsTrigger value="household">Household ({cohabs.data?.length ?? 0})</TabsTrigger>
         </TabsList>
         <TabsContent value="references" className="mt-4 space-y-6">
-          <ReferenceCollector caseId={myCase.id} references={(refs.data ?? []) as ReferenceRow[]} />
+          <ReferenceCollector caseId={myCase.id} references={(refs.data ?? []) as ReferenceRow[]} required={requiredRefs} />
 
           {(refs.data ?? []).length > 0 && (
             <div>
