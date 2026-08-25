@@ -95,7 +95,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
         .eq("case_id", myCase.id)
         .eq("signer_key", "applicant")
         .maybeSingle(),
-      db.from("cases").select("is_renewal").eq("id", myCase.id).maybeSingle(),
+      db.from("cases").select("is_renewal, license_track").eq("id", myCase.id).maybeSingle(),
       // The latest review per item — staff rows are filtered by RLS on the view.
       db
         .from("requirement_review_latest")
@@ -276,7 +276,11 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       return { name: r.name, state }
     })
     referenceProgress = {
-      required: requiredReferences(intakeAnswers, { isRenewal: kase?.is_renewal ?? false }),
+      // Track-aware: carry_guard / special_carry_guard need TWO references, not four.
+      required: requiredReferences(intakeAnswers, {
+        isRenewal: kase?.is_renewal ?? false,
+        licenseTrack: (kase?.license_track as "carry_guard" | "special_carry_guard" | undefined) ?? undefined,
+      }),
       people,
       invitedCount: people.filter((p) => p.state !== "not_invited").length,
       notarizedCount: people.filter((p) => p.state === "notarized").length,

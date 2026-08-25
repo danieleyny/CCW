@@ -93,35 +93,42 @@ export async function recordDocument(input: {
   //  3. Neither — fall back to matching the registry document_type. (IDN-01/02/03
   //     all declare type "id", so this is the coarse path used only when the UI
   //     couldn't name the requirement.)
+  // Bind via the SERVICE ROLE: case_requirements is staff-writable only
+  // (case_requirements_write = is_staff_or_admin()), so the applicant's own RLS
+  // client CANNOT set document_id — the update silently no-ops and the evidence
+  // never binds (staff can't see it, and smart-cover siblings never light up).
+  // This is the documented service-role pattern: a client-initiated write to a
+  // staff-only table with server-derived values, scoped to this owned case.
+  const bindDb = createAdminClient()
   const smart = input.documentKind ? smartDocument(input.documentKind) : undefined
   const boundReqCodes: string[] = []
   if (smart) {
-    const { data: rows } = await supabase
+    const { data: rows } = await bindDb
       .from("case_requirements")
       .select("id, req_code")
       .eq("case_id", input.caseId)
       .in("req_code", smart.reqCodes)
       .neq("status", "satisfied")
     for (const r of rows ?? []) {
-      await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
+      await bindDb.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
       boundReqCodes.push(r.req_code)
     }
   } else {
     const { data: matchingReqs } = input.reqCode
-      ? await supabase
+      ? await bindDb
           .from("case_requirements")
           .select("id, req_code")
           .eq("case_id", input.caseId)
           .eq("req_code", input.reqCode)
           .neq("status", "satisfied")
-      : await supabase
+      : await bindDb
           .from("case_requirements")
           .select("id, req_code, requirements!inner(document_type)")
           .eq("case_id", input.caseId)
           .eq("requirements.document_type", input.type)
           .neq("status", "satisfied")
     for (const r of matchingReqs ?? []) {
-      await supabase.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
+      await bindDb.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
       boundReqCodes.push(r.req_code)
     }
   }
