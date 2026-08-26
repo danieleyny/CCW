@@ -128,16 +128,18 @@ const ICON_TONE: Record<string, string> = {
   warn: "text-warn",
 }
 
+// Keyed by the shared registry section (lib/requirements/sections).
 const CATEGORY_ICON: Record<string, LucideIcon> = {
-  eligibility: ShieldCheck,
   identity: Fingerprint,
-  household: Users,
+  residence: House,
+  records: Scale,
+  credentials: Medal,
   training: GraduationCap,
-  record: Scale,
-  storage: Lock,
-  fees: Receipt,
-  special: Medal,
-  other: FileText,
+  people: Users,
+  prepared: FileText,
+  conditional: Medal,
+  sponsor: Users,
+  admin: Receipt,
 }
 
 /**

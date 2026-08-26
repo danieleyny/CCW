@@ -3,6 +3,7 @@ import { resolveFacts } from "@/lib/facts/resolve"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
 import type { FactGroup } from "@/lib/facts/registry"
 import { sponsorItemState, SPONSOR_ITEM_COPY } from "@/lib/sponsor/status"
+import { sectionFor, SECTIONS, SECTION_ORDER } from "@/lib/requirements/sections"
 import {
   loadSponsorCase,
   loadSponsorRequirements,
@@ -57,6 +58,12 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   // track) so the rep never sees a "Four references" row that isn't real.
   const packet = reqs.filter((r) => r.party === "sponsor" && r.status !== "na")
   const applicant = reqs.filter((r) => r.party === "applicant" && r.status !== "na")
+  // Group the assist-scope list by the shared registry sections (same taxonomy the
+  // applicant's own surfaces use).
+  const applicantGroups = SECTIONS.filter((s) => !s.hidden && s.key !== "sponsor")
+    .map((s) => ({ key: s.key, title: s.title, rows: applicant.filter((r) => sectionFor(r.req_code) === s.key) }))
+    .filter((g) => g.rows.length > 0)
+    .sort((a, b) => SECTION_ORDER[a.key] - SECTION_ORDER[b.key])
 
   // At full scope the rep gets execution parity on the applicant's file — upload +
   // prepare drafts through the SAME actions the applicant uses. We load the
@@ -193,14 +200,19 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
             Nothing to show yet — the applicant&apos;s documents will appear here as they&apos;re added.
           </p>
         ) : (
-          // assist scope → read-only view of the non-disclosure paperwork.
-          <div className="space-y-2">
-            {applicant.map((r) => {
-              const doc = docByReq.get(r.req_code)
-              const prog = rosterByReq.get(r.req_code)
-              const sensitive = conciergeScopeFor(r.req_code) === "hidden"
-              return (
-                <div key={r.case_requirement_id} className="flex items-start justify-between gap-3 rounded-lg border border-hairline bg-card p-4">
+          // assist scope → read-only view of the non-disclosure paperwork, grouped
+          // by the shared sections.
+          <div className="space-y-6">
+            {applicantGroups.map((g) => (
+              <div key={g.key}>
+                <h3 className="engraved-sm mb-1.5 text-text-mid">{g.title}</h3>
+                <div className="space-y-2">
+                  {g.rows.map((r) => {
+                    const doc = docByReq.get(r.req_code)
+                    const prog = rosterByReq.get(r.req_code)
+                    const sensitive = conciergeScopeFor(r.req_code) === "hidden"
+                    return (
+                      <div key={r.case_requirement_id} className="flex items-start justify-between gap-3 rounded-lg border border-hairline bg-card p-4">
                   <div className="min-w-0">
                     <div className="text-sm font-medium">{title(r.req_code, r.title)}</div>
                     <div className="mt-0.5 text-xs text-text-mid">
@@ -223,9 +235,12 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                   {doc && r.scope === "full" ? (
                     <OpenDocumentButton documentId={doc.document_id} sensitive={sensitive} />
                   ) : null}
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         )}
       </section>
