@@ -55,7 +55,11 @@ export const SECTIONS: SectionDef[] = [
   },
   { key: "conditional", title: "Only if it applies to you", blurb: "Extra items a few applicants need — most people won't see these." },
   { key: "sponsor", title: "From your sponsor", blurb: "{company} handles these. You can see the status; the documents themselves are theirs." },
-  { key: "admin", title: "System checks", blurb: "We verify these for you.", hidden: true },
+  // Concierge surfaces HIDE this section (staff handle it). The self-guided
+  // checklist DOES show it — after its own system-verified filter removes ELG-*/
+  // FMT-01, what's left is fees + sign-off attests — so the title reads for that
+  // context. (hidden only affects surfaces that honour the flag.)
+  { key: "admin", title: "Fees & sign-offs", blurb: "Fees you pay directly, and confirmations.", hidden: true },
 ]
 
 export const SECTION_BY_KEY: Record<SectionKey, SectionDef> = Object.fromEntries(
