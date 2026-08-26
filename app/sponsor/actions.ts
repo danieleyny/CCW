@@ -142,6 +142,16 @@ export async function prepareSponsorForm(caseId: string): Promise<{ url?: string
   // Everything we hold, from the ONE fact layer (applicant identity + company
   // licence/custodian + employer). The SSN is NEVER resolved for a sponsor fill.
   const f = await resolveFacts(admin, caseId)
+  // The business address is one field on the form; the company profile stores it as
+  // street/city/state/ZIP. Compose it (empty if the profile isn't filled — which the
+  // guard below then catches).
+  const businessAddress = [
+    f["employer.address.street"],
+    f["employer.address.city"],
+    [f["employer.address.state"], f["employer.address.zip"]].filter(Boolean).join(" "),
+  ]
+    .filter(Boolean)
+    .join(", ")
   const filled = await fillTemplate("nypd_company_application", {
     applicantName: f["applicant.fullName"],
     applicantAddress: f["applicant.fullAddress"],
@@ -152,10 +162,38 @@ export async function prepareSponsorForm(caseId: string): Promise<{ url?: string
     wgpExpire: f["sponsor.agencyLicenseExpiry"],
     custodian: f["sponsor.custodianName"],
     custodianLicenseNo: f["sponsor.custodianLicenseNumber"],
-    businessAddress: f["employer.address.street"],
+    businessAddress,
     businessPhone: f["employer.phone"],
     businessType: f["employer.type"],
   })
+
+  // READINESS GUARD — never generate the official company form with an empty licence
+  // or custodian block. Report exactly what's missing, split by whose it is: the
+  // company blocks are the rep's own profile; the applicant blocks fill once the
+  // applicant finishes intake (the rep can't type them).
+  if (filled.missingRequired.length) {
+    const COMPANY_LABELS: Record<string, string> = {
+      "Name of Company Seeking Permit for Applicant": "company name",
+      "Business Address": "business address",
+      "Business Telephone Number": "business phone",
+      "Type of Business": "type of business",
+      "License Number": "agency licence number",
+      "License Expiration Date": "agency licence expiry",
+      "Gun Custodian": "gun custodian name",
+      "Pistol License No": "custodian licence number",
+    }
+    const APPLICANT_LABELS: Record<string, string> = {
+      "Name of Applicant Last Name First Name MI": "the applicant's legal name",
+      "Address Street City or Town Slate Zip Code": "the applicant's address",
+      "Date of Birth": "the applicant's date of birth",
+    }
+    const companyMissing = filled.missingRequired.filter((r) => r in COMPANY_LABELS).map((r) => COMPANY_LABELS[r])
+    const applicantMissing = filled.missingRequired.filter((r) => r in APPLICANT_LABELS).map((r) => APPLICANT_LABELS[r])
+    const parts: string[] = []
+    if (companyMissing.length) parts.push(`Complete your company profile first — still needed: ${companyMissing.join(", ")}.`)
+    if (applicantMissing.length) parts.push(`We're still waiting on ${applicantMissing.join(", ")} — these fill once the applicant finishes their intake.`)
+    return { error: parts.join(" ") }
+  }
 
   const path = `clients/${kase.client_id}/sponsor-prefill/company-form-${Date.now()}.pdf`
   const { error: upErr } = await admin.storage
@@ -168,39 +206,69 @@ export async function prepareSponsorForm(caseId: string): Promise<{ url?: string
 }
 
 /** SPN-05 — the gun custodian is structured company data, not a file. */
-export async function saveCustodian(formData: FormData): Promise<{ ok?: true; error?: string }> {
+/**
+ * The company profile — the rep enters the company ONCE (agency licence,
+ * custodian, and the business address/phone/type the official form needs but the
+ * applicant can't type for a sponsored guard). The company documents (SPN-01…) are
+ * pre-filled from this, so it must be captured first. Required fields are named
+ * back specifically on save.
+ */
+export async function saveCompanyProfile(formData: FormData): Promise<{ ok?: true; error?: string }> {
   await requireRole(["sponsor"])
   const caseId = String(formData.get("caseId") ?? "")
   const scope = await loadSponsorCase(caseId)
   if (!scope) return { error: "You don't have access to this case." }
+  const g = (k: string) => String(formData.get(k) ?? "").trim()
 
-  const name = String(formData.get("custodian_name") ?? "").trim()
-  const licenseNumber = String(formData.get("custodian_license_number") ?? "").trim()
-  if (name.length < 2 || licenseNumber.length < 2) {
-    return { error: "Enter the custodian's name and NYPD licence number." }
+  // The fields the company form can't be filled without.
+  const required: Record<string, string> = {
+    "Agency licence number": g("agency_license_number"),
+    "Gun custodian name": g("custodian_name"),
+    "Custodian NYPD licence number": g("custodian_license_number"),
+    "Business street": g("business_street"),
+    "Business city": g("business_city"),
+    "Business state": g("business_state"),
+    "Business ZIP": g("business_zip"),
+    "Business phone": g("business_phone"),
+    "Type of business": g("business_type"),
   }
+  const missing = Object.entries(required)
+    .filter(([, v]) => !v)
+    .map(([label]) => label)
+  if (missing.length) return { error: `Still needed: ${missing.join(", ")}.` }
 
   const admin = createAdminClient()
   await admin
     .from("sponsors")
     .update({
-      custodian_name: name,
-      custodian_email: String(formData.get("custodian_email") ?? "").trim() || null,
-      custodian_phone: String(formData.get("custodian_phone") ?? "").trim() || null,
-      custodian_license_number: licenseNumber,
+      agency_license_number: g("agency_license_number"),
+      agency_license_expires: g("agency_license_expires") || null,
+      custodian_name: g("custodian_name"),
+      custodian_email: g("custodian_email") || null,
+      custodian_phone: g("custodian_phone") || null,
+      custodian_license_number: g("custodian_license_number"),
+      business_street: g("business_street"),
+      business_city: g("business_city"),
+      business_state: g("business_state"),
+      business_zip: g("business_zip"),
+      business_phone: g("business_phone"),
+      business_type: g("business_type"),
+      dba_name: g("dba_name") || null,
+      president_owner: g("president_owner") || null,
+      qualifying_officer: g("qualifying_officer") || null,
     })
     .eq("id", scope.sponsor_id)
 
-  // SPN-05 is satisfied by structured data, not an uploaded document. Marking it
-  // satisfied here is the one place a sponsor packet row completes without a file;
-  // it never touches the applicant's rows or the CP-5 sign-off.
+  // SPN-05 (gun custodian) is satisfied by structured data, not a file — the one
+  // place a sponsor packet row completes without an upload. SPN-04 (agency licence)
+  // is still an uploaded document; recording the number here does not satisfy it.
   await admin
     .from("case_requirements")
-    .update({ status: "satisfied", notes: "Gun custodian recorded by the sponsoring company." })
+    .update({ status: "satisfied", notes: "Gun custodian recorded in the company profile." })
     .eq("case_id", caseId)
     .eq("req_code", "SPN-05")
 
-  await logActivity({ action: "sponsor.custodian_saved", caseId, entity: "case", entityId: caseId })
+  await logActivity({ action: "sponsor.company_profile_saved", caseId, entity: "case", entityId: caseId })
   revalidatePath(`/sponsor/${caseId}`)
   return { ok: true }
 }

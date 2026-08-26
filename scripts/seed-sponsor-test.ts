@@ -19,6 +19,7 @@ import type { Database } from "../lib/supabase/types"
 import { materializeCaseRequirements, materializeSponsorPacket } from "../lib/requirements/materialize"
 import { toGeneratorAnswers, type WizardAnswers } from "../lib/intake/answers"
 import { resolveArmedTrack } from "../lib/requirements/track"
+import { backfillCaseFacts } from "../lib/facts/resolve"
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -57,11 +58,15 @@ async function main() {
   const { data: sponsor } = await db.from("sponsors").insert({ legal_name: "Test Guard Co." }).select("id").single()
 
   // 2. The applicant — an UNCLAIMED lead + a case (claim-by-email adopts these).
+  //    A real two-token legal name so the fact layer resolves first/last cleanly.
   const { data: client } = await db
     .from("clients")
     .insert({
-      full_name: "Test Applicant",
+      full_name: "Marcus Powell",
       email: APPLICANT_EMAIL,
+      phone: "(212) 555-0148",
+      borough: "Manhattan",
+      zip: "10001",
       track: "resident",
       current_stage: "lead",
       lead_source: "sponsor_test",
@@ -69,24 +74,38 @@ async function main() {
     })
     .select("id")
     .single()
+  // A sponsored case is a concierge experience unlocked by the sponsorship itself,
+  // not a Stripe purchase — so seed service_mode='concierge' deliberately (never an
+  // accident of the seed).
   const { data: kase } = await db
     .from("cases")
-    .insert({ client_id: client!.id, stage: "document_collection", service_mode: "self_guided" })
+    .insert({ client_id: client!.id, stage: "document_collection", service_mode: "concierge" })
     .select("id")
     .single()
   const caseId = kase!.id
 
-  // 3. Pre-complete a clean NYC Carry Guard intake so the portal is populated and
-  //    the tester lands straight on the sponsor experience.
+  // 3. Pre-complete a FULL NYC Carry Guard applicant intake so every applicant-owned
+  //    form fills and the completeness gate is satisfied. Business fields are left
+  //    OUT on purpose — for a sponsored guard the employer IS the sponsoring company,
+  //    supplied through the rep's company profile, not the applicant's intake.
   const answers: WizardAnswers = {
     dob: "1990-01-01",
     residence: "nyc",
     borough: "Manhattan",
     licenseType: "carry",
+    middleInitial: "J",
     legalStreet: "123 Test St",
+    legalApt: "4B",
     legalCity: "New York",
     legalState: "NY",
+    placeOfBirth: "Brooklyn, NY, USA",
+    sex: "Male",
+    heightInches: 70,
+    weightLbs: 180,
+    hairColor: "Brown",
+    eyeColor: "Brown",
     citizenship: "citizen",
+    occupation: "Security officer",
     prohibitorFelony: false,
     prohibitorMentalHealth: false,
     prohibitorActiveOop: false,
@@ -120,6 +139,9 @@ async function main() {
   await db.from("cases").update({ license_track: armed.track }).eq("id", caseId)
   await materializeCaseRequirements(db, caseId, "nyc", toGeneratorAnswers(answers, { isRenewal: false, armed }))
   await materializeSponsorPacket(db, caseId)
+  // Seed case_facts from the intake/client record, exactly as real intake processing
+  // does — so the applicant's forms resolve from the canonical fact layer.
+  await backfillCaseFacts(db, caseId)
 
   // 6. The sponsor rep account (pre-confirmed, role='sponsor').
   const tempPassword = randomBytes(9).toString("base64url")

@@ -9,14 +9,15 @@ import { Button } from "@/components/ui/button"
 /** SPN-01: download the OFFICIAL company form pre-filled with what we hold. The
  *  company completes the officer/business fields + notarised signatures, then
  *  uploads the finished form. */
-export function PrepareCompanyFormButton({ caseId }: { caseId: string }) {
+export function PrepareCompanyFormButton({ caseId, ready = true }: { caseId: string; ready?: boolean }) {
   const [pending, start] = useTransition()
   return (
     <Button
       size="sm"
       variant="ghost"
       className="min-h-[36px]"
-      disabled={pending}
+      disabled={pending || !ready}
+      title={ready ? undefined : "Complete your company profile first — the form is pre-filled from it."}
       onClick={() =>
         start(async () => {
           const r = await prepareSponsorForm(caseId)

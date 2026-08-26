@@ -23,6 +23,12 @@ export interface FactSource {
     agencyLicenseExpiry: string | null
     custodianName: string | null
     custodianLicenseNumber: string | null
+    businessStreet: string | null
+    businessCity: string | null
+    businessState: string | null
+    businessZip: string | null
+    businessPhone: string | null
+    businessType: string | null
   } | null
 }
 
@@ -79,13 +85,16 @@ export const FACTS: FactDef[] = [
   { key: "applicant.email", label: "Email", type: "text", group: "contact", from: (s) => s.client.email },
 
   // ── Employer (the applicant's own, unless a sponsorship supplies it) ──
+  // Employer facts resolve SPONSOR-FIRST when a sponsorship exists (the employer
+  // IS the sponsoring company), then fall back to the applicant's intake. Uniform
+  // across all employer.* so `employer.name` is no longer the odd one out.
   { key: "employer.name", label: "Employer name", type: "text", group: "employer", from: (s) => s.sponsor?.legalName ?? s.intake.businessName },
-  { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", from: (s) => s.intake.businessStreet },
-  { key: "employer.address.city", label: "Employer city", type: "text", group: "employer", from: (s) => s.intake.businessCity },
-  { key: "employer.address.state", label: "Employer state", type: "text", group: "employer", from: (s) => s.intake.businessState },
-  { key: "employer.address.zip", label: "Employer ZIP", type: "zip", group: "employer", from: (s) => s.intake.businessZip },
-  { key: "employer.phone", label: "Employer phone", type: "phone", group: "employer", from: (s) => s.intake.businessPhone },
-  { key: "employer.type", label: "Type of business", type: "text", group: "employer", from: (s) => s.intake.businessType },
+  { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", from: (s) => s.sponsor?.businessStreet ?? s.intake.businessStreet },
+  { key: "employer.address.city", label: "Employer city", type: "text", group: "employer", from: (s) => s.sponsor?.businessCity ?? s.intake.businessCity },
+  { key: "employer.address.state", label: "Employer state", type: "text", group: "employer", from: (s) => s.sponsor?.businessState ?? s.intake.businessState },
+  { key: "employer.address.zip", label: "Employer ZIP", type: "zip", group: "employer", from: (s) => s.sponsor?.businessZip ?? s.intake.businessZip },
+  { key: "employer.phone", label: "Employer phone", type: "phone", group: "employer", from: (s) => s.sponsor?.businessPhone ?? s.intake.businessPhone },
+  { key: "employer.type", label: "Type of business", type: "text", group: "employer", from: (s) => s.sponsor?.businessType ?? s.intake.businessType },
   { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", from: (s) => s.intake.occupation },
 
   // ── Sponsor-owned ──

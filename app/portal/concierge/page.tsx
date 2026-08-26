@@ -38,7 +38,19 @@ export default async function ConciergeHome() {
   if (serviceMode !== "concierge") redirect("/portal/choose-path")
 
   const supabase = await createClient()
-  if (!(await hasPaidPackage(supabase, myCase.id, "full_concierge"))) redirect("/portal/choose-path")
+  // A sponsored applicant reaches the concierge experience through their sponsorship,
+  // not a Stripe purchase — an active (non-revoked) sponsorship unlocks it. Everyone
+  // else needs the paid Full Concierge package.
+  const { data: activeSponsorship } = await supabase
+    .from("case_sponsorships")
+    .select("id")
+    .eq("case_id", myCase.id)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle()
+  if (!activeSponsorship && !(await hasPaidPackage(supabase, myCase.id, "full_concierge"))) {
+    redirect("/portal/choose-path")
+  }
 
   const onboarding = await loadConciergeOnboarding(supabase, myCase.id)
   const firstName = myCase.client.full_name.split(" ")[0]

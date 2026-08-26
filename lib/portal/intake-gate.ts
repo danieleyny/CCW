@@ -43,16 +43,25 @@ export function decideOnboardingRedirect(input: {
   stage: CaseStageKey
   intakeCompleted: boolean
   hasAttorneyReview: boolean
+  /** A non-revoked sponsorship on this case. Sponsored cases require the applicant's
+   *  OWN intake even under concierge — the sponsor can't supply identity/disclosures
+   *  (the firewall), so "we fill it for you" does not apply. */
+  isSponsored?: boolean
 }): string | null {
-  const { pathname, serviceMode, stage, intakeCompleted, hasAttorneyReview } = input
+  const { pathname, serviceMode, stage, intakeCompleted, hasAttorneyReview, isSponsored } = input
   if (EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
-  // Concierge never does intake — they go straight to their dashboard.
+  // Never trap an attorney-review case.
+  if (hasAttorneyReview) return null
+  // A SPONSORED case ALWAYS does its own intake first, regardless of service mode or
+  // stage — the sponsor cannot supply the applicant's identity or disclosures. Nudge
+  // until intake is complete, then let them through.
+  if (isSponsored) return intakeCompleted ? null : "/portal/intake"
+  // Non-sponsored Concierge never does intake — we fill it out for them.
   if (serviceMode === "concierge") return null
   // Only nudge brand-new cases; anything that's moved on is left alone (this also
   // keeps legacy pre-fork cases mid-flight from being yanked to the fork).
   if (!EARLY_STAGES.includes(stage)) return null
   if (intakeCompleted) return null
-  if (hasAttorneyReview) return null
   // Not yet forked → the fork is the first thing. Self-Guided → intake.
   return serviceMode ? "/portal/intake" : "/portal/choose-path"
 }
@@ -61,10 +70,27 @@ export async function resolveOnboardingRedirect(
   pathname: string,
   myCase: MyCase
 ): Promise<string | null> {
-  // Cheap, pure short-circuits first — avoid the DB reads when we already know.
+  // Cheap, pure short-circuit first.
   if (EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
-  if (myCase.service_mode === "concierge") return null
-  if (!EARLY_STAGES.includes(myCase.stage as CaseStageKey)) return null
+
+  // Is this a sponsored case? A non-revoked sponsorship makes intake a hard
+  // prerequisite (see decideOnboardingRedirect), overriding the concierge skip.
+  const admin = createAdminClient()
+  const { data: sponsorship } = await admin
+    .from("case_sponsorships")
+    .select("id")
+    .eq("case_id", myCase.id)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle()
+  const isSponsored = !!sponsorship
+
+  // When NOT sponsored we can still short-circuit cheaply for concierge / advanced
+  // cases before touching intake_sessions.
+  if (!isSponsored) {
+    if (myCase.service_mode === "concierge") return null
+    if (!EARLY_STAGES.includes(myCase.stage as CaseStageKey)) return null
+  }
 
   const supabase = await createClient()
   const { data: session } = await supabase
@@ -75,7 +101,6 @@ export async function resolveOnboardingRedirect(
 
   // Attorney-review track: don't trap them (activity_log is staff-read RLS, so
   // this routing check reads the applicant's own case via the service role).
-  const admin = createAdminClient()
   const { data: review } = await admin
     .from("activity_log")
     .select("id")
@@ -90,5 +115,6 @@ export async function resolveOnboardingRedirect(
     stage: myCase.stage as CaseStageKey,
     intakeCompleted: !!session?.completed_at,
     hasAttorneyReview: !!review,
+    isSponsored,
   })
 }

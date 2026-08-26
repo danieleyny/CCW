@@ -22,6 +22,22 @@ export default async function IntakePage() {
   const session = await ensureIntakeSession(myCase.id)
   const completed = !!session.completed_at
 
+  // A sponsored (company-referred) applicant completes their OWN intake — the sponsor
+  // never supplies the applicant's identity or disclosures. Show a clear first-run
+  // prompt explaining why the interview comes first.
+  let sponsorName: string | null = null
+  if (!completed) {
+    const { data: sp } = await createAdminClient()
+      .from("case_sponsorships")
+      .select("sponsor:sponsors(legal_name)")
+      .eq("case_id", myCase.id)
+      .is("revoked_at", null)
+      .limit(1)
+      .maybeSingle()
+    sponsorName = (sp?.sponsor as unknown as { legal_name?: string } | null)?.legal_name ?? null
+    if (sp && !sponsorName) sponsorName = "your sponsoring company"
+  }
+
   // V3-P4.4 — carry the eligibility-quiz answers into intake: a brand-new
   // session prefills residence + training status from what the lead already
   // told us, so nobody answers the same question twice.
@@ -59,6 +75,16 @@ export default async function IntakePage() {
 
   return (
     <div>
+      {sponsorName && (
+        <div className="mb-5 rounded-lg border border-brass/30 bg-brass/[0.06] p-4">
+          <p className="text-sm font-medium text-brass">Let&apos;s start with your interview</p>
+          <p className="mt-1 text-sm text-text-mid">
+            {sponsorName} is sponsoring your licence and handles the company paperwork. This
+            application, though, is yours — only you can answer these questions, so we start here.
+            It takes a few minutes and saves as you go.
+          </p>
+        </div>
+      )}
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Application intake</h1>
         <p className="mt-1 text-sm text-muted-foreground">
