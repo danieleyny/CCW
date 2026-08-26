@@ -3839,35 +3839,62 @@ export type Database = {
         Row: {
           agency_license_expires: string | null
           agency_license_number: string | null
+          business_city: string | null
+          business_phone: string | null
+          business_state: string | null
+          business_street: string | null
+          business_type: string | null
+          business_zip: string | null
           created_at: string
           custodian_email: string | null
           custodian_license_number: string | null
           custodian_name: string | null
           custodian_phone: string | null
+          dba_name: string | null
           id: string
           legal_name: string
+          president_owner: string | null
+          qualifying_officer: string | null
         }
         Insert: {
           agency_license_expires?: string | null
           agency_license_number?: string | null
+          business_city?: string | null
+          business_phone?: string | null
+          business_state?: string | null
+          business_street?: string | null
+          business_type?: string | null
+          business_zip?: string | null
           created_at?: string
           custodian_email?: string | null
           custodian_license_number?: string | null
           custodian_name?: string | null
           custodian_phone?: string | null
+          dba_name?: string | null
           id?: string
           legal_name: string
+          president_owner?: string | null
+          qualifying_officer?: string | null
         }
         Update: {
           agency_license_expires?: string | null
           agency_license_number?: string | null
+          business_city?: string | null
+          business_phone?: string | null
+          business_state?: string | null
+          business_street?: string | null
+          business_type?: string | null
+          business_zip?: string | null
           created_at?: string
           custodian_email?: string | null
           custodian_license_number?: string | null
           custodian_name?: string | null
           custodian_phone?: string | null
+          dba_name?: string | null
           id?: string
           legal_name?: string
+          president_owner?: string | null
+          qualifying_officer?: string | null
         }
         Relationships: []
       }

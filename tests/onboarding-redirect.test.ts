@@ -47,4 +47,33 @@ describe("decideOnboardingRedirect", () => {
       decideOnboardingRedirect({ ...base, serviceMode: "self_guided", hasAttorneyReview: true })
     ).toBeNull()
   })
+
+  it("a SPONSORED case requires the applicant's own intake even under concierge", () => {
+    // Concierge would normally skip intake, but a sponsor can't supply the
+    // applicant's identity/disclosures — so intake is forced until complete.
+    expect(
+      decideOnboardingRedirect({ ...base, serviceMode: "concierge", isSponsored: true, stage: "document_collection" as CaseStageKey })
+    ).toBe("/portal/intake")
+  })
+
+  it("a SPONSORED case with intake complete is let through", () => {
+    expect(
+      decideOnboardingRedirect({
+        ...base,
+        serviceMode: "concierge",
+        isSponsored: true,
+        intakeCompleted: true,
+        stage: "document_collection" as CaseStageKey,
+      })
+    ).toBeNull()
+  })
+
+  it("a sponsored case still isn't trapped away from the account pages or under attorney review", () => {
+    expect(
+      decideOnboardingRedirect({ ...base, isSponsored: true, pathname: "/portal/intake" })
+    ).toBeNull()
+    expect(
+      decideOnboardingRedirect({ ...base, isSponsored: true, hasAttorneyReview: true })
+    ).toBeNull()
+  })
 })

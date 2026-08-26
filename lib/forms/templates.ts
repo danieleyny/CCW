@@ -264,7 +264,23 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     isFillable: true,
     ephemeral: ["ssn"],
     fontSize: 9,
-    requires: ["Name of Applicant Last Name First Name MI", "Address Street City or Town Slate Zip Code", "Date of Birth", "Name of Company Seeking Permit for Applicant"],
+    // Applicant identity AND the company blocks the official form can't be filed
+    // blank — the readiness guard (prepareSponsorForm) reports any of these back to
+    // the rep by name, so no company form ever generates with an empty licence or
+    // custodian block.
+    requires: [
+      "Name of Applicant Last Name First Name MI",
+      "Address Street City or Town Slate Zip Code",
+      "Date of Birth",
+      "Name of Company Seeking Permit for Applicant",
+      "Business Address",
+      "Business Telephone Number",
+      "Type of Business",
+      "License Number",
+      "License Expiration Date",
+      "Gun Custodian",
+      "Pistol License No",
+    ],
     signatureOnly: ["INVESTIGATING OFFICERS SIGNATURE", "SUPERVISORS SIGNATURE", "CO LICENSE DIVISION SIGNATURE", "Signature4", "Signature5", "Signature6", "Signature7", "Notary Public", "Application No"],
     build: (v) => ({
       text: {

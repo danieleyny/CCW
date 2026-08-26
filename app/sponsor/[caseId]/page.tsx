@@ -17,7 +17,7 @@ import { loadRequirementView } from "@/lib/portal/requirement-view"
 import type { MyCase } from "@/lib/portal"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { SponsorUploader } from "@/components/sponsor/sponsor-uploader"
-import { CustodianForm } from "@/components/sponsor/custodian-form"
+import { CompanyProfileForm, type CompanyProfile } from "@/components/sponsor/company-profile-form"
 import { OpenDocumentButton } from "@/components/sponsor/open-document-button"
 import { SponsorApplicantFile, type SponsorFileRow } from "@/components/sponsor/sponsor-applicant-file"
 import { PrepareCompanyFormButton } from "@/components/sponsor/prepare-company-form-button"
@@ -54,6 +54,47 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   for (const d of docs) if (!docByReq.has(d.req_code)) docByReq.set(d.req_code, d)
   const rosterByReq = new Map(roster.map((r) => [r.req_code, r]))
 
+  // The company profile — entered ONCE, then every company document is pre-filled
+  // from it. It's the control the SPN-01 pre-fill depends on, so it renders first
+  // and the documents stay locked until it's complete. Load the current values (to
+  // prefill the form) and compute readiness from the fields the official form needs.
+  const admin = createAdminClient()
+  const { data: sponsorRow } = await admin
+    .from("sponsors")
+    .select(
+      "agency_license_number, agency_license_expires, custodian_name, custodian_email, custodian_phone, custodian_license_number, business_street, business_city, business_state, business_zip, business_phone, business_type, dba_name, president_owner, qualifying_officer",
+    )
+    .eq("id", scope.sponsor_id)
+    .maybeSingle()
+  const profile: CompanyProfile = {
+    agency_license_number: sponsorRow?.agency_license_number ?? null,
+    agency_license_expires: sponsorRow?.agency_license_expires ?? null,
+    custodian_name: sponsorRow?.custodian_name ?? null,
+    custodian_email: sponsorRow?.custodian_email ?? null,
+    custodian_phone: sponsorRow?.custodian_phone ?? null,
+    custodian_license_number: sponsorRow?.custodian_license_number ?? null,
+    business_street: sponsorRow?.business_street ?? null,
+    business_city: sponsorRow?.business_city ?? null,
+    business_state: sponsorRow?.business_state ?? null,
+    business_zip: sponsorRow?.business_zip ?? null,
+    business_phone: sponsorRow?.business_phone ?? null,
+    business_type: sponsorRow?.business_type ?? null,
+    dba_name: sponsorRow?.dba_name ?? null,
+    president_owner: sponsorRow?.president_owner ?? null,
+    qualifying_officer: sponsorRow?.qualifying_officer ?? null,
+  }
+  const profileComplete = Boolean(
+    profile.agency_license_number &&
+      profile.custodian_name &&
+      profile.custodian_license_number &&
+      profile.business_street &&
+      profile.business_city &&
+      profile.business_state &&
+      profile.business_zip &&
+      profile.business_phone &&
+      profile.business_type,
+  )
+
   // Hide not-applicable items entirely (e.g. REF-01 doesn't apply to the armed
   // track) so the rep never sees a "Four references" row that isn't real.
   const packet = reqs.filter((r) => r.party === "sponsor" && r.status !== "na")
@@ -71,7 +112,6 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   // for the prefills; the scoped feed above still governs what rows exist.
   let fileRows: SponsorFileRow[] | null = null
   if (scope.scope === "full") {
-    const admin = createAdminClient()
     const { data: cl } = await admin
       .from("cases")
       .select("client_id, clients:client_id(full_name, borough, zip)")
@@ -105,7 +145,7 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   // and setCaseFact the applicant uses (attributed as a sponsor edit). Only at full
   // scope: setCaseFact authorizes a sponsor write solely at full scope, so we show
   // the editable surface only there. The SSN is NEVER shown to a sponsor.
-  const facts = scope.scope === "full" ? await resolveFacts(createAdminClient(), caseId) : null
+  const facts = scope.scope === "full" ? await resolveFacts(admin, caseId) : null
   const detailGroups: FactGroup[] = ["sponsor", "you", "address", "contact", "physical", "employer", "safeguard"]
 
   return (
@@ -122,13 +162,28 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
         </p>
       </div>
 
+      {/* Company profile — entered ONCE, fills every company form. It renders BEFORE
+          the documents because the SPN-01 pre-fill is built from it. */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <IdCard className="size-4 text-brass" />
+          <h2 className="text-lg font-semibold tracking-tight">Your company profile</h2>
+        </div>
+        <CompanyProfileForm caseId={caseId} profile={profile} complete={profileComplete} />
+      </section>
+
       {/* Company packet — the work that is theirs alone. */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <Building2 className="size-4 text-brass" />
           <h2 className="text-lg font-semibold tracking-tight">Your company packet</h2>
         </div>
-        <div className="space-y-2">
+        {!profileComplete && (
+          <p className="rounded-lg border border-brass/30 bg-brass/[0.06] px-3 py-2 text-xs text-brass">
+            Complete your company profile first — the forms below are pre-filled from it.
+          </p>
+        )}
+        <div className={profileComplete ? "space-y-2" : "space-y-2 opacity-60"}>
           {packet.map((r) => {
             const doc = docByReq.get(r.req_code)
             const satisfied = r.status === "satisfied"
@@ -159,7 +214,7 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                   </div>
                   {r.req_code === "SPN-05" ? null : (
                     <div className="flex shrink-0 items-center gap-2">
-                      {r.req_code === "SPN-01" && <PrepareCompanyFormButton caseId={caseId} />}
+                      {r.req_code === "SPN-01" && <PrepareCompanyFormButton caseId={caseId} ready={profileComplete} />}
                       {/* View what was uploaded — the rep couldn't see their own file before. */}
                       {doc?.document_id && <OpenDocumentButton documentId={doc.document_id} sensitive={false} />}
                       <SponsorUploader
@@ -171,10 +226,12 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                     </div>
                   )}
                 </div>
-                {r.req_code === "SPN-05" && (
-                  <div className="mt-3">
-                    <CustodianForm caseId={caseId} satisfied={satisfied} />
-                  </div>
+                {/* SPN-05 (gun custodian) is captured in the company profile above, not
+                    as an inline form — this row shows only its resulting status. */}
+                {r.req_code === "SPN-05" && !satisfied && (
+                  <p className="mt-2 text-xs text-text-low">
+                    Recorded in your company profile above.
+                  </p>
                 )}
               </div>
             )

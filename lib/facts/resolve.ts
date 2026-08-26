@@ -12,7 +12,7 @@ export async function loadFactSource(db: DB, caseId: string): Promise<FactSource
     db.from("cases").select("clients:client_id(full_name, email, phone, borough, zip)").eq("id", caseId).maybeSingle(),
     db
       .from("case_sponsorships")
-      .select("sponsor:sponsors(legal_name, agency_license_number, agency_license_expires, custodian_name, custodian_license_number)")
+      .select("sponsor:sponsors(legal_name, agency_license_number, agency_license_expires, custodian_name, custodian_license_number, business_street, business_city, business_state, business_zip, business_phone, business_type)")
       .eq("case_id", caseId)
       .limit(1)
       .maybeSingle(),
@@ -24,6 +24,12 @@ export async function loadFactSource(db: DB, caseId: string): Promise<FactSource
     agency_license_expires?: string
     custodian_name?: string
     custodian_license_number?: string
+    business_street?: string
+    business_city?: string
+    business_state?: string
+    business_zip?: string
+    business_phone?: string
+    business_type?: string
   } | null) ?? null
   return {
     intake: (intake?.answers ?? {}) as WizardAnswers,
@@ -35,6 +41,12 @@ export async function loadFactSource(db: DB, caseId: string): Promise<FactSource
           agencyLicenseExpiry: s.agency_license_expires ?? null,
           custodianName: s.custodian_name ?? null,
           custodianLicenseNumber: s.custodian_license_number ?? null,
+          businessStreet: s.business_street ?? null,
+          businessCity: s.business_city ?? null,
+          businessState: s.business_state ?? null,
+          businessZip: s.business_zip ?? null,
+          businessPhone: s.business_phone ?? null,
+          businessType: s.business_type ?? null,
         }
       : null,
   }
