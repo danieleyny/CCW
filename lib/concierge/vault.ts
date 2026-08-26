@@ -8,6 +8,7 @@
  */
 import { actionFor } from "@/lib/requirements/actions"
 import { smartDocumentsForRequirement, type SmartDocument } from "@/lib/requirements/smart-documents"
+import { sectionFor, SECTION_ORDER, SECTION_BY_KEY, type SectionKey } from "@/lib/requirements/sections"
 import type { ReqChecklistItem } from "@/components/portal/requirements-checklist"
 import type { CurrentDoc } from "@/components/portal/document-uploader"
 
@@ -21,6 +22,7 @@ export interface VaultGuide {
 
 export interface VaultItem {
   reqCode: string
+  section: SectionKey
   documentType: string
   /** Friendly, retail-voice ask. */
   title: string
@@ -31,6 +33,14 @@ export interface VaultItem {
   photoSpec: boolean
   /** UX 2.1 — the registry's how-to, rendered as a collapsible in the card. */
   guide: VaultGuide | null
+}
+
+export interface VaultGroup {
+  key: SectionKey
+  title: string
+  blurb: string
+  items: VaultItem[]
+  counts: { total: number; outstanding: number; received: number; approved: number }
 }
 
 // Warmer titles for the handful of near-universal asks; track-specific documents
@@ -100,6 +110,7 @@ export function buildVaultItems(items: ReqChecklistItem[], currentByReq: Record<
           : null
       return {
         reqCode: i.reqCode,
+        section: sectionFor(i.reqCode) ?? "conditional",
         documentType: action.documentType as string,
         title: friendly?.title ?? action.customerTitle ?? i.title,
         help: friendly?.help ?? action.help,
@@ -111,13 +122,44 @@ export function buildVaultItems(items: ReqChecklistItem[], currentByReq: Record<
       }
     })
 
-  // UX 2.4 — the next thing to do is always at the top: OUTSTANDING first (in the
-  // ORDER), then RECEIVED, then APPROVED.
+  // Within a section: OUTSTANDING first (in the ORDER), then RECEIVED, then APPROVED.
   const orderIdx = (code: string) => {
     const i = ORDER.indexOf(code)
     return i === -1 ? ORDER.length : i
   }
   return vault.sort((a, b) => vaultStateRank(a) - vaultStateRank(b) || orderIdx(a.reqCode) - orderIdx(b.reqCode))
+}
+
+/**
+ * Group the vault's upload items by section (Phase 2). Sections render in fixed
+ * order; a section with no applicable items is dropped. Items keep the
+ * outstanding→received→approved sort within each group.
+ */
+export function buildVaultGroups(items: ReqChecklistItem[], currentByReq: Record<string, CurrentDoc>): VaultGroup[] {
+  const flat = buildVaultItems(items, currentByReq)
+  const byKey = new Map<SectionKey, VaultItem[]>()
+  for (const it of flat) {
+    if (!byKey.has(it.section)) byKey.set(it.section, [])
+    byKey.get(it.section)!.push(it)
+  }
+  const groups: VaultGroup[] = []
+  for (const [key, groupItems] of byKey) {
+    const def = SECTION_BY_KEY[key]
+    if (def.hidden) continue // system checks never render
+    groups.push({
+      key,
+      title: def.title,
+      blurb: def.blurb,
+      items: groupItems,
+      counts: {
+        total: groupItems.length,
+        outstanding: groupItems.filter((i) => vaultStateRank(i) === 0).length,
+        received: groupItems.filter((i) => vaultStateRank(i) === 1).length,
+        approved: groupItems.filter((i) => vaultStateRank(i) === 2).length,
+      },
+    })
+  }
+  return groups.sort((a, b) => SECTION_ORDER[a.key] - SECTION_ORDER[b.key])
 }
 
 /** 0 = outstanding, 1 = received (uploaded, unreviewed), 2 = approved. */
