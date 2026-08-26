@@ -8,6 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { REQUIREMENT_ACTIONS, actionFor, isSignable, conciergeScopeFor } from "@/lib/requirements/actions"
+import { sectionFor, SECTIONS } from "@/lib/requirements/sections"
 import { renderRequirementDocument } from "@/lib/requirements/document-engine"
 import { adminClient, supabaseReachable } from "./helpers/supabase"
 import { pdfText } from "./helpers/pdf"
@@ -20,6 +21,19 @@ describe("requirement → action map", () => {
       if (a.mode === "generate") {
         expect(a.questionnaireId, `${code} is generate but has no questionnaireId`).toBeTruthy()
       }
+    }
+  })
+
+  it("every requirement is assigned to a section (no silent fallthrough)", () => {
+    for (const code of Object.keys(REQUIREMENT_ACTIONS)) {
+      expect(sectionFor(code), `${code} has no section in lib/requirements/sections`).toBeTruthy()
+    }
+  })
+
+  it("every section has at least one requirement", () => {
+    const used = new Set(Object.keys(REQUIREMENT_ACTIONS).map((c) => sectionFor(c)))
+    for (const s of SECTIONS) {
+      expect(used.has(s.key), `section "${s.key}" has no requirements`).toBe(true)
     }
   })
 

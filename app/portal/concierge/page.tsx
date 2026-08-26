@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { type CaseStageKey, isNypdControlled } from "@/config/stages"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
-import { buildVaultItems } from "@/lib/concierge/vault"
+import { buildVaultGroups } from "@/lib/concierge/vault"
 import { buildReviewItems, readyToFile } from "@/lib/concierge/review"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
@@ -60,7 +60,7 @@ export default async function ConciergeHome() {
       .order("created_at"),
   ])
 
-  const vaultItems = buildVaultItems(view.items, view.currentByReq)
+  const vaultGroups = buildVaultGroups(view.items, view.currentByReq)
   const reviewItems = buildReviewItems(view)
 
   // Milestone state — REAL signals only, never cosmetic.
@@ -137,7 +137,7 @@ export default async function ConciergeHome() {
         <DocumentVault
           caseId={myCase.id}
           clientId={myCase.client_id}
-          items={vaultItems}
+          groups={vaultGroups}
           referenceProgress={view.referenceProgress}
           cohabitantProgress={view.cohabitantProgress}
         />
