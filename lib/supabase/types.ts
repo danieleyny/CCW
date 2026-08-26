@@ -4389,6 +4389,7 @@ export type Database = {
           notarized: boolean | null
           party: Database["public"]["Enums"]["req_party"] | null
           req_code: string | null
+          review_notes: string | null
           signed_at: string | null
           sponsorship_id: string | null
           status: Database["public"]["Enums"]["document_status"] | null

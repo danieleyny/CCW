@@ -16,6 +16,9 @@ export interface SponsorFileRow {
   title: string
   status: string
   hasDoc: boolean
+  /** The bound document's own status (a rejection lives here, not on the requirement). */
+  docStatus: string | null
+  docNote: string | null
   documentId: string | null
   prefill: Record<string, unknown>
 }
@@ -56,10 +59,13 @@ export function SponsorApplicantFile({ caseId, rows }: { caseId: string; rows: S
               <div className="text-sm font-medium">{action?.customerTitle ?? r.title}</div>
               <div className="mt-0.5 text-xs text-text-mid">
                 {r.reqCode} ·{" "}
-                <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, r.hasDoc)].className}>
-                  {SPONSOR_ITEM_COPY[sponsorItemState(r.status, r.hasDoc)].label}
+                <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, r.docStatus, r.hasDoc)].className}>
+                  {SPONSOR_ITEM_COPY[sponsorItemState(r.status, r.docStatus, r.hasDoc)].label}
                 </span>
               </div>
+              {sponsorItemState(r.status, r.docStatus, r.hasDoc) === "changes" && r.docNote && (
+                <p className="mt-1.5 rounded-md bg-warn/10 px-2 py-1.5 text-xs text-warn">Sent back: {r.docNote}</p>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {r.hasDoc && r.documentId && <OpenDocumentButton documentId={r.documentId} sensitive={sensitive} />}

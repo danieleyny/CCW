@@ -84,6 +84,8 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
         title: r.title,
         status: r.status,
         hasDoc: !!docByReq.get(r.req_code),
+        docStatus: docByReq.get(r.req_code)?.status ?? null,
+        docNote: docByReq.get(r.req_code)?.review_notes ?? null,
         documentId: docByReq.get(r.req_code)?.document_id ?? null,
         prefill: view.prefills[r.req_code] ?? {},
       }))
@@ -123,7 +125,7 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
           {packet.map((r) => {
             const doc = docByReq.get(r.req_code)
             const satisfied = r.status === "satisfied"
-            const state = r.status === "na" ? null : sponsorItemState(r.status, !!doc)
+            const state = r.status === "na" ? null : sponsorItemState(r.status, doc?.status, !!doc)
             return (
               <div key={r.case_requirement_id} className="rounded-lg border border-hairline bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -140,6 +142,12 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                     </div>
                     {actionFor(r.req_code)?.help && (
                       <p className="mt-1 text-xs text-text-low">{actionFor(r.req_code)!.help}</p>
+                    )}
+                    {/* Send-back reason so the rep knows what to fix + can re-upload. */}
+                    {state === "changes" && doc?.review_notes && (
+                      <p className="mt-1.5 rounded-md bg-warn/10 px-2 py-1.5 text-xs text-warn">
+                        Sent back: {doc.review_notes}
+                      </p>
                     )}
                   </div>
                   {r.req_code === "SPN-05" ? null : (
@@ -200,12 +208,17 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
                       {r.status === "na" ? (
                         "Not needed"
                       ) : (
-                        <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, !!doc)].className}>
-                          {SPONSOR_ITEM_COPY[sponsorItemState(r.status, !!doc)].label}
+                        <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, doc?.status, !!doc)].className}>
+                          {SPONSOR_ITEM_COPY[sponsorItemState(r.status, doc?.status, !!doc)].label}
                         </span>
                       )}
                       {prog && prog.required_count != null && ` · ${prog.done_count ?? 0} of ${prog.required_count} back`}
                     </div>
+                    {sponsorItemState(r.status, doc?.status, !!doc) === "changes" && doc?.review_notes && (
+                      <p className="mt-1.5 rounded-md bg-warn/10 px-2 py-1.5 text-xs text-warn">
+                        Sent back: {doc.review_notes}
+                      </p>
+                    )}
                   </div>
                   {doc && r.scope === "full" ? (
                     <OpenDocumentButton documentId={doc.document_id} sensitive={sensitive} />

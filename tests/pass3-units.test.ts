@@ -73,11 +73,13 @@ describe("legal name is never inferred from a display name / email (3F)", () => 
 })
 
 describe("sponsor three-state (R3) + armed track", () => {
-  it("distinguishes received (uploaded) from accepted (staff)", () => {
-    expect(sponsorItemState("pending", false)).toBe("outstanding")
-    expect(sponsorItemState("pending", true)).toBe("received") // a doc is in, not yet approved
-    expect(sponsorItemState("satisfied", true)).toBe("accepted") // staff accepted
-    expect(sponsorItemState("rejected", true)).toBe("changes")
+  it("distinguishes received / accepted / rejected, reading the document status too", () => {
+    expect(sponsorItemState("pending", null, false)).toBe("outstanding")
+    expect(sponsorItemState("pending", "pending", true)).toBe("received") // a doc is in, not yet approved
+    expect(sponsorItemState("satisfied", "approved", true)).toBe("accepted") // staff accepted
+    // A rejection lives on the DOCUMENT, not the requirement — must still show as changes.
+    expect(sponsorItemState("pending", "rejected", true)).toBe("changes")
+    expect(sponsorItemState("rejected", null, true)).toBe("changes")
   })
 
   it("isArmedTrack covers the two armed licences only", () => {

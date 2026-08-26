@@ -15,9 +15,20 @@
  */
 export type SponsorItemState = "outstanding" | "received" | "accepted" | "changes"
 
-export function sponsorItemState(status: string, hasDoc: boolean): SponsorItemState {
-  if (status === "satisfied") return "accepted"
-  if (status === "rejected") return "changes"
+/**
+ * A rejection is recorded on the DOCUMENT (documents.status='rejected' + a review
+ * note), NOT on case_requirements.status — which stays 'pending' until staff
+ * accept. So the requirement status alone never shows a send-back; we must read
+ * the bound document's status too, or the sponsor sees "Received — under review"
+ * forever after their file was rejected.
+ */
+export function sponsorItemState(
+  reqStatus: string,
+  docStatus: string | null | undefined,
+  hasDoc: boolean
+): SponsorItemState {
+  if (reqStatus === "satisfied" || docStatus === "approved") return "accepted"
+  if (reqStatus === "rejected" || docStatus === "rejected") return "changes"
   if (hasDoc) return "received"
   return "outstanding"
 }
