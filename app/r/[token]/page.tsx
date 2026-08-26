@@ -62,6 +62,11 @@ export default async function ReferencePage({
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
+      {/* UNBRAND DECISION: this page is shown to a THIRD PARTY (a character
+          reference) who arrived from an emailed link. We KEEP a clear identity
+          here on purpose — an anonymous page asking a stranger for personal details
+          and a notarised signature reads as phishing. The PDF they sign is
+          unbranded (lib/pdf/builder); the page + invitation email are not. */}
       <LogoLockup className="mb-6 text-lg" />
       {children}
     </div>

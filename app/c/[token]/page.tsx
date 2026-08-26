@@ -57,6 +57,9 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
+      {/* UNBRAND DECISION: shown to a THIRD PARTY (an adult cohabitant) from an
+          emailed link — kept branded on purpose so it doesn't read as phishing.
+          The affidavit PDF they sign is unbranded (lib/pdf/builder); this page is not. */}
       <LogoLockup className="mb-6 text-lg" />
       {children}
     </div>
