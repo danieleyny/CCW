@@ -5,11 +5,14 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import { trimSignaturePng, MIN_SIGNATURE_PX } from "@/lib/pdf/png"
 
 /**
- * The shared document builder. Every generated Gun License NYC document is drawn
- * through this, so design lives HERE — not in the individual generators.
+ * The shared document builder. Every generated document is drawn through this, so
+ * design lives HERE — not in the individual generators. Documents are UNBRANDED:
+ * they're the applicant's own submissions, so they carry no firm mark, wordmark,
+ * footer attribution, or brand PDF metadata — nothing that reveals a consulting
+ * firm to the NYPD.
  *
- * What it gives you: a real embedded typeface (Geist, the brand family, SIL OFL
- * 1.1 — see assets/fonts/OFL-Geist.txt), a proper letterhead on page 1 with slim
+ * What it gives you: a real embedded typeface (Geist, SIL OFL 1.1 — see
+ * assets/fonts/OFL-Geist.txt), a clean page-1 header (applicant + title) with slim
  * running heads after it, a type scale with consistent leading, a footer with
  * "Page X of Y" stamped once pagination is actually known, and an execution
  * block where the signature sits ON its rule next to the date it was signed.
@@ -180,9 +183,12 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
     if (y - need < BODY_FLOOR) newPage()
   }
 
-  /** Slim running head on continuation pages — the letterhead is page 1 only. */
+  /** Slim running head on continuation pages — the applicant's name + the doc
+   *  title, no firm brand. */
   function runningHead() {
-    page.drawText("Gun License NYC", { x: M, y: y - 8, size: 8.5, font: medium, color: BRASS })
+    if (opts.applicantName) {
+      page.drawText(opts.applicantName, { x: M, y: y - 8, size: 8.5, font: medium, color: MUTED })
+    }
     if (opts.docTitle) {
       const t = opts.docTitle
       const w = font.widthOfTextAtSize(t, 8.5)
@@ -210,18 +216,13 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
     y -= o.gap ?? 6
   }
 
-  /** Page-1 letterhead: mark, wordmark, brass rule, right-aligned meta block. */
+  /** Page-1 header: the applicant's own document — NO firm mark or wordmark. A
+   *  right-aligned meta block (whose it is, case ref, prepared date), a rule, and
+   *  the document title. Unbranded, so it reaches the NYPD as the applicant's. */
   function letterhead(title: string, subtitle?: string) {
     const top = y
 
-    // Mark: a small brass skyline, the same idea as the site's logo.
-    const bars = [6, 11, 8, 14, 9]
-    bars.forEach((h, i) => {
-      page.drawRectangle({ x: M + i * 4.4, y: top - 12, width: 3, height: h, color: BRASS })
-    })
-    page.drawText("Gun License NYC", { x: M + 30, y: top - 12, size: 13, font: bold, color: INK })
-
-    // Right-aligned meta: what this is, whose it is, when we prepared it.
+    // Right-aligned meta: whose document this is + when it was prepared. No brand.
     const meta: string[] = []
     if (opts.applicantName) meta.push(opts.applicantName)
     if (opts.caseRef) meta.push(`Case ${opts.caseRef}`)
@@ -232,7 +233,7 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
     })
 
     y = top - Math.max(26, 8 + meta.length * 11 + 6)
-    page.drawLine({ start: { x: M, y }, end: { x: PAGE_W - M, y }, thickness: 1.4, color: BRASS })
+    page.drawLine({ start: { x: M, y }, end: { x: PAGE_W - M, y }, thickness: 1.2, color: RULE })
     y -= 26
 
     drawText(title, M, { ...TYPE.title, bold: true, gap: subtitle ? 2 : 10 })
@@ -372,8 +373,7 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
       thickness: 0.6,
       color: HAIR,
     })
-    const note = "Prepared by Gun License NYC — not an official NYPD form"
-    p.drawText(note, { x: M, y: FOOTER_Y, size: 8, font, color: MUTED })
+    // No firm attribution — the document is the applicant's. Page numbers only.
     const num = `Page ${i + 1} of ${total}`
     const numW = font.widthOfTextAtSize(num, 8)
     p.drawText(num, { x: PAGE_W - M - numW, y: FOOTER_Y, size: 8, font, color: MUTED })
@@ -396,15 +396,13 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
     }
   })
 
-  // Metadata — a downloaded file should identify itself.
-  pdf.setTitle(opts.docTitle ?? "Gun License NYC document")
-  pdf.setAuthor("Gun License NYC")
-  pdf.setSubject(
-    opts.draft
-      ? "DRAFT — unsigned document prepared for the applicant. Not an official NYPD form."
-      : "Document prepared for the applicant. Not an official NYPD form."
-  )
-  pdf.setProducer("Gun License NYC")
+  // Metadata — unbranded. The document belongs to the applicant; no firm name in
+  // the title, author, subject or producer (those are visible in a PDF's info).
+  pdf.setTitle(opts.docTitle ?? "Document")
+  pdf.setAuthor(opts.applicantName ?? "")
+  pdf.setSubject(opts.draft ? "DRAFT — unsigned. Not for filing." : "")
+  pdf.setProducer("")
+  pdf.setCreator("")
   pdf.setCreationDate(opts.preparedOn ?? new Date())
 
   return pdf.save()

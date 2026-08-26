@@ -11,7 +11,6 @@
  */
 import { buildPdf, type DrawOpts } from "@/lib/pdf/builder"
 import { FINGERPRINT_SCHEDULING, type FeeSummary } from "@/lib/fees"
-import { brand } from "@/config/brand"
 
 /** Compact body style — this sheet trades a little air for fitting on one page. */
 const LINE: DrawOpts = { size: 9.5, lead: 13, gap: 1 }
@@ -30,7 +29,7 @@ export async function renderFeeSheet(args: {
       c.rule()
 
       c.para(
-        `These fees are paid by you, directly to the agencies below. ${brand.name} never collects, holds, or forwards them — our service fee is separate and is not on this sheet.`,
+        `These fees are paid by you, directly to the agencies below — never collected, held, or forwarded on your behalf. Any service fee is separate and is not on this sheet.`,
         MUTED
       )
       c.spacer(4)

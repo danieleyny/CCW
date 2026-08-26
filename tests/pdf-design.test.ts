@@ -156,8 +156,9 @@ describe("document builder", () => {
 
       const text = await pdfText(bytes)
       for (let p = 1; p <= total; p++) expect(text).toContain(`Page ${p} of ${total}`)
-      // The "not an official NYPD form" line is on every page, not just page 1.
-      expect(text.match(/not an official NYPD form/g)?.length).toBe(total)
+      // UNBRANDED: no firm name anywhere on the document (letterhead, running head,
+      // or footer) — it's the applicant's own submission.
+      expect(text).not.toContain("Gun License NYC")
     } finally {
       delete process.env.PDF_FALLBACK_FONTS
     }
@@ -179,8 +180,11 @@ describe("document builder", () => {
       expect(text).not.toContain("DRAFT")
 
       const pdf = await PDFDocument.load(bytes)
+      // Unbranded metadata: title is the document, author is the applicant (not
+      // the firm), and no "Gun License NYC" appears in the info dictionary.
       expect(pdf.getTitle()).toBe("Affirmation of Understanding")
-      expect(pdf.getAuthor()).toBe("Gun License NYC")
+      expect(pdf.getAuthor()).toBe("Test Applicant")
+      expect(pdf.getTitle()).not.toContain("Gun License NYC")
     } finally {
       delete process.env.PDF_FALLBACK_FONTS
     }
