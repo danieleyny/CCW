@@ -142,8 +142,7 @@ export async function assemblePacket(admin: DB, caseId: string): Promise<{ pdf: 
 
   const cover = master.addPage([612, 792])
   let y = 792 - M
-  cover.drawText("Gun License NYC", { x: M, y: y - 11, size: 11, font: bold, color: BRASS })
-  y -= 30
+  // No firm wordmark — the packet is the applicant's own submission.
   cover.drawText("Application Packet", { x: M, y: y - 22, size: 22, font: bold, color: INK })
   y -= 34
   cover.drawText(`Applicant: ${applicant}`, { x: M, y: y - 12, size: 12, font, color: INK })

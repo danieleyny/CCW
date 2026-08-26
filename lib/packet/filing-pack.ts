@@ -11,8 +11,8 @@
  *   4. The assembled, NYPD-ordered document packet (lib/packet/assemble).
  *
  * NON-NEGOTIABLE: no NYPD credentials, no submission. The applicant files at
- * licensing.nypdonline.org. Every page carries the "prepared by Gun License NYC
- * — you submit your own application" framing the builder already enforces.
+ * licensing.nypdonline.org. The generated documents are UNBRANDED (the builder
+ * carries no firm mark or attribution) — they are the applicant's own submissions.
  *
  * Service-role only (reads Storage + the whole case), like assemblePacket.
  */
@@ -178,5 +178,5 @@ export function filingPackFileName(applicantName?: string | null): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40)
-  return `gunlicensenyc-filing-pack-${slug || "application"}.pdf`
+  return `${slug || "application"}-application-packet.pdf`
 }

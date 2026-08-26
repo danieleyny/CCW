@@ -27,7 +27,6 @@ import {
   type SignOpts,
 } from "@/lib/forms/documents"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
-import { brand } from "@/config/brand"
 import { SIGNING_CONSENT } from "@/lib/requirements/consent"
 import { buildWorksheet, type WorksheetContext } from "@/lib/requirements/worksheet"
 import type { WizardAnswers } from "@/lib/intake/answers"
@@ -35,7 +34,7 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 type DB = SupabaseClient<Database>
 type DocumentType = Database["public"]["Enums"]["document_type"]
 
-const PREPARED_BY = `Prepared by ${brand.name}. This is not an official NYPD form — it is a prepared document you review, sign, and submit with your own application.`
+const PREPARED_BY = `This is not an official NYPD form — it is a prepared worksheet. Review it, then enter your answers into your own application.`
 
 export interface RenderInput {
   reqCode: string
