@@ -1,6 +1,6 @@
 import { ShieldCheck } from "lucide-react"
 import { actionFor } from "@/lib/requirements/actions"
-import { applicantGroup } from "@/lib/concierge/application-review"
+import { isDisclosureItem } from "@/lib/requirements/sections"
 import { RequirementAction } from "@/components/portal/requirement-action"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import type { RequirementView } from "@/lib/portal/requirement-view"
@@ -32,7 +32,7 @@ export function DisclosuresSection({
   // Obtain-mode history documents (e.g. a certificate of good conduct) live in
   // the vault; references/cohabitants sign + notarize themselves (excluded).
   const items = view.items.filter(
-    (i) => i.status !== "na" && applicantGroup(i.reqCode) === "history" && actionFor(i.reqCode)?.mode === "generate"
+    (i) => i.status !== "na" && isDisclosureItem(i.reqCode) && actionFor(i.reqCode)?.mode === "generate"
   )
   if (items.length === 0) return null
 

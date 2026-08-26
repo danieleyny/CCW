@@ -104,3 +104,16 @@ const SECTION_BY_CODE: Record<string, SectionKey> = {
 export function sectionFor(reqCode: string): SectionKey | null {
   return SECTION_BY_CODE[reqCode] ?? null
 }
+
+/**
+ * The disclosure / history family — arrest, order-of-protection, domestic-incident,
+ * the disclosure questionnaire, good-conduct, social-media, military, name-change,
+ * out-of-state. These are handled in the dedicated "Your disclosures" surface, not
+ * mixed into "Review & file" (several of them land in the `prepared` section, which
+ * also holds non-disclosure items like the affirmation — so section alone can't
+ * separate them). Preserves the old applicantGroup "history" grouping exactly.
+ */
+const DISCLOSURE_PREFIXES = ["DSC", "ARR", "OOP", "DIR", "QUE", "GMC", "SOC", "MIL", "NAM", "OOS"]
+export function isDisclosureItem(reqCode: string): boolean {
+  return DISCLOSURE_PREFIXES.includes(reqCode.split("-")[0])
+}

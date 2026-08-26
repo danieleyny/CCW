@@ -5,7 +5,8 @@
  * concierge_scope.
  */
 import { describe, expect, it } from "vitest"
-import { buildApplicationReview, applicantGroup } from "@/lib/concierge/application-review"
+import { buildApplicationReview } from "@/lib/concierge/application-review"
+import { sectionFor } from "@/lib/requirements/sections"
 import type { RequirementView } from "@/lib/portal/requirement-view"
 
 function item(reqCode: string, status = "pending") {
@@ -23,23 +24,23 @@ function view(partial: Partial<RequirementView>): RequirementView {
   } as unknown as RequirementView
 }
 
-describe("applicantGroup", () => {
-  it("maps req codes to applicant-facing groups", () => {
-    expect(applicantGroup("IDN-01")).toBe("identity")
-    expect(applicantGroup("RES-01")).toBe("identity")
-    expect(applicantGroup("TRN-01")).toBe("training")
-    expect(applicantGroup("DSC-01")).toBe("history")
-    expect(applicantGroup("REF-01")).toBe("people")
-    expect(applicantGroup("AFF-01")).toBe("prepared")
-    expect(applicantGroup("FEE-01")).toBe("filing")
+describe("the shared section taxonomy drives the review", () => {
+  it("maps req codes to registry sections", () => {
+    expect(sectionFor("IDN-01")).toBe("identity")
+    expect(sectionFor("RES-01")).toBe("residence")
+    expect(sectionFor("TRN-01")).toBe("training")
+    expect(sectionFor("DSC-01")).toBe("prepared")
+    expect(sectionFor("REF-01")).toBe("people")
+    expect(sectionFor("SPN-01")).toBe("sponsor")
+    expect(sectionFor("FEE-01")).toBe("admin") // hidden
   })
 })
 
 describe("buildApplicationReview", () => {
-  it("groups rows and drops empty groups", () => {
-    const groups = buildApplicationReview(view({ items: [item("IDN-01"), item("TRN-01")] }), {})
-    const keys = groups.map((g) => g.key)
-    expect(keys).toEqual(["identity", "training"])
+  it("groups rows by section, in registry order, dropping empty groups", () => {
+    const groups = buildApplicationReview(view({ items: [item("TRN-01"), item("IDN-01")] }), {})
+    // identity comes before training in the fixed section order, regardless of input order.
+    expect(groups.map((g) => g.key)).toEqual(["identity", "training"])
   })
 
   it("an outstanding document is theirs to do → 'You' + a per-item link into the vault", () => {
@@ -63,9 +64,15 @@ describe("buildApplicationReview", () => {
     for (const r of rows) expect(r.actionHref).toBe("/portal/concierge#IDN-01")
   })
 
-  it("a system-verified / attest item has no Go button (no landing spot)", () => {
-    const row = buildApplicationReview(view({ items: [item("ELG-01"), item("FEE-01")] }), {}).flatMap((g) => g.rows)
-    for (const r of row) expect(r.actionHref).toBeNull()
+  it("admin / system-verified items are hidden from the review entirely", () => {
+    const groups = buildApplicationReview(view({ items: [item("ELG-01"), item("FEE-01"), item("FMT-01")] }), {})
+    expect(groups).toEqual([]) // the whole 'admin' section is hidden
+  })
+
+  it("names the sponsor section from the company", () => {
+    const groups = buildApplicationReview(view({ items: [item("SPN-01")] }), {}, "ISS Action")
+    expect(groups[0].key).toBe("sponsor")
+    expect(groups[0].label).toBe("From ISS Action")
   })
 
   it("references belong to the references, shown as progress", () => {
