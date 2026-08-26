@@ -69,6 +69,7 @@ export interface SponsorDocumentRow {
   type: string
   file_name: string | null
   status: string
+  review_notes: string | null
   generated: boolean
   signed_at: string | null
   notarized: boolean
