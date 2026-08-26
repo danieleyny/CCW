@@ -33,16 +33,22 @@ export default async function DocumentsPage() {
   // CONCIERGE UX Phase 3 — a concierge applicant gets a READ-ONLY application
   // review, not the self-serve upload library. Self-guided is unchanged.
   if (myCase.service_mode === "concierge") {
-    const { data: reqs } = await supabase
-      .from("case_requirements")
-      .select("req_code, updated_at")
-      .eq("case_id", myCase.id)
+    const [{ data: reqs }, { data: sp }] = await Promise.all([
+      supabase.from("case_requirements").select("req_code, updated_at").eq("case_id", myCase.id),
+      supabase
+        .from("case_sponsorships")
+        .select("sponsor:sponsors(legal_name)")
+        .eq("case_id", myCase.id)
+        .limit(1)
+        .maybeSingle(),
+    ])
     const lastActivity: Record<string, string> = {}
     for (const r of reqs ?? []) if (r.updated_at) lastActivity[r.req_code] = r.updated_at
+    const sponsorName = (sp?.sponsor as unknown as { legal_name?: string } | null)?.legal_name ?? null
     return (
       <div>
         <ScrollToTop />
-        <ApplicationReview groups={buildApplicationReview(view, lastActivity)} />
+        <ApplicationReview groups={buildApplicationReview(view, lastActivity, sponsorName)} />
       </div>
     )
   }

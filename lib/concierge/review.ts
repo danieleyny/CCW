@@ -15,7 +15,7 @@
  */
 import { actionFor } from "@/lib/requirements/actions"
 import { type CaseStageKey, stageIndex } from "@/config/stages"
-import { applicantGroup } from "@/lib/concierge/application-review"
+import { isDisclosureItem } from "@/lib/requirements/sections"
 import type { RequirementView } from "@/lib/portal/requirement-view"
 
 export interface ReviewItem {
@@ -46,7 +46,7 @@ export function buildReviewItems(view: RequirementView): ReviewItem[] {
     if (!conciergeSignable(reqCode)) continue
     // Disclosure/history documents are signed in the dedicated "Your disclosures"
     // section, not here — don't duplicate them in Review & file.
-    if (applicantGroup(reqCode) === "history") continue
+    if (isDisclosureItem(reqCode)) continue
     const action = actionFor(reqCode)
     items.push({
       reqCode,

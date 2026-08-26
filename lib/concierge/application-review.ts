@@ -1,38 +1,15 @@
 import { actionFor } from "@/lib/requirements/actions"
+import { sectionFor, SECTIONS, SECTION_BY_KEY, SECTION_ORDER, type SectionKey } from "@/lib/requirements/sections"
 import type { RequirementView } from "@/lib/portal/requirement-view"
 
 /**
- * CONCIERGE UX Phase 3 — the read-only "Your application" surface. A concierge
- * applicant paid NOT to work an upload list, so /portal/documents shows the WHOLE
- * application, grouped, with the important column being WHO HAS IT and a
- * last-activity stamp that proves motion between logins. Nothing is actionable in
- * place; a genuinely-theirs item just links back into the vault or disclosures.
- *
- * NOTE: this grouping is `applicantGroup` — an APPLICANT-facing concept,
- * deliberately SEPARATE from `requirements.concierge_scope` (which governs what an
- * engaged TRAINER may see and has RLS behind it). Do not conflate the two.
+ * The read-only "Your application" surface. A concierge applicant paid NOT to work
+ * an upload list, so /portal/documents shows the WHOLE application, grouped by the
+ * ONE registry taxonomy (lib/requirements/sections) — the same sections the vault
+ * uses — with WHO HAS IT and a last-activity stamp that proves motion between
+ * logins. Nothing is actionable in place; a genuinely-theirs item links back into
+ * the vault, disclosures, or Review & file.
  */
-
-export type ApplicantGroup = "identity" | "training" | "history" | "people" | "prepared" | "filing"
-
-export const REVIEW_GROUPS: { key: ApplicantGroup; label: string }[] = [
-  { key: "identity", label: "Identity & residence" },
-  { key: "training", label: "Training" },
-  { key: "history", label: "Your history & disclosures" },
-  { key: "people", label: "The people we contact" },
-  { key: "prepared", label: "Documents we prepare" },
-  { key: "filing", label: "Filing" },
-]
-
-export function applicantGroup(reqCode: string): ApplicantGroup {
-  const p = reqCode.split("-")[0]
-  if (["IDN", "RES", "DMV"].includes(p)) return "identity"
-  if (["TRN", "RNW"].includes(p)) return "training"
-  if (["DSC", "ARR", "OOP", "DIR", "QUE", "GMC", "SOC", "MIL", "NAM", "OOS"].includes(p)) return "history"
-  if (["REF", "COH"].includes(p)) return "people"
-  if (["AFF", "SAF"].includes(p)) return "prepared"
-  return "filing"
-}
 
 /**
  * The concierge-page anchor a "Go" link should land on for a requirement. The
@@ -60,8 +37,9 @@ export interface ReviewRow {
 }
 
 export interface ReviewGroupData {
-  key: ApplicantGroup
+  key: SectionKey
   label: string
+  blurb: string
   rows: ReviewRow[]
 }
 
@@ -137,27 +115,40 @@ function derive(
 }
 
 /**
- * Build the grouped review. `lastActivity` maps req_code → ISO timestamp (from
- * case_requirements.updated_at, resolved by the page). Empty groups are dropped.
+ * Build the grouped review, using the ONE registry taxonomy. `lastActivity` maps
+ * req_code → ISO timestamp (case_requirements.updated_at). `sponsorName` names the
+ * sponsor section ("From ISS Action") for this case. Hidden (admin) + empty groups
+ * are dropped; sections render in the fixed registry order.
  */
 export function buildApplicationReview(
   view: RequirementView,
-  lastActivity: Record<string, string>
+  lastActivity: Record<string, string>,
+  sponsorName?: string | null
 ): ReviewGroupData[] {
-  const rows: ReviewRow[] = view.items
+  const rows = view.items
     .filter((i) => i.status !== "na")
     .map((i) => {
       const action = actionFor(i.reqCode)
       return {
         reqCode: i.reqCode,
+        section: sectionFor(i.reqCode) ?? "conditional",
         title: action?.customerTitle ?? i.title,
         lastActivity: lastActivity[i.reqCode] ?? null,
         ...derive(i, view),
       }
     })
 
-  return REVIEW_GROUPS.map((g) => ({
-    ...g,
-    rows: rows.filter((r) => applicantGroup(r.reqCode) === g.key),
-  })).filter((g) => g.rows.length > 0)
+  return SECTIONS.filter((s) => !s.hidden)
+    .map((s) => {
+      const isSponsor = s.key === "sponsor"
+      const company = sponsorName?.trim() || "your sponsor"
+      return {
+        key: s.key,
+        label: isSponsor ? `From ${company}` : SECTION_BY_KEY[s.key].title,
+        blurb: s.blurb.replace("{company}", company),
+        rows: rows.filter((r) => r.section === s.key),
+      }
+    })
+    .filter((g) => g.rows.length > 0)
+    .sort((a, b) => SECTION_ORDER[a.key] - SECTION_ORDER[b.key])
 }

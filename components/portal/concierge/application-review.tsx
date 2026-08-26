@@ -38,7 +38,10 @@ export function ApplicationReview({ groups }: { groups: ReviewGroupData[] }) {
 
       {groups.map((g) => (
         <section key={g.key} className="space-y-2">
-          <h2 className="engraved text-text-low">{g.label}</h2>
+          <div>
+            <h2 className="engraved text-text-low">{g.label}</h2>
+            {g.blurb && <p className="mt-0.5 text-xs text-text-low">{g.blurb}</p>}
+          </div>
           <ul className="divide-y divide-hairline rounded-lg border border-hairline bg-card">
             {g.rows.map((r) => {
               const WhoIcon = whoIcon(r.whoHasIt)
