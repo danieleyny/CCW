@@ -9,6 +9,7 @@ import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SponsorUploader } from "@/components/sponsor/sponsor-uploader"
 import { OpenDocumentButton } from "@/components/sponsor/open-document-button"
 import { sponsorItemState, SPONSOR_ITEM_COPY } from "@/lib/sponsor/status"
+import { sectionFor, SECTIONS, SECTION_ORDER } from "@/lib/requirements/sections"
 import { Button } from "@/components/ui/button"
 
 export interface SponsorFileRow {
@@ -41,9 +42,15 @@ export function SponsorApplicantFile({ caseId, rows }: { caseId: string; rows: S
     )
   }
 
-  return (
-    <div className="space-y-2">
-      {rows.map((r) => {
+  // Same registry taxonomy as the applicant's own surfaces — the file reads as a
+  // handful of labelled sections, not a flat wall. (SPN-* is the company packet,
+  // rendered above; it never appears in the applicant's file.)
+  const groups = SECTIONS.filter((s) => !s.hidden && s.key !== "sponsor")
+    .map((s) => ({ title: s.title, key: s.key, rows: rows.filter((r) => sectionFor(r.reqCode) === s.key) }))
+    .filter((g) => g.rows.length > 0)
+    .sort((a, b) => SECTION_ORDER[a.key] - SECTION_ORDER[b.key])
+
+  const renderRow = (r: SponsorFileRow) => {
         const action = actionFor(r.reqCode)
         const sensitive = conciergeScopeFor(r.reqCode) === "hidden"
         const isUpload = action?.mode === "obtain" && !!action.documentType
@@ -92,7 +99,16 @@ export function SponsorApplicantFile({ caseId, rows }: { caseId: string; rows: S
             )}
           </div>
         )
-      })}
+  }
+
+  return (
+    <div className="space-y-6">
+      {groups.map((g) => (
+        <div key={g.key}>
+          <h3 className="engraved-sm mb-1.5 text-text-mid">{g.title}</h3>
+          <div className="space-y-2">{g.rows.map(renderRow)}</div>
+        </div>
+      ))}
     </div>
   )
 }
