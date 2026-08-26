@@ -233,7 +233,8 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
     })
 
     y = top - Math.max(26, 8 + meta.length * 11 + 6)
-    page.drawLine({ start: { x: M, y }, end: { x: PAGE_W - M, y }, thickness: 1.2, color: RULE })
+    // The brass rule is design, not identity — keep it.
+    page.drawLine({ start: { x: M, y }, end: { x: PAGE_W - M, y }, thickness: 1.4, color: BRASS })
     y -= 26
 
     drawText(title, M, { ...TYPE.title, bold: true, gap: subtitle ? 2 : 10 })
@@ -373,7 +374,10 @@ export async function buildPdf(draw: (c: Ctx) => void, opts: BuildOpts = {}): Pr
       thickness: 0.6,
       color: HAIR,
     })
-    // No firm attribution — the document is the applicant's. Page numbers only.
+    // No firm attribution — only the mistaken-for-official WARNING stays (that
+    // risk is unchanged by unbranding); the "prepared by …" name is gone.
+    const note = "Not an official NYPD form — prepared for the applicant's review and signature"
+    p.drawText(note, { x: M, y: FOOTER_Y, size: 8, font, color: MUTED })
     const num = `Page ${i + 1} of ${total}`
     const numW = font.widthOfTextAtSize(num, 8)
     p.drawText(num, { x: PAGE_W - M - numW, y: FOOTER_Y, size: 8, font, color: MUTED })
