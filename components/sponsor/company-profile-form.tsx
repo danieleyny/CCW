@@ -24,6 +24,9 @@ export interface CompanyProfile {
   dba_name: string | null
   president_owner: string | null
   qualifying_officer: string | null
+  carry_business_status: string | null
+  carry_business_number: string | null
+  carry_business_expires: string | null
 }
 
 /**
@@ -43,6 +46,7 @@ export function CompanyProfileForm({
 }) {
   const [pending, start] = useTransition()
   const [open, setOpen] = useState(!complete)
+  const [carryStatus, setCarryStatus] = useState(profile.carry_business_status ?? "")
 
   function submit(formData: FormData) {
     formData.set("caseId", caseId)
@@ -98,6 +102,38 @@ export function CompanyProfileForm({
         <Field label="ZIP *" name="business_zip" defaultValue={V.business_zip} required />
         <Field label="Business phone *" name="business_phone" defaultValue={V.business_phone} required />
         <Field label="Type of business *" name="business_type" defaultValue={V.business_type} required />
+      </Group>
+
+      <Group title="NYPD Carry Business licence">
+        <div className="sm:col-span-2">
+          <Label htmlFor="cp-carry_business_status" className="text-xs">
+            Does your company hold an NYPD Carry Business licence?
+          </Label>
+          <select
+            id="cp-carry_business_status"
+            name="carry_business_status"
+            value={carryStatus}
+            onChange={(e) => setCarryStatus(e.target.value)}
+            className="mt-1 h-9 w-full rounded-md border border-hairline-strong bg-surface-1 px-2 text-sm"
+          >
+            <option value="">Select…</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="unsure">I&apos;m not sure</option>
+          </select>
+          {carryStatus === "unsure" && (
+            <p className="mt-1 text-xs text-text-low">
+              That&apos;s fine — we&apos;ll confirm it with you. An honest &ldquo;not sure&rdquo; is more useful
+              than a guess.
+            </p>
+          )}
+        </div>
+        {carryStatus === "yes" && (
+          <>
+            <Field label="Carry Business licence number" name="carry_business_number" defaultValue={V.carry_business_number} />
+            <Field label="Licence expiry" name="carry_business_expires" type="date" defaultValue={V.carry_business_expires} />
+          </>
+        )}
       </Group>
 
       <Group title="Optional">

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, FileDown, Send, Ban, Clock, GraduationCap, CalendarDays, MessageSquare } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff } from "@/lib/auth"
 import { type CaseStageKey, stageIndex } from "@/config/stages"
 import { buildMessageTemplates } from "@/config/message-templates"
@@ -57,6 +58,27 @@ export default async function CaseFilePage({
   const { id } = await params
   await requireStaff()
   const supabase = await createClient()
+
+  // Sponsoring company (staff-only) — surface the rep's self-assessment, flagged
+  // when they answered "not sure" so a human resolves it before go-live.
+  const { data: sponsorshipRow } = await createAdminClient()
+    .from("case_sponsorships")
+    .select(
+      "sponsor:sponsors(legal_name, agency_license_number, custodian_name, carry_business_status, carry_business_number, carry_business_expires)"
+    )
+    .eq("case_id", id)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle()
+  const company =
+    (sponsorshipRow?.sponsor as unknown as {
+      legal_name?: string
+      agency_license_number?: string
+      custodian_name?: string
+      carry_business_status?: string
+      carry_business_number?: string
+      carry_business_expires?: string
+    } | null) ?? null
 
   const { data: kase } = await supabase
     .from("cases")
@@ -486,6 +508,36 @@ export default async function CaseFilePage({
         </TabsList>
 
         <TabsContent value="requirements" className="mt-4 space-y-4">
+          {company && (
+            <div className="rounded-lg border border-hairline bg-card p-4">
+              <div className="text-sm font-semibold">Sponsoring company · {company.legal_name ?? "—"}</div>
+              <div className="mt-2 grid gap-2 text-xs sm:grid-cols-3">
+                <div>
+                  <div className="text-text-low">NYPD Carry Business licence</div>
+                  {company.carry_business_status === "yes" ? (
+                    <div className="text-ok">
+                      Yes — {company.carry_business_number || "no number given"}
+                      {company.carry_business_expires ? ` · exp ${company.carry_business_expires}` : ""}
+                    </div>
+                  ) : company.carry_business_status === "unsure" ? (
+                    <div className="rounded bg-warn/10 px-1.5 py-0.5 font-medium text-warn">⚠ Not sure — confirm with rep</div>
+                  ) : company.carry_business_status === "no" ? (
+                    <div className="text-text-mid">No</div>
+                  ) : (
+                    <div className="text-text-low">Not answered yet</div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-text-low">WGP agency licence</div>
+                  <div className="text-text-mid">{company.agency_license_number || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-text-low">Gun custodian (§5-06)</div>
+                  <div className="text-text-mid">{company.custodian_name || "—"}</div>
+                </div>
+              </div>
+            </div>
+          )}
           <QaGateCard
             caseId={id}
             blockers={gate.blockers.filter((b) => b.kind !== "sign_off_missing").map((b) => b.detail)}

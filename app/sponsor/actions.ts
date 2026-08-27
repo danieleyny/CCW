@@ -256,6 +256,11 @@ export async function saveCompanyProfile(formData: FormData): Promise<{ ok?: tru
       dba_name: g("dba_name") || null,
       president_owner: g("president_owner") || null,
       qualifying_officer: g("qualifying_officer") || null,
+      // H2 tri-state — whether the company holds an NYPD Carry Business licence.
+      // "unsure"/"no" are valid answers (routed to staff); number/expiry only when yes.
+      carry_business_status: g("carry_business_status") || null,
+      carry_business_number: g("carry_business_status") === "yes" ? g("carry_business_number") || null : null,
+      carry_business_expires: g("carry_business_status") === "yes" ? g("carry_business_expires") || null : null,
     })
     .eq("id", scope.sponsor_id)
 
