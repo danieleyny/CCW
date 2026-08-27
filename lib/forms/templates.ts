@@ -71,6 +71,15 @@ export interface FormTemplate {
 }
 
 const s = (v: unknown): string => (v == null ? "" : String(v))
+const isYes = (v: unknown): boolean => v === true || v === "yes"
+
+/** PD 643-041 Section B question numbers, in form order (24/25/26 are separate,
+ *  20 folds 20a). Mirrors SECTION_B_QUESTIONS in questionnaires.ts — the numbers are
+ *  fixed by the form, so kept inline here to avoid a lib/forms → lib/requirements dep. */
+const SECTION_B_NUMBERS = [
+  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
+  "23", "24", "25", "26", "27", "28",
+]
 /** Intake stores DOB as YYYY-MM-DD → the three parts, or "" when absent. */
 function dobParts(v: unknown): { mm: string; dd: string; yyyy: string } {
   const [yyyy = "", mm = "", dd = ""] = s(v).split("-")
@@ -326,6 +335,40 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
           .join(" "),
       },
     }),
+  },
+
+  // ── Handgun License Application — Addendum (PD 643-041A) — the OFFICIAL form ──
+  // A two-column table of 19 ROW SLOTS: qN holds the NYPD QUESTION NUMBER, qNexp the
+  // explanation. We list ONLY the "yes" answers, in form order, keyed by their real
+  // question number. QUE-01 fires only when ≥1 answer is yes, so an all-"no" case
+  // never produces this. >19 "yes" explanations would need a second copy — flagged
+  // (astronomically rare; we fill the first 19 rather than silently over-writing).
+  nypd_disclosure_addendum: {
+    key: "nypd_disclosure_addendum",
+    file: "application-addendum-643-041a.pdf",
+    officialTitle: "Handgun License Application — Addendum (PD 643-041A)",
+    formNumber: "PD 643-041A",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/643-041a`,
+    isFillable: true,
+    signable: true,
+    fontSize: 9,
+    signatureField: "Signature",
+    dateField: "Date",
+    requires: ["q1", "q1exp"],
+    signatureOnly: ["Signature", "Date"],
+    build: (v) => {
+      const rows = SECTION_B_NUMBERS.filter((no) => isYes(v[`q${no}`])).map((no) => ({
+        no,
+        exp: s(v[`q${no}_explain`]),
+      }))
+      const text: Record<string, string> = {}
+      rows.slice(0, 19).forEach((r, i) => {
+        text[`q${i + 1}`] = r.no // the row slot gets the NYPD question number
+        text[`q${i + 1}exp`] = r.exp
+      })
+      return { text }
+    },
   },
 
   // ── Company / Carry Guard application (SPN-01) — sponsor completes ──────────

@@ -338,8 +338,12 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "generate",
     actionLabel: "Write your explanations",
     questionnaireId: "disclosure-addendum",
+    // Fills the OFFICIAL PD 643-041A addendum (not our facsimile): the "yes" answers
+    // only, keyed by their real NYPD question number. QUE-01 fires only if_any_q_yes.
+    templateKey: "nypd_disclosure_addendum",
+    documentType: "disclosure_addendum",
     customerTitle: "Your written explanations, in your own words",
-    help: "One written explanation for each 'yes' answer, in your own words. We turn them into the addendum.",
+    help: "One written explanation for each 'yes' answer, in your own words. We fill them onto the official Handgun License Application Addendum (PD 643-041A).",
   },
   "ARR-01": {
     conciergeScope: "hidden",
