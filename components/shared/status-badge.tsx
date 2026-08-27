@@ -10,11 +10,13 @@ const TONES: Record<string, string> = {
   closed: "bg-surface-3 text-text-mid border-hairline",
   approved: "bg-ok/12 text-ok border-ok/30",
   denied: "bg-danger/12 text-danger border-danger/30",
-  // checklist / documents
+  // checklist / documents — a received/pending document is SIGNAL ("we're checking
+  // this"), never brass (your turn) and never warn (a warning). Green/ok is staff
+  // acceptance only.
   not_started: "bg-surface-3 text-text-low border-hairline",
   in_progress: "bg-signal-dim text-signal border-signal/30",
-  submitted: "bg-warn/12 text-warn border-warn/30",
-  pending: "bg-warn/12 text-warn border-warn/30",
+  submitted: "bg-signal-dim text-signal border-signal/30",
+  pending: "bg-signal-dim text-signal border-signal/30",
   rejected: "bg-danger/12 text-danger border-danger/30",
   // requirements engine (case_req_status)
   satisfied: "bg-ok/12 text-ok border-ok/30",
