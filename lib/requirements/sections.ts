@@ -79,6 +79,7 @@ export const SECTION_ORDER: Record<SectionKey, number> = Object.fromEntries(
 const SECTION_BY_CODE: Record<string, SectionKey> = {
   // Who you are
   "IDN-01": "identity", "IDN-02": "identity", "IDN-03": "identity", "IDN-04": "identity",
+  "SSN-01": "identity",
   // Where you live
   "RES-01": "residence",
   // Records about you
