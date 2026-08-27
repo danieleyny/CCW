@@ -371,6 +371,112 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     },
   },
 
+  // ── Handgun License Application (PD 643-041) — the FULL 123-field application ──
+  // We PREPARE it filled from the fact layer + intake; the applicant reviews, signs,
+  // and files it themselves at NYPD (we never file). Neither signable-by-us nor
+  // notarised — signature/date blocks stay blank. Traps handled: the 20 Section B
+  // /Yes/No boxes + LicenseType/LicenseTypePremises/AlienOrCitizen are dual-widget
+  // `choices` (setNypdChoice, throws on no match). Q29 has 4 rows each and row 1 has
+  // NO "To" field (the form pre-prints PRESENT). Q31 splits across two lines. Narrow
+  // columns (occupation, Q31) get explicit small sizes then auto-fit.
+  nypd_handgun_application: {
+    key: "nypd_handgun_application",
+    file: "handgun-license-application-643-041.pdf",
+    officialTitle: "Handgun License Application (PD 643-041)",
+    formNumber: "PD 643-041",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/643-041`,
+    isFillable: true,
+    ephemeral: ["ssn"],
+    fontSize: 9,
+    fieldFontSize: {
+      "Occupation Owner  Employee  Gun Custodian": 6,
+      "30_Who_will_guns_be_Safeguarded_by": 7,
+      "30_b_Who_will_guns_be_Safeguarded_by": 7,
+    },
+    requires: ["1_LastName", "1_FirstName", "Date of Birth", "2 Legal Address Street No"],
+    signatureOnly: ["AffirmedSignatureDate", "LetterOfNecessitySignatureDate", "Social Security Number"],
+    build: (v) => {
+      const text: Record<string, string> = {
+        "1_LastName": s(v.lastName),
+        "1_FirstName": s(v.firstName),
+        "1_MI": s(v.mi),
+        "Maiden NameAlias": s(v.alias),
+        "2 Legal Address Street No": s(v.street),
+        Apt: s(v.apt),
+        "City or Town": s(v.city),
+        State: s(v.state),
+        "Zip Code": s(v.zip),
+        "Res Pct": s(v.resPct),
+        "Alien Registration Number": s(v.alienReg),
+        "Social Security Number": s(v.ssn),
+        "Home Phone No": s(v.homePhone),
+        "Cell Phone No": s(v.cellPhone),
+        "Email Address": s(v.email),
+        "4 Place of Birth  City State Country": s(v.placeOfBirth),
+        Age: s(v.age),
+        "Date of Birth": s(v.dob),
+        "Hgt inches": s(v.height),
+        Wgt: s(v.weight),
+        Sex: s(v.sex),
+        "Color of Hair": s(v.hairColor),
+        "Color of Eyes": s(v.eyeColor),
+        "5 Name of Business": s(v.businessName),
+        "Type of Business": s(v.businessType),
+        "6 Business Address Street No": s(v.businessStreet),
+        "City or Town_2": s(v.businessCity),
+        State_2: s(v.businessState),
+        "Zip Code_2": s(v.businessZip),
+        "7 Bus Telephone NoDay": s(v.busPhone),
+        "Occupation Owner  Employee  Gun Custodian": s(v.occupation),
+        "9 Basic License Number": s(v.outOfCityLicenseNumber),
+        "Issued By": s(v.outOfCityIssuedBy),
+        County: s(v.outOfCityCounty),
+        "Date Issued": s(v.outOfCityIssuedOn),
+        "Expiration Date": s(v.outOfCityExpiresOn),
+        LicenseNumber_renewal_applicant: s(v.renewalLicenseNumber),
+        // Q30 safeguarding + Q31 (SPLIT across two lines: name/relation/address, phone).
+        "30_How_will_guns_be_Safeguarded": s(v.safeguardMethod),
+        "30_Who_will_guns_be_Safeguarded_by": [s(v.safeguardName), s(v.safeguardRelation), s(v.safeguardAddress)]
+          .filter(Boolean)
+          .join(", "),
+        "30_b_Who_will_guns_be_Safeguarded_by": s(v.safeguardPhone),
+      }
+      // Letter of necessity (page 4) — the six statements, if collected.
+      for (const n of [1, 2, 3, 4, 5, 6]) text[`LetterOfNecessity${n}`] = s(v[`lop${n}`])
+
+      // Q29 histories — 4 rows each; ROW 1 has NO "To" field (PRESENT pre-printed).
+      const res = Array.isArray(v.residenceHistory) ? (v.residenceHistory as Record<string, unknown>[]) : []
+      res.slice(0, 4).forEach((r, i) => {
+        const n = i + 1
+        text[`ResidenceFrom${n}`] = s(r.fromMonth)
+        if (n > 1) text[`ResidenceTo${n}`] = s(r.toMonth) || "PRESENT"
+        text[`ResidenceAddress${n}`] = s(r.address)
+      })
+      const emp = Array.isArray(v.employmentHistory) ? (v.employmentHistory as Record<string, unknown>[]) : []
+      emp.slice(0, 4).forEach((r, i) => {
+        const n = i + 1
+        text[`EmploymentFrom${n}`] = s(r.fromMonth)
+        if (n > 1) text[`EmploymentTo${n}`] = s(r.toMonth) || "PRESENT"
+        text[`EmploymentAddress${n}`] = [s(r.employerName), s(r.employerAddress)].filter(Boolean).join(", ")
+        text[`EmploymentOccupation${n}`] = s(r.occupation)
+      })
+
+      // Dual-widget choices — throw on no match, never the .check() trap.
+      const choices: Record<string, string | undefined> = {
+        LicenseType: s(v.licenseType) || undefined,
+        AlienOrCitizen: s(v.citizenship) || undefined,
+        LicenseTypePremises: s(v.premisesType) || undefined,
+      }
+      // Section B 10–28 (incl. 20a; 24/25/26 separate) — Yes / No.
+      for (const no of ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "20a", "21", "22", "23", "24", "25", "26", "27", "28"]) {
+        const ans = s(v[`q${no}`])
+        if (ans === "Yes" || ans === "No") choices[`SectionB${no}`] = ans
+      }
+      return { text, choices }
+    },
+  },
+
   // ── Company / Carry Guard application (SPN-01) — sponsor completes ──────────
   nypd_company_application: {
     key: "nypd_company_application",
