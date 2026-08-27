@@ -106,17 +106,11 @@ export default async function ConciergeHome() {
   const agentFirst =
     (agentRow?.profiles as unknown as { full_name: string } | null)?.full_name?.split(" ")[0] ?? null
 
-  // UX 1.3 — an UNBOOKED call is the single most valuable action → put the
-  // scheduler above the fold, before the tower. A BOOKED call is a fact, not a
-  // task → show it as a compact strip beneath the tower, not a full calendar.
+  // UX 1.3 — an UNBOOKED call is the single most valuable action → put the compact
+  // "book your intro call" card above the fold, before the tower. Once BOOKED it's
+  // a fact, not a task → it folds into the control tower as a milestone line, so it
+  // stops occupying its own section.
   const callBooked = !!onboarding.introCall?.scheduledAt
-  const bookCall = (
-    <BookCall
-      calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
-      introToken={myCase.calendly_token}
-      introCall={onboarding.introCall}
-    />
-  )
 
   return (
     <div className="space-y-6">
@@ -139,11 +133,19 @@ export default async function ConciergeHome() {
 
       <SponsorBanner caseId={myCase.id} />
 
-      {!callBooked && bookCall}
+      {!callBooked && (
+        <BookCall
+          calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
+          introToken={myCase.calendly_token}
+          introCall={onboarding.introCall}
+        />
+      )}
 
-      <ControlTower state={controlState} nypdControlled={isNypdControlled(stage)} />
-
-      {callBooked && bookCall}
+      <ControlTower
+        state={controlState}
+        nypdControlled={isNypdControlled(stage)}
+        introCall={onboarding.introCall}
+      />
 
       <div id="vault" className="scroll-mt-20">
         <DocumentVault
