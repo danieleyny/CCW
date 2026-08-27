@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { requiredReferences } from "@/lib/intake/schema"
+import { referenceComposition } from "@/lib/references/composition"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { readImageDimensions } from "@/lib/files/image-dimensions"
 import { PHOTO_MIN_PX, PHOTO_MAX_PX, PHOTO_ASPECT_TOLERANCE } from "@/lib/files/photo-spec"
@@ -25,6 +26,7 @@ export interface GateBlocker {
     | "training_missing"
     | "training_expired"
     | "references_short"
+    | "references_composition"
     | "photo_spec"
     | "sign_off_missing"
     | "track_unresolved"
@@ -55,7 +57,7 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
         .eq("case_id", caseId),
       db.from("disclosures").select("id, type, narrative").eq("case_id", caseId),
       db.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
-      db.from("character_references").select("id, notarized").eq("case_id", caseId),
+      db.from("character_references").select("id, notarized, is_family").eq("case_id", caseId),
       db
         .from("documents")
         .select("file_path, file_name, status")
@@ -133,6 +135,12 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
       kind: "references_short",
       detail: `${notarized}/${needed} notarized character references on file for this track.`,
     })
+  }
+  // Composition (38 RCNY §5-05(b)(8)): at least 2 must be non-relatives — a packet
+  // with too many family references is blocked with the reason named.
+  const comp = referenceComposition(refs ?? [], needed)
+  if (comp.problem) {
+    blockers.push({ kind: "references_composition", detail: comp.problem })
   }
 
   // 5. If IDN-04 (photo) applies and a photo is on file, it must independently

@@ -12,6 +12,9 @@ import { enforceUploadedFile } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { smartDocument } from "@/lib/requirements/smart-documents"
+import { requiredReferences } from "@/lib/intake/schema"
+import { referenceComposition, familyCapMessage } from "@/lib/references/composition"
+import type { WizardAnswers } from "@/lib/intake/answers"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -192,11 +195,32 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
   const v = parsed.data
   const supabase = await createClient()
 
-  const { count } = await supabase
-    .from("character_references")
-    .select("id", { count: "exact", head: true })
-    .eq("case_id", v.caseId)
-  if ((count ?? 0) >= 4) return { error: "You already have 4 references." }
+  // Enforce BOTH the count and the composition (38 RCNY §5-05(b)(8)) server-side —
+  // the UI blocks it too, but the rule can't live only in the client. How many this
+  // track needs, and the family cap, come from the ONE composition rule.
+  const [{ data: kase }, { data: intakeRow }, { data: existing }] = await Promise.all([
+    supabase.from("cases").select("is_renewal, license_track").eq("id", v.caseId).maybeSingle(),
+    supabase.from("intake_sessions").select("answers").eq("case_id", v.caseId).maybeSingle(),
+    supabase.from("character_references").select("is_family").eq("case_id", v.caseId),
+  ])
+  const answers = (intakeRow?.answers ?? {}) as WizardAnswers
+  const required = requiredReferences(answers, {
+    isRenewal: !!kase?.is_renewal,
+    licenseTrack: (kase?.license_track ?? undefined) as
+      | "concealed_carry"
+      | "carry_guard"
+      | "special_carry_guard"
+      | "sponsored_unresolved"
+      | undefined,
+  })
+  const refs = existing ?? []
+  if (refs.length >= required) {
+    return { error: `You already have ${required} reference${required === 1 ? "" : "s"}.` }
+  }
+  const comp = referenceComposition(refs, required)
+  if (v.isFamily === "on" && comp.familyCapReached) {
+    return { error: familyCapMessage(comp.maxFamily, required) }
+  }
 
   const { data: created, error } = await supabase
     .from("character_references")

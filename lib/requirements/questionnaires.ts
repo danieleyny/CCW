@@ -14,7 +14,7 @@
  * nullified matters ARE disclosed (CPL Article 160), and that non-disclosure is
  * more damaging than the underlying event. Nothing here may suggest omitting.
  */
-import { type WizardAnswers } from "@/lib/intake/answers"
+import { type WizardAnswers, QUESTIONNAIRE } from "@/lib/intake/answers"
 
 /**
  * Everything we already know about the applicant. Name/borough/ZIP live on the
@@ -97,6 +97,64 @@ export interface Questionnaire {
 
 const CANDOR_NOTICE =
   "Disclose everything, including anything sealed, dismissed, or nullified — New York's sealing statute (CPL Article 160) does not excuse you from disclosing to the License Division. Leaving something out is treated far more harshly than the underlying event."
+
+/**
+ * THE complete PD 643-041 Section B — every question 10 through 28, verbatim. This
+ * is the single source the disclosure questionnaire, the PD 643-041A addendum
+ * generator, and our internal disclosure summary all read, so they can never drift
+ * out of sync or quietly collapse a question.
+ *
+ * Q10–22 reuse the intake questionnaire's verbatim text (already collected at
+ * intake as `answers.questionnaire`). Q23–28 have dedicated intake flows whose
+ * answers prefill them: 23←arrests, 24←ordersOfProtection, 27←domesticIncidents,
+ * 28←aliasName. **24, 25 and 26 are THREE separate questions** (against you / by you
+ * against household or family / by you against another) — never collapsed. **21 and
+ * 22 are separate** (mental illness/treatment vs any disability affecting safe
+ * possession). Q20 folds the form's 20 and 20a (both ask about corporate licences).
+ */
+export interface SectionBQuestion {
+  no: string
+  text: string
+  /** Names the specific sub-facts the official form wants inside the explanation. */
+  explainHelp?: string
+}
+export const SECTION_B_QUESTIONS: SectionBQuestion[] = [
+  ...QUESTIONNAIRE.map((q) => ({ no: String(q.no), text: q.text })),
+  {
+    no: "23",
+    text:
+      "Been arrested, indicted, or summonsed for ANY offense other than parking violations, in ANY jurisdiction — federal, state, local, or foreign? You must include cases that were dismissed and/or the record sealed.",
+    explainHelp:
+      "For each: the date and time, the charge(s), how it was resolved (the disposition), and the court and police agency. You'll add each Certificate of Disposition separately.",
+  },
+  {
+    no: "24",
+    text: "Have you ever had, or do you now have, an Order of Protection issued AGAINST you?",
+    explainHelp:
+      "For each: the court and date of issuance, the complainant's name, address and telephone number, their relationship to you, and the reason it was issued.",
+  },
+  {
+    no: "25",
+    text:
+      "Have you ever had an Order of Protection issued BY you against a member of your household or any family member?",
+    explainHelp: "For each: the court and date of issuance, the other party, their relationship to you, and the reason.",
+  },
+  {
+    no: "26",
+    text: "Have you ever had an Order of Protection issued BY you against a person other than a member of your household or family?",
+    explainHelp: "For each: the court and date of issuance, the other party, and the reason.",
+  },
+  {
+    no: "27",
+    text: "Have the police ever responded to a domestic incident in which you were involved?",
+    explainHelp: "Disclose it even if no arrest or charges followed.",
+  },
+  {
+    no: "28",
+    text: "Have you used any variation in the spelling of your name, or any other name (an alias)?",
+    explainHelp: "List each name or spelling you have used, and when.",
+  },
+]
 
 export const QUESTIONNAIRES: Record<string, Questionnaire> = {
   affirmation: {
@@ -246,91 +304,70 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
 
   "disclosure-addendum": {
     id: "disclosure-addendum",
-    title: "Disclosure questions",
+    title: "The application's history questions (10–28)",
     intro:
-      "We've carried over what you told us in intake — confirm each answer and add any explanation the addendum needs. Every 'yes' needs its own written explanation on the Handgun License Application Addendum (PD 643-041A). Answer honestly — this is the part of the application people get wrong.",
+      "The NYPD application asks questions 10 through 28 about your history. We've carried over what you told us in intake — confirm each answer and, for every 'yes', add a written explanation. Every 'yes' needs its own explanation on the Handgun License Application Addendum (PD 643-041A). This is the part of the application people get wrong.",
     notice: CANDOR_NOTICE,
     attorneySeam: true,
-    submitLabel: "Generate my addendum",
-    // QA Phase 9 — prefill from intake so this is CONFIRMATION, not a second
-    // interrogation. Only the items intake collects DIRECTLY (arrests, orders of
-    // protection, domestic incidents) are carried over — including a 'no' the
-    // applicant themselves gave. Mental-health and prior-denial are deliberately
-    // NOT pre-answered: intake's prohibitor flag is narrower than the addendum's
-    // question, and pre-filling 'no' there could suppress a disclosure (candor).
+    submitLabel: "Generate my documents",
+    // Prefill from intake so this is CONFIRMATION, not a second interrogation.
+    // Questions 10–22 carry over from the intake Section-B questionnaire (including a
+    // 'no' the applicant gave); 23←arrests, 24←orders of protection, 27←domestic
+    // incidents, 28←alias carry over from their dedicated intake flows. Q25/26 (an
+    // order of protection issued BY the applicant) have no intake flow, so they are
+    // deliberately NOT pre-answered — a blank is honest, a pre-filled 'no' could
+    // suppress a disclosure (candor).
     prefill: (ctx) => {
       const joinNarr = (rows: { occurredOn?: string; jurisdiction?: string; narrative?: string }[]) =>
         rows
           .map((r) => [r.occurredOn, r.jurisdiction, r.narrative].filter(Boolean).join(" — "))
           .filter(Boolean)
           .join("\n\n")
+      const byNo = new Map((ctx.intake.questionnaire ?? []).map((q) => [String(q.no), q]))
+      const out: Record<string, unknown> = {}
+      // Q10–22 from the intake questionnaire.
+      for (const q of ctx.intake.questionnaire ?? []) {
+        out[`q${q.no}`] = q.yes ? "yes" : "no"
+        if (q.narrative) out[`q${q.no}_explain`] = q.narrative
+      }
+      // Ensure every 10–22 has an explicit answer even if intake left it blank.
+      for (const q of QUESTIONNAIRE) if (!byNo.has(String(q.no))) out[`q${q.no}`] = "no"
+      // Q23–28 from their dedicated intake flows.
       const arrests = ctx.intake.arrests ?? []
       const oops = ctx.intake.ordersOfProtection ?? []
       const dirs = ctx.intake.domesticIncidents ?? []
-      return {
-        everArrested: arrests.length > 0 ? "yes" : "no",
-        arrestExplanation: joinNarr(arrests),
-        orderOfProtection: oops.length > 0 ? "yes" : "no",
-        oopExplanation: joinNarr(oops),
-        domesticIncident: dirs.length > 0 ? "yes" : "no",
-        dirExplanation: joinNarr(dirs),
+      out.q23 = arrests.length > 0 ? "yes" : "no"
+      if (arrests.length) out.q23_explain = joinNarr(arrests)
+      out.q24 = oops.length > 0 ? "yes" : "no"
+      if (oops.length) out.q24_explain = joinNarr(oops)
+      out.q27 = dirs.length > 0 ? "yes" : "no"
+      if (dirs.length) out.q27_explain = joinNarr(dirs)
+      if (ctx.intake.aliasName?.trim()) {
+        out.q28 = "yes"
+        out.q28_explain = ctx.intake.aliasName.trim()
+      } else {
+        out.q28 = "no"
       }
+      return out
     },
-    fields: [
-      {
-        name: "everArrested",
-        label: "Have you ever been arrested, indicted, or summonsed — anywhere, at any time?",
-        type: "yesno",
-        help: "Yes even if it was dismissed, sealed, nullified, or you were never convicted.",
-        revealOnYes: [
-          {
-            name: "arrestExplanation",
-            label: "In your own words, what happened?",
-            type: "textarea",
-            required: true,
-            help: "Facts only: date, place, what was alleged, and how it ended. You'll add the court's Certificate of Disposition separately.",
-            maxLength: 4000,
-          },
-        ],
-      },
-      {
-        name: "orderOfProtection",
-        label: "Has an order of protection ever been issued against you or on your behalf?",
-        type: "yesno",
-        help: "Yes even if it has expired or was later vacated.",
-        revealOnYes: [
-          { name: "oopExplanation", label: "Explain the circumstances", type: "textarea", required: true, maxLength: 4000 },
-        ],
-      },
-      {
-        name: "domesticIncident",
-        label: "Has a domestic incident report ever been filed involving you?",
-        type: "yesno",
-        help: "Yes even if no arrest or charges followed.",
-        revealOnYes: [
-          { name: "dirExplanation", label: "Explain the circumstances", type: "textarea", required: true, maxLength: 4000 },
-        ],
-      },
-      {
-        name: "mentalHealth",
-        label:
-          "Have you ever been involuntarily committed, or adjudicated as lacking mental capacity?",
-        type: "yesno",
-        blockOnYes:
-          "An involuntary commitment or an adjudication of mental incapacity is a federal firearms prohibitor (18 U.S.C. §922(g)(4)). This isn't something we can prepare an explanation around — you should speak with a New York firearms attorney about your eligibility and any restoration of rights before you file. Message your concierge and we'll refer you.",
-        revealOnYes: [
-          { name: "mhExplanation", label: "Explain the circumstances", type: "textarea", required: true, maxLength: 4000 },
-        ],
-      },
-      {
-        name: "licenseDenied",
-        label: "Has a firearms license ever been denied, suspended, or revoked — in any state?",
-        type: "yesno",
-        revealOnYes: [
-          { name: "denialExplanation", label: "Explain the circumstances", type: "textarea", required: true, maxLength: 4000 },
-        ],
-      },
-    ],
+    // Data-driven from the canonical Section-B list — every question 10–28, in the
+    // form's own words, with 21/22 and 24/25/26 as distinct items. A "yes" reveals
+    // an explanation naming the specific sub-facts the form asks for.
+    fields: SECTION_B_QUESTIONS.map((q) => ({
+      name: `q${q.no}`,
+      label: `${q.no}. ${q.text}`,
+      type: "yesno" as const,
+      revealOnYes: [
+        {
+          name: `q${q.no}_explain`,
+          label: "In your own words, what happened?",
+          type: "textarea" as const,
+          required: true,
+          help: q.explainHelp,
+          maxLength: 4000,
+        },
+      ],
+    })),
   },
 
   "arrest-statements": {

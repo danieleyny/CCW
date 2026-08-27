@@ -379,6 +379,23 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     sourceUrl: NYPD_REQUIRED_DOCS,
     sourceLabel: "NYPD photo spec",
   },
+  "SSN-01": {
+    // Sensitive: hidden from the trainer/sponsor concierge feed, exactly like the
+    // disclosure documents. The SSN NUMBER is never asked for here — only the card.
+    conciergeScope: "hidden",
+    mode: "obtain",
+    actionLabel: "Upload your Social Security card",
+    documentType: "social_security_card",
+    customerTitle: "A clear photo of your Social Security card",
+    help: "The NYPD requires your Social Security card for every licence type. Upload a clear photo or scan of the card itself — we don't ask for the number here.",
+    steps: [
+      "Find your physical Social Security card.",
+      "Photograph or scan it so the name and card are fully readable.",
+      "Upload it here.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
   "RES-01": {
     mode: "obtain",
     actionLabel: "Upload proof of residence",
@@ -455,11 +472,19 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   },
   "MIL-01": {
     mode: "obtain",
-    actionLabel: "Upload your DD-214",
+    actionLabel: "Upload your discharge papers",
     documentType: "dd214",
-    customerTitle: "Your DD-214 discharge papers",
-    help: "Your military discharge documentation (DD-214).",
-    steps: ["Find your DD-214. If you don't have a copy, request one from the National Archives.", "Scan it in full.", "Upload it here."],
+    customerTitle: "Your military separation and discharge papers",
+    // Both are required, not either — the NYPD asks for the DD-214 (separation
+    // papers) AND the discharge papers. Two parts; complete only when both are in.
+    minFiles: 2,
+    help: "Both your DD-214 (separation papers) AND your discharge papers. If you don't have copies, request them from the National Archives.",
+    steps: [
+      "Find your DD-214 (separation papers) and your discharge papers.",
+      "If you don't have a copy of either, request it from the National Archives.",
+      "Scan each in full.",
+      "Upload both here — this item isn't complete until both are in.",
+    ],
     sourceUrl: "https://www.archives.gov/veterans/military-service-records",
     sourceLabel: "National Archives — service records",
   },
