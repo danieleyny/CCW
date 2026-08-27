@@ -5760,6 +5760,7 @@ export type Database = {
         | "county_pistol_license"
         | "employment_authorization"
         | "hipaa_release"
+        | "disclosure_summary"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6054,6 +6055,7 @@ export const Constants = {
         "county_pistol_license",
         "employment_authorization",
         "hipaa_release",
+        "disclosure_summary",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [
