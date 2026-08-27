@@ -1,0 +1,16 @@
+-- ============================================================================
+-- COMPLIANCE PR1 · Correction 1 (E4) — the Social Security CARD is a document
+--
+-- The NYPD License Division Required-Documents Checklist lists "Social Security
+-- Card" as a mandatory upload for ALL licence types. A prior instruction kept it
+-- `at_filing` with no upload slot — that was wrong. Add a document_type for the
+-- card so the requirement (SSN-01, next migration) can store the image.
+--
+-- The SSN *number* policy is UNCHANGED: it is still never resolved for a sponsor
+-- fill, never stored in case_facts, still `at_filing` on the worksheet. The card
+-- is a document; the number is a fact — two separate paths.
+--
+-- Enum values must be ADDED in their own transaction before any statement can cast
+-- to them, so this is a standalone migration ahead of the row inserts.
+-- ============================================================================
+alter type public.document_type add value if not exists 'social_security_card';
