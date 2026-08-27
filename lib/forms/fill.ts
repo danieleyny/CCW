@@ -3,7 +3,7 @@ import "server-only"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { createHash } from "node:crypto"
-import { PDFDocument } from "pdf-lib"
+import { PDFDocument, PDFName, StandardFonts, type PDFFont, type PDFTextField } from "pdf-lib"
 import { formTemplate, type FormTemplate } from "./templates"
 
 /**
@@ -62,6 +62,51 @@ function applyFont(field: { setFontSize: (n: number) => void }, size?: number) {
 }
 
 /**
+ * Choose a font size that FITS a single-line value inside its widget. NYPD forms
+ * have narrow columns (occupation, Q31) where the default size clips silently —
+ * `SECURITY GUARD` → `SECURITY G`, intact in /V, gone on the page. Measure against
+ * the widget rect and step down to a floor. Multiline fields wrap, so they keep the
+ * intended size. Returns the fitted size (never below the floor).
+ */
+const FONT_FLOOR = 5
+function fitFontSize(tf: PDFTextField, text: string, font: PDFFont, intended: number): number {
+  try {
+    if (tf.isMultiline()) return intended
+    const w = tf.acroField.getWidgets()[0]
+    if (!w) return intended
+    const rect = w.getRectangle()
+    const avail = Math.max(4, rect.width - 4) // small horizontal padding
+    let size = intended
+    while (size > FONT_FLOOR && font.widthOfTextAtSize(text, size) > avail) size -= 0.5
+    return size
+  } catch {
+    return intended
+  }
+}
+
+/**
+ * Set a DUAL-WIDGET NYPD checkbox (SectionB*, LicenseType, AlienOrCitizen). These
+ * are ONE field with two widgets whose on-values are /Yes and /No (or /CarryGuard…
+ * etc.). pdf-lib's `.check()` always ticks the FIRST widget, so it can never answer
+ * "No" and once ticked CARRY BUSINESS on a carry-guard app. Set /AS on the matching
+ * widget and /V on the field. THROWS on no match — never falls back to the first
+ * widget, never a bare catch. (Trap 1, TEMPLATES-MANIFEST.md.)
+ */
+function setNypdChoice(form: ReturnType<PDFDocument["getForm"]>, name: string, onValue: string) {
+  const af = form.getField(name).acroField
+  const want = PDFName.of(onValue)
+  let matched = false
+  for (const w of af.getWidgets()) {
+    const on = w.getOnValue()
+    const hit = !!on && on.asString() === want.asString()
+    w.dict.set(PDFName.of("AS"), hit ? want : PDFName.of("Off"))
+    if (hit) matched = true
+  }
+  if (!matched) throw new Error(`${name}: no widget with on-value /${onValue}`)
+  af.dict.set(PDFName.of("V"), want)
+}
+
+/**
  * Fill a template with values. Left UNFLATTENED: signable forms wait for the
  * applicant's signature (signTemplate flattens then), and the company/investigation
  * pre-fills are completed by the recipient. Throws for a download-only template.
@@ -73,6 +118,10 @@ export async function fillTemplate(key: string, values: Record<string, unknown>)
   const { bytes, sha256 } = templateBytes(t)
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true })
   const form = pdf.getForm()
+  // Trap 2: without an EMBEDDED font + regenerated appearances, several NYPD fields
+  // store the value in /V and render BLANK. Embed Helvetica and use it for every
+  // text field's appearance (see updateFieldAppearances below).
+  const font = await pdf.embedFont(StandardFonts.Helvetica)
   const filled = t.build(values)
   const missing: string[] = []
   let textAttempted = 0
@@ -85,8 +134,10 @@ export async function fillTemplate(key: string, values: Record<string, unknown>)
     textAttempted++
     try {
       const tf = form.getTextField(name)
-      applyFont(tf, t.fontSize)
-      tf.setText(String(val))
+      const text = String(val)
+      const intended = t.fieldFontSize?.[name] ?? t.fontSize ?? 9
+      applyFont(tf, fitFontSize(tf, text, font, intended)) // Trap 3: shrink to fit
+      tf.setText(text)
       textApplied++
     } catch {
       missing.push(name)
@@ -103,10 +154,33 @@ export async function fillTemplate(key: string, values: Record<string, unknown>)
     }
   }
 
-  // Completeness: which declared-required fields ended up empty?
+  // Trap 2: regenerate every text-field appearance with the embedded font BEFORE we
+  // set the dual-widget choices (whose /AS we then set directly, below).
+  try {
+    form.updateFieldAppearances(font)
+  } catch {
+    /* best-effort — a field that resists appearance regen still holds its /V */
+  }
+
+  // Trap 1: dual-widget NYPD choices — set the matching widget's /AS directly, AFTER
+  // updateFieldAppearances so it can't clobber our selection. Throws on no match.
+  for (const [name, onValue] of Object.entries(filled.choices ?? {})) {
+    if (onValue == null || onValue === "") continue
+    checksAttempted++
+    try {
+      setNypdChoice(form, name, onValue)
+      checksApplied++
+    } catch {
+      missing.push(name)
+    }
+  }
+
+  // Completeness: which declared-required fields ended up empty? A required field can
+  // be satisfied by text OR by a choice selection.
   const missingRequired = (t.requires ?? []).filter((r) => {
     const v = filled.text?.[r]
-    return v == null || v === ""
+    const c = filled.choices?.[r]
+    return (v == null || v === "") && (c == null || c === "")
   })
 
   const out = await pdf.save()
@@ -130,6 +204,7 @@ export async function signTemplate(
   if (t.notarize) throw new Error(`Template ${key} must be notarised — it is never digitally signed`)
   const pdf = await PDFDocument.load(draftBytes, { ignoreEncryption: true })
   const form = pdf.getForm()
+  const font = await pdf.embedFont(StandardFonts.Helvetica)
 
   const mm = String(signedAt.getMonth() + 1).padStart(2, "0")
   const dd = String(signedAt.getDate()).padStart(2, "0")
@@ -159,6 +234,13 @@ export async function signTemplate(
         /* absent — validator catches */
       }
     }
+  }
+
+  // Regenerate the signing-date appearances with the embedded font before flatten.
+  try {
+    form.updateFieldAppearances(font)
+  } catch {
+    /* best-effort */
   }
 
   if (t.signatureField) {

@@ -219,6 +219,46 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     customerTitle: "Read and sign your affirmation of understanding",
     help: "A signed affirmation that you understand NYC's carry rules and where carrying is prohibited. We prepare it from your intake — you review and sign it here.",
   },
+  // FAM-01 — the official 38 RCNY 5-33 affidavit, filled + NOTARISED (never digitally
+  // signed; the notarised paper is what satisfies).
+  "FAM-01": {
+    mode: "generate",
+    actionLabel: "Complete & generate",
+    questionnaireId: "affidavit-familiarity",
+    templateKey: "nypd_affidavit_familiarity",
+    documentType: "affidavit_familiarity",
+    notarize: true,
+    customerTitle: "Your affidavit of familiarity with the rules and law",
+    help: "The official 38 RCNY 5-33 affidavit that you're responsible for knowing the laws that apply to your licence. We fill your county; you sign it before a notary (leave the date for the notary) and upload the notarised copy.",
+  },
+  // SFG-01 — the official safeguard-person acknowledgement, filled + WITNESSED.
+  "SFG-01": {
+    mode: "generate",
+    actionLabel: "Complete & generate",
+    questionnaireId: "safeguard-acknowledgement",
+    templateKey: "nypd_safeguard_acknowledgement",
+    documentType: "safeguard_acknowledgement",
+    notarize: true, // witnessed on paper — never digitally signed
+    customerTitle: "The person who will safeguard your firearm(s)",
+    help: "The official NYPD acknowledgement for the New York State resident who will safeguard and surrender your firearm(s) if you die or become incapacitated. We fill their details; they sign it before a witness and you upload the completed form.",
+  },
+  // AFF-02 — the Penal Law Art. 35/265/400 affirmation. Its official PDF is not yet
+  // on the platform (owner outstanding), so it's obtain-and-upload for now — a
+  // DISTINCT instrument from FAM-01.
+  "AFF-02": {
+    mode: "obtain",
+    actionLabel: "Upload the notarised affirmation",
+    documentType: "affirmation_penal_law",
+    customerTitle: "Affirmation — Penal Law Articles 35, 265 & 400",
+    help: "A separate notarised affirmation that you've read and understand NY Penal Law Articles 35 (justification), 265 (weapons offences) and 400 (licensing). This is distinct from your affirmation of understanding. Your case team provides the official form; sign it before a notary and upload the notarised copy here.",
+    steps: [
+      "Your case team will send you the official affirmation form.",
+      "Read it, then sign it before a notary — don't sign it beforehand.",
+      "Upload the notarised copy here.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD required documents",
+  },
   "SAF-01": {
     mode: "generate",
     actionLabel: "Complete & generate",
