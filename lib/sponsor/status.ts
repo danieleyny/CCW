@@ -7,11 +7,12 @@
  * middle state:
  *
  *   outstanding → nothing in yet
- *   received    → a document is bound (server-confirmed), awaiting review — BRASS
+ *   received    → a document is bound (server-confirmed), awaiting review — SIGNAL
  *   accepted    → staff accepted it — GREEN (earned only by a human)
  *   changes     → sent back for another version
  *
- * Green is never shown before staff acceptance; a received document is brass.
+ * Green is never shown before staff acceptance; a received document is signal, not
+ * brass (brass is reserved for "your turn").
  */
 export type SponsorItemState = "outstanding" | "received" | "accepted" | "changes"
 
@@ -35,7 +36,9 @@ export function sponsorItemState(
 
 export const SPONSOR_ITEM_COPY: Record<SponsorItemState, { label: string; className: string }> = {
   outstanding: { label: "Outstanding", className: "text-text-mid" },
-  received: { label: "Received — under review", className: "text-brass-bright" },
+  // Received = server-confirmed, awaiting review → SIGNAL (brass is reserved for
+  // "your turn"; green is reserved for staff acceptance).
+  received: { label: "Received — under review", className: "text-signal" },
   accepted: { label: "Accepted", className: "text-ok" },
   changes: { label: "Needs another version", className: "text-warn" },
 }

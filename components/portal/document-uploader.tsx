@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Upload, ExternalLink, Loader2, CheckCircle2, ChevronDown, HelpCircle, Clock, AlertTriangle, type LucideIcon } from "lucide-react"
+import { Upload, ExternalLink, Loader2, ChevronDown, HelpCircle } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
@@ -10,6 +10,8 @@ import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
 import { normalizeApplicantPhoto } from "@/lib/files/photo-spec"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { StateChip } from "@/components/shared/state-chip"
+import { docStateStyle, type DocState } from "@/lib/ui/doc-state"
 import { DocumentExample } from "@/components/portal/document-example"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -154,40 +156,33 @@ export function DocumentUploader({
   //   APPROVED / PROVIDED — the QUIETEST card: thin green rail, flat surface.
   const approved = current?.status === "approved"
   const received = !!current && current.status === "pending" && !current.sharedFromName
-  const needsYou = !current && !sharedProvided
-  const quiet = approved || sharedProvided
-  const stateClass = conciergeVoice
-    ? needsFix
-      ? "border border-warn/40 border-l-[3px] border-l-warn bg-surface-2"
-      : needsYou
-        ? "border border-hairline-strong border-l-[3px] border-l-brass bg-surface-2"
-        : received
-          ? "border border-hairline border-l-[3px] border-l-brass/60 bg-surface-2"
-          : quiet
-            ? "border border-hairline border-l-2 border-l-ok bg-surface-1"
-            : "border border-hairline bg-card"
-    : "border bg-card"
+
+  // Map this uploader's status to the ONE shared doc-state vocabulary (lib/ui/
+  // doc-state). A smart-doc "provided by another file" re-tones to signal (received),
+  // NOT green — green is staff acceptance only.
+  const docState: DocState = needsFix
+    ? "changes"
+    : approved
+      ? "approved"
+      : received
+        ? "received"
+        : sharedProvided
+          ? "received"
+          : "needs_you"
+  const style = docStateStyle(docState)
+  const recede = conciergeVoice && style.quiet
+  const stateClass = conciergeVoice ? cn(style.rail, style.surface) : "border bg-card"
 
   return (
     <div className={cn("rounded-lg p-4 transition-colors", stateClass)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className={cn("text-sm", quiet ? "font-normal text-text-mid" : "font-medium")}>{label}</div>
+          <div className={cn("text-sm", recede ? "font-normal text-text-mid" : "font-medium")}>{label}</div>
           {/* An approved/provided card recedes — no description, just the title + chip. */}
-          {description && !quiet && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+          {description && !recede && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
         </div>
         {conciergeVoice ? (
-          approved ? (
-            <StateChip icon={CheckCircle2} label="Approved" className="text-ok" />
-          ) : needsFix ? (
-            <StateChip icon={AlertTriangle} label="Changes requested" className="text-warn" />
-          ) : received ? (
-            <StateChip icon={Clock} label="Received" className="text-brass-bright" />
-          ) : sharedProvided ? (
-            <StateChip icon={CheckCircle2} label="Provided" className="text-ok" />
-          ) : (
-            <StateChip icon={Upload} label="Needs you" className="rounded bg-brass/15 px-1.5 py-0.5 text-brass-bright" />
-          )
+          <StateChip state={docState} label={sharedProvided ? "Provided" : undefined} />
         ) : current ? (
           <StatusBadge status={current.status} />
         ) : (
@@ -248,7 +243,7 @@ export function DocumentUploader({
         />
         <Button
           size="sm"
-          variant={quiet ? "ghost" : current ? "outline" : "default"}
+          variant={style.quiet ? "ghost" : current ? "outline" : "default"}
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
@@ -303,12 +298,3 @@ export function DocumentUploader({
   )
 }
 
-/** A state chip: icon + label. Colour is never the only signal — every state has
- *  both a distinct icon and a text label. */
-function StateChip({ icon: Icon, label, className }: { icon: LucideIcon; label: string; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium", className)}>
-      <Icon className="size-3.5" /> {label}
-    </span>
-  )
-}

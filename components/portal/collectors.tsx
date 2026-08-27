@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { referenceComposition } from "@/lib/references/composition"
 
 export interface ReferenceRow {
   id: string
@@ -88,6 +89,16 @@ export function ReferenceCollector({
   }, [state])
 
   const atMax = references.length >= required
+  // The ONE composition rule (38 RCNY §5-05(b)(8)) drives the family control, the
+  // success banner, and the send-back message — same rule the server enforces.
+  const comp = referenceComposition(references, required)
+  const showFamilyOption = comp.maxFamily > 0
+  const familyAllowed = showFamilyOption && !comp.familyCapReached
+
+  // Never leave a disallowed "family" selection armed (e.g. after the cap fills).
+  useEffect(() => {
+    if (!familyAllowed && isFamily) setIsFamily(false)
+  }, [familyAllowed, isFamily])
 
   return (
     <div className="space-y-4">
@@ -123,10 +134,16 @@ export function ReferenceCollector({
         )}
       </ul>
 
-      {atMax ? (
+      {comp.complete ? (
+        // Success is gated on COMPOSITION, not just count — an invalid set (too many
+        // family) never shows the "all done" banner.
         <p className="rounded-md border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
           All {required} references added. Remember to get each one notarized.
         </p>
+      ) : atMax && comp.problem ? (
+        // Count is met but the composition is invalid — tell them exactly why and let
+        // them delete a family reference above.
+        <p className="rounded-md border border-warn/30 bg-warn/10 p-3 text-sm text-warn">{comp.problem}</p>
       ) : (
         <form ref={formRef} action={action} className="space-y-3 rounded-lg border bg-card p-4">
           <input type="hidden" name="caseId" value={caseId} />
@@ -157,36 +174,46 @@ export function ReferenceCollector({
               <Input id="ref-phone" name="contactPhone" placeholder="optional" />
             </div>
           </div>
-          {/* A prominent, tappable family control — not an easy-to-miss tick box. */}
-          <button
-            type="button"
-            onClick={() => setIsFamily((v) => !v)}
-            aria-pressed={isFamily}
-            className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-              isFamily
-                ? "border-brass/60 bg-brass/10 ring-1 ring-brass/25"
-                : "border-hairline bg-surface-2/40 hover:bg-surface-2"
-            }`}
-          >
-            <Checkbox
-              id="ref-family"
-              name="isFamily"
-              checked={isFamily}
-              onCheckedChange={(v) => setIsFamily(!!v)}
-              onClick={(e) => e.stopPropagation()}
-              className="size-5"
-            />
-            <span className="min-w-0">
-              <span className={`flex items-center gap-1.5 text-sm font-medium ${isFamily ? "text-brass-bright" : "text-foreground"}`}>
-                <Users className="size-3.5" /> This person is a family member
+          {/* The family control appears ONLY on a track that allows a family
+              reference (Carry Guard / Premises allow none, so it isn't offered at
+              all). Once the family cap is full, it's disabled with the reason. */}
+          {showFamilyOption ? (
+            <button
+              type="button"
+              onClick={() => familyAllowed && setIsFamily((v) => !v)}
+              aria-pressed={isFamily}
+              disabled={!familyAllowed}
+              className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                isFamily
+                  ? "border-brass/60 bg-brass/10 ring-1 ring-brass/25"
+                  : "border-hairline bg-surface-2/40 hover:bg-surface-2"
+              } ${!familyAllowed ? "cursor-not-allowed opacity-60" : ""}`}
+            >
+              <Checkbox
+                id="ref-family"
+                name="isFamily"
+                checked={isFamily}
+                disabled={!familyAllowed}
+                onCheckedChange={(v) => setIsFamily(!!v)}
+                onClick={(e) => e.stopPropagation()}
+                className="size-5"
+              />
+              <span className="min-w-0">
+                <span className={`flex items-center gap-1.5 text-sm font-medium ${isFamily ? "text-brass-bright" : "text-foreground"}`}>
+                  <Users className="size-3.5" /> This person is a family member
+                </span>
+                <span className="mt-0.5 block text-xs text-text-low">
+                  {comp.familyCapReached
+                    ? `You already have ${comp.maxFamily} family reference${comp.maxFamily === 1 ? "" : "s"} — this one must be unrelated.`
+                    : `Up to ${comp.maxFamily} of your references may be family; at least 2 must be unrelated.`}
+                </span>
               </span>
-              <span className="mt-0.5 block text-xs text-text-low">
-                {required <= 2
-                  ? "For this licence, references may not be family — mark it so we can flag it."
-                  : "Up to 2 of your references may be family."}
-              </span>
-            </span>
-          </button>
+            </button>
+          ) : (
+            <p className="rounded-lg border border-hairline bg-surface-2/40 p-3 text-xs text-text-low">
+              For this licence, none of your references may be family — each must be someone unrelated to you.
+            </p>
+          )}
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           <Button type="submit" size="sm" disabled={pending}>
             <Plus className="size-4" /> Add reference
