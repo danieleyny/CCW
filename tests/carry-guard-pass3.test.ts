@@ -35,14 +35,26 @@ describe.skipIf(!reachable)("Pass 3 — de-scope on the armed-guard track", () =
     expect(applies.get("GRD-01")).toBe(true) // armed-guard credential DOES fire
   })
 
-  it("a concealed-carry case STILL requires SAF-01 and REF-01 (unchanged)", async () => {
+  it("a concealed-carry case requires REF-01 but NOT SAF-01 (safe photos are premise-business only)", async () => {
     const rows = await activeNycRequirements()
     const concealed: IntakeAnswers = { isCarry: true, isArmedGuard: false, isRenewal: false }
     const applies = new Map(generateCaseRequirements(rows, concealed).map((g) => [g.reqCode, g.applies]))
 
-    expect(applies.get("SAF-01")).toBe(true) // safe photos still required off the armed track
+    // Compliance PR1 Correction 2: SAF-01 → premises_only. Safe photos no longer
+    // fire for concealed carry (they belong to Premise Business only).
+    expect(applies.get("SAF-01")).toBe(false)
     expect(applies.get("REF-01")).toBe(true) // four references
     expect(applies.get("GRD-01")).toBe(false) // no armed-guard credential
+    // Correction 1: the SSN card is required for every licence type.
+    expect(applies.get("SSN-01")).toBe(true)
+  })
+
+  it("a premises case DOES require SAF-01 (safe photos live here)", async () => {
+    const rows = await activeNycRequirements()
+    const premises: IntakeAnswers = { isCarry: false, isPremises: true, isRenewal: false }
+    const applies = new Map(generateCaseRequirements(rows, premises).map((g) => [g.reqCode, g.applies]))
+    expect(applies.get("SAF-01")).toBe(true)
+    expect(applies.get("SSN-01")).toBe(true)
   })
 
   it("SPN citations carry §5-04 / §5-06 on the active versions (3A)", async () => {
