@@ -1,0 +1,11 @@
+-- ============================================================================
+-- COMPLIANCE PR2 · Part C2 — the disclosure SUMMARY is our own document
+--
+-- Two different documents come out of the Section-B answers:
+--   • PD 643-041A (disclosure_addendum) — the OFFICIAL addendum, "yes" answers only
+--   • disclosure_summary — OUR internal worksheet listing every question 10–28 with
+--     the applicant's answer, so he and the case team can transcribe accurately.
+-- They must file under distinct document types so one never overwrites the other.
+-- Enum values are added in their own transaction before any cast to them.
+-- ============================================================================
+alter type public.document_type add value if not exists 'disclosure_summary';

@@ -5761,6 +5761,7 @@ export type Database = {
         | "employment_authorization"
         | "hipaa_release"
         | "social_security_card"
+        | "disclosure_summary"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6056,6 +6057,7 @@ export const Constants = {
         "employment_authorization",
         "hipaa_release",
         "social_security_card",
+        "disclosure_summary",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

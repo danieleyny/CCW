@@ -18,6 +18,7 @@ import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { buildPdf, longDate } from "@/lib/pdf/builder"
+import { SECTION_B_QUESTIONS } from "@/lib/requirements/questionnaires"
 import {
   affirmationOfUnderstanding,
   socialMediaDisclosure,
@@ -67,37 +68,67 @@ const str = (v: unknown): string => (typeof v === "string" ? v : "")
 const rows = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
 const isYes = (v: unknown): boolean => v === true || v === "yes"
 
-/** Q10–28 addendum — one written explanation per "yes". */
+/**
+ * PD 643-041A — the OFFICIAL addendum. A two-column record (Question Number ·
+ * Detailed Explanation) that lists ONLY the "yes" answers, keyed by the form's own
+ * question number. When there are no "yes" answers this document is NOT produced at
+ * all (QUE-01 fires only `if_any_q_yes`); listing twenty "no" rows on PD 643-041A
+ * is a misuse of the form.
+ */
 async function disclosureAddendum(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
-  const items: { q: string; explain: string }[] = []
-  const push = (flag: unknown, q: string, key: string) => {
-    if (isYes(flag)) items.push({ q, explain: str(a[key]) })
-  }
-  push(a.everArrested, "Have you ever been arrested, indicted, or summonsed?", "arrestExplanation")
-  push(a.orderOfProtection, "Has an order of protection ever been issued against you or on your behalf?", "oopExplanation")
-  push(a.domesticIncident, "Has a domestic incident report ever been filed involving you?", "dirExplanation")
-  push(a.mentalHealth, "Have you ever been involuntarily committed or adjudicated as lacking mental capacity?", "mhExplanation")
-  push(a.licenseDenied, "Has a firearms license ever been denied, suspended, or revoked?", "denialExplanation")
+  const items = SECTION_B_QUESTIONS.filter((q) => isYes(a[`q${q.no}`])).map((q) => ({
+    no: q.no,
+    q: q.text,
+    explain: str(a[`q${q.no}_explain`]),
+  }))
 
   return buildPdf((c) => {
-    c.heading("Handgun License Application — Addendum", "Written explanations (PD 643-041A style)")
+    c.heading("Handgun License Application — Addendum", "PD 643-041A · written explanations for “yes” answers to questions 10–28")
     c.rule()
-    if (items.length === 0) {
-      c.para("The applicant answered “no” to each disclosure question; no written explanation is required.")
-    } else {
-      c.para(
-        "The following explanations are provided in the applicant's own words. Sealed, dismissed, and nullified matters are disclosed here notwithstanding CPL Article 160.",
-        { color: "muted", size: 10 }
-      )
+    c.para(
+      "Each explanation below corresponds, by question number, to a “yes” answer on the application. Sealed, dismissed, and nullified matters are disclosed here notwithstanding CPL Article 160.",
+      { color: "muted", size: 10 }
+    )
+    c.spacer()
+    for (const it of items) {
+      c.h2(`Question ${it.no}`)
+      c.para(it.q, { color: "muted", size: 9 })
+      c.para(it.explain || "(no explanation provided)")
       c.spacer()
-      for (const [i, it] of items.entries()) {
-        c.h2(`${i + 1}. ${it.q}`)
-        c.para(it.explain || "(no explanation provided)")
-        c.spacer()
-      }
     }
     c.rule()
     c.para("I affirm the statements above are true and complete to the best of my knowledge.", { size: 10 })
+    c.signatureImage("Applicant signature")
+  }, { signaturePng: sig, ...sign })
+}
+
+/**
+ * OUR internal disclosure summary — NOT an NYPD form. Lists EVERY question 10–28
+ * with the applicant's Yes/No answer (and the explanation on a "yes"), so he and the
+ * case team can see the complete record and transcribe it into the NYPD portal
+ * accurately. Clearly labelled as ours. Signed so DSC-01 (completeness attestation)
+ * is satisfied the same way it always was.
+ */
+async function disclosureSummary(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
+  return buildPdf((c) => {
+    c.heading(
+      "Disclosure Summary — internal worksheet",
+      "NOT an NYPD form. Your complete answers to application questions 10–28, kept so you and your case team can transcribe them into the NYPD portal accurately."
+    )
+    c.rule()
+    for (const q of SECTION_B_QUESTIONS) {
+      const yes = isYes(a[`q${q.no}`])
+      c.h2(`${q.no}. ${yes ? "Yes" : "No"}`)
+      c.para(q.text, { color: "muted", size: 9 })
+      if (yes) c.para(str(a[`q${q.no}_explain`]) || "(no explanation provided)")
+      c.spacer()
+    }
+    c.rule()
+    c.para(
+      "This is our internal summary to help you complete the NYPD application accurately. It is not an NYPD form and is not filed with the NYPD.",
+      { color: "muted", size: 9 }
+    )
+    c.para("I affirm the answers above are true and complete to the best of my knowledge.", { size: 10 })
     c.signatureImage("Applicant signature")
   }, { signaturePng: sig, ...sign })
 }
@@ -207,7 +238,7 @@ const TITLES: Record<string, string> = {
   "AFF-01": "Affirmation of Understanding",
   "SAF-01": "Safe Storage Statement",
   "SOC-01": "Social Media List",
-  "DSC-01": "Handgun License Application — Addendum",
+  "DSC-01": "Disclosure Summary (internal worksheet)",
   "QUE-01": "Handgun License Application — Addendum",
   "ARR-01": "Arrest Statements",
   "OOP-01": "Order of Protection Statement",
@@ -239,7 +270,10 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
     case "SOC-01":
       return { bytes: await socialMediaDisclosure(n, str(a.handles), dated, sig, sign), fileName: "social-media-list.pdf", documentType: "social_media_list", label: "Social media list (optional)" }
     case "DSC-01":
+      // OUR internal worksheet — every question 10–28 with its answer.
+      return { bytes: await disclosureSummary(n, a, sig, sign), fileName: "disclosure-summary.pdf", documentType: "disclosure_summary", label: "Disclosure summary (internal)" }
     case "QUE-01":
+      // The OFFICIAL PD 643-041A addendum — "yes" answers only, keyed by question number.
       return { bytes: await disclosureAddendum(n, a, sig, sign), fileName: "disclosure-addendum.pdf", documentType: "disclosure_addendum", label: "Disclosure addendum" }
     case "ARR-01":
       return { bytes: await arrestNarratives(n, toArrests(a.arrests), dated, sig, sign), fileName: "arrest-statements.pdf", documentType: "arrest_statement", label: "Arrest statements" }
