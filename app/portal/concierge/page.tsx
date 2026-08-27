@@ -18,6 +18,7 @@ import { DocumentVault } from "@/components/portal/concierge/document-vault"
 import { ReviewAndFile } from "@/components/portal/concierge/review-and-file"
 import { DisclosuresSection } from "@/components/portal/concierge/disclosures-section"
 import { ControlTower } from "@/components/portal/concierge/control-tower"
+import { PrepareApplicationButton } from "@/components/portal/prepare-application-button"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Card, CardContent } from "@/components/ui/card"
@@ -146,6 +147,8 @@ export default async function ConciergeHome() {
         nypdControlled={isNypdControlled(stage)}
         introCall={onboarding.introCall}
       />
+
+      <PrepareApplicationButton caseId={myCase.id} />
 
       <div id="vault" className="scroll-mt-20">
         <DocumentVault

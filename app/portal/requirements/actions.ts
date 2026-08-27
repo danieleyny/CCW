@@ -6,6 +6,8 @@ import { authorizeCaseActor } from "@/lib/case-actor"
 import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
 import { formTemplate } from "@/lib/forms/templates"
 import { resolveFacts } from "@/lib/facts/resolve"
+import { buildApplicationValues } from "@/lib/forms/application"
+import type { WizardAnswers } from "@/lib/intake/answers"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
@@ -853,4 +855,42 @@ export async function prepareInvestigationForms(
     detail: { count: out.length },
   })
   return { forms: out }
+}
+
+/**
+ * Prepare the applicant's FULL NYPD application (PD 643-041) as a filled draft PDF,
+ * assembled from the fact layer + intake. A download helper the applicant reviews,
+ * signs, and files THEMSELVES at NYPD — we never file. The SSN and the handgun list
+ * are left blank (entered at filing). Returns a short-lived signed URL, and whether
+ * the five-year history overflowed the form's 4 rows (a continuation sheet is
+ * needed — never silently truncated).
+ */
+export async function prepareApplication(
+  caseId: string
+): Promise<{ url?: string; error?: string; overflow?: boolean }> {
+  await requireRole(["client", "staff", "admin"])
+  const admin = createAdminClient()
+  const { data: kase } = await admin
+    .from("cases")
+    .select("client_id, license_track")
+    .eq("id", caseId)
+    .maybeSingle()
+  if (!kase?.client_id) return { error: "Case not found." }
+
+  const [facts, { data: intakeRow }] = await Promise.all([
+    resolveFacts(admin, caseId),
+    admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
+  ])
+  const intake = (intakeRow?.answers ?? {}) as WizardAnswers
+  const values = buildApplicationValues(facts, intake, { licenseTrack: kase.license_track })
+  const filled = await fillTemplate("nypd_handgun_application", values)
+
+  const path = `clients/${kase.client_id}/prepared/handgun-application-${Date.now()}.pdf`
+  const { error: upErr } = await admin.storage
+    .from("documents")
+    .upload(path, Buffer.from(filled.bytes), { contentType: "application/pdf", upsert: true })
+  if (upErr) return { error: "Couldn't prepare the application — please try again." }
+  const { data: signed } = await admin.storage.from("documents").createSignedUrl(path, 300)
+  await logActivity({ action: "application.prepared", caseId, entity: "case", entityId: caseId })
+  return { url: signed?.signedUrl, overflow: !!values.residenceOverflow || !!values.employmentOverflow }
 }
