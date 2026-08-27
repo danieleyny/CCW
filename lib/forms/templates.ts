@@ -46,13 +46,28 @@ export interface FormTemplate {
   dateSplit?: { mm: string; dd: string; yyyy: string }
   /** Explicit font size so values match the form's own type and don't clip (M4). */
   fontSize?: number
+  /** Per-field explicit font sizes (a narrow column the auto-fit floor can't save,
+   *  e.g. 6pt occupation / 7pt Q31). The auto-fitter still shrinks further if needed. */
+  fieldFontSize?: Record<string, number>
   /** PDF field names that MUST be non-empty for the form to count as complete. */
   requires?: string[]
   /** Fields legitimately blank until signing / assigned by the agency (signature,
    *  signing date, notary blocks, control numbers). Documentation of the third bucket. */
   signatureOnly?: string[]
-  /** Data to write onto the real fields. Absent ⇒ download-only. */
-  build?: (v: Record<string, unknown>) => { text?: Record<string, string | undefined>; checks?: Record<string, boolean> }
+  /**
+   * Data to write onto the real fields. Absent ⇒ download-only.
+   *  - `text`    single-value text fields.
+   *  - `checks`  single-widget checkboxes (on-value only) — pdf-lib's `.check()`.
+   *  - `choices` DUAL-widget NYPD checkboxes (SectionB*, LicenseType, AlienOrCitizen):
+   *              value is the on-value NAME to select (`"Yes"`, `"CarryGuardSecurity"`).
+   *              Applied via setNypdChoice, which throws on no match — never the
+   *              `.check()` trap that always ticks the first widget.
+   */
+  build?: (v: Record<string, unknown>) => {
+    text?: Record<string, string | undefined>
+    checks?: Record<string, boolean>
+    choices?: Record<string, string | undefined>
+  }
 }
 
 const s = (v: unknown): string => (v == null ? "" : String(v))
@@ -254,6 +269,65 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     },
   },
 
+  // ── Affidavit of Familiarity with Rules and Law (38 RCNY 5-33) — NOTARISED ──
+  // The whole sworn paragraph is pre-printed; the only blanks are the venue county
+  // and the "sworn to before me this __ day of __, 200_" date. The date is the
+  // NOTARY's to write — and the pre-printed "200_" cannot express 2026 anyway — so
+  // ThisDay/Month/YearDigit are LEFT BLANK. We fill only the venue county.
+  nypd_affidavit_familiarity: {
+    key: "nypd_affidavit_familiarity",
+    file: "affidavit-familiarity-5-33.pdf",
+    officialTitle: "Affidavit of Familiarity with Rules and Law (38 RCNY 5-33)",
+    formNumber: "38 RCNY 5-33",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/affidavit-familiarity`,
+    isFillable: true,
+    notarize: true,
+    fontSize: 10,
+    requires: ["CountyOf"],
+    signatureOnly: ["ThisDay", "Month", "YearDigit"],
+    build: (v) => ({ text: { CountyOf: s(v.county) } }),
+  },
+
+  // ── Acknowledgement of Person Agreeing to Safeguard Firearm(s) — WITNESSED ──
+  // Both signatures (the safeguard's and the witness's) are INK — this form is
+  // witnessed, not notarised, and has no signature widget. `notarize:true` here is
+  // our "never digitally signed; the ink-signed paper is what satisfies" marker. We
+  // fill the applicant + the designated safeguard's identity/contact. Three field
+  // names are TRAPS — mapped by POSITION, not name: `Print Name`=LAST name, `NY`=ZIP
+  // (state is pre-printed NY), `Telephone Numbers`=HOME phone. The safeguard must be
+  // a NY-State resident (validated in the questionnaire).
+  nypd_safeguard_acknowledgement: {
+    key: "nypd_safeguard_acknowledgement",
+    file: "safeguard-acknowledgement.pdf",
+    officialTitle: "Acknowledgement of Person Agreeing to Safeguard Firearm(s)",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/safeguard-acknowledgement`,
+    isFillable: true,
+    notarize: true, // witnessed on paper — never digitally signed (see note above)
+    fontSize: 9,
+    requires: ["Name of Applicant  Licensee", "Print Name", "First", "Address", "City", "NY"],
+    signatureOnly: ["Application  License Number", "Witness name printed", "Date"],
+    build: (v) => ({
+      text: {
+        "Name of Applicant  Licensee": s(v.applicantName),
+        "Print Name": s(v.safeguardLastName), // trap: this is the LAST-name box
+        First: s(v.safeguardFirstName),
+        MI: s(v.safeguardMI),
+        Address: s(v.safeguardStreet),
+        Apt: s(v.safeguardApt),
+        City: s(v.safeguardCity),
+        NY: s(v.safeguardZip), // trap: this is the ZIP box (state pre-printed NY)
+        "Telephone Numbers": s(v.safeguardHomePhone), // trap: this is the HOME-phone box
+        Cell: s(v.safeguardCellPhone),
+        Business: s(v.safeguardBusinessPhone),
+        name_of_person_agreeing_to_safeguard_fireams: [s(v.safeguardFirstName), s(v.safeguardMI), s(v.safeguardLastName)]
+          .filter(Boolean)
+          .join(" "),
+      },
+    }),
+  },
+
   // ── Company / Carry Guard application (SPN-01) — sponsor completes ──────────
   nypd_company_application: {
     key: "nypd_company_application",
@@ -306,6 +380,14 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
   // ── Request for Applicant's Employment Record (investigation, Phase 4) ──────
   // NYPD serves the SAME file at /forms-auth-rel and /form-req-app-emp-rec — one
   // template, both URLs. Filled + printed; the applicant signs on paper.
+  //
+  // ⚠ KNOWN ASSET BUG (TEMPLATES-MANIFEST.md): forms-auth-rel.pdf is BYTE-IDENTICAL
+  // to form-req-app-emp-rec.pdf — both are this employment-record request. The real
+  // *Authorization for Release* form was never saved under that name, so any path
+  // that means to produce an authorization-for-release currently produces an
+  // employment-record request instead. There is no separate authorization-for-release
+  // template today. OWNER: source the correct form; do NOT add an aliasing template
+  // that reuses this file for a release. (Flagged as a follow-up task.)
   nypd_employment_record_request: {
     key: "nypd_employment_record_request",
     file: "forms-auth-rel.pdf",

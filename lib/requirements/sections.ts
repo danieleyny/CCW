@@ -92,7 +92,8 @@ const SECTION_BY_CODE: Record<string, SectionKey> = {
   // People we contact
   "REF-01": "people", "REF-02": "people", "COH-01": "people", "COH-02": "people", "SAF-01": "people",
   // We prepare, you sign
-  "AFF-01": "prepared", "DSC-01": "prepared", "QUE-01": "prepared", "ARR-01": "prepared",
+  "AFF-01": "prepared", "AFF-02": "prepared", "FAM-01": "prepared", "SFG-01": "prepared",
+  "DSC-01": "prepared", "QUE-01": "prepared", "ARR-01": "prepared",
   "OOP-01": "prepared", "DIR-01": "prepared", "SOC-01": "prepared", "CSC-01": "prepared",
   // Only if it applies
   "MIL-01": "conditional", "NAM-01": "conditional", "GMC-01": "conditional", "PRM-01": "conditional",

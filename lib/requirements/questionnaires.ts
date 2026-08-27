@@ -157,6 +157,61 @@ export const SECTION_B_QUESTIONS: SectionBQuestion[] = [
 ]
 
 export const QUESTIONNAIRES: Record<string, Questionnaire> = {
+  // ── Affidavit of Familiarity with Rules and Law (38 RCNY 5-33) — NOTARISED ──
+  "affidavit-familiarity": {
+    id: "affidavit-familiarity",
+    title: "Affidavit of familiarity (38 RCNY 5-33)",
+    intro:
+      "A short sworn affidavit that you're responsible for knowing the laws and rules that apply to your licence. We fill in your county; you sign it before a notary — leave the date for the notary.",
+    notice: "This form must be notarised. Sign it before a notary — don't sign it beforehand — and upload the notarised copy.",
+    submitLabel: "Generate my affidavit",
+    fields: [
+      {
+        name: "county",
+        label: "County you'll swear this in",
+        type: "text",
+        required: true,
+        help: "Usually your home county — Manhattan is New York County, Brooklyn is Kings County, Staten Island is Richmond County.",
+      },
+    ],
+  },
+
+  // ── Acknowledgement of Person Agreeing to Safeguard Firearm(s) — WITNESSED ──
+  "safeguard-acknowledgement": {
+    id: "safeguard-acknowledgement",
+    title: "Person agreeing to safeguard your firearm(s)",
+    intro:
+      "The person you designated will safeguard and surrender your firearm(s) if you die or become incapacitated. They must be a New York State resident. We've carried over what you told us — confirm and complete their details. They sign this before a witness (not a notary).",
+    notice: "The designated person must be a New York State resident, and signs before a witness. Upload the completed, witnessed form.",
+    submitLabel: "Generate the acknowledgement",
+    prefill: (ctx) => {
+      const parts = (ctx.intake.safeguardName ?? "").trim().split(/\s+/).filter(Boolean)
+      const first = parts[0] ?? ""
+      const last = parts.length > 1 ? parts[parts.length - 1] : ""
+      return {
+        applicantName: ctx.clientName,
+        safeguardFirstName: first,
+        safeguardLastName: last,
+        safeguardStreet: ctx.intake.safeguardAddress ?? "",
+        safeguardHomePhone: ctx.intake.safeguardPhone ?? "",
+      }
+    },
+    fields: [
+      { name: "applicantName", label: "Your full legal name", type: "text", required: true, fact: "applicant.fullName" },
+      { name: "safeguardLastName", label: "Their last name", type: "text", required: true },
+      { name: "safeguardFirstName", label: "Their first name", type: "text", required: true },
+      { name: "safeguardMI", label: "Middle initial", type: "text" },
+      { name: "safeguardStreet", label: "Their street address", type: "text", required: true },
+      { name: "safeguardApt", label: "Apt", type: "text" },
+      { name: "safeguardCity", label: "City", type: "text", required: true },
+      { name: "safeguardZip", label: "ZIP (New York State only)", type: "text", required: true, help: "The person you designate must be a New York State resident." },
+      { name: "safeguardHomePhone", label: "Home phone", type: "text" },
+      { name: "safeguardCellPhone", label: "Cell phone", type: "text" },
+      { name: "safeguardBusinessPhone", label: "Business phone", type: "text" },
+    ],
+  },
+
+
   affirmation: {
     id: "affirmation",
     title: "Affirmation of understanding",

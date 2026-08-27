@@ -16,7 +16,7 @@ import { FORM_TEMPLATES, type FormTemplate } from "./templates"
  */
 
 /** Fully-populated fixtures. Child support is run across all declaration branches. */
-const FIXTURES: Record<string, Record<string, unknown>[]> = {
+export const FIXTURES: Record<string, Record<string, unknown>[]> = {
   nypd_child_support_cert: [
     { firstName: "A", lastName: "B", ssn: "1", street: "S", apt: "1", city: "C", state: "NY", zip: "1", dob: "1990-02-03", empName: "E", empStreet: "ES", empCity: "EC", empState: "NY", empZip: "1", obligated: "no" },
     { obligated: "yes", acctNumbers: "1", obligBranch: "a" },
@@ -49,6 +49,22 @@ const FIXTURES: Record<string, Record<string, unknown>[]> = {
     { applicantName: "A", applicantAddress: "B", dob: "1990-01-01", ssn: "1", companyName: "Co", businessAddress: "BA", businessPhone: "BP", businessType: "BT", wgpLicenseType: "W", wgpLicenseNumber: "N", wgpExpire: "2030", custodian: "Cu", custodianLicenseNo: "L", position: "P" },
   ],
   nypd_employment_record_request: [{ fullName: "A", address: "B", dob: "1990-01-01", ssn: "1" }],
+  nypd_affidavit_familiarity: [{ county: "New York" }],
+  nypd_safeguard_acknowledgement: [
+    {
+      applicantName: "Marcus J Powell",
+      safeguardLastName: "Reyes",
+      safeguardFirstName: "Dana",
+      safeguardMI: "K",
+      safeguardStreet: "500 Guard Ave",
+      safeguardApt: "3C",
+      safeguardCity: "New York",
+      safeguardZip: "10011",
+      safeguardHomePhone: "(212) 555-0142",
+      safeguardCellPhone: "(212) 555-0143",
+      safeguardBusinessPhone: "(212) 555-0144",
+    },
+  ],
 }
 
 export interface ValidatorRow {

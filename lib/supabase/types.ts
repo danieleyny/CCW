@@ -5771,6 +5771,9 @@ export type Database = {
         | "hipaa_release"
         | "social_security_card"
         | "disclosure_summary"
+        | "affidavit_familiarity"
+        | "safeguard_acknowledgement"
+        | "affirmation_penal_law"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6067,6 +6070,9 @@ export const Constants = {
         "hipaa_release",
         "social_security_card",
         "disclosure_summary",
+        "affidavit_familiarity",
+        "safeguard_acknowledgement",
+        "affirmation_penal_law",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [
