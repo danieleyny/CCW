@@ -3845,6 +3845,9 @@ export type Database = {
           business_street: string | null
           business_type: string | null
           business_zip: string | null
+          carry_business_expires: string | null
+          carry_business_number: string | null
+          carry_business_status: string | null
           created_at: string
           custodian_email: string | null
           custodian_license_number: string | null
@@ -3865,6 +3868,9 @@ export type Database = {
           business_street?: string | null
           business_type?: string | null
           business_zip?: string | null
+          carry_business_expires?: string | null
+          carry_business_number?: string | null
+          carry_business_status?: string | null
           created_at?: string
           custodian_email?: string | null
           custodian_license_number?: string | null
@@ -3885,6 +3891,9 @@ export type Database = {
           business_street?: string | null
           business_type?: string | null
           business_zip?: string | null
+          carry_business_expires?: string | null
+          carry_business_number?: string | null
+          carry_business_status?: string | null
           created_at?: string
           custodian_email?: string | null
           custodian_license_number?: string | null

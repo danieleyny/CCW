@@ -62,7 +62,7 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
   const { data: sponsorRow } = await admin
     .from("sponsors")
     .select(
-      "agency_license_number, agency_license_expires, custodian_name, custodian_email, custodian_phone, custodian_license_number, business_street, business_city, business_state, business_zip, business_phone, business_type, dba_name, president_owner, qualifying_officer",
+      "agency_license_number, agency_license_expires, custodian_name, custodian_email, custodian_phone, custodian_license_number, business_street, business_city, business_state, business_zip, business_phone, business_type, dba_name, president_owner, qualifying_officer, carry_business_status, carry_business_number, carry_business_expires",
     )
     .eq("id", scope.sponsor_id)
     .maybeSingle()
@@ -82,6 +82,9 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
     dba_name: sponsorRow?.dba_name ?? null,
     president_owner: sponsorRow?.president_owner ?? null,
     qualifying_officer: sponsorRow?.qualifying_officer ?? null,
+    carry_business_status: sponsorRow?.carry_business_status ?? null,
+    carry_business_number: sponsorRow?.carry_business_number ?? null,
+    carry_business_expires: sponsorRow?.carry_business_expires ?? null,
   }
   const profileComplete = Boolean(
     profile.agency_license_number &&
@@ -94,6 +97,27 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
       profile.business_phone &&
       profile.business_type,
   )
+
+  // H1 — a HARD first-load gate. Until the company profile is complete, the rep
+  // sees ONLY the profile (and nothing else) — it's six fields, it unblocks their
+  // own applicant, and every company form is pre-filled from it. Re-editable after
+  // via the profile card; never re-gated once complete.
+  if (!profileComplete) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <SectionEyebrow>{scope.applicant_name}</SectionEyebrow>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Start with your company profile</h1>
+          <p className="mt-1 max-w-prose text-sm text-text-mid">
+            Before anything else, tell us about your company once. Every company form is pre-filled from this,
+            so your applicant&apos;s packet can move. It takes a minute — the rest of this file opens as soon as
+            it&apos;s complete.
+          </p>
+        </div>
+        <CompanyProfileForm caseId={caseId} profile={profile} complete={false} />
+      </div>
+    )
+  }
 
   // Hide not-applicable items entirely (e.g. REF-01 doesn't apply to the armed
   // track) so the rep never sees a "Four references" row that isn't real.
