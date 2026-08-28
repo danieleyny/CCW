@@ -2,6 +2,9 @@ import { redirect } from "next/navigation"
 import { getMyCase } from "@/lib/portal"
 import { hasPaidPackage } from "@/lib/packages"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { assembleApplicationValues } from "@/lib/forms/prepare"
+import { computeApplicationReadiness } from "@/lib/forms/application-readiness"
 import { type CaseStageKey, isNypdControlled } from "@/config/stages"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
@@ -76,6 +79,15 @@ export default async function ConciergeHome() {
   const vaultGroups = buildVaultGroups(view.items, view.currentByReq)
   const reviewItems = buildReviewItems(view)
 
+  // How complete the prepared PD 643-041 will be, from the SAME stores the fill
+  // reads — so the Prepare button is honest about what's still missing before the
+  // applicant downloads a draft. Admin: server-derived readiness over the client's
+  // own facts/intake/disclosures (mirrors prepareApplication).
+  const assembled = await assembleApplicationValues(createAdminClient(), myCase.id)
+  const readiness = assembled
+    ? computeApplicationReadiness(assembled.values, { licenseTrack: assembled.track })
+    : { ready: false, captured: 0, total: 1, missing: [{ label: "Your details", href: "/portal/details" }] }
+
   // Milestone state — REAL signals only, never cosmetic.
   const applicable = view.items.filter((i) => i.status !== "na")
   const controlState = {
@@ -148,7 +160,7 @@ export default async function ConciergeHome() {
         introCall={onboarding.introCall}
       />
 
-      <PrepareApplicationButton caseId={myCase.id} />
+      <PrepareApplicationButton caseId={myCase.id} readiness={readiness} />
 
       <div id="vault" className="scroll-mt-20">
         <DocumentVault

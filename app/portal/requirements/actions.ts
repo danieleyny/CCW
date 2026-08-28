@@ -6,8 +6,9 @@ import { authorizeCaseActor } from "@/lib/case-actor"
 import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
 import { formTemplate } from "@/lib/forms/templates"
 import { resolveFacts } from "@/lib/facts/resolve"
-import { buildApplicationValues } from "@/lib/forms/application"
-import type { WizardAnswers } from "@/lib/intake/answers"
+import { assembleApplicationValues } from "@/lib/forms/prepare"
+import { computeApplicationReadiness } from "@/lib/forms/application-readiness"
+import { stampIncompleteDraft } from "@/lib/forms/partial"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
@@ -866,36 +867,43 @@ export async function prepareInvestigationForms(
  * needed — never silently truncated).
  */
 export async function prepareApplication(
-  caseId: string
-): Promise<{ url?: string; error?: string; overflow?: boolean }> {
+  caseId: string,
+  opts?: { partial?: boolean }
+): Promise<{ url?: string; error?: string; overflow?: boolean; partial?: boolean; missing?: number }> {
   await requireRole(["client", "staff", "admin"])
   const admin = createAdminClient()
-  const { data: kase } = await admin
-    .from("cases")
-    .select("client_id, license_track")
-    .eq("id", caseId)
-    .maybeSingle()
-  if (!kase?.client_id) return { error: "Case not found." }
+  const assembled = await assembleApplicationValues(admin, caseId)
+  if (!assembled) return { error: "Case not found." }
+  const { values, track, clientId } = assembled
 
-  const [facts, { data: intakeRow }, { data: disclosureRows }] = await Promise.all([
-    resolveFacts(admin, caseId),
-    admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
-    // Section B answers live in requirement_answers (DSC-01/QUE-01) — the canonical
-    // store the compliance work made. Prefer DSC-01; QUE-01 carries the same set.
-    admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["DSC-01", "QUE-01"]),
-  ])
-  const intake = (intakeRow?.answers ?? {}) as WizardAnswers
-  const byCode = new Map((disclosureRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
-  const disclosures = byCode.get("DSC-01") ?? byCode.get("QUE-01") ?? {}
-  const values = buildApplicationValues(facts, intake, { licenseTrack: kase.license_track, disclosures })
+  // Readiness gate: a draft that's missing required data is HONEST about it — the
+  // caller must opt in to a partial draft, and that partial is watermarked and
+  // fronted with a missing-field cover sheet so it can never look file-ready.
+  const readiness = computeApplicationReadiness(values, { licenseTrack: track })
+  if (!readiness.ready && !opts?.partial) {
+    return { error: "Some required details are still missing.", partial: false, missing: readiness.missing.length }
+  }
+
   const filled = await fillTemplate("nypd_handgun_application", values)
+  const bytes = readiness.ready ? filled.bytes : await stampIncompleteDraft(filled.bytes, readiness.missing)
 
-  const path = `clients/${kase.client_id}/prepared/handgun-application-${Date.now()}.pdf`
+  const path = `clients/${clientId}/prepared/handgun-application-${readiness.ready ? "" : "DRAFT-"}${Date.now()}.pdf`
   const { error: upErr } = await admin.storage
     .from("documents")
-    .upload(path, Buffer.from(filled.bytes), { contentType: "application/pdf", upsert: true })
+    .upload(path, Buffer.from(bytes), { contentType: "application/pdf", upsert: true })
   if (upErr) return { error: "Couldn't prepare the application — please try again." }
   const { data: signed } = await admin.storage.from("documents").createSignedUrl(path, 300)
-  await logActivity({ action: "application.prepared", caseId, entity: "case", entityId: caseId })
-  return { url: signed?.signedUrl, overflow: !!values.residenceOverflow || !!values.employmentOverflow }
+  await logActivity({
+    action: "application.prepared",
+    caseId,
+    entity: "case",
+    entityId: caseId,
+    detail: { partial: !readiness.ready, missing: readiness.missing.length, captured: readiness.captured, total: readiness.total },
+  })
+  return {
+    url: signed?.signedUrl,
+    overflow: !!values.residenceOverflow || !!values.employmentOverflow,
+    partial: !readiness.ready,
+    missing: readiness.missing.length,
+  }
 }
