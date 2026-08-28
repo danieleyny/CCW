@@ -49,6 +49,17 @@ describe("buildApplicationValues — facts + intake → application values", () 
     expect(v2.q12).toBe("Yes")
   })
 
+  it("reads safeguard facts-first, intake as fallback", () => {
+    const v = buildApplicationValues(
+      { "safeguard.name": "Dana Reyes", "safeguard.method": "In a locked safe at my residence" } as Record<string, string>,
+      { safeguardName: "STALE", safeguardRelation: "Brother" } as WizardAnswers,
+      {}
+    )
+    expect(v.safeguardName).toBe("Dana Reyes") // fact wins
+    expect(v.safeguardMethod).toBe("In a locked safe at my residence")
+    expect(v.safeguardRelation).toBe("Brother") // intake fallback where no fact
+  })
+
   it("flags a five-year history that overflows the form's four rows", () => {
     const five = Array.from({ length: 5 }, (_, i) => ({ fromMonth: `200${i}-01`, address: `${i}` }))
     const v = buildApplicationValues(facts, { residenceHistory: five } as WizardAnswers, {})

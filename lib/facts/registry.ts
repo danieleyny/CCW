@@ -97,6 +97,17 @@ export const FACTS: FactDef[] = [
   { key: "employer.type", label: "Type of business", type: "text", group: "employer", from: (s) => s.sponsor?.businessType ?? s.intake.businessType },
   { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", from: (s) => s.intake.occupation },
 
+  // ── Safeguard (Q30 how/where + Q31 the designated person) ──
+  // Scalars, so they live in the fact layer (entered once, reused on every form and
+  // reachable on /portal/details — a concierge applicant never sees the wizard). The
+  // NYPD constraints ride in the label: Q30 storage must be IN New York State, and
+  // the Q31 person must be a New York State resident.
+  { key: "safeguard.method", label: "How and where the handgun is safeguarded (must be in New York State)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardMethod },
+  { key: "safeguard.name", label: "Person who will safeguard it (Q31)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardName },
+  { key: "safeguard.relation", label: "Their relationship to you", type: "text", group: "safeguard", from: (s) => s.intake.safeguardRelation },
+  { key: "safeguard.address", label: "Their address (must be a New York State resident)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardAddress },
+  { key: "safeguard.phone", label: "Their telephone", type: "phone", group: "safeguard", from: (s) => s.intake.safeguardPhone },
+
   // ── Sponsor-owned ──
   { key: "sponsor.legalName", label: "Company legal name", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.legalName },
   { key: "sponsor.agencyLicenseNumber", label: "Agency licence #", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.agencyLicenseNumber },

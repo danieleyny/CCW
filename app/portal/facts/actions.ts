@@ -65,3 +65,46 @@ export async function setCaseFact(
   revalidatePath("/portal/checklist")
   return { ok: true }
 }
+
+/**
+ * Save the five-year residence/employment history (Q29) and the out-of-city licence
+ * (Q9) for a case. These are REPEATABLE rows, so they can't be scalar facts — they
+ * merge into intake_sessions.answers (the same store the wizard writes and the
+ * application mapper reads), CREATING the row if a concierge case has none. This is
+ * the "door" that lets a concierge applicant supply data the wizard never asked.
+ */
+export async function saveApplicationHistory(
+  caseId: string,
+  input: {
+    residenceHistory: unknown[]
+    employmentHistory: unknown[]
+    outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
+  }
+): Promise<{ ok?: true; error?: string }> {
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "Not authorized." }
+  const admin = createAdminClient()
+
+  const { data: existing } = await admin
+    .from("intake_sessions")
+    .select("answers, current_step")
+    .eq("case_id", actor.caseId)
+    .maybeSingle()
+  const answers = {
+    ...((existing?.answers ?? {}) as Record<string, unknown>),
+    residenceHistory: input.residenceHistory,
+    employmentHistory: input.employmentHistory,
+    outOfCityLicenseNumber: input.outOfCity.number || undefined,
+    outOfCityCounty: input.outOfCity.county || undefined,
+    outOfCityIssuedOn: input.outOfCity.issuedOn || undefined,
+    outOfCityExpiresOn: input.outOfCity.expiresOn || undefined,
+  }
+  const { error } = await admin
+    .from("intake_sessions")
+    .upsert({ case_id: actor.caseId, current_step: existing?.current_step ?? 1, answers: answers as never }, { onConflict: "case_id" })
+  if (error) return { error: "Couldn't save that." }
+
+  await logActivity({ action: "application.history_saved", caseId: actor.caseId, entity: "case", entityId: actor.caseId })
+  revalidatePath("/portal/details")
+  return { ok: true }
+}

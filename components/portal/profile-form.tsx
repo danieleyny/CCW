@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 import { updateProfile, changePassword, type ProfileState } from "@/app/portal/profile/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,7 +31,15 @@ function ContactCard({ fullName, email, phone }: { fullName: string; email: stri
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your details</CardTitle>
+        <CardTitle>Your account</CardTitle>
+        <p className="text-sm text-text-mid">
+          This page saves your name and phone. Your <strong>application details</strong> — address, physical
+          description, five-year history, safeguard and more — live on{" "}
+          <Link href="/portal/details" className="text-signal underline underline-offset-2">
+            Your details
+          </Link>
+          , and fill your forms automatically.
+        </p>
       </CardHeader>
       <form action={formAction}>
         <CardContent className="space-y-4">
