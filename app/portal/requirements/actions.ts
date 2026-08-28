@@ -319,11 +319,16 @@ export async function generateRequirementDocument(
         detail: { templateKey: action.templateKey, sha256: filled.sha256, ...filled.summary, missing: filled.missing, missingRequired: incompleteFields },
       })
     } else {
+      // DSC-01's document is the signed answers + authorization record — it needs the
+      // full assembled application data (facts + intake + disclosures + letter of
+      // necessity), not just the requirement's own answers.
+      const record = reqCode === "DSC-01" ? (await assembleApplicationValues(admin, actor.caseId))?.values : undefined
       const doc = await renderRequirementDocument({
         reqCode,
         applicantName: actor.clientName,
         answers,
         caseRef: actor.caseId.slice(0, 8),
+        record,
       })
       documentId = await storeGeneratedDocument(admin, {
         caseId: actor.caseId,
@@ -580,6 +585,7 @@ export async function signRequirementDocument(
       const filled = await signTemplate(new Uint8Array(await blob.arrayBuffer()), action.templateKey, signaturePng, signedAt)
       signedBytes = filled.bytes
     } else {
+      const record = reqCode === "DSC-01" ? (await assembleApplicationValues(admin, myCase.id))?.values : undefined
       const doc = await renderRequirementDocument({
         reqCode,
         applicantName: myCase.client.full_name,
@@ -587,6 +593,7 @@ export async function signRequirementDocument(
         signaturePng,
         signedAt,
         caseRef: myCase.id.slice(0, 8),
+        record,
       })
       signedBytes = doc.bytes
     }

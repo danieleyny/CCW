@@ -18,7 +18,6 @@ import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { buildPdf, longDate } from "@/lib/pdf/builder"
-import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import {
   affirmationOfUnderstanding,
   socialMediaDisclosure,
@@ -31,6 +30,7 @@ import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { SIGNING_CONSENT } from "@/lib/requirements/consent"
 import { buildWorksheet, type WorksheetContext } from "@/lib/requirements/worksheet"
 import type { ApplicationValues } from "@/lib/forms/application"
+import { renderSignedApplicationRecord } from "@/lib/disclosures/signed-record"
 
 type DB = SupabaseClient<Database>
 type DocumentType = Database["public"]["Enums"]["document_type"]
@@ -53,6 +53,9 @@ export interface RenderInput {
   caseRef?: string
   /** Applicant contact/zip for the worksheet's copy-paste fields, when known. */
   worksheetContext?: WorksheetContext
+  /** DSC-01 only: the assembled application values (facts + intake + disclosures +
+   *  letter of necessity) for the signed answers + authorization record. */
+  record?: ApplicationValues
 }
 
 export interface RenderedDocument {
@@ -67,71 +70,6 @@ export interface RenderedDocument {
 const str = (v: unknown): string => (typeof v === "string" ? v : "")
 const rows = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
 const isYes = (v: unknown): boolean => v === true || v === "yes"
-
-/**
- * PD 643-041A — the OFFICIAL addendum. A two-column record (Question Number ·
- * Detailed Explanation) that lists ONLY the "yes" answers, keyed by the form's own
- * question number. When there are no "yes" answers this document is NOT produced at
- * all (QUE-01 fires only `if_any_q_yes`); listing twenty "no" rows on PD 643-041A
- * is a misuse of the form.
- */
-async function disclosureAddendum(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
-  const items = PORTAL_DISCLOSURES.filter((q) => isYes(a[`q${q.no}`])).map((q) => ({
-    no: q.no,
-    q: q.text,
-    explain: str(a[`q${q.no}_explain`]),
-  }))
-
-  return buildPdf((c) => {
-    c.heading("Handgun License Application — Addendum", "Written explanations for every “yes” disclosure answer")
-    c.rule()
-    c.para(
-      "Each explanation below corresponds, by question number, to a “yes” answer on the application. Sealed, dismissed, and nullified matters are disclosed here notwithstanding CPL Article 160.",
-      { color: "muted", size: 10 }
-    )
-    c.spacer()
-    for (const it of items) {
-      c.h2(`Question ${it.no}`)
-      c.para(it.q, { color: "muted", size: 9 })
-      c.para(it.explain || "(no explanation provided)")
-      c.spacer()
-    }
-    c.rule()
-    c.para("I affirm the statements above are true and complete to the best of my knowledge.", { size: 10 })
-    c.signatureImage("Applicant signature")
-  }, { signaturePng: sig, ...sign })
-}
-
-/**
- * OUR internal disclosure summary — NOT an NYPD form. Lists EVERY question 10–28
- * with the applicant's Yes/No answer (and the explanation on a "yes"), so he and the
- * case team can see the complete record and transcribe it into the NYPD portal
- * accurately. Clearly labelled as ours. Signed so DSC-01 (completeness attestation)
- * is satisfied the same way it always was.
- */
-async function disclosureSummary(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
-  return buildPdf((c) => {
-    c.heading(
-      "Disclosure Summary — internal worksheet",
-      "NOT an NYPD form. Your complete answers to the portal disclosure questions, kept so you and your case team can transcribe them into the NYPD portal accurately."
-    )
-    c.rule()
-    for (const q of PORTAL_DISCLOSURES) {
-      const yes = isYes(a[`q${q.no}`])
-      c.h2(`${q.no}. ${yes ? "Yes" : "No"}`)
-      c.para(q.text, { color: "muted", size: 9 })
-      if (yes) c.para(str(a[`q${q.no}_explain`]) || "(no explanation provided)")
-      c.spacer()
-    }
-    c.rule()
-    c.para(
-      "This is our internal summary to help you complete the NYPD application accurately. It is not an NYPD form and is not filed with the NYPD.",
-      { color: "muted", size: 9 }
-    )
-    c.para("I affirm the answers above are true and complete to the best of my knowledge.", { size: 10 })
-    c.signatureImage("Applicant signature")
-  }, { signaturePng: sig, ...sign })
-}
 
 async function protectionOrderStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
@@ -270,11 +208,10 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
     case "SOC-01":
       return { bytes: await socialMediaDisclosure(n, str(a.handles), dated, sig, sign), fileName: "social-media-list.pdf", documentType: "social_media_list", label: "Social media list (optional)" }
     case "DSC-01":
-      // OUR internal worksheet — every question 10–28 with its answer.
-      return { bytes: await disclosureSummary(n, a, sig, sign), fileName: "disclosure-summary.pdf", documentType: "disclosure_summary", label: "Disclosure summary (internal)" }
-    case "QUE-01":
-      // The OFFICIAL PD 643-041A addendum — "yes" answers only, keyed by question number.
-      return { bytes: await disclosureAddendum(n, a, sig, sign), fileName: "disclosure-addendum.pdf", documentType: "disclosure_addendum", label: "Disclosure addendum" }
+      // THE signed answers + authorization record (Part 5) — every portal disclosure
+      // question with the applicant's answer, the application details, and their
+      // authorization for us to enter them into the portal. Replaces the old summary.
+      return { bytes: await renderSignedApplicationRecord(n, a, input.record ?? ({} as ApplicationValues), { signaturePng: sig, signedAt }), fileName: "application-answers.pdf", documentType: "disclosure_summary", label: "Application answers & authorization" }
     case "ARR-01":
       return { bytes: await arrestNarratives(n, toArrests(a.arrests), dated, sig, sign), fileName: "arrest-statements.pdf", documentType: "arrest_statement", label: "Arrest statements" }
     case "OOP-01":
