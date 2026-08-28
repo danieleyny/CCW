@@ -105,8 +105,6 @@ function valueFor(f: CoverageField, v: ApplicationValues, ctx: WorksheetContext)
       if (lt === "CarryBusiness") return "Carry Business"
       return lt ? String(lt) : NOT_ANSWERED
     }
-    case "other_nyc_handgun_license":
-      return "— enter at filing if you hold another NYC handgun licence —"
     case "name_last_first":
       return joinNonEmpty([s(v.firstName), s(v.lastName)], " ") !== NOT_ANSWERED
         ? joinNonEmpty([s(v.lastName) && `${s(v.lastName)},`, s(v.firstName)], " ")

@@ -19,6 +19,7 @@
  *  - no two templates share a file/sha256.
  */
 import { usDate, usMonthYear } from "@/lib/forms/format"
+import { SECTION_B_NUMBERS } from "@/lib/forms/section-b"
 
 export interface FormTemplate {
   key: string
@@ -73,14 +74,6 @@ export interface FormTemplate {
 
 const s = (v: unknown): string => (v == null ? "" : String(v))
 const isYes = (v: unknown): boolean => v === true || v === "yes"
-
-/** PD 643-041 Section B question numbers, in form order (24/25/26 are separate,
- *  20 folds 20a). Mirrors SECTION_B_QUESTIONS in questionnaires.ts — the numbers are
- *  fixed by the form, so kept inline here to avoid a lib/forms → lib/requirements dep. */
-const SECTION_B_NUMBERS = [
-  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
-  "23", "24", "25", "26", "27", "28",
-]
 /** Intake stores DOB as YYYY-MM-DD → the three parts, or "" when absent. */
 function dobParts(v: unknown): { mm: string; dd: string; yyyy: string } {
   const [yyyy = "", mm = "", dd = ""] = s(v).split("-")
@@ -469,8 +462,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         AlienOrCitizen: s(v.citizenship) || undefined,
         LicenseTypePremises: s(v.premisesType) || undefined,
       }
-      // Section B 10–28 (incl. 20a; 24/25/26 separate) — Yes / No.
-      for (const no of ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "20a", "21", "22", "23", "24", "25", "26", "27", "28"]) {
+      // Section B 10–28 (incl. 20a; 24/25/26 separate) — Yes / No. Shared list.
+      for (const no of SECTION_B_NUMBERS) {
         const ans = s(v[`q${no}`])
         if (ans === "Yes" || ans === "No") choices[`SectionB${no}`] = ans
       }

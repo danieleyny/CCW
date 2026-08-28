@@ -1,4 +1,5 @@
 import type { ApplicationValues } from "@/lib/forms/application"
+import { SECTION_B_NUMBERS } from "@/lib/forms/section-b"
 
 /**
  * Readiness of a prepared PD 643-041 draft: which of the fields WE fill are still
@@ -15,6 +16,12 @@ export interface ReadinessItem {
   /** The screen that collects it. */
   href: string
 }
+export interface ReadinessNote {
+  text: string
+  /** An optional helper link (e.g. the NYPD precinct finder) rendered after the text. */
+  href?: string
+  hrefLabel?: string
+}
 export interface ApplicationReadiness {
   ready: boolean
   captured: number
@@ -23,16 +30,12 @@ export interface ApplicationReadiness {
   /** Non-blocking advisories shown on the readiness card — things the form asks for
    *  that the applicant completes at filing (e.g. precinct numbers we don't derive),
    *  so they're surfaced explicitly instead of silently passing. */
-  notes: string[]
+  notes: ReadinessNote[]
 }
 
 const DETAILS = "/portal/details"
 const DISCLOSURES = "/portal/checklist" // the disclosure questionnaire lives on the checklist
 
-const SECTION_B_NUMBERS = [
-  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "20a", "21", "22",
-  "23", "24", "25", "26", "27", "28",
-]
 
 export function computeApplicationReadiness(
   v: ApplicationValues,
@@ -45,7 +48,7 @@ export function computeApplicationReadiness(
   const isPremises = String(v.licenseType) === "Premises"
   const isCarry = !isPremises
   const missing: ReadinessItem[] = []
-  const notes: string[] = []
+  const notes: ReadinessNote[] = []
   let total = 0
   let captured = 0
   const check = (ok: boolean, label: string, href: string) => {
@@ -95,7 +98,11 @@ export function computeApplicationReadiness(
 
   // PART 7 — precincts. We don't derive them (a wrong precinct on a sworn form is
   // worse than a blank), so they're an explicit at-filing note, never a silent pass.
-  notes.push("Precinct numbers (residence, employment, business) are left blank — write in your NYPD precinct on each row at filing.")
+  notes.push({
+    text: "Precinct numbers (residence, employment, business) are left blank — write in your NYPD precinct on each row at filing.",
+    href: "https://www.nyc.gov/site/nypd/bureaus/patrol/find-your-precinct.page",
+    hrefLabel: "Find your precinct",
+  })
 
   return { ready: missing.length === 0, captured, total, missing, notes }
 }

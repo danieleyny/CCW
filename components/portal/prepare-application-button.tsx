@@ -78,8 +78,16 @@ export function PrepareApplicationButton({ caseId, readiness }: { caseId: string
         {readiness.notes.length > 0 && (
           <ul className="mt-2 space-y-1 border-t border-hairline pt-2">
             {readiness.notes.map((n) => (
-              <li key={n} className="text-xs text-text-low">
-                {n}
+              <li key={n.text} className="text-xs text-text-low">
+                {n.text}
+                {n.href && (
+                  <>
+                    {" "}
+                    <a href={n.href} target="_blank" rel="noopener noreferrer" className="text-signal underline underline-offset-2">
+                      {n.hrefLabel ?? "Learn more"}
+                    </a>
+                  </>
+                )}
               </li>
             ))}
           </ul>

@@ -71,7 +71,8 @@ describe("application coverage map", () => {
       .map((f) => f.id)
       .sort()
     expect(gapIds).toEqual(
-      ["certificate_of_relief", "letter_of_necessity", "residence_precinct", "safeguard_ack_form"].sort()
+      // letter_of_necessity (LON-01) and safeguard_ack_form (SFG-01) closed this round.
+      ["certificate_of_relief", "residence_precinct"].sort()
     )
   })
 
