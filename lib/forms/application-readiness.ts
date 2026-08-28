@@ -96,13 +96,9 @@ export function computeApplicationReadiness(
   if (answered >= SECTION_B_NUMBERS.length) captured++
   else missing.push({ label: `Section B disclosures — ${answered} of ${SECTION_B_NUMBERS.length} questions answered (Q10–28, incl. 20a)`, href: DISCLOSURES })
 
-  // PART 7 — precincts. We don't derive them (a wrong precinct on a sworn form is
-  // worse than a blank), so they're an explicit at-filing note, never a silent pass.
-  notes.push({
-    text: "Precinct numbers (residence, employment, business) are left blank — write in your NYPD precinct on each row at filing.",
-    href: "https://www.nyc.gov/site/nypd/bureaus/patrol/find-your-precinct.page",
-    hrefLabel: "Find your precinct",
-  })
+  // Precinct note removed — the NYPD online portal does not ask for a precinct
+  // (PORTAL_ALIGNMENT_REBUILD Part 7). This readiness gate is retired with the paper
+  // form in the final phase.
 
   return { ready: missing.length === 0, captured, total, missing, notes }
 }

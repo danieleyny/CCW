@@ -169,15 +169,8 @@ export const APPLICATION_COVERAGE = [
     notes:
       "DELIBERATELY NOT STORED. Required on the application and the physical card must be brought; the applicant enters it directly at filing. Storing it would contradict the Phase-3 PII-minimisation posture. Worksheet prints a labelled blank.",
   },
-  {
-    id: "residence_precinct",
-    section: "identity",
-    formLabel: "Res. Pct.",
-    questionNo: "3",
-    capture: { kind: "gap" },
-    status: "gap",
-    notes: "Residence precinct — derivable from the legal address; not yet computed.",
-  },
+  // Precinct removed — the NYPD ONLINE portal does not ask for a precinct
+  // (PORTAL_ALIGNMENT_REBUILD Part 7); the paper form did.
   {
     id: "contact_phone_email",
     section: "identity",
@@ -424,12 +417,12 @@ export const APPLICATION_COVERAGE = [
     section: "documents",
     formLabel:
       "Original Certificate of Relief from Disabilities (if ever convicted of a felony or a serious offense per P.L. §265.00(17))",
-    capture: { kind: "gap" },
-    status: "gap",
+    capture: { kind: "requirement", ref: "COR-01" },
+    status: "ok",
     sensitive: true,
     appliesTo: ["carry", "premises", "special_carry"],
     notes:
-      "Named in the arrest instructions and in ARR-01's help text, but not a tracked requirement with its own document. See REGISTRY_COVERAGE.md §13a.",
+      "COR-01 — spawned by portal Q7's felony/serious-offense conviction sub-question. Original, signed; obtained from the court of conviction.",
   },
   doc("order_of_protection_docs", "Order of Protection: copy + detailed written statement", "OOP-01", true),
   doc("business_ownership", "Proof of Business Ownership (filing receipt, certificate of incorporation, licences/permits, proof of business address)", "PRM-01", false, "Bundled — the form lists these as distinct items.", ["business", "premises"]),

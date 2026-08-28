@@ -177,6 +177,8 @@ export interface CaseRequirementRow {
     legal_citation: string | null
     /** 'applicant' (default) | 'sponsor' — sponsor rows are the company packet. */
     party: string
+    /** Where the document goes: portal_upload | interview | internal. */
+    destination: string
   } | null
 }
 
@@ -191,7 +193,7 @@ export async function getCaseRequirements(db: DB, caseId: string): Promise<CaseR
     .from("case_requirements")
     .select(
       "id, req_code, status, document_id, reference_id, cohabitant_id, notes, " +
-        "requirement:requirements(id, title, description, authority, severity, trigger_cond, document_type, effective_from, legal_status, legal_citation, party)"
+        "requirement:requirements(id, title, description, authority, severity, trigger_cond, document_type, effective_from, legal_status, legal_citation, party, destination)"
     )
     .eq("case_id", caseId)
     .order("req_code", { ascending: true })

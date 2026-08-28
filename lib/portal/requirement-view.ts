@@ -359,6 +359,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     parts: needFiles ? { have: haveFiles, need: needFiles } : undefined,
     sponsorManaged: row.requirement?.party === "sponsor",
     preparedBySponsor: draftedBySponsor.get(row.req_code) ?? false,
+    destination: (row.requirement?.destination ?? "internal") as "portal_upload" | "interview" | "internal",
     }
   })
 

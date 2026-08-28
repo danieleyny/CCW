@@ -103,7 +103,8 @@ export function DocumentUploader({
 
     // FMT-01: enforce size + type and sanitize the filename (the NYPD portal
     // silently rejects oversized files, wrong types, and "dirty" names).
-    const check = validateFile({ name: file.name, size: file.size })
+    // The applicant photograph is image-only — the portal rejects a PDF there.
+    const check = validateFile({ name: file.name, size: file.size, imageOnly: type === "applicant_photo" })
     if (!check.ok) {
       toast.error(check.errors[0] ?? "That file can't be uploaded.")
       return

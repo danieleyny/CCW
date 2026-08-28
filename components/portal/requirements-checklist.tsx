@@ -75,6 +75,9 @@ export interface ReqChecklistItem {
   /** The draft was prepared by a full-scope sponsor, not the applicant — so the
    *  applicant's card can say "review and sign" (adoption is theirs alone). */
   preparedBySponsor?: boolean
+  /** Which pile this document is in: uploaded to the NYPD portal, held for the
+   *  interview, or our internal record / entered into the portal for you. */
+  destination?: "portal_upload" | "interview" | "internal"
 }
 
 type FilterKey = "all" | "todo" | "done" | "notarizing"
@@ -85,6 +88,14 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "done", label: "Completed" },
   { key: "notarizing", label: "Needs notarization" },
 ]
+
+/** Which pile a document is in — shown as a small badge so nothing gets uploaded to
+ *  the portal that the portal never asked for. */
+const DESTINATION_COPY: Record<string, { label: string; cls: string }> = {
+  portal_upload: { label: "Upload to NYPD portal", cls: "border-signal/40 bg-signal/10 text-signal" },
+  interview: { label: "Bring to your interview", cls: "border-brass/40 bg-brass/10 text-brass" },
+  internal: { label: "We handle this", cls: "border-hairline bg-surface-3 text-text-low" },
+}
 
 const LADDER_TONE: Record<string, string> = {
   muted: "bg-surface-2 text-text-mid",
@@ -417,6 +428,13 @@ export function RequirementsChecklist({
                         <h4 className="font-display text-base font-semibold leading-[1.3]">
                           {actionFor(item.reqCode)?.customerTitle ?? item.title}
                         </h4>
+                        {item.destination && DESTINATION_COPY[item.destination] && (
+                          <span
+                            className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${DESTINATION_COPY[item.destination].cls}`}
+                          >
+                            {DESTINATION_COPY[item.destination].label}
+                          </span>
+                        )}
                         {item.description && (
                           <p className="mt-1 line-clamp-3 text-[13px] leading-[1.55] text-muted-foreground [text-wrap:pretty]">
                             {item.description}

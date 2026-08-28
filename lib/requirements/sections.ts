@@ -91,6 +91,8 @@ const SECTION_BY_CODE: Record<string, SectionKey> = {
   "TRN-01": "training", "RNW-01": "training",
   // People we contact
   "REF-01": "people", "REF-02": "people", "COH-01": "people", "COH-02": "people", "SAF-01": "people",
+  // New portal uploads
+  "PHO-01": "identity", "SGI-01": "people",
   // We prepare, you sign
   "AFF-01": "prepared", "AFF-02": "prepared", "FAM-01": "prepared", "SFG-01": "prepared",
   "LON-01": "prepared", "PBR-01": "prepared",
