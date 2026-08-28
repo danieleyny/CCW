@@ -16,22 +16,37 @@ describe("buildApplicationValues — facts + intake → application values", () 
     "employer.name": "Test Guard Co.",
   } as Record<string, string>
 
-  it("maps identity, citizenship, licence type and Section B", () => {
-    const intake: WizardAnswers = {
-      licenseType: "carry",
-      questionnaire: [{ no: 12, yes: true }, { no: 11, yes: false }],
-      arrests: [{ narrative: "x" }],
-      aliasName: "",
-    }
-    const v = buildApplicationValues(facts, intake, { licenseTrack: "carry_guard" })
+  it("maps identity/citizenship/licence type, and Section B from the disclosure store", () => {
+    const v = buildApplicationValues(facts, { licenseType: "carry" } as WizardAnswers, {
+      licenseTrack: "carry_guard",
+      disclosures: { q10: "no", q12: "yes", q12_explain: "x", q23: "yes", q24: "no" },
+    })
     expect(v.lastName).toBe("Powell")
     expect(v.businessName).toBe("Test Guard Co.")
     expect(v.citizenship).toBe("Citizen")
     expect(v.licenseType).toBe("CarryGuardSecurity") // NOT CarryBusiness
+    expect(v.q10).toBe("No")
+    expect(v.q12).toBe("Yes")
+    expect(v.q23).toBe("Yes")
+    expect(v.q24).toBe("No")
+    expect(v.q12_explain).toBeUndefined() // explanation keys are not Section B boxes
+  })
+
+  it("NEVER infers a sworn answer from an empty collection (the critical correctness fix)", () => {
+    // Nothing entered: no disclosure store, no questionnaire, empty/absent arrays.
+    const v = buildApplicationValues(facts, { arrests: [], aliasName: "" } as WizardAnswers, {})
+    for (const q of ["q10", "q12", "q23", "q24", "q27", "q28"]) {
+      expect(v[q], `${q} must be UNSET (not-asked), never a false "No"`).toBeUndefined()
+    }
+  })
+
+  it("falls back to legacy intake.questionnaire only when the disclosure store is empty", () => {
+    const v = buildApplicationValues(facts, { questionnaire: [{ no: 12, yes: true }, { no: 11, yes: false }] } as WizardAnswers, {})
     expect(v.q12).toBe("Yes")
     expect(v.q11).toBe("No")
-    expect(v.q23).toBe("Yes") // from an arrest
-    expect(v.q28).toBe("No") // no alias
+    // But a disclosure store, when present, wins and legacy is ignored.
+    const v2 = buildApplicationValues(facts, { questionnaire: [{ no: 12, yes: false }] } as WizardAnswers, { disclosures: { q12: "yes" } })
+    expect(v2.q12).toBe("Yes")
   })
 
   it("flags a five-year history that overflows the form's four rows", () => {

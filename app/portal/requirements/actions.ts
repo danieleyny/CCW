@@ -877,12 +877,17 @@ export async function prepareApplication(
     .maybeSingle()
   if (!kase?.client_id) return { error: "Case not found." }
 
-  const [facts, { data: intakeRow }] = await Promise.all([
+  const [facts, { data: intakeRow }, { data: disclosureRows }] = await Promise.all([
     resolveFacts(admin, caseId),
     admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
+    // Section B answers live in requirement_answers (DSC-01/QUE-01) — the canonical
+    // store the compliance work made. Prefer DSC-01; QUE-01 carries the same set.
+    admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["DSC-01", "QUE-01"]),
   ])
   const intake = (intakeRow?.answers ?? {}) as WizardAnswers
-  const values = buildApplicationValues(facts, intake, { licenseTrack: kase.license_track })
+  const byCode = new Map((disclosureRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
+  const disclosures = byCode.get("DSC-01") ?? byCode.get("QUE-01") ?? {}
+  const values = buildApplicationValues(facts, intake, { licenseTrack: kase.license_track, disclosures })
   const filled = await fillTemplate("nypd_handgun_application", values)
 
   const path = `clients/${kase.client_id}/prepared/handgun-application-${Date.now()}.pdf`

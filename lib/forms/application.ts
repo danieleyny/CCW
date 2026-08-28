@@ -25,8 +25,16 @@ export interface ApplicationValues extends Record<string, unknown> {
 export function buildApplicationValues(
   facts: Record<string, string>,
   intake: WizardAnswers,
-  opts: { licenseTrack?: string | null } = {}
+  opts: {
+    licenseTrack?: string | null
+    /** The disclosure questionnaire answers (requirement_answers, DSC-01/QUE-01) —
+     *  the CANONICAL store for Section B. Keys are `q10`…`q28` (+ `q20a`) with values
+     *  "yes"/"no", plus `qN_explain`. This is the ONLY source that sets a sworn
+     *  Section B box; an absent answer is "not asked", never "no". */
+    disclosures?: Record<string, unknown>
+  } = {}
 ): ApplicationValues {
+  const disclosures = opts.disclosures ?? {}
   const f = (k: string) => facts[k] ?? ""
   const citizenship = f("applicant.citizenship")
   const premises = intake.licenseType === "premises"
@@ -88,14 +96,30 @@ export function buildApplicationValues(
     safeguardPhone: intake.safeguardPhone ?? "",
   }
 
-  // Section B 10–28 — Yes/No. 10–22 from the intake questionnaire; 23/24/27/28 from
-  // their dedicated flows. 25/26 (an order of protection BY the applicant) have no
-  // intake flow, so they're left unanswered for the applicant to tick.
-  for (const q of intake.questionnaire ?? []) v[`q${q.no}`] = q.yes ? "Yes" : "No"
-  v.q23 = (intake.arrests?.length ?? 0) > 0 ? "Yes" : "No"
-  v.q24 = (intake.ordersOfProtection?.length ?? 0) > 0 ? "Yes" : "No"
-  v.q27 = (intake.domesticIncidents?.length ?? 0) > 0 ? "Yes" : "No"
-  v.q28 = (intake.aliasName ?? "").trim() ? "Yes" : "No"
+  // Section B 10–28 — set ONLY from an EXPLICIT recorded answer. Three states matter:
+  // answered-yes, answered-no, NOT-ASKED. The disclosure questionnaire (DSC-01/QUE-01,
+  // requirement_answers) is canonical; an absent answer means "not asked", NOT "no",
+  // and leaves the box /Off. We NEVER infer a sworn "No" from an empty collection — a
+  // wrong tick is a false written statement (Penal Law §210.45), sworn by the applicant.
+  const isSectionBKey = (k: string) => /^q\d+a?$/.test(k) // q10, q20a, q23 — not qN_explain
+  const hasDisclosureStore = Object.keys(disclosures).some(isSectionBKey)
+  if (hasDisclosureStore) {
+    for (const [k, val] of Object.entries(disclosures)) {
+      if (!isSectionBKey(k)) continue
+      if (val === "yes" || val === true) v[k] = "Yes"
+      else if (val === "no" || val === false) v[k] = "No"
+      // anything else → leave unset (not asked)
+    }
+  } else if ((intake.questionnaire?.length ?? 0) > 0) {
+    // LEGACY fallback only: an older case still carrying intake.questionnaire and no
+    // disclosure-store answers. Logged so the tail is visible. Keyed by NYPD question
+    // number (never array position).
+    // eslint-disable-next-line no-console
+    console.warn("buildApplicationValues: Section B fell back to legacy intake.questionnaire (no DSC-01/QUE-01 answers)")
+    for (const q of intake.questionnaire ?? []) v[`q${q.no}`] = q.yes ? "Yes" : "No"
+  }
+  // NOTE: q23/q24/q27/q28 are NO LONGER inferred from intake.arrays — an empty array
+  // is "not asked". Their explicit yes/no lives in the disclosure store above.
 
   return v
 }
