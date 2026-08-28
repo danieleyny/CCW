@@ -50,6 +50,9 @@ export const FIXTURES: Record<string, Record<string, unknown>[]> = {
   ],
   nypd_employment_record_request: [{ fullName: "A", address: "B", dob: "1990-01-01", ssn: "1" }],
   nypd_affidavit_familiarity: [{ county: "New York" }],
+  nypd_letter_of_necessity: [
+    { lop1: "Armored-car messenger; I transport currency and require a concealed handgun on route.", lop2: "Carried only for the job.", lop3: "Locked in the vault when off duty.", lop4: "Trained per DCJS.", lop5: "Will return the licence on termination.", lop6: "Read Penal Law Art. 35, 265, 400." },
+  ],
   nypd_disclosure_addendum: [
     { q10: "no", q12: "yes", q12_explain: "Prescribed a short course of medication by Dr. Lee in 2019; no ongoing use.", q23: "yes", q23_explain: "Arrest in 2015, New York County; charge dismissed and sealed." },
   ],

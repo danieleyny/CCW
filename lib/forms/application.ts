@@ -32,9 +32,13 @@ export function buildApplicationValues(
      *  "yes"/"no", plus `qN_explain`. This is the ONLY source that sets a sworn
      *  Section B box; an absent answer is "not asked", never "no". */
     disclosures?: Record<string, unknown>
+    /** The Letter of Necessity's six statements (LON-01, requirement_answers) —
+     *  lop1…lop6. They fill page 4 of the application AND the standalone LON form. */
+    letterOfNecessity?: Record<string, unknown>
   } = {}
 ): ApplicationValues {
   const disclosures = opts.disclosures ?? {}
+  const lon = opts.letterOfNecessity ?? {}
   const f = (k: string) => facts[k] ?? ""
   const citizenship = f("applicant.citizenship")
   const premises = intake.licenseType === "premises"
@@ -94,6 +98,13 @@ export function buildApplicationValues(
     safeguardRelation: f("safeguard.relation") || (intake.safeguardRelation ?? ""),
     safeguardAddress: f("safeguard.address") || (intake.safeguardAddress ?? ""),
     safeguardPhone: f("safeguard.phone") || (intake.safeguardPhone ?? ""),
+    // Letter of Necessity (page 4) — the six statements, from LON-01.
+    lop1: String(lon.lop1 ?? ""),
+    lop2: String(lon.lop2 ?? ""),
+    lop3: String(lon.lop3 ?? ""),
+    lop4: String(lon.lop4 ?? ""),
+    lop5: String(lon.lop5 ?? ""),
+    lop6: String(lon.lop6 ?? ""),
   }
 
   // Section B 10–28 — set ONLY from an EXPLICIT recorded answer. Three states matter:

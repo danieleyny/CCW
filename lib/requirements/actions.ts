@@ -325,6 +325,34 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     notarize: true,
     help: "Two non-family character references for a premises license. Each gets a private link to write and notarize their letter.",
   },
+  "LON-01": {
+    conciergeScope: "full",
+    mode: "generate",
+    actionLabel: "Prepare your Letter of Necessity",
+    questionnaireId: "letter-of-necessity",
+    // Fills the OFFICIAL letter-of-necessity.pdf ("the form provided must be used")
+    // AND page 4 of the prepared PD 643-041 from the same six values. Signed with the
+    // application at filing, so not signed in-platform (no signature widget).
+    templateKey: "nypd_letter_of_necessity",
+    signable: false,
+    documentType: "letter_of_necessity",
+    customerTitle: "Your Letter of Necessity",
+    help: "Carry licences for business or professional use require a Letter of Necessity on the NYPD's own form. Answer two questions about your work; the four acknowledgements are pre-filled for you to confirm.",
+  },
+  "PBR-01": {
+    conciergeScope: "full",
+    mode: "obtain",
+    actionLabel: "Add the public-records exemption (optional)",
+    documentType: "public_records_exemption",
+    sourceUrl: "https://licensing.nypdonline.org/",
+    steps: [
+      "Download the Request for Public-Records Exemption (PL §400.00(5)(b)) — it asks the NYPD to withhold your name and address from the public licensee record.",
+      "Complete it by hand (it isn't a fillable form) and sign it.",
+      "Upload the signed copy here to include it with your application.",
+    ],
+    customerTitle: "Public-records exemption (optional)",
+    help: "By default, a handgun licensee's name and address are a public record (PL §400.00(5)). This optional form asks the License Division to withhold yours. It costs a checkbox and a printed page.",
+  },
   "DSC-01": {
     conciergeScope: "hidden",
     mode: "generate",

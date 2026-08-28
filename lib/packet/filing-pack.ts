@@ -23,7 +23,10 @@ import { assemblePacket, mergePdfs, docOrderIndex } from "@/lib/packet/assemble"
 import { buildWorksheet } from "@/lib/requirements/worksheet"
 import { actionFor } from "@/lib/requirements/actions"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
-import type { WizardAnswers } from "@/lib/intake/answers"
+import { assembleApplicationValues } from "@/lib/forms/prepare"
+import { fillTemplate } from "@/lib/forms/fill"
+import { computeApplicationReadiness } from "@/lib/forms/application-readiness"
+import { stampIncompleteDraft } from "@/lib/forms/partial"
 
 type DB = SupabaseClient<Database>
 
@@ -54,8 +57,11 @@ export async function assembleFilingPack(admin: DB, caseId: string): Promise<Fil
   const applicant = client?.full_name ?? "Applicant"
   const appRef = (kase as unknown as { nypd_app_ref: string | null } | null)?.nypd_app_ref ?? null
 
-  const { data: session } = await admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle()
-  const answers = (session?.answers ?? {}) as WizardAnswers
+  // The assembled application values — the SAME resolver the prepared PD 643-041
+  // fills from (facts + intake + the canonical Section B store). Both the worksheet
+  // and the in-pack prepared form read these, so they can never disagree.
+  const assembled = await assembleApplicationValues(admin, caseId)
+  const appValues = assembled?.values ?? null
 
   // Which upload documents apply to this case, and whether each is in hand.
   const { data: reqRows } = await admin
@@ -81,28 +87,55 @@ export async function assembleFilingPack(admin: DB, caseId: string): Promise<Fil
   }
   guide.sort((a, b) => docOrderIndex(a.documentType) - docOrderIndex(b.documentType))
 
-  const worksheet = buildWorksheet(answers, {
-    applicantName: applicant,
-    phone: client?.phone ?? null,
-    email: client?.email ?? null,
-    zip: client?.zip ?? null,
-  })
+  const worksheet = appValues
+    ? buildWorksheet(appValues, {
+        applicantName: applicant,
+        phone: client?.phone ?? null,
+        email: client?.email ?? null,
+        zip: client?.zip ?? null,
+      })
+    : []
 
-  // ── The guide front-matter (one branded document) ─────────────────────────
-  const frontMatter = await buildPdf(
+  // PART 3 — the prepared PD 643-041 itself, first in the pack. The applicant's
+  // model is "download my package and go"; the filled form living behind a separate
+  // button meant they filed without it. Watermark it if it isn't ready, same as the
+  // standalone prepare.
+  let preparedApp: Uint8Array | null = null
+  if (appValues) {
+    const filled = await fillTemplate("nypd_handgun_application", appValues)
+    const readiness = computeApplicationReadiness(appValues, { licenseTrack: assembled!.track })
+    preparedApp = readiness.ready ? filled.bytes : await stampIncompleteDraft(filled.bytes, readiness.missing)
+  }
+
+  const pdfMeta = { docTitle: "Filing Pack", applicantName: applicant, caseRef: appRef ?? undefined }
+
+  // ── Cover / how-to-file (leads the pack; the prepared application follows it) ──
+  const cover = await buildPdf(
     (c) => {
       c.heading("Your Filing Pack", "Everything you need to submit your own application")
       c.para(
-        `You file your own application at ${PORTAL_URL} — we prepare and organize it, but only you (or a New York-licensed attorney) can submit it to the NYPD License Division. This pack has three parts: the answers to type in, a guide to which document goes where, and your assembled documents.`,
+        `You file your own application at ${PORTAL_URL} — we prepare and organize it, but only you (or a New York-licensed attorney) can submit it to the NYPD License Division. This pack leads with your prepared application, then the answers to type in, a guide to which document goes where, and your assembled documents.`,
         { size: 10.5 }
       )
       c.spacer()
       c.para(`Applicant: ${applicant}`, { size: 11 })
       if (appRef) c.para(`NYPD reference: ${appRef}`, { size: 10, color: "muted" })
+      if (preparedApp) {
+        c.spacer()
+        c.h2("Part 1 — Your prepared application (PD 643-041)")
+        c.para(
+          "The pages that follow are your Handgun License Application, filled from everything on file. Review every field, then use it as you enter your answers online. Your Social Security number and the handgun list are left blank to complete at filing. A form marked “DRAFT — INCOMPLETE” still has blanks — finish your details first.",
+          { size: 10 }
+        )
+      }
+    },
+    pdfMeta
+  )
 
-      // Part 1 — the worksheet
-      c.pageBreak()
-      c.h2("Part 1 — What to type into the application")
+  // ── Worksheet + upload guide (follow the prepared application) ─────────────
+  const guidePdf = await buildPdf(
+    (c) => {
+      c.h2("Part 2 — What to type into the application")
       c.para(
         `Enter these at ${PORTAL_URL}, in the order the form asks. Lines marked "enter at filing" are ones we deliberately don't store — like your Social Security number.`,
         { size: 10 }
@@ -117,9 +150,8 @@ export async function assembleFilingPack(admin: DB, caseId: string): Promise<Fil
         }
       }
 
-      // Part 2 — the upload guide
       c.pageBreak()
-      c.h2("Part 2 — Your documents, and where each goes")
+      c.h2("Part 3 — Your documents, and where each goes")
       c.para(
         `Upload each of these in the portal's document-upload section. A ✓ means we've prepared or received it and it's in the assembled packet that follows; a ▢ means it's still outstanding.`,
         { size: 10 }
@@ -142,15 +174,13 @@ export async function assembleFilingPack(admin: DB, caseId: string): Promise<Fil
         )
       }
     },
-    {
-      docTitle: "Filing Pack",
-      applicantName: applicant,
-      caseRef: appRef ?? undefined,
-    }
+    pdfMeta
   )
 
   const { pdf: docsPacket } = await assemblePacket(admin, caseId)
-  const pdf = await mergePdfs([frontMatter, docsPacket])
+  // Prepared application first — immediately after the cover/how-to — then the
+  // worksheet + upload guide, then the assembled supporting documents.
+  const pdf = await mergePdfs([cover, ...(preparedApp ? [preparedApp] : []), guidePdf, docsPacket])
 
   const provided = guide.filter((d) => d.provided).length
   return {

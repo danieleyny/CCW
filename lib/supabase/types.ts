@@ -5774,6 +5774,7 @@ export type Database = {
         | "affidavit_familiarity"
         | "safeguard_acknowledgement"
         | "affirmation_penal_law"
+        | "public_records_exemption"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6073,6 +6074,7 @@ export const Constants = {
         "affidavit_familiarity",
         "safeguard_acknowledgement",
         "affirmation_penal_law",
+        "public_records_exemption",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

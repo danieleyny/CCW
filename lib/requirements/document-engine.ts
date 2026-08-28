@@ -30,7 +30,7 @@ import {
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { SIGNING_CONSENT } from "@/lib/requirements/consent"
 import { buildWorksheet, type WorksheetContext } from "@/lib/requirements/worksheet"
-import type { WizardAnswers } from "@/lib/intake/answers"
+import type { ApplicationValues } from "@/lib/forms/application"
 
 type DB = SupabaseClient<Database>
 type DocumentType = Database["public"]["Enums"]["document_type"]
@@ -198,7 +198,7 @@ async function applicationWorksheet(
   sign: SignOpts,
   ctx?: WorksheetContext
 ) {
-  const sections = buildWorksheet(a as WizardAnswers, {
+  const sections = buildWorksheet(a as unknown as ApplicationValues, {
     applicantName: name,
     phone: ctx?.phone ?? null,
     email: ctx?.email ?? null,

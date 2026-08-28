@@ -110,7 +110,8 @@ const CANDOR_NOTICE =
  * 28←aliasName. **24, 25 and 26 are THREE separate questions** (against you / by you
  * against household or family / by you against another) — never collapsed. **21 and
  * 22 are separate** (mental illness/treatment vs any disability affecting safe
- * possession). Q20 folds the form's 20 and 20a (both ask about corporate licences).
+ * possession). **20 and 20a are separate** — 20 asks about the corporation/partnership
+ * (the ENTITY), 20a about any officer, director or partner (the PEOPLE).
  */
 export interface SectionBQuestion {
   no: string
@@ -119,7 +120,27 @@ export interface SectionBQuestion {
   explainHelp?: string
 }
 export const SECTION_B_QUESTIONS: SectionBQuestion[] = [
-  ...QUESTIONNAIRE.map((q) => ({ no: String(q.no), text: q.text })),
+  ...QUESTIONNAIRE.flatMap((q) =>
+    q.no === 20
+      ? [
+          // Q20 (the ENTITY) and Q20a (the PEOPLE) are DISTINCT questions on the form.
+          // An applicant whose company holds no licence but whose business partner
+          // personally holds one answers NO to 20 and YES to 20a.
+          {
+            no: "20",
+            text:
+              "Has any CORPORATION OR PARTNERSHIP of which you are an officer, director, or partner ever applied for or been issued a license or permit by the Police Department? (Give type, year, license number.)",
+          },
+          {
+            no: "20a",
+            text:
+              "Has any OFFICER, DIRECTOR OR PARTNER (other than you) ever applied for or been issued a license or permit by the Police Department? (Give type, year, license number.)",
+            explainHelp:
+              "This asks about the PEOPLE — a fellow officer, director, or business partner who personally holds or applied for a licence — even if the company itself never did.",
+          },
+        ]
+      : [{ no: String(q.no), text: q.text }]
+  ),
   {
     no: "23",
     text:
@@ -266,6 +287,55 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
         type: "yesno",
         help: "If yes, each adult 18+ also completes a cohabitant affidavit.",
       },
+    ],
+  },
+
+  // Letter of Necessity (LON-01) — the six statements page 4 of the application (and
+  // the standalone official form) require of a carry applicant. 1 and 3 are yours to
+  // write; 2, 4, 5 and 6 are the form's own acknowledgements, pre-filled for you to
+  // review and adjust. The same six values fill page 4 of your prepared PD 643-041.
+  "letter-of-necessity": {
+    id: "letter-of-necessity",
+    title: "Letter of Necessity",
+    intro:
+      "A carry licence for business or professional use requires a Letter of Necessity — the official form the NYPD provides (it must be used in all cases). Answer the two questions about your own situation; the four acknowledgements are pre-filled from the form's language for you to confirm or refine. You sign it as part of your application.",
+    submitLabel: "Prepare my Letter of Necessity",
+    prefill: () => ({
+      lop2:
+        "I acknowledge that the handgun may be carried only during the course of, and strictly in connection with, my job, business, or occupational requirements as described herein.",
+      lop4:
+        "I have been trained, or will receive training, in the use and safety of a handgun before carrying it.",
+      lop5:
+        "I (or my employer, if applicable) am aware of the responsibility to properly dispose of the handgun and return the licence to the License Division upon the termination of my employment or the cessation of the business.",
+      lop6:
+        "I have read and am familiar with the provisions of Penal Law Articles 35 (use of deadly force), 265 (criminal possession and use of a firearm), and 400 (responsibilities of a handgun licensee).",
+    }),
+    fields: [
+      {
+        name: "lop1",
+        label: "1. Your employment, and why it requires carrying a concealed handgun",
+        type: "textarea",
+        help: "A detailed description of your employment and the specific reason the work requires you to carry a concealed handgun.",
+        required: true,
+        maxLength: 1200,
+      },
+      {
+        name: "lop2",
+        label: "2. Acknowledgement — carried only for the job described",
+        type: "textarea",
+        maxLength: 800,
+      },
+      {
+        name: "lop3",
+        label: "3. How the handgun will be safeguarded when not in use",
+        type: "textarea",
+        help: "How you (and/or your employer) will safeguard the handgun when it is not being carried.",
+        required: true,
+        maxLength: 1200,
+      },
+      { name: "lop4", label: "4. Acknowledgement — trained in use and safety", type: "textarea", maxLength: 800 },
+      { name: "lop5", label: "5. Acknowledgement — disposal and licence return", type: "textarea", maxLength: 800 },
+      { name: "lop6", label: "6. Acknowledgement — familiar with Penal Law Art. 35, 265, 400", type: "textarea", maxLength: 800 },
     ],
   },
 

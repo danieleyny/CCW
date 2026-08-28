@@ -85,9 +85,10 @@ describe("nypd_handgun_application build() — the traps", () => {
     expect(out.choices?.AlienOrCitizen).toBe("Citizen")
     expect(out.choices?.SectionB10).toBe("No")
     expect(out.choices?.SectionB12).toBe("Yes")
-    // Row 1 gets no "To" (the form pre-prints PRESENT); row 2 does.
+    // Row 1 gets no "To" (the form pre-prints PRESENT); row 2 does. Dates render US
+    // MM/YYYY on the form (Part 6) though stored ISO.
     expect(out.text?.ResidenceTo1).toBeUndefined()
-    expect(out.text?.ResidenceTo2).toBe("2018-05")
-    expect(out.text?.ResidenceFrom1).toBe("2018-06")
+    expect(out.text?.ResidenceTo2).toBe("05/2018")
+    expect(out.text?.ResidenceFrom1).toBe("06/2018")
   })
 })

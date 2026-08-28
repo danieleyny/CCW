@@ -18,6 +18,7 @@
  *  - a template never declares both signable and notarize.
  *  - no two templates share a file/sha256.
  */
+import { usDate, usMonthYear } from "@/lib/forms/format"
 
 export interface FormTemplate {
   key: string
@@ -415,7 +416,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         "Email Address": s(v.email),
         "4 Place of Birth  City State Country": s(v.placeOfBirth),
         Age: s(v.age),
-        "Date of Birth": s(v.dob),
+        "Date of Birth": usDate(s(v.dob)), // stored ISO, printed MM/DD/YYYY
         "Hgt inches": s(v.height),
         Wgt: s(v.weight),
         Sex: s(v.sex),
@@ -432,8 +433,8 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
         "9 Basic License Number": s(v.outOfCityLicenseNumber),
         "Issued By": s(v.outOfCityIssuedBy),
         County: s(v.outOfCityCounty),
-        "Date Issued": s(v.outOfCityIssuedOn),
-        "Expiration Date": s(v.outOfCityExpiresOn),
+        "Date Issued": usDate(s(v.outOfCityIssuedOn)),
+        "Expiration Date": usDate(s(v.outOfCityExpiresOn)),
         LicenseNumber_renewal_applicant: s(v.renewalLicenseNumber),
         // Q30 safeguarding + Q31 (SPLIT across two lines: name/relation/address, phone).
         "30_How_will_guns_be_Safeguarded": s(v.safeguardMethod),
@@ -449,15 +450,15 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
       const res = Array.isArray(v.residenceHistory) ? (v.residenceHistory as Record<string, unknown>[]) : []
       res.slice(0, 4).forEach((r, i) => {
         const n = i + 1
-        text[`ResidenceFrom${n}`] = s(r.fromMonth)
-        if (n > 1) text[`ResidenceTo${n}`] = s(r.toMonth) || "PRESENT"
+        text[`ResidenceFrom${n}`] = usMonthYear(s(r.fromMonth)) // column reads "MONTH AND YEAR"
+        if (n > 1) text[`ResidenceTo${n}`] = usMonthYear(s(r.toMonth)) || "PRESENT"
         text[`ResidenceAddress${n}`] = s(r.address)
       })
       const emp = Array.isArray(v.employmentHistory) ? (v.employmentHistory as Record<string, unknown>[]) : []
       emp.slice(0, 4).forEach((r, i) => {
         const n = i + 1
-        text[`EmploymentFrom${n}`] = s(r.fromMonth)
-        if (n > 1) text[`EmploymentTo${n}`] = s(r.toMonth) || "PRESENT"
+        text[`EmploymentFrom${n}`] = usMonthYear(s(r.fromMonth))
+        if (n > 1) text[`EmploymentTo${n}`] = usMonthYear(s(r.toMonth)) || "PRESENT"
         text[`EmploymentAddress${n}`] = [s(r.employerName), s(r.employerAddress)].filter(Boolean).join(", ")
         text[`EmploymentOccupation${n}`] = s(r.occupation)
       })
@@ -475,6 +476,46 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
       }
       return { text, choices }
     },
+  },
+
+  // ── Letter of Necessity (LON-01) — carry applicants ────────────────────────
+  // Page 4 of the application ("In ALL CASES the form provided must be used"). The
+  // six statements also fill page 4 of the prepared PD 643-041 from the SAME values
+  // (build reads v.lop1…lop6 there) — one source, two surfaces. Signed with the
+  // application at filing, so no in-platform signature widget: the date line stays
+  // blank until then. 1 and 3 are applicant-specific and required; 2/4/5/6 are the
+  // form's acknowledgements (pre-filled, editable) — see the letter-of-necessity
+  // questionnaire.
+  nypd_letter_of_necessity: {
+    key: "nypd_letter_of_necessity",
+    file: "letter-of-necessity.pdf",
+    officialTitle: "Letter of Necessity (carry applicants)",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/letter-of-necessity`,
+    isFillable: true,
+    fontSize: 9,
+    dateField: "LetterOfNecessitySignatureDate",
+    signatureOnly: ["LetterOfNecessitySignatureDate"],
+    requires: ["LetterOfNecessity1", "LetterOfNecessity3"],
+    build: (v) => {
+      const text: Record<string, string> = {}
+      for (const n of [1, 2, 3, 4, 5, 6]) text[`LetterOfNecessity${n}`] = s(v[`lop${n}`])
+      return { text }
+    },
+  },
+
+  // ── Public-records exemption (PBR-01) — OPTIONAL, hand-filled for v1 ─────────
+  // The official PDF has no AcroForm fields, so it is offered as a fillable-by-hand
+  // download with a plain explanation of PL §400.00(5)(b). A real concierge value-add
+  // at the cost of a checkbox and a printed page.
+  nypd_public_records_exemption: {
+    key: "nypd_public_records_exemption",
+    file: "public-records-exemption.pdf",
+    officialTitle: "Request for Public-Records Exemption (PL §400.00(5)(b))",
+    issuingAuthority: "NYPD License Division",
+    sourceUrl: `${BASE}/public-records-exemption`,
+    isFillable: false,
+    downloadOnly: true,
   },
 
   // ── Company / Carry Guard application (SPN-01) — sponsor completes ──────────
