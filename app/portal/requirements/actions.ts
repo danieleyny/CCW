@@ -9,6 +9,7 @@ import { resolveFacts } from "@/lib/facts/resolve"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { computeApplicationReadiness } from "@/lib/forms/application-readiness"
 import { stampIncompleteDraft } from "@/lib/forms/partial"
+import { rematerializeCase } from "@/lib/requirements/rematerialize"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
@@ -75,6 +76,16 @@ export async function saveRequirementAnswers(
   // Propagate fact-backed fields to case_facts — entered once, reused everywhere.
   // Derived facts are read-only; the SSN is handled at fill time (encrypted store).
   await propagateFacts(actor, reqCode, answers)
+
+  // A saved disclosure changes what the application requires: a "yes" to a Section B
+  // question must spawn the PD 643-041A addendum and the matching statement
+  // requirement (arrest, order of protection, domestic incident, name change) in THIS
+  // request — not only if the applicant once passed through the wizard. Re-materialize
+  // from the canonical stores whenever the Section B answers change.
+  if (reqCode === "DSC-01" || reqCode === "QUE-01") {
+    await rematerializeCase(createAdminClient(), actor.caseId)
+    revalidatePath("/portal/concierge")
+  }
 
   revalidatePath("/portal/checklist")
   return { ok: true }

@@ -241,28 +241,46 @@ export function eligibilityGate(a: WizardAnswers): EligibilityResult {
  * `isRenewal` comes from the CASE (cases.is_renewal), not the wizard — the
  * caller passes it in.
  */
+/** The generator's conditional flags, resolved from the canonical stores. Defined
+ *  here (client-safe) so the server-only resolver in lib/requirements/conditions.ts
+ *  and this mapper share one shape without pulling `server-only` into client bundles. */
+export interface ConditionFlags {
+  hasArrestHistory: boolean
+  hasOopHistory: boolean
+  hasDomesticIncident: boolean
+  hasNameChange: boolean
+  isVeteran: boolean
+  anyQuestionYes: boolean
+  hasCohabitants: boolean
+}
+
 export function toGeneratorAnswers(
   a: WizardAnswers,
   opts: {
     isRenewal?: boolean
     /** Derived armed-guard flags from resolveArmedTrack(); absent for non-sponsored cases. */
     armed?: { isArmedGuard: boolean; needsPreLicenseExemption: boolean; needsCountyLicenseDoc: boolean }
+    /** Conditional flags resolved from the CANONICAL stores (deriveConditionFlags).
+     *  When present they WIN over the wizard-derived defaults below — a concierge case
+     *  has an empty wizard, so these are the only truthful source. */
+    conditions?: Partial<ConditionFlags>
   } = {}
 ): GeneratorAnswers {
   const premises = a.licenseType === "premises"
+  const c = opts.conditions
   return {
     isCarry: !premises,
     isPremises: premises,
     isRenewal: !!opts.isRenewal,
     isRetiredLeo: !!a.isRetiredLeo,
-    hasCohabitants: (a.cohabitants?.length ?? 0) > 0,
-    hasArrestHistory: (a.arrests?.length ?? 0) > 0,
-    hasOopHistory: (a.ordersOfProtection?.length ?? 0) > 0,
-    hasDomesticIncident: (a.domesticIncidents?.length ?? 0) > 0,
+    hasCohabitants: c?.hasCohabitants ?? (a.cohabitants?.length ?? 0) > 0,
+    hasArrestHistory: c?.hasArrestHistory ?? (a.arrests?.length ?? 0) > 0,
+    hasOopHistory: c?.hasOopHistory ?? (a.ordersOfProtection?.length ?? 0) > 0,
+    hasDomesticIncident: c?.hasDomesticIncident ?? (a.domesticIncidents?.length ?? 0) > 0,
     lprUnder7yr: a.citizenship === "lpr" && !!a.lprUnder7yr,
-    isVeteran: !!a.isVeteran,
-    hasNameChange: !!a.hasNameChange,
-    anyQuestionYes: (a.questionnaire ?? []).some((q) => q.yes),
+    isVeteran: c?.isVeteran ?? !!a.isVeteran,
+    hasNameChange: c?.hasNameChange ?? !!a.hasNameChange,
+    anyQuestionYes: c?.anyQuestionYes ?? (a.questionnaire ?? []).some((q) => q.yes),
     isArmedGuard: !!opts.armed?.isArmedGuard,
     needsPreLicenseExemption: !!opts.armed?.needsPreLicenseExemption,
     needsCountyLicenseDoc: !!opts.armed?.needsCountyLicenseDoc,
