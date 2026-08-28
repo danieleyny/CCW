@@ -67,6 +67,7 @@ export function RequirementAction({
   feeReceipts,
   dmvApplicant,
   lockParty,
+  isLeo,
 }: {
   reqCode: string
   status: string
@@ -90,6 +91,8 @@ export function RequirementAction({
   /** Co-authored document (Letter of Necessity) on a sponsored case: the viewing
    *  party. The other party's fields render read-only. Absent ⇒ nothing locked. */
   lockParty?: "applicant" | "sponsor"
+  /** Law-enforcement applicant — unlocks the leoOnly disclosure (portal Q16). */
+  isLeo?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [signing, setSigning] = useState(false)
@@ -195,6 +198,7 @@ export function RequirementAction({
             initial={prefill}
             signatureOnFile={signatureOnFile}
             lockParty={lockParty}
+            isLeo={isLeo}
           />
         )}
       </div>
@@ -380,6 +384,7 @@ export function RequirementAction({
             initial={prefill}
             signatureOnFile={signatureOnFile}
             lockParty={lockParty}
+            isLeo={isLeo}
           />
         )}
       </div>

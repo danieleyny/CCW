@@ -57,7 +57,7 @@ describe("requirement → action map", () => {
   it("disclosure material is hidden from trainers; third-party documents are progress-only", () => {
     // Seeing "ARR-01" on a checklist tells you the applicant has an arrest
     // history — the row must be absent, not merely redacted.
-    for (const code of ["DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01", "GMC-01"]) {
+    for (const code of ["DSC-01", "ARR-01", "OOP-01", "DIR-01", "GMC-01"]) {
       expect(conciergeScopeFor(code), `${code} must be hidden`).toBe("hidden")
     }
     // Written and notarized by people who never signed up for this.
@@ -117,7 +117,7 @@ describe("requirement → action map", () => {
     )
 
     it("documents the applicant signs are signable; the ones others sign are not", () => {
-      for (const code of ["AFF-01", "SAF-01", "SOC-01", "DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01"]) {
+      for (const code of ["AFF-01", "SAF-01", "SOC-01", "DSC-01", "ARR-01", "OOP-01", "DIR-01"]) {
         expect(isSignable(actionFor(code)), `${code} must require a signature`).toBe(true)
       }
       // Reference letters are signed by the reference through the token flow.

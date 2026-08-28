@@ -39,7 +39,7 @@ describe("computeNextStep", () => {
       intakeDone: true,
       stage: "document_collection",
     })
-    expect(s.title).toContain("written explanations")
+    expect(s.title).toContain("disclosure questions")
   })
 
   it("leaves optional items for last — SOC-01 is enjoined, it can wait", () => {

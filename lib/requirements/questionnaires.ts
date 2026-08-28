@@ -15,6 +15,7 @@
  * more damaging than the underlying event. Nothing here may suggest omitting.
  */
 import { type WizardAnswers, QUESTIONNAIRE } from "@/lib/intake/answers"
+import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 
 /**
  * Everything we already know about the applicant. Name/borough/ZIP live on the
@@ -65,6 +66,9 @@ export interface Field {
    */
   blockOnYes?: string
   maxLength?: number
+  /** Shown only to law-enforcement applicants (portal Q16). Hidden — and never
+   *  recorded — for everyone else. */
+  leoOnly?: boolean
   /**
    * On a SPONSORED case, who owns this field. The Letter of Necessity is co-authored:
    * the employer supplies the business-knowledge statements (1, 3, 5) and the
@@ -123,69 +127,54 @@ const CANDOR_NOTICE =
  * possession). **20 and 20a are separate** — 20 asks about the corporation/partnership
  * (the ENTITY), 20a about any officer, director or partner (the PEOPLE).
  */
-export interface SectionBQuestion {
-  no: string
-  text: string
-  /** Names the specific sub-facts the official form wants inside the explanation. */
-  explainHelp?: string
+/**
+ * The disclosure questionnaire fields, built from the verbatim NYPD ONLINE PORTAL
+ * question set (lib/disclosures/portal-questions). Seventeen questions; a "Yes"
+ * reveals a free-text explanation. Q6 nests under Q5 (only asked if Q5 is yes); Q7
+ * carries the verbatim arrest note and a felony/serious-offense sub-question that
+ * drives the Certificate of Relief; Q16 is law-enforcement only (leoOnly, hidden
+ * unless the case is a LEO applicant); Q17 is a confidentiality REQUEST (no
+ * explanation) whose "Yes" spawns the Public Records Exemption form.
+ */
+function disclosureFields(): Field[] {
+  const fields: Field[] = []
+  for (const q of PORTAL_DISCLOSURES) {
+    if (q.conditionalOnYesOf) continue // nested under its parent (Q6 under Q5)
+    if (q.isConfidentialityRequest) {
+      fields.push({
+        name: `q${q.no}`,
+        label: `${q.no}. ${q.text}`,
+        type: "yesno",
+        help: "A request, not a disclosure. Answering yes means we prepare the New York State Request for Public Records Exemption for you to complete and upload.",
+      })
+      continue
+    }
+    const reveal: Field[] = [
+      { name: `q${q.no}_explain`, label: "In your own words, what happened?", type: "textarea", required: true, help: q.explainHelp, maxLength: 4000 },
+    ]
+    // Q5 → nest Q6 (dishonorable discharge), only asked when Q5 is yes.
+    const child = PORTAL_DISCLOSURES.find((c) => c.conditionalOnYesOf === q.no)
+    if (child) reveal.push({ name: `q${child.no}`, label: child.text, type: "yesno" })
+    // Q7 → felony / serious-offense conviction sub-question (drives Certificate of Relief).
+    if (q.no === 7) {
+      reveal.push({
+        name: "q7_felony",
+        label: "Were you ever convicted of, or did you plead guilty to, a felony or a serious offense as defined in Penal Law § 265.00(17)?",
+        type: "yesno",
+        help: "If yes, an ORIGINAL Certificate of Relief from Disabilities must be submitted. A dismissed or sealed arrest with no conviction does not require one.",
+      })
+    }
+    fields.push({
+      name: `q${q.no}`,
+      label: `${q.no}. ${q.text}`,
+      type: "yesno",
+      help: q.note, // Q7's verbatim arrest note; undefined elsewhere
+      leoOnly: q.leoOnly,
+      revealOnYes: reveal,
+    })
+  }
+  return fields
 }
-export const SECTION_B_QUESTIONS: SectionBQuestion[] = [
-  ...QUESTIONNAIRE.flatMap((q) =>
-    q.no === 20
-      ? [
-          // Q20 (the ENTITY) and Q20a (the PEOPLE) are DISTINCT questions on the form.
-          // An applicant whose company holds no licence but whose business partner
-          // personally holds one answers NO to 20 and YES to 20a.
-          {
-            no: "20",
-            text:
-              "Has any CORPORATION OR PARTNERSHIP of which you are an officer, director, or partner ever applied for or been issued a license or permit by the Police Department? (Give type, year, license number.)",
-          },
-          {
-            no: "20a",
-            text:
-              "Has any OFFICER, DIRECTOR OR PARTNER (other than you) ever applied for or been issued a license or permit by the Police Department? (Give type, year, license number.)",
-            explainHelp:
-              "This asks about the PEOPLE — a fellow officer, director, or business partner who personally holds or applied for a licence — even if the company itself never did.",
-          },
-        ]
-      : [{ no: String(q.no), text: q.text }]
-  ),
-  {
-    no: "23",
-    text:
-      "Been arrested, indicted, or summonsed for ANY offense other than parking violations, in ANY jurisdiction — federal, state, local, or foreign? You must include cases that were dismissed and/or the record sealed.",
-    explainHelp:
-      "For each: the date and time, the charge(s), how it was resolved (the disposition), and the court and police agency. You'll add each Certificate of Disposition separately.",
-  },
-  {
-    no: "24",
-    text: "Have you ever had, or do you now have, an Order of Protection issued AGAINST you?",
-    explainHelp:
-      "For each: the court and date of issuance, the complainant's name, address and telephone number, their relationship to you, and the reason it was issued.",
-  },
-  {
-    no: "25",
-    text:
-      "Have you ever had an Order of Protection issued BY you against a member of your household or any family member?",
-    explainHelp: "For each: the court and date of issuance, the other party, their relationship to you, and the reason.",
-  },
-  {
-    no: "26",
-    text: "Have you ever had an Order of Protection issued BY you against a person other than a member of your household or family?",
-    explainHelp: "For each: the court and date of issuance, the other party, and the reason.",
-  },
-  {
-    no: "27",
-    text: "Have the police ever responded to a domestic incident in which you were involved?",
-    explainHelp: "Disclose it even if no arrest or charges followed.",
-  },
-  {
-    no: "28",
-    text: "Have you used any variation in the spelling of your name, or any other name (an alias)?",
-    explainHelp: "List each name or spelling you have used, and when.",
-  },
-]
 
 export const QUESTIONNAIRES: Record<string, Questionnaire> = {
   // ── Affidavit of Familiarity with Rules and Law (38 RCNY 5-33) — NOTARISED ──
@@ -449,70 +438,17 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
 
   "disclosure-addendum": {
     id: "disclosure-addendum",
-    title: "The application's history questions (10–28)",
+    title: "The application's disclosure questions",
     intro:
-      "The NYPD application asks questions 10 through 28 about your history. We've carried over what you told us in intake — confirm each answer and, for every 'yes', add a written explanation. Every 'yes' needs its own explanation on the Handgun License Application Addendum (PD 643-041A). This is the part of the application people get wrong.",
+      "The NYPD online portal asks these seventeen questions about your history, in these exact words. Answer each honestly; for every 'yes', add a written explanation. These are the answers we record and enter for you — the part people get wrong. Disclose everything, including anything sealed, dismissed, or nullified.",
     notice: CANDOR_NOTICE,
     attorneySeam: true,
-    submitLabel: "Generate my documents",
-    // Prefill from intake so this is CONFIRMATION, not a second interrogation.
-    // Questions 10–22 carry over from the intake Section-B questionnaire (including a
-    // 'no' the applicant gave); 23←arrests, 24←orders of protection, 27←domestic
-    // incidents, 28←alias carry over from their dedicated intake flows. Q25/26 (an
-    // order of protection issued BY the applicant) have no intake flow, so they are
-    // deliberately NOT pre-answered — a blank is honest, a pre-filled 'no' could
-    // suppress a disclosure (candor).
-    prefill: (ctx) => {
-      const joinNarr = (rows: { occurredOn?: string; jurisdiction?: string; narrative?: string }[]) =>
-        rows
-          .map((r) => [r.occurredOn, r.jurisdiction, r.narrative].filter(Boolean).join(" — "))
-          .filter(Boolean)
-          .join("\n\n")
-      const byNo = new Map((ctx.intake.questionnaire ?? []).map((q) => [String(q.no), q]))
-      const out: Record<string, unknown> = {}
-      // Q10–22 from the intake questionnaire.
-      for (const q of ctx.intake.questionnaire ?? []) {
-        out[`q${q.no}`] = q.yes ? "yes" : "no"
-        if (q.narrative) out[`q${q.no}_explain`] = q.narrative
-      }
-      // Ensure every 10–22 has an explicit answer even if intake left it blank.
-      for (const q of QUESTIONNAIRE) if (!byNo.has(String(q.no))) out[`q${q.no}`] = "no"
-      // Q23–28 from their dedicated intake flows.
-      const arrests = ctx.intake.arrests ?? []
-      const oops = ctx.intake.ordersOfProtection ?? []
-      const dirs = ctx.intake.domesticIncidents ?? []
-      out.q23 = arrests.length > 0 ? "yes" : "no"
-      if (arrests.length) out.q23_explain = joinNarr(arrests)
-      out.q24 = oops.length > 0 ? "yes" : "no"
-      if (oops.length) out.q24_explain = joinNarr(oops)
-      out.q27 = dirs.length > 0 ? "yes" : "no"
-      if (dirs.length) out.q27_explain = joinNarr(dirs)
-      if (ctx.intake.aliasName?.trim()) {
-        out.q28 = "yes"
-        out.q28_explain = ctx.intake.aliasName.trim()
-      } else {
-        out.q28 = "no"
-      }
-      return out
-    },
-    // Data-driven from the canonical Section-B list — every question 10–28, in the
-    // form's own words, with 21/22 and 24/25/26 as distinct items. A "yes" reveals
-    // an explanation naming the specific sub-facts the form asks for.
-    fields: SECTION_B_QUESTIONS.map((q) => ({
-      name: `q${q.no}`,
-      label: `${q.no}. ${q.text}`,
-      type: "yesno" as const,
-      revealOnYes: [
-        {
-          name: `q${q.no}_explain`,
-          label: "In your own words, what happened?",
-          type: "textarea" as const,
-          required: true,
-          help: q.explainHelp,
-          maxLength: 4000,
-        },
-      ],
-    })),
+    submitLabel: "Save my answers",
+    // No prefill from the old paper-form intake: the portal question set is materially
+    // different (drugs split into three, Q14 is the PROTECTED person, corporate/subpoena
+    // questions gone), so a carried-over answer could be wrong on a sworn form. Fresh
+    // answers, every one — see PORTAL_ALIGNMENT_REBUILD "migrate nothing blindly".
+    fields: disclosureFields(),
   },
 
   "arrest-statements": {

@@ -18,7 +18,7 @@ import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { buildPdf, longDate } from "@/lib/pdf/builder"
-import { SECTION_B_QUESTIONS } from "@/lib/requirements/questionnaires"
+import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import {
   affirmationOfUnderstanding,
   socialMediaDisclosure,
@@ -76,14 +76,14 @@ const isYes = (v: unknown): boolean => v === true || v === "yes"
  * is a misuse of the form.
  */
 async function disclosureAddendum(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
-  const items = SECTION_B_QUESTIONS.filter((q) => isYes(a[`q${q.no}`])).map((q) => ({
+  const items = PORTAL_DISCLOSURES.filter((q) => isYes(a[`q${q.no}`])).map((q) => ({
     no: q.no,
     q: q.text,
     explain: str(a[`q${q.no}_explain`]),
   }))
 
   return buildPdf((c) => {
-    c.heading("Handgun License Application — Addendum", "PD 643-041A · written explanations for “yes” answers to questions 10–28")
+    c.heading("Handgun License Application — Addendum", "Written explanations for every “yes” disclosure answer")
     c.rule()
     c.para(
       "Each explanation below corresponds, by question number, to a “yes” answer on the application. Sealed, dismissed, and nullified matters are disclosed here notwithstanding CPL Article 160.",
@@ -113,10 +113,10 @@ async function disclosureSummary(name: string, a: Record<string, unknown>, sig: 
   return buildPdf((c) => {
     c.heading(
       "Disclosure Summary — internal worksheet",
-      "NOT an NYPD form. Your complete answers to application questions 10–28, kept so you and your case team can transcribe them into the NYPD portal accurately."
+      "NOT an NYPD form. Your complete answers to the portal disclosure questions, kept so you and your case team can transcribe them into the NYPD portal accurately."
     )
     c.rule()
-    for (const q of SECTION_B_QUESTIONS) {
+    for (const q of PORTAL_DISCLOSURES) {
       const yes = isYes(a[`q${q.no}`])
       c.h2(`${q.no}. ${yes ? "Yes" : "No"}`)
       c.para(q.text, { color: "muted", size: 9 })

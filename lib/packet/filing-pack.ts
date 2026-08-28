@@ -24,9 +24,6 @@ import { buildWorksheet } from "@/lib/requirements/worksheet"
 import { actionFor } from "@/lib/requirements/actions"
 import { isSystemVerified } from "@/lib/requirements/system-checks"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
-import { fillTemplate } from "@/lib/forms/fill"
-import { computeApplicationReadiness } from "@/lib/forms/application-readiness"
-import { stampIncompleteDraft } from "@/lib/forms/partial"
 
 type DB = SupabaseClient<Database>
 
@@ -96,16 +93,10 @@ export async function assembleFilingPack(admin: DB, caseId: string): Promise<Fil
       })
     : []
 
-  // PART 3 — the prepared PD 643-041 itself, first in the pack. The applicant's
-  // model is "download my package and go"; the filled form living behind a separate
-  // button meant they filed without it. Watermark it if it isn't ready, same as the
-  // standalone prepare.
-  let preparedApp: Uint8Array | null = null
-  if (appValues) {
-    const filled = await fillTemplate("nypd_handgun_application", appValues)
-    const readiness = computeApplicationReadiness(appValues, { licenseTrack: assembled!.track })
-    preparedApp = readiness.ready ? filled.bytes : await stampIncompleteDraft(filled.bytes, readiness.missing)
-  }
+  // PORTAL_ALIGNMENT_REBUILD: we no longer produce a filled PD 643-041 — the portal
+  // is the filing surface and staff transcribe from the worksheet. The paper-form fill
+  // is retired here (deleted in the final phase); the pack leads with the worksheet.
+  const preparedApp: Uint8Array | null = null
 
   const pdfMeta = { docTitle: "Filing Pack", applicantName: applicant, caseRef: appRef ?? undefined }
 

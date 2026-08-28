@@ -34,6 +34,7 @@ export function QuestionnaireDialog({
   caseId,
   canAdopt = true,
   lockParty,
+  isLeo,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -51,9 +52,14 @@ export function QuestionnaireDialog({
    *  viewing. Fields owned by the OTHER party render read-only — the save layer
    *  enforces the same split, this just shows it. Absent ⇒ no field is locked. */
   lockParty?: "applicant" | "sponsor"
+  /** Whether this is a law-enforcement applicant. leoOnly fields (portal Q16) are
+   *  hidden — and never validated or recorded — for everyone else. */
+  isLeo?: boolean
 }) {
   const isLocked = (f: Field) => !!lockParty && !!f.party && f.party !== lockParty
   const otherLabel = lockParty === "applicant" ? "your employer" : "the applicant"
+  // leoOnly questions never render, validate, or persist for a non-LEO applicant.
+  const visibleFields = (questionnaire.fields ?? []).filter((f) => !f.leoOnly || isLeo)
   const [values, setValues] = useState<Values>(initial)
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
   const [step, setStep] = useState<"answers" | "sign">("answers")
@@ -134,7 +140,7 @@ export function QuestionnaireDialog({
       // GENERATE: every yes/no question must be answered before we produce the
       // document, and a "yes" on a per-se prohibitor blocks generation and routes
       // to an attorney instead. yesno fields are always top-level in our schemas.
-      const yesNoFields = (questionnaire.fields ?? []).filter((f) => f.type === "yesno")
+      const yesNoFields = visibleFields.filter((f) => f.type === "yesno")
       const answered = (v: unknown) => v === "yes" || v === "no" || v === true || v === false
       const isYes = (v: unknown) => v === "yes" || v === true
 
@@ -154,7 +160,7 @@ export function QuestionnaireDialog({
       // Ephemeral fields (e.g. SSN) are filled into the PDF but NEVER saved: split
       // them out of the persisted answers and pass them transiently to generation.
       const ephemeralNames = new Set<string>()
-      for (const f of questionnaire.fields ?? []) {
+      for (const f of visibleFields) {
         if (f.ephemeral) ephemeralNames.add(f.name)
         for (const sub of f.revealOnYes ?? []) if (sub.ephemeral) ephemeralNames.add(sub.name)
       }
@@ -335,7 +341,7 @@ export function QuestionnaireDialog({
             </div>
           )}
 
-          {(questionnaire.fields ?? []).map((f) =>
+          {visibleFields.map((f) =>
             renderField(f, values[f.name], (v) => set(f.name, v), "f")
           )}
 

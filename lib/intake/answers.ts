@@ -252,6 +252,10 @@ export interface ConditionFlags {
   isVeteran: boolean
   anyQuestionYes: boolean
   hasCohabitants: boolean
+  /** Portal Q7 sub-question: a felony/serious-offense conviction → Certificate of Relief. */
+  hasFelonyConviction: boolean
+  /** Portal Q17: the confidentiality opt-in → Public Records Exemption form. */
+  wantsConfidentiality: boolean
 }
 
 export function toGeneratorAnswers(
@@ -281,6 +285,8 @@ export function toGeneratorAnswers(
     isVeteran: c?.isVeteran ?? !!a.isVeteran,
     hasNameChange: c?.hasNameChange ?? !!a.hasNameChange,
     anyQuestionYes: c?.anyQuestionYes ?? (a.questionnaire ?? []).some((q) => q.yes),
+    hasFelonyConviction: !!c?.hasFelonyConviction, // portal-only; no wizard equivalent
+    wantsConfidentiality: !!c?.wantsConfidentiality,
     isArmedGuard: !!opts.armed?.isArmedGuard,
     needsPreLicenseExemption: !!opts.armed?.needsPreLicenseExemption,
     needsCountyLicenseDoc: !!opts.armed?.needsCountyLicenseDoc,
