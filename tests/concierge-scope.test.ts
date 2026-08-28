@@ -21,12 +21,14 @@ const admin = adminClient()
  * Named, not derived. Relaxing any of these means editing this list, which means
  * writing down why in a code review — exactly the friction it should have.
  */
-const MUST_BE_HIDDEN = ["DSC-01", "QUE-01", "ARR-01", "OOP-01", "DIR-01", "GMC-01"]
+const MUST_BE_HIDDEN = ["DSC-01", "ARR-01", "OOP-01", "DIR-01", "GMC-01"]
 const MUST_BE_PROGRESS = ["COH-01", "REF-01", "REF-02"]
 
 describe.skipIf(!reachable)("concierge classification", () => {
   it("the database agrees with the TypeScript map on every requirement", async () => {
-    const { data } = await admin.from("requirements").select("req_code, concierge_scope")
+    // Active versions only — a retired requirement (QUE-01) keeps its historical row
+    // but no longer has a TS action entry.
+    const { data } = await admin.from("requirements").select("req_code, concierge_scope").is("effective_to", null)
     const mismatches: string[] = []
     for (const row of data ?? []) {
       const ts = conciergeScopeFor(row.req_code)

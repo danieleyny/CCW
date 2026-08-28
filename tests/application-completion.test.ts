@@ -12,27 +12,32 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 const noSources = { disclosures: null, cohabitantCount: 0, nameChangeFact: false }
 
 describe("deriveConditionFlags — canonical store first", () => {
-  it("reads Section B 'yes' from the disclosure store for a concierge case (empty wizard)", () => {
+  it("reads a 'yes' from the portal disclosure store for a concierge case (empty wizard)", () => {
+    // Portal question numbers: q5 armed forces, q7 arrest, q13 OOP against you,
+    // q15 domestic, q1 alias, q7_felony conviction, q17 confidentiality.
     const { flags, source } = deriveConditionFlags(null, {
       ...noSources,
-      disclosures: { q15: "yes", q23: "yes", q24: "no", q27: "yes", q28: "no" },
+      disclosures: { q5: "yes", q7: "yes", q7_felony: "yes", q13: "no", q15: "yes", q1: "no", q17: "yes" },
     })
     expect(source.sectionB).toBe("disclosure-store")
     expect(flags.anyQuestionYes).toBe(true)
-    expect(flags.hasArrestHistory).toBe(true) // q23
-    expect(flags.hasDomesticIncident).toBe(true) // q27
-    expect(flags.isVeteran).toBe(true) // q15
-    expect(flags.hasOopHistory).toBe(false) // q24/25/26 all no
-    expect(flags.hasNameChange).toBe(false) // q28 no
+    expect(flags.hasArrestHistory).toBe(true) // q7
+    expect(flags.hasDomesticIncident).toBe(true) // q15
+    expect(flags.isVeteran).toBe(true) // q5
+    expect(flags.hasOopHistory).toBe(false) // q13 no
+    expect(flags.hasNameChange).toBe(false) // q1 no
+    expect(flags.hasFelonyConviction).toBe(true) // q7_felony → Certificate of Relief
+    expect(flags.wantsConfidentiality).toBe(true) // q17 → Public Records Exemption
   })
 
   it("an all-'no' disclosure store spawns nothing", () => {
     const disclosures = Object.fromEntries(
-      ["10", "15", "23", "24", "25", "26", "27", "28"].map((n) => [`q${n}`, "no"])
+      ["1", "5", "7", "13", "14", "15"].map((n) => [`q${n}`, "no"])
     )
     const { flags } = deriveConditionFlags(null, { ...noSources, disclosures })
     expect(flags.anyQuestionYes).toBe(false)
     expect(flags.hasArrestHistory).toBe(false)
+    expect(flags.hasFelonyConviction).toBe(false)
   })
 
   it("falls back to WizardAnswers when there is no disclosure store", () => {
@@ -46,11 +51,11 @@ describe("deriveConditionFlags — canonical store first", () => {
     expect(flags.anyQuestionYes).toBe(true)
   })
 
-  it("the cohabitant roster and a name-change fact win regardless of Q28", () => {
-    const { flags, source } = deriveConditionFlags(null, { disclosures: { q28: "no" }, cohabitantCount: 2, nameChangeFact: true })
+  it("the cohabitant roster and a name-change fact win regardless of Q1", () => {
+    const { flags, source } = deriveConditionFlags(null, { disclosures: { q1: "no" }, cohabitantCount: 2, nameChangeFact: true })
     expect(flags.hasCohabitants).toBe(true)
     expect(source.cohabitants).toBe("roster")
-    expect(flags.hasNameChange).toBe(true) // the alias fact overrides a Q28 'no'
+    expect(flags.hasNameChange).toBe(true) // the alias fact overrides a Q1 'no'
   })
 })
 

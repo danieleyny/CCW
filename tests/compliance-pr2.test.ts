@@ -1,38 +1,62 @@
 /**
- * COMPLIANCE PR2 — Part C, all of Section B.
- *   C1 — the disclosure questionnaire asks every question 10–28, with 24/25/26 and
- *        21/22 as distinct items.
- *   C2 — two different documents: the OFFICIAL PD 643-041A addendum lists ONLY the
- *        "yes" answers keyed by question number (and does NOT list "no" rows), while
- *        our INTERNAL disclosure summary lists every question with its answer.
+ * PORTAL disclosures — the seventeen NYPD online-portal questions replace the old
+ * paper Section B (10–28). Verifies the verbatim set, the traps (drugs split into
+ * three, Q14 = protected person, Q6 conditional on Q5, Q16 leoOnly, Q17 a request),
+ * and that the internal disclosure summary lists every question with its answer.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { renderRequirementDocument } from "@/lib/requirements/document-engine"
-import { QUESTIONNAIRES, SECTION_B_QUESTIONS } from "@/lib/requirements/questionnaires"
+import { QUESTIONNAIRES } from "@/lib/requirements/questionnaires"
+import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { pdfText } from "./helpers/pdf"
 
-describe("C1 — the canonical Section B list and questionnaire", () => {
-  it("covers every question 10–28, with 24/25/26 and 21/22 as separate items", () => {
-    const nos = SECTION_B_QUESTIONS.map((q) => q.no)
-    for (const n of ["10", "11", "12", "21", "22", "23", "24", "25", "26", "27", "28"]) {
-      expect(nos, `missing Q${n}`).toContain(n)
-    }
-    // 24/25/26 are three distinct entries, not one collapsed order-of-protection Q.
-    expect(nos.filter((n) => n === "24" || n === "25" || n === "26")).toHaveLength(3)
-    // 21 and 22 are distinct.
-    expect(nos.filter((n) => n === "21" || n === "22")).toHaveLength(2)
+describe("the portal disclosure question set", () => {
+  it("is exactly seventeen questions, in order", () => {
+    expect(PORTAL_DISCLOSURES).toHaveLength(17)
+    expect(PORTAL_DISCLOSURES.map((q) => q.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
   })
 
-  it("the disclosure questionnaire asks a yes/no per Section B question", () => {
+  it("splits drugs into three separate questions (8, 9, 10)", () => {
+    expect(PORTAL_DISCLOSURES[7].text).toMatch(/narcotics, controlled substances, or tranquilizers/)
+    expect(PORTAL_DISCLOSURES[8].text).toMatch(/illegal drugs/)
+    expect(PORTAL_DISCLOSURES[9].text).toMatch(/addicted/)
+  })
+
+  it("Q14 asks about the PROTECTED person, not orders issued by the applicant", () => {
+    expect(PORTAL_DISCLOSURES[13].text).toMatch(/protected person on an Order of Protection/)
+  })
+
+  it("gates Q6 on Q5, marks Q16 leoOnly, and Q17 a confidentiality request", () => {
+    expect(PORTAL_DISCLOSURES.find((q) => q.no === 6)?.conditionalOnYesOf).toBe(5)
+    expect(PORTAL_DISCLOSURES.find((q) => q.no === 16)?.leoOnly).toBe(true)
+    expect(PORTAL_DISCLOSURES.find((q) => q.no === 17)?.isConfidentialityRequest).toBe(true)
+  })
+
+  it("carries Q7's verbatim arrest note including the Certificate of Relief clause", () => {
+    const q7 = PORTAL_DISCLOSURES.find((q) => q.no === 7)!
+    expect(q7.note).toMatch(/dismissed, sealed, voided, or nullified/)
+    expect(q7.note).toMatch(/Certificate of Relief from Disabilities/)
+  })
+
+  it("the disclosure questionnaire renders a top-level yes/no per asked question, Q6 nested under Q5, Q16 leoOnly", () => {
     const q = QUESTIONNAIRES["disclosure-addendum"]
-    const fieldNames = new Set((q.fields ?? []).map((f) => f.name))
-    for (const s of SECTION_B_QUESTIONS) {
-      expect(fieldNames, `no field for Q${s.no}`).toContain(`q${s.no}`)
+    const top = new Set((q.fields ?? []).map((f) => f.name))
+    // Every non-conditional question is top-level.
+    for (const d of PORTAL_DISCLOSURES) {
+      if (d.conditionalOnYesOf) expect(top.has(`q${d.no}`)).toBe(false) // Q6 nested
+      else expect(top.has(`q${d.no}`), `no field for Q${d.no}`).toBe(true)
     }
+    // Q6 is nested inside Q5's reveal; Q7 has the felony sub-question.
+    const q5 = (q.fields ?? []).find((f) => f.name === "q5")!
+    expect(q5.revealOnYes?.some((s) => s.name === "q6")).toBe(true)
+    const q7 = (q.fields ?? []).find((f) => f.name === "q7")!
+    expect(q7.revealOnYes?.some((s) => s.name === "q7_felony")).toBe(true)
+    // Q16 is flagged leoOnly.
+    expect((q.fields ?? []).find((f) => f.name === "q16")?.leoOnly).toBe(true)
   })
 })
 
-describe("C2 — two different documents", () => {
+describe("the internal disclosure summary", () => {
   beforeAll(() => {
     process.env.PDF_FALLBACK_FONTS = "1"
   })
@@ -40,31 +64,13 @@ describe("C2 — two different documents", () => {
     delete process.env.PDF_FALLBACK_FONTS
   })
 
-  it("PD 643-041A (QUE-01) lists ONLY the yes answers, keyed by question number", async () => {
-    const answers = { q12: "yes", q12_explain: "Prescribed by Dr. Lee in 2019.", q23: "no", q24: "no" }
-    const doc = await renderRequirementDocument({ reqCode: "QUE-01", applicantName: "Test Applicant", answers })
-    const text = (await pdfText(doc.bytes)).toLowerCase()
-    expect(text).toContain("question 12")
-    expect(text).toContain("prescribed by dr. lee")
-    // A "no" answer never appears as its own row on the official addendum.
-    expect(text).not.toContain("question 23")
-    expect(text).not.toContain("question 24")
-    // The old misuse text is gone.
-    expect(text).not.toContain("answered")
-  })
-
-  it("all-no produces an addendum with NO question rows", async () => {
-    const doc = await renderRequirementDocument({ reqCode: "QUE-01", applicantName: "Test Applicant", answers: {} })
-    const text = (await pdfText(doc.bytes)).toLowerCase()
-    for (const s of SECTION_B_QUESTIONS) expect(text).not.toContain(`question ${s.no}`)
-  })
-
-  it("the internal disclosure summary (DSC-01) lists EVERY question with its answer", async () => {
-    const answers = { q10: "no", q12: "yes", q12_explain: "detail", q24: "no" }
+  it("lists every portal question with its answer", async () => {
+    const answers = { q1: "no", q7: "yes", q7_explain: "Arrest in 2015, dismissed and sealed.", q13: "no" }
     const doc = await renderRequirementDocument({ reqCode: "DSC-01", applicantName: "Test Applicant", answers })
     const text = (await pdfText(doc.bytes)).toLowerCase()
-    // Every question number is present with an answer (10 … 28, incl. 24/25/26).
-    for (const n of ["10.", "12.", "24.", "25.", "26.", "28."]) expect(text).toContain(n)
+    expect(text).toContain("1.")
+    expect(text).toContain("7.")
+    expect(text).toContain("dismissed and sealed")
     expect(text).toContain("not an nypd form")
     expect(doc.documentType).toBe("disclosure_summary")
   })

@@ -23,6 +23,8 @@ export type TriggerCond =
   | "if_veteran"
   | "if_name_change"
   | "if_any_q_yes"
+  | "if_felony_conviction" // COR-01: portal Q7 felony/serious-offense conviction
+  | "if_confidentiality_request" // PBR-01: portal Q17 confidentiality opt-in
   // ── Sponsored armed-guard (Carry Guard) track ──
   // `sponsor_packet` never fires in the generic generator — sponsor-owned rows
   // are seeded by materializeSponsorPacket(), and party='sponsor' rows are
@@ -57,6 +59,8 @@ export interface IntakeAnswers {
   isVeteran?: boolean
   hasNameChange?: boolean
   anyQuestionYes?: boolean
+  hasFelonyConviction?: boolean // portal Q7 conviction → Certificate of Relief
+  wantsConfidentiality?: boolean // portal Q17 → Public Records Exemption
   // Sponsored armed-guard track — derived by resolveArmedTrack(), never typed in.
   // isArmedGuard is only ever true once the track has RESOLVED to carry_guard or
   // special_carry_guard; an unresolved case seeds only the sponsor packet.
@@ -100,6 +104,10 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
       return !!a.hasNameChange
     case "if_any_q_yes":
       return !!a.anyQuestionYes
+    case "if_felony_conviction":
+      return !!a.hasFelonyConviction
+    case "if_confidentiality_request":
+      return !!a.wantsConfidentiality
     // ── Sponsored armed-guard track ──
     case "sponsor_packet":
       return false // never generic — seeded by materializeSponsorPacket()

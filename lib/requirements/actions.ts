@@ -356,22 +356,26 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   "DSC-01": {
     conciergeScope: "hidden",
     mode: "generate",
-    actionLabel: "Complete disclosures",
+    actionLabel: "Answer the disclosure questions",
     questionnaireId: "disclosure-addendum",
-    customerTitle: "Your written explanations for the application's history questions",
-    help: "The NYPD application asks questions 10–28 about your history. Every 'yes' needs its own written explanation, submitted on the Handgun License Application Addendum (PD 643-041A). Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
+    customerTitle: "The application's disclosure questions",
+    help: "The NYPD online portal asks seventeen questions about your history, in its own words. Every 'yes' needs a written explanation. Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
   },
-  "QUE-01": {
-    conciergeScope: "hidden",
-    mode: "generate",
-    actionLabel: "Write your explanations",
-    questionnaireId: "disclosure-addendum",
-    // Fills the OFFICIAL PD 643-041A addendum (not our facsimile): the "yes" answers
-    // only, keyed by their real NYPD question number. QUE-01 fires only if_any_q_yes.
-    templateKey: "nypd_disclosure_addendum",
-    documentType: "disclosure_addendum",
-    customerTitle: "Your written explanations, in your own words",
-    help: "One written explanation for each 'yes' answer, in your own words. We fill them onto the official Handgun License Application Addendum (PD 643-041A).",
+  // QUE-01 (the PD 643-041A addendum) is RETIRED — the portal captures explanations
+  // inline under each question, so there is no separate addendum form.
+  "COR-01": {
+    conciergeScope: "full",
+    mode: "obtain",
+    actionLabel: "Add your Certificate of Relief",
+    documentType: "cert_relief_disabilities",
+    sourceUrl: "https://ww2.nycourts.gov/",
+    steps: [
+      "Because you disclosed a felony or serious-offense conviction, obtain an ORIGINAL Certificate of Relief from Disabilities from the court of your conviction (or the Department of Corrections and Community Supervision, if applicable).",
+      "It must be the original, signed by the court — a photocopy is not accepted.",
+      "Upload the original here so we can include it with your application.",
+    ],
+    customerTitle: "Certificate of Relief from Disabilities",
+    help: "A felony or serious-offense conviction (Penal Law § 265.00(17)) requires an original, signed Certificate of Relief from Disabilities. The License Division will not proceed without it.",
   },
   "ARR-01": {
     conciergeScope: "hidden",

@@ -6,7 +6,6 @@
  */
 import { describe, expect, it } from "vitest"
 import { SECTION_B_NUMBERS } from "@/lib/forms/section-b"
-import { SECTION_B_QUESTIONS } from "@/lib/requirements/questionnaires"
 import { APPLICATION_COVERAGE } from "@/config/application-coverage"
 import { FORM_TEMPLATES } from "@/lib/forms/templates"
 
@@ -16,10 +15,6 @@ describe("SECTION_B_NUMBERS — the single source", () => {
     expect(SECTION_B_NUMBERS).toContain("20a")
     // 20a sits between 20 and 21.
     expect(SECTION_B_NUMBERS.indexOf("20a")).toBe(SECTION_B_NUMBERS.indexOf("20") + 1)
-  })
-
-  it("the disclosure questionnaire's numbers match the shared list exactly", () => {
-    expect(SECTION_B_QUESTIONS.map((q) => q.no)).toEqual([...SECTION_B_NUMBERS])
   })
 
   it("every questionnaire-ref coverage field is a real Section B number, incl. 20a", () => {

@@ -97,6 +97,7 @@ const SECTION_BY_CODE: Record<string, SectionKey> = {
   "DSC-01": "prepared", "QUE-01": "prepared", "ARR-01": "prepared",
   "OOP-01": "prepared", "DIR-01": "prepared", "SOC-01": "prepared", "CSC-01": "prepared",
   // Only if it applies
+  "COR-01": "conditional",
   "MIL-01": "conditional", "NAM-01": "conditional", "GMC-01": "conditional", "PRM-01": "conditional",
   "LEO-01": "conditional", "LEO-02": "conditional", "LEO-03": "conditional",
   // From the sponsor

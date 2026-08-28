@@ -64,15 +64,24 @@ export function deriveConditionFlags(
   let hasDomesticIncident: boolean
   let hasNameChange: boolean
   let isVeteran: boolean
+  // New portal-only flags — no wizard equivalent, so false unless the disclosure store
+  // says otherwise.
+  let hasFelonyConviction = false
+  let wantsConfidentiality = false
 
   if (hasStore) {
     source.sectionB = "disclosure-store"
+    // NYPD ONLINE PORTAL question numbers (lib/disclosures/portal-questions):
+    //   q1 alias · q5 armed forces · q7 arrest · q13 OOP against you · q15 domestic
+    //   q7_felony felony/serious-offense conviction · q17 confidentiality request.
     anyQuestionYes = Object.entries(d!).some(([k, v]) => isSectionBKey(k) && yes(v))
-    hasArrestHistory = yes(d!.q23)
-    hasOopHistory = yes(d!.q24) || yes(d!.q25) || yes(d!.q26)
-    hasDomesticIncident = yes(d!.q27)
-    hasNameChange = yes(d!.q28)
-    isVeteran = yes(d!.q15)
+    hasArrestHistory = yes(d!.q7)
+    hasOopHistory = yes(d!.q13)
+    hasDomesticIncident = yes(d!.q15)
+    hasNameChange = yes(d!.q1)
+    isVeteran = yes(d!.q5)
+    hasFelonyConviction = yes(d!.q7_felony)
+    wantsConfidentiality = yes(d!.q17)
   } else {
     source.sectionB = "wizard"
     anyQuestionYes =
@@ -95,7 +104,7 @@ export function deriveConditionFlags(
   source.cohabitants = sources.cohabitantCount > 0 ? "roster" : "wizard"
 
   return {
-    flags: { hasArrestHistory, hasOopHistory, hasDomesticIncident, hasNameChange, isVeteran, anyQuestionYes, hasCohabitants },
+    flags: { hasArrestHistory, hasOopHistory, hasDomesticIncident, hasNameChange, isVeteran, anyQuestionYes, hasCohabitants, hasFelonyConviction, wantsConfidentiality },
     source,
   }
 }
