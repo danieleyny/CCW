@@ -478,17 +478,14 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "proof_residence",
     customerTitle: "Proof that you live at your NYC address",
     example: "proof-of-address",
-    // Per the NYPD License Division required-documents checklist (verified 21 Aug
-    // 2026): a current utility bill (electric/gas/cable/internet/landline), OR a
-    // current lease / co-op-condo ownership docs TOGETHER WITH a filed NYS income
-    // tax return at the same address. Bank statements and general government mail
-    // are NOT on the NYPD list; cell phone bills are explicitly excluded.
-    help: "Proof you live at your NYC address, showing your full name and current NYC address. Cell phone bills are NOT accepted.",
+    // The NYPD online portal's own proof-of-residence list (PORTAL_ALIGNMENT_REBUILD
+    // Part 4a): a Utility Bill, Real Estate Tax Bill, ownership in a co-op/condo, a
+    // Lease, or a Maintenance Bill. No utility-type restriction and no lease+tax-return
+    // pairing — match the portal.
+    help: "Proof you live at your NYC address, showing your full name and current NYC address.",
     steps: [
-      "Use a CURRENT utility bill — electric, gas, cable/internet, or landline telephone.",
-      "Or a current residential lease (or co-op/condo ownership documents) TOGETHER WITH a signed, filed New York State income tax return showing the same address.",
-      "Whichever you use, it must show your full name and your NYC address, and be current.",
-      "Cell phone bills are not accepted — pick another document.",
+      "Use any ONE of: a utility bill, a real-estate tax bill, proof of ownership in a co-op or condo, a residential lease, or a maintenance bill.",
+      "It must show your full name and your NYC address, and be current.",
       "Upload it here.",
     ],
     sourceUrl: NYPD_REQUIRED_DOCS,
@@ -525,7 +522,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "training_cert",
     customerTitle: "Your firearms training certificate",
     example: "certificate",
-    help: "The 16-hour classroom plus 2-hour live-fire course required for a carry license. The certificate expires six months after completion, so timing matters — we track the clock.",
+    help: "The 18-hour DCJS-approved course required for a carry license — 16 classroom hours plus a 2-hour live-fire session (Penal Law § 400.00(19)). The certificate expires six months after completion, so timing matters — we track the clock.",
     steps: [
       "Book a DCJS-approved instructor — you can find one right here under Find an instructor.",
       "Complete the 16 classroom hours and the 2-hour live-fire session.",
