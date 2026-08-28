@@ -33,6 +33,7 @@ export function QuestionnaireDialog({
   signatureOnFile,
   caseId,
   canAdopt = true,
+  lockParty,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -46,7 +47,13 @@ export function QuestionnaireDialog({
   /** Whether THIS actor may adopt (sign). False for a sponsor — a drafted sworn
    *  document waits for the applicant to review and sign. */
   canAdopt?: boolean
+  /** On a co-authored document (Letter of Necessity) on a SPONSORED case, the party
+   *  viewing. Fields owned by the OTHER party render read-only — the save layer
+   *  enforces the same split, this just shows it. Absent ⇒ no field is locked. */
+  lockParty?: "applicant" | "sponsor"
 }) {
+  const isLocked = (f: Field) => !!lockParty && !!f.party && f.party !== lockParty
+  const otherLabel = lockParty === "applicant" ? "your employer" : "the applicant"
   const [values, setValues] = useState<Values>(initial)
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
   const [step, setStep] = useState<"answers" | "sign">("answers")
@@ -228,13 +235,18 @@ export function QuestionnaireDialog({
         </div>
       )
     }
+    const locked = isLocked(f)
     return (
       <div key={id} className="space-y-1.5">
         <Label htmlFor={id} className="text-xs">
           {f.label}
-          {f.required && <span className="text-danger"> *</span>}
+          {f.required && !locked && <span className="text-danger"> *</span>}
         </Label>
-        {f.help && <p className="text-xs text-text-mid">{f.help}</p>}
+        {locked ? (
+          <p className="text-xs text-text-low">Provided by {otherLabel} — you can&apos;t change it here.</p>
+        ) : (
+          f.help && <p className="text-xs text-text-mid">{f.help}</p>
+        )}
         {f.type === "textarea" ? (
           <Textarea
             id={id}
@@ -244,6 +256,8 @@ export function QuestionnaireDialog({
             placeholder={f.placeholder}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
+            disabled={locked}
+            readOnly={locked}
           />
         ) : f.type === "select" ? (
           <select

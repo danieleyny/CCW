@@ -57,13 +57,19 @@ export async function saveRequirementAnswers(
   if (!actor) return { error: "No case found" }
   if (!actionFor(reqCode)) return { error: "Unknown requirement" }
 
+  // Co-authored documents (the Letter of Necessity): on a sponsored case the actor may
+  // write ONLY their own party's fields, so an applicant save can't wipe the employer's
+  // business-knowledge statements (1/3/5) and a sponsor save can't touch the applicant's
+  // acknowledgements (2/4/6). No-op on a non-sponsored case (the applicant owns all).
+  const answersToSave = await applyPartyOwnership(actor, reqCode, answers)
+
   const { error } = await actor.db
     .from("requirement_answers")
     .upsert(
       {
         case_id: actor.caseId,
         req_code: reqCode,
-        answers: answers as never,
+        answers: answersToSave as never,
         completed_at: new Date().toISOString(),
         // Attribution: who prepared this draft. A sworn document is still not
         // final until the APPLICANT signs it (adoption), regardless of who drafted.
@@ -89,6 +95,51 @@ export async function saveRequirementAnswers(
 
   revalidatePath("/portal/checklist")
   return { ok: true }
+}
+
+/**
+ * Enforce field-level party ownership on a co-authored document (the Letter of
+ * Necessity). On a SPONSORED case the incoming save keeps only the fields the ACTOR's
+ * party owns; every other-party field falls back to what's already stored — so the two
+ * authors (employer: statements 1/3/5; applicant: 2/4/6) can never overwrite each
+ * other. Untagged fields and non-sponsored cases pass through unchanged.
+ */
+async function applyPartyOwnership(
+  actor: { caseId: string; actor: string },
+  reqCode: string,
+  answers: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const act = actionFor(reqCode)
+  const qid = act && (act.mode === "generate" || act.mode === "roster") ? act.questionnaireId : null
+  const q = qid ? questionnaireFor(qid) : null
+  const partyFields = (q?.fields ?? []).filter((f) => f.party)
+  if (partyFields.length === 0) return answers // not a co-authored document
+
+  const admin = createAdminClient()
+  const { data: sponsorship } = await admin
+    .from("case_sponsorships")
+    .select("id")
+    .eq("case_id", actor.caseId)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle()
+  if (!sponsorship) return answers // not sponsored — the applicant owns everything
+
+  const actorParty = actor.actor === "sponsor" ? "sponsor" : "applicant"
+  const { data: existingRow } = await admin
+    .from("requirement_answers")
+    .select("answers")
+    .eq("case_id", actor.caseId)
+    .eq("req_code", reqCode)
+    .maybeSingle()
+  const existing = (existingRow?.answers ?? {}) as Record<string, unknown>
+
+  const merged = { ...answers }
+  for (const f of partyFields) {
+    // A field the actor does NOT own: preserve the stored value, ignore the incoming one.
+    if (f.party !== actorParty) merged[f.name] = existing[f.name]
+  }
+  return merged
 }
 
 /** Write a questionnaire's fact-backed answers to the shared case_facts. */

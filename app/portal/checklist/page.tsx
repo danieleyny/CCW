@@ -16,6 +16,10 @@ export default async function ChecklistPage() {
   const supabase = await createClient()
   const view = await loadRequirementView(supabase, myCase)
   const isConcierge = myCase.service_mode === "concierge"
+  // A sponsored case always carries party='sponsor' packet items — so if any item is
+  // sponsor-managed, the case is sponsored. Used to lock the employer's Letter-of-
+  // Necessity fields (statements 1/3/5) read-only for the applicant.
+  const caseSponsored = view.items.some((i) => i.sponsorManaged)
 
   return (
     <div>
@@ -53,6 +57,7 @@ export default async function ChecklistPage() {
         signatureOnFile={view.signatureOnFile}
         feeSummary={view.feeSummary}
         feeReceipts={view.feeReceipts}
+        caseSponsored={caseSponsored}
       />
     </div>
   )
