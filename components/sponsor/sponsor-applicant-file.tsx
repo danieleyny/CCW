@@ -95,6 +95,7 @@ export function SponsorApplicantFile({ caseId, rows }: { caseId: string; rows: S
                 signatureOnFile={null}
                 caseId={caseId}
                 canAdopt={false}
+                lockParty="sponsor"
               />
             )}
           </div>

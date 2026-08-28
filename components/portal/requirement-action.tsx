@@ -66,6 +66,7 @@ export function RequirementAction({
   feeSummary,
   feeReceipts,
   dmvApplicant,
+  lockParty,
 }: {
   reqCode: string
   status: string
@@ -86,6 +87,9 @@ export function RequirementAction({
   feeReceipts?: FeeReceipts | null
   /** Applicant identity for the DMV-01 email-request draft (no SSN). */
   dmvApplicant?: DmvApplicant | null
+  /** Co-authored document (Letter of Necessity) on a sponsored case: the viewing
+   *  party. The other party's fields render read-only. Absent ⇒ nothing locked. */
+  lockParty?: "applicant" | "sponsor"
 }) {
   const [open, setOpen] = useState(false)
   const [signing, setSigning] = useState(false)
@@ -190,6 +194,7 @@ export function RequirementAction({
             questionnaire={q}
             initial={prefill}
             signatureOnFile={signatureOnFile}
+            lockParty={lockParty}
           />
         )}
       </div>
@@ -374,6 +379,7 @@ export function RequirementAction({
             questionnaire={q}
             initial={prefill}
             signatureOnFile={signatureOnFile}
+            lockParty={lockParty}
           />
         )}
       </div>

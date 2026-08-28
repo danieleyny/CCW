@@ -65,6 +65,16 @@ export interface Field {
    */
   blockOnYes?: string
   maxLength?: number
+  /**
+   * On a SPONSORED case, who owns this field. The Letter of Necessity is co-authored:
+   * the employer supplies the business-knowledge statements (1, 3, 5) and the
+   * applicant the acknowledgements (2, 4, 6) — one shared document, two authors.
+   * The save layer enforces it (an actor writes only their own party's fields, so
+   * neither can clobber the other's sworn statements); the dialog locks the rest.
+   * Absent ⇒ the applicant owns it, and on a non-sponsored case party is ignored
+   * (the applicant supplies everything).
+   */
+  party?: "applicant" | "sponsor"
 }
 
 export interface RepeatableGroup {
@@ -313,29 +323,39 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     fields: [
       {
         name: "lop1",
-        label: "1. Your employment, and why it requires carrying a concealed handgun",
+        label: "1. The employment, and why it requires carrying a concealed handgun",
         type: "textarea",
-        help: "A detailed description of your employment and the specific reason the work requires you to carry a concealed handgun.",
+        help: "A detailed description of the employment and the specific reason the work requires carrying a concealed handgun. On a sponsored case your employer provides this.",
         required: true,
         maxLength: 1200,
+        party: "sponsor",
       },
       {
         name: "lop2",
         label: "2. Acknowledgement — carried only for the job described",
         type: "textarea",
         maxLength: 800,
+        party: "applicant",
       },
       {
         name: "lop3",
         label: "3. How the handgun will be safeguarded when not in use",
         type: "textarea",
-        help: "How you (and/or your employer) will safeguard the handgun when it is not being carried.",
+        help: "How the handgun is safeguarded when it is not being carried. On a sponsored case your employer provides this.",
         required: true,
         maxLength: 1200,
+        party: "sponsor",
       },
-      { name: "lop4", label: "4. Acknowledgement — trained in use and safety", type: "textarea", maxLength: 800 },
-      { name: "lop5", label: "5. Acknowledgement — disposal and licence return", type: "textarea", maxLength: 800 },
-      { name: "lop6", label: "6. Acknowledgement — familiar with Penal Law Art. 35, 265, 400", type: "textarea", maxLength: 800 },
+      { name: "lop4", label: "4. Acknowledgement — trained in use and safety", type: "textarea", maxLength: 800, party: "applicant" },
+      {
+        name: "lop5",
+        label: "5. Acknowledgement — disposal and licence return",
+        type: "textarea",
+        help: "On a sponsored case your employer acknowledges its responsibility to dispose of the handgun and return the licence when the employment ends.",
+        maxLength: 800,
+        party: "sponsor",
+      },
+      { name: "lop6", label: "6. Acknowledgement — familiar with Penal Law Art. 35, 265, 400", type: "textarea", maxLength: 800, party: "applicant" },
     ],
   },
 

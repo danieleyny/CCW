@@ -109,6 +109,20 @@ describe("Part 4/5 — Letter of Necessity fills, Q20a is its own question", () 
   })
 })
 
+describe("Letter of Necessity — co-authored field ownership (sponsored split)", () => {
+  it("employer owns statements 1/3/5; applicant owns 2/4/6", async () => {
+    const { questionnaireFor } = await import("@/lib/requirements/questionnaires")
+    const q = questionnaireFor("letter-of-necessity")!
+    const party = Object.fromEntries((q.fields ?? []).map((f) => [f.name, f.party]))
+    expect(party.lop1).toBe("sponsor")
+    expect(party.lop3).toBe("sponsor")
+    expect(party.lop5).toBe("sponsor")
+    expect(party.lop2).toBe("applicant")
+    expect(party.lop4).toBe("applicant")
+    expect(party.lop6).toBe("applicant")
+  })
+})
+
 describe("usDate / usMonthYear — format at the boundary", () => {
   it("ISO → US", () => {
     expect(usDate("1990-04-12")).toBe("04/12/1990")
