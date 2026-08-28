@@ -530,13 +530,21 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
   // NYPD serves the SAME file at /forms-auth-rel and /form-req-app-emp-rec — one
   // template, both URLs. Filled + printed; the applicant signs on paper.
   //
-  // ⚠ KNOWN ASSET BUG (TEMPLATES-MANIFEST.md): forms-auth-rel.pdf is BYTE-IDENTICAL
-  // to form-req-app-emp-rec.pdf — both are this employment-record request. The real
-  // *Authorization for Release* form was never saved under that name, so any path
-  // that means to produce an authorization-for-release currently produces an
-  // employment-record request instead. There is no separate authorization-for-release
-  // template today. OWNER: source the correct form; do NOT add an aliasing template
-  // that reuses this file for a release. (Flagged as a follow-up task.)
+  // RESOLVED — this was raised as an asset bug and it is NOT one. Verified against the
+  // live NYPD site on 2026-08-27:
+  //   · licensing.nypdonline.org/additional-forms lists two entries,
+  //     "Authorization for Employment Release" (/forms-auth-rel) and
+  //     "Request for applicant's employment record" (/form-req-app-emp-rec).
+  //   · BOTH slugs serve the SAME PDF, titled "REQUEST FOR APPLICANT'S EMPLOYMENT
+  //     RECORD". The list-page label is NYPD's own mislabel, not a mis-save here.
+  //   · That one form IS the authorization: it carries the consent paragraph — "I
+  //     hereby give my written consent and request and authorize you to turn over any
+  //     and all employment records relating to my employment" — over an Applicant's
+  //     Signature line. One instrument, two names.
+  // So forms-auth-rel.pdf holding this file is correct. There is no missing form.
+  // Do NOT source a separate "authorization for release"; none exists. If a second
+  // template key is ever wanted for the release-facing name, alias it to THIS file
+  // rather than treating the two as different documents.
   nypd_employment_record_request: {
     key: "nypd_employment_record_request",
     file: "forms-auth-rel.pdf",
