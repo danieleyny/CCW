@@ -11,6 +11,7 @@ import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
 import { money, formatDate, formatDateTime, daysSince, daysUntil } from "@/lib/format"
 import { StageControl } from "@/components/admin/stage-control"
+import { RematerializeButton } from "@/components/admin/rematerialize-button"
 import { DocumentReview, type DocRow } from "@/components/admin/document-review"
 import { RequirementsReview, type CaseReqRow } from "@/components/admin/requirements-review"
 import { ConciergeCockpit } from "@/components/admin/concierge-cockpit"
@@ -546,6 +547,9 @@ export default async function CaseFilePage({
             signedOffAt={kase.qa_signed_off_at}
           />
           <RequirementsReview caseId={id} rows={reqRows} />
+          <div className="flex justify-end">
+            <RematerializeButton caseId={id} />
+          </div>
         </TabsContent>
 
         <TabsContent value="intake" className="mt-4">

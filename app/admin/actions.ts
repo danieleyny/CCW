@@ -1245,3 +1245,26 @@ export async function recordDosArmedStatusGranted(
   revalidatePath(`/admin/cases/${caseId}`)
   return { ok: true }
 }
+
+/**
+ * Re-materialize a case's requirements against the CURRENT registry — so a case
+ * that predates newly-added requirement rows picks them up. Additive: satisfied /
+ * rejected rows are left intact. Staff-triggered from the admin case view; the
+ * one-shot backfill after a requirements migration uses the same rematerializeCase.
+ */
+export async function rematerializeCaseRequirements(
+  caseId: string
+): Promise<{ ok?: true; error?: string; inserted?: number; updated?: number }> {
+  await requireStaff()
+  const { rematerializeCase } = await import("@/lib/requirements/rematerialize")
+  const admin = createAdminClient()
+  try {
+    const r = await rematerializeCase(admin, caseId)
+    if (!r) return { error: "This case has no completed intake yet — nothing to re-materialize." }
+    await logActivity({ action: "case.rematerialized", caseId, entity: "case", entityId: caseId, detail: { inserted: r.inserted, updated: r.updated } })
+    revalidatePath(`/admin/cases/${caseId}`)
+    return { ok: true, inserted: r.inserted, updated: r.updated }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Re-materialize failed." }
+  }
+}
