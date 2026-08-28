@@ -88,12 +88,12 @@ export function buildApplicationValues(
     employmentHistory,
     residenceOverflow: residenceHistory.length > 4,
     employmentOverflow: employmentHistory.length > 4,
-    // Q30 / Q31 safeguarding (intake)
-    safeguardMethod: intake.safeguardMethod ?? "",
-    safeguardName: intake.safeguardName ?? "",
-    safeguardRelation: intake.safeguardRelation ?? "",
-    safeguardAddress: intake.safeguardAddress ?? "",
-    safeguardPhone: intake.safeguardPhone ?? "",
+    // Q30 / Q31 safeguarding — facts-first (they're now on /portal/details), intake fallback.
+    safeguardMethod: f("safeguard.method") || (intake.safeguardMethod ?? ""),
+    safeguardName: f("safeguard.name") || (intake.safeguardName ?? ""),
+    safeguardRelation: f("safeguard.relation") || (intake.safeguardRelation ?? ""),
+    safeguardAddress: f("safeguard.address") || (intake.safeguardAddress ?? ""),
+    safeguardPhone: f("safeguard.phone") || (intake.safeguardPhone ?? ""),
   }
 
   // Section B 10–28 — set ONLY from an EXPLICIT recorded answer. Three states matter:

@@ -7,6 +7,8 @@ import { hasCaseSsn } from "@/lib/facts/ssn"
 import { FACTS, type FactGroup } from "@/lib/facts/registry"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
+import { ApplicationHistory } from "@/components/portal/facts/application-history"
+import type { WizardAnswers } from "@/lib/intake/answers"
 
 export const metadata = { title: "Your details" }
 
@@ -23,6 +25,10 @@ export default async function DetailsPage() {
   const db = await createClient()
   const facts = await resolveFacts(db, myCase.id)
   const hasSsn = await hasCaseSsn(createAdminClient(), myCase.id)
+  // The repeatable Q29 histories + Q9 out-of-city licence live in intake_sessions,
+  // not the scalar fact layer — load them for the "Application history" section.
+  const { data: intakeRow } = await db.from("intake_sessions").select("answers").eq("case_id", myCase.id).maybeSingle()
+  const intake = (intakeRow?.answers ?? {}) as WizardAnswers
 
   // Completeness meter over the editable, non-SSN facts.
   const editable = FACTS.filter((f) => !f.derive && f.key !== "applicant.ssn")
@@ -53,6 +59,18 @@ export default async function DetailsPage() {
       </div>
 
       <FactGroups caseId={myCase.id} facts={facts} hasSsn={hasSsn} groups={GROUP_ORDER} showSsn />
+
+      <ApplicationHistory
+        caseId={myCase.id}
+        residence={intake.residenceHistory ?? []}
+        employment={intake.employmentHistory ?? []}
+        outOfCity={{
+          number: intake.outOfCityLicenseNumber ?? "",
+          county: intake.outOfCityCounty ?? "",
+          issuedOn: intake.outOfCityIssuedOn ?? "",
+          expiresOn: intake.outOfCityExpiresOn ?? "",
+        }}
+      />
     </div>
   )
 }
