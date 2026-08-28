@@ -69,7 +69,9 @@ export function buildApplicationValues(
     cellPhone: f("applicant.phone.cell"),
     email: f("applicant.email"),
     alienReg: f("applicant.alienRegistrationNumber"),
-    citizenship: citizenship ? (citizenship === "lpr" ? "Alien" : "Citizen") : "",
+    // Legacy tokens ("citizen"/"lpr") and the readable select values ("U.S. citizen"/
+    // "Lawful permanent resident") both resolve correctly.
+    citizenship: citizenship ? (/^lpr$/i.test(citizenship) || /permanent resident/i.test(citizenship) ? "Alien" : "Citizen") : "",
     // Employer / business (facts — sponsor-first already resolved)
     businessName: f("employer.name"),
     businessType: f("employer.type"),
