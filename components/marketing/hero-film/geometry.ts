@@ -146,12 +146,12 @@ export const SEAL_TICKS = Array.from({ length: 18 }, (_, t) => {
 })
 
 /* ── the checklist rows — real published requirements.
-   §8 rulings: references × 4 (requiredReferences carry = 4), 16-hour course and
+   §8 rulings: references × 4 (requiredReferences carry = 4), 18-hour course and
    household affidavits are published; fingerprints SOFTENED to "submitted" because
    the NYPD schedules the in-person prints, not us. ── */
 export const ROWS = [
   "Character references × 4 · notarized",
-  "16-hour safety course · certificate",
+  "18-hour safety course · certificate",
   "Household affidavits · every adult",
   "Fingerprints · submitted",
 ] as const

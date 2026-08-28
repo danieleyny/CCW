@@ -33,7 +33,7 @@ const GROUPS: { phase: string; items: { label: string; cite: string }[] }[] = [
   {
     phase: "Training",
     items: [
-      { label: "16-hour classroom certificate", cite: "Penal Law §400.00(19)" },
+      { label: "18-hour training certificate", cite: "Penal Law §400.00(19)" },
       { label: "2-hour live-fire certificate", cite: "Penal Law §400.00(19)" },
       { label: "Written exam, 80%+ passing", cite: "Penal Law §400.00(19)" },
     ],
