@@ -25,14 +25,15 @@ export async function assembleApplicationValues(admin: DB, caseId: string): Prom
   const { data: kase } = await admin.from("cases").select("client_id, license_track").eq("id", caseId).maybeSingle()
   if (!kase?.client_id) return null
 
-  const [facts, { data: intakeRow }, { data: disclosureRows }] = await Promise.all([
+  const [facts, { data: intakeRow }, { data: reqRows }] = await Promise.all([
     resolveFacts(admin, caseId),
     admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
-    admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["DSC-01", "QUE-01"]),
+    admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["DSC-01", "QUE-01", "LON-01"]),
   ])
   const intake = (intakeRow?.answers ?? {}) as WizardAnswers
-  const byCode = new Map((disclosureRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
+  const byCode = new Map((reqRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
   const disclosures = byCode.get("DSC-01") ?? byCode.get("QUE-01") ?? {}
-  const values = buildApplicationValues(facts, intake, { licenseTrack: kase.license_track, disclosures })
+  const letterOfNecessity = byCode.get("LON-01") ?? {}
+  const values = buildApplicationValues(facts, intake, { licenseTrack: kase.license_track, disclosures, letterOfNecessity })
   return { values, track: kase.license_track, clientId: kase.client_id }
 }

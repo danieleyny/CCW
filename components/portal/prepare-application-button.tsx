@@ -75,6 +75,15 @@ export function PrepareApplicationButton({ caseId, readiness }: { caseId: string
             </ul>
           </>
         )}
+        {readiness.notes.length > 0 && (
+          <ul className="mt-2 space-y-1 border-t border-hairline pt-2">
+            {readiness.notes.map((n) => (
+              <li key={n} className="text-xs text-text-low">
+                {n}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">

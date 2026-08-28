@@ -308,7 +308,7 @@ export const APPLICATION_COVERAGE = [
     questionNo: "20a",
     capture: { kind: "intake", ref: "questionnaire" },
     status: "ok",
-    notes: "Combined with Q20 in the interview — Q20's wording covers both the applicant's own roles and any officer/director/partner.",
+    notes: "A DISTINCT question from Q20: 20 is the entity (corporation/partnership), 20a is any officer/director/partner. Collected separately in the disclosure questionnaire.",
   },
   q("21", "Suffered from mental illness, or due to mental illness received treatment, been admitted to a hospital or institution, or taken medication?", true),
   q("22", "Have you ever suffered from any disability or condition that may affect your ability to safely possess or use a handgun? (Epilepsy, Diabetes, Fainting Spells, Blackouts, Temporary Loss of Memory or any Nervous Disorder must be listed.)", true),

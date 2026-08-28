@@ -38,12 +38,18 @@ const completeIntake = {
   employmentHistory: [{ fromMonth: "2019-01", employer: "Test Guard Co." }],
 } as WizardAnswers
 const allDisclosures = Object.fromEntries(
-  ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"].map((n) => [`q${n}`, "no"])
+  ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "20a", "21", "22", "23", "24", "25", "26", "27", "28"].map((n) => [`q${n}`, "no"])
 )
+// A carry case also needs the Letter of Necessity's applicant statements (1 and 3).
+const completeLon = { lop1: "Armored-car messenger.", lop3: "Locked in the vault when off duty." }
 
 describe("computeApplicationReadiness", () => {
   it("a fully-answered case is ready with nothing missing", () => {
-    const v = buildApplicationValues(completeFacts, completeIntake, { licenseTrack: "concealed_carry", disclosures: allDisclosures })
+    const v = buildApplicationValues(completeFacts, completeIntake, {
+      licenseTrack: "concealed_carry",
+      disclosures: allDisclosures,
+      letterOfNecessity: completeLon,
+    })
     const r = computeApplicationReadiness(v, { licenseTrack: "concealed_carry" })
     expect(r.ready).toBe(true)
     expect(r.missing).toHaveLength(0)
@@ -70,7 +76,7 @@ describe("computeApplicationReadiness", () => {
     const r = computeApplicationReadiness(v, { licenseTrack: "concealed_carry" })
     const sectionB = r.missing.find((m) => /Section B/i.test(m.label))
     expect(sectionB).toBeDefined()
-    expect(sectionB!.label).toMatch(/2 of 19/)
+    expect(sectionB!.label).toMatch(/2 of 20/)
   })
 })
 

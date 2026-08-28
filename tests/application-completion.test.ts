@@ -91,6 +91,24 @@ describe("buildWorksheet — reads the assembled application values", () => {
   })
 })
 
+describe("Part 4/5 — Letter of Necessity fills, Q20a is its own question", () => {
+  it("sets lop1…lop6 on the application from the LON answers", () => {
+    const v = buildApplicationValues({}, {} as WizardAnswers, {
+      letterOfNecessity: { lop1: "Armored-car messenger.", lop3: "Locked in the vault.", lop6: "Read the Penal Law." },
+    })
+    expect(v.lop1).toBe("Armored-car messenger.")
+    expect(v.lop3).toBe("Locked in the vault.")
+    expect(v.lop6).toBe("Read the Penal Law.")
+    expect(v.lop2).toBe("") // unanswered acknowledgement stays blank, never invented
+  })
+
+  it("Q20 (entity) and Q20a (people) resolve independently", () => {
+    const v = buildApplicationValues({}, {} as WizardAnswers, { disclosures: { q20: "no", q20a: "yes" } })
+    expect(v.q20).toBe("No")
+    expect(v.q20a).toBe("Yes")
+  })
+})
+
 describe("usDate / usMonthYear — format at the boundary", () => {
   it("ISO → US", () => {
     expect(usDate("1990-04-12")).toBe("04/12/1990")

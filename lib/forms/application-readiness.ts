@@ -20,13 +20,17 @@ export interface ApplicationReadiness {
   captured: number
   total: number
   missing: ReadinessItem[]
+  /** Non-blocking advisories shown on the readiness card — things the form asks for
+   *  that the applicant completes at filing (e.g. precinct numbers we don't derive),
+   *  so they're surfaced explicitly instead of silently passing. */
+  notes: string[]
 }
 
 const DETAILS = "/portal/details"
 const DISCLOSURES = "/portal/checklist" // the disclosure questionnaire lives on the checklist
 
 const SECTION_B_NUMBERS = [
-  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
+  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "20a", "21", "22",
   "23", "24", "25", "26", "27", "28",
 ]
 
@@ -39,7 +43,9 @@ export function computeApplicationReadiness(
     return typeof val === "string" && val.trim() !== ""
   }
   const isPremises = String(v.licenseType) === "Premises"
+  const isCarry = !isPremises
   const missing: ReadinessItem[] = []
+  const notes: string[] = []
   let total = 0
   let captured = 0
   const check = (ok: boolean, label: string, href: string) => {
@@ -74,11 +80,22 @@ export function computeApplicationReadiness(
   check(has("safeguardMethod"), "How/where the handgun is safeguarded (Q30)", DETAILS)
   check(has("safeguardName"), "Who will safeguard it (Q31)", DETAILS)
 
+  // Letter of Necessity (page 4) — required for a carry licence ("the form provided
+  // must be used"). The two applicant-specific statements are what block; the four
+  // acknowledgements are pre-filled.
+  if (isCarry) {
+    check(has("lop1") && has("lop3"), "Letter of Necessity (your employment + how it's safeguarded)", "/portal/checklist")
+  }
+
   // Section B — how many of the 20 questions are answered
   total++
   const answered = SECTION_B_NUMBERS.filter((n) => has(`q${n}`)).length
   if (answered >= SECTION_B_NUMBERS.length) captured++
-  else missing.push({ label: `Section B disclosures — ${answered} of ${SECTION_B_NUMBERS.length} questions answered (Q10–28)`, href: DISCLOSURES })
+  else missing.push({ label: `Section B disclosures — ${answered} of ${SECTION_B_NUMBERS.length} questions answered (Q10–28, incl. 20a)`, href: DISCLOSURES })
 
-  return { ready: missing.length === 0, captured, total, missing }
+  // PART 7 — precincts. We don't derive them (a wrong precinct on a sworn form is
+  // worse than a blank), so they're an explicit at-filing note, never a silent pass.
+  notes.push("Precinct numbers (residence, employment, business) are left blank — write in your NYPD precinct on each row at filing.")
+
+  return { ready: missing.length === 0, captured, total, missing, notes }
 }

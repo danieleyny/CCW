@@ -86,7 +86,7 @@ export default async function ConciergeHome() {
   const assembled = await assembleApplicationValues(createAdminClient(), myCase.id)
   const readiness = assembled
     ? computeApplicationReadiness(assembled.values, { licenseTrack: assembled.track })
-    : { ready: false, captured: 0, total: 1, missing: [{ label: "Your details", href: "/portal/details" }] }
+    : { ready: false, captured: 0, total: 1, missing: [{ label: "Your details", href: "/portal/details" }], notes: [] }
 
   // Milestone state — REAL signals only, never cosmetic.
   const applicable = view.items.filter((i) => i.status !== "na")
