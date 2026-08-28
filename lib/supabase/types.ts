@@ -3487,6 +3487,7 @@ export type Database = {
           concierge_scope: Database["public"]["Enums"]["concierge_scope"]
           created_at: string
           description: string | null
+          destination: Database["public"]["Enums"]["requirement_destination"]
           document_type: Database["public"]["Enums"]["document_type"] | null
           effective_from: string
           effective_to: string | null
@@ -3514,6 +3515,7 @@ export type Database = {
           concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
           created_at?: string
           description?: string | null
+          destination?: Database["public"]["Enums"]["requirement_destination"]
           document_type?: Database["public"]["Enums"]["document_type"] | null
           effective_from?: string
           effective_to?: string | null
@@ -3541,6 +3543,7 @@ export type Database = {
           concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
           created_at?: string
           description?: string | null
+          destination?: Database["public"]["Enums"]["requirement_destination"]
           document_type?: Database["public"]["Enums"]["document_type"] | null
           effective_from?: string
           effective_to?: string | null
@@ -5775,6 +5778,7 @@ export type Database = {
         | "safeguard_acknowledgement"
         | "affirmation_penal_law"
         | "public_records_exemption"
+        | "safeguard_id"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -5810,6 +5814,7 @@ export type Database = {
         | "submitted"
         | "notarized"
       req_party: "applicant" | "sponsor"
+      requirement_destination: "portal_upload" | "interview" | "internal"
       requirement_sev: "critical" | "high" | "watch" | "long_lead"
       review_decision: "approved" | "changes_requested"
       service_mode: "self_guided" | "concierge"
@@ -6075,6 +6080,7 @@ export const Constants = {
         "safeguard_acknowledgement",
         "affirmation_penal_law",
         "public_records_exemption",
+        "safeguard_id",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [
@@ -6116,6 +6122,7 @@ export const Constants = {
         "notarized",
       ],
       req_party: ["applicant", "sponsor"],
+      requirement_destination: ["portal_upload", "interview", "internal"],
       requirement_sev: ["critical", "high", "watch", "long_lead"],
       review_decision: ["approved", "changes_requested"],
       service_mode: ["self_guided", "concierge"],
