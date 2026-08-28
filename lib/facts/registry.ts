@@ -40,6 +40,15 @@ export interface FactDef {
   sensitive?: boolean
   /** Sponsor-owned facts (the agency licence, custodian) are the sponsor's to set. */
   owner?: "applicant" | "sponsor"
+  /** A closed answer set — rendered as a select so the value can't vary in spelling
+   *  before it reaches a sworn form. Only for genuinely fixed sets. */
+  options?: string[]
+  /** Shows the expected SHAPE in an empty input (never the label again). */
+  placeholder?: string
+  /** Not required of everyone (an alias only if you have one; an alien-registration
+   *  number only for a permanent resident). Shown with an "only if it applies" chip
+   *  and never counted against completeness. */
+  optional?: boolean
   /** Backfill / fallback source. */
   from?: (s: FactSource) => string | null | undefined
   /** Read-only value computed from other facts at resolve time. */
@@ -60,20 +69,20 @@ export const FACTS: FactDef[] = [
   { key: "applicant.legalFirstName", label: "First name", type: "text", group: "you", from: (s) => nameParts(s.client.fullName)[0] },
   { key: "applicant.legalMiddleInitial", label: "Middle initial", type: "text", group: "you", from: (s) => s.intake.middleInitial },
   { key: "applicant.legalLastName", label: "Last name", type: "text", group: "you", from: (s) => { const p = nameParts(s.client.fullName); return p.length > 1 ? p[p.length - 1] : "" } },
-  { key: "applicant.aliasOrMaidenName", label: "Alias / maiden name", type: "text", group: "you", from: (s) => s.intake.aliasName },
+  { key: "applicant.aliasOrMaidenName", label: "Alias / maiden name", type: "text", group: "you", optional: true, placeholder: "leave blank if none", from: (s) => s.intake.aliasName },
   { key: "applicant.dob", label: "Date of birth", type: "date", group: "you", sensitive: true, from: (s) => s.intake.dob },
-  { key: "applicant.placeOfBirth", label: "Place of birth", type: "text", group: "you", from: (s) => s.intake.placeOfBirth },
-  { key: "applicant.sex", label: "Sex", type: "text", group: "physical", from: (s) => s.intake.sex },
-  { key: "applicant.height", label: "Height", type: "text", group: "physical", from: (s) => (s.intake.heightInches ? String(s.intake.heightInches) : "") },
-  { key: "applicant.weight", label: "Weight (lb)", type: "text", group: "physical", from: (s) => (s.intake.weightLbs ? String(s.intake.weightLbs) : "") },
-  { key: "applicant.hairColor", label: "Hair color", type: "text", group: "physical", from: (s) => s.intake.hairColor },
-  { key: "applicant.eyeColor", label: "Eye color", type: "text", group: "physical", from: (s) => s.intake.eyeColor },
-  { key: "applicant.citizenship", label: "Citizenship", type: "text", group: "you", from: (s) => s.intake.citizenship },
-  { key: "applicant.alienRegistrationNumber", label: "Alien registration #", type: "text", group: "you", from: (s) => s.intake.alienRegistrationNumber },
+  { key: "applicant.placeOfBirth", label: "Place of birth", type: "text", group: "you", placeholder: "City, State, Country", from: (s) => s.intake.placeOfBirth },
+  { key: "applicant.sex", label: "Sex", type: "select", group: "physical", options: ["Male", "Female", "X"], from: (s) => s.intake.sex },
+  { key: "applicant.height", label: "Height", type: "text", group: "physical", placeholder: "inches, e.g. 70", from: (s) => (s.intake.heightInches ? String(s.intake.heightInches) : "") },
+  { key: "applicant.weight", label: "Weight (lb)", type: "text", group: "physical", placeholder: "pounds, e.g. 180", from: (s) => (s.intake.weightLbs ? String(s.intake.weightLbs) : "") },
+  { key: "applicant.hairColor", label: "Hair color", type: "select", group: "physical", options: ["Bald", "Black", "Blond", "Brown", "Gray", "Red", "Sandy", "White", "Other"], from: (s) => s.intake.hairColor },
+  { key: "applicant.eyeColor", label: "Eye color", type: "select", group: "physical", options: ["Black", "Blue", "Brown", "Gray", "Green", "Hazel", "Maroon", "Other"], from: (s) => s.intake.eyeColor },
+  { key: "applicant.citizenship", label: "Citizenship", type: "select", group: "you", options: ["U.S. citizen", "Lawful permanent resident"], from: (s) => s.intake.citizenship },
+  { key: "applicant.alienRegistrationNumber", label: "Alien registration #", type: "text", group: "you", optional: true, placeholder: "only if a permanent resident", from: (s) => s.intake.alienRegistrationNumber },
 
   // ── Address ──
   { key: "applicant.address.street", label: "Street address", type: "text", group: "address", from: (s) => s.intake.legalStreet },
-  { key: "applicant.address.apt", label: "Apt #", type: "text", group: "address", from: (s) => s.intake.legalApt },
+  { key: "applicant.address.apt", label: "Apt #", type: "text", group: "address", optional: true, placeholder: "if you have one", from: (s) => s.intake.legalApt },
   { key: "applicant.address.city", label: "City", type: "text", group: "address", from: (s) => s.intake.legalCity },
   { key: "applicant.address.state", label: "State", type: "text", group: "address", from: (s) => s.intake.legalState ?? "NY" },
   { key: "applicant.address.zip", label: "ZIP", type: "zip", group: "address", from: (s) => s.client.zip },
@@ -81,7 +90,7 @@ export const FACTS: FactDef[] = [
   // ── Contact ──
   { key: "applicant.phone.home", label: "Home phone", type: "phone", group: "contact" },
   { key: "applicant.phone.cell", label: "Cell phone", type: "phone", group: "contact", from: (s) => s.client.phone },
-  { key: "applicant.phone.work", label: "Work phone", type: "phone", group: "contact" },
+  { key: "applicant.phone.work", label: "Work phone", type: "phone", group: "contact", optional: true },
   { key: "applicant.email", label: "Email", type: "text", group: "contact", from: (s) => s.client.email },
 
   // ── Employer (the applicant's own, unless a sponsorship supplies it) ──

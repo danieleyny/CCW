@@ -1,6 +1,7 @@
 import { Building2, FileText, Landmark, Mail, IdCard } from "lucide-react"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
+import { buildFactGroups } from "@/lib/facts/details-view"
 import type { FactGroup } from "@/lib/facts/registry"
 import { sponsorItemState, SPONSOR_ITEM_COPY } from "@/lib/sponsor/status"
 import { sectionFor, SECTIONS, SECTION_ORDER } from "@/lib/requirements/sections"
@@ -337,7 +338,7 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
             Fix any of these once and it&apos;s corrected on every form that uses it. The applicant&apos;s
             Social Security number is never shown here.
           </p>
-          <FactGroups caseId={caseId} facts={facts} hasSsn={false} groups={detailGroups} />
+          <FactGroups caseId={caseId} {...buildFactGroups(facts, false, detailGroups, false)} />
         </section>
       )}
 

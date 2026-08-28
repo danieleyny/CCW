@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { hasCaseSsn } from "@/lib/facts/ssn"
-import { FACTS, type FactGroup } from "@/lib/facts/registry"
+import { type FactGroup } from "@/lib/facts/registry"
+import { buildFactGroups } from "@/lib/facts/details-view"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
 import { ApplicationHistory } from "@/components/portal/facts/application-history"
@@ -30,10 +31,9 @@ export default async function DetailsPage() {
   const { data: intakeRow } = await db.from("intake_sessions").select("answers").eq("case_id", myCase.id).maybeSingle()
   const intake = (intakeRow?.answers ?? {}) as WizardAnswers
 
-  // Completeness meter over the editable, non-SSN facts.
-  const editable = FACTS.filter((f) => !f.derive && f.key !== "applicant.ssn")
-  const captured = editable.filter((f) => (facts[f.key] ?? "").trim()).length
-  const total = editable.length
+  // Rows built server-side (registry + form-usage counts stay off the client); the
+  // meter and inline saves are then driven from client state.
+  const { groups: groupData, total } = buildFactGroups(facts, hasSsn, GROUP_ORDER, true)
 
   return (
     <div className="space-y-6">
@@ -46,19 +46,7 @@ export default async function DetailsPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-brass/30 bg-brass/[0.05] p-4">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">
-            {captured} of {total} details captured
-          </span>
-          {captured < total && <span className="text-text-mid">{total - captured} still needed</span>}
-        </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-3">
-          <div className="h-full rounded-full bg-brass" style={{ width: `${Math.round((captured / total) * 100)}%` }} />
-        </div>
-      </div>
-
-      <FactGroups caseId={myCase.id} facts={facts} hasSsn={hasSsn} groups={GROUP_ORDER} showSsn />
+      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter />
 
       <ApplicationHistory
         caseId={myCase.id}

@@ -18,7 +18,10 @@ export async function setCaseFact(
   caseId: string,
   key: string,
   value: string,
-  opts?: { reqCode?: string }
+  /** `skipRevalidate` — the inline "Your details" editor updates the screen from
+   *  client state, so a revalidatePath mid-typing would re-render the server tree and
+   *  steal focus while someone tabs the list. The pencil flows keep revalidating. */
+  opts?: { reqCode?: string; skipRevalidate?: boolean }
 ): Promise<{ ok?: true; error?: string }> {
   const actor = await authorizeCaseActor(caseId)
   if (!actor) return { error: "Not authorized." }
@@ -31,7 +34,7 @@ export async function setCaseFact(
     if (actor.actor !== "client") return { error: "Only you can set your Social Security number." }
     await setCaseSsn(admin, caseId, value, actor.profileId)
     await logActivity({ action: "fact.ssn_updated", caseId, entity: "case", entityId: caseId })
-    revalidatePath("/portal/details")
+    if (!opts?.skipRevalidate) revalidatePath("/portal/details")
     return { ok: true }
   }
 
@@ -61,8 +64,10 @@ export async function setCaseFact(
     entityId: caseId,
     detail: { key, ...(overrideReq ? { override: overrideReq } : {}) },
   })
-  revalidatePath("/portal/details")
-  revalidatePath("/portal/checklist")
+  if (!opts?.skipRevalidate) {
+    revalidatePath("/portal/details")
+    revalidatePath("/portal/checklist")
+  }
   return { ok: true }
 }
 
