@@ -94,9 +94,10 @@ export const APPLICATION_COVERAGE = [
     id: "other_nyc_handgun_license",
     section: "type",
     formLabel: "Do you possess any other NYC Handgun Lic.? If YES: Type, Lic. No.",
-    capture: { kind: "intake", ref: "hasOtherLicense" },
-    status: "partial",
-    notes: "We capture the yes/no; the type + licence number are not stored.",
+    capture: { kind: "at_filing" },
+    status: "at_filing",
+    notes:
+      "Rare — most applicants hold no other NYC handgun licence. Left for the applicant to enter at filing (yes/no + type + number); surfaced on the worksheet as a labelled blank rather than collected.",
   },
 
   // ── Section A · Field 1 — name ────────────────────────────────────────────
@@ -245,12 +246,22 @@ export const APPLICATION_COVERAGE = [
   {
     id: "business_occupation",
     section: "employment",
-    formLabel:
-      "Bus. Telephone No./Day · Occupation (Owner / Employee / Gun Custodian) · How many other persons in this business have N.Y.C. Handgun Licenses?",
+    formLabel: "Bus. Telephone No./Day · Occupation (Owner / Employee / Gun Custodian)",
     questionNo: "7",
     capture: { kind: "intake", ref: "occupation" },
-    status: "partial",
+    status: "ok",
     appliesTo: ["business", "premises"],
+  },
+  {
+    id: "business_other_license_holders",
+    section: "employment",
+    formLabel: "How many other persons in this business have N.Y.C. Handgun Licenses?",
+    questionNo: "7",
+    capture: { kind: "at_filing" },
+    status: "at_filing",
+    appliesTo: ["business", "premises"],
+    notes:
+      "A business figure entered at filing (the employer/sponsor knows it). Surfaced on the worksheet as a labelled blank rather than collected.",
   },
   {
     id: "company_gun_custodian",
@@ -426,12 +437,12 @@ export const APPLICATION_COVERAGE = [
     id: "letter_of_necessity",
     section: "documents",
     formLabel:
-      "Letter of Necessity (page 3 of the application) — required for ALL carry applicants and premises-for-employment. NO SUBSTITUTES.",
-    capture: { kind: "gap" },
-    status: "gap",
+      "Letter of Necessity (page 4 of the application) — required for ALL carry applicants and premises-for-employment. NO SUBSTITUTES.",
+    capture: { kind: "requirement", ref: "LON-01" },
+    status: "ok",
     appliesTo: ["carry", "business"],
     notes:
-      "A mandatory carry-application component with six specified statements. No requirement code exists for it today — a real coverage gap.",
+      "LON-01 collects the six statements and fills the official form + page 4 of the application. On a sponsored case the employer authors statements 1/3/5, the applicant 2/4/6.",
   },
   {
     id: "social_security_card",
@@ -449,10 +460,10 @@ export const APPLICATION_COVERAGE = [
     section: "documents",
     formLabel:
       "Acknowledgement of Person Agreeing to Safeguard Firearm(s) — completed & witnessed by the safeguard, plus a copy of THEIR photo ID",
-    capture: { kind: "gap" },
-    status: "gap",
+    capture: { kind: "requirement", ref: "SFG-01" },
+    status: "ok",
     notes:
-      "We capture the applicant's safe-storage plan (SAF-01) but not the safeguard person's own signed acknowledgement. Third-party document — see REGISTRY_COVERAGE.md §3.",
+      "SFG-01 fills the official Acknowledgement (nypd_safeguard_acknowledgement) from the safeguard person's details; they sign it before a witness. Separate from the applicant's own safe-storage plan (SAF-01).",
   },
   doc("character_references", "Character reference letters, notarized (carry: 4; premises: 2; renewal: exempt)", "REF-01"),
   doc("training_certificate", "DCJS-approved training — 16-hr classroom + 2-hr live-fire (carry / special carry)", "TRN-01", false, undefined, ["carry", "special_carry"]),
