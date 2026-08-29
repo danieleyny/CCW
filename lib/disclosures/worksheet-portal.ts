@@ -71,7 +71,11 @@ export function buildPortalWorksheet(
       f("Citizenship", s(v.citizenship)),
       f("Alien Registration Number", s(v.alienReg), { optional: true }),
       ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
-      ...addressFields("Mailing Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip), true),
+      f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
+      // Only surface the mailing block when it's actually different.
+      ...(v.mailingDifferent
+        ? addressFields("Mailing Address", s(v.mailingStreet), s(v.mailingApt), s(v.mailingCity), s(v.mailingState), s(v.mailingZip))
+        : []),
     ],
   })
 

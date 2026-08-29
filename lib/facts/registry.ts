@@ -112,6 +112,14 @@ export const FACTS: FactDef[] = [
   { key: "applicant.address.city", label: "City", type: "text", group: "address", from: (s) => s.intake.legalCity },
   { key: "applicant.address.state", label: "State", type: "select", group: "address", options: US_STATES, from: (s) => s.intake.legalState ?? "NY" },
   { key: "applicant.address.zip", label: "ZIP", type: "zip", group: "address", from: (s) => s.client.zip },
+  // Mailing address — a separate block behind a "different from home?" flag (portal
+  // step 1). Optional; left blank when the mailing address is the home address.
+  { key: "applicant.mailingDifferent", label: "Mailing address different from home?", type: "select", group: "address", options: ["No", "Yes"], optional: true },
+  { key: "applicant.mailing.street", label: "Mailing street", type: "text", group: "address", optional: true },
+  { key: "applicant.mailing.apt", label: "Mailing apt/unit", type: "text", group: "address", optional: true },
+  { key: "applicant.mailing.city", label: "Mailing city", type: "text", group: "address", optional: true },
+  { key: "applicant.mailing.state", label: "Mailing state", type: "select", group: "address", options: US_STATES, optional: true },
+  { key: "applicant.mailing.zip", label: "Mailing ZIP", type: "zip", group: "address", optional: true },
 
   // ── Contact ──
   { key: "applicant.phone.home", label: "Home phone", type: "phone", group: "contact" },

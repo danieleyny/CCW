@@ -33,11 +33,11 @@ function HistoryDates({
     <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
       <div className="space-y-1">
         <Label className="text-[11px] text-text-low">From</Label>
-        <Input type="month" className="w-[9rem]" value={fromMonth ?? ""} onChange={(e) => onFrom(e.target.value)} />
+        <Input type="date" className="w-[10rem]" value={fromMonth ?? ""} onChange={(e) => onFrom(e.target.value)} />
       </div>
       <div className="space-y-1">
         <Label className="text-[11px] text-text-low">To</Label>
-        <Input type="month" className="w-[9rem]" value={toMonth ?? ""} disabled={present} onChange={(e) => onTo(e.target.value)} />
+        <Input type="date" className="w-[10rem]" value={toMonth ?? ""} disabled={present} onChange={(e) => onTo(e.target.value)} />
       </div>
       <label className="flex items-center gap-1.5 pb-2.5 text-xs text-text-mid">
         <input
