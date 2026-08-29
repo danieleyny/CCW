@@ -472,6 +472,33 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     sourceUrl: NYPD_REQUIRED_DOCS,
     sourceLabel: "NYPD required documents",
   },
+  "PHO-01": {
+    mode: "obtain",
+    documentType: "applicant_photo",
+    actionLabel: "Upload your photograph",
+    customerTitle: "A recent passport-type photograph",
+    help: "A recent color passport-type photo, front view, taken within the last 30 days (same rules as a U.S. Passport Book). No hats, headgear, or glasses except for religious purposes; head straight; well lit. No selfies. Upload an IMAGE file — a PDF is rejected here.",
+    steps: [
+      "Take or obtain a passport-style color photo, front view, within the last 30 days.",
+      "Remove hats, headgear, and glasses (except for religious purposes); keep your head straight and the background plain.",
+      "Save it as an image (jpg, jpeg, png, gif, bmp, or tif) — NOT a PDF.",
+      "Upload it here.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+  },
+  "SGI-01": {
+    mode: "obtain",
+    documentType: "safeguard_id",
+    actionLabel: "Upload the safeguard's ID",
+    customerTitle: "Your safeguard person's photo ID",
+    help: "A copy of the government-issued photo ID of the person who will safeguard your firearm(s). If you already hold a firearm licence, also upload its front and back.",
+    steps: [
+      "Get a clear copy of the safeguard person's government-issued photo ID (driver's licence or state ID).",
+      "If you already hold a firearm licence, also include its front and back.",
+      "Upload it here.",
+    ],
+    sourceUrl: NYPD_REQUIRED_DOCS,
+  },
   "RES-01": {
     mode: "obtain",
     actionLabel: "Upload proof of residence",

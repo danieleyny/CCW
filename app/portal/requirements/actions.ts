@@ -7,8 +7,6 @@ import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
 import { formTemplate } from "@/lib/forms/templates"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
-import { computeApplicationReadiness } from "@/lib/forms/application-readiness"
-import { stampIncompleteDraft } from "@/lib/forms/partial"
 import { rematerializeCase } from "@/lib/requirements/rematerialize"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -319,11 +317,16 @@ export async function generateRequirementDocument(
         detail: { templateKey: action.templateKey, sha256: filled.sha256, ...filled.summary, missing: filled.missing, missingRequired: incompleteFields },
       })
     } else {
+      // DSC-01's document is the signed answers + authorization record — it needs the
+      // full assembled application data (facts + intake + disclosures + letter of
+      // necessity), not just the requirement's own answers.
+      const record = reqCode === "DSC-01" ? (await assembleApplicationValues(admin, actor.caseId))?.values : undefined
       const doc = await renderRequirementDocument({
         reqCode,
         applicantName: actor.clientName,
         answers,
         caseRef: actor.caseId.slice(0, 8),
+        record,
       })
       documentId = await storeGeneratedDocument(admin, {
         caseId: actor.caseId,
@@ -580,6 +583,7 @@ export async function signRequirementDocument(
       const filled = await signTemplate(new Uint8Array(await blob.arrayBuffer()), action.templateKey, signaturePng, signedAt)
       signedBytes = filled.bytes
     } else {
+      const record = reqCode === "DSC-01" ? (await assembleApplicationValues(admin, myCase.id))?.values : undefined
       const doc = await renderRequirementDocument({
         reqCode,
         applicantName: myCase.client.full_name,
@@ -587,6 +591,7 @@ export async function signRequirementDocument(
         signaturePng,
         signedAt,
         caseRef: myCase.id.slice(0, 8),
+        record,
       })
       signedBytes = doc.bytes
     }
@@ -920,52 +925,3 @@ export async function prepareInvestigationForms(
   return { forms: out }
 }
 
-/**
- * Prepare the applicant's FULL NYPD application (PD 643-041) as a filled draft PDF,
- * assembled from the fact layer + intake. A download helper the applicant reviews,
- * signs, and files THEMSELVES at NYPD — we never file. The SSN and the handgun list
- * are left blank (entered at filing). Returns a short-lived signed URL, and whether
- * the five-year history overflowed the form's 4 rows (a continuation sheet is
- * needed — never silently truncated).
- */
-export async function prepareApplication(
-  caseId: string,
-  opts?: { partial?: boolean }
-): Promise<{ url?: string; error?: string; overflow?: boolean; partial?: boolean; missing?: number }> {
-  await requireRole(["client", "staff", "admin"])
-  const admin = createAdminClient()
-  const assembled = await assembleApplicationValues(admin, caseId)
-  if (!assembled) return { error: "Case not found." }
-  const { values, track, clientId } = assembled
-
-  // Readiness gate: a draft that's missing required data is HONEST about it — the
-  // caller must opt in to a partial draft, and that partial is watermarked and
-  // fronted with a missing-field cover sheet so it can never look file-ready.
-  const readiness = computeApplicationReadiness(values, { licenseTrack: track })
-  if (!readiness.ready && !opts?.partial) {
-    return { error: "Some required details are still missing.", partial: false, missing: readiness.missing.length }
-  }
-
-  const filled = await fillTemplate("nypd_handgun_application", values)
-  const bytes = readiness.ready ? filled.bytes : await stampIncompleteDraft(filled.bytes, readiness.missing)
-
-  const path = `clients/${clientId}/prepared/handgun-application-${readiness.ready ? "" : "DRAFT-"}${Date.now()}.pdf`
-  const { error: upErr } = await admin.storage
-    .from("documents")
-    .upload(path, Buffer.from(bytes), { contentType: "application/pdf", upsert: true })
-  if (upErr) return { error: "Couldn't prepare the application — please try again." }
-  const { data: signed } = await admin.storage.from("documents").createSignedUrl(path, 300)
-  await logActivity({
-    action: "application.prepared",
-    caseId,
-    entity: "case",
-    entityId: caseId,
-    detail: { partial: !readiness.ready, missing: readiness.missing.length, captured: readiness.captured, total: readiness.total },
-  })
-  return {
-    url: signed?.signedUrl,
-    overflow: !!values.residenceOverflow || !!values.employmentOverflow,
-    partial: !readiness.ready,
-    missing: readiness.missing.length,
-  }
-}

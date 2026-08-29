@@ -423,6 +423,14 @@ export default async function CaseFilePage({
               <StageControl caseId={kase.id} stage={stage} status={kase.status} />
               <div className="flex items-center gap-2">
                 <a
+                  href={`/admin/cases/${kase.id}/worksheet`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-signal/40 bg-signal/8 px-3 py-1.5 text-xs font-medium text-signal transition-colors hover:bg-signal/15"
+                >
+                  <FileDown className="size-3.5" /> Portal worksheet
+                </a>
+                <a
                   href={`/admin/cases/${kase.id}/filing-pack`}
                   target="_blank"
                   rel="noreferrer"

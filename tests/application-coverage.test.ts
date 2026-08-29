@@ -71,8 +71,9 @@ describe("application coverage map", () => {
       .map((f) => f.id)
       .sort()
     expect(gapIds).toEqual(
-      // letter_of_necessity (LON-01) and safeguard_ack_form (SFG-01) closed this round.
-      ["certificate_of_relief", "residence_precinct"].sort()
+      // certificate_of_relief closed (COR-01); residence_precinct removed (the portal
+      // doesn't ask). No documented coverage gaps remain.
+      [].sort()
     )
   })
 

@@ -9,8 +9,10 @@ export const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
 // V3-P0.5 — heic/heif included: it's the iPhone camera default, and the gun-safe
 // photo is a REQUIRED document. The client-side compressor (lib/files/compress.ts)
 // converts to JPEG where the browser can decode; otherwise the original is kept.
-export const ALLOWED_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff", "heic", "heif"] as const
+export const ALLOWED_EXTENSIONS = ["pdf", "tif", "tiff", "jpg", "jpeg", "gif", "png", "bmp", "heic", "heif"] as const
 export type AllowedExtension = (typeof ALLOWED_EXTENSIONS)[number]
+/** The portal accepts IMAGES ONLY for the photograph — a PDF is rejected there. */
+export const IMAGE_EXTENSIONS = ["tif", "tiff", "jpg", "jpeg", "gif", "png", "bmp", "heic", "heif"] as const
 
 /**
  * Make a filename portal-safe: strip accents, lowercase the extension, and
@@ -41,15 +43,19 @@ export interface FileValidationResult {
   errors: string[]
 }
 
-/** Validate size + extension and return the sanitized filename (FMT-01). */
-export function validateFile(input: { name: string; size: number }): FileValidationResult {
+/** Validate size + extension and return the sanitized filename (FMT-01). Pass
+ *  `imageOnly` for the photograph — the portal rejects a PDF there. */
+export function validateFile(input: { name: string; size: number; imageOnly?: boolean }): FileValidationResult {
   const errors: string[] = []
   const sanitizedName = sanitizeFilename(input.name)
   const extension = sanitizedName.includes(".") ? sanitizedName.split(".").pop()! : ""
+  const allowed = input.imageOnly ? IMAGE_EXTENSIONS : ALLOWED_EXTENSIONS
 
-  if (!ALLOWED_EXTENSIONS.includes(extension as AllowedExtension)) {
+  if (!(allowed as readonly string[]).includes(extension)) {
     errors.push(
-      `Unsupported file type "${extension || "unknown"}". Allowed: ${ALLOWED_EXTENSIONS.join(", ")}.`
+      input.imageOnly
+        ? `The photograph must be an IMAGE — a PDF isn't accepted here. Allowed: ${IMAGE_EXTENSIONS.join(", ")}.`
+        : `Unsupported file type "${extension || "unknown"}". Allowed: ${ALLOWED_EXTENSIONS.join(", ")}.`
     )
   }
   if (input.size > MAX_FILE_BYTES) {

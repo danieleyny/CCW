@@ -53,33 +53,6 @@ export const FIXTURES: Record<string, Record<string, unknown>[]> = {
   nypd_letter_of_necessity: [
     { lop1: "Armored-car messenger; I transport currency and require a concealed handgun on route.", lop2: "Carried only for the job.", lop3: "Locked in the vault when off duty.", lop4: "Trained per DCJS.", lop5: "Will return the licence on termination.", lop6: "Read Penal Law Art. 35, 265, 400." },
   ],
-  nypd_disclosure_addendum: [
-    { q10: "no", q12: "yes", q12_explain: "Prescribed a short course of medication by Dr. Lee in 2019; no ongoing use.", q23: "yes", q23_explain: "Arrest in 2015, New York County; charge dismissed and sealed." },
-  ],
-  nypd_handgun_application: [
-    {
-      lastName: "Powell", firstName: "Marcus", mi: "J",
-      street: "123 Test St", apt: "4B", city: "New York", state: "NY", zip: "10001",
-      citizenship: "Citizen", cellPhone: "(212) 555-0148", email: "marcus@example.test",
-      placeOfBirth: "Brooklyn, NY, USA", age: "36", dob: "1990-01-01",
-      height: "70", weight: "180", sex: "Male", hairColor: "Brown", eyeColor: "Brown",
-      licenseType: "CarryGuardSecurity",
-      businessName: "Test Guard Co.", businessType: "Armed security agency", businessStreet: "500 Guard Ave",
-      businessCity: "New York", businessState: "NY", businessZip: "10011", busPhone: "(212) 555-0199",
-      occupation: "Security officer",
-      residenceHistory: [
-        { fromMonth: "2018-06", toMonth: "", address: "123 Test St Apt 4B, New York, NY 10001" },
-        { fromMonth: "2015-01", toMonth: "2018-05", address: "9 Old Rd, Brooklyn, NY 11201" },
-      ],
-      employmentHistory: [
-        { fromMonth: "2020-03", toMonth: "", employerName: "Test Guard Co.", employerAddress: "500 Guard Ave, New York, NY", occupation: "Security officer" },
-      ],
-      safeguardMethod: "In a locked gun safe at my residence",
-      safeguardName: "Dana Reyes", safeguardRelation: "Brother", safeguardAddress: "500 Guard Ave, New York, NY 10011",
-      safeguardPhone: "(212) 555-0142",
-      q10: "No", q11: "No", q12: "Yes", q23: "Yes", q24: "No", q27: "No", q28: "No",
-    },
-  ],
   nypd_safeguard_acknowledgement: [
     {
       applicantName: "Marcus J Powell",

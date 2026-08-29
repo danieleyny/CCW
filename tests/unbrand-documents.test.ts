@@ -33,7 +33,10 @@ function assertUnbranded(text: string, where: string) {
 }
 
 // Narrative generate-mode documents (not official-PDF fills, not roster tokens).
-const DOCS = ["AFF-01", "ARR-01", "SAF-01", "DSC-01", "OOP-01", "DIR-01", "WORKSHEET"]
+// DSC-01 is EXEMPT: it is the signed answers + authorization record — OUR record, not
+// an NYPD submission — and it must name Gun License NYC in the authorization (the
+// applicant authorizes us to enter their answers and to be named as the preparer).
+const DOCS = ["AFF-01", "ARR-01", "SAF-01", "OOP-01", "DIR-01", "WORKSHEET"]
 
 describe("generated documents carry no company identity", () => {
   beforeAll(() => {

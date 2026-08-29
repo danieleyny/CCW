@@ -72,7 +72,7 @@ export const FACTS: FactDef[] = [
   { key: "applicant.aliasOrMaidenName", label: "Alias / maiden name", type: "text", group: "you", optional: true, placeholder: "leave blank if none", from: (s) => s.intake.aliasName },
   { key: "applicant.dob", label: "Date of birth", type: "date", group: "you", sensitive: true, from: (s) => s.intake.dob },
   { key: "applicant.placeOfBirth", label: "Place of birth", type: "text", group: "you", placeholder: "City, State, Country", from: (s) => s.intake.placeOfBirth },
-  { key: "applicant.sex", label: "Sex", type: "select", group: "physical", options: ["Male", "Female", "X"], from: (s) => s.intake.sex },
+  { key: "applicant.sex", label: "Gender", type: "select", group: "physical", options: ["Male", "Female", "X"], from: (s) => s.intake.sex },
   { key: "applicant.height", label: "Height", type: "text", group: "physical", placeholder: "inches, e.g. 70", from: (s) => (s.intake.heightInches ? String(s.intake.heightInches) : "") },
   { key: "applicant.weight", label: "Weight (lb)", type: "text", group: "physical", placeholder: "pounds, e.g. 180", from: (s) => (s.intake.weightLbs ? String(s.intake.weightLbs) : "") },
   { key: "applicant.hairColor", label: "Hair color", type: "select", group: "physical", options: ["Bald", "Black", "Blond", "Brown", "Gray", "Red", "Sandy", "White", "Other"], from: (s) => s.intake.hairColor },
@@ -112,8 +112,9 @@ export const FACTS: FactDef[] = [
   // NYPD constraints ride in the label: Q30 storage must be IN New York State, and
   // the Q31 person must be a New York State resident.
   { key: "safeguard.method", label: "How and where the handgun is safeguarded (must be in New York State)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardMethod },
-  { key: "safeguard.name", label: "Person who will safeguard it (Q31)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardName },
-  { key: "safeguard.relation", label: "Their relationship to you", type: "text", group: "safeguard", from: (s) => s.intake.safeguardRelation },
+  { key: "safeguard.name", label: "Person who will safeguard it — must be 21+ and a NY State resident", type: "text", group: "safeguard", from: (s) => s.intake.safeguardName },
+  { key: "safeguard.relation", label: "Their relationship to you (spouse, sibling, family, friend, other)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardRelation },
+  { key: "safeguard.email", label: "Their email address (required by the portal)", type: "text", group: "safeguard" },
   { key: "safeguard.address", label: "Their address (must be a New York State resident)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardAddress },
   { key: "safeguard.phone", label: "Their telephone", type: "phone", group: "safeguard", from: (s) => s.intake.safeguardPhone },
 
