@@ -15,7 +15,7 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 
 export const metadata = { title: "Your details" }
 
-const GROUP_ORDER: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "counsel", "sponsor"]
+const GROUP_ORDER: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "safekeeping", "counsel", "sponsor"]
 
 /**
  * "Your details" — the preparation form. Every reusable fact captured once, edited
@@ -44,7 +44,8 @@ export default async function DetailsPage() {
     { prefix: "applicant.address", label: "Home address", street: fx("applicant.address.street"), buildingNumber: fx("applicant.address.buildingNumber"), streetName: fx("applicant.address.streetName"), confirmed: fx("applicant.address.streetConfirmed") === "yes" },
     { prefix: "applicant.mailing", label: "Mailing address", street: fx("applicant.mailing.street"), buildingNumber: fx("applicant.mailing.buildingNumber"), streetName: fx("applicant.mailing.streetName"), confirmed: fx("applicant.mailing.streetConfirmed") === "yes" },
     { prefix: "employer.address", label: "Employer address", street: fx("employer.address.street"), buildingNumber: fx("employer.address.buildingNumber"), streetName: fx("employer.address.streetName"), confirmed: fx("employer.address.streetConfirmed") === "yes" },
-    { prefix: "safeguard", label: "Safeguard address", street: fx("safeguard.address"), buildingNumber: fx("safeguard.buildingNumber"), streetName: fx("safeguard.streetName"), confirmed: fx("safeguard.streetConfirmed") === "yes" },
+    { prefix: "safeguard", label: "Safeguard person's address", street: fx("safeguard.street") || fx("safeguard.address"), buildingNumber: fx("safeguard.buildingNumber"), streetName: fx("safeguard.streetName"), confirmed: fx("safeguard.streetConfirmed") === "yes" },
+    { prefix: "safekeeping", label: "Safekeeping location", street: fx("safekeeping.street"), buildingNumber: fx("safekeeping.buildingNumber"), streetName: fx("safekeeping.streetName"), confirmed: fx("safekeeping.streetConfirmed") === "yes" },
   ]
 
   return (

@@ -143,10 +143,16 @@ export function ApplicationHistory({
               </Button>
             </div>
             <Input
-              placeholder="Address (street, city, state, county, zip, apt)"
+              placeholder="Street address (e.g. 123 Main St)"
               value={h.address ?? ""}
               onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
             />
+            <div className="grid gap-2 sm:grid-cols-[1fr_2fr_5rem_6rem]">
+              <Input placeholder="Apt/Unit" value={h.apt ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, apt: e.target.value } : x)))} />
+              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, city: e.target.value } : x)))} />
+              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
+              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
+            </div>
             <RowSplit
               entry={h}
               onChange={(patch) => setRes((c) => c.map((x, j) => (j === i ? { ...x, ...patch } : x)))}

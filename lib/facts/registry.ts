@@ -12,7 +12,7 @@
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 export type FactType = "text" | "date" | "phone" | "zip" | "select"
-export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "counsel" | "addressSplit"
+export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel" | "addressSplit"
 
 export interface FactSource {
   intake: WizardAnswers
@@ -53,6 +53,9 @@ export interface FactDef {
   from?: (s: FactSource) => string | null | undefined
   /** Read-only value computed from other facts at resolve time. */
   derive?: (get: (k: string) => string) => string
+  /** Kept for read/backfill but NOT shown in the details editor — a legacy field
+   *  superseded by a structured replacement (e.g. the combined safeguard name). */
+  hidden?: boolean
 }
 
 // The legal name is NEVER inferred from a display name or an email address
@@ -152,12 +155,31 @@ export const FACTS: FactDef[] = [
   // reachable on /portal/details — a concierge applicant never sees the wizard). The
   // NYPD constraints ride in the label: Q30 storage must be IN New York State, and
   // the Q31 person must be a New York State resident.
-  { key: "safeguard.method", label: "How and where the handgun is safeguarded (must be in New York State)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardMethod },
-  { key: "safeguard.name", label: "Person who will safeguard it — must be at least 21 (ideally a NY State resident)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardName },
+  { key: "safeguard.method", label: "How the handgun is secured when not in use (e.g. locked safe)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardMethod },
+  // The safeguarding PERSON. The portal has separate first/last name inputs; the old
+  // combined `safeguard.name` is kept hidden only as a read fallback.
+  { key: "safeguard.name", label: "Safeguard person (combined — legacy)", type: "text", group: "safeguard", hidden: true, from: (s) => s.intake.safeguardName },
+  { key: "safeguard.firstName", label: "Person who will safeguard it — first name (must be at least 21)", type: "text", group: "safeguard", from: (s) => (s.intake.safeguardName ?? "").trim().split(/\s+/)[0] },
+  { key: "safeguard.lastName", label: "Safeguard person — last name", type: "text", group: "safeguard", from: (s) => { const p = (s.intake.safeguardName ?? "").trim().split(/\s+/).filter(Boolean); return p.length > 1 ? p[p.length - 1] : "" } },
   { key: "safeguard.relation", label: "Their relationship to you (spouse, sibling, family, friend, other)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardRelation },
   { key: "safeguard.email", label: "Their email address (required by the portal)", type: "text", group: "safeguard" },
-  { key: "safeguard.address", label: "Their address (ideally a New York State resident — not required)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardAddress },
   { key: "safeguard.phone", label: "Their telephone", type: "phone", group: "safeguard", from: (s) => s.intake.safeguardPhone },
+  // Their address — structured (the portal wants building/street/apt/city/state/zip,
+  // not a blob). `safeguard.address` is kept hidden as the legacy single-line fallback.
+  { key: "safeguard.address", label: "Their address (combined — legacy)", type: "text", group: "safeguard", hidden: true, from: (s) => s.intake.safeguardAddress },
+  { key: "safeguard.street", label: "Their street address", type: "text", group: "safeguard", optional: true },
+  { key: "safeguard.apt", label: "Their apt / unit", type: "text", group: "safeguard", optional: true },
+  { key: "safeguard.city", label: "Their city", type: "text", group: "safeguard", optional: true },
+  { key: "safeguard.state", label: "Their state", type: "select", group: "safeguard", options: US_STATES, optional: true },
+  { key: "safeguard.zip", label: "Their ZIP", type: "zip", group: "safeguard", optional: true },
+
+  // The SAFEKEEPING LOCATION — where the handgun is physically secured. A distinct
+  // full address (not the home address; for a business licence it often differs).
+  { key: "safekeeping.street", label: "Where it is secured — street address", type: "text", group: "safekeeping" },
+  { key: "safekeeping.apt", label: "Apt / unit / suite", type: "text", group: "safekeeping", optional: true },
+  { key: "safekeeping.city", label: "City", type: "text", group: "safekeeping" },
+  { key: "safekeeping.state", label: "State", type: "select", group: "safekeeping", options: US_STATES, from: () => "NY" },
+  { key: "safekeeping.zip", label: "ZIP", type: "zip", group: "safekeeping" },
   // 21+ is the portal's HARD rule for the safeguarding person (NY residency is only
   // "ideally"). We capture it explicitly so readiness can block an under-21.
   { key: "safeguard.is21", label: "Is this person at least 21 years old?", type: "select", group: "safeguard", options: ["Yes", "No"] },
@@ -187,6 +209,9 @@ export const FACTS: FactDef[] = [
   { key: "safeguard.buildingNumber", label: "Safeguard building number", type: "text", group: "addressSplit", optional: true },
   { key: "safeguard.streetName", label: "Safeguard street name", type: "text", group: "addressSplit", optional: true },
   { key: "safeguard.streetConfirmed", label: "Safeguard street split confirmed", type: "text", group: "addressSplit", optional: true },
+  { key: "safekeeping.buildingNumber", label: "Safekeeping building number", type: "text", group: "addressSplit", optional: true },
+  { key: "safekeeping.streetName", label: "Safekeeping street name", type: "text", group: "addressSplit", optional: true },
+  { key: "safekeeping.streetConfirmed", label: "Safekeeping street split confirmed", type: "text", group: "addressSplit", optional: true },
 
   // ── Sponsor-owned ──
   { key: "sponsor.legalName", label: "Company legal name", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.legalName },
