@@ -160,7 +160,9 @@ export const FACTS: FactDef[] = [
   { key: "sponsor.custodianLicenseNumber", label: "Custodian licence #", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.custodianLicenseNumber },
 
   // ── SSN — registered, but NEVER stored in case_facts (see lib/facts/ssn) ──
-  { key: "applicant.ssn", label: "Social Security number", type: "text", group: "you", sensitive: true },
+  // The portal wants only the LAST FOUR digits (step 1). We never ask for or store a
+  // full SSN — less sensitive data, same outcome. Held in the encrypted store.
+  { key: "applicant.ssn", label: "Social Security number — last 4 digits only", type: "text", group: "you", sensitive: true },
 
   // ── Derived (read-only) ──
   { key: "applicant.fullName", label: "Full name", type: "text", group: "you", derive: (g) => [g("applicant.legalFirstName"), g("applicant.legalMiddleInitial"), g("applicant.legalLastName")].filter(Boolean).join(" ") },

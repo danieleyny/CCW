@@ -150,10 +150,10 @@ export function FactRow({
               <input
                 {...commonProps}
                 type={kind === "ssn" ? "password" : type === "date" ? "date" : type === "phone" ? "tel" : "text"}
-                inputMode={type === "phone" ? "tel" : type === "zip" ? "numeric" : undefined}
-                maxLength={type === "zip" ? 5 : undefined}
+                inputMode={type === "phone" ? "tel" : type === "zip" || kind === "ssn" ? "numeric" : undefined}
+                maxLength={type === "zip" ? 5 : kind === "ssn" ? 4 : undefined}
                 autoComplete={kind === "ssn" ? "off" : undefined}
-                placeholder={placeholder ?? (kind === "ssn" ? "•••-••-••••" : undefined)}
+                placeholder={placeholder ?? (kind === "ssn" ? "last 4 digits" : undefined)}
                 onChange={(e) => setDraft(e.target.value)}
               />
             )}
