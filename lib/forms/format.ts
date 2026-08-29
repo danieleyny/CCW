@@ -42,9 +42,13 @@ export function portalDate(iso: string | null | undefined): string {
   return `${Number(mo)}/${Number(d)}/${y}`
 }
 
-/** Total inches → feet-inches with zero-padded inches (70 → 5'10", 65 → 5'05"). */
+/** Height → feet-inches with zero-padded inches (70 → 5'10", 65 → 5'05"). Accepts a
+ *  total-inches number/string OR an already-formatted feet-inches value (the fact is
+ *  now stored as "5'10"") — the latter passes through. */
 export function portalHeight(inches: string | number | null | undefined): string {
-  const n = typeof inches === "number" ? inches : parseInt(String(inches ?? "").trim(), 10)
+  const raw = String(inches ?? "").trim()
+  if (/^\d+'\d/.test(raw)) return raw // already feet-inches
+  const n = typeof inches === "number" ? inches : parseInt(raw, 10)
   if (!Number.isFinite(n) || n <= 0) return ""
   const ft = Math.floor(n / 12)
   const inch = n % 12
