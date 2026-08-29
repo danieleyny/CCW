@@ -339,19 +339,17 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     customerTitle: "Your Letter of Necessity",
     help: "Carry licences for business or professional use require a Letter of Necessity on the NYPD's own form. Answer two questions about your work; the four acknowledgements are pre-filled for you to confirm.",
   },
-  "PBR-01": {
+  // PBR-01 (the uploaded Public Records Exemption) is RETIRED — the live portal fills
+  // it INLINE, so we collect the election as data (CON-01), never as an upload.
+  "CON-01": {
     conciergeScope: "full",
-    mode: "obtain",
-    actionLabel: "Add the public-records exemption (optional)",
+    mode: "generate",
+    actionLabel: "Confidentiality request (optional)",
+    questionnaireId: "confidentiality",
+    signable: false,
     documentType: "public_records_exemption",
-    sourceUrl: "https://licensing.nypdonline.org/",
-    steps: [
-      "Download the Request for Public-Records Exemption (PL §400.00(5)(b)) — it asks the NYPD to withhold your name and address from the public licensee record.",
-      "Complete it by hand (it isn't a fillable form) and sign it.",
-      "Upload the signed copy here to include it with your application.",
-    ],
-    customerTitle: "Public-records exemption (optional)",
-    help: "By default, a handgun licensee's name and address are a public record (PL §400.00(5)). This optional form asks the License Division to withhold yours. It costs a checkbox and a printed page.",
+    customerTitle: "Keep your information confidential? (optional)",
+    help: "By default a handgun licensee's name, ZIP and licence type are a public record and are released on request. You may ask the License Division to withhold them — the portal collects this on its own page, so we record your answer and enter it for you. Optional.",
   },
   "DSC-01": {
     conciergeScope: "hidden",

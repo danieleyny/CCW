@@ -69,6 +69,11 @@ export interface Field {
   /** Shown only to law-enforcement applicants (portal Q16). Hidden — and never
    *  recorded — for everyone else. */
   leoOnly?: boolean
+  /** Letter-of-Necessity scope by licence type (portal Part 5): the statement is
+   *  asked only of the matching tracks. "all" is asked of everyone; "carry" of any
+   *  carry track; "guard" of Carry Guard/Security; "business" of the business tracks.
+   *  A Concealed Carry applicant therefore answers only the "all" + "carry" statements. */
+  lonScope?: "all" | "carry" | "guard" | "business"
   /**
    * On a SPONSORED case, who owns this field. The Letter of Necessity is co-authored:
    * the employer supplies the business-knowledge statements (1, 3, 5) and the
@@ -318,6 +323,7 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
         required: true,
         maxLength: 1200,
         party: "sponsor",
+        lonScope: "business",
       },
       {
         name: "lop2",
@@ -325,6 +331,7 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
         type: "textarea",
         maxLength: 800,
         party: "applicant",
+        lonScope: "guard",
       },
       {
         name: "lop3",
@@ -334,8 +341,9 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
         required: true,
         maxLength: 1200,
         party: "sponsor",
+        lonScope: "all",
       },
-      { name: "lop4", label: "4. Acknowledgement — trained in use and safety", type: "textarea", maxLength: 800, party: "applicant" },
+      { name: "lop4", label: "4. Acknowledgement — trained in use and safety", type: "textarea", maxLength: 800, party: "applicant", lonScope: "carry" },
       {
         name: "lop5",
         label: "5. Acknowledgement — disposal and licence return",
@@ -343,8 +351,47 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
         help: "On a sponsored case your employer acknowledges its responsibility to dispose of the handgun and return the licence when the employment ends.",
         maxLength: 800,
         party: "sponsor",
+        lonScope: "guard",
       },
-      { name: "lop6", label: "6. Acknowledgement — familiar with Penal Law Art. 35, 265, 400", type: "textarea", maxLength: 800, party: "applicant" },
+      { name: "lop6", label: "6. Acknowledgement — familiar with Penal Law Art. 35, 265, 400", type: "textarea", maxLength: 800, party: "applicant", lonScope: "all" },
+    ],
+  },
+
+  // Confidentiality (portal step 11) — the Public Records Exemption, filled INLINE as
+  // data (not uploaded). By default a licensee's name, address and licence type are a
+  // public record and are released on request; this asks the License Division to
+  // withhold them. Optional.
+  "confidentiality": {
+    id: "confidentiality",
+    title: "Confidentiality (Public Records Exemption)",
+    intro:
+      "By default, a handgun licensee's name, ZIP code and licence type are a public record and are released to newspapers on request. You may ask the License Division to keep them confidential. This is optional — answer No to skip it.",
+    submitLabel: "Save my confidentiality request",
+    fields: [
+      {
+        name: "requesting",
+        label: "Do you want to request that your information be kept confidential?",
+        type: "yesno",
+        revealOnYes: [
+          { name: "g1a", label: "My safety may be endangered — I am/was an active or retired police, peace, probation, parole, or corrections officer", type: "checkbox" },
+          { name: "g1b", label: "I am/was a protected person under a currently valid order of protection", type: "checkbox" },
+          { name: "g1c", label: "I am/was a witness in a criminal proceeding involving a criminal charge", type: "checkbox" },
+          { name: "g1d", label: "I am/was a juror or grand juror in a criminal proceeding", type: "checkbox" },
+          { name: "g2", label: "My safety, or my spouse/partner/household member's, may be endangered for some other reason (explain below)", type: "checkbox" },
+          { name: "g3", label: "I am the spouse, domestic partner, or household member of a person described above", type: "checkbox" },
+          { name: "g4", label: "I have reason to believe I may be subject to unwarranted harassment on disclosure", type: "checkbox" },
+          { name: "item5", label: "Additional supportive information", type: "textarea", maxLength: 2000 },
+          {
+            name: "election",
+            label: "Scope of this request",
+            type: "select",
+            options: [
+              { value: "all", label: "Apply this request to all my NYC handgun licence applications and licences" },
+              { value: "withdraw", label: "I am not submitting a request, and withdraw any previous requests" },
+            ],
+          },
+        ],
+      },
     ],
   },
 

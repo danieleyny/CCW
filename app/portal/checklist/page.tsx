@@ -20,6 +20,9 @@ export default async function ChecklistPage() {
   // sponsor-managed, the case is sponsored. Used to lock the employer's Letter-of-
   // Necessity fields (statements 1/3/5) read-only for the applicant.
   const caseSponsored = view.items.some((i) => i.sponsorManaged)
+  // Licence track scopes the Letter-of-Necessity statements (a Concealed Carry
+  // applicant is asked 3 of them, not 6).
+  const { data: trackRow } = await supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
 
   return (
     <div>
@@ -58,6 +61,7 @@ export default async function ChecklistPage() {
         feeSummary={view.feeSummary}
         feeReceipts={view.feeReceipts}
         caseSponsored={caseSponsored}
+        licenseTrack={trackRow?.license_track ?? null}
       />
     </div>
   )

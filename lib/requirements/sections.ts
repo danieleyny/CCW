@@ -95,7 +95,7 @@ const SECTION_BY_CODE: Record<string, SectionKey> = {
   "PHO-01": "identity", "SGI-01": "people",
   // We prepare, you sign
   "AFF-01": "prepared", "AFF-02": "prepared", "FAM-01": "prepared", "SFG-01": "prepared",
-  "LON-01": "prepared", "PBR-01": "prepared",
+  "LON-01": "prepared", "CON-01": "prepared",
   "DSC-01": "prepared", "QUE-01": "prepared", "ARR-01": "prepared",
   "OOP-01": "prepared", "DIR-01": "prepared", "SOC-01": "prepared", "CSC-01": "prepared",
   // Only if it applies
