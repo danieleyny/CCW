@@ -127,6 +127,9 @@ interface ObtainAction extends ActionBase {
    * is a separate, softer signal — no fixed target to hit.
    */
   minFiles?: number
+  /** Show the shared in-person + online notary routes (a notarized upload like the
+   *  release) — the same panel the reference/cohabitant flows render. */
+  notaryRoutes?: boolean
 }
 
 interface AttestAction extends ActionBase {
@@ -366,6 +369,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Add your notarized release",
     documentType: "notarized_release",
+    notaryRoutes: true,
     sourceUrl: "https://licensing.nypdonline.org/",
     steps: [
       "Get the release form from the portal's Forms section (a sample is provided there).",

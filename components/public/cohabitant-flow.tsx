@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { CheckCircle2, Download, MapPin, ExternalLink, Stamp, Video } from "lucide-react"
+import { CheckCircle2, Download, MapPin } from "lucide-react"
 import { submitCohabitantAnswers, uploadNotarizedCohabitant } from "@/app/c/actions"
-import { notaryOptions, ronOptions } from "@/lib/references/notary"
+import { NotaryRoutes } from "@/components/shared/notary-options"
 import { NotarizedTokenUpload } from "@/components/public/notarized-token-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,8 +58,6 @@ export function CohabitantFlow({
   }
 
   if (phase === "notarize") {
-    const opts = notaryOptions(area)
-    const ron = ronOptions()
     return (
       <div className="mt-6 space-y-5">
         <div className="rounded-lg border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
@@ -88,44 +86,7 @@ export function CohabitantFlow({
             have to start over. You&apos;ll sign at the notary — in person, or during your online notary session.
           </p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">3</span>
-            <Stamp className="size-4 text-brass" /> Take it to a notary — bring photo ID
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Sign it <b>in front of the notary</b>, who then completes and stamps the certificate. Notary options near you:
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {opts.map((o) => (
-              <li key={o.label} className="text-sm">
-                <a href={o.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal underline">
-                  <MapPin className="size-3.5" /> {o.label} <ExternalLink className="size-3" />
-                </a>
-                <span className="ml-1 text-xs text-text-low">— {o.note}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="rounded-lg border border-signal/30 bg-signal/5 p-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Video className="size-4 text-signal" /> Prefer not to travel? Notarize online instead
-          </div>
-          <p className="mt-1 text-xs text-text-low">
-            New York allows Remote Online Notarization — you sign by live video while the notary watches, in minutes.
-            Upload the same unsigned PDF to any of these:
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {ron.map((o) => (
-              <li key={o.label} className="text-sm">
-                <a href={o.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal underline">
-                  {o.label} <ExternalLink className="size-3" />
-                </a>
-                <span className="ml-1 text-xs text-text-low">— {o.note}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <NotaryRoutes area={area} stepNumber="3" />
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">4</span>
