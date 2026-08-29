@@ -83,6 +83,12 @@ export default async function DetailsPage() {
         caseId={myCase.id}
         residence={intake.residenceHistory ?? []}
         employment={intake.employmentHistory ?? []}
+        employerSeed={{
+          employed: fx("employer.employed") === "Yes",
+          startDate: fx("employer.startDate"),
+          name: fx("employer.name"),
+          occupation: fx("applicant.jobTitle"),
+        }}
         outOfCity={{
           number: intake.outOfCityLicenseNumber ?? "",
           county: intake.outOfCityCounty ?? "",

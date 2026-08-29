@@ -65,6 +65,8 @@ export interface EmploymentHistoryEntry {
   /** @deprecated legacy combined "name + address"; coalesced into employerName on read. */
   employer?: string
   occupation?: string
+  /** UI-only: this row was auto-seeded from the employer facts (never persisted). */
+  _seeded?: boolean
 }
 /** One handgun / long-gun the applicant already owns (portal "Do you currently own…"). */
 export interface FirearmEntry {

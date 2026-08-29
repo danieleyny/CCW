@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useActionState, useState } from "react"
+import { useActionState, useRef, useState } from "react"
 import { ChevronDown, Check, X, ShieldCheck, Loader2 } from "lucide-react"
 import { signAgreements, type ConciergeResult } from "@/app/portal/concierge/actions"
 import { AGREEMENTS } from "@/config/agreements"
@@ -26,8 +26,30 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
   // reading it. Signing is unlocked only when every one is agreed; a single "do
   // not agree" hard-blocks (they can switch to self-guided instead).
   const [decisions, setDecisions] = useState<Record<string, "agree" | "disagree">>({})
-  const decide = (kind: string, d: "agree" | "disagree") =>
-    setDecisions((prev) => ({ ...prev, [kind]: d }))
+  // #1 — one agreement open at a time. Agreeing advances to the next unanswered one
+  // and scrolls it into view; the last agreement brings up the signature block. "I do
+  // not agree" does NOT advance (that card ends the engagement — keep it in view).
+  const [openKind, setOpenKind] = useState<string | null>(AGREEMENTS[0]?.kind ?? null)
+  const cardRefs = useRef<Record<string, HTMLLIElement | null>>({})
+  const signRef = useRef<HTMLFormElement | null>(null)
+  const decide = (kind: string, d: "agree" | "disagree") => {
+    setDecisions((prev) => {
+      const next = { ...prev, [kind]: d }
+      if (d === "agree") {
+        const nextUnanswered = AGREEMENTS.find((a) => a.kind !== kind && next[a.kind] !== "agree")
+        if (nextUnanswered) {
+          setOpenKind(nextUnanswered.kind)
+          requestAnimationFrame(() => cardRefs.current[nextUnanswered.kind]?.scrollIntoView({ behavior: "smooth", block: "center" }))
+        } else {
+          setOpenKind(null) // everything agreed → collapse and reveal the signature block
+          requestAnimationFrame(() => signRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }))
+        }
+      } else {
+        setOpenKind(kind) // keep the declined card open and in view
+      }
+      return next
+    })
+  }
   const agreedCount = AGREEMENTS.filter((a) => decisions[a.kind] === "agree").length
   const allAgreed = agreedCount === AGREEMENTS.length
   const anyDisagreed = AGREEMENTS.some((a) => decisions[a.kind] === "disagree")
@@ -50,9 +72,20 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
         {AGREEMENTS.map((a, i) => {
           const decision = decisions[a.kind]
           return (
-            <li key={a.kind}>
-              <details className="group rounded-lg border border-hairline bg-card" open={i === 0}>
-                <summary className="flex cursor-pointer list-none items-start gap-3 p-4">
+            <li key={a.kind} ref={(el) => { cardRefs.current[a.kind] = el }} className="scroll-mt-24">
+              <details
+                className="group rounded-lg border border-hairline bg-card"
+                open={openKind === a.kind}
+              >
+                <summary
+                  className="flex cursor-pointer list-none items-start gap-3 p-4"
+                  onClick={(e) => {
+                    // Controlled: re-opening an answered card still works (a convenience),
+                    // but we drive `open` ourselves so agreeing can advance the sequence.
+                    e.preventDefault()
+                    setOpenKind((cur) => (cur === a.kind ? null : a.kind))
+                  }}
+                >
                   <span
                     className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs ${
                       decision === "agree"
@@ -104,7 +137,7 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
         })}
       </ul>
 
-      <form action={action} className="space-y-4 rounded-lg border border-brass/30 bg-brass/[0.04] p-4 sm:p-5">
+      <form ref={signRef} action={action} className="scroll-mt-24 space-y-4 rounded-lg border border-brass/30 bg-brass/[0.04] p-4 sm:p-5">
         <input type="hidden" name="base64Png" value={png} />
         <input
           type="hidden"
