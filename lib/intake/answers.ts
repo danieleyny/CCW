@@ -44,6 +44,11 @@ export interface AddressHistoryEntry {
   fromMonth?: string // YYYY-MM
   toMonth?: string // YYYY-MM, or blank for "present"
   address?: string // street, city, state, county, zip, apt
+  // Portal wants building number + street name separately; a parse is a GUESS until
+  // streetConfirmed is set. Empty → the worksheet falls back to the render-time split.
+  buildingNumber?: string
+  streetName?: string
+  streetConfirmed?: boolean
 }
 /** Q29 — one row of the five-year employment history. */
 export interface EmploymentHistoryEntry {

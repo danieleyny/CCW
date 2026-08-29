@@ -1,4 +1,5 @@
 import type { WizardAnswers } from "@/lib/intake/answers"
+import { resolveStreetSplit } from "@/lib/forms/format"
 
 /**
  * Assemble the fill values for the full NYPD application (PD 643-041) from the ONE
@@ -20,6 +21,20 @@ const LICENSE_TYPE_BY_TRACK: Record<string, string> = {
 export interface ApplicationValues extends Record<string, unknown> {
   residenceOverflow: boolean
   employmentOverflow: boolean
+}
+
+/**
+ * A CONFIRMED building/street split for one address → `${which}BuildingNumber` /
+ * `${which}StreetName`. Unconfirmed stays empty so the worksheet and signed record
+ * fall back to the render-time parse — a guess is never treated as final.
+ */
+function splitInto(which: string, buildingNumber: string, streetName: string, confirmed: string, street: string): Record<string, string> {
+  const s = resolveStreetSplit({ buildingNumber, streetName, confirmed: confirmed === "yes", street })
+  const ok = confirmed === "yes"
+  return {
+    [`${which}BuildingNumber`]: ok ? s.buildingNumber : "",
+    [`${which}StreetName`]: ok ? s.streetName : "",
+  }
 }
 
 export function buildApplicationValues(
@@ -57,6 +72,12 @@ export function buildApplicationValues(
     city: f("applicant.address.city"),
     state: f("applicant.address.state"),
     zip: f("applicant.address.zip"),
+    // Confirmed portal building/street splits (empty when unconfirmed → the worksheet
+    // and signed record fall back to the render-time parse of the single line).
+    ...splitInto("home", f("applicant.address.buildingNumber"), f("applicant.address.streetName"), f("applicant.address.streetConfirmed"), f("applicant.address.street")),
+    ...splitInto("mailing", f("applicant.mailing.buildingNumber"), f("applicant.mailing.streetName"), f("applicant.mailing.streetConfirmed"), f("applicant.mailing.street")),
+    ...splitInto("business", f("employer.address.buildingNumber"), f("employer.address.streetName"), f("employer.address.streetConfirmed"), f("employer.address.street")),
+    ...splitInto("safeguard", f("safeguard.buildingNumber"), f("safeguard.streetName"), f("safeguard.streetConfirmed"), f("safeguard.address")),
     mailingDifferent: f("applicant.mailingDifferent") === "Yes",
     mailingStreet: f("applicant.mailing.street"),
     mailingApt: f("applicant.mailing.apt"),

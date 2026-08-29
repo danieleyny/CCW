@@ -72,3 +72,22 @@ export function splitStreet(street: string | null | undefined): { buildingNumber
   if (m) return { buildingNumber: m[1], streetName: m[2] }
   return { buildingNumber: "", streetName: v }
 }
+
+/**
+ * The portal wants Building Number and Street Name as SEPARATE fields. We store a
+ * single `street` line, so a split is a best-effort GUESS until the applicant
+ * confirms it. This resolver honours that: once confirmed, the stored split is
+ * authoritative; until then it falls back to the render-time heuristic — so an
+ * unconfirmed address is never silently treated as a finished answer.
+ */
+export function resolveStreetSplit(opts: {
+  buildingNumber?: string | null
+  streetName?: string | null
+  confirmed?: boolean
+  street: string | null | undefined
+}): { buildingNumber: string; streetName: string } {
+  const bn = (opts.buildingNumber ?? "").trim()
+  const sn = (opts.streetName ?? "").trim()
+  if (opts.confirmed && (bn || sn)) return { buildingNumber: bn, streetName: sn }
+  return splitStreet(opts.street)
+}
