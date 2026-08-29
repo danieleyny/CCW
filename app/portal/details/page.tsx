@@ -9,11 +9,12 @@ import { buildFactGroups } from "@/lib/facts/details-view"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
 import { ApplicationHistory } from "@/components/portal/facts/application-history"
+import { FirearmsRecords } from "@/components/portal/facts/firearms-records"
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 export const metadata = { title: "Your details" }
 
-const GROUP_ORDER: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "sponsor"]
+const GROUP_ORDER: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "counsel", "sponsor"]
 
 /**
  * "Your details" — the preparation form. Every reusable fact captured once, edited
@@ -58,6 +59,12 @@ export default async function DetailsPage() {
           issuedOn: intake.outOfCityIssuedOn ?? "",
           expiresOn: intake.outOfCityExpiresOn ?? "",
         }}
+      />
+
+      <FirearmsRecords
+        caseId={myCase.id}
+        firearms={intake.firearms ?? []}
+        otherLicenses={intake.otherLicenses ?? []}
       />
     </div>
   )

@@ -12,7 +12,7 @@
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 export type FactType = "text" | "date" | "phone" | "zip" | "select"
-export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard"
+export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "counsel"
 
 export interface FactSource {
   intake: WizardAnswers
@@ -105,6 +105,9 @@ export const FACTS: FactDef[] = [
   { key: "applicant.eyeColor", label: "Eye color", type: "select", group: "physical", options: ["Black", "Blue", "Brown", "Gray", "Green", "Hazel", "Two Different", "Other"], from: (s) => s.intake.eyeColor },
   { key: "applicant.citizenship", label: "Citizenship", type: "select", group: "you", options: ["U.S. citizen", "Lawful permanent resident"], from: (s) => s.intake.citizenship },
   { key: "applicant.alienRegistrationNumber", label: "Alien registration #", type: "text", group: "you", optional: true, placeholder: "only if a permanent resident", from: (s) => s.intake.alienRegistrationNumber },
+  // Renewal — the prior licence number (cases.is_renewal already flags renewals; the
+  // number itself had no home). Optional: only a renewal has one.
+  { key: "applicant.priorLicenseNumber", label: "Prior licence number", type: "text", group: "you", optional: true, placeholder: "only if renewing" },
 
   // ── Address ──
   { key: "applicant.address.street", label: "Street address", type: "text", group: "address", from: (s) => s.intake.legalStreet },
@@ -139,6 +142,10 @@ export const FACTS: FactDef[] = [
   { key: "employer.phone", label: "Employer phone", type: "phone", group: "employer", from: (s) => s.sponsor?.businessPhone ?? s.intake.businessPhone },
   { key: "employer.type", label: "Industry / type of business", type: "select", group: "employer", options: INDUSTRIES, from: (s) => s.sponsor?.businessType ?? s.intake.businessType },
   { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", from: (s) => s.intake.occupation },
+  // Portal employment block — asked of everyone; the start date/unit only apply if employed.
+  { key: "employer.employed", label: "Currently employed?", type: "select", group: "employer", options: ["Yes", "No"] },
+  { key: "employer.startDate", label: "Current employment start date", type: "date", group: "employer", optional: true, placeholder: "only if employed" },
+  { key: "employer.unit", label: "Business unit / suite number", type: "text", group: "employer", optional: true, placeholder: "if any" },
 
   // ── Safeguard (Q30 how/where + Q31 the designated person) ──
   // Scalars, so they live in the fact layer (entered once, reused on every form and
@@ -151,6 +158,18 @@ export const FACTS: FactDef[] = [
   { key: "safeguard.email", label: "Their email address (required by the portal)", type: "text", group: "safeguard" },
   { key: "safeguard.address", label: "Their address (ideally a New York State resident — not required)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardAddress },
   { key: "safeguard.phone", label: "Their telephone", type: "phone", group: "safeguard", from: (s) => s.intake.safeguardPhone },
+  // 21+ is the portal's HARD rule for the safeguarding person (NY residency is only
+  // "ideally"). We capture it explicitly so readiness can block an under-21.
+  { key: "safeguard.is21", label: "Is this person at least 21 years old?", type: "select", group: "safeguard", options: ["Yes", "No"] },
+
+  // Counsel — the portal asks everyone; most answer "No", the name block only applies
+  // on "Yes". This is NOT legal representation of the applicant by us.
+  { key: "counsel.represented", label: "Are you represented by an attorney for this application?", type: "select", group: "counsel", options: ["No", "Yes"] },
+  { key: "counsel.firstName", label: "Attorney first name", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
+  { key: "counsel.lastName", label: "Attorney last name", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
+  { key: "counsel.firm", label: "Name of firm", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
+  { key: "counsel.email", label: "Attorney email", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
+  { key: "counsel.phone", label: "Attorney phone", type: "phone", group: "counsel", optional: true, placeholder: "only if represented" },
 
   // ── Sponsor-owned ──
   { key: "sponsor.legalName", label: "Company legal name", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.legalName },

@@ -87,6 +87,10 @@ export function buildApplicationValues(
     businessZip: f("employer.address.zip"),
     busPhone: f("employer.phone"),
     occupation: f("applicant.jobTitle"),
+    employed: f("employer.employed"),
+    employmentStartDate: f("employer.startDate"),
+    businessUnit: f("employer.unit"),
+    priorLicenseNumber: f("applicant.priorLicenseNumber"),
     // Licence type — best effort, applicant confirms.
     licenseType: premises ? "Premises" : LICENSE_TYPE_BY_TRACK[opts.licenseTrack ?? ""] ?? "",
     premisesType: premises ? "Residence" : "",
@@ -106,6 +110,17 @@ export function buildApplicationValues(
     safeguardRelation: f("safeguard.relation") || (intake.safeguardRelation ?? ""),
     safeguardAddress: f("safeguard.address") || (intake.safeguardAddress ?? ""),
     safeguardPhone: f("safeguard.phone") || (intake.safeguardPhone ?? ""),
+    safeguardIs21: f("safeguard.is21"),
+    // Counsel (facts) — most answer No; the name block only applies on Yes.
+    counselRepresented: f("counsel.represented"),
+    counselFirstName: f("counsel.firstName"),
+    counselLastName: f("counsel.lastName"),
+    counselFirm: f("counsel.firm"),
+    counselEmail: f("counsel.email"),
+    counselPhone: f("counsel.phone"),
+    // Portal record tables with no scalar home (intake).
+    firearms: intake.firearms ?? [],
+    otherLicenses: intake.otherLicenses ?? [],
     // Letter of Necessity (page 4) — the six statements, from LON-01.
     lop1: String(lon.lop1 ?? ""),
     lop2: String(lon.lop2 ?? ""),

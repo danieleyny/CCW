@@ -64,6 +64,10 @@ export function computePortalReadiness(
   // Safekeeping + safeguard.
   need(has("safeguardMethod"), "How the handgun is secured", DETAILS)
   need(has("safeguardName") && (has("safeguardPhone") || has("safeguardEmail")), "The safeguard person", DETAILS)
+  // 21+ is the portal's HARD rule for the safeguarding person. Both an unanswered
+  // confirmation AND an explicit "No" block — an under-21 safeguard is disqualifying,
+  // so it must be corrected before the portal will accept the entry.
+  need(v.safeguardIs21 === "Yes", "Confirm the safeguard person is at least 21", DETAILS)
 
   // Disclosures — every asked question answered (Q6 only if Q5 yes; Q16 LEO only,
   // filtered out for non-LEO so absent is fine).

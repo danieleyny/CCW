@@ -55,6 +55,21 @@ export interface EmploymentHistoryEntry {
   employer?: string
   occupation?: string
 }
+/** One handgun / long-gun the applicant already owns (portal "Do you currently own…"). */
+export interface FirearmEntry {
+  make?: string
+  model?: string
+  caliber?: string
+  serial?: string
+}
+/** One other firearms licence/permit held (the portal table behind "other licences"). */
+export interface OtherLicenseEntry {
+  number?: string
+  agency?: string // issuing agency or authority
+  stateCounty?: string // state and county of issuance
+  issuedOn?: string
+  expiresOn?: string
+}
 
 /** Platforms offered in the social-media disclosure dropdown. */
 export const SOCIAL_PLATFORMS = [
@@ -145,6 +160,9 @@ export interface WizardAnswers {
   // Q29 — five-year residence + employment histories
   residenceHistory?: AddressHistoryEntry[]
   employmentHistory?: EmploymentHistoryEntry[]
+  // Portal tables with no scalar home — firearms currently owned + other licences held.
+  firearms?: FirearmEntry[]
+  otherLicenses?: OtherLicenseEntry[]
 }
 
 /**

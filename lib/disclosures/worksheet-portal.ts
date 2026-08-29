@@ -94,8 +94,12 @@ export function buildPortalWorksheet(
   sections.push({
     title: "Employment",
     fields: [
+      f("Currently employed?", s(v.employed), { optional: true }),
       f("Name of Business", s(v.businessName), { optional: true }),
       f("Job Title", s(v.occupation), { optional: true }),
+      f("Industry / type of business", s(v.businessType), { optional: true }),
+      f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
+      f("Business Unit / Suite", s(v.businessUnit), { optional: true }),
       ...addressFields("Business Address", s(v.businessStreet), "", s(v.businessCity), s(v.businessState), s(v.businessZip), true),
       f("Business Phone", s(v.busPhone), { optional: true }),
       ...asRows(v.employmentHistory).flatMap((r, i) => [
@@ -107,11 +111,27 @@ export function buildPortalWorksheet(
     ],
   })
 
+  const firearms = asRecords(v.firearms)
+  const otherLicenses = asRecords(v.otherLicenses)
   sections.push({
     title: "Other Licenses & Existing Guns",
     fields: [
-      f("Do you have other licenses?", "", { atFiling: true }),
-      f("Do you currently own any handguns or rifle/shotguns?", "", { atFiling: true }),
+      f("Do you have other licenses?", otherLicenses.length ? "Yes" : "No", { optional: true }),
+      ...otherLicenses.flatMap((l, i) => [
+        f(`Licence ${i + 1} — Number`, s(l.number), { optional: true }),
+        f(`Licence ${i + 1} — Issuing Agency`, s(l.agency), { optional: true }),
+        f(`Licence ${i + 1} — State & County`, s(l.stateCounty), { optional: true }),
+        f(`Licence ${i + 1} — Date Issued`, portalDate(s(l.issuedOn)), { optional: true }),
+        f(`Licence ${i + 1} — Expiration`, portalDate(s(l.expiresOn)), { optional: true }),
+      ]),
+      f("Do you currently own any handguns or rifle/shotguns?", firearms.length ? "Yes" : "No", { optional: true }),
+      ...firearms.flatMap((g, i) => [
+        f(`Firearm ${i + 1} — Make`, s(g.make), { optional: true }),
+        f(`Firearm ${i + 1} — Model`, s(g.model), { optional: true }),
+        f(`Firearm ${i + 1} — Caliber`, s(g.caliber), { optional: true }),
+        f(`Firearm ${i + 1} — Serial`, s(g.serial), { optional: true }),
+      ]),
+      ...(ctx.isRenewal ? [f("Prior licence number (renewal)", s(v.priorLicenseNumber), { optional: true })] : []),
     ],
   })
 
@@ -123,6 +143,7 @@ export function buildPortalWorksheet(
       f("Safeguard — Relationship", s(v.safeguardRelation)),
       f("Safeguard — Email", s(v.safeguardEmail)),
       f("Safeguard — Phone", s(v.safeguardPhone)),
+      f("Safeguard — At least 21?", s(v.safeguardIs21)),
       ...addressFields("Safeguard Address", s(v.safeguardAddress), "", "", "", "", true),
     ],
   })
@@ -146,10 +167,20 @@ export function buildPortalWorksheet(
     fields: [1, 2, 3, 4, 5, 6].map((n) => f(`Statement ${n}`, s(v[`lop${n}`]), { optional: n === 2 || n === 4 || n === 5 || n === 6 })),
   })
 
+  const counselYes = v.counselRepresented === "Yes"
   sections.push({
     title: "Representation & Assistance",
     fields: [
-      f("Are you being represented by counsel?", "No", { optional: true }),
+      f("Are you being represented by counsel?", s(v.counselRepresented) || "No", { optional: true }),
+      ...(counselYes
+        ? [
+            f("Counsel — First Name", s(v.counselFirstName), { optional: true }),
+            f("Counsel — Last Name", s(v.counselLastName), { optional: true }),
+            f("Counsel — Firm", s(v.counselFirm), { optional: true }),
+            f("Counsel — Email", s(v.counselEmail), { optional: true }),
+            f("Counsel — Phone", s(v.counselPhone), { optional: true }),
+          ]
+        : []),
       f("Did anyone assist you in preparing the application?", "Yes"),
       f("Assistant — Organization Name", brand.name),
       f("Assistant — Email", brand.contact.email),
@@ -163,4 +194,7 @@ export function buildPortalWorksheet(
 type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; occupation?: string }
 function asRows(x: unknown): Row[] {
   return Array.isArray(x) ? (x as Row[]) : []
+}
+function asRecords(x: unknown): Record<string, unknown>[] {
+  return Array.isArray(x) ? (x as Record<string, unknown>[]) : []
 }

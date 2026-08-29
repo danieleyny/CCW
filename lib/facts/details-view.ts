@@ -37,6 +37,7 @@ const GROUP_LABEL: Record<FactGroup, string> = {
   employer: "Employer",
   sponsor: "The company",
   safeguard: "Safeguard",
+  counsel: "Counsel",
 }
 
 /** How many questionnaires reference each fact — the "used on N forms" line. */
