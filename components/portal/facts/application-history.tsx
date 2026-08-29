@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Trash2, Plus, Loader2, Check } from "lucide-react"
+import { Trash2, Plus, Loader2, Check, TriangleAlert } from "lucide-react"
 import { toast } from "sonner"
 import { saveApplicationHistory } from "@/app/portal/facts/actions"
+import { splitStreet } from "@/lib/forms/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,6 +48,41 @@ function HistoryDates({
           className="size-4 rounded border-input"
         />
         Present
+      </label>
+    </div>
+  )
+}
+
+/**
+ * Per-residence-row building/street split — the portal wants them separate. Seeded by
+ * parsing the row's address line; a checkbox confirms the guess. Values live on the
+ * entry so the parent's save persists them; unconfirmed rows fall back to the
+ * render-time split in the worksheet.
+ */
+function RowSplit({ entry, onChange }: { entry: AddressHistoryEntry; onChange: (patch: Partial<AddressHistoryEntry>) => void }) {
+  if (!(entry.address ?? "").trim()) return null
+  const guess = splitStreet(entry.address)
+  const bn = entry.buildingNumber ?? guess.buildingNumber
+  const sn = entry.streetName ?? guess.streetName
+  const confirmed = !!entry.streetConfirmed
+  return (
+    <div className={`rounded-md border p-2 ${confirmed ? "border-hairline" : "border-warn/40 bg-warn/[0.05]"}`}>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[11px] text-text-low">
+        {confirmed ? <Check className="size-3 text-ok" /> : <TriangleAlert className="size-3 text-warn" />}
+        Portal split (building number · street name)
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[7rem_1fr]">
+        <Input className="h-8" placeholder="Bldg #" value={bn} onChange={(e) => onChange({ buildingNumber: e.target.value })} />
+        <Input className="h-8" placeholder="Street name" value={sn} onChange={(e) => onChange({ streetName: e.target.value })} />
+      </div>
+      <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-text-mid">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          onChange={(e) => onChange({ streetConfirmed: e.target.checked, buildingNumber: bn, streetName: sn })}
+          className="size-3.5 rounded border-input"
+        />
+        This split is correct
       </label>
     </div>
   )
@@ -110,6 +146,10 @@ export function ApplicationHistory({
               placeholder="Address (street, city, state, county, zip, apt)"
               value={h.address ?? ""}
               onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+            />
+            <RowSplit
+              entry={h}
+              onChange={(patch) => setRes((c) => c.map((x, j) => (j === i ? { ...x, ...patch } : x)))}
             />
           </div>
         ))}

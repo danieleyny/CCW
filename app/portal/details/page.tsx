@@ -10,6 +10,7 @@ import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
 import { ApplicationHistory } from "@/components/portal/facts/application-history"
 import { FirearmsRecords } from "@/components/portal/facts/firearms-records"
+import { AddressSplits, type AddressSplitInput } from "@/components/portal/facts/address-splits"
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 export const metadata = { title: "Your details" }
@@ -36,6 +37,16 @@ export default async function DetailsPage() {
   // meter and inline saves are then driven from client state.
   const { groups: groupData, total } = buildFactGroups(facts, hasSsn, GROUP_ORDER, true)
 
+  // Portal building/street splits — parse each stored single-line street, flagged for
+  // confirmation. Safeguard's address is a free-form line; still worth splitting.
+  const fx = (k: string) => facts[k] ?? ""
+  const addressSplits: AddressSplitInput[] = [
+    { prefix: "applicant.address", label: "Home address", street: fx("applicant.address.street"), buildingNumber: fx("applicant.address.buildingNumber"), streetName: fx("applicant.address.streetName"), confirmed: fx("applicant.address.streetConfirmed") === "yes" },
+    { prefix: "applicant.mailing", label: "Mailing address", street: fx("applicant.mailing.street"), buildingNumber: fx("applicant.mailing.buildingNumber"), streetName: fx("applicant.mailing.streetName"), confirmed: fx("applicant.mailing.streetConfirmed") === "yes" },
+    { prefix: "employer.address", label: "Employer address", street: fx("employer.address.street"), buildingNumber: fx("employer.address.buildingNumber"), streetName: fx("employer.address.streetName"), confirmed: fx("employer.address.streetConfirmed") === "yes" },
+    { prefix: "safeguard", label: "Safeguard address", street: fx("safeguard.address"), buildingNumber: fx("safeguard.buildingNumber"), streetName: fx("safeguard.streetName"), confirmed: fx("safeguard.streetConfirmed") === "yes" },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -48,6 +59,8 @@ export default async function DetailsPage() {
       </div>
 
       <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter />
+
+      <AddressSplits caseId={myCase.id} addresses={addressSplits} />
 
       <ApplicationHistory
         caseId={myCase.id}
