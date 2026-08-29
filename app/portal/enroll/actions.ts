@@ -39,6 +39,20 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   if (!myCase) return { error: "Your case isn't set up yet." }
 
   const supabase = await createClient()
+
+  // Eligibility gate on the MONEY path: a case flagged for attorney review (e.g. the
+  // applicant reported they are neither a citizen nor a lawful permanent resident,
+  // 18 U.S.C. § 922(g)(5)) must not be charged. Route to a human instead of taking
+  // payment while eligibility is unresolved.
+  const { count: attorneyReview } = await supabase
+    .from("activity_log")
+    .select("id", { count: "exact", head: true })
+    .eq("case_id", myCase.id)
+    .eq("action", "intake.attorney_review_required")
+  if ((attorneyReview ?? 0) > 0) {
+    return { error: "We can't take payment while your eligibility is under attorney review. Your consultant will reach out about the right next step." }
+  }
+
   const pkg = await getPackage(supabase, packageKey)
   if (!pkg) return { error: "That package isn't available." }
 
