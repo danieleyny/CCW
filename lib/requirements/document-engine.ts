@@ -103,6 +103,40 @@ async function confidentialityRecord(name: string, a: Record<string, unknown>, s
   }, sign)
 }
 
+/** Penal Law 35/265/400 — a plain-language EXPLANATION of what the articles cover
+ *  (never advice about the applicant's own facts), which the applicant reads and
+ *  signs. Not notarised; held internally. */
+async function penalLawAffirmation(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
+  return buildPdf((c) => {
+    c.heading("New York Penal Law — Articles 35, 265 & 400", "A plain-language summary. Not legal advice.")
+    c.rule()
+    c.para(
+      "Your application asks you to affirm that you have read and are familiar with New York Penal Law Articles 35, 265 and 400. This document summarizes what each covers so you can make that affirmation informed. It describes the law in general terms; it does not tell you how the law applies to your own situation — for that, speak with a New York attorney.",
+      { size: 10, color: "muted" }
+    )
+    c.spacer()
+    c.h2("Article 35 — Justification")
+    c.para(
+      "Sets out when the use of physical force, including deadly physical force, is legally justified — self-defense and the defense of others, the defense of premises and property, and the limits and duties (such as when retreat is required) that apply. Justification is a defense to what would otherwise be an offense."
+    )
+    c.spacer()
+    c.h2("Article 265 — Firearms and Other Dangerous Weapons")
+    c.para(
+      "Defines the criminal possession and use of firearms and other weapons — including unlawful possession, possession in sensitive locations, and the aggravating circumstances that raise the degree of the offense. It also defines a “serious offense,” which matters to licence eligibility."
+    )
+    c.spacer()
+    c.h2("Article 400 — Licensing of Firearms")
+    c.para(
+      "Governs the licensing of handguns — eligibility, the application and investigation process, the types of licences, the duties and responsibilities of a licensee (including safe storage and reporting obligations), and the grounds and process for suspension or revocation."
+    )
+    c.spacer()
+    c.para("Statutes: NY Penal Law Article 35, Article 265, and Article 400 (available at nysenate.gov/legislation/laws/PEN).", { size: 9, color: "muted" })
+    c.rule()
+    c.para("I affirm that I have read and am familiar with the summaries of Penal Law Articles 35, 265 and 400 set out above.", { size: 10 })
+    c.signatureImage("Applicant signature")
+  }, { signaturePng: sig, ...sign })
+}
+
 async function protectionOrderStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Order of Protection — Written Statement")
@@ -206,6 +240,7 @@ const toArrests = (v: unknown): ArrestEntry[] =>
 /** Letterhead / PDF-metadata title per requirement. */
 const TITLES: Record<string, string> = {
   "AFF-01": "Affirmation of Understanding",
+  "AFF-02": "Penal Law 35/265/400 Affirmation",
   "SAF-01": "Safe Storage Statement",
   "SOC-01": "Social Media List",
   "DSC-01": "Disclosure Summary (internal worksheet)",
@@ -235,6 +270,8 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
   switch (reqCode) {
     case "AFF-01":
       return { bytes: await affirmationOfUnderstanding(n, dated, sig, sign), fileName: "affirmation-of-understanding.pdf", documentType: "affirmation_understanding", label: "Affirmation of understanding" }
+    case "AFF-02":
+      return { bytes: await penalLawAffirmation(n, a, sig, sign), fileName: "penal-law-affirmation.pdf", documentType: "affirmation_penal_law", label: "Penal Law 35/265/400 affirmation" }
     case "CON-01":
       return { bytes: await confidentialityRecord(n, a, sign), fileName: "confidentiality-request.pdf", documentType: "public_records_exemption", label: "Confidentiality request" }
     case "SAF-01":

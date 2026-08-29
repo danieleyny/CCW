@@ -245,19 +245,19 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   // AFF-02 — the Penal Law Art. 35/265/400 affirmation. Its official PDF is not yet
   // on the platform (owner outstanding), so it's obtain-and-upload for now — a
   // DISTINCT instrument from FAM-01.
+  // AFF-02 is NOT a portal upload and there is NO NYPD form to notarise — the applicant
+  // affirms Penal Law 35/265/400 inside the application (Letter of Necessity + step 16).
+  // We author a plain-language explanation and the applicant signs it in-system, held
+  // internally. OPERATOR: the paper Required-Documents checklist listed a notarised
+  // "Affirmation of Understanding"; if the License Division asks for a notarised one at
+  // interview, flip AFF_02_NOTARIZED and re-version the requirement.
   "AFF-02": {
-    mode: "obtain",
-    actionLabel: "Upload the notarised affirmation",
+    mode: "generate",
+    actionLabel: "Read & sign",
+    questionnaireId: "penal-law-affirmation",
     documentType: "affirmation_penal_law",
-    customerTitle: "Affirmation — Penal Law Articles 35, 265 & 400",
-    help: "A separate notarised affirmation that you've read and understand NY Penal Law Articles 35 (justification), 265 (weapons offences) and 400 (licensing). This is distinct from your affirmation of understanding. Your case team provides the official form; sign it before a notary and upload the notarised copy here.",
-    steps: [
-      "Your case team will send you the official affirmation form.",
-      "Read it, then sign it before a notary — don't sign it beforehand.",
-      "Upload the notarised copy here.",
-    ],
-    sourceUrl: NYPD_REQUIRED_DOCS,
-    sourceLabel: "NYPD required documents",
+    customerTitle: "Penal Law Articles 35, 265 & 400",
+    help: "A plain-language summary of what NY Penal Law Articles 35 (justification), 265 (weapons offences) and 400 (licensing) cover. You read it and sign — our record that you were informed before affirming it inside your application. Not notarised.",
   },
   "SAF-01": {
     mode: "generate",
@@ -452,22 +452,6 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     sourceUrl: NYPD_REQUIRED_DOCS,
     sourceLabel: "NYPD required documents",
   },
-  "IDN-04": {
-    mode: "obtain",
-    actionLabel: "Upload your photo",
-    documentType: "applicant_photo",
-    customerTitle: "A square photo of you, taken in the last 30 days",
-    example: "applicant-photo",
-    help: "A passport-style photo that meets the NYPD portal's spec. We check the dimensions for you as you upload.",
-    steps: [
-      "Get a passport-style photo (any pharmacy does these) or take one against a plain background.",
-      "It must be square — between 600×600 and 1200×1200 pixels.",
-      "Taken within the last 30 days.",
-      "Upload it here — we'll verify the size and shape before it counts.",
-    ],
-    sourceUrl: NYPD_REQUIRED_DOCS,
-    sourceLabel: "NYPD photo spec",
-  },
   "SSN-01": {
     // Sensitive: hidden from the trainer/sponsor concierge feed, exactly like the
     // disclosure documents. The SSN NUMBER is never asked for here — only the card.
@@ -489,15 +473,17 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     documentType: "applicant_photo",
     actionLabel: "Upload your photograph",
+    example: "applicant-photo",
     customerTitle: "A recent passport-type photograph",
-    help: "A recent color passport-type photo, front view, taken within the last 30 days (same rules as a U.S. Passport Book). No hats, headgear, or glasses except for religious purposes; head straight; well lit. No selfies. Upload an IMAGE file — a PDF is rejected here.",
+    help: "A recent color passport-type photo, front view, taken within the last 30 days (same rules as a U.S. Passport Book). No hats, headgear, or glasses except for religious purposes; head straight; well lit. No selfies. Upload an IMAGE file — a PDF is rejected here. We check it against the NYPD spec as you upload, so it can't get bounced later.",
     steps: [
       "Take or obtain a passport-style color photo, front view, within the last 30 days.",
       "Remove hats, headgear, and glasses (except for religious purposes); keep your head straight and the background plain.",
       "Save it as an image (jpg, jpeg, png, gif, bmp, or tif) — NOT a PDF.",
-      "Upload it here.",
+      "Upload it here — we verify the size and shape before it counts.",
     ],
     sourceUrl: NYPD_REQUIRED_DOCS,
+    sourceLabel: "NYPD photo spec",
   },
   "SGI-01": {
     mode: "obtain",

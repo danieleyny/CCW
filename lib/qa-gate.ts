@@ -143,10 +143,10 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
     blockers.push({ kind: "references_composition", detail: comp.problem })
   }
 
-  // 5. If IDN-04 (photo) applies and a photo is on file, it must independently
+  // 5. If PHO-01 (photo) applies and a photo is on file, it must independently
   //    meet the NYPD spec server-side — the browser validator can be bypassed
   //    (curl straight to storage), so we re-check the actual bytes here.
-  const photoApplicable = (reqs ?? []).some((r) => r.req_code === "IDN-04" && r.status !== "na")
+  const photoApplicable = (reqs ?? []).some((r) => r.req_code === "PHO-01" && r.status !== "na")
   const photo = (photoDocs ?? [])[0]
   if (photoApplicable && photo?.file_path) {
     const { data: blob } = await db.storage.from("documents").download(photo.file_path)

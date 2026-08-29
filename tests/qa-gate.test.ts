@@ -27,7 +27,7 @@ describe.skipIf(!reachable)("CP-5 pre-filing gate (lib/qa-gate)", () => {
     const { data: reqs } = await admin
       .from("requirements")
       .select("id, req_code, blocking")
-      .in("req_code", ["IDN-04", "TRN-01"])
+      .in("req_code", ["PHO-01", "TRN-01"])
       .is("effective_to", null)
     reqIds = Object.fromEntries((reqs ?? []).map((r) => [r.req_code, r.id]))
     // A real staff profile id to record as the sign-off actor.
@@ -66,7 +66,7 @@ describe.skipIf(!reachable)("CP-5 pre-filing gate (lib/qa-gate)", () => {
     return { caseId: kase!.id, clientId }
   }
 
-  async function addReq(caseId: string, code: "IDN-04" | "TRN-01", status: string) {
+  async function addReq(caseId: string, code: "PHO-01" | "TRN-01", status: string) {
     await admin.from("case_requirements").insert({
       case_id: caseId,
       requirement_id: reqIds[code],
@@ -77,7 +77,7 @@ describe.skipIf(!reachable)("CP-5 pre-filing gate (lib/qa-gate)", () => {
 
   it("a PENDING blocking requirement blocks", async () => {
     const { caseId } = await makeCase({ qa_signed_off_by: signOffBy })
-    await addReq(caseId, "IDN-04", "pending")
+    await addReq(caseId, "PHO-01", "pending")
     const gate = await evaluatePreFilingGate(admin, caseId)
     expect(gate.ok).toBe(false)
     expect(gate.blockers.map((b) => b.kind)).toContain("blocking_requirements")
@@ -85,14 +85,14 @@ describe.skipIf(!reachable)("CP-5 pre-filing gate (lib/qa-gate)", () => {
 
   it("a REJECTED blocking requirement also blocks (the old escape)", async () => {
     const { caseId } = await makeCase({ qa_signed_off_by: signOffBy })
-    await addReq(caseId, "IDN-04", "rejected")
+    await addReq(caseId, "PHO-01", "rejected")
     const gate = await evaluatePreFilingGate(admin, caseId)
     expect(gate.blockers.map((b) => b.kind)).toContain("blocking_requirements")
   })
 
   it("an N/A blocking requirement does NOT block (legitimately inapplicable)", async () => {
     const { caseId } = await makeCase({ qa_signed_off_by: signOffBy })
-    await addReq(caseId, "IDN-04", "na")
+    await addReq(caseId, "PHO-01", "na")
     const gate = await evaluatePreFilingGate(admin, caseId)
     expect(gate.blockers.map((b) => b.kind)).not.toContain("blocking_requirements")
   })
@@ -137,7 +137,7 @@ describe.skipIf(!reachable)("CP-5 pre-filing gate (lib/qa-gate)", () => {
 
   it("an off-spec application photo blocks; an in-spec one clears", async () => {
     const { caseId, clientId } = await makeCase({ qa_signed_off_by: signOffBy })
-    await addReq(caseId, "IDN-04", "satisfied") // applies → photo checked
+    await addReq(caseId, "PHO-01", "satisfied") // applies → photo checked
     const path = `clients/${clientId}/photo-${caseId}.png`
     cleanupStorage.push(path)
 
@@ -173,7 +173,7 @@ describe.skipIf(!reachable)("CP-5 pre-filing gate (lib/qa-gate)", () => {
   it("a clean, signed-off case with no open work passes", async () => {
     const { caseId } = await makeCase({ qa_signed_off_by: signOffBy, is_renewal: true })
     await admin.from("intake_sessions").insert({ case_id: caseId, answers: {} }) // renewal → 0 refs
-    await addReq(caseId, "IDN-04", "na")
+    await addReq(caseId, "PHO-01", "na")
     const gate = await evaluatePreFilingGate(admin, caseId)
     expect(gate.blockers).toEqual([])
     expect(gate.ok).toBe(true)

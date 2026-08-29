@@ -403,7 +403,7 @@ export const APPLICATION_COVERAGE = [
 
   // ── Supporting documents named in the instructions / packet ───────────────
   doc("fees", "Two non-refundable fees ($340.00 + $89.75) — certified check / bank check / money order / credit card", "FEE-01"),
-  doc("photographs", "Two recent color photographs, 1½ × 1½ inches, front view, face unobscured", "IDN-04"),
+  doc("photographs", "A recent color passport-type photograph, front view (portal upload)", "PHO-01"),
   doc("birth_certificate", "Birth Certificate (or military record / U.S. passport / baptismal certificate)", "IDN-02"),
   doc("citizenship_proof", "Proof of Citizenship / Alien Registration (naturalization papers or Alien Registration Card)", "IDN-03"),
   doc("good_conduct_origin", "Good conduct certificate from country of origin (if U.S. resident < 7 years)", "GMC-01", true, "GMC-01's title is ambiguous between this consular certificate and a NYS DOCCS one — see REGISTRY_COVERAGE.md."),

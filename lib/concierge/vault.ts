@@ -50,13 +50,9 @@ const FRIENDLY: Record<string, { title: string; help: string }> = {
     title: "A photo of your ID",
     help: "A passport, driver's license, or state ID. One clear photo — a passport covers your ID, birth date, and citizenship all at once.",
   },
-  "IDN-04": {
-    title: "Your license photo",
-    help: "A passport-style headshot. We check it against the NYPD spec as you upload, so it can't get bounced later.",
-  },
   "RES-01": {
     title: "Proof you live in NYC",
-    help: "A recent utility bill, lease, or bank statement showing your name and NYC address.",
+    help: "A recent utility bill, real-estate tax bill, lease, maintenance bill, or co-op/condo ownership doc showing your name and NYC address.",
   },
   "TRN-01": {
     title: "Your training certificate",
@@ -69,7 +65,7 @@ const FRIENDLY: Record<string, { title: string; help: string }> = {
 }
 
 // The order the core asks feel natural in; anything else follows, in view order.
-const ORDER = ["IDN-01", "IDN-04", "RES-01", "TRN-01", "RNW-01"]
+const ORDER = ["IDN-01", "PHO-01", "RES-01", "TRN-01", "RNW-01"]
 
 /**
  * Build the vault ask list. Only "obtain"-mode document requirements that exist
