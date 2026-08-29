@@ -87,6 +87,9 @@ export async function saveApplicationHistory(
     residenceHistory: unknown[]
     employmentHistory: unknown[]
     outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
+    /** Portal tables with no scalar home — optional so existing callers stay valid. */
+    firearms?: unknown[]
+    otherLicenses?: unknown[]
   }
 ): Promise<{ ok?: true; error?: string }> {
   const actor = await authorizeCaseActor(caseId)
@@ -106,6 +109,8 @@ export async function saveApplicationHistory(
     outOfCityCounty: input.outOfCity.county || undefined,
     outOfCityIssuedOn: input.outOfCity.issuedOn || undefined,
     outOfCityExpiresOn: input.outOfCity.expiresOn || undefined,
+    ...(input.firearms ? { firearms: input.firearms } : {}),
+    ...(input.otherLicenses ? { otherLicenses: input.otherLicenses } : {}),
   }
   const { error } = await admin
     .from("intake_sessions")
@@ -113,6 +118,39 @@ export async function saveApplicationHistory(
   if (error) return { error: "Couldn't save that." }
 
   await logActivity({ action: "application.history_saved", caseId: actor.caseId, entity: "case", entityId: actor.caseId })
+  revalidatePath("/portal/details")
+  return { ok: true }
+}
+
+/**
+ * Save the portal's two record tables that have no scalar home — firearms currently
+ * owned and other firearms licences held. Merges ONLY these keys into
+ * intake_sessions.answers so it can never clobber the histories saved separately.
+ */
+export async function saveFirearmsAndLicenses(
+  caseId: string,
+  input: { firearms: unknown[]; otherLicenses: unknown[] }
+): Promise<{ ok?: true; error?: string }> {
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "Not authorized." }
+  const admin = createAdminClient()
+
+  const { data: existing } = await admin
+    .from("intake_sessions")
+    .select("answers, current_step")
+    .eq("case_id", actor.caseId)
+    .maybeSingle()
+  const answers = {
+    ...((existing?.answers ?? {}) as Record<string, unknown>),
+    firearms: input.firearms,
+    otherLicenses: input.otherLicenses,
+  }
+  const { error } = await admin
+    .from("intake_sessions")
+    .upsert({ case_id: actor.caseId, current_step: existing?.current_step ?? 1, answers: answers as never }, { onConflict: "case_id" })
+  if (error) return { error: "Couldn't save that." }
+
+  await logActivity({ action: "application.records_saved", caseId: actor.caseId, entity: "case", entityId: actor.caseId })
   revalidatePath("/portal/details")
   return { ok: true }
 }

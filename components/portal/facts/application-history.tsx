@@ -82,7 +82,7 @@ export function ApplicationHistory({
   }
 
   return (
-    <section className="space-y-4 rounded-lg border border-hairline bg-card p-4">
+    <section id="history" className="scroll-mt-20 space-y-4 rounded-lg border border-hairline bg-card p-4">
       <div>
         <h3 className="text-sm font-semibold">Five-year history & out-of-city licence</h3>
         <p className="mt-0.5 text-xs text-text-mid">

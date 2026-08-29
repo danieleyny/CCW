@@ -237,6 +237,40 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
   },
 
 
+  // Penal Law 35/265/400 — NOT an upload and NOT notarised (there is no such NYPD
+  // form). We author a plain-language explanation of what the three articles cover;
+  // the applicant reads it and signs, so we have a record they were informed before
+  // affirming it to NYPD (in the Letter of Necessity + step-16 affirmation). Held
+  // internally. WE EXPLAIN THE ARTICLES; we never say how the law applies to them.
+  "penal-law-affirmation": {
+    id: "penal-law-affirmation",
+    title: "Penal Law Articles 35, 265 & 400",
+    intro:
+      "The application asks you to affirm you have read and are familiar with New York Penal Law Articles 35, 265 and 400. Below is a plain-language summary of what each covers. Read it, then confirm and sign — this is our record that you were informed. It is not legal advice about your situation.",
+    submitLabel: "Confirm & sign",
+    fields: [
+      { name: "fullName", label: "Your full legal name", type: "text", required: true, fact: "applicant.fullName" },
+      {
+        name: "ackArt35",
+        label: "I have read the summary of Article 35 — justification, and the use of physical and deadly force.",
+        type: "checkbox",
+        required: true,
+      },
+      {
+        name: "ackArt265",
+        label: "I have read the summary of Article 265 — criminal possession and use of a firearm.",
+        type: "checkbox",
+        required: true,
+      },
+      {
+        name: "ackArt400",
+        label: "I have read the summary of Article 400 — licensing and the responsibilities of a handgun licensee.",
+        type: "checkbox",
+        required: true,
+      },
+    ],
+  },
+
   affirmation: {
     id: "affirmation",
     title: "Affirmation of understanding",

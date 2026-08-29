@@ -85,7 +85,13 @@ describe("smartDocumentsForRequirement — pickers offer the right kinds, widest
     expect(kinds).toContain("naturalization_certificate")
   })
 
-  it("RES-01 offers only proof-of-residence", () => {
-    expect(smartDocumentsForRequirement("RES-01").map((d) => d.kind)).toEqual(["proof_of_residence"])
+  it("RES-01 offers the portal's five proof-of-residence kinds (no bank statement)", () => {
+    expect(smartDocumentsForRequirement("RES-01").map((d) => d.kind)).toEqual([
+      "proof_of_residence",
+      "residence_tax_bill",
+      "residence_coop_condo",
+      "residence_lease",
+      "residence_maintenance_bill",
+    ])
   })
 })

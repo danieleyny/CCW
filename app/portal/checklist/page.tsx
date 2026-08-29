@@ -89,6 +89,7 @@ export default async function ChecklistPage() {
         feeReceipts={view.feeReceipts}
         caseSponsored={caseSponsored}
         licenseTrack={trackRow?.license_track ?? null}
+        isConcierge={isConcierge}
       />
     </div>
   )

@@ -11,6 +11,8 @@ import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
 import { DmvFallback } from "@/components/portal/dmv-fallback"
+import { RequestHelpButton } from "@/components/portal/request-help-button"
+import { NotaryRoutes } from "@/components/shared/notary-options"
 import type { DmvApplicant } from "@/lib/portal/requirement-view"
 import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
 import { smartDocumentsForRequirement } from "@/lib/requirements/smart-documents"
@@ -69,6 +71,7 @@ export function RequirementAction({
   lockParty,
   isLeo,
   licenseTrack,
+  isConcierge,
 }: {
   reqCode: string
   status: string
@@ -96,6 +99,9 @@ export function RequirementAction({
   isLeo?: boolean
   /** Licence track — scopes the Letter of Necessity statements to the track. */
   licenseTrack?: string | null
+  /** Concierge case — unlocks the DMV "Request help" escape hatch (self-guided cases
+   *  have no case team to route it to). */
+  isConcierge?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [signing, setSigning] = useState(false)
@@ -245,6 +251,20 @@ export function RequirementAction({
 
         {action.example && <DocumentExample id={action.example} />}
 
+        {/* Notarized upload (the release) — the SAME in-person + online notary routes
+            the reference and cohabitant flows offer, scoped to the applicant's area. */}
+        {action.notaryRoutes && !done && (
+          <div className="space-y-2">
+            <NotaryRoutes area={dmvApplicant?.address ?? ""} />
+          </div>
+        )}
+
+        {/* TRN-01/RNW-01: connect me with an instructor (email the case team). */}
+        {(reqCode === "TRN-01" || reqCode === "RNW-01") && <RequestHelpButton kind="training" />}
+
+        {/* DMV-01: the most-failed item — concierge cases get a "Request help" hatch. */}
+        {reqCode === "DMV-01" && isConcierge && <RequestHelpButton kind="dmv" />}
+
         {/* DMV-01 only: a real path when MyDMV / NY.gov ID login errors out. */}
         {reqCode === "DMV-01" && <DmvFallback applicant={dmvApplicant} />}
 
@@ -256,7 +276,7 @@ export function RequirementAction({
             reqCode={reqCode}
             label={action.actionLabel}
             current={current ?? null}
-            photoSpec={reqCode === "IDN-04"}
+            photoSpec={reqCode === "PHO-01"}
             smartKinds={smartDocumentsForRequirement(reqCode)}
           />
         )}

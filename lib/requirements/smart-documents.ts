@@ -26,6 +26,10 @@ export type DocumentKind =
   | "naturalization_certificate"
   | "permanent_resident_card"
   | "proof_of_residence"
+  | "residence_tax_bill"
+  | "residence_coop_condo"
+  | "residence_lease"
+  | "residence_maintenance_bill"
 
 export interface SmartDocument {
   kind: DocumentKind
@@ -79,9 +83,39 @@ export const SMART_DOCUMENTS: SmartDocument[] = [
     // license/state-ID/passport — so no IDN-01.
     reqCodes: ["IDN-03", "IDN-02"],
   },
+  // Proof of residence — the NYPD online portal's OWN accepted list, each its own
+  // selectable kind. A bank statement is NOT on it and a cell-phone bill is excluded.
   {
     kind: "proof_of_residence",
-    label: "Utility bill / lease / bank statement",
+    label: "Utility bill",
+    covers: "proof of residence",
+    documentType: "proof_residence",
+    reqCodes: ["RES-01"],
+  },
+  {
+    kind: "residence_tax_bill",
+    label: "Real estate tax bill",
+    covers: "proof of residence",
+    documentType: "proof_residence",
+    reqCodes: ["RES-01"],
+  },
+  {
+    kind: "residence_coop_condo",
+    label: "Proof of ownership in a co-op or condo",
+    covers: "proof of residence",
+    documentType: "proof_residence",
+    reqCodes: ["RES-01"],
+  },
+  {
+    kind: "residence_lease",
+    label: "Lease",
+    covers: "proof of residence",
+    documentType: "proof_residence",
+    reqCodes: ["RES-01"],
+  },
+  {
+    kind: "residence_maintenance_bill",
+    label: "Maintenance bill",
     covers: "proof of residence",
     documentType: "proof_residence",
     reqCodes: ["RES-01"],
