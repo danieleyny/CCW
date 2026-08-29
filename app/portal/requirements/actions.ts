@@ -11,6 +11,8 @@ import { rematerializeCase } from "@/lib/requirements/rematerialize"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
+import { sendEmail } from "@/lib/email"
+import { brand } from "@/config/brand"
 import { getMyCase } from "@/lib/portal"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
@@ -925,3 +927,70 @@ export async function prepareInvestigationForms(
   return { forms: out }
 }
 
+
+/**
+ * "Find me an instructor" (TRN-01) — email the case team a training request, log it,
+ * and confirm in place. Idempotent-ish: a request in the last 7 days short-circuits so
+ * nobody fires five emails.
+ */
+export async function requestTrainingInstructor(): Promise<{ ok?: true; error?: string; alreadySent?: boolean }> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found" }
+  const admin = createAdminClient()
+
+  const { data: recent } = await admin
+    .from("activity_log")
+    .select("created_at")
+    .eq("case_id", myCase.id)
+    .eq("action", "training.instructor_requested")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (recent && Date.now() - new Date(recent.created_at).getTime() < 7 * 86400 * 1000) {
+    return { alreadySent: true }
+  }
+
+  const { data: kase } = await admin.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
+  const trainingLines = [
+    `Name: ${myCase.client.full_name}`,
+    `Account email: ${myCase.client.email ?? "—"}`,
+    `Case reference: ${myCase.id.slice(0, 8)}`,
+    `Licence track: ${kase?.license_track ?? "—"}`,
+    `Requested: ${new Date().toISOString()}`,
+  ]
+  await sendEmail({
+    to: brand.contact.email,
+    subject: `Training request — ${myCase.client.full_name}`,
+    text: trainingLines.join("\n"),
+    html: trainingLines.map((l) => `<p>${l}</p>`).join(""),
+  })
+  await logActivity({ action: "training.instructor_requested", caseId: myCase.id, entity: "case", entityId: myCase.id })
+  return { ok: true }
+}
+
+/**
+ * "Request help" on the DMV abstract (DMV-01) — CONCIERGE ONLY. Opens a request to the
+ * case team so they can walk the applicant through the lifetime-abstract gotchas.
+ */
+export async function requestDmvHelp(): Promise<{ ok?: true; error?: string }> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found" }
+  if (myCase.service_mode !== "concierge") return { error: "This is a concierge service." }
+
+  const dmvLines = [
+    `Name: ${myCase.client.full_name}`,
+    `Account email: ${myCase.client.email ?? "—"}`,
+    `Case reference: ${myCase.id.slice(0, 8)}`,
+    `Requested help with the lifetime driving abstract on ${new Date().toISOString()}`,
+  ]
+  await sendEmail({
+    to: brand.contact.email,
+    subject: `DMV abstract help — ${myCase.client.full_name}`,
+    text: dmvLines.join("\n"),
+    html: dmvLines.map((l) => `<p>${l}</p>`).join(""),
+  })
+  await logActivity({ action: "dmv.help_requested", caseId: myCase.id, entity: "case", entityId: myCase.id })
+  return { ok: true }
+}

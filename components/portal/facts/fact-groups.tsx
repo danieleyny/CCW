@@ -62,7 +62,7 @@ export function FactGroups({
       {showMeter && <Meter captured={captured} total={total} />}
       <div ref={containerRef} className="space-y-6">
         {groups.map((g) => (
-          <section key={g.key} className="rounded-lg border border-hairline bg-card p-4">
+          <section key={g.key} id={g.key} className="scroll-mt-20 rounded-lg border border-hairline bg-card p-4">
             <div className="engraved mb-1 text-text-low">{g.label}</div>
             {g.rows.map((r) => (
               <FactRow
