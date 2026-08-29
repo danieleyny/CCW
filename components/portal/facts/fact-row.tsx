@@ -32,8 +32,9 @@ export function FactRow({
   /** Move focus to the next editable input in the list (Enter / tab-through). */
   focusNext: (from: HTMLElement) => boolean
 }) {
-  const { key, label, type, kind, options, placeholder, uses, onFile, optional } = meta
+  const { key, label, type, kind, options, placeholder, uses, onFile, optional, example } = meta
   const [editing, setEditing] = useState(false) // pencil opened a filled/ssn row
+  const [showExample, setShowExample] = useState(false)
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState(value)
   const [saved, setSaved] = useState(value) // last persisted value (ssn: always "")
@@ -168,6 +169,23 @@ export function FactRow({
           </div>
         )}
 
+        {example && (
+          <div className="mt-1">
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowExample((v) => !v)}
+              className="text-[11px] font-medium text-signal underline-offset-2 hover:underline"
+            >
+              {showExample ? "Hide example" : "Show me an example"}
+            </button>
+            {showExample && (
+              <p className="mt-1 rounded-md border border-hairline bg-surface-2/40 p-2 text-[12px] italic text-text-mid">
+                &ldquo;{example}&rdquo;
+              </p>
+            )}
+          </div>
+        )}
         {usesLabel && <div className="mt-0.5 text-[11px] text-text-low">{usesLabel}</div>}
         {status === "error" && (
           <div className="mt-0.5 flex items-center gap-1 text-[11px] text-danger">

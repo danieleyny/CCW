@@ -56,6 +56,9 @@ export interface FactDef {
   /** Kept for read/backfill but NOT shown in the details editor — a legacy field
    *  superseded by a structured replacement (e.g. the combined safeguard name). */
   hidden?: boolean
+  /** A collapsed "Show me an example" under an abstract field — a real, complete
+   *  sample answer modelling the level of detail expected. */
+  example?: string
 }
 
 // The legal name is NEVER inferred from a display name or an email address
@@ -99,7 +102,10 @@ export const FACTS: FactDef[] = [
   { key: "applicant.legalLastName", label: "Last name", type: "text", group: "you", from: (s) => { const p = nameParts(s.client.fullName); return p.length > 1 ? p[p.length - 1] : "" } },
   { key: "applicant.aliasOrMaidenName", label: "Alias / maiden name", type: "text", group: "you", optional: true, placeholder: "leave blank if none", from: (s) => s.intake.aliasName },
   { key: "applicant.dob", label: "Date of birth", type: "date", group: "you", sensitive: true, from: (s) => s.intake.dob },
-  { key: "applicant.placeOfBirth", label: "Place of birth", type: "text", group: "you", placeholder: "City, State, Country", from: (s) => s.intake.placeOfBirth },
+  // Place of birth is a paper-form leftover — the online portal never asks it (what it
+  // wants is proof of citizenship, a document, IDN-03). Hidden from the editor and the
+  // readiness count; the column stays so nothing already captured is lost.
+  { key: "applicant.placeOfBirth", label: "Place of birth", type: "text", group: "you", hidden: true, placeholder: "City, State, Country", from: (s) => s.intake.placeOfBirth },
   { key: "applicant.sex", label: "Gender", type: "select", group: "physical", options: ["Male", "Female", "Other"], from: (s) => s.intake.sex },
   { key: "applicant.height", label: "Height", type: "select", group: "physical", options: HEIGHTS, from: (s) => (s.intake.heightInches ? `${Math.floor(Number(s.intake.heightInches) / 12)}'${String(Number(s.intake.heightInches) % 12).padStart(2, "0")}"` : "") },
   { key: "applicant.weight", label: "Weight (lb)", type: "text", group: "physical", placeholder: "pounds, e.g. 180", from: (s) => (s.intake.weightLbs ? String(s.intake.weightLbs) : "") },
@@ -155,7 +161,7 @@ export const FACTS: FactDef[] = [
   // reachable on /portal/details — a concierge applicant never sees the wizard). The
   // NYPD constraints ride in the label: Q30 storage must be IN New York State, and
   // the Q31 person must be a New York State resident.
-  { key: "safeguard.method", label: "How the handgun is secured when not in use (e.g. locked safe)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardMethod },
+  { key: "safeguard.method", label: "How the handgun is secured when not in use (must be in New York State)", type: "text", group: "safeguard", from: (s) => s.intake.safeguardMethod, example: "In a locked safe in my bedroom closet at my home address, with the ammunition stored separately in the same safe." },
   // The safeguarding PERSON. The portal has separate first/last name inputs; the old
   // combined `safeguard.name` is kept hidden only as a read fallback.
   { key: "safeguard.name", label: "Safeguard person (combined — legacy)", type: "text", group: "safeguard", hidden: true, from: (s) => s.intake.safeguardName },
