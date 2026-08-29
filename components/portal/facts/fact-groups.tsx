@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { FactRow } from "./fact-row"
-import type { FactGroupData } from "@/lib/facts/details-view"
+import { flagAttorneyReview } from "@/app/portal/facts/actions"
+import type { FactGroupData, FactRowMeta } from "@/lib/facts/details-view"
 
 /**
  * Grouped, inline-editable fact rows — the one preparation surface, reused by the
@@ -16,12 +17,16 @@ export function FactGroups({
   groups,
   total,
   showMeter = false,
+  flagEligibility = false,
 }: {
   caseId: string
   groups: FactGroupData[]
   /** Editable, non-SSN denominator for the meter. */
   total: number
   showMeter?: boolean
+  /** The applicant's OWN screen — enables the citizenship eligibility routing. A
+   *  sponsor editing a file must not flag the applicant, so it stays off there. */
+  flagEligibility?: boolean
 }) {
   // key → current value, for every editable row (drives the meter + collapse).
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -46,38 +51,77 @@ export function FactGroups({
     return false
   }
 
-  // Optional facts ("only if it applies") never count toward completeness.
-  const requiredKeys = useMemo(() => {
+  // A conditional row is shown only when its trigger fact holds one of its values.
+  // A hidden conditional field counts for nothing — not the meter, not readiness.
+  const isVisible = (r: FactRowMeta) => !r.showWhen || r.showWhen.equals.includes((values[r.showWhen.key] ?? "").trim())
+
+  // Optional facts never count; conditionally-hidden fields don't either — and the
+  // denominator recomputes live as a conditional toggles (#14).
+  const { requiredKeys, liveTotal } = useMemo(() => {
     const s = new Set<string>()
-    for (const g of groups) for (const r of g.rows) if (r.kind === "editable" && !r.optional) s.add(r.key)
-    return s
-  }, [groups])
+    for (const g of groups) for (const r of g.rows) if (r.kind === "editable" && !r.optional && isVisible(r)) s.add(r.key)
+    return { requiredKeys: s, liveTotal: s.size }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, values])
   const captured = useMemo(
     () => [...requiredKeys].filter((k) => (values[k] ?? "").trim() !== "").length,
     [requiredKeys, values]
   )
 
+  const citizenship = values["applicant.citizenship"] ?? ""
+
   return (
     <div className="space-y-6">
-      {showMeter && <Meter captured={captured} total={total} />}
+      {showMeter && <Meter captured={captured} total={liveTotal || total} />}
       <div ref={containerRef} className="space-y-6">
-        {groups.map((g) => (
-          <section key={g.key} id={g.key} className="scroll-mt-20 rounded-lg border border-hairline bg-card p-4">
-            <div className="engraved mb-1 text-text-low">{g.label}</div>
-            {g.rows.map((r) => (
-              <FactRow
-                key={r.key}
-                caseId={caseId}
-                meta={r.kind === "ssn" ? { ...r, onFile: ssnOnFile[r.key] } : r}
-                value={r.kind === "editable" ? values[r.key] ?? "" : r.value}
-                onSaved={(key, next) => setValues((prev) => ({ ...prev, [key]: next }))}
-                onSsnSaved={() => setSsnOnFile((prev) => ({ ...prev, [r.key]: true }))}
-                focusNext={focusNext}
-              />
-            ))}
-          </section>
-        ))}
+        {groups.map((g) => {
+          const rows = g.rows.filter(isVisible)
+          if (rows.length === 0) return null // a group whose every field is conditionally hidden
+          return (
+            <section key={g.key} id={g.key} className="scroll-mt-20 rounded-lg border border-hairline bg-card p-4">
+              <div className="engraved mb-1 text-text-low">{g.label}</div>
+              {rows.map((r) => (
+                <FactRow
+                  key={r.key}
+                  caseId={caseId}
+                  meta={r.kind === "ssn" ? { ...r, onFile: ssnOnFile[r.key] } : r}
+                  value={r.kind === "editable" ? values[r.key] ?? "" : r.value}
+                  onSaved={(key, next) => setValues((prev) => ({ ...prev, [key]: next }))}
+                  onSsnSaved={() => setSsnOnFile((prev) => ({ ...prev, [r.key]: true }))}
+                  focusNext={focusNext}
+                />
+              ))}
+              {/* #3 — "Neither" is an ELIGIBILITY answer, not a data point. State the
+                  general federal rule, don't conclude about their status, and route to
+                  attorney review. */}
+              {g.key === "you" && citizenship === "Neither" && (
+                <CitizenshipEligibilityNotice caseId={caseId} flagEligibility={flagEligibility} />
+              )}
+            </section>
+          )
+        })}
       </div>
+    </div>
+  )
+}
+
+function CitizenshipEligibilityNotice({ caseId, flagEligibility }: { caseId: string; flagEligibility: boolean }) {
+  // Route it to a human (idempotent). Only from the applicant's own screen.
+  useEffect(() => {
+    if (flagEligibility) void flagAttorneyReview(caseId, "citizenship_neither")
+  }, [caseId, flagEligibility])
+  return (
+    <div className="mt-3 rounded-md border border-danger/40 bg-danger/[0.06] p-3 text-sm">
+      <p className="font-medium text-danger">We can&apos;t move this application forward yet.</p>
+      <p className="mt-1 text-text-mid">
+        Under federal law (18 U.S.C. § 922(g)(5)), a person who is neither a U.S. citizen nor a lawful
+        permanent resident is generally prohibited from possessing a firearm. We can&apos;t advise on your
+        specific situation, and we won&apos;t take payment while this is unresolved.
+      </p>
+      <p className="mt-1 text-text-mid">
+        We&apos;ve flagged your case for attorney review — your consultant will reach out about the right
+        next step.
+      </p>
     </div>
   )
 }

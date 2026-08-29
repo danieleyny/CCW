@@ -102,6 +102,9 @@ export function ApplicationHistory({
   const [res, setRes] = useState<AddressHistoryEntry[]>(residence.length ? residence : [{}])
   const [emp, setEmp] = useState<EmploymentHistoryEntry[]>(employment.length ? employment : [{}])
   const [ooc, setOoc] = useState(outOfCity)
+  const [hasOoc, setHasOoc] = useState<"" | "no" | "yes">(
+    outOfCity.number || outOfCity.county || outOfCity.issuedOn || outOfCity.expiresOn ? "yes" : ""
+  )
   const [pending, start] = useTransition()
 
   function save() {
@@ -204,21 +207,36 @@ export function ApplicationHistory({
         </Button>
       </div>
 
-      {/* Out-of-city licence (Q9) — only for a Special Carry (out-of-city) applicant. */}
+      {/* Out-of-city licence (Q9) — behind a Yes/No; the four fields render only on Yes. */}
       <div className="space-y-2">
-        <Label className="text-xs">Out-of-city licence (Special Carry only, if you hold one)</Label>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Input placeholder="Licence number" value={ooc.number} onChange={(e) => setOoc((o) => ({ ...o, number: e.target.value }))} />
-          <Input placeholder="County" value={ooc.county} onChange={(e) => setOoc((o) => ({ ...o, county: e.target.value }))} />
-          <div className="space-y-1">
-            <Label className="text-[11px] text-text-low">Date issued</Label>
-            <Input type="date" value={ooc.issuedOn} onChange={(e) => setOoc((o) => ({ ...o, issuedOn: e.target.value }))} />
+        <Label className="text-xs">Do you hold a pistol licence from another New York county?</Label>
+        <select
+          className="h-9 w-full max-w-[12rem] rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm outline-none"
+          value={hasOoc}
+          onChange={(e) => {
+            const v = e.target.value as "" | "no" | "yes"
+            setHasOoc(v)
+            if (v !== "yes") setOoc({ number: "", county: "", issuedOn: "", expiresOn: "" })
+          }}
+        >
+          <option value="">Select…</option>
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+        {hasOoc === "yes" && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input placeholder="Licence number" value={ooc.number} onChange={(e) => setOoc((o) => ({ ...o, number: e.target.value }))} />
+            <Input placeholder="County" value={ooc.county} onChange={(e) => setOoc((o) => ({ ...o, county: e.target.value }))} />
+            <div className="space-y-1">
+              <Label className="text-[11px] text-text-low">Date issued</Label>
+              <Input type="date" value={ooc.issuedOn} onChange={(e) => setOoc((o) => ({ ...o, issuedOn: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-text-low">Expires</Label>
+              <Input type="date" value={ooc.expiresOn} onChange={(e) => setOoc((o) => ({ ...o, expiresOn: e.target.value }))} />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label className="text-[11px] text-text-low">Expires</Label>
-            <Input type="date" value={ooc.expiresOn} onChange={(e) => setOoc((o) => ({ ...o, expiresOn: e.target.value }))} />
-          </div>
-        </div>
+        )}
       </div>
 
       <Button size="sm" disabled={pending} onClick={save} className="min-h-[36px]">

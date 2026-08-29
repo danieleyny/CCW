@@ -89,6 +89,12 @@ export async function resolveFacts(db: DB, caseId: string, opts: ResolveOpts = {
   const keys = opts.keys ?? FACTS.map((f) => f.key)
   const out: Record<string, string> = {}
   for (const k of keys) out[k] = get(k)
+  // #4 phone migration — the portal has only Primary (cell) and Other (work); home is
+  // gone. A legacy case that carried only a home phone keeps it, surfaced as the cell.
+  if (keys.includes("applicant.phone.cell") && !out["applicant.phone.cell"].trim()) {
+    const home = get("applicant.phone.home")
+    if (home.trim()) out["applicant.phone.cell"] = home
+  }
   return out
 }
 

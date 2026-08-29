@@ -1,4 +1,4 @@
-import { FACTS, type FactGroup, type FactType } from "@/lib/facts/registry"
+import { FACTS, type FactDef, type FactGroup, type FactType } from "@/lib/facts/registry"
 import { QUESTIONNAIRES } from "@/lib/requirements/questionnaires"
 
 /**
@@ -18,6 +18,8 @@ export interface FactRowMeta {
   optional?: boolean
   /** A collapsed "Show me an example" sample answer for an abstract field. */
   example?: string
+  /** Conditional visibility, evaluated client-side against live values. */
+  showWhen?: { key: string; equals: string[] }
   uses: number
   /** The current value. Empty for an unset editable fact; ALWAYS empty for the SSN
    *  (its value is never sent to the client). */
@@ -61,21 +63,29 @@ export function buildFactGroups(
   facts: Record<string, string>,
   hasSsn: boolean,
   groups: FactGroup[],
-  showSsn: boolean
+  showSsn: boolean,
+  /** Renewal-only facts (the prior licence number) appear only on a renewal case. */
+  isRenewal = false
 ): { groups: FactGroupData[]; total: number } {
   const uses = factUsage()
   const out: FactGroupData[] = []
-  let total = 0 // editable, non-derived, non-SSN — the meter's denominator
+  let total = 0 // editable, non-derived, non-SSN, currently-VISIBLE — the meter's denominator
+
+  // A conditional row counts toward the denominator only when its condition is met by
+  // the CURRENT facts (the client recomputes this live as values change).
+  const visible = (f: FactDef) => !f.showWhen || f.showWhen.equals.includes(facts[f.showWhen.key] ?? "")
 
   for (const g of groups) {
     // DERIVED facts (full name, age, DOB parts) are computed from other answers, not
     // questions to answer — they never appear on this editor.
-    const defs = FACTS.filter((f) => f.group === g && !f.derive && !f.hidden && (showSsn || f.key !== "applicant.ssn"))
+    const defs = FACTS.filter(
+      (f) => f.group === g && !f.derive && !f.hidden && (showSsn || f.key !== "applicant.ssn") && (isRenewal || !f.renewalOnly)
+    )
     if (defs.length === 0) continue
     const rows: FactRowMeta[] = defs.map((f) => {
       const kind: FactRowMeta["kind"] = f.key === "applicant.ssn" ? "ssn" : "editable"
-      // An optional field is never counted toward completeness.
-      if (kind === "editable" && !f.optional) total++
+      // Counted only if required AND currently visible.
+      if (kind === "editable" && !f.optional && visible(f)) total++
       return {
         key: f.key,
         label: f.label,
@@ -85,6 +95,7 @@ export function buildFactGroups(
         placeholder: f.placeholder,
         optional: f.optional,
         example: f.example,
+        showWhen: f.showWhen,
         uses: uses[f.key] ?? 0,
         value: kind === "ssn" ? "" : facts[f.key] ?? "",
         onFile: kind === "ssn" ? hasSsn : undefined,

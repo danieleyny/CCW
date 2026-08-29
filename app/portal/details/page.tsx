@@ -49,8 +49,9 @@ export default async function DetailsPage() {
   const groupOrder: FactGroup[] = sponsorship ? [...BASE_GROUPS, "sponsor"] : BASE_GROUPS
 
   // Rows built server-side (registry + form-usage counts stay off the client); the
-  // meter and inline saves are then driven from client state.
-  const { groups: groupData, total } = buildFactGroups(facts, hasSsn, groupOrder, true)
+  // meter and inline saves are then driven from client state. Renewal-only fields (the
+  // prior licence number) appear only when the case is a renewal.
+  const { groups: groupData, total } = buildFactGroups(facts, hasSsn, groupOrder, true, !!myCase.is_renewal)
 
   // Portal building/street splits — parse each stored single-line street, flagged for
   // confirmation. Safeguard's address is a free-form line; still worth splitting.
@@ -74,7 +75,7 @@ export default async function DetailsPage() {
         </p>
       </div>
 
-      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter />
+      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter flagEligibility />
 
       <AddressSplits caseId={myCase.id} addresses={addressSplits} />
 
