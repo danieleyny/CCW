@@ -361,6 +361,21 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
   },
   // QUE-01 (the PD 643-041A addendum) is RETIRED — the portal captures explanations
   // inline under each question, so there is no separate addendum form.
+  "REL-01": {
+    conciergeScope: "full",
+    mode: "obtain",
+    actionLabel: "Add your notarized release",
+    documentType: "notarized_release",
+    sourceUrl: "https://licensing.nypdonline.org/",
+    steps: [
+      "Get the release form from the portal's Forms section (a sample is provided there).",
+      "Sign it in front of a notary and have it notarized.",
+      "Bring the original to your interview — this is held with your file, not uploaded to the portal.",
+      "Upload a copy here so we have it on record.",
+    ],
+    customerTitle: "Your notarized release authorization",
+    help: "You affirm on the application that you will provide a signed, notarized release authorizing the License Division to obtain information relevant to its review. Held for your interview.",
+  },
   "COR-01": {
     conciergeScope: "full",
     mode: "obtain",
