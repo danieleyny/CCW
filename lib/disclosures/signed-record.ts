@@ -103,17 +103,35 @@ export async function renderSignedApplicationRecord(
         for (const n of [1, 2, 3, 4, 5, 6]) if (s(v[`lop${n}`])) c.para(`  ${n}. ${s(v[`lop${n}`])}`)
       }
 
-      // 4 & 5 — Authorization + acknowledgment
+      // 4 — The portal's four affirmations, VERBATIM. Staff will tick these on the
+      // applicant's behalf, so the applicant must have made them to us first.
       c.pageBreak()
-      c.h2("4 · Authorization")
+      c.h2("4 · Affirmations")
       c.para(
-        "I confirm that the answers and information above are my own, that I have reviewed them for accuracy and completeness, and that they are true. I authorize Gun License NYC to enter these answers on my behalf into the New York City Police Department's online licensing portal, and to be identified there as the person who assisted me in preparing my application."
+        "The undersigned affirms and acknowledges that he/she has knowledge of and shall be responsible for compliance with all laws, rules, regulations, standards and procedures, promulgated by federal, state, or local jurisdictions, and by federal, state, or local law enforcement agencies that are applicable to this license.",
+        { size: 10 }
       )
       c.spacer()
-      c.h2("5 · Acknowledgment")
       c.para(
-        "I understand that a false written statement is a Class A misdemeanor under New York Penal Law § 210.45, and that the answers above are my own.",
+        "The undersigned affirms that the statements made and answers given herein are accurate and complete, and hereby authorizes the New York City Police Department, License Division to make appropriate inquiries in connection with processing this application. False written statements in this document are punishable under Section 210.45 of the New York Penal Law.",
         { size: 10 }
+      )
+      c.spacer()
+      c.para(
+        "The undersigned affirms that he/she will provide signed and notarized Release(s) authorizing the License Division to obtain any and all information that the License Division deems relevant to its review of his/her application.",
+        { size: 10 }
+      )
+      c.spacer()
+      c.para(
+        "The undersigned acknowledges the state-mandated warnings regarding the risk of a firearm in the home and the responsibility to store firearms safely (Penal Law § 400.00(18)(b)).",
+        { size: 10 }
+      )
+
+      // 5 — Our authorization to enter the answers into the portal on their behalf.
+      c.spacer()
+      c.h2("5 · Authorization")
+      c.para(
+        "I confirm that the answers and information above are my own, that I have reviewed them for accuracy and completeness, and that they are true. I authorize Gun License NYC to enter these answers on my behalf into the New York City Police Department's online licensing portal, and to be identified there as the person who assisted me in preparing my application."
       )
       c.spacer()
       c.signatureImage("Applicant signature")
