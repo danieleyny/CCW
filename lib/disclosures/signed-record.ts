@@ -127,9 +127,27 @@ export async function renderSignedApplicationRecord(
         { size: 10 }
       )
 
-      // 5 — Our authorization to enter the answers into the portal on their behalf.
+      // 5 — Post-submission duties (portal step 16) — standing obligations while pending.
       c.spacer()
-      c.h2("5 · Authorization")
+      c.h2("5 · Post-submission duties")
+      c.para(
+        "While my application is pending, I will report IMMEDIATELY to the License Division, New Applicant Section, (646) 610-5551 / DG_LIC-HandgunIntake@NYPD.ORG, any of the following:",
+        { size: 10 }
+      )
+      for (const duty of [
+        "An arrest, indictment, or conviction in any jurisdiction; a summons other than a traffic infraction; or a suspension/ineligibility order under CPL §530.14 or Family Court Act §842-a.",
+        "A change of business or residence address.",
+        "A change of business, occupation, or employment.",
+        "Any change in the circumstances cited in this application.",
+        "Receipt of psychiatric treatment, or treatment for alcoholism or drug abuse, or any disability or condition affecting my ability to safely possess a handgun.",
+        "Becoming the subject or recipient of an Order of Protection, Temporary Order of Protection, or an Extreme Risk (“Red Flag”) Protection Order.",
+      ]) {
+        c.para(`  • ${duty}`, { size: 9.5 })
+      }
+
+      // 6 — Our authorization to enter the answers into the portal on their behalf.
+      c.spacer()
+      c.h2("6 · Authorization")
       c.para(
         "I confirm that the answers and information above are my own, that I have reviewed them for accuracy and completeness, and that they are true. I authorize Gun License NYC to enter these answers on my behalf into the New York City Police Department's online licensing portal, and to be identified there as the person who assisted me in preparing my application."
       )
