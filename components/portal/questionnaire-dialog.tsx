@@ -19,6 +19,22 @@ import { Textarea } from "@/components/ui/textarea"
 
 type Values = Record<string, unknown>
 
+/** The Letter-of-Necessity scope categories a licence track is asked (always incl.
+ *  "all"). A Concealed Carry applicant gets {all, carry} → the three "all"/"carry"
+ *  statements; a Carry Guard/Security applicant additionally gets the guard/business
+ *  ones. */
+function lonCategoriesFor(track?: string | null): Set<string> {
+  const cats = new Set<string>(["all"])
+  if (track === "carry_guard" || track === "special_carry_guard") {
+    cats.add("carry").add("guard").add("business")
+  } else if (track === "premises") {
+    cats.add("business")
+  } else {
+    cats.add("carry") // concealed_carry / special_carry / default
+  }
+  return cats
+}
+
 /**
  * Generic renderer for any questionnaire schema — adding a document is a data
  * change, not a UI change. Handles text/date/select/textarea/checkbox, yes-no
@@ -35,6 +51,7 @@ export function QuestionnaireDialog({
   canAdopt = true,
   lockParty,
   isLeo,
+  licenseTrack,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -55,11 +72,17 @@ export function QuestionnaireDialog({
   /** Whether this is a law-enforcement applicant. leoOnly fields (portal Q16) are
    *  hidden — and never validated or recorded — for everyone else. */
   isLeo?: boolean
+  /** The case's licence track — scopes the Letter of Necessity statements (a Concealed
+   *  Carry applicant is asked only the "all" + "carry" statements, not all six). */
+  licenseTrack?: string | null
 }) {
   const isLocked = (f: Field) => !!lockParty && !!f.party && f.party !== lockParty
   const otherLabel = lockParty === "applicant" ? "your employer" : "the applicant"
-  // leoOnly questions never render, validate, or persist for a non-LEO applicant.
-  const visibleFields = (questionnaire.fields ?? []).filter((f) => !f.leoOnly || isLeo)
+  const lonCats = lonCategoriesFor(licenseTrack)
+  // leoOnly questions never render for a non-LEO; LON statements only for their track.
+  const visibleFields = (questionnaire.fields ?? []).filter(
+    (f) => (!f.leoOnly || isLeo) && (!f.lonScope || lonCats.has(f.lonScope))
+  )
   const [values, setValues] = useState<Values>(initial)
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
   const [step, setStep] = useState<"answers" | "sign">("answers")

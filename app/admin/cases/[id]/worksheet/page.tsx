@@ -1,6 +1,7 @@
 import { requireStaff } from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
+import { getCaseSsn } from "@/lib/facts/ssn"
 import { buildPortalWorksheet } from "@/lib/disclosures/worksheet-portal"
 import { PortalWorksheet } from "@/components/admin/portal-worksheet"
 
@@ -31,10 +32,12 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
     return <p className="rounded-lg border border-hairline bg-card p-6 text-sm text-text-mid">No application data yet for this case.</p>
   }
 
+  const ssnLast4 = (await getCaseSsn(admin, id, "portal worksheet — SSN last 4")) ?? ""
   const sections = buildPortalWorksheet(assembled.values, disclosures as Record<string, unknown>, {
     isRenewal: !!kase?.is_renewal,
     phone: client?.phone,
     email: client?.email,
+    ssnLast4,
   })
 
   return (

@@ -11,9 +11,9 @@ import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { pdfText } from "./helpers/pdf"
 
 describe("the portal disclosure question set", () => {
-  it("is exactly seventeen questions, in order", () => {
-    expect(PORTAL_DISCLOSURES).toHaveLength(17)
-    expect(PORTAL_DISCLOSURES.map((q) => q.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+  it("is the sixteen sworn questions (confidentiality is a separate inline form)", () => {
+    expect(PORTAL_DISCLOSURES).toHaveLength(16)
+    expect(PORTAL_DISCLOSURES.map((q) => q.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
   })
 
   it("splits drugs into three separate questions (8, 9, 10)", () => {
@@ -26,10 +26,9 @@ describe("the portal disclosure question set", () => {
     expect(PORTAL_DISCLOSURES[13].text).toMatch(/protected person on an Order of Protection/)
   })
 
-  it("gates Q6 on Q5, marks Q16 leoOnly, and Q17 a confidentiality request", () => {
+  it("gates Q6 on Q5 and marks Q16 leoOnly", () => {
     expect(PORTAL_DISCLOSURES.find((q) => q.no === 6)?.conditionalOnYesOf).toBe(5)
     expect(PORTAL_DISCLOSURES.find((q) => q.no === 16)?.leoOnly).toBe(true)
-    expect(PORTAL_DISCLOSURES.find((q) => q.no === 17)?.isConfidentialityRequest).toBe(true)
   })
 
   it("carries Q7's verbatim arrest note including the Certificate of Relief clause", () => {

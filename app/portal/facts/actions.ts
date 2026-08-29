@@ -32,7 +32,10 @@ export async function setCaseFact(
 
   if (key === "applicant.ssn") {
     if (actor.actor !== "client") return { error: "Only you can set your Social Security number." }
-    await setCaseSsn(admin, caseId, value, actor.profileId)
+    // The portal wants only the LAST FOUR digits — we never store a full SSN. Keep the
+    // last 4 digits of whatever was entered.
+    const last4 = value.replace(/\D/g, "").slice(-4)
+    await setCaseSsn(admin, caseId, last4, actor.profileId)
     await logActivity({ action: "fact.ssn_updated", caseId, entity: "case", entityId: caseId })
     if (!opts?.skipRevalidate) revalidatePath("/portal/details")
     return { ok: true }

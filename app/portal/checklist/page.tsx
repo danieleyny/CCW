@@ -3,7 +3,11 @@ import { CheckCircle2, ArrowRight, ConciergeBell } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { assembleApplicationValues } from "@/lib/forms/prepare"
+import { computePortalReadiness } from "@/lib/disclosures/readiness"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
+import { ReadinessCard } from "@/components/portal/readiness-card"
 
 export const metadata = { title: "Your checklist" }
 
@@ -20,6 +24,31 @@ export default async function ChecklistPage() {
   // sponsor-managed, the case is sponsored. Used to lock the employer's Letter-of-
   // Necessity fields (statements 1/3/5) read-only for the applicant.
   const caseSponsored = view.items.some((i) => i.sponsorManaged)
+  // Licence track scopes the Letter-of-Necessity statements (a Concealed Carry
+  // applicant is asked 3 of them, not 6).
+  const { data: trackRow } = await supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
+
+  // Two-gate portal readiness (ready to enter · ready to finalize). Admin: assembles
+  // the applicant's own data for the summary (mirrors the signed record).
+  const admin = createAdminClient()
+  const assembled = await assembleApplicationValues(admin, myCase.id)
+  const { data: dscRow } = await admin
+    .from("requirement_answers")
+    .select("answers")
+    .eq("case_id", myCase.id)
+    .eq("req_code", "DSC-01")
+    .maybeSingle()
+  const readiness = assembled
+    ? computePortalReadiness(
+        assembled.values,
+        (dscRow?.answers ?? {}) as Record<string, unknown>,
+        view.items.map((i) => ({ reqCode: i.reqCode, status: i.status })),
+        {
+          licenseTrack: assembled.track,
+          signedRecordSatisfied: view.items.find((i) => i.reqCode === "DSC-01")?.status === "satisfied",
+        }
+      )
+    : null
 
   return (
     <div>
@@ -44,6 +73,7 @@ export default async function ChecklistPage() {
         </div>
       )}
       <Header intakeDone={view.intakeDone} />
+      {readiness && !isConcierge && <ReadinessCard readiness={readiness} />}
       <RequirementsChecklist
         items={view.items}
         caseId={myCase.id}
@@ -58,6 +88,7 @@ export default async function ChecklistPage() {
         feeSummary={view.feeSummary}
         feeReceipts={view.feeReceipts}
         caseSponsored={caseSponsored}
+        licenseTrack={trackRow?.license_track ?? null}
       />
     </div>
   )

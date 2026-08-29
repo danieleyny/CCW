@@ -71,6 +71,38 @@ const str = (v: unknown): string => (typeof v === "string" ? v : "")
 const rows = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
 const isYes = (v: unknown): boolean => v === true || v === "yes"
 
+/** The confidentiality election (Public Records Exemption) — our record of the
+ *  grounds and election the applicant chose, which staff enter inline on the portal. */
+async function confidentialityRecord(name: string, a: Record<string, unknown>, sign: SignOpts) {
+  const requesting = a.requesting === "yes" || a.requesting === true
+  const grounds: [string, string][] = [
+    ["g1a", "Active/retired police, peace, probation, parole, or corrections officer"],
+    ["g1b", "Protected person under a currently valid order of protection"],
+    ["g1c", "Witness in a criminal proceeding"],
+    ["g1d", "Juror or grand juror in a criminal proceeding"],
+    ["g2", "Safety may be endangered for another reason (see below)"],
+    ["g3", "Spouse/domestic partner/household member of a person described above"],
+    ["g4", "May be subject to unwarranted harassment on disclosure"],
+  ]
+  return buildPdf((c) => {
+    c.heading("Confidentiality Request — Public Records Exemption", "Our record of your election; not an NYPD form")
+    c.rule()
+    c.para(`Requesting confidentiality: ${requesting ? "Yes" : "No"}`)
+    if (requesting) {
+      c.spacer()
+      c.para("Grounds selected:", { size: 10, color: "muted" })
+      for (const [k, label] of grounds) if (a[k] === true || a[k] === "true") c.para(`  • ${label}`)
+      if (str(a.item5)) {
+        c.spacer()
+        c.para("Additional supportive information:", { size: 10, color: "muted" })
+        c.para(str(a.item5))
+      }
+      c.spacer()
+      c.para(`Scope: ${a.election === "withdraw" ? "Not submitting a request / withdrawing any previous request" : "Apply to all my NYC handgun licence applications and licences"}`)
+    }
+  }, sign)
+}
+
 async function protectionOrderStatement(name: string, a: Record<string, unknown>, sig: Uint8Array | undefined, sign: SignOpts) {
   return buildPdf((c) => {
     c.heading("Order of Protection — Written Statement")
@@ -203,6 +235,8 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
   switch (reqCode) {
     case "AFF-01":
       return { bytes: await affirmationOfUnderstanding(n, dated, sig, sign), fileName: "affirmation-of-understanding.pdf", documentType: "affirmation_understanding", label: "Affirmation of understanding" }
+    case "CON-01":
+      return { bytes: await confidentialityRecord(n, a, sign), fileName: "confidentiality-request.pdf", documentType: "public_records_exemption", label: "Confidentiality request" }
     case "SAF-01":
       return { bytes: await safeStorageStatement(n, a, sig, sign), fileName: "safe-storage-statement.pdf", documentType: "safeguard_ack", label: "Safe storage statement" }
     case "SOC-01":

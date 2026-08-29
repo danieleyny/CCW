@@ -17,7 +17,7 @@ describe("deriveConditionFlags — canonical store first", () => {
     // q15 domestic, q1 alias, q7_felony conviction, q17 confidentiality.
     const { flags, source } = deriveConditionFlags(null, {
       ...noSources,
-      disclosures: { q5: "yes", q7: "yes", q7_felony: "yes", q13: "no", q15: "yes", q1: "no", q17: "yes" },
+      disclosures: { q5: "yes", q7: "yes", q7_felony: "yes", q13: "no", q15: "yes", q1: "no" },
     })
     expect(source.sectionB).toBe("disclosure-store")
     expect(flags.anyQuestionYes).toBe(true)
@@ -27,7 +27,6 @@ describe("deriveConditionFlags — canonical store first", () => {
     expect(flags.hasOopHistory).toBe(false) // q13 no
     expect(flags.hasNameChange).toBe(false) // q1 no
     expect(flags.hasFelonyConviction).toBe(true) // q7_felony → Certificate of Relief
-    expect(flags.wantsConfidentiality).toBe(true) // q17 → Public Records Exemption
   })
 
   it("an all-'no' disclosure store spawns nothing", () => {

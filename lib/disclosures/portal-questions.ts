@@ -58,11 +58,9 @@ export const PORTAL_DISCLOSURES: PortalDisclosure[] = [
   { no: 14, text: "Have you ever been the protected person on an Order of Protection?" },
   { no: 15, text: "Have you ever been involved in a domestic incident which was reported to police?" },
   { no: 16, text: "Have your Firearm(s) ever been removed from you or surrendered for any reason throughout your career as a law enforcement?", leoOnly: true },
-  {
-    no: 17,
-    text: 'In the event that I am granted a handgun license, I request that my name and address, and all other information related to my license, be kept confidential to the extent permitted by law. I will complete and upload the New York State "Request for Public Records Exemption" form that is required in connection with my request for confidentiality. I will indicate the reason for my request for confidentiality on the form.',
-    isConfidentialityRequest: true,
-  },
+  // Confidentiality (portal step 11) is NOT a sworn disclosure question — it is a
+  // separate inline grounds form (the Public Records Exemption), collected as data,
+  // never uploaded. See CON-01 / the confidentiality questionnaire.
 ]
 
 /** The answer key for a portal disclosure question. */

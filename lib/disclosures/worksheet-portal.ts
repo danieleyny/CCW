@@ -46,7 +46,7 @@ function addressFields(prefix: string, street: string, apt: string, city: string
 export function buildPortalWorksheet(
   v: ApplicationValues,
   disclosures: Record<string, unknown>,
-  ctx: { applicationType?: string; isRenewal?: boolean; phone?: string | null; email?: string | null; leo?: boolean }
+  ctx: { applicationType?: string; isRenewal?: boolean; phone?: string | null; email?: string | null; leo?: boolean; ssnLast4?: string }
 ): WorksheetSection[] {
   const sections: WorksheetSection[] = []
 
@@ -67,11 +67,14 @@ export function buildPortalWorksheet(
       f("Primary Phone", s(v.cellPhone) || s(v.homePhone) || s(ctx.phone)),
       f("Other Phone", s(v.homePhone), { optional: true }),
       f("Email", s(v.email) || s(ctx.email)),
-      f("Place of Birth", s(v.placeOfBirth)),
-      f("Citizenship", s(v.citizenship)),
-      f("Alien Registration Number", s(v.alienReg), { optional: true }),
+      f("Are you a U.S. Citizen?", v.citizenship === "Citizen" ? "Yes" : v.citizenship === "Alien" ? "No" : ""),
+      f("SSN — Last 4 digits", s(ctx.ssnLast4)),
       ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
-      ...addressFields("Mailing Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip), true),
+      f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
+      // Only surface the mailing block when it's actually different.
+      ...(v.mailingDifferent
+        ? addressFields("Mailing Address", s(v.mailingStreet), s(v.mailingApt), s(v.mailingCity), s(v.mailingState), s(v.mailingZip))
+        : []),
     ],
   })
 

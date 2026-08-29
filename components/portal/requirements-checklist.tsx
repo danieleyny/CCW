@@ -227,6 +227,7 @@ export function RequirementsChecklist({
   feeReceipts,
   dmvApplicant,
   caseSponsored = false,
+  licenseTrack = null,
 }: {
   items: ReqChecklistItem[]
   caseId: string
@@ -250,6 +251,8 @@ export function RequirementsChecklist({
   /** Whether this case is sponsored — locks the employer's co-authored fields (the
    *  Letter of Necessity's statements 1/3/5) read-only for the applicant. */
   caseSponsored?: boolean
+  /** Licence track — scopes the Letter of Necessity statements. */
+  licenseTrack?: string | null
 }) {
   // System controls (FMT-01, the intake-derived eligibility items) are things we
   // verify, not tasks for the customer — showing them as "Confirm" buttons was
@@ -502,6 +505,7 @@ export function RequirementsChecklist({
                             feeReceipts={feeReceipts}
                             dmvApplicant={item.reqCode === "DMV-01" ? dmvApplicant : null}
                             lockParty={caseSponsored ? "applicant" : undefined}
+                            licenseTrack={licenseTrack}
                           />
                           )
                         )}

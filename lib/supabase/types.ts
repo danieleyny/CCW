@@ -5779,6 +5779,7 @@ export type Database = {
         | "affirmation_penal_law"
         | "public_records_exemption"
         | "safeguard_id"
+        | "notarized_release"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6081,6 +6082,7 @@ export const Constants = {
         "affirmation_penal_law",
         "public_records_exemption",
         "safeguard_id",
+        "notarized_release",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

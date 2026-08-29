@@ -81,7 +81,8 @@ export function deriveConditionFlags(
     hasNameChange = yes(d!.q1)
     isVeteran = yes(d!.q5)
     hasFelonyConviction = yes(d!.q7_felony)
-    wantsConfidentiality = yes(d!.q17)
+    // Confidentiality is now a separate inline collection (CON-01), not a Section B
+    // answer and not a spawned upload — so it no longer drives a condition here.
   } else {
     source.sectionB = "wizard"
     anyQuestionYes =

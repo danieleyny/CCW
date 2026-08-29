@@ -68,6 +68,7 @@ export function RequirementAction({
   dmvApplicant,
   lockParty,
   isLeo,
+  licenseTrack,
 }: {
   reqCode: string
   status: string
@@ -93,6 +94,8 @@ export function RequirementAction({
   lockParty?: "applicant" | "sponsor"
   /** Law-enforcement applicant — unlocks the leoOnly disclosure (portal Q16). */
   isLeo?: boolean
+  /** Licence track — scopes the Letter of Necessity statements to the track. */
+  licenseTrack?: string | null
 }) {
   const [open, setOpen] = useState(false)
   const [signing, setSigning] = useState(false)
@@ -199,6 +202,7 @@ export function RequirementAction({
             signatureOnFile={signatureOnFile}
             lockParty={lockParty}
             isLeo={isLeo}
+            licenseTrack={licenseTrack}
           />
         )}
       </div>
@@ -385,6 +389,7 @@ export function RequirementAction({
             signatureOnFile={signatureOnFile}
             lockParty={lockParty}
             isLeo={isLeo}
+            licenseTrack={licenseTrack}
           />
         )}
       </div>
