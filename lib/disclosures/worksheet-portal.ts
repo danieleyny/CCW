@@ -1,5 +1,6 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
-import { portalDate, portalHeight, portalWeight, splitStreet, resolveStreetSplit } from "@/lib/forms/format"
+import { portalDate, portalHeight, portalWeight, splitStreet, resolveStreetSplit, isDayAssumed } from "@/lib/forms/format"
+import { lonStatementsFor } from "@/lib/requirements/lon"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
@@ -31,6 +32,14 @@ function f(label: string, value: string, opts: { atFiling?: boolean; optional?: 
   return { label, value: v, missing: !v && !opts.atFiling && !opts.optional, atFiling: opts.atFiling }
 }
 
+/** A history date field: renders M/D/YYYY and flags a day we had to assume (the
+ *  histories store month-only), so a guessed day on a sworn history is never silent. */
+function fDate(label: string, iso: string, opts: { optional?: boolean; presentIfEmpty?: boolean } = {}): WorksheetField {
+  const value = portalDate(iso) || (opts.presentIfEmpty ? "Present" : "")
+  const flagged = isDayAssumed(iso) ? `${label} ⚠ day assumed — confirm` : label
+  return { label: flagged, value, missing: !value && !opts.optional }
+}
+
 function addressFields(
   prefix: string,
   street: string,
@@ -58,7 +67,18 @@ function addressFields(
 export function buildPortalWorksheet(
   v: ApplicationValues,
   disclosures: Record<string, unknown>,
-  ctx: { applicationType?: string; isRenewal?: boolean; phone?: string | null; email?: string | null; leo?: boolean; ssnLast4?: string }
+  ctx: {
+    applicationType?: string
+    isRenewal?: boolean
+    phone?: string | null
+    email?: string | null
+    leo?: boolean
+    ssnLast4?: string
+    /** Scopes the Letter of Necessity — a concealed-carry case answers three of six. */
+    licenseTrack?: string | null
+    /** CON-01 answers (requirement_answers) — the step-11 confidentiality election. */
+    confidentiality?: Record<string, unknown>
+  }
 ): WorksheetSection[] {
   const sections: WorksheetSection[] = []
 
@@ -105,11 +125,16 @@ export function buildPortalWorksheet(
         confirmed: !!r.streetConfirmed,
         street: s(r.address),
       })
+      // The portal's residence table is eight columns.
       return [
-        f(`Row ${i + 1} — From`, portalDate(s(r.fromMonth))),
-        f(`Row ${i + 1} — To`, portalDate(s(r.toMonth)) || "Present"),
-        f(`Row ${i + 1} — Building`, buildingNumber, { optional: true }),
-        f(`Row ${i + 1} — Street`, streetName),
+        fDate(`Row ${i + 1} — From`, s(r.fromMonth)),
+        fDate(`Row ${i + 1} — To`, s(r.toMonth), { presentIfEmpty: true }),
+        f(`Row ${i + 1} — Building Number`, buildingNumber, { optional: true }),
+        f(`Row ${i + 1} — Street Name`, streetName),
+        f(`Row ${i + 1} — Apt/Unit/Suite`, s(r.apt), { optional: true }),
+        f(`Row ${i + 1} — City`, s(r.city)),
+        f(`Row ${i + 1} — State`, s(r.state)),
+        f(`Row ${i + 1} — Zip`, s(r.zip)),
       ]
     }),
   })
@@ -122,8 +147,8 @@ export function buildPortalWorksheet(
       f("Job Title", s(v.occupation), { optional: true }),
       f("Industry / type of business", s(v.businessType), { optional: true }),
       f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
-      f("Business Unit / Suite", s(v.businessUnit), { optional: true }),
-      ...addressFields("Business Address", s(v.businessStreet), "", s(v.businessCity), s(v.businessState), s(v.businessZip), true, {
+      // The unit/suite is the address's Apt/Unit field — one input, not two.
+      ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true, {
         buildingNumber: s(v.businessBuildingNumber),
         streetName: s(v.businessStreetName),
       }),
@@ -131,8 +156,8 @@ export function buildPortalWorksheet(
       ...asRows(v.employmentHistory).flatMap((r, i) => [
         f(`History ${i + 1} — Business Name`, s(r.employerName) || s(r.employer), { optional: true }),
         f(`History ${i + 1} — Job Title`, s(r.occupation), { optional: true }),
-        f(`History ${i + 1} — Start`, portalDate(s(r.fromMonth)), { optional: true }),
-        f(`History ${i + 1} — End`, portalDate(s(r.toMonth)) || "Present", { optional: true }),
+        fDate(`History ${i + 1} — Start`, s(r.fromMonth), { optional: true }),
+        fDate(`History ${i + 1} — End`, s(r.toMonth), { optional: true, presentIfEmpty: true }),
       ]),
     ],
   })
@@ -162,18 +187,42 @@ export function buildPortalWorksheet(
   })
 
   sections.push({
-    title: "Safekeeping and Safeguarding",
+    title: "Safekeeping (where the handgun is secured)",
     fields: [
-      f("How/where will it be secured when not in use?", s(v.safeguardMethod)),
-      f("Safeguard — First/Last Name", s(v.safeguardName)),
+      f("How will it be secured when not in use?", s(v.safeguardMethod)),
+      // The safekeeping LOCATION — a distinct six-part address (not the home address).
+      ...addressFields(
+        "Safekeeping Location",
+        s(v.safekeepingStreet),
+        s(v.safekeepingApt),
+        s(v.safekeepingCity),
+        s(v.safekeepingState),
+        s(v.safekeepingZip),
+        false,
+        { buildingNumber: s(v.safekeepingBuildingNumber), streetName: s(v.safekeepingStreetName) }
+      ),
+    ],
+  })
+
+  sections.push({
+    title: "Safeguarding Person",
+    fields: [
+      f("Safeguard — First Name", s(v.safeguardFirstName)),
+      f("Safeguard — Last Name", s(v.safeguardLastName)),
       f("Safeguard — Relationship", s(v.safeguardRelation)),
       f("Safeguard — Email", s(v.safeguardEmail)),
       f("Safeguard — Phone", s(v.safeguardPhone)),
       f("Safeguard — At least 21?", s(v.safeguardIs21)),
-      ...addressFields("Safeguard Address", s(v.safeguardAddress), "", "", "", "", true, {
-        buildingNumber: s(v.safeguardBuildingNumber),
-        streetName: s(v.safeguardStreetName),
-      }),
+      ...addressFields(
+        "Safeguard Address",
+        s(v.safeguardAddress),
+        s(v.safeguardApt),
+        s(v.safeguardCity),
+        s(v.safeguardState),
+        s(v.safeguardZip),
+        true,
+        { buildingNumber: s(v.safeguardBuildingNumber), streetName: s(v.safeguardStreetName) }
+      ),
     ],
   })
 
@@ -191,9 +240,41 @@ export function buildPortalWorksheet(
     }),
   })
 
+  // The Letter of Necessity is SCOPED by licence type — a concealed-carry case answers
+  // three of the six statements. Render only the applicable ones so the worksheet never
+  // flags an inapplicable statement as a missing answer.
   sections.push({
     title: "Letter of Necessity",
-    fields: [1, 2, 3, 4, 5, 6].map((n) => f(`Statement ${n}`, s(v[`lop${n}`]), { optional: n === 2 || n === 4 || n === 5 || n === 6 })),
+    fields: lonStatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`]))),
+  })
+
+  // Step 11 — the confidentiality (public-records exemption) election. Only meaningful
+  // when a request is actually being made; otherwise a single "No".
+  const con = ctx.confidentiality ?? {}
+  const conRequesting = isYes(con.requesting)
+  const CON_GROUNDS: [string, string][] = [
+    ["g1a", "Active/retired police, peace, probation, parole, corrections officer"],
+    ["g1b", "Protected person under a valid order of protection"],
+    ["g1c", "Witness in a criminal proceeding"],
+    ["g1d", "Juror / grand juror in a criminal proceeding"],
+    ["g2", "Safety may be endangered for another reason (explained)"],
+    ["g3", "Spouse/partner/household member of a person above"],
+    ["g4", "May be subject to unwarranted harassment on disclosure"],
+  ]
+  sections.push({
+    title: "Confidentiality (Public-Records Exemption)",
+    fields: [
+      f("Requesting confidentiality?", con.requesting == null ? "" : conRequesting ? "Yes" : "No", { optional: true }),
+      ...(conRequesting
+        ? [
+            ...CON_GROUNDS.filter(([k]) => con[k] === true || con[k] === "true" || con[k] === "on").map(([, label]) =>
+              f(`Ground — ${label}`, "Checked", { optional: true })
+            ),
+            f("Additional supportive information", s(con.item5 as string), { optional: true }),
+            f("Scope of request", con.election === "all" ? "Apply to all my applications/licences" : con.election === "withdraw" ? "Not submitting / withdraw previous" : "", { optional: true }),
+          ]
+        : []),
+    ],
   })
 
   const counselYes = v.counselRepresented === "Yes"
@@ -220,7 +301,7 @@ export function buildPortalWorksheet(
   return sections
 }
 
-type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean }
+type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string }
 function asRows(x: unknown): Row[] {
   return Array.isArray(x) ? (x as Row[]) : []
 }

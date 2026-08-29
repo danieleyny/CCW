@@ -77,7 +77,8 @@ export function buildApplicationValues(
     ...splitInto("home", f("applicant.address.buildingNumber"), f("applicant.address.streetName"), f("applicant.address.streetConfirmed"), f("applicant.address.street")),
     ...splitInto("mailing", f("applicant.mailing.buildingNumber"), f("applicant.mailing.streetName"), f("applicant.mailing.streetConfirmed"), f("applicant.mailing.street")),
     ...splitInto("business", f("employer.address.buildingNumber"), f("employer.address.streetName"), f("employer.address.streetConfirmed"), f("employer.address.street")),
-    ...splitInto("safeguard", f("safeguard.buildingNumber"), f("safeguard.streetName"), f("safeguard.streetConfirmed"), f("safeguard.address")),
+    ...splitInto("safeguard", f("safeguard.buildingNumber"), f("safeguard.streetName"), f("safeguard.streetConfirmed"), f("safeguard.street") || f("safeguard.address")),
+    ...splitInto("safekeeping", f("safekeeping.buildingNumber"), f("safekeeping.streetName"), f("safekeeping.streetConfirmed"), f("safekeeping.street")),
     mailingDifferent: f("applicant.mailingDifferent") === "Yes",
     mailingStreet: f("applicant.mailing.street"),
     mailingApt: f("applicant.mailing.apt"),
@@ -128,10 +129,26 @@ export function buildApplicationValues(
     // Q30 / Q31 safeguarding — facts-first (they're now on /portal/details), intake fallback.
     safeguardMethod: f("safeguard.method") || (intake.safeguardMethod ?? ""),
     safeguardName: f("safeguard.name") || (intake.safeguardName ?? ""),
+    // The portal has separate first/last name inputs (facts-first; fall back to
+    // splitting the legacy combined name).
+    safeguardFirstName: f("safeguard.firstName") || (f("safeguard.name") || intake.safeguardName || "").trim().split(/\s+/).filter(Boolean)[0] || "",
+    safeguardLastName: f("safeguard.lastName") || (() => { const p = (f("safeguard.name") || intake.safeguardName || "").trim().split(/\s+/).filter(Boolean); return p.length > 1 ? p[p.length - 1] : "" })(),
     safeguardRelation: f("safeguard.relation") || (intake.safeguardRelation ?? ""),
-    safeguardAddress: f("safeguard.address") || (intake.safeguardAddress ?? ""),
+    // Structured address (the portal wants six parts); legacy single line is the fallback.
+    safeguardAddress: f("safeguard.street") || f("safeguard.address") || (intake.safeguardAddress ?? ""),
+    safeguardApt: f("safeguard.apt"),
+    safeguardCity: f("safeguard.city"),
+    safeguardState: f("safeguard.state"),
+    safeguardZip: f("safeguard.zip"),
+    safeguardEmail: f("safeguard.email"),
     safeguardPhone: f("safeguard.phone") || (intake.safeguardPhone ?? ""),
     safeguardIs21: f("safeguard.is21"),
+    // The safekeeping LOCATION — a distinct full address (where the handgun is secured).
+    safekeepingStreet: f("safekeeping.street"),
+    safekeepingApt: f("safekeeping.apt"),
+    safekeepingCity: f("safekeeping.city"),
+    safekeepingState: f("safekeeping.state"),
+    safekeepingZip: f("safekeeping.zip"),
     // Counsel (facts) — most answer No; the name block only applies on Yes.
     counselRepresented: f("counsel.represented"),
     counselFirstName: f("counsel.firstName"),

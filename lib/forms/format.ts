@@ -36,10 +36,25 @@ export function usMonthYear(iso: string | null | undefined): string {
 export function portalDate(iso: string | null | undefined): string {
   const v = (iso ?? "").trim()
   if (!v) return ""
-  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (!m) return v
-  const [, y, mo, d] = m
-  return `${Number(mo)}/${Number(d)}/${y}`
+  const full = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (full) {
+    const [, y, mo, d] = full
+    return `${Number(mo)}/${Number(d)}/${y}`
+  }
+  // Month-only (YYYY-MM) — the histories are stored this way. The portal wants a full
+  // M/D/YYYY, so we assume the 1st; callers flag the assumed day for correction.
+  const month = v.match(/^(\d{4})-(\d{2})$/)
+  if (month) {
+    const [, y, mo] = month
+    return `${Number(mo)}/1/${y}`
+  }
+  return v
+}
+
+/** A stored date whose DAY we had to assume (month-only `YYYY-MM`) — a guessed day on
+ *  a sworn history should be flagged, never silently accepted. */
+export function isDayAssumed(iso: string | null | undefined): boolean {
+  return /^\d{4}-\d{2}$/.test((iso ?? "").trim())
 }
 
 /** Height → feet-inches with zero-padded inches (70 → 5'10", 65 → 5'05"). Accepts a

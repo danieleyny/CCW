@@ -37,6 +37,7 @@ const GROUP_LABEL: Record<FactGroup, string> = {
   employer: "Employer",
   sponsor: "The company",
   safeguard: "Safeguard",
+  safekeeping: "Safekeeping location",
   counsel: "Counsel",
   addressSplit: "Address details", // hidden group — driven by the AddressSplits widget
 }
@@ -67,7 +68,7 @@ export function buildFactGroups(
   for (const g of groups) {
     // DERIVED facts (full name, age, DOB parts) are computed from other answers, not
     // questions to answer — they never appear on this editor.
-    const defs = FACTS.filter((f) => f.group === g && !f.derive && (showSsn || f.key !== "applicant.ssn"))
+    const defs = FACTS.filter((f) => f.group === g && !f.derive && !f.hidden && (showSsn || f.key !== "applicant.ssn"))
     if (defs.length === 0) continue
     const rows: FactRowMeta[] = defs.map((f) => {
       const kind: FactRowMeta["kind"] = f.key === "applicant.ssn" ? "ssn" : "editable"

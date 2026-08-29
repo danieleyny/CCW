@@ -10,6 +10,7 @@ import {
   submitRequirementRoster,
 } from "@/app/portal/requirements/actions"
 import { actionFor } from "@/lib/requirements/actions"
+import { lonCategoriesFor } from "@/lib/requirements/lon"
 import { SignDocument } from "@/components/portal/sign-document"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -23,18 +24,6 @@ type Values = Record<string, unknown>
  *  "all"). A Concealed Carry applicant gets {all, carry} → the three "all"/"carry"
  *  statements; a Carry Guard/Security applicant additionally gets the guard/business
  *  ones. */
-function lonCategoriesFor(track?: string | null): Set<string> {
-  const cats = new Set<string>(["all"])
-  if (track === "carry_guard" || track === "special_carry_guard") {
-    cats.add("carry").add("guard").add("business")
-  } else if (track === "premises") {
-    cats.add("business")
-  } else {
-    cats.add("carry") // concealed_carry / special_carry / default
-  }
-  return cats
-}
-
 /**
  * Generic renderer for any questionnaire schema — adding a document is a data
  * change, not a UI change. Handles text/date/select/textarea/checkbox, yes-no

@@ -70,10 +70,10 @@ describe("residence-history rows — per-row confirmed split", () => {
     const v = buildApplicationValues({}, intake, {})
     const w = buildPortalWorksheet(v, {}, {})
     const res = w.find((s) => s.title === "Residence History (past 5 years)")!
-    expect(res.fields.find((f) => f.label === "Row 1 — Building")?.value).toBe("10")
-    expect(res.fields.find((f) => f.label === "Row 1 — Street")?.value).toBe("Downing St")
-    expect(res.fields.find((f) => f.label === "Row 2 — Building")?.value).toBe("7")
-    expect(res.fields.find((f) => f.label === "Row 2 — Street")?.value).toBe("Rue X")
+    expect(res.fields.find((f) => f.label === "Row 1 — Building Number")?.value).toBe("10")
+    expect(res.fields.find((f) => f.label === "Row 1 — Street Name")?.value).toBe("Downing St")
+    expect(res.fields.find((f) => f.label === "Row 2 — Building Number")?.value).toBe("7")
+    expect(res.fields.find((f) => f.label === "Row 2 — Street Name")?.value).toBe("Rue X")
   })
 })
 
