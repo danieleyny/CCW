@@ -75,6 +75,35 @@ export async function setCaseFact(
 }
 
 /**
+ * Route a case into the attorney-review seam we already use for eligibility blocks
+ * (the intake gate logs the same activity). Idempotent — one flag per case — so it is
+ * safe to call on render. Used when the applicant reports they are neither a citizen
+ * nor a lawful permanent resident (18 U.S.C. § 922(g)(5)); we never conclude about
+ * their specific status, we route it to a human.
+ */
+export async function flagAttorneyReview(caseId: string, reason: string): Promise<{ ok?: true; error?: string }> {
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "Not authorized." }
+  // Applicant-initiated only — a sponsor editing a file must not flag the applicant.
+  if (actor.actor !== "client") return { ok: true }
+  const admin = createAdminClient()
+  const { count } = await admin
+    .from("activity_log")
+    .select("id", { count: "exact", head: true })
+    .eq("case_id", actor.caseId)
+    .eq("action", "intake.attorney_review_required")
+  if ((count ?? 0) > 0) return { ok: true } // already flagged
+  await logActivity({
+    action: "intake.attorney_review_required",
+    caseId: actor.caseId,
+    entity: "case",
+    entityId: actor.caseId,
+    detail: { reasons: [reason] },
+  })
+  return { ok: true }
+}
+
+/**
  * Save the five-year residence/employment history (Q29) and the out-of-city licence
  * (Q9) for a case. These are REPEATABLE rows, so they can't be scalar facts — they
  * merge into intake_sessions.answers (the same store the wizard writes and the

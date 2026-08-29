@@ -59,6 +59,14 @@ export interface FactDef {
   /** A collapsed "Show me an example" under an abstract field — a real, complete
    *  sample answer modelling the level of detail expected. */
   example?: string
+  /** CONDITIONAL visibility — the field is HIDDEN unless another fact holds one of
+   *  these values (evaluated client-side against live values). A hidden conditional
+   *  field is excluded from the completeness count and from readiness. When it IS
+   *  shown it is required (no "only if it applies" tag). */
+  showWhen?: { key: string; equals: string[] }
+  /** Shown only when the case is a renewal (cases.is_renewal) — a server gate, not a
+   *  guess from the applicant. */
+  renewalOnly?: boolean
 }
 
 // The legal name is NEVER inferred from a display name or an email address
@@ -112,11 +120,12 @@ export const FACTS: FactDef[] = [
   // Exact NYPD portal value lists (PORTAL_ALIGNMENT_REBUILD Part 2, step 1).
   { key: "applicant.hairColor", label: "Hair color", type: "select", group: "physical", options: ["Black", "Brown", "White", "Red", "Gray", "Blond", "Auburn", "Chestnut", "Bald", "Sandy", "Dyed", "Salt & Pepper", "Frosted", "Other"], from: (s) => s.intake.hairColor },
   { key: "applicant.eyeColor", label: "Eye color", type: "select", group: "physical", options: ["Black", "Blue", "Brown", "Gray", "Green", "Hazel", "Two Different", "Other"], from: (s) => s.intake.eyeColor },
-  { key: "applicant.citizenship", label: "Citizenship", type: "select", group: "you", options: ["U.S. citizen", "Lawful permanent resident"], from: (s) => s.intake.citizenship },
-  { key: "applicant.alienRegistrationNumber", label: "Alien registration #", type: "text", group: "you", optional: true, placeholder: "only if a permanent resident", from: (s) => s.intake.alienRegistrationNumber },
-  // Renewal — the prior licence number (cases.is_renewal already flags renewals; the
-  // number itself had no home). Optional: only a renewal has one.
-  { key: "applicant.priorLicenseNumber", label: "Prior licence number", type: "text", group: "you", optional: true, placeholder: "only if renewing" },
+  { key: "applicant.citizenship", label: "Are you a U.S. citizen?", type: "select", group: "you", options: ["U.S. citizen", "Lawful permanent resident (green card)", "Neither"], from: (s) => s.intake.citizenship },
+  // Alien registration # — shown ONLY for a lawful permanent resident (a conditional,
+  // not an "only if it applies" tag). Required when shown.
+  { key: "applicant.alienRegistrationNumber", label: "Alien registration #", type: "text", group: "you", showWhen: { key: "applicant.citizenship", equals: ["Lawful permanent resident (green card)"] }, from: (s) => s.intake.alienRegistrationNumber },
+  // Renewal — the prior licence number. Shown ONLY on a renewal case (server gate).
+  { key: "applicant.priorLicenseNumber", label: "Prior licence number", type: "text", group: "you", renewalOnly: true, placeholder: "your expiring licence number" },
 
   // ── Address ──
   { key: "applicant.address.street", label: "Street address", type: "text", group: "address", from: (s) => s.intake.legalStreet },
@@ -134,27 +143,33 @@ export const FACTS: FactDef[] = [
   { key: "applicant.mailing.zip", label: "Mailing ZIP", type: "zip", group: "address", optional: true },
 
   // ── Contact ──
-  { key: "applicant.phone.home", label: "Home phone", type: "phone", group: "contact" },
-  { key: "applicant.phone.cell", label: "Cell phone", type: "phone", group: "contact", from: (s) => s.client.phone },
-  { key: "applicant.phone.work", label: "Work phone", type: "phone", group: "contact", optional: true },
+  // The portal has exactly two phones: Primary (cell) and Other (work). Home phone is
+  // a paper-form leftover — hidden from the editor; its value falls back into the cell
+  // at resolve time (see resolveFacts) so a case that had only a home phone keeps it.
+  { key: "applicant.phone.home", label: "Home phone (legacy)", type: "phone", group: "contact", hidden: true },
+  { key: "applicant.phone.cell", label: "Cell phone (primary)", type: "phone", group: "contact", from: (s) => s.client.phone },
+  { key: "applicant.phone.work", label: "Work phone (other)", type: "phone", group: "contact", optional: true },
   { key: "applicant.email", label: "Email", type: "text", group: "contact", from: (s) => s.client.email },
 
   // ── Employer (the applicant's own, unless a sponsorship supplies it) ──
   // Employer facts resolve SPONSOR-FIRST when a sponsorship exists (the employer
   // IS the sponsoring company), then fall back to the applicant's intake. Uniform
   // across all employer.* so `employer.name` is no longer the odd one out.
-  { key: "employer.name", label: "Employer name", type: "text", group: "employer", from: (s) => s.sponsor?.legalName ?? s.intake.businessName },
-  { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", from: (s) => s.sponsor?.businessStreet ?? s.intake.businessStreet },
-  { key: "employer.address.city", label: "Employer city", type: "text", group: "employer", from: (s) => s.sponsor?.businessCity ?? s.intake.businessCity },
-  { key: "employer.address.state", label: "Employer state", type: "select", group: "employer", options: US_STATES, from: (s) => s.sponsor?.businessState ?? s.intake.businessState },
-  { key: "employer.address.zip", label: "Employer ZIP", type: "zip", group: "employer", from: (s) => s.sponsor?.businessZip ?? s.intake.businessZip },
-  { key: "employer.phone", label: "Employer phone", type: "phone", group: "employer", from: (s) => s.sponsor?.businessPhone ?? s.intake.businessPhone },
-  { key: "employer.type", label: "Industry / type of business", type: "select", group: "employer", options: INDUSTRIES, from: (s) => s.sponsor?.businessType ?? s.intake.businessType },
-  { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", from: (s) => s.intake.occupation },
-  // Portal employment block — asked of everyone; the start date/unit only apply if employed.
+  // "Currently employed?" gates the rest of the block — every downstream employer
+  // field is shown only when the answer is Yes.
   { key: "employer.employed", label: "Currently employed?", type: "select", group: "employer", options: ["Yes", "No"] },
-  { key: "employer.startDate", label: "Current employment start date", type: "date", group: "employer", optional: true, placeholder: "only if employed" },
-  { key: "employer.unit", label: "Business unit / suite number", type: "text", group: "employer", optional: true, placeholder: "if any" },
+  { key: "employer.name", label: "Employer name", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.legalName ?? s.intake.businessName },
+  { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessStreet ?? s.intake.businessStreet },
+  // Unit/suite is part of the address — directly under the street (#5).
+  { key: "employer.unit", label: "Business unit / suite number", type: "text", group: "employer", optional: true, showWhen: { key: "employer.employed", equals: ["Yes"] }, placeholder: "if any" },
+  { key: "employer.address.city", label: "Employer city", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessCity ?? s.intake.businessCity },
+  { key: "employer.address.state", label: "Employer state", type: "select", group: "employer", options: US_STATES, showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessState ?? s.intake.businessState },
+  { key: "employer.address.zip", label: "Employer ZIP", type: "zip", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessZip ?? s.intake.businessZip },
+  { key: "employer.phone", label: "Employer phone", type: "phone", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessPhone ?? s.intake.businessPhone },
+  { key: "employer.type", label: "Industry / type of business", type: "select", group: "employer", options: INDUSTRIES, showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessType ?? s.intake.businessType },
+  { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.intake.occupation },
+  // Start date — required when employed, hidden entirely when not. Every job has one.
+  { key: "employer.startDate", label: "Current employment start date", type: "date", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] } },
 
   // ── Safeguard (Q30 how/where + Q31 the designated person) ──
   // Scalars, so they live in the fact layer (entered once, reused on every form and
@@ -192,12 +207,14 @@ export const FACTS: FactDef[] = [
 
   // Counsel — the portal asks everyone; most answer "No", the name block only applies
   // on "Yes". This is NOT legal representation of the applicant by us.
+  // Dynamic: No → nothing else renders; Yes → five required attorney fields. A hidden
+  // conditional needs no "only if it applies" tag.
   { key: "counsel.represented", label: "Are you represented by an attorney for this application?", type: "select", group: "counsel", options: ["No", "Yes"] },
-  { key: "counsel.firstName", label: "Attorney first name", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
-  { key: "counsel.lastName", label: "Attorney last name", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
-  { key: "counsel.firm", label: "Name of firm", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
-  { key: "counsel.email", label: "Attorney email", type: "text", group: "counsel", optional: true, placeholder: "only if represented" },
-  { key: "counsel.phone", label: "Attorney phone", type: "phone", group: "counsel", optional: true, placeholder: "only if represented" },
+  { key: "counsel.firstName", label: "Attorney first name", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
+  { key: "counsel.lastName", label: "Attorney last name", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
+  { key: "counsel.firm", label: "Name of firm", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
+  { key: "counsel.email", label: "Attorney email", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
+  { key: "counsel.phone", label: "Attorney phone", type: "phone", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
 
   // Building Number / Street Name split (portal wants them separate). These live in a
   // HIDDEN group — never rendered by the generic details editor; driven by the bespoke
