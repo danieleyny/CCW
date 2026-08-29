@@ -228,6 +228,7 @@ export function RequirementsChecklist({
   dmvApplicant,
   caseSponsored = false,
   licenseTrack = null,
+  isConcierge = false,
 }: {
   items: ReqChecklistItem[]
   caseId: string
@@ -253,6 +254,8 @@ export function RequirementsChecklist({
   caseSponsored?: boolean
   /** Licence track — scopes the Letter of Necessity statements. */
   licenseTrack?: string | null
+  /** Concierge case — unlocks the DMV 'Request help' hatch. */
+  isConcierge?: boolean
 }) {
   // System controls (FMT-01, the intake-derived eligibility items) are things we
   // verify, not tasks for the customer — showing them as "Confirm" buttons was
@@ -506,6 +509,7 @@ export function RequirementsChecklist({
                             dmvApplicant={item.reqCode === "DMV-01" ? dmvApplicant : null}
                             lockParty={caseSponsored ? "applicant" : undefined}
                             licenseTrack={licenseTrack}
+                            isConcierge={isConcierge}
                           />
                           )
                         )}

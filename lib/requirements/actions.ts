@@ -508,7 +508,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     // Part 4a): a Utility Bill, Real Estate Tax Bill, ownership in a co-op/condo, a
     // Lease, or a Maintenance Bill. No utility-type restriction and no lease+tax-return
     // pairing — match the portal.
-    help: "Proof you live at your NYC address, showing your full name and current NYC address.",
+    help: "Proof you live at your NYC address, showing your full name and current NYC address. A cell-phone bill is not on the accepted list.",
     steps: [
       "Use any ONE of: a utility bill, a real-estate tax bill, proof of ownership in a co-op or condo, a residential lease, or a maintenance bill.",
       "It must show your full name and your NYC address, and be current.",
