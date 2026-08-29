@@ -38,7 +38,7 @@ export interface PortalDisclosure {
 export const PORTAL_DISCLOSURES: PortalDisclosure[] = [
   { no: 1, text: "Have you ever used any variation in the spelling of your name, or have you ever used any other name (an alias)?", explainHelp: "List each name or spelling you have used, and when." },
   { no: 2, text: "Have you ever been discharged, fired, or terminated from any employment?", explainHelp: "For each: the employer, the date, and the circumstances." },
-  { no: 3, text: "Have you been denied appointment to a position in a civil service system, federal, state or local?" },
+  { no: 3, text: "Have you ever been denied appointment to a position in a civil service system, federal, state or local?" },
   { no: 4, text: "Have you ever been rejected for military service?" },
   { no: 5, text: "Have you ever served in the armed forces of this or any other country?", explainHelp: "The branch, country, and dates of service." },
   { no: 6, text: 'If you answered "Yes" to Question Number 5, were you dishonorably discharged?', conditionalOnYesOf: 5 },
@@ -52,7 +52,7 @@ export const PORTAL_DISCLOSURES: PortalDisclosure[] = [
   { no: 8, text: "Have you ever used narcotics, controlled substances, or tranquilizers?" },
   { no: 9, text: "Have you ever used illegal drugs?" },
   { no: 10, text: "Have you ever been addicted to any drug, narcotic, or other substance?" },
-  { no: 11, text: "Have you suffered from mental illness, or due to mental illness received treatment, been admitted to a hospital or institution, or taken medication?" },
+  { no: 11, text: "Have you ever been diagnosed with mental illness, or due to mental illness received treatment, been admitted to a hospital or institution, or taken medication?" },
   { no: 12, text: "Have you ever had any disability, condition, illness, or impairment that may interfere with your ability to safely possess or use a firearm? Note, you must list any such disability, condition, illness, or impairment, including, but not limited to, epilepsy, diabetes, fainting spells, blackouts, temporary loss of memory or any nervous disorder." },
   { no: 13, text: "Have you ever had, or do you now have, an Order of Protection issued against you?" },
   { no: 14, text: "Have you ever been the protected person on an Order of Protection?" },
