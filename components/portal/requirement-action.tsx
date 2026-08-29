@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { ChevronDown, Download, ExternalLink, FileText, Check, Stamp, PenLine, Users } from "lucide-react"
 import { toast } from "sonner"
 import type { Database } from "@/lib/supabase/types"
@@ -107,6 +107,16 @@ export function RequirementAction({
   const [signing, setSigning] = useState(false)
   const [howTo, setHowTo] = useState(false)
   const [pending, startTransition] = useTransition()
+
+  // Deep-link (#13): a "Your information" card links to /portal/checklist#<reqCode>.
+  // Land the applicant in FRONT of the questionnaire, not merely near it — open the
+  // dialog when the URL hash names this requirement.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (window.location.hash === `#${reqCode}` && !done) setOpen(true)
+    // Run once on mount for this requirement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const action = actionFor(reqCode)
   if (!action || status === "na") return null

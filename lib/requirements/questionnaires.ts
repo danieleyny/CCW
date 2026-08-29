@@ -222,16 +222,20 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
       }
     },
     fields: [
+      // Every field bound to its fact so "entered once on the details screen" actually
+      // prefills here (and edits here propagate back). See STATUS_AND_FINAL_GAPS #3/#5.
       { name: "applicantName", label: "Your full legal name", type: "text", required: true, fact: "applicant.fullName" },
-      { name: "safeguardLastName", label: "Their last name", type: "text", required: true },
-      { name: "safeguardFirstName", label: "Their first name", type: "text", required: true },
+      { name: "safeguardLastName", label: "Their last name", type: "text", required: true, fact: "safeguard.lastName" },
+      { name: "safeguardFirstName", label: "Their first name", type: "text", required: true, fact: "safeguard.firstName" },
       { name: "safeguardMI", label: "Middle initial", type: "text" },
-      { name: "safeguardStreet", label: "Their street address", type: "text", required: true },
-      { name: "safeguardApt", label: "Apt", type: "text" },
-      { name: "safeguardCity", label: "City", type: "text", required: true },
-      { name: "safeguardZip", label: "ZIP (New York State only)", type: "text", required: true, help: "The person you designate must be a New York State resident." },
+      { name: "safeguardStreet", label: "Their street address", type: "text", required: true, fact: "safeguard.street" },
+      { name: "safeguardApt", label: "Apt", type: "text", fact: "safeguard.apt" },
+      { name: "safeguardCity", label: "City", type: "text", required: true, fact: "safeguard.city" },
+      // The filing surface is the ONLINE portal, which allows any state ("ideally" NY).
+      // NYPD's paper form says "must" — we keep that as a caution, not a hard block.
+      { name: "safeguardZip", label: "ZIP", type: "text", required: true, fact: "safeguard.zip", help: "Ideally a New York State resident. The NYPD paper acknowledgement says the person must be a NY State resident; the online portal accepts any state. If they're out of state, your consultant will confirm it with the License Division." },
       { name: "safeguardHomePhone", label: "Home phone", type: "text" },
-      { name: "safeguardCellPhone", label: "Cell phone", type: "text" },
+      { name: "safeguardCellPhone", label: "Cell phone", type: "text", fact: "safeguard.phone" },
       { name: "safeguardBusinessPhone", label: "Business phone", type: "text" },
     ],
   },

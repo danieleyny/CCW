@@ -15,7 +15,10 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 
 export const metadata = { title: "Your details" }
 
-const GROUP_ORDER: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "safekeeping", "counsel", "sponsor"]
+// The applicant's own preparation groups. "sponsor" (the armed-guard company block) is
+// appended ONLY for a genuinely sponsored case — see below. A plain concealed-carry
+// applicant must never be shown Company legal name / Agency licence / Gun custodian.
+const BASE_GROUPS: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "safekeeping", "counsel"]
 
 /**
  * "Your details" — the preparation form. Every reusable fact captured once, edited
@@ -33,9 +36,21 @@ export default async function DetailsPage() {
   const { data: intakeRow } = await db.from("intake_sessions").select("answers").eq("case_id", myCase.id).maybeSingle()
   const intake = (intakeRow?.answers ?? {}) as WizardAnswers
 
+  // BUG FIX (#8): the sponsor group used to be unconditional, so every applicant saw
+  // "THE COMPANY". Show it ONLY for a genuinely sponsored case — the same non-revoked
+  // case_sponsorships test the sponsor surface uses.
+  const { data: sponsorship } = await db
+    .from("case_sponsorships")
+    .select("id")
+    .eq("case_id", myCase.id)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle()
+  const groupOrder: FactGroup[] = sponsorship ? [...BASE_GROUPS, "sponsor"] : BASE_GROUPS
+
   // Rows built server-side (registry + form-usage counts stay off the client); the
   // meter and inline saves are then driven from client state.
-  const { groups: groupData, total } = buildFactGroups(facts, hasSsn, GROUP_ORDER, true)
+  const { groups: groupData, total } = buildFactGroups(facts, hasSsn, groupOrder, true)
 
   // Portal building/street splits — parse each stored single-line street, flagged for
   // confirmation. Safeguard's address is a free-form line; still worth splitting.

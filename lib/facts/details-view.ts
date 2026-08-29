@@ -16,6 +16,8 @@ export interface FactRowMeta {
   /** Not required of everyone — shown with an "only if it applies" chip and never
    *  counted toward completeness. */
   optional?: boolean
+  /** A collapsed "Show me an example" sample answer for an abstract field. */
+  example?: string
   uses: number
   /** The current value. Empty for an unset editable fact; ALWAYS empty for the SSN
    *  (its value is never sent to the client). */
@@ -82,6 +84,7 @@ export function buildFactGroups(
         options: f.options,
         placeholder: f.placeholder,
         optional: f.optional,
+        example: f.example,
         uses: uses[f.key] ?? 0,
         value: kind === "ssn" ? "" : facts[f.key] ?? "",
         onFile: kind === "ssn" ? hasSsn : undefined,

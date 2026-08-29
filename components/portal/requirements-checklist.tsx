@@ -392,7 +392,8 @@ export function RequirementsChecklist({
                 return (
                   <li
                     key={item.id}
-                    className={cn("card-raised p-5", GLOW_BY_TONE[tone] ?? "glow-neutral")}
+                    id={item.reqCode}
+                    className={cn("scroll-mt-40 card-raised p-5 sm:scroll-mt-24", GLOW_BY_TONE[tone] ?? "glow-neutral")}
                   >
                     {/* Badge gets its OWN row above the title so it never drops to
                         a second line and orphans the title at 390px; req_code is
