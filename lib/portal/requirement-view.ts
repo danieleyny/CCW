@@ -111,6 +111,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     clientName: myCase.client.full_name,
     borough: myCase.client.borough,
     zip: myCase.client.zip,
+    licenseTrack: kase?.license_track ?? null,
   }
   const savedByCode = new Map((savedAnswers ?? []).map((r) => [r.req_code, r.answers as Record<string, unknown>]))
   // Attribution: a draft whose drafted_by is NOT the applicant's own profile was

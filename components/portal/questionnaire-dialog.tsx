@@ -72,6 +72,17 @@ export function QuestionnaireDialog({
   const visibleFields = (questionnaire.fields ?? []).filter(
     (f) => (!f.leoOnly || isLeo) && (!f.lonScope || lonCats.has(f.lonScope))
   )
+  // F3 — the Letter of Necessity questions are numbered by the official form (1–6), so
+  // a concealed-carry applicant sees 3, 4, 6 and it reads as though questions went
+  // missing. Renumber the VISIBLE fields contiguously (1, 2, 3…); keep the official box
+  // number as quiet secondary context.
+  const lonRenumber = new Map<string, { num: number; box: string; text: string }>()
+  if (questionnaire.id === "letter-of-necessity") {
+    visibleFields.forEach((f, i) => {
+      const m = f.label.match(/^(\d+)\.\s*(.*)$/)
+      lonRenumber.set(f.name, { num: i + 1, box: m?.[1] ?? "", text: m?.[2] ?? f.label })
+    })
+  }
   const [values, setValues] = useState<Values>(initial)
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
   const [step, setStep] = useState<"answers" | "sign">("answers")
@@ -194,9 +205,10 @@ export function QuestionnaireDialog({
         return
       }
       if (gen.incomplete?.length) {
-        toast.error(`This form isn't complete yet — it still needs: ${gen.incomplete.join(", ")}. Add those, then generate again.`, {
-          duration: 9000,
-        })
+        // A persistent, styled alert naming exactly what's still needed — right here,
+        // in the form that collects it. No document is generated (Part F2).
+        const friendly = gen.incomplete.map((n) => n.replace(/^LetterOfNecessity(\d+)$/, "Statement $1"))
+        setBlockMsg(`This form isn't complete yet — fill in ${friendly.join(", ")} above, then generate again.`)
         return
       }
       if (gen.needsSignature) {
@@ -257,8 +269,11 @@ export function QuestionnaireDialog({
     return (
       <div key={id} className="space-y-1.5">
         <Label htmlFor={id} className="text-xs">
-          {f.label}
+          {lonRenumber.get(f.name) ? `${lonRenumber.get(f.name)!.num}. ${lonRenumber.get(f.name)!.text}` : f.label}
           {f.required && !locked && <span className="text-danger"> *</span>}
+          {lonRenumber.get(f.name)?.box && (
+            <span className="ml-1.5 font-normal text-text-low">· Form box {lonRenumber.get(f.name)!.box}</span>
+          )}
         </Label>
         {locked ? (
           <p className="text-xs text-text-low">Provided by {otherLabel} — you can&apos;t change it here.</p>

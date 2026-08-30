@@ -148,13 +148,16 @@ export async function validateFormTemplates(): Promise<ValidatorResult> {
 
     // Completeness: every `requires` entry must exist on the PDF AND be produced
     // by build() from a full fixture — a required field with no mapping fails CI.
-    for (const req of t.requires ?? []) {
+    // `requires` may be a function of the fill values (track-derived), so resolve it
+    // against the full fixture.
+    const full = (FIXTURES[t.key] ?? [])[0]
+    const requiredFields = typeof t.requires === "function" ? (full ? t.requires(full) : []) : t.requires ?? []
+    for (const req of requiredFields) {
       if (!pdfFields.has(req)) errors.push(`${t.key}: requires "${req}" which is not a field on the PDF`)
     }
-    const full = (FIXTURES[t.key] ?? [])[0]
     if (t.requires && t.build && full) {
       const f = t.build(full)
-      for (const req of t.requires) {
+      for (const req of requiredFields) {
         const v = f.text?.[req]
         if (v == null || v === "") errors.push(`${t.key}: required field "${req}" is not produced by build() from a full fixture`)
       }

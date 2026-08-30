@@ -267,8 +267,21 @@ export async function generateRequirementDocument(
           }
         }
       }
+      // The licence track scopes the Letter of Necessity (which statements are asked,
+      // required and printed). Inject it so the template gates on the same source the
+      // questionnaire does.
+      const { data: trackRow } = await admin.from("cases").select("license_track").eq("id", actor.caseId).maybeSingle()
+      fillValues = { ...fillValues, licenseTrack: trackRow?.license_track ?? "" }
+
       const filled = await fillTemplate(action.templateKey, fillValues)
       incompleteFields = filled.missingRequired
+      // Part F2 — a REQUIRED value is empty. A partially filled government form must
+      // NEVER present as done: do not store it, do not return a document. Hand back
+      // the missing list so the applicant is told exactly what to enter and where.
+      // (Applies to every template-based generate, not just the Letter of Necessity.)
+      if (incompleteFields.length) {
+        return { incomplete: incompleteFields }
+      }
       // Phase 4 — fill failures are LOUD. A field that didn't land is a mapping
       // bug: fail fast off-prod; in prod, complete the fill but flag it for review
       // and raise a task so a partially-filled government form never presents as done.
