@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { type CaseStageKey, isNypdControlled } from "@/config/stages"
 import { loadConciergeOnboarding } from "@/lib/concierge/onboarding"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
-import { buildVaultGroups } from "@/lib/concierge/vault"
+import type { RequirementCardCtx } from "@/components/portal/requirement-card"
 import { buildReviewItems, readyToFile } from "@/lib/concierge/review"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
@@ -75,10 +75,30 @@ export default async function ConciergeHome() {
       .order("created_at"),
   ])
 
-  const vaultGroups = buildVaultGroups(view.items, view.currentByReq)
   const reviewItems = buildReviewItems(view)
   // The data the portal needs — first-class asks, deep-linked to /portal/details.
   const dataAsks = await buildDataAsks(createAdminClient(), myCase.id)
+
+  // The SAME card context the self-guided checklist assembles — so the concierge vault
+  // renders the identical <RequirementCard> (Part A), with its DMV/TRN helpers.
+  const caseSponsored = view.items.some((i) => i.sponsorManaged)
+  const { data: trackRow } = await supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
+  const cardCtx: RequirementCardCtx = {
+    caseId: myCase.id,
+    clientId: myCase.client_id,
+    prefills: view.prefills,
+    generated: view.generated,
+    currentByReq: view.currentByReq,
+    referenceProgress: view.referenceProgress,
+    cohabitantProgress: view.cohabitantProgress,
+    signatureOnFile: view.signatureOnFile,
+    feeSummary: view.feeSummary,
+    feeReceipts: view.feeReceipts,
+    dmvApplicant: view.dmvApplicant,
+    caseSponsored,
+    licenseTrack: trackRow?.license_track ?? null,
+    isConcierge: true,
+  }
 
   // Milestone state — REAL signals only, never cosmetic.
   const applicable = view.items.filter((i) => i.status !== "na")
@@ -157,9 +177,8 @@ export default async function ConciergeHome() {
 
       <div id="vault" className="scroll-mt-20">
         <DocumentVault
-          caseId={myCase.id}
-          clientId={myCase.client_id}
-          groups={vaultGroups}
+          items={view.items}
+          ctx={cardCtx}
           referenceProgress={view.referenceProgress}
           cohabitantProgress={view.cohabitantProgress}
         />

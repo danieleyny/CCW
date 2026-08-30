@@ -555,7 +555,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     help: "The 18-hour DCJS-approved course required for a carry license — 16 classroom hours plus a 2-hour live-fire session (Penal Law § 400.00(19)). The certificate expires six months after completion, so timing matters — we track the clock.",
     steps: [
       "Book a DCJS-approved instructor — you can find one right here under Find an instructor.",
-      "Complete the 16 classroom hours and the 2-hour live-fire session.",
+      "Complete the 18-hour course — 16 classroom hours plus a 2-hour live-fire session.",
       "Your instructor issues the certificate.",
       "Upload it here. We'll flag it if it's approaching six months old.",
     ],

@@ -70,13 +70,15 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
     { key: "employment", label: "Where you've worked (5 years)", captured: (employer.captured > 0 ? 1 : 0) + (empCount > 0 ? 1 : 0), total: 2, href: "/portal/details#history" },
     { key: "safeguard", label: "Keeping your firearm safe", captured: safeguard.captured, total: safeguard.total, href: "/portal/details#safeguard" },
   ]
-  asks.push({ key: "lon", label: "Your written statements", captured: lonHave, total: 2, href: "/portal/checklist#LON-01" })
+  // Concierge home is /portal/concierge — the LON/CON cards live in its vault, each
+  // RequirementCard carrying id=reqCode (and opening its questionnaire on the hash).
+  asks.push({ key: "lon", label: "Your written statements", captured: lonHave, total: 2, href: "/portal/concierge#LON-01" })
   asks.push({
     key: "confidentiality",
     label: "Confidentiality (optional)",
     captured: con.requesting === "yes" || con.requesting === "no" ? 1 : 0,
     total: 1,
-    href: "/portal/checklist#CON-01",
+    href: "/portal/concierge#CON-01",
   })
   return asks
 }
