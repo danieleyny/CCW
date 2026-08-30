@@ -35,3 +35,20 @@ export function lonStatementsFor(track?: string | null): number[] {
   const cats = lonCategoriesFor(track)
   return [1, 2, 3, 4, 5, 6].filter((n) => cats.has(LON_STATEMENT_SCOPE[n]))
 }
+
+/** Statements marked required on the questionnaire (the employment description and the
+ *  safeguarding statement). Keep in step with the `required: true` fields. */
+export const REQUIRED_LON_STATEMENTS = [1, 3]
+
+/** The official PDF field names (`LetterOfNecessityN`) a track ASKS — build() prints
+ *  only these; out-of-scope boxes stay blank (Part F4). */
+export function lonFieldsFor(track?: string | null): string[] {
+  return lonStatementsFor(track).map((n) => `LetterOfNecessity${n}`)
+}
+
+/** The REQUIRED fields for a track — required AND in-scope. A required field the
+ *  applicant was never shown is a bug by construction (Part F1). */
+export function requiredLonFieldsFor(track?: string | null): string[] {
+  const visible = new Set(lonStatementsFor(track))
+  return REQUIRED_LON_STATEMENTS.filter((n) => visible.has(n)).map((n) => `LetterOfNecessity${n}`)
+}

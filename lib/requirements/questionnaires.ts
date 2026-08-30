@@ -16,6 +16,7 @@
  */
 import { type WizardAnswers, QUESTIONNAIRE } from "@/lib/intake/answers"
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
+import { lonStatementsFor } from "@/lib/requirements/lon"
 
 /**
  * Everything we already know about the applicant. Name/borough/ZIP live on the
@@ -26,6 +27,8 @@ export interface PrefillContext {
   clientName: string
   borough: string | null
   zip: string | null
+  /** Scopes track-dependent prefill (the Letter of Necessity acknowledgements). */
+  licenseTrack?: string | null
 }
 
 export type FieldType =
@@ -342,16 +345,21 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     intro:
       "A carry licence for business or professional use requires a Letter of Necessity — the official form the NYPD provides (it must be used in all cases). Answer the two questions about your own situation; the four acknowledgements are pre-filled from the form's language for you to confirm or refine. You sign it as part of your application.",
     submitLabel: "Prepare my Letter of Necessity",
-    prefill: () => ({
-      lop2:
-        "I acknowledge that the handgun may be carried only during the course of, and strictly in connection with, my job, business, or occupational requirements as described herein.",
-      lop4:
-        "I have been trained, or will receive training, in the use and safety of a handgun before carrying it.",
-      lop5:
-        "I (or my employer, if applicable) am aware of the responsibility to properly dispose of the handgun and return the licence to the License Division upon the termination of my employment or the cessation of the business.",
-      lop6:
-        "I have read and am familiar with the provisions of Penal Law Articles 35 (use of deadly force), 265 (criminal possession and use of a firearm), and 400 (responsibilities of a handgun licensee).",
-    }),
+    // F4 — prefill only the acknowledgements IN SCOPE for the track. A concealed-carry
+    // applicant is never shown (and must never sign) lop2/lop5, so they are never
+    // pre-populated for them.
+    prefill: (ctx) => {
+      const inScope = new Set(lonStatementsFor(ctx.licenseTrack))
+      const all: Record<number, string> = {
+        2: "I acknowledge that the handgun may be carried only during the course of, and strictly in connection with, my job, business, or occupational requirements as described herein.",
+        4: "I have been trained, or will receive training, in the use and safety of a handgun before carrying it.",
+        5: "I (or my employer, if applicable) am aware of the responsibility to properly dispose of the handgun and return the licence to the License Division upon the termination of my employment or the cessation of the business.",
+        6: "I have read and am familiar with the provisions of Penal Law Articles 35 (use of deadly force), 265 (criminal possession and use of a firearm), and 400 (responsibilities of a handgun licensee).",
+      }
+      const out: Record<string, unknown> = {}
+      for (const [n, text] of Object.entries(all)) if (inScope.has(Number(n))) out[`lop${n}`] = text
+      return out
+    },
     fields: [
       {
         name: "lop1",

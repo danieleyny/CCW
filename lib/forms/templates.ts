@@ -1,3 +1,5 @@
+import { lonStatementsFor, requiredLonFieldsFor } from "@/lib/requirements/lon"
+
 /**
  * The NYPD/HRA form template registry. The PDF bytes live in
  * assets/form-templates/ (read like the fonts in lib/pdf/builder.ts); this
@@ -49,8 +51,10 @@ export interface FormTemplate {
   /** Per-field explicit font sizes (a narrow column the auto-fit floor can't save,
    *  e.g. 6pt occupation / 7pt Q31). The auto-fitter still shrinks further if needed. */
   fieldFontSize?: Record<string, number>
-  /** PDF field names that MUST be non-empty for the form to count as complete. */
-  requires?: string[]
+  /** PDF field names that MUST be non-empty for the form to count as complete. A
+   *  function form derives them from the fill values (e.g. the Letter of Necessity,
+   *  whose required statements depend on the licence track). */
+  requires?: string[] | ((v: Record<string, unknown>) => string[])
   /** Fields legitimately blank until signing / assigned by the agency (signature,
    *  signing date, notary blocks, control numbers). Documentation of the third bucket. */
   signatureOnly?: string[]
@@ -348,10 +352,17 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     fontSize: 9,
     dateField: "LetterOfNecessitySignatureDate",
     signatureOnly: ["LetterOfNecessitySignatureDate"],
-    requires: ["LetterOfNecessity1", "LetterOfNecessity3"],
+    // F1 — the required statements are derived from the SAME lonScope gating that
+    // decides which questions the applicant is shown. A concealed-carry applicant is
+    // never asked for LetterOfNecessity1, so it is never required of them.
+    requires: (v) => requiredLonFieldsFor(String(v.licenseTrack ?? "")),
+    // F4 — print ONLY the statements in scope for the track. An out-of-scope box the
+    // applicant was never shown must stay BLANK — never a prefilled acknowledgement
+    // asserting something untrue of their licence.
     build: (v) => {
+      const inScope = new Set(lonStatementsFor(String(v.licenseTrack ?? "")))
       const text: Record<string, string> = {}
-      for (const n of [1, 2, 3, 4, 5, 6]) text[`LetterOfNecessity${n}`] = s(v[`lop${n}`])
+      for (const n of [1, 2, 3, 4, 5, 6]) if (inScope.has(n)) text[`LetterOfNecessity${n}`] = s(v[`lop${n}`])
       return { text }
     },
   },

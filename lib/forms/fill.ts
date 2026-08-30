@@ -176,8 +176,9 @@ export async function fillTemplate(key: string, values: Record<string, unknown>)
   }
 
   // Completeness: which declared-required fields ended up empty? A required field can
-  // be satisfied by text OR by a choice selection.
-  const missingRequired = (t.requires ?? []).filter((r) => {
+  // be satisfied by text OR by a choice selection. `requires` may be track-derived.
+  const required = typeof t.requires === "function" ? t.requires(values) : t.requires ?? []
+  const missingRequired = required.filter((r) => {
     const v = filled.text?.[r]
     const c = filled.choices?.[r]
     return (v == null || v === "") && (c == null || c === "")
