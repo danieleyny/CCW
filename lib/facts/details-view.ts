@@ -43,7 +43,6 @@ const GROUP_LABEL: Record<FactGroup, string> = {
   safeguard: "Safeguard",
   safekeeping: "Safekeeping location",
   counsel: "Counsel",
-  addressSplit: "Address details", // hidden group — driven by the AddressSplits widget
 }
 
 /** How many questionnaires reference each fact — the "used on N forms" line. */

@@ -12,7 +12,7 @@
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 export type FactType = "text" | "date" | "phone" | "zip" | "select"
-export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel" | "addressSplit"
+export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel"
 
 export interface FactSource {
   intake: WizardAnswers
@@ -215,26 +215,6 @@ export const FACTS: FactDef[] = [
   { key: "counsel.firm", label: "Name of firm", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
   { key: "counsel.email", label: "Attorney email", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
   { key: "counsel.phone", label: "Attorney phone", type: "phone", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
-
-  // Building Number / Street Name split (portal wants them separate). These live in a
-  // HIDDEN group — never rendered by the generic details editor; driven by the bespoke
-  // AddressSplits widget (parse + confirm). `streetConfirmed` = "yes" once the applicant
-  // confirms the guess. No `from` seeding — a parse is a guess until confirmed.
-  { key: "applicant.address.buildingNumber", label: "Home building number", type: "text", group: "addressSplit", optional: true },
-  { key: "applicant.address.streetName", label: "Home street name", type: "text", group: "addressSplit", optional: true },
-  { key: "applicant.address.streetConfirmed", label: "Home street split confirmed", type: "text", group: "addressSplit", optional: true },
-  { key: "applicant.mailing.buildingNumber", label: "Mailing building number", type: "text", group: "addressSplit", optional: true },
-  { key: "applicant.mailing.streetName", label: "Mailing street name", type: "text", group: "addressSplit", optional: true },
-  { key: "applicant.mailing.streetConfirmed", label: "Mailing street split confirmed", type: "text", group: "addressSplit", optional: true },
-  { key: "employer.address.buildingNumber", label: "Employer building number", type: "text", group: "addressSplit", optional: true },
-  { key: "employer.address.streetName", label: "Employer street name", type: "text", group: "addressSplit", optional: true },
-  { key: "employer.address.streetConfirmed", label: "Employer street split confirmed", type: "text", group: "addressSplit", optional: true },
-  { key: "safeguard.buildingNumber", label: "Safeguard building number", type: "text", group: "addressSplit", optional: true },
-  { key: "safeguard.streetName", label: "Safeguard street name", type: "text", group: "addressSplit", optional: true },
-  { key: "safeguard.streetConfirmed", label: "Safeguard street split confirmed", type: "text", group: "addressSplit", optional: true },
-  { key: "safekeeping.buildingNumber", label: "Safekeeping building number", type: "text", group: "addressSplit", optional: true },
-  { key: "safekeeping.streetName", label: "Safekeeping street name", type: "text", group: "addressSplit", optional: true },
-  { key: "safekeeping.streetConfirmed", label: "Safekeeping street split confirmed", type: "text", group: "addressSplit", optional: true },
 
   // ── Sponsor-owned ──
   { key: "sponsor.legalName", label: "Company legal name", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.legalName },

@@ -43,14 +43,9 @@ export interface SocialAccount {
 export interface AddressHistoryEntry {
   fromMonth?: string // YYYY-MM or full YYYY-MM-DD
   toMonth?: string // YYYY-MM / YYYY-MM-DD, or blank for "present"
-  address?: string // LEGACY single line (street, city, state, county, zip, apt)
-  // Portal wants building number + street name separately; a parse is a GUESS until
-  // streetConfirmed is set. Empty → the worksheet falls back to the render-time split.
-  buildingNumber?: string
-  streetName?: string
-  streetConfirmed?: boolean
-  // The portal's residence table is eight columns — these give it the four the legacy
-  // single `address` line couldn't. Empty → fall back to the legacy line.
+  address?: string // street line; the worksheet derives building/street via splitStreet
+  // The portal's residence table is eight columns — these give it the four the single
+  // `address` line couldn't.
   apt?: string
   city?: string
   state?: string

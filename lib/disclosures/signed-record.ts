@@ -17,10 +17,8 @@ import type { SignOpts } from "@/lib/forms/documents"
  */
 const s = (v: unknown): string => (typeof v === "string" ? v : v == null ? "" : String(v))
 
-function addressLine(street: string, apt: string, city: string, state: string, zip: string, override?: { buildingNumber?: string; streetName?: string }): string {
-  const parsed = splitStreet(street)
-  const buildingNumber = (override?.buildingNumber || "").trim() || parsed.buildingNumber
-  const streetName = (override?.streetName || "").trim() || parsed.streetName
+function addressLine(street: string, apt: string, city: string, state: string, zip: string): string {
+  const { buildingNumber, streetName } = splitStreet(street)
   const parts = [
     buildingNumber && `Bldg ${buildingNumber}`,
     streetName,
@@ -58,7 +56,7 @@ export async function renderSignedApplicationRecord(
       c.para(`Date of birth: ${portalDate(s(v.dob)) || "—"}   ·   Gender: ${s(v.sex) || "—"}`)
       c.para(`Height: ${portalHeight(v.height as string) || "—"}   ·   Weight: ${portalWeight(v.weight as string) || "—"}   ·   Eyes: ${s(v.eyeColor) || "—"}   ·   Hair: ${s(v.hairColor) || "—"}`)
       c.para(`Place of birth: ${s(v.placeOfBirth) || "—"}   ·   Citizenship: ${s(v.citizenship) || "—"}`)
-      c.para(`Home address: ${addressLine(s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip), { buildingNumber: s(v.homeBuildingNumber), streetName: s(v.homeStreetName) })}`)
+      c.para(`Home address: ${addressLine(s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip))}`)
       c.para(`Phone: ${s(v.cellPhone) || s(v.homePhone) || "—"}   ·   Email: ${s(v.email) || "—"}`)
       c.spacer()
 
@@ -85,7 +83,7 @@ export async function renderSignedApplicationRecord(
       c.pageBreak()
       c.h2("3 · Application details")
       c.para(`Employer: ${s(v.businessName) || "—"}${s(v.occupation) ? ` — ${s(v.occupation)}` : ""}`)
-      if (s(v.businessStreet)) c.para(`Business address: ${addressLine(s(v.businessStreet), "", s(v.businessCity), s(v.businessState), s(v.businessZip), { buildingNumber: s(v.businessBuildingNumber), streetName: s(v.businessStreetName) })}`)
+      if (s(v.businessStreet)) c.para(`Business address: ${addressLine(s(v.businessStreet), "", s(v.businessCity), s(v.businessState), s(v.businessZip))}`)
       c.spacer()
       c.para("Residence history (past 5 years):", { size: 10, color: "muted" })
       for (const r of asRows(v.residenceHistory)) {

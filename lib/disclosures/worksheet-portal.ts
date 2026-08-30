@@ -1,5 +1,5 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
-import { portalDate, portalHeight, portalWeight, splitStreet, resolveStreetSplit, isDayAssumed } from "@/lib/forms/format"
+import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
 import { lonStatementsFor } from "@/lib/requirements/lon"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
@@ -40,20 +40,10 @@ function fDate(label: string, iso: string, opts: { optional?: boolean; presentIf
   return { label: flagged, value, missing: !value && !opts.optional }
 }
 
-function addressFields(
-  prefix: string,
-  street: string,
-  apt: string,
-  city: string,
-  state: string,
-  zip: string,
-  optional = false,
-  /** A confirmed portal split — preferred over the render-time parse when present. */
-  override?: { buildingNumber?: string; streetName?: string }
-): WorksheetField[] {
-  const parsed = splitStreet(street)
-  const buildingNumber = (override?.buildingNumber || "").trim() || parsed.buildingNumber
-  const streetName = (override?.streetName || "").trim() || parsed.streetName
+function addressFields(prefix: string, street: string, apt: string, city: string, state: string, zip: string, optional = false): WorksheetField[] {
+  // Building/street are derived here, at render, for STAFF only. The applicant never
+  // sees or confirms this split (Part D) — staff correct a bad one at entry time.
+  const { buildingNumber, streetName } = splitStreet(street)
   return [
     f(`${prefix} — Building Number`, buildingNumber, { optional }),
     f(`${prefix} — Street Name`, streetName, { optional }),
@@ -101,17 +91,11 @@ export function buildPortalWorksheet(
       f("Email", s(v.email) || s(ctx.email)),
       f("Are you a U.S. Citizen?", v.citizenship === "Citizen" ? "Yes" : v.citizenship === "Alien" ? "No" : ""),
       f("SSN — Last 4 digits", s(ctx.ssnLast4)),
-      ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip), false, {
-        buildingNumber: s(v.homeBuildingNumber),
-        streetName: s(v.homeStreetName),
-      }),
+      ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
       f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
       // Only surface the mailing block when it's actually different.
       ...(v.mailingDifferent
-        ? addressFields("Mailing Address", s(v.mailingStreet), s(v.mailingApt), s(v.mailingCity), s(v.mailingState), s(v.mailingZip), false, {
-            buildingNumber: s(v.mailingBuildingNumber),
-            streetName: s(v.mailingStreetName),
-          })
+        ? addressFields("Mailing Address", s(v.mailingStreet), s(v.mailingApt), s(v.mailingCity), s(v.mailingState), s(v.mailingZip))
         : []),
     ],
   })
@@ -119,12 +103,7 @@ export function buildPortalWorksheet(
   sections.push({
     title: "Residence History (past 5 years)",
     fields: asRows(v.residenceHistory).flatMap((r, i) => {
-      const { buildingNumber, streetName } = resolveStreetSplit({
-        buildingNumber: r.buildingNumber,
-        streetName: r.streetName,
-        confirmed: !!r.streetConfirmed,
-        street: s(r.address),
-      })
+      const { buildingNumber, streetName } = splitStreet(s(r.address))
       // The portal's residence table is eight columns.
       return [
         fDate(`Row ${i + 1} — From`, s(r.fromMonth)),
@@ -148,10 +127,7 @@ export function buildPortalWorksheet(
       f("Industry / type of business", s(v.businessType), { optional: true }),
       f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
       // The unit/suite is the address's Apt/Unit field — one input, not two.
-      ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true, {
-        buildingNumber: s(v.businessBuildingNumber),
-        streetName: s(v.businessStreetName),
-      }),
+      ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true),
       f("Business Phone", s(v.busPhone), { optional: true }),
       ...asRows(v.employmentHistory).flatMap((r, i) => [
         f(`History ${i + 1} — Business Name`, s(r.employerName) || s(r.employer), { optional: true }),
@@ -197,9 +173,7 @@ export function buildPortalWorksheet(
         s(v.safekeepingApt),
         s(v.safekeepingCity),
         s(v.safekeepingState),
-        s(v.safekeepingZip),
-        false,
-        { buildingNumber: s(v.safekeepingBuildingNumber), streetName: s(v.safekeepingStreetName) }
+        s(v.safekeepingZip)
       ),
     ],
   })
@@ -220,8 +194,7 @@ export function buildPortalWorksheet(
         s(v.safeguardCity),
         s(v.safeguardState),
         s(v.safeguardZip),
-        true,
-        { buildingNumber: s(v.safeguardBuildingNumber), streetName: s(v.safeguardStreetName) }
+        true
       ),
     ],
   })
