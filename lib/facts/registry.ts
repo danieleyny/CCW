@@ -106,7 +106,9 @@ const HEIGHTS = Array.from({ length: (8 - 3) * 12 + 1 }, (_, i) => {
 export const FACTS: FactDef[] = [
   // ── You ──
   { key: "applicant.legalFirstName", label: "First name", type: "text", group: "you", from: (s) => nameParts(s.client.fullName)[0] },
-  { key: "applicant.legalMiddleInitial", label: "Middle initial", type: "text", group: "you", from: (s) => s.intake.middleInitial },
+  // Not everyone has a middle initial — optional, so it never keeps the meter from
+  // reaching 100% (A3: the "N of N+1" bug).
+  { key: "applicant.legalMiddleInitial", label: "Middle initial", type: "text", group: "you", optional: true, placeholder: "if you have one", from: (s) => s.intake.middleInitial },
   { key: "applicant.legalLastName", label: "Last name", type: "text", group: "you", from: (s) => { const p = nameParts(s.client.fullName); return p.length > 1 ? p[p.length - 1] : "" } },
   { key: "applicant.aliasOrMaidenName", label: "Alias / maiden name", type: "text", group: "you", optional: true, placeholder: "leave blank if none", from: (s) => s.intake.aliasName },
   { key: "applicant.dob", label: "Date of birth", type: "date", group: "you", sensitive: true, from: (s) => s.intake.dob },

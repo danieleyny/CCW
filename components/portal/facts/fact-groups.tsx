@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { ArrowRight, ChevronRight, CheckCircle2 } from "lucide-react"
 import { FactRow } from "./fact-row"
 import { flagAttorneyReview } from "@/app/portal/facts/actions"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { FactGroupData, FactRowMeta } from "@/lib/facts/details-view"
 
 /**
@@ -70,9 +72,84 @@ export function FactGroups({
 
   const citizenship = values["applicant.citizenship"] ?? ""
 
+  // A2 — the fields still needed: required, currently VISIBLE, and empty. Listed in
+  // page order and grouped by section so the dialog reads like the page.
+  const outstanding = useMemo(() => {
+    const out: { key: string; label: string; section: string }[] = []
+    for (const g of groups)
+      for (const r of g.rows)
+        if (r.kind === "editable" && !r.optional && isVisible(r) && (values[r.key] ?? "").trim() === "")
+          out.push({ key: r.key, label: r.label, section: g.label })
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, values])
+
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  // Scroll a field into view, focus it, and pulse its ring once so the eye lands on it.
+  const jumpTo = (key: string) => {
+    setDialogOpen(false)
+    // Let the dialog close before we scroll/focus underneath it.
+    setTimeout(() => {
+      const el = document.getElementById(`fact-${key}`)
+      if (!el) return
+      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      ;(el as HTMLElement).focus({ preventScroll: true })
+      el.classList.remove("fact-pulse")
+      void (el as HTMLElement).offsetWidth // restart the animation
+      el.classList.add("fact-pulse")
+      setTimeout(() => el.classList.remove("fact-pulse"), 1900)
+    }, 60)
+  }
+
   return (
     <div className="space-y-6">
-      {showMeter && <Meter captured={captured} total={liveTotal || total} />}
+      {showMeter && (
+        <Meter
+          captured={captured}
+          total={liveTotal || total}
+          outstandingCount={outstanding.length}
+          onOpen={() => setDialogOpen(true)}
+        />
+      )}
+      {showMeter && (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {outstanding.length} still needed
+              </DialogTitle>
+            </DialogHeader>
+            {outstanding.length > 0 && (
+              <button
+                type="button"
+                onClick={() => jumpTo(outstanding[0].key)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brass px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brass-bright"
+              >
+                Jump to the next one still needed <ArrowRight className="size-4" />
+              </button>
+            )}
+            <ul className="mt-1 max-h-[50vh] space-y-1 overflow-y-auto">
+              {groupOutstanding(outstanding).map(({ section, items }) => (
+                <li key={section}>
+                  <div className="engraved-sm px-1 pb-1 pt-2 text-text-low">{section}</div>
+                  {items.map((o) => (
+                    <button
+                      key={o.key}
+                      type="button"
+                      onClick={() => jumpTo(o.key)}
+                      className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-surface-2"
+                    >
+                      <span>{o.label}</span>
+                      <ChevronRight className="size-4 shrink-0 text-text-low" />
+                    </button>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </DialogContent>
+        </Dialog>
+      )}
       <div ref={containerRef} className="space-y-6">
         {groups.map((g) => {
           const rows = g.rows.filter(isVisible)
@@ -126,19 +203,62 @@ function CitizenshipEligibilityNotice({ caseId, flagEligibility }: { caseId: str
   )
 }
 
-function Meter({ captured, total }: { captured: number; total: number }) {
+/** Group the outstanding fields by their section, preserving page order. */
+function groupOutstanding(outstanding: { key: string; label: string; section: string }[]) {
+  const out: { section: string; items: { key: string; label: string; section: string }[] }[] = []
+  for (const o of outstanding) {
+    const last = out[out.length - 1]
+    if (last && last.section === o.section) last.items.push(o)
+    else out.push({ section: o.section, items: [o] })
+  }
+  return out
+}
+
+/**
+ * A2 — the progress bar IS the answer to "which one's missing?". With something
+ * outstanding it's a button that opens the list; done, it's a calm "all captured".
+ */
+function Meter({
+  captured,
+  total,
+  outstandingCount,
+  onOpen,
+}: {
+  captured: number
+  total: number
+  outstandingCount: number
+  onOpen: () => void
+}) {
   const pct = total > 0 ? Math.round((captured / total) * 100) : 0
+  const done = outstandingCount === 0
+
+  if (done) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-ok/30 bg-ok/[0.06] p-4 text-sm font-medium text-ok">
+        <CheckCircle2 className="size-4" /> All details captured
+      </div>
+    )
+  }
+
   return (
-    <div className="rounded-lg border border-brass/30 bg-brass/[0.05] p-4">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full rounded-lg border border-brass/30 bg-brass/[0.05] p-4 text-left transition-colors hover:border-brass/50"
+      aria-label={`${outstandingCount} still needed — show which`}
+    >
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">
           {captured} of {total} details captured
         </span>
-        {captured < total && <span className="text-text-mid">{total - captured} still needed</span>}
+        <span className="inline-flex items-center gap-1 text-brass-bright">
+          {outstandingCount} still needed — show which
+          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-3">
         <div className="h-full rounded-full bg-brass transition-all" style={{ width: `${pct}%` }} />
       </div>
-    </div>
+    </button>
   )
 }

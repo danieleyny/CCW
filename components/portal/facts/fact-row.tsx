@@ -97,6 +97,11 @@ export function FactRow({
   }
 
   const inputId = `fact-${key}`
+  // A1 — a REQUIRED, empty field carries a soft warn-tone ring ("look here", not an
+  // error). Optional fields never ring; the ring clears the instant a value is typed
+  // (driven by the live draft, no save round-trip). Not the destructive red — at first
+  // load every field is empty, and an error-red page is the wrong first impression.
+  const needsRing = kind === "editable" && !optional && draft.trim() === "" && !focused
   const commonProps = {
     id: inputId,
     "data-fact-input": true as const,
@@ -108,8 +113,9 @@ export function FactRow({
     },
     onBlur,
     onKeyDown,
-    className:
-      "h-9 w-full max-w-[20rem] rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40",
+    className: `h-9 w-full max-w-[20rem] rounded-md border bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 ${
+      needsRing ? "border-warn/40 ring-2 ring-warn/15" : "border-hairline-strong"
+    }`,
   }
 
   return (

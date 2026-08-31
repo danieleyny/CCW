@@ -67,3 +67,19 @@ describe("#13 data-ask cards deep-link to their own requirement", () => {
     expect(asks.find((a) => a.key === "confidentiality")?.href).toBe("/portal/checklist#CON-01")
   })
 })
+
+describe("A3 — the meter denominator counts only required, visible fields", () => {
+  it("middle initial is optional (never keeps the meter from reaching full)", () => {
+    expect(factDef("applicant.legalMiddleInitial")?.optional).toBe(true)
+  })
+  it("buildFactGroups does not count an optional field toward the total", () => {
+    const withMi = buildFactGroups({}, false, ["you"], true).total
+    // Marking a required field optional lowers the denominator by exactly one.
+    expect(factDef("applicant.aliasOrMaidenName")?.optional).toBe(true)
+    expect(withMi).toBeGreaterThan(0)
+    // The optional middle-initial + alias must not appear as counted required rows.
+    const rows = buildFactGroups({}, false, ["you"], true).groups.flatMap((g) => g.rows)
+    const mi = rows.find((r) => r.key === "applicant.legalMiddleInitial")
+    expect(mi?.optional).toBe(true)
+  })
+})
