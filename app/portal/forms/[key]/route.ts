@@ -12,6 +12,8 @@ import {
 } from "@/lib/forms/documents"
 import { generateCohabitantAffidavitPdf } from "@/lib/cohabitants/document"
 import { getSignaturePng } from "@/lib/signatures"
+import { fillTemplate, rawTemplate } from "@/lib/forms/fill"
+import { resolveFacts } from "@/lib/facts/resolve"
 import { formatSocialAccounts, type WizardAnswers } from "@/lib/intake/answers"
 
 /** Generate a pre-filled applicant document on demand from their intake answers. */
@@ -74,6 +76,31 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
       )
       filename = "safeguard-person-designation.pdf"
       break
+    // REL-01 — the two Release forms the applicant downloads, signs, and brings to the
+    // interview. NYPD serves both; we hand them over from our held assets.
+    case "release-employment": {
+      // The employment record request/authorization — fillable. We fill name/address/DOB;
+      // the SSN and NYPD's investigator block (Rank/Name, Tax Shield, forwarding) are
+      // left blank for the applicant / the License Division.
+      const f = await resolveFacts(supabase, myCase.id)
+      const doc = await fillTemplate("nypd_employment_record_request", {
+        fullName: f["applicant.fullName"] || applicant,
+        address: f["applicant.fullAddress"],
+        dob: f["applicant.dob"],
+      })
+      pdf = doc.bytes
+      filename = "employment-record-release.pdf"
+      break
+    }
+    case "release-medical": {
+      // The HIPAA medical release (OCA Form 960) — encrypted, no fillable fields and a
+      // full-SSN field we intentionally never prefill. Hand over the blank official PDF.
+      const doc = rawTemplate("nypd_hipaa_release")
+      if (!doc) return new Response("Unknown document", { status: 404 })
+      pdf = doc.bytes
+      filename = "hipaa-medical-release.pdf"
+      break
+    }
     default:
       return new Response("Unknown document", { status: 404 })
   }
