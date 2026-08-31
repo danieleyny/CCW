@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import { authorizeCaseActor } from "@/lib/case-actor"
 import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
-import { formTemplate } from "@/lib/forms/templates"
+import { formTemplate, templateWetInk } from "@/lib/forms/templates"
+import { watermarkDraftPdf } from "@/lib/forms/watermark"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { rematerializeCase } from "@/lib/requirements/rematerialize"
@@ -289,12 +290,26 @@ export async function generateRequirementDocument(
       if (filled.missing.length && process.env.NODE_ENV !== "production") {
         throw new Error(`Fill mapping error on ${action.templateKey}: unresolved fields → ${filled.missing.join(", ")}`)
       }
+      // WET-INK drafts are handed over to be signed on paper — stamp them DRAFT —
+      // UNSIGNED so the filled form can never look finished (#10). A previously-
+      // uploaded completed copy no longer matches this regenerated draft, so mark it
+      // stale — never keep it attached to a draft that has since changed (#8).
+      const wet = templateWetInk(filled.template)
+      const draftBytes = wet ? await watermarkDraftPdf(filled.bytes) : filled.bytes
+      if (wet) {
+        await admin
+          .from("documents")
+          .update({ stale: true })
+          .eq("case_id", actor.caseId)
+          .eq("req_code", reqCode)
+          .eq("generated", false)
+      }
       documentId = await storeGeneratedDocument(admin, {
         caseId: actor.caseId,
         clientId: actor.clientId,
         reqCode,
         doc: {
-          bytes: filled.bytes,
+          bytes: draftBytes,
           fileName: `${action.templateKey}.pdf`,
           documentType: action.documentType as never,
           label: filled.template.officialTitle,

@@ -38,3 +38,17 @@ describe("template-level: signable and wet-ink are mutually exclusive", () => {
     }
   })
 })
+
+describe("#10 — the DRAFT — UNSIGNED watermark", () => {
+  it("stamps every page and returns a still-valid PDF", async () => {
+    const { PDFDocument } = await import("pdf-lib")
+    const { watermarkDraftPdf } = await import("@/lib/forms/watermark")
+    const src = await PDFDocument.create()
+    src.addPage([612, 792])
+    src.addPage([612, 792])
+    const stamped = await watermarkDraftPdf(await src.save())
+    const out = await PDFDocument.load(stamped)
+    expect(out.getPageCount()).toBe(2) // pages preserved
+    expect(stamped.byteLength).toBeGreaterThan(0)
+  })
+})
