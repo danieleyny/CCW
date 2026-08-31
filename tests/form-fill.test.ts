@@ -120,10 +120,13 @@ describe("fillTemplate — official NYPD/HRA forms", () => {
     expect(sf.getFields().length).toBe(0)
   })
 
-  it("a NOTARISED form is never digitally signed", async () => {
+  it("a wet-ink form is never digitally signed (notary OR witness)", async () => {
     await expect(
       signTemplate(new Uint8Array([1]), "nypd_prelicense_exemption", PNG, new Date())
-    ).rejects.toThrow(/notaris/i)
+    ).rejects.toThrow(/wet-ink|never digitally signed/i)
+    await expect(
+      signTemplate(new Uint8Array([1]), "nypd_safeguard_acknowledgement", PNG, new Date())
+    ).rejects.toThrow(/wet-ink|never digitally signed/i)
   })
 
   it("a download-only template cannot be filled", async () => {

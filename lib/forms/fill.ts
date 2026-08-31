@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { createHash } from "node:crypto"
 import { PDFDocument, PDFName, StandardFonts, type PDFFont, type PDFTextField } from "pdf-lib"
-import { formTemplate, type FormTemplate } from "./templates"
+import { formTemplate, templateWetInk, type FormTemplate } from "./templates"
 
 /**
  * Fill the REAL official PDF. Reads the bundled template (assets/form-templates/,
@@ -202,7 +202,8 @@ export async function signTemplate(
 ): Promise<FilledDocument> {
   const t = formTemplate(key)
   if (!t) throw new Error(`Unknown form template: ${key}`)
-  if (t.notarize) throw new Error(`Template ${key} must be notarised — it is never digitally signed`)
+  const wet = templateWetInk(t)
+  if (wet) throw new Error(`Template ${key} is wet-ink (${wet}) — it is never digitally signed`)
   const pdf = await PDFDocument.load(draftBytes, { ignoreEncryption: true })
   const form = pdf.getForm()
   const font = await pdf.embedFont(StandardFonts.Helvetica)

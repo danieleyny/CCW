@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { createHash } from "node:crypto"
 import { PDFDocument } from "pdf-lib"
-import { FORM_TEMPLATES, type FormTemplate } from "./templates"
+import { FORM_TEMPLATES, templateWetInk, type FormTemplate } from "./templates"
 
 /**
  * Every form-engine defect in the 23 Aug 2026 QA pass shared one root cause:
@@ -114,8 +114,12 @@ export async function validateFormTemplates(): Promise<ValidatorResult> {
     if (!shaToFiles.has(sha)) shaToFiles.set(sha, new Set())
     shaToFiles.get(sha)!.add(t.file)
 
-    // 7. signable and notarize are mutually exclusive.
-    if (t.signable && t.notarize) errors.push(`${t.key}: declares BOTH signable and notarize`)
+    // 7. Digitally signable and wet-ink are mutually exclusive — a form that offers a
+    //    signature pad must never be one the fill layer refuses to sign (B4). (A form
+    //    that is NEITHER — signed with the application at filing, e.g. the Letter of
+    //    Necessity — is fine: the UI offers no pad for it either.)
+    const wet = templateWetInk(t)
+    if (t.signable && wet) errors.push(`${t.key}: declares BOTH signable and wet-ink (${wet})`)
 
     // 2 + 3. Loads with pdf-lib; isFillable matches reality.
     let pdfFields: Set<string>
