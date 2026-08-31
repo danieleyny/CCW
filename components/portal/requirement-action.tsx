@@ -260,8 +260,26 @@ export function RequirementAction({
 
         {action.example && <DocumentExample id={action.example} />}
 
-        {/* Notarized upload (the release) — the SAME in-person + online notary routes
-            the reference and cohabitant flows offer, scoped to the applicant's area. */}
+        {/* REL-01: hand over BOTH release forms to download — employment + HIPAA
+            medical. Filled with what we can; the applicant signs and brings the
+            originals to their interview. */}
+        {reqCode === "REL-01" && !done && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button asChild variant="outline" size="sm">
+              <a href="/portal/forms/release-employment" target="_blank" rel="noreferrer">
+                <Download className="size-4" /> Employment records release
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href="/portal/forms/release-medical" target="_blank" rel="noreferrer">
+                <Download className="size-4" /> HIPAA medical release
+              </a>
+            </Button>
+          </div>
+        )}
+
+        {/* Notarized upload (e.g. a release) — the SAME in-person + online notary
+            routes the reference and cohabitant flows offer, scoped to the area. */}
         {action.notaryRoutes && !done && (
           <div className="space-y-2">
             <NotaryRoutes area={dmvApplicant?.address ?? ""} />
