@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { fillTemplate } from "@/lib/forms/fill"
+import { watermarkDraftPdf } from "@/lib/forms/watermark"
 import { safeguardTokenActive, safeguardFillValues } from "@/lib/safeguard/invite"
 
 /**
@@ -21,8 +22,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   const values = await safeguardFillValues(admin, invite.case_id)
   const filled = await fillTemplate("nypd_safeguard_acknowledgement", values)
+  // Handed over to be signed before a witness — stamp it so the blank form can never
+  // be mistaken for a completed one.
+  const bytes = await watermarkDraftPdf(filled.bytes)
 
-  return new Response(Buffer.from(filled.bytes), {
+  return new Response(Buffer.from(bytes), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="safeguard-acknowledgement.pdf"`,

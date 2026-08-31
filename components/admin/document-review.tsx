@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react"
 import { ExternalLink, Check, X, Link2 } from "lucide-react"
 import { toast } from "sonner"
 import { reviewDocument } from "@/app/admin/actions"
+import { actionFor, actionWetInk } from "@/lib/requirements/actions"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -47,16 +48,23 @@ export interface DocRow {
 }
 
 /** Canned rejection reasons — a picklist beats free-text guesswork and keeps the
- *  reason consistent for the client. "Other" falls back to the detail field. */
-const REJECT_REASONS = [
+ *  reason consistent for the client. "Other" falls back to the detail field. The
+ *  execution checks follow the document's wet-ink MODE: a WITNESS form is never
+ *  rejected for "not notarised" (it doesn't need a notary), and vice-versa. */
+const REJECT_BASE = [
   "Blurry or unreadable",
   "Wrong document for this requirement",
   "Expired or out of date",
-  "Not notarized",
-  "Signed before it was notarized",
   "Missing a page or detail",
-  "Other",
-] as const
+]
+const REJECT_NOTARY = ["Not notarized", "Signed before it was notarized"]
+const REJECT_WITNESS = ["Not witnessed", "Missing witness signature or printed name", "Signed before the witness"]
+
+function rejectReasonsFor(reqCode: string | null): string[] {
+  const wet = reqCode ? actionWetInk(actionFor(reqCode)) : null
+  const execution = wet === "witness" ? REJECT_WITNESS : REJECT_NOTARY
+  return [...REJECT_BASE, ...execution, "Other"]
+}
 
 // Pending first (needs action), then rejected (awaiting re-upload), then approved.
 const STATUS_ORDER: Record<string, number> = { pending: 0, rejected: 1, approved: 2 }
@@ -341,7 +349,7 @@ export function DocumentReview({
           </DialogHeader>
 
           <fieldset className="space-y-1.5">
-            {REJECT_REASONS.map((r) => (
+            {rejectReasonsFor(rejecting?.reqCode ?? null).map((r) => (
               <label
                 key={r}
                 className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-surface-2/60 has-[:checked]:border-brass has-[:checked]:bg-brass/10"
