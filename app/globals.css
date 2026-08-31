@@ -487,6 +487,22 @@
   }
 }
 
+/* A2 — "jump to the field still needed" pulses its warn-tone ring once. */
+@keyframes fact-pulse {
+  0%   { box-shadow: 0 0 0 2px color-mix(in oklab, var(--warn) 80%, transparent); }
+  100% { box-shadow: 0 0 0 10px color-mix(in oklab, var(--warn) 0%, transparent); }
+}
+.fact-pulse {
+  border-radius: 0.6rem;
+  animation: fact-pulse 0.85s ease-out 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fact-pulse {
+    animation: none;
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--warn) 70%, transparent);
+  }
+}
+
 @keyframes shimmer { 100% { transform: translateX(100%); } }
 .shimmer {
   position: relative;
