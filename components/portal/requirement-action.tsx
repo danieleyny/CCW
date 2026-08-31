@@ -10,7 +10,6 @@ import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requ
 import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
-import { DmvFallback } from "@/components/portal/dmv-fallback"
 import { RequestHelpButton } from "@/components/portal/request-help-button"
 import { NotaryRoutes } from "@/components/shared/notary-options"
 import type { DmvApplicant } from "@/lib/portal/requirement-view"
@@ -274,9 +273,6 @@ export function RequirementAction({
 
         {/* DMV-01: the most-failed item — concierge cases get a "Request help" hatch. */}
         {reqCode === "DMV-01" && isConcierge && <RequestHelpButton kind="dmv" />}
-
-        {/* DMV-01 only: a real path when MyDMV / NY.gov ID login errors out. */}
-        {reqCode === "DMV-01" && <DmvFallback applicant={dmvApplicant} />}
 
         {!done && action.documentType && (
           <DocumentUploader

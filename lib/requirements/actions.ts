@@ -541,10 +541,8 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     ],
     sourceUrl: "https://dmv.ny.gov/records/get-my-own-driving-record-abstract",
     sourceLabel: "NYS DMV — driving records",
-    // TODO(concierge): optionally generate a pre-filled MV-15C PDF (same identity
-    // fields as the email draft) via the document engine so the applicant just
-    // prints, signs and mails it. Deferred — the mailto + offline paths (see
-    // components/portal/dmv-fallback) unblock people today without new plumbing.
+    // The how-to steps + source link cover this; the "Trouble with the DMV site?"
+    // fallback panel was removed at the owner's request.
   },
   "TRN-01": {
     mode: "obtain",
