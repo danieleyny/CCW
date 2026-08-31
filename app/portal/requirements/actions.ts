@@ -20,6 +20,7 @@ import { questionnaireFor, type Field } from "@/lib/requirements/questionnaires"
 import { factDef } from "@/lib/facts/registry"
 import { setCaseSsn, getCaseSsn, ssnConfigured } from "@/lib/facts/ssn"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
+import { inviteSafeguard, loadSafeguardInvite } from "@/lib/safeguard/invite"
 import { toUserFacingError } from "@/lib/schema-health"
 import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
 import { recomputeReferenceRequirement } from "@/lib/references/process"
@@ -1006,4 +1007,35 @@ export async function requestDmvHelp(): Promise<{ ok?: true; error?: string }> {
   })
   await logActivity({ action: "dmv.help_requested", caseId: myCase.id, entity: "case", entityId: myCase.id })
   return { ok: true }
+}
+
+/**
+ * SFG-01 — send the safeguard person a tokenized link to complete, sign (witnessed)
+ * and upload NYPD's Acknowledgement themselves, like the reference/cohabitant flows.
+ * Their email comes from the safeguard facts (entered on Your details).
+ */
+export async function sendSafeguardInvite(
+  caseId?: string
+): Promise<{ ok?: boolean; error?: string; token?: string; emailed?: boolean; email?: string }> {
+  const actor = await authorizeCaseActor(caseId)
+  if (!actor) return { error: "No case found." }
+  const admin = createAdminClient()
+  const f = await resolveFacts(admin, actor.caseId)
+  const email = (f["safeguard.email"] ?? "").trim()
+  if (!email) {
+    return { error: "Add the safeguard person's email on Your details first, then send them the link." }
+  }
+  const res = await inviteSafeguard(admin, actor.caseId, email)
+  if (!res) return { error: "Couldn't send the link. Please try again." }
+  await logActivity({
+    action: "safeguard.invite_sent",
+    caseId: actor.caseId,
+    entity: "case",
+    entityId: actor.caseId,
+    detail: { emailed: res.emailed },
+  })
+  const invite = await loadSafeguardInvite(admin, actor.caseId)
+  revalidatePath("/portal/checklist")
+  revalidatePath("/portal/concierge")
+  return { ok: true, token: invite?.token ?? undefined, emailed: res.emailed, email }
 }

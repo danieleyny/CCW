@@ -11,6 +11,7 @@ import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
 import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
 import { RequestHelpButton } from "@/components/portal/request-help-button"
+import { SafeguardInvite } from "@/components/portal/safeguard-invite"
 import { NotaryRoutes } from "@/components/shared/notary-options"
 import type { DmvApplicant } from "@/lib/portal/requirement-view"
 import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
@@ -129,6 +130,10 @@ export function RequirementAction({
     const needsSignature = isSignable(action) && !!generated && !generated.signedAt
     return (
       <div className="mt-3 space-y-2">
+        {/* SFG-01: the safeguard person completes and signs this themselves via a
+            private link (witnessed, no notary). Filling it here yourself stays as a
+            fallback below. */}
+        {reqCode === "SFG-01" && !done && <SafeguardInvite caseId={caseId} />}
         <div className="flex flex-wrap items-center gap-2">
           {q && (
             <Button

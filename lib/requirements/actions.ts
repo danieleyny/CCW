@@ -243,7 +243,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "safeguard_acknowledgement",
     notarize: true, // witnessed on paper — never digitally signed
     customerTitle: "The person who will safeguard your firearm(s)",
-    help: "The official NYPD acknowledgement for the New York State resident who will safeguard and surrender your firearm(s) if you die or become incapacitated. We fill their details; they sign it before a witness and you upload the completed form.",
+    help: "The official NYPD acknowledgement for the person who will safeguard and surrender your firearm(s) if you die or become incapacitated. Send them a private link and they complete it themselves — they sign it before a witness (no notary) and upload it. Or fill and generate it yourself and hand it to them.",
   },
   // AFF-02 — the Penal Law Art. 35/265/400 affirmation. Its official PDF is not yet
   // on the platform (owner outstanding), so it's obtain-and-upload for now — a

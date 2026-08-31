@@ -3623,6 +3623,97 @@ export type Database = {
         }
         Relationships: []
       }
+      safeguard_invites: {
+        Row: {
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          document_id: string | null
+          email: string
+          id: string
+          opened_at: string | null
+          sent_at: string | null
+          status: string
+          token: string | null
+          token_expires_at: string | null
+          token_revoked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          document_id?: string | null
+          email: string
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          document_id?: string | null
+          email?: string
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safeguard_invites_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguard_invites_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "safeguard_invites_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "safeguard_invites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safeguard_invites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "safeguard_invites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
       service_packages: {
         Row: {
           active: boolean
