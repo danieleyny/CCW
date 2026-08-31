@@ -35,6 +35,7 @@
  *   own application at licensing.nypdonline.org.
  */
 import type { Database } from "@/lib/supabase/types"
+import { formTemplateWetInk } from "@/lib/forms/templates"
 
 type DocumentType = Database["public"]["Enums"]["document_type"]
 
@@ -852,9 +853,21 @@ export function actionFor(reqCode: string): RequirementAction | null {
  * applicant signs themselves — the sole-occupancy statement — so it follows the
  * normal generate → sign → notarize path.
  */
+/**
+ * The wet-ink mode a generate requirement's document needs, if any — derived from its
+ * template (the ONE source), so the UI and the fill layer can never disagree about
+ * whether to offer a signature pad. "notary" | "witness" | null (digitally signable).
+ */
+export function actionWetInk(action: RequirementAction | null): "notary" | "witness" | null {
+  if (!action || action.mode !== "generate" || !action.templateKey) return null
+  return formTemplateWetInk(action.templateKey)
+}
+
 export function isSignable(action: RequirementAction | null): boolean {
   if (!action) return false
-  if (action.mode === "generate") return action.signable !== false
+  // A wet-ink document is NEVER digitally signed — offering the pad is the bug this
+  // fixes (the fill layer would then refuse it). Branch to download + upload instead.
+  if (action.mode === "generate") return action.signable !== false && !actionWetInk(action)
   return action.mode === "roster" && action.roster === "cohabitants"
 }
 

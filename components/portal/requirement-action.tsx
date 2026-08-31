@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from "react"
 import { ChevronDown, Download, ExternalLink, FileText, Check, Stamp, PenLine, Users } from "lucide-react"
 import { toast } from "sonner"
 import type { Database } from "@/lib/supabase/types"
-import { actionFor, isSignable } from "@/lib/requirements/actions"
+import { actionFor, isSignable, actionWetInk } from "@/lib/requirements/actions"
 import { questionnaireFor } from "@/lib/requirements/questionnaires"
 import { confirmAttestation, generateCompanionDocument } from "@/app/portal/requirements/actions"
 import { QuestionnaireDialog } from "@/components/portal/questionnaire-dialog"
@@ -121,6 +121,10 @@ export function RequirementAction({
   const action = actionFor(reqCode)
   if (!action || status === "na") return null
   const done = status === "satisfied"
+  // WET-INK forms are never digitally signed: no signature pad — download, sign on
+  // paper (before a notary OR a witness), then upload the completed copy (Part B).
+  // Null for anything digitally signable or non-generate (e.g. the roster branch).
+  const wet = actionWetInk(action)
 
   // ── generate ──────────────────────────────────────────────────────────────
   if (action.mode === "generate") {
@@ -154,7 +158,7 @@ export function RequirementAction({
             <Button size="sm" variant="outline" asChild>
               <a href={generated.url} target="_blank" rel="noreferrer">
                 <Download className="mr-1.5 size-3.5" />
-                {generated.signedAt ? "Download" : "Read the draft"}
+                {wet ? "Download the form" : generated.signedAt ? "Download" : "Read the draft"}
               </a>
             </Button>
           )}
@@ -191,23 +195,30 @@ export function RequirementAction({
           />
         )}
 
-        {action.notarize && generated && !done && (
+        {/* B2 — the copy follows the wet-ink MODE. Notary forms get the notary routes
+            panel; witness forms explicitly say NO notary is needed. */}
+        {wet && generated && !done && (
           <p className="flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
             <Stamp className="mt-0.5 size-3.5 shrink-0" />
-            Generated — now have it notarized and upload the signed copy. This item stays open until
-            the notarized copy is in.
+            {wet === "notary"
+              ? "Your form is ready — filled and unsigned. Sign it in front of a notary (don't sign it beforehand), then upload the notarised copy. This item stays open until that copy is in."
+              : "Your form is ready — filled and unsigned. Sign it in front of a witness — they sign and print their name in the witness block. No notary is needed. Then upload the completed copy; this item stays open until it's in."}
           </p>
         )}
 
         {action.example && <DocumentExample id={action.example} />}
 
-        {action.notarize && generated && !done && action.documentType && (
+        {wet === "notary" && generated && !done && (
+          <NotaryRoutes area={dmvApplicant?.address ?? ""} />
+        )}
+
+        {wet && generated && !done && action.documentType && (
           <DocumentUploader
             caseId={caseId}
             clientId={clientId}
             type={action.documentType as DocumentType}
             reqCode={reqCode}
-            label="Upload the notarized copy"
+            label="Upload the completed copy"
             current={current ?? null}
           />
         )}
@@ -349,7 +360,7 @@ export function RequirementAction({
             <Button size="sm" variant="outline" asChild>
               <a href={generated.url} target="_blank" rel="noreferrer">
                 <Download className="mr-1.5 size-3.5" />
-                {generated.signedAt ? "Download" : "Read the draft"}
+                {wet ? "Download the form" : generated.signedAt ? "Download" : "Read the draft"}
               </a>
             </Button>
           )}

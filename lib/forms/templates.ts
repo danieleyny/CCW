@@ -17,7 +17,7 @@ import { lonStatementsFor, requiredLonFieldsFor } from "@/lib/requirements/lon"
  *  - isFillable true ⇒ the PDF actually exposes AcroForm fields to pdf-lib.
  *  - every field build() emits (and every declared signature/date field) exists
  *    on the PDF, across every conditional branch.
- *  - a template never declares both signable and notarize.
+ *  - a template never declares both signable and wet-ink (notary/witness).
  *  - no two templates share a file/sha256.
  */
 
@@ -36,7 +36,15 @@ export interface FormTemplate {
   ephemeral?: string[]
   /** Filled-and-signed sworn document — the APPLICANT adopts (mutually excl. notarize). */
   signable?: boolean
-  /** The form's own instructions require a notary — generate filled + UNSIGNED. */
+  /**
+   * WET-INK forms are generated filled but UNSIGNED — never a digital signature.
+   * The mode drives the copy and whether a notary panel shows:
+   *   "notary"  → signed in front of a notary, then the notarised copy uploaded
+   *   "witness" → signed in front of a witness (no notary), then uploaded
+   */
+  wetInk?: "notary" | "witness"
+  /** @deprecated use `wetInk: "notary"`. Kept as an alias so nothing breaks in one
+   *  step; `templateWetInk()` maps a leftover `notarize:true` to "notary". */
   notarize?: boolean
   /** Held only — no build(), not reachable from a "Complete this form" control. */
   downloadOnly?: boolean
@@ -182,7 +190,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/forms-cohab`,
     isFillable: true,
-    notarize: true, // each cohabitant signs before a notary — never digitally signed
+    wetInk: "notary", // each cohabitant signs before a notary — never digitally signed
     fontSize: 9,
     requires: ["Text2", "Date19_af_date", "Text4", "Text5", "Text6"],
     signatureOnly: ["Signature10", "Signature11", "Text12", "Text13", "Text14"],
@@ -215,7 +223,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/request-pre-exemption`,
     isFillable: true,
-    notarize: true,
+    wetInk: "notary",
     fontSize: 9,
     // The applicant identity + the §5-09 instructor block must ALL be filled — the
     // form is blank only at the two signatures (notarised on paper). The instructor
@@ -287,7 +295,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/affidavit-familiarity`,
     isFillable: true,
-    notarize: true,
+    wetInk: "notary",
     fontSize: 10,
     requires: ["CountyOf"],
     signatureOnly: ["ThisDay", "Month", "YearDigit"],
@@ -309,7 +317,7 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
     issuingAuthority: "NYPD License Division",
     sourceUrl: `${BASE}/safeguard-acknowledgement`,
     isFillable: true,
-    notarize: true, // witnessed on paper — never digitally signed (see note above)
+    wetInk: "witness", // signed before a witness (never a notary, never digital)
     fontSize: 9,
     requires: ["Name of Applicant  Licensee", "Print Name", "First", "Address", "City", "NY"],
     signatureOnly: ["Application  License Number", "Witness name printed", "Date"],
@@ -523,4 +531,15 @@ export const FORM_TEMPLATES: Record<string, FormTemplate> = {
 
 export function formTemplate(key: string): FormTemplate | null {
   return FORM_TEMPLATES[key] ?? null
+}
+
+/** The wet-ink mode a template requires, if any — its explicit `wetInk`, or a legacy
+ *  `notarize:true` mapped to "notary". Null ⇒ digitally signable (or download-only). */
+export function templateWetInk(t: FormTemplate): "notary" | "witness" | null {
+  return t.wetInk ?? (t.notarize ? "notary" : null)
+}
+
+export function formTemplateWetInk(key: string): "notary" | "witness" | null {
+  const t = formTemplate(key)
+  return t ? templateWetInk(t) : null
 }
