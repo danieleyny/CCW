@@ -58,8 +58,9 @@ export function deriveLadder(input: LadderInput): LadderState {
  *
  *   generate + signable  → the draft is SIGNED (signed_at set)
  *   generate + wet-ink   → a completed, UPLOADED (non-draft) copy is in
+ *   roster               → the third-party evidence (reference / cohabitant) is bound,
+ *                          or the uploaded notarised copy (sole-occupancy statement)
  *   obtain / attest      → a bound document or an uploaded file
- *   roster               → the third-party evidence (reference / cohabitant) is bound
  */
 export function hasCompletingEvidence(input: {
   mode: string | undefined
@@ -78,7 +79,13 @@ export function hasCompletingEvidence(input: {
     // Our generated draft never counts on its own; only its completion does.
     return input.wetInk ? input.hasUpload : input.signedAt
   }
-  return input.documentId || input.rosterBound || input.hasUpload
+  if (input.mode === "roster") {
+    // A roster completes via the third-party evidence (recompute-bound) or the
+    // uploaded NOTARISED copy (the sole-occupancy statement) — NEVER our own bound
+    // draft, which is generated the moment the applicant lists their household.
+    return input.rosterBound || input.hasUpload
+  }
+  return input.documentId || input.hasUpload
 }
 
 /** Warm, specific copy — this is the applicant's whole sense of where they are.

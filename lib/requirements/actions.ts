@@ -867,8 +867,11 @@ export function isSignable(action: RequirementAction | null): boolean {
   if (!action) return false
   // A wet-ink document is NEVER digitally signed — offering the pad is the bug this
   // fixes (the fill layer would then refuse it). Branch to download + upload instead.
+  // Roster documents (references, cohabitant affidavits, and the living-alone
+  // sole-occupancy statement) are all NOTARISED — signed in front of the notary, on
+  // paper — so none are signable here.
   if (action.mode === "generate") return action.signable !== false && !actionWetInk(action)
-  return action.mode === "roster" && action.roster === "cohabitants"
+  return false
 }
 
 /**

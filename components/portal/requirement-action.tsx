@@ -336,8 +336,11 @@ export function RequirementAction({
     // Living alone collapses this to ONE document the applicant signs themselves
     // (the sole-occupancy statement), so that path shows the normal
     // draft → sign → notarize controls instead of invitation copy.
+    // Living alone → ONE document: the sole-occupancy statement. It is NOTARISED
+    // (COH-01), so — like every notary document — the applicant signs it IN FRONT OF
+    // THE NOTARY, never digitally beforehand (a jurat can't be sworn over a pre-placed
+    // signature, and we reject one). Flow: download → notarise → upload.
     const soleOccupancy = action.roster === "cohabitants" && !!generated
-    const needsSignature = soleOccupancy && !generated!.signedAt
     // References already invited → the primary button becomes a reminder resend.
     const refsInvited = action.roster === "references" && (referenceProgress?.invitedCount ?? 0) > 0
 
@@ -347,16 +350,11 @@ export function RequirementAction({
           {q && (
             <Button
               size="sm"
-              variant={done || needsSignature || refsInvited ? "outline" : "default"}
+              variant={done || soleOccupancy || refsInvited ? "outline" : "default"}
               onClick={() => setOpen(true)}
             >
               <Users className="mr-1.5 size-3.5" />
               {soleOccupancy ? "Edit my answer" : refsInvited ? "Send reminder" : action.actionLabel}
-            </Button>
-          )}
-          {needsSignature && !signing && (
-            <Button size="sm" onClick={() => setSigning(true)}>
-              <PenLine className="mr-1.5 size-3.5" /> Review &amp; sign
             </Button>
           )}
           {generated?.url && (
@@ -376,22 +374,6 @@ export function RequirementAction({
             </Button>
           )}
         </div>
-
-        {needsSignature && (
-          <p className="flex items-start gap-1.5 rounded-md border border-brass/30 bg-brass/10 p-2 text-xs text-brass">
-            <PenLine className="mt-0.5 size-3.5 shrink-0" />
-            Draft — unsigned. It doesn&apos;t count toward your application until you sign it, and
-            the date on it will be the date you sign.
-          </p>
-        )}
-
-        {needsSignature && signing && (
-          <SignDocument
-            reqCode={reqCode}
-            signatureOnFile={signatureOnFile}
-            onSigned={() => setSigning(false)}
-          />
-        )}
 
         {(() => {
           // One tracker for both rosters — references and household affidavits
@@ -422,7 +404,7 @@ export function RequirementAction({
           <p className="flex items-start gap-1.5 rounded-md border border-warn/30 bg-warn/10 p-2 text-xs text-warn">
             <Stamp className="mt-0.5 size-3.5 shrink-0" />
             {soleOccupancy
-              ? "Once it's signed, have it notarized and upload the signed copy — that's what completes this."
+              ? "Don't sign it yet — take it to a notary and sign it in front of them, then upload the notarized copy. That's what completes this."
               : action.roster === "references"
                 ? refsInvited
                   ? "We've emailed your references — they each write and notarize their own letter through a private link. This completes when the notarized letters are uploaded. Send a reminder if they're taking a while."
@@ -431,15 +413,20 @@ export function RequirementAction({
           </p>
         )}
 
-        {soleOccupancy && !done && generated?.signedAt && action.documentType && (
-          <DocumentUploader
-            caseId={caseId}
-            clientId={clientId}
-            type={action.documentType as DocumentType}
-            reqCode={reqCode}
-            label="Upload the notarized copy"
-            current={current ?? null}
-          />
+        {soleOccupancy && !done && (
+          <div className="space-y-3">
+            <NotaryRoutes area={dmvApplicant?.address ?? ""} />
+            {action.documentType && (
+              <DocumentUploader
+                caseId={caseId}
+                clientId={clientId}
+                type={action.documentType as DocumentType}
+                reqCode={reqCode}
+                label="Upload the notarized copy"
+                current={current ?? null}
+              />
+            )}
+          </div>
         )}
 
         {q && (

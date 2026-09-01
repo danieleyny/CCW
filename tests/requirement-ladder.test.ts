@@ -37,6 +37,12 @@ describe("completing evidence — our own draft never counts", () => {
     expect(hasCompletingEvidence({ ...base, mode: "roster", rosterBound: true })).toBe(true)
     expect(hasCompletingEvidence({ ...base, mode: "roster" })).toBe(false)
   })
+  it("roster: our own bound DRAFT never counts — sole-occupancy needs its uploaded notarised copy", () => {
+    // COH-01 binds document_id to the generated draft the moment the applicant lists
+    // their household; that draft must not read as done until the notarised copy is in.
+    expect(hasCompletingEvidence({ ...base, mode: "roster", documentId: true })).toBe(false)
+    expect(hasCompletingEvidence({ ...base, mode: "roster", hasUpload: true })).toBe(true)
+  })
 })
 
 describe("the ladder reflects it — an unsigned draft is 'Not started', not 'Received'", () => {

@@ -124,9 +124,11 @@ describe("requirement → action map", () => {
       for (const code of ["REF-01", "REF-02"]) {
         expect(isSignable(actionFor(code)), `${code} must NOT be applicant-signed`).toBe(false)
       }
-      // COH-01 cuts both ways: housemates sign their own affidavits, but living
-      // alone collapses to the applicant's own sole-occupancy statement.
-      expect(isSignable(actionFor("COH-01"))).toBe(true)
+      // COH-01 is NOTARISED either way: housemates sign their own affidavits before a
+      // notary, and living alone collapses to the applicant's own sole-occupancy
+      // statement — also notarised, signed in front of the notary, never digitally
+      // here (a jurat can't be sworn over a pre-placed signature).
+      expect(isSignable(actionFor("COH-01"))).toBe(false)
       // An upload is evidence, not something signed on platform.
       expect(isSignable(actionFor("IDN-01"))).toBe(false)
     })
