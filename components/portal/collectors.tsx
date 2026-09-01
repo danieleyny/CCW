@@ -83,6 +83,9 @@ export function ReferenceCollector({
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset()
+      // Reset the form after a successful server add — a legitimate response to an
+      // async action result, not derivable during render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsFamily(false)
       toast.success("Reference added")
     }
@@ -97,6 +100,7 @@ export function ReferenceCollector({
 
   // Never leave a disallowed "family" selection armed (e.g. after the cap fills).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!familyAllowed && isFamily) setIsFamily(false)
   }, [familyAllowed, isFamily])
 

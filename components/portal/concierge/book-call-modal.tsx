@@ -42,6 +42,9 @@ export function BookCallModal({ url }: { url: string }) {
   // mounts the iframe. Reset on close so each open gets a fresh scheduler.
   useEffect(() => {
     if (!open) {
+      // Tear down the iframe scheduler on close so each open gets a fresh one — a
+      // lifecycle reset keyed to the `open` prop, correctly done in an effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSrc(null)
       setLoaded(false)
       scheduled.current = false

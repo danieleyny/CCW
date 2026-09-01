@@ -113,6 +113,9 @@ export function RequirementAction({
   // dialog when the URL hash names this requirement.
   useEffect(() => {
     if (typeof window === "undefined") return
+    // Deep-link: open the dialog on mount when the URL hash names this requirement —
+    // a one-shot mount effect, not derivable during render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (window.location.hash === `#${reqCode}` && !done) setOpen(true)
     // Run once on mount for this requirement.
     // eslint-disable-next-line react-hooks/exhaustive-deps

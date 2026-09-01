@@ -26,7 +26,7 @@ describe("#6 safeguard storage field carries an example", () => {
 })
 
 describe("#12 safeguard-acknowledgement fields are bound to their facts", () => {
-  const fields = QUESTIONNAIRES["safeguard-acknowledgement"].fields
+  const fields = QUESTIONNAIRES["safeguard-acknowledgement"]?.fields ?? []
   const factByName = Object.fromEntries(fields.map((f) => [f.name, f.fact]))
   it("name, address and phone all carry a fact binding", () => {
     expect(factByName.safeguardFirstName).toBe("safeguard.firstName")

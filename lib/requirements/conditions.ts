@@ -67,7 +67,7 @@ export function deriveConditionFlags(
   // New portal-only flags — no wizard equivalent, so false unless the disclosure store
   // says otherwise.
   let hasFelonyConviction = false
-  let wantsConfidentiality = false
+  const wantsConfidentiality = false
 
   if (hasStore) {
     source.sectionB = "disclosure-store"

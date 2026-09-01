@@ -39,7 +39,7 @@ describe("PLE-01 §5-09 instructor block", () => {
     expect(text["lnstmctors Verified Statement 2"]).toContain("no danger")
     expect(text["lnstmctors Verified Statement 3"]).toContain("West Range, NY")
     // Every required instructor field is present ⇒ the completeness gate passes.
-    for (const req of t.requires ?? []) expect(text[req] ?? "").not.toBe("")
+    for (const req of Array.isArray(t.requires) ? t.requires : []) expect(text[req] ?? "").not.toBe("")
   })
 
   it("leaves the danger-assessment line blank when not attested (gate will flag it)", () => {

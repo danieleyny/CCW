@@ -7,6 +7,7 @@
  * Runs after `pnpm db:reset && pnpm seed`; skips when no local Supabase answers.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import type { Database } from "@/lib/supabase/types"
 import { adminClient, supabaseReachable } from "./helpers/supabase"
 import { runReminderEngine } from "@/lib/reminders/engine"
 import { REQUIRED_AGREEMENT_KINDS, currentAgreementVersion } from "@/config/agreements"
@@ -26,8 +27,8 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
   const iso = (daysAgo: number) => new Date(Date.now() - daysAgo * DAY).toISOString()
 
   async function makeCase(opts: {
+    stage: Database["public"]["Enums"]["case_stage"]
     paid: boolean
-    stage: string
     openedDaysAgo: number
     completeAgreements?: boolean
     isDemo?: boolean
