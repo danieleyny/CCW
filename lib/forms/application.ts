@@ -166,7 +166,6 @@ export function buildApplicationValues(
     // LEGACY fallback only: an older case still carrying intake.questionnaire and no
     // disclosure-store answers. Logged so the tail is visible. Keyed by NYPD question
     // number (never array position).
-    // eslint-disable-next-line no-console
     console.warn("buildApplicationValues: Section B fell back to legacy intake.questionnaire (no DSC-01/QUE-01 answers)")
     for (const q of intake.questionnaire ?? []) v[`q${q.no}`] = q.yes ? "Yes" : "No"
   }

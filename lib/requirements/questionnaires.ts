@@ -14,7 +14,7 @@
  * nullified matters ARE disclosed (CPL Article 160), and that non-disclosure is
  * more damaging than the underlying event. Nothing here may suggest omitting.
  */
-import { type WizardAnswers, QUESTIONNAIRE } from "@/lib/intake/answers"
+import { type WizardAnswers } from "@/lib/intake/answers"
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { lonStatementsFor } from "@/lib/requirements/lon"
 

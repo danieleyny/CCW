@@ -20,13 +20,11 @@ describe.skipIf(!DIR)("render fillable templates for visual verification", () =>
       if (!t.build) continue
       const fx = FIXTURES[key]?.[0]
       if (!fx) {
-        // eslint-disable-next-line no-console
         console.log(`SKIP ${key} — no fixture`)
         continue
       }
       const filled = await fillTemplate(key, fx)
       writeFileSync(join(DIR!, `${key}.pdf`), filled.bytes)
-      // eslint-disable-next-line no-console
       console.log(`WROTE ${key}.pdf  missing=[${filled.missing.join(",")}]  missingRequired=[${filled.missingRequired.join(",")}]`)
     }
   })

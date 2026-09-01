@@ -36,7 +36,6 @@ export async function rematerializeCase(admin: DB, caseId: string): Promise<Mate
   const answers: WizardAnswers = hasIntake ? rawAnswers! : ({ licenseType: "carry" } as WizardAnswers)
 
   const { flags, source } = deriveConditionFlags(rawAnswers, sources)
-  // eslint-disable-next-line no-console
   console.log(`[rematerialize] case ${caseId} conditions:`, { ...flags, _sources: source, hasIntake })
 
   const jurisdictionKey = eligibilityGate(answers).jurisdiction

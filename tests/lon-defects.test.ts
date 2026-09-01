@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { lonStatementsFor, lonFieldsFor, requiredLonFieldsFor, REQUIRED_LON_STATEMENTS } from "@/lib/requirements/lon"
+import { lonStatementsFor, requiredLonFieldsFor, REQUIRED_LON_STATEMENTS } from "@/lib/requirements/lon"
 import { formTemplate } from "@/lib/forms/templates"
 
 const lon = formTemplate("nypd_letter_of_necessity")!

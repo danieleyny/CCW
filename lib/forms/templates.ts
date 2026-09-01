@@ -83,7 +83,6 @@ export interface FormTemplate {
 }
 
 const s = (v: unknown): string => (v == null ? "" : String(v))
-const isYes = (v: unknown): boolean => v === true || v === "yes"
 /** Intake stores DOB as YYYY-MM-DD → the three parts, or "" when absent. */
 function dobParts(v: unknown): { mm: string; dd: string; yyyy: string } {
   const [yyyy = "", mm = "", dd = ""] = s(v).split("-")
