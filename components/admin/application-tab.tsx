@@ -363,6 +363,9 @@ function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const meta = STATE_META[slot.state]
+  // Pre-flight: the portal rejects a PDF in the image-only Photograph slot. Catch it
+  // here so a staffer doesn't get bounced mid-entry.
+  const imageOnlyViolation = slot.imageOnly && /\.pdf$/i.test(slot.fileName ?? "")
 
   const open = () => {
     if (!slot.documentId) return
@@ -386,6 +389,9 @@ function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (
           <meta.Icon className="size-3.5" /> {meta.label}
         </div>
         {slot.fileName && <div className="mt-0.5 truncate text-xs text-text-low">{slot.fileName}</div>}
+        {imageOnlyViolation && (
+          <div className="mt-0.5 text-xs font-medium text-danger">This slot is image-only — the portal will reject this PDF. Get a photo (JPG/PNG) instead.</div>
+        )}
         {slot.sharedFromLabel && <div className="mt-0.5 text-xs text-text-low">Provided from another upload</div>}
         {slot.rejectionNote && <div className="mt-0.5 text-xs text-danger">Note: {slot.rejectionNote}</div>}
         {error && <div className="mt-0.5 text-xs text-danger">{error}</div>}
