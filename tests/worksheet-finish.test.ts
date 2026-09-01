@@ -23,11 +23,11 @@ describe("#1 history dates — month-only renders M/D/YYYY and is flagged", () =
       employmentHistory: [{ fromMonth: "2022-01", employerName: "Acme", occupation: "Guard" }],
     } as WizardAnswers
     const w = buildPortalWorksheet(buildApplicationValues({}, intake, {}), {}, {})
-    const res = sectionByTitle(w, "Residence History (past 5 years)")
+    const res = sectionByTitle(w, "Residence History")
     const from = res.fields.find((f) => f.label.startsWith("Row 1 — From"))!
     expect(from.value).toBe("3/1/2021")
     expect(from.label).toContain("day assumed")
-    expect(fieldVal(w, "Employment", "History 1 — Start")).toBe("1/1/2022")
+    expect(fieldVal(w, "Employment History", "History 1 — Start")).toBe("1/1/2022")
   })
 })
 
@@ -37,12 +37,12 @@ describe("#2 residence table renders all eight columns", () => {
       residenceHistory: [{ fromMonth: "2021-03-01", toMonth: "2023-06-01", address: "742 Evergreen Terrace", apt: "2", city: "Springfield", state: "NY", zip: "11111" }],
     } as WizardAnswers
     const w = buildPortalWorksheet(buildApplicationValues({}, intake, {}), {}, {})
-    expect(fieldVal(w, "Residence History (past 5 years)", "Row 1 — Building Number")).toBe("742")
-    expect(fieldVal(w, "Residence History (past 5 years)", "Row 1 — Street Name")).toBe("Evergreen Terrace")
-    expect(fieldVal(w, "Residence History (past 5 years)", "Row 1 — Apt/Unit/Suite")).toBe("2")
-    expect(fieldVal(w, "Residence History (past 5 years)", "Row 1 — City")).toBe("Springfield")
-    expect(fieldVal(w, "Residence History (past 5 years)", "Row 1 — State")).toBe("NY")
-    expect(fieldVal(w, "Residence History (past 5 years)", "Row 1 — Zip")).toBe("11111")
+    expect(fieldVal(w, "Residence History", "Row 1 — Building Number")).toBe("742")
+    expect(fieldVal(w, "Residence History", "Row 1 — Street Name")).toBe("Evergreen Terrace")
+    expect(fieldVal(w, "Residence History", "Row 1 — Apt/Unit/Suite")).toBe("2")
+    expect(fieldVal(w, "Residence History", "Row 1 — City")).toBe("Springfield")
+    expect(fieldVal(w, "Residence History", "Row 1 — State")).toBe("NY")
+    expect(fieldVal(w, "Residence History", "Row 1 — Zip")).toBe("11111")
   })
 })
 
@@ -65,22 +65,22 @@ describe("#3–#6 safeguard + safekeeping", () => {
   const w = buildPortalWorksheet(buildApplicationValues(facts, {} as WizardAnswers, {}), {}, {})
 
   it("#5 safeguard name is two fields", () => {
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard — First Name")).toBe("Dana")
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard — Last Name")).toBe("Reyes")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard — First Name")).toBe("Dana")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard — Last Name")).toBe("Reyes")
   })
   it("#4 safeguard email reaches the worksheet", () => {
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard — Email")).toBe("dana@example.com")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard — Email")).toBe("dana@example.com")
   })
   it("#3 safeguard address renders each part from its own field (nothing dumped into Street)", () => {
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard Address — Street Name")).toBe("Vanderbilt Ave")
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard Address — Building Number")).toBe("55")
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard Address — Apt/Unit")).toBe("3")
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard Address — City")).toBe("Brooklyn")
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard Address — State")).toBe("NY")
-    expect(fieldVal(w, "Safeguarding Person", "Safeguard Address — Zip")).toBe("11205")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard Address — Street Name")).toBe("Vanderbilt Ave")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard Address — Building Number")).toBe("55")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard Address — Apt/Unit")).toBe("3")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard Address — City")).toBe("Brooklyn")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard Address — State")).toBe("NY")
+    expect(fieldVal(w, "Safekeeping and Safeguarding", "Safeguard Address — Zip")).toBe("11205")
   })
   it("#6 safekeeping location is its own six-part address, distinct from home", () => {
-    const sk = sectionByTitle(w, "Safekeeping (where the handgun is secured)")
+    const sk = sectionByTitle(w, "Safekeeping and Safeguarding")
     expect(sk.fields.find((f) => f.label === "Safekeeping Location — Street Name")?.value).toBe("Court St")
     expect(sk.fields.find((f) => f.label === "Safekeeping Location — City")?.value).toBe("Brooklyn")
     expect(sk.fields.find((f) => f.label === "Safekeeping Location — Zip")?.value).toBe("11201")
@@ -110,7 +110,7 @@ describe("#8 confidentiality section on the worksheet", () => {
     const w = buildPortalWorksheet(buildApplicationValues({}, {} as WizardAnswers, {}), {}, {
       confidentiality: { requesting: "yes", g1a: true, item5: "I am a witness", election: "all" },
     })
-    const con = sectionByTitle(w, "Confidentiality (Public-Records Exemption)")
+    const con = sectionByTitle(w, "Confidentiality")
     expect(con.fields.find((f) => f.label === "Requesting confidentiality?")?.value).toBe("Yes")
     expect(con.fields.some((f) => f.label.includes("police, peace"))).toBe(true)
     expect(con.fields.find((f) => f.label === "Additional supportive information")?.value).toBe("I am a witness")
@@ -120,7 +120,7 @@ describe("#8 confidentiality section on the worksheet", () => {
     const w = buildPortalWorksheet(buildApplicationValues({}, {} as WizardAnswers, {}), {}, {
       confidentiality: { requesting: "no" },
     })
-    const con = sectionByTitle(w, "Confidentiality (Public-Records Exemption)")
+    const con = sectionByTitle(w, "Confidentiality")
     expect(con.fields).toHaveLength(1)
     expect(con.fields[0].value).toBe("No")
   })

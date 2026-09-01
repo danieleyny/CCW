@@ -29,7 +29,7 @@ describe("worksheet — home + residence address split at render", () => {
   it("each residence row is split from its address line", () => {
     const intake = { residenceHistory: [{ address: "10 Downing St", city: "Bronx", state: "NY", zip: "10451" }] } as WizardAnswers
     const w = buildPortalWorksheet(buildApplicationValues({}, intake, {}), {}, {})
-    const res = w.find((s) => s.title === "Residence History (past 5 years)")!
+    const res = w.find((s) => s.title === "Residence History")!
     expect(res.fields.find((f) => f.label === "Row 1 — Building Number")?.value).toBe("10")
     expect(res.fields.find((f) => f.label === "Row 1 — Street Name")?.value).toBe("Downing St")
   })

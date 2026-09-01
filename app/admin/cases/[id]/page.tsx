@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { ArrowLeft, FileDown, Send, Ban, Clock, GraduationCap, CalendarDays, MessageSquare } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
@@ -42,6 +43,9 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ApplicationTab } from "@/components/admin/application-tab"
+import { assembleApplicationTab } from "@/lib/portal/application-tab"
+import { revealCaseSsn, openCaseDocument, setStepEntered } from "@/app/admin/cases/[id]/application-actions"
 import {
   Table,
   TableBody,
@@ -502,8 +506,9 @@ export default async function CaseFilePage({
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="requirements">
+      <Tabs defaultValue="application">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="application">Application</TabsTrigger>
           <TabsTrigger value="requirements">Requirements ({blockingOpen})</TabsTrigger>
           <TabsTrigger value="intake">Intake responses</TabsTrigger>
           <TabsTrigger value="disclosures">Disclosures ({disclosureRows.length})</TabsTrigger>
@@ -515,6 +520,12 @@ export default async function CaseFilePage({
           <TabsTrigger value="messages">Messages ({messages.length})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="application" className="mt-4">
+          <Suspense fallback={<div className="rounded-lg border border-hairline bg-card p-6 text-sm text-text-mid">Loading the portal transcription…</div>}>
+            <ApplicationTabLoader caseId={id} />
+          </Suspense>
+        </TabsContent>
 
         <TabsContent value="requirements" className="mt-4 space-y-4">
           {company && (
@@ -953,5 +964,30 @@ function Empty({ children }: { children: React.ReactNode }) {
     <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
       {children}
     </p>
+  )
+}
+
+/**
+ * Streams the heavy portal-transcription assembly (values, disclosures, requirements,
+ * upload states) so it never blocks the rest of the case page. Staff-only — the parent
+ * page already passed requireStaff(). Uses the service-role client to read the SSN
+ * PRESENCE (not value) and the concierge-prepared answers a client RLS session can't see.
+ */
+async function ApplicationTabLoader({ caseId }: { caseId: string }) {
+  const admin = createAdminClient()
+  const data = await assembleApplicationTab(admin, caseId)
+  if (!data) {
+    return <p className="rounded-lg border border-hairline bg-card p-6 text-sm text-text-mid">No application data yet for this case.</p>
+  }
+  return (
+    <ApplicationTab
+      data={data}
+      caseId={caseId}
+      revealSsn={revealCaseSsn}
+      openDocument={openCaseDocument}
+      setStepEntered={setStepEntered}
+      recordHref={`/admin/cases/${caseId}/application-record`}
+      uploadSetHref={`/admin/cases/${caseId}/upload-set`}
+    />
   )
 }

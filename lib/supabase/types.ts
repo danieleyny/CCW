@@ -2891,6 +2891,56 @@ export type Database = {
           },
         ]
       }
+      portal_entry_progress: {
+        Row: {
+          case_id: string
+          entered_at: string
+          entered_by: string | null
+          step_no: number
+        }
+        Insert: {
+          case_id: string
+          entered_at?: string
+          entered_by?: string | null
+          step_no: number
+        }
+        Update: {
+          case_id?: string
+          entered_at?: string
+          entered_by?: string | null
+          step_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_entry_progress_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_entry_progress_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "portal_entry_progress_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "portal_entry_progress_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prelicense_instructor_statements: {
         Row: {
           case_id: string
