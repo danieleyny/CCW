@@ -50,6 +50,37 @@ export function deriveLadder(input: LadderInput): LadderState {
   return "pending"
 }
 
+/**
+ * Does the requirement hold the artefact that ACTUALLY COMPLETES it — never our
+ * own unsigned/un-notarized generated draft, which is bound as `document_id` the
+ * moment it's generated. This is the difference between "we made you a draft" and
+ * "the thing that finishes this is in." Feeds `hasEvidence` above.
+ *
+ *   generate + signable  → the draft is SIGNED (signed_at set)
+ *   generate + wet-ink   → a completed, UPLOADED (non-draft) copy is in
+ *   obtain / attest      → a bound document or an uploaded file
+ *   roster               → the third-party evidence (reference / cohabitant) is bound
+ */
+export function hasCompletingEvidence(input: {
+  mode: string | undefined
+  /** The generate requirement needs a notary/witness — i.e. an uploaded wet-ink copy. */
+  wetInk: boolean
+  /** The generated draft has been signed (documents.signed_at set). */
+  signedAt: boolean
+  /** A non-generated uploaded copy exists (the upload widget's current doc). */
+  hasUpload: boolean
+  /** case_requirements.document_id is bound (may point at our own draft). */
+  documentId: boolean
+  /** reference_id or cohabitant_id is bound (roster evidence). */
+  rosterBound: boolean
+}): boolean {
+  if (input.mode === "generate") {
+    // Our generated draft never counts on its own; only its completion does.
+    return input.wetInk ? input.hasUpload : input.signedAt
+  }
+  return input.documentId || input.rosterBound || input.hasUpload
+}
+
 /** Warm, specific copy — this is the applicant's whole sense of where they are.
  *  Three-state completed treatment (R3): outstanding → muted (no accent),
  *  needs-you → BRASS ("your turn," and nothing else is brass), received → SIGNAL

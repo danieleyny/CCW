@@ -53,7 +53,12 @@ export async function saveRequirementAnswers(
   answers: Record<string, unknown>,
   /** Sponsor parity: a full-scope rep passes the case they're drafting for. Omitted
    *  by the applicant (derived from their own case). */
-  caseId?: string
+  caseId?: string,
+  /** `skipRevalidate` — when a MODAL flow is running (the questionnaire dialog), a
+   *  revalidatePath re-renders the server tree UNDER the open dialog and tears out
+   *  the client state that holds the sign step, closing it mid-flow. The dialog
+   *  passes this and calls router.refresh() once on close instead. */
+  opts?: { skipRevalidate?: boolean }
 ): Promise<Result> {
   const actor = await authorizeCaseActor(caseId)
   if (!actor) return { error: "No case found" }
@@ -92,10 +97,10 @@ export async function saveRequirementAnswers(
   // from the canonical stores whenever the Section B answers change.
   if (reqCode === "DSC-01" || reqCode === "QUE-01") {
     await rematerializeCase(createAdminClient(), actor.caseId)
-    revalidatePath("/portal/concierge")
+    if (!opts?.skipRevalidate) revalidatePath("/portal/concierge")
   }
 
-  revalidatePath("/portal/checklist")
+  if (!opts?.skipRevalidate) revalidatePath("/portal/checklist")
   return { ok: true }
 }
 
@@ -194,7 +199,11 @@ export async function generateRequirementDocument(
   caseId?: string,
   /** Transient values (e.g. SSN) filled into the PDF but NEVER persisted — see the
    *  SSN decision. Merged at fill time only. */
-  ephemeral?: Record<string, unknown>
+  ephemeral?: Record<string, unknown>,
+  /** `skipRevalidate` — the questionnaire dialog defers refresh to close (see
+   *  saveRequirementAnswers), so a generate that advances to the sign step doesn't
+   *  revalidate the page out from under the open dialog. */
+  opts?: { skipRevalidate?: boolean }
 ): Promise<Result> {
   const actor = await authorizeCaseActor(caseId)
   if (!actor) return { error: "No case found" }
@@ -415,8 +424,10 @@ export async function generateRequirementDocument(
     entityId: documentId,
     detail: { req_code: reqCode, notarize: !!action.notarize, draft: signable },
   })
-  revalidatePath("/portal/checklist")
-  revalidatePath("/portal/documents")
+  if (!opts?.skipRevalidate) {
+    revalidatePath("/portal/checklist")
+    revalidatePath("/portal/documents")
+  }
   // Never route to signing an incomplete form — the caller shows what's missing.
   return { ok: true, documentId, needsSignature: signable && incompleteFields.length === 0, incomplete: incompleteFields.length ? incompleteFields : undefined }
 }
@@ -438,7 +449,10 @@ export async function submitRequirementRoster(
   reqCode: string,
   answers: Record<string, unknown>,
   /** Sponsor parity: a full-scope rep passes the case; the applicant omits it. */
-  caseId?: string
+  caseId?: string,
+  /** `skipRevalidate` — the questionnaire dialog defers refresh to close (see
+   *  saveRequirementAnswers); the sole-occupancy path advances to a sign step. */
+  opts?: { skipRevalidate?: boolean }
 ): Promise<RosterResult> {
   const actor = await authorizeCaseActor(caseId)
   if (!actor) return { error: "No case found" }
@@ -515,9 +529,11 @@ export async function submitRequirementRoster(
       entity: "case_requirement",
       detail: { req_code: reqCode, ...sync },
     })
-    revalidatePath("/portal/checklist")
-    revalidatePath("/portal/documents")
-    revalidatePath("/portal/people")
+    if (!opts?.skipRevalidate) {
+      revalidatePath("/portal/checklist")
+      revalidatePath("/portal/documents")
+      revalidatePath("/portal/people")
+    }
 
     const noun = action.roster === "references" ? "reference" : "household member"
     const parts: string[] = []
@@ -561,7 +577,10 @@ export async function submitRequirementRoster(
  */
 export async function signRequirementDocument(
   reqCode: string,
-  base64Png?: string
+  base64Png?: string,
+  /** `skipRevalidate` — the sign step runs inside the questionnaire dialog, which
+   *  refreshes on close; a revalidate here would tear the dialog down mid-sign. */
+  opts?: { skipRevalidate?: boolean }
 ): Promise<Result> {
   await requireRole(["client"])
   const myCase = await getMyCase()
@@ -677,8 +696,10 @@ export async function signRequirementDocument(
     entityId: draft.id,
     detail: { req_code: reqCode, notarize: !!action.notarize },
   })
-  revalidatePath("/portal/checklist")
-  revalidatePath("/portal/documents")
+  if (!opts?.skipRevalidate) {
+    revalidatePath("/portal/checklist")
+    revalidatePath("/portal/documents")
+  }
   return { ok: true, documentId: draft.id }
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Plus, Trash2, ShieldAlert, Scale } from "lucide-react"
 import { toast } from "sonner"
 import type { Field, Questionnaire } from "@/lib/requirements/questionnaires"
@@ -87,6 +88,15 @@ export function QuestionnaireDialog({
   /** answers → sign. A signable document is a DRAFT until the sign step runs. */
   const [step, setStep] = useState<"answers" | "sign">("answers")
   const [pending, startTransition] = useTransition()
+  const router = useRouter()
+
+  // Close, THEN refresh — the actions run with skipRevalidate so the server tree
+  // never re-renders under the open dialog (which would tear out the sign step and
+  // self-close it). One refresh on close lands all the changes at once.
+  const close = () => {
+    onOpenChange(false)
+    router.refresh()
+  }
   /** A persistent block (e.g. a disqualifying answer) that stops generation. */
   const [blockMsg, setBlockMsg] = useState<string | null>(null)
 
@@ -141,7 +151,7 @@ export function QuestionnaireDialog({
             return
           }
         }
-        const r = await submitRequirementRoster(reqCode, values, caseId)
+        const r = await submitRequirementRoster(reqCode, values, caseId, { skipRevalidate: true })
         if (r.error) {
           toast.error(r.error)
           return
@@ -151,12 +161,12 @@ export function QuestionnaireDialog({
             setStep("sign")
           } else {
             toast.success("Draft prepared — the applicant will review and sign it.", { duration: 9000 })
-            onOpenChange(false)
+            close()
           }
           return
         }
         toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
-        onOpenChange(false)
+        close()
         return
       }
 
@@ -194,12 +204,12 @@ export function QuestionnaireDialog({
         else persisted[k] = v
       }
 
-      const saved = await saveRequirementAnswers(reqCode, persisted, caseId)
+      const saved = await saveRequirementAnswers(reqCode, persisted, caseId, { skipRevalidate: true })
       if (saved.error) {
         toast.error(saved.error)
         return
       }
-      const gen = await generateRequirementDocument(reqCode, caseId, ephemeral)
+      const gen = await generateRequirementDocument(reqCode, caseId, ephemeral, { skipRevalidate: true })
       if (gen.error) {
         toast.error(gen.error)
         return
@@ -218,12 +228,12 @@ export function QuestionnaireDialog({
           // A sponsor drafted a sworn document — it stays a draft until the
           // applicant reviews and signs. The sponsor never adopts.
           toast.success("Draft prepared — the applicant will review and sign it.", { duration: 9000 })
-          onOpenChange(false)
+          close()
         }
         return
       }
       toast.success("Your document is ready to download.")
-      onOpenChange(false)
+      close()
     })
   }
 
@@ -321,7 +331,7 @@ export function QuestionnaireDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(true) : close())}>
       {/* CENTERED, not a right-hand drawer: this is the main task on the screen,
           and a form pinned to one edge reads like a side panel you can ignore.
           `dark` is required — Radix portals mount at document.body, OUTSIDE the
@@ -344,9 +354,10 @@ export function QuestionnaireDialog({
             <SignDocument
               reqCode={reqCode}
               signatureOnFile={signatureOnFile}
+              deferRefresh
               onSigned={() => {
                 setStep("answers")
-                onOpenChange(false)
+                close()
               }}
             />
             <Button variant="ghost" className="w-full" onClick={() => setStep("answers")}>

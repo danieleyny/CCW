@@ -3,7 +3,67 @@
  * fixtures. The cases below are the ones that actually happen to people.
  */
 import { describe, expect, it } from "vitest"
-import { deriveLadder, reviewerLabel } from "@/lib/requirements/ladder"
+import { deriveLadder, hasCompletingEvidence, reviewerLabel } from "@/lib/requirements/ladder"
+
+describe("completing evidence — our own draft never counts", () => {
+  const base = {
+    mode: "generate" as string | undefined,
+    wetInk: false,
+    signedAt: false,
+    hasUpload: false,
+    documentId: false,
+    rosterBound: false,
+  }
+
+  it("generate + signable: an unsigned draft (document bound) is NOT evidence", () => {
+    // The draft is bound as document_id at generation — that must not count.
+    expect(hasCompletingEvidence({ ...base, documentId: true })).toBe(false)
+  })
+  it("generate + signable: the SAME document, once signed, IS evidence", () => {
+    expect(hasCompletingEvidence({ ...base, documentId: true, signedAt: true })).toBe(true)
+  })
+  it("generate + wet-ink: an unsigned/un-notarized draft is NOT evidence", () => {
+    expect(hasCompletingEvidence({ ...base, wetInk: true, documentId: true, signedAt: true })).toBe(false)
+  })
+  it("generate + wet-ink: an UPLOADED completed copy IS evidence", () => {
+    expect(hasCompletingEvidence({ ...base, wetInk: true, hasUpload: true })).toBe(true)
+  })
+  it("obtain: any uploaded document is evidence", () => {
+    expect(hasCompletingEvidence({ ...base, mode: "obtain", hasUpload: true })).toBe(true)
+    expect(hasCompletingEvidence({ ...base, mode: "obtain", documentId: true })).toBe(true)
+    expect(hasCompletingEvidence({ ...base, mode: "obtain" })).toBe(false)
+  })
+  it("roster: bound reference/cohabitant evidence counts; a stray draft does not", () => {
+    expect(hasCompletingEvidence({ ...base, mode: "roster", rosterBound: true })).toBe(true)
+    expect(hasCompletingEvidence({ ...base, mode: "roster" })).toBe(false)
+  })
+})
+
+describe("the ladder reflects it — an unsigned draft is 'Not started', not 'Received'", () => {
+  it("generate + signable, unsigned draft → pending (Need you)", () => {
+    const hasEvidence = hasCompletingEvidence({
+      mode: "generate", wetInk: false, signedAt: false, hasUpload: false, documentId: true, rosterBound: false,
+    })
+    expect(deriveLadder({ status: "pending", hasEvidence })).toBe("pending")
+  })
+  it("generate + signable, signed → submitted then satisfied → approved", () => {
+    const hasEvidence = hasCompletingEvidence({
+      mode: "generate", wetInk: false, signedAt: true, hasUpload: false, documentId: true, rosterBound: false,
+    })
+    expect(deriveLadder({ status: "pending", hasEvidence })).toBe("submitted")
+    expect(deriveLadder({ status: "satisfied", hasEvidence })).toBe("approved")
+  })
+  it("generate + wet-ink, draft only → pending; uploaded copy → submitted", () => {
+    const draftOnly = hasCompletingEvidence({
+      mode: "generate", wetInk: true, signedAt: true, hasUpload: false, documentId: true, rosterBound: false,
+    })
+    expect(deriveLadder({ status: "pending", hasEvidence: draftOnly })).toBe("pending")
+    const uploaded = hasCompletingEvidence({
+      mode: "generate", wetInk: true, signedAt: true, hasUpload: true, documentId: true, rosterBound: false,
+    })
+    expect(deriveLadder({ status: "pending", hasEvidence: uploaded })).toBe("submitted")
+  })
+})
 
 describe("status ladder", () => {
   it("nothing provided yet", () => {

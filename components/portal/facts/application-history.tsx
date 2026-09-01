@@ -7,6 +7,7 @@ import { portalDate } from "@/lib/forms/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 import type { AddressHistoryEntry, EmploymentHistoryEntry } from "@/lib/intake/answers"
 
 /**
@@ -63,17 +64,31 @@ export function ApplicationHistory({
   residence: AddressHistoryEntry[]
   employment: EmploymentHistoryEntry[]
   /** #9 — seed employment row 1 from the employer we already collected. */
-  employerSeed?: { employed: boolean; startDate: string; name: string; occupation: string }
+  employerSeed?: { employed: boolean; startDate: string; name: string; address: string; occupation: string }
   outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
 }) {
-  // #9 — when the case has an employer with a start date and NO employment history yet,
-  // seed row 1 from it (marked _seeded so a later employer edit never clobbers an edit).
+  // #9 — when the case has an employer with a start date and no MEANINGFUL employment
+  // history yet, seed row 1 with the actual VALUES from it (dates, business name,
+  // business address, occupation) — not just a coverage notice above a blank row.
+  // Marked _seeded so a later employer edit offers a re-sync rather than clobbering.
   const seededEmp = (): EmploymentHistoryEntry[] => {
-    if (employment.length) return employment
+    const meaningful = employment.filter(
+      (h) => h.employerName || h.employer || h.employerAddress || h.occupation || h.fromMonth
+    )
+    if (meaningful.length) return employment
     if (employerSeed?.employed && employerSeed.startDate) {
-      return [{ fromMonth: employerSeed.startDate, toMonth: "", employerName: employerSeed.name, occupation: employerSeed.occupation, _seeded: true } as EmploymentHistoryEntry]
+      return [
+        {
+          fromMonth: employerSeed.startDate,
+          toMonth: "", // Present
+          employerName: employerSeed.name,
+          employerAddress: employerSeed.address,
+          occupation: employerSeed.occupation,
+          _seeded: true,
+        } as EmploymentHistoryEntry,
+      ]
     }
-    return [{}]
+    return employment.length ? employment : [{}]
   }
   const [res, setRes] = useState<AddressHistoryEntry[]>(residence.length ? residence : [{}])
   const [emp, setEmp] = useState<EmploymentHistoryEntry[]>(seededEmp)
@@ -124,9 +139,9 @@ export function ApplicationHistory({
       onBlur={onSectionBlur}
     >
       <div>
-        <h3 className="text-sm font-semibold">Five-year history & out-of-city licence</h3>
+        <h3 className="text-sm font-semibold">Five-year history</h3>
         <p className="mt-0.5 text-xs text-text-mid">
-          Questions 29 and 9 on the application. List newest first.
+          Question 29 on the application — where you&apos;ve lived and worked. List newest first.
         </p>
       </div>
 
@@ -167,7 +182,7 @@ export function ApplicationHistory({
       {/* Employment — Q29 */}
       <div className="space-y-2">
         <Label className="text-xs">Places of employment — past 5 years</Label>
-        <EmploymentCoverage seed={employerSeed} />
+        <EmploymentCoverage seed={employerSeed} show={emp.some((h) => h._seeded)} />
         {emp.map((h, i) => (
           <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
             {h._seeded && (
@@ -208,8 +223,14 @@ export function ApplicationHistory({
         </Button>
       </div>
 
-      {/* Out-of-city licence (Q9) — behind a Yes/No; the four fields render only on Yes. */}
-      <div className="space-y-2">
+      {/* Other pistol licences (Q9) — its OWN card, not part of employment: it's a
+          different question about a licence you already hold, not a job. Behind a
+          Yes/No; the four fields render only on Yes. */}
+      <div className="space-y-2 rounded-md border border-hairline bg-surface-2/30 p-3">
+        <div>
+          <h3 className="text-sm font-semibold">Other pistol licences</h3>
+          <p className="mt-0.5 text-xs text-text-mid">Question 9 on the application.</p>
+        </div>
         <Label className="text-xs">Do you hold a pistol licence from another New York county?</Label>
         <select
           className="h-9 w-full max-w-[12rem] rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm outline-none"
@@ -267,19 +288,40 @@ export function ApplicationHistory({
   )
 }
 
-/** #9 — a one-line coverage note based on the seeded employer's start date. */
-function EmploymentCoverage({ seed }: { seed?: { employed: boolean; startDate: string } }) {
-  if (!seed?.employed || !seed.startDate) return null
+/**
+ * #9 — a proper CONFIRMATION callout shown only when we actually seeded the row from
+ * the employer facts. It says "we filled this in" and whether the job covers the full
+ * five years. Confirmation tone (ok / signal) with a left rule + icon — NOT brass
+ * (brass means "your turn"), and never floated above an empty row.
+ */
+function EmploymentCoverage({
+  seed,
+  show,
+}: {
+  seed?: { employed: boolean; startDate: string }
+  show: boolean
+}) {
+  if (!show || !seed?.employed || !seed.startDate) return null
   const start = new Date(seed.startDate)
   if (isNaN(start.getTime())) return null
   const fiveYearsAgo = new Date()
   fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
   const coversAll = start.getTime() <= fiveYearsAgo.getTime()
+  const Icon = coversAll ? Check : AlertCircle
   return (
-    <p className="rounded-md border border-signal/25 bg-signal/[0.05] p-2 text-[11px] text-text-mid">
-      {coversAll
-        ? "This job covers the full five years. Nothing else needed here."
-        : `This covers back to ${portalDate(seed.startDate)}. Add anything before that.`}
-    </p>
+    <div
+      className={cn(
+        "flex items-start gap-2 rounded-md border-l-2 p-3 text-xs text-text-mid",
+        coversAll ? "border-ok bg-ok/[0.06]" : "border-signal bg-signal/[0.06]"
+      )}
+    >
+      <Icon className={cn("mt-0.5 size-4 shrink-0", coversAll ? "text-ok" : "text-signal")} />
+      <span>
+        <span className="font-medium text-foreground">We filled this in from your employer details.</span>{" "}
+        {coversAll
+          ? "This job covers the full five years, so nothing more is needed here — just check it's right."
+          : `This covers back to ${portalDate(seed.startDate)}. Add anything before that.`}
+      </span>
+    </div>
   )
 }

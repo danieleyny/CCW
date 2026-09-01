@@ -54,6 +54,18 @@ export default async function DetailsPage() {
 
   const fx = (k: string) => facts[k] ?? ""
 
+  // Assemble the employer's business address from the split fact keys (mirrors the
+  // residence street/unit/city/state/zip layout) so the seeded employment row's
+  // "Business address" is populated too, not left blank.
+  const employerAddress = [
+    [fx("employer.address.street"), fx("employer.unit")].filter(Boolean).join(", "),
+    [fx("employer.address.city"), [fx("employer.address.state"), fx("employer.address.zip")].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", "),
+  ]
+    .filter(Boolean)
+    .join(", ")
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,6 +87,7 @@ export default async function DetailsPage() {
           employed: fx("employer.employed") === "Yes",
           startDate: fx("employer.startDate"),
           name: fx("employer.name"),
+          address: employerAddress,
           occupation: fx("applicant.jobTitle"),
         }}
         outOfCity={{

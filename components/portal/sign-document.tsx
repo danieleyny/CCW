@@ -18,18 +18,22 @@ export function SignDocument({
   reqCode,
   signatureOnFile,
   onSigned,
+  deferRefresh = false,
 }: {
   reqCode: string
   /** Base64 PNG of the signature already captured for this case, if any. */
   signatureOnFile: string | null
   onSigned?: () => void
+  /** Inside the questionnaire dialog: skip the server revalidate (it would tear
+   *  the open dialog down mid-sign) and let the dialog refresh once on close. */
+  deferRefresh?: boolean
 }) {
   const [resign, setResign] = useState(!signatureOnFile)
   const [pending, startTransition] = useTransition()
 
   const sign = (base64?: string) =>
     startTransition(async () => {
-      const r = await signRequirementDocument(reqCode, base64)
+      const r = await signRequirementDocument(reqCode, base64, { skipRevalidate: deferRefresh })
       if (r.error) {
         toast.error(r.error)
         return

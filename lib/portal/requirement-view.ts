@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import type { MyCase } from "@/lib/portal"
 import { getCaseRequirements } from "@/lib/requirements"
-import { actionFor } from "@/lib/requirements/actions"
+import { actionFor, actionWetInk } from "@/lib/requirements/actions"
 import { questionnaireFor, prefillFor, type PrefillContext } from "@/lib/requirements/questionnaires"
 import { formatLegalAddress, type WizardAnswers } from "@/lib/intake/answers"
 import type { GeneratedDoc, ReferenceProgress, RefPersonState } from "@/components/portal/requirement-action"
@@ -22,7 +22,7 @@ import type { LibraryFile } from "@/components/portal/document-library"
 import type { CurrentDoc } from "@/components/portal/document-uploader"
 import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { computeFeeSummary, type FeeSummary } from "@/lib/fees"
-import { deriveLadder } from "@/lib/requirements/ladder"
+import { deriveLadder, hasCompletingEvidence } from "@/lib/requirements/ladder"
 import { requiredReferences } from "@/lib/intake/schema"
 import { cohabitantState } from "@/lib/cohabitants/process"
 import { resolveFacts } from "@/lib/facts/resolve"
@@ -335,10 +335,18 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
     // status + evidence + the latest review, never stored (lib/requirements/ladder).
     ladder: deriveLadder({
       status: row.status,
-      // A current uploaded doc counts as evidence even if case_requirements
-      // .document_id was never bound (the desync that showed IDN-03 as both
-      // "Approved" in the widget and "Not started" on the card).
-      hasEvidence: !!(row.document_id || row.reference_id || row.cohabitant_id) || !!currentDoc,
+      // COMPLETING evidence only — never our own unsigned/un-notarized generated
+      // draft (bound as document_id at generation). A generate+signable req needs
+      // signed_at; a generate+wet-ink req needs an uploaded completed copy; obtain
+      // counts an upload or a bound doc; roster counts reference/cohabitant binding.
+      hasEvidence: hasCompletingEvidence({
+        mode: act?.mode,
+        wetInk: !!actionWetInk(act),
+        signedAt: !!generated[row.req_code]?.signedAt,
+        hasUpload: !!currentDoc,
+        documentId: !!row.document_id,
+        rosterBound: !!(row.reference_id || row.cohabitant_id),
+      }),
       docStatus: currentDoc?.status ?? null,
       latestReview: review?.decision ? { decision: review.decision } : null,
       rosterInvited:

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Lock, ArrowRight, Users, ShieldCheck, ChevronDown, Check } from "lucide-react"
 import { groupByCategory } from "@/lib/requirements/categories"
@@ -12,6 +12,8 @@ import type { ReferenceProgress } from "@/components/portal/requirement-action"
 import { cn } from "@/lib/utils"
 
 type Filter = "all" | "needsYou" | "received" | "done"
+const FILTERS: Filter[] = ["all", "needsYou", "received", "done"]
+const FILTER_KEY = "vaultFilter"
 
 /**
  * CONCIERGE — the document/requirement surface. It is NOT a second card implementation:
@@ -31,7 +33,30 @@ export function DocumentVault({
   referenceProgress: ReferenceProgress | null
   cohabitantProgress: ReferenceProgress | null
 }) {
-  const [filter, setFilter] = useState<Filter>("all")
+  // Open on what's left, not "All" — the list shortens as items complete, which is
+  // the whole point of the filter. Default to "Need you"; a choice made this session
+  // is remembered (sessionStorage) but a fresh visit resets to "Need you".
+  const [filter, setFilter] = useState<Filter>("needsYou")
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(FILTER_KEY)
+      // Hydrate the remembered choice AFTER mount, not in a lazy initializer — the
+      // server can't read sessionStorage, so a render-time read would mismatch on
+      // hydration. This post-mount setState is the correct pattern here.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (stored && FILTERS.includes(stored as Filter)) setFilter(stored as Filter)
+    } catch {
+      /* private mode / no storage — the "Need you" default stands */
+    }
+  }, [])
+  const choose = (f: Filter) => {
+    setFilter(f)
+    try {
+      sessionStorage.setItem(FILTER_KEY, f)
+    } catch {
+      /* ignore */
+    }
+  }
 
   // The applicant's own applicable requirements (skip system-verified na + unenforced).
   // Disclosure GENERATE items (Q10–28 affirmations) have their own section on this page,
@@ -58,6 +83,11 @@ export function DocumentVault({
   )
   const total = applicable.length
 
+  // "Need you" empty but the vault isn't → don't strand the applicant on a blank
+  // panel: show everything, and say why.
+  const needsYouEmpty = filter === "needsYou" && totals.needsYou === 0
+  const effectiveFilter: Filter = needsYouEmpty ? "all" : filter
+
   return (
     <section className="space-y-5">
       <div>
@@ -77,15 +107,21 @@ export function DocumentVault({
       ) : (
         <>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            <FilterChip active={filter === "all"} onClick={() => setFilter("all")} label="All" n={total} tone="muted" />
-            <FilterChip active={filter === "needsYou"} onClick={() => setFilter("needsYou")} label="Need you" n={totals.needsYou} tone="brass" />
-            <FilterChip active={filter === "received"} onClick={() => setFilter("received")} label="With us" n={totals.received} tone="signal" />
-            <FilterChip active={filter === "done"} onClick={() => setFilter("done")} label="Done" n={totals.done} tone="ok" />
+            <FilterChip active={effectiveFilter === "all"} onClick={() => choose("all")} label="All" n={total} tone="muted" />
+            <FilterChip active={effectiveFilter === "needsYou"} onClick={() => choose("needsYou")} label="Need you" n={totals.needsYou} tone="brass" />
+            <FilterChip active={effectiveFilter === "received"} onClick={() => choose("received")} label="With us" n={totals.received} tone="signal" />
+            <FilterChip active={effectiveFilter === "done"} onClick={() => choose("done")} label="Done" n={totals.done} tone="ok" />
           </div>
+
+          {needsYouEmpty && (
+            <p className="flex items-start gap-1.5 rounded-md border border-ok/25 bg-ok/[0.06] p-2.5 text-sm text-ok">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0" /> Nothing needs you right now — showing everything.
+            </p>
+          )}
 
           <div className="space-y-6">
             {groups.map(({ category, items: catItems }) => (
-              <VaultSection key={category.key} title={category.label} items={catItems} filter={filter} ctx={ctx} />
+              <VaultSection key={category.key} title={category.label} items={catItems} filter={effectiveFilter} ctx={ctx} />
             ))}
           </div>
         </>
