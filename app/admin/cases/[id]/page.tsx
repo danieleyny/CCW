@@ -209,14 +209,11 @@ export default async function CaseFilePage({
     }
   }
 
-  // Signed URLs for uploaded documents.
-  const docs: DocRow[] = await Promise.all(
-    (docsRes.data ?? []).map(async (d) => {
-      let signedUrl: string | null = null
-      if (d.file_path) {
-        const { data } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 300)
-        signedUrl = data?.signedUrl ?? null
-      }
+  // Document rows. The signed URL is minted ON CLICK (openCaseDocument), never here —
+  // a render-time URL (5-min TTL) expires while the reviewer reads the page and then
+  // fails with InvalidJWT when they click it.
+  const docs: DocRow[] = (docsRes.data ?? []).map((d) => {
+      const hasFile = !!d.file_path
       // req_code is the per-upload binding (what the uploader was answering);
       // fall back to the satisfying-doc binding for legacy rows with no req_code.
       const reqCode = (d.req_code && reqByCode.has(d.req_code)) ? d.req_code : (reqCodeByDocId.get(d.id) ?? null)
@@ -229,14 +226,13 @@ export default async function CaseFilePage({
         .filter((t): t is string => Boolean(t))
       return {
         id: d.id, type: d.type, status: d.status, notarized: d.notarized,
-        version: d.version, review_notes: d.review_notes, file_name: d.file_name, signedUrl,
+        version: d.version, review_notes: d.review_notes, file_name: d.file_name, hasFile,
         generated: d.generated, signed_at: d.signed_at, created_at: d.created_at,
         reqCode, reqTitle: req?.title ?? null, acceptance: req?.acceptance ?? null,
         reqBlocking: req?.blocking ?? false, reqStatus: req?.status ?? null,
         sameFileAs: alsoTitles,
       }
     })
-  )
   const docNameById = new Map((docsRes.data ?? []).map((d) => [d.id, d.file_name ?? d.type]))
 
   // Requirements rows (the one checklist) + gate.
@@ -580,7 +576,7 @@ export default async function CaseFilePage({
         </TabsContent>
 
         <TabsContent value="documents" className="mt-4">
-          <DocumentReview caseId={kase.id} clientId={client.id} documents={docs} />
+          <DocumentReview caseId={kase.id} clientId={client.id} documents={docs} openDocument={openCaseDocument} />
         </TabsContent>
 
         <TabsContent value="people" className="mt-4 space-y-6">

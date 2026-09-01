@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { ExternalLink, Check, X, Link2 } from "lucide-react"
+import { ExternalLink, Check, X, Link2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { reviewDocument } from "@/app/admin/actions"
 import { actionFor, actionWetInk } from "@/lib/requirements/actions"
@@ -25,7 +25,8 @@ export interface DocRow {
   version: number
   review_notes: string | null
   file_name: string | null
-  signedUrl: string | null
+  /** Whether there's a stored file to view (the URL is minted on click, not at render). */
+  hasFile: boolean
   /** Generated on platform (vs uploaded by the client). */
   generated: boolean
   /** ISO signing timestamp; null on a generated document means unsigned DRAFT. */
@@ -108,14 +109,41 @@ interface Group {
   docs: DocRow[]
 }
 
+/**
+ * "View" mints its signed URL ON CLICK — a render-time URL (5-min TTL) baked into an
+ * href expires while the reviewer reads the page, which surfaced as an InvalidJWT
+ * ("exp" claim failed) error when they finally clicked it.
+ */
+function ViewButton({ documentId, openDocument }: { documentId: string; openDocument: (id: string) => Promise<{ url?: string; error?: string }> }) {
+  const [pending, start] = useTransition()
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          const r = await openDocument(documentId)
+          if (r.url) window.open(r.url, "_blank", "noopener,noreferrer")
+          else toast.error(r.error ?? "Couldn't open the file.")
+        })
+      }
+    >
+      {pending ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />} View
+    </Button>
+  )
+}
+
 export function DocumentReview({
   caseId,
   clientId,
   documents,
+  openDocument,
 }: {
   caseId: string
   clientId: string
   documents: DocRow[]
+  openDocument: (documentId: string) => Promise<{ url?: string; error?: string }>
 }) {
   const [pending, startTransition] = useTransition()
   const [rejecting, setRejecting] = useState<DocRow | null>(null)
@@ -288,12 +316,8 @@ export function DocumentReview({
                         )}
                       </div>
 
-                      {doc.signedUrl ? (
-                        <Button asChild variant="outline" size="sm">
-                          <a href={doc.signedUrl} target="_blank" rel="noreferrer">
-                            <ExternalLink className="size-4" /> View
-                          </a>
-                        </Button>
+                      {doc.hasFile ? (
+                        <ViewButton documentId={doc.id} openDocument={openDocument} />
                       ) : (
                         <span className="text-xs text-muted-foreground">no file</span>
                       )}
