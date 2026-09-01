@@ -1,7 +1,6 @@
 import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { fillTemplate } from "@/lib/forms/fill"
-import { watermarkDraftPdf } from "@/lib/forms/watermark"
 import { safeguardTokenActive, safeguardFillValues } from "@/lib/safeguard/invite"
 
 /**
@@ -22,14 +21,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   const values = await safeguardFillValues(admin, invite.case_id)
   const filled = await fillTemplate("nypd_safeguard_acknowledgement", values)
-  // Handed over to be signed before a witness — stamp it so the blank form can never
-  // be mistaken for a completed one.
-  const bytes = await watermarkDraftPdf(filled.bytes)
+  // This IS the working form: the safeguard prints it and signs in front of a
+  // WITNESS. NO watermark/banner — a "NOT FOR FILING" page would be refused, and
+  // the state machine (not ink) keeps the item outstanding until the completed copy
+  // is uploaded. The "to be witnessed" cue lives in the filename, which never prints.
+  const bytes = filled.bytes
 
   return new Response(Buffer.from(bytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="safeguard-acknowledgement.pdf"`,
+      "Content-Disposition": `attachment; filename="safeguard-acknowledgement-to-be-witnessed.pdf"`,
       "Cache-Control": "no-store",
     },
   })

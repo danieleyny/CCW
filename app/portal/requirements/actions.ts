@@ -5,7 +5,6 @@ import { requireRole } from "@/lib/auth"
 import { authorizeCaseActor } from "@/lib/case-actor"
 import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
 import { formTemplate, templateWetInk } from "@/lib/forms/templates"
-import { watermarkDraftPdf } from "@/lib/forms/watermark"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { rematerializeCase } from "@/lib/requirements/rematerialize"
@@ -299,12 +298,13 @@ export async function generateRequirementDocument(
       if (filled.missing.length && process.env.NODE_ENV !== "production") {
         throw new Error(`Fill mapping error on ${action.templateKey}: unresolved fields → ${filled.missing.join(", ")}`)
       }
-      // WET-INK drafts are handed over to be signed on paper — stamp them DRAFT —
-      // UNSIGNED so the filled form can never look finished (#10). A previously-
-      // uploaded completed copy no longer matches this regenerated draft, so mark it
-      // stale — never keep it attached to a draft that has since changed (#8).
+      // WET-INK forms are the working ORIGINAL the applicant/third party prints and
+      // signs before a notary or a witness — NEVER watermark or banner them (a notary
+      // handed a "NOT FOR FILING" page will refuse it). The vault state machine keeps
+      // the item outstanding until the completed copy is uploaded; the intent lives in
+      // the filename, which never prints. A regenerated draft also makes any previously
+      // uploaded completed copy stale — never keep it attached to changed content (#8).
       const wet = templateWetInk(filled.template)
-      const draftBytes = wet ? await watermarkDraftPdf(filled.bytes) : filled.bytes
       if (wet) {
         await admin
           .from("documents")
@@ -313,13 +313,16 @@ export async function generateRequirementDocument(
           .eq("req_code", reqCode)
           .eq("generated", false)
       }
+      const fileName = wet
+        ? `${action.templateKey}-to-be-${wet === "notary" ? "notarised" : "witnessed"}.pdf`
+        : `${action.templateKey}.pdf`
       documentId = await storeGeneratedDocument(admin, {
         caseId: actor.caseId,
         clientId: actor.clientId,
         reqCode,
         doc: {
-          bytes: draftBytes,
-          fileName: `${action.templateKey}.pdf`,
+          bytes: filled.bytes,
+          fileName,
           documentType: action.documentType as never,
           label: filled.template.officialTitle,
         },
@@ -488,7 +491,7 @@ export async function submitRequirementRoster(
         ok: true,
         documentId: gen.documentId,
         needsSignature: gen.needsSignature,
-        summary: "We prepared your sole-occupancy statement. Sign it, then have it notarized and upload the signed copy.",
+        summary: "We prepared your sole-occupancy statement. Sign it in front of a notary — who then completes and stamps it — and upload the notarized copy.",
       }
     }
 

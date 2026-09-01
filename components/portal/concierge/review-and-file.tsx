@@ -15,8 +15,11 @@ import {
 } from "lucide-react"
 import { signRequirementDocument } from "@/app/portal/requirements/actions"
 import type { ReviewItem } from "@/lib/concierge/review"
+import type { DocumentType } from "@/lib/doc-types"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { NotaryRoutes } from "@/components/shared/notary-options"
+import { DocumentUploader } from "@/components/portal/document-uploader"
 import { PrepareInvestigationForms } from "@/components/portal/concierge/prepare-investigation-forms"
 
 // The applicant files on the NYPD portal — we never submit for them. Same URLs
@@ -32,10 +35,17 @@ const NYPD_INSTRUCTIONS = "https://licensing.nypdonline.org/new-app-instruction"
 export function ReviewAndFile({
   items,
   ready,
+  caseId,
+  clientId,
+  area = "",
 }: {
   items: ReviewItem[]
   /** Packet assembled + QA-passed (stage ≥ application_assembled). */
   ready: boolean
+  caseId: string
+  clientId: string
+  /** Applicant ZIP/neighborhood, to scope the in-person notary options. */
+  area?: string
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -84,62 +94,86 @@ export function ReviewAndFile({
       {items.length > 0 && (
         <div className="space-y-3">
           <p className="text-sm text-text-mid">
-            These are the documents we prepared that are yours to sign. One tap applies the signature you
-            already gave us — no redrawing.
+            The documents we prepared that need you. Some you sign here with one tap — no redrawing. The
+            ones that must be signed on paper you download, complete in front of a notary or a witness, and
+            upload back.
           </p>
           {items.map((item) => (
             <div
               key={item.reqCode}
               id={item.reqCode}
-              className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline bg-card p-4"
+              className="scroll-mt-24 rounded-lg border border-hairline bg-card p-4"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  {item.signed ? (
-                    <Check className="size-4 shrink-0 text-ok" />
-                  ) : (
-                    <PenLine className="size-4 shrink-0 text-brass" />
-                  )}
-                  <span className="text-sm font-medium">{item.title}</span>
-                </div>
-                {item.signed ? (
-                  <p className="mt-0.5 flex items-center gap-1 pl-6 text-xs text-ok">
-                    Signed{item.notarize && (
-                      <span className="text-warn">
-                        {" "}
-                        · <Stamp className="inline size-3" /> take it to a notary next
-                      </span>
-                    )}
-                  </p>
-                ) : (
-                  item.notarize && (
-                    <p className="mt-0.5 pl-6 text-xs text-text-low">You&apos;ll sign, then have it notarized.</p>
-                  )
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {item.url && (
-                  <Button asChild size="sm" variant="ghost">
-                    <a href={item.url} target="_blank" rel="noreferrer">
-                      <ExternalLink className="size-4" /> View
-                    </a>
-                  </Button>
-                )}
-                {!item.signed && (
-                  <Button
-                    size="sm"
-                    disabled={pending && busyCode === item.reqCode}
-                    onClick={() => sign(item.reqCode)}
-                  >
-                    {pending && busyCode === item.reqCode ? (
-                      <Loader2 className="size-4 animate-spin" />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    {item.signed ? (
+                      <Check className="size-4 shrink-0 text-ok" />
+                    ) : item.wetInk ? (
+                      <Stamp className="size-4 shrink-0 text-brass" />
                     ) : (
-                      <PenLine className="size-4" />
+                      <PenLine className="size-4 shrink-0 text-brass" />
                     )}
-                    Sign
-                  </Button>
-                )}
+                    <span className="text-sm font-medium">{item.title}</span>
+                  </div>
+                  {/* The instruction. NEVER "sign then notarise" — a jurat requires signing
+                      in the notary's/witness's presence, and we reject a pre-signed document. */}
+                  {item.signable ? (
+                    item.signed && <p className="mt-0.5 pl-6 text-xs text-ok">Signed — nothing more to do here.</p>
+                  ) : item.wetInk === "witness" ? (
+                    <p className="mt-0.5 pl-6 text-xs text-text-mid">
+                      Don&apos;t sign this yet — the person safeguarding your firearm signs it in front of a{" "}
+                      <b>witness</b>, who signs and prints their name in the witness block. No notary is needed.
+                      Then upload the completed copy.
+                    </p>
+                  ) : (
+                    <p className="mt-0.5 pl-6 text-xs text-text-mid">
+                      Don&apos;t sign this yet — you sign it <b>in front of the notary</b>, who then completes and
+                      stamps the certificate. Then upload the notarised copy.
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {item.url && (
+                    <Button asChild size="sm" variant="ghost">
+                      <a href={item.url} target="_blank" rel="noreferrer">
+                        {item.signable ? <ExternalLink className="size-4" /> : <Download className="size-4" />}
+                        {item.signable ? "View" : "Download the form"}
+                      </a>
+                    </Button>
+                  )}
+                  {item.signable && !item.signed && (
+                    <Button
+                      size="sm"
+                      disabled={pending && busyCode === item.reqCode}
+                      onClick={() => sign(item.reqCode)}
+                    >
+                      {pending && busyCode === item.reqCode ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <PenLine className="size-4" />
+                      )}
+                      Sign
+                    </Button>
+                  )}
+                </div>
               </div>
+
+              {/* Wet-ink: upload the completed copy — that is what finishes it. Notary
+                  routes only for notary documents; a witnessed form needs no notary. */}
+              {!item.signable && item.documentType && (
+                <div className="mt-3 space-y-3">
+                  <DocumentUploader
+                    caseId={caseId}
+                    clientId={clientId}
+                    type={item.documentType as DocumentType}
+                    reqCode={item.reqCode}
+                    label="Upload the completed copy"
+                    current={item.current}
+                  />
+                  {item.wetInk === "notary" && <NotaryRoutes area={area} />}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -187,7 +187,7 @@ export default async function ConciergeHome() {
       <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
 
       <div id="review" className="scroll-mt-20">
-        <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} />
+        <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} caseId={myCase.id} clientId={myCase.client_id} />
       </div>
 
       <section className="space-y-3">
