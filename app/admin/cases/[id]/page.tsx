@@ -45,6 +45,8 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApplicationTab } from "@/components/admin/application-tab"
 import { assembleApplicationTab } from "@/lib/portal/application-tab"
+import { assembleCompletion } from "@/lib/portal/completion"
+import { CompletionBars } from "@/components/admin/completion-bars"
 import { revealCaseSsn, openCaseDocument, setStepEntered } from "@/app/admin/cases/[id]/application-actions"
 import {
   Table,
@@ -57,10 +59,13 @@ import {
 
 export default async function CaseFilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ tab?: string }>
 }) {
   const { id } = await params
+  const { tab } = await searchParams
   await requireStaff()
   const supabase = await createClient()
 
@@ -493,16 +498,32 @@ export default async function CaseFilePage({
           </div>
 
           <ReticleProgress currentStage={stage} className="mt-6" />
+
+          {/* Completion at a glance — portal / interview / overall, one metrics pass. */}
+          <div className="mt-5 rounded-lg border border-hairline bg-surface-2/40 p-3">
+            <Suspense fallback={<div className="text-xs text-text-low">Computing completion…</div>}>
+              <CompletionBarsLoader caseId={id} />
+            </Suspense>
+          </div>
         </CardContent>
       </Card>
 
       {/* CONCIERGE Phase 5 — the done-for-you cockpit, only for concierge cases */}
       {kase.service_mode === "concierge" && (
-        <ConciergeCockpit caseId={kase.id} clientName={client.full_name} stage={stage} />
+        <ConciergeCockpit
+          caseId={kase.id}
+          clientName={client.full_name}
+          stage={stage}
+          metricsSlot={
+            <Suspense fallback={<div className="text-xs text-text-low">Computing completion…</div>}>
+              <CompletionBarsLoader caseId={id} compact />
+            </Suspense>
+          }
+        />
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="application">
+      <Tabs defaultValue={tab === "requirements" || tab === "documents" || tab === "intake" || tab === "disclosures" || tab === "people" || tab === "training" || tab === "notes" || tab === "tasks" || tab === "messages" || tab === "activity" ? tab : "application"}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="application">Application</TabsTrigger>
           <TabsTrigger value="requirements">Requirements ({blockingOpen})</TabsTrigger>
@@ -969,6 +990,13 @@ function Empty({ children }: { children: React.ReactNode }) {
  * page already passed requireStaff(). Uses the service-role client to read the SSN
  * PRESENCE (not value) and the concierge-prepared answers a client RLS session can't see.
  */
+/** Streams the three completion bars for the case header (and concierge cockpit). */
+async function CompletionBarsLoader({ caseId, compact = false }: { caseId: string; compact?: boolean }) {
+  const metrics = await assembleCompletion(createAdminClient(), caseId)
+  if (!metrics) return <p className="text-xs text-text-low">No application data yet — completion appears once intake is in.</p>
+  return <CompletionBars metrics={metrics} caseId={caseId} compact={compact} />
+}
+
 async function ApplicationTabLoader({ caseId }: { caseId: string }) {
   const admin = createAdminClient()
   const data = await assembleApplicationTab(admin, caseId)

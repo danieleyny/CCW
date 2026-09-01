@@ -13,6 +13,7 @@ import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { newReferenceToken } from "@/lib/references/process"
 import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
 import { paidPackageCaseIds } from "@/lib/packages"
+import { REQUIRED_UPLOAD_CODES } from "@/config/portal-steps"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -444,6 +445,91 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       title: "A case is ready for pre-filing QA sign-off",
       body: "Every gate check passes — review and sign off so the case can be assembled.",
       link: `/admin/cases/${k.id}`,
+    }))
+  }
+
+  // ── PORTAL PARITY Rule: a concierge case is READY TO ENTER into the NYPD portal ─
+  // Fires ONCE per case (windowKey = case id) to the assigned staff member, IN-APP AND
+  // BY EMAIL (the part qa_ready lacks), the moment every step 1–14 field, every required
+  // upload, and the signed answers record are in — and transcription hasn't started yet.
+  // Staff-only; the applicant is never emailed by this rule. Demo cases are skipped by
+  // fireOnce centrally.
+  // The readiness computation lives in a server-only module (it assembles the case's
+  // application values). engine.ts is intentionally NOT server-only — the tsx verify
+  // harnesses drive it — so load it via a GUARDED dynamic import: under Next/cron and
+  // the test stub it resolves; under a plain-node harness it rejects and we skip.
+  let assembleApplicationTab: ((admin: DB, caseId: string) => Promise<{ readiness: { readyToEnter: boolean }; metrics: { portal: { done: number; total: number }; interview: { done: number; total: number }; overall: { done: number; total: number } } } | null>) | null = null
+  try {
+    ;({ assembleApplicationTab } = await import("@/lib/portal/application-tab"))
+  } catch {
+    assembleApplicationTab = null // server-only unavailable in this context
+  }
+  if (assembleApplicationTab) {
+    const assemble = assembleApplicationTab
+    const { data: entryCandidates } = await admin
+      .from("cases")
+      .select("id, clients(full_name, assigned_staff)")
+      .eq("status", "active")
+      .eq("service_mode", "concierge")
+      .in("stage", ["document_collection", "notarization"])
+    for (const k of entryCandidates ?? []) {
+      const cl = k.clients as unknown as { full_name: string; assigned_staff: string | null } | null
+      const staffId = cl?.assigned_staff
+      if (!staffId) continue
+      // "Not already marked entered" — skip if a staffer has begun transcribing this case.
+      const { count: progressRows } = await admin
+        .from("portal_entry_progress")
+        .select("case_id", { count: "exact", head: true })
+        .eq("case_id", k.id)
+      if ((progressRows ?? 0) > 0) continue
+      const data = await assemble(admin, k.id)
+      if (!data || !data.readiness.readyToEnter) continue
+      const m = data.metrics
+      const { data: staffUser } = await admin.auth.admin.getUserById(staffId)
+      push(await fireOnce(admin, {
+        ruleKey: "portal_entry_ready",
+        target: staffId,
+        windowKey: k.id, // once per case
+        caseId: k.id,
+        recipient: staffId,
+        email: staffUser?.user?.email ?? null,
+        kind: "action_required",
+        title: "A case is ready to enter into the NYPD portal",
+        body: `Everything needed to begin ${cl?.full_name ?? "the applicant"}'s online application is in. Portal ${m.portal.done}/${m.portal.total} · Interview ${m.interview.done}/${m.interview.total} · Overall ${m.overall.done}/${m.overall.total}.`,
+        link: `/admin/cases/${k.id}?tab=application`,
+        cta: { label: "Open the Application tab", url: `${siteBase()}/admin/cases/${k.id}?tab=application` },
+      }))
+    }
+  }
+
+  // ── PORTAL PARITY Rule: portal entry BLOCKED — a required upload on a concierge case
+  // was sent back. A distinct rule (not a re-fire of portal_entry_ready), once per
+  // rejected document, to the assigned staff member so they know the case slipped.
+  const { data: rejectedReq } = await admin
+    .from("documents")
+    .select("id, req_code, case_id")
+    .eq("status", "rejected")
+    .in("req_code", [...REQUIRED_UPLOAD_CODES])
+  const blockedCaseIds = [...new Set((rejectedReq ?? []).map((d) => d.case_id))]
+  const { data: blockedCases } = blockedCaseIds.length
+    ? await admin.from("cases").select("id, service_mode, clients(assigned_staff)").in("id", blockedCaseIds).eq("service_mode", "concierge")
+    : { data: [] as { id: string; service_mode: string; clients: unknown }[] }
+  const staffByBlockedCase = new Map(
+    (blockedCases ?? []).map((c) => [c.id, (c.clients as unknown as { assigned_staff: string | null } | null)?.assigned_staff ?? null])
+  )
+  for (const d of rejectedReq ?? []) {
+    const staffId = staffByBlockedCase.get(d.case_id)
+    if (!staffId) continue
+    push(await fireOnce(admin, {
+      ruleKey: "portal_entry_blocked",
+      target: staffId,
+      windowKey: d.id, // once per rejected required-upload document
+      caseId: d.case_id,
+      recipient: staffId,
+      kind: "action_required",
+      title: "Portal entry blocked — a required upload was sent back",
+      body: `A required portal upload (${d.req_code}) on this concierge case was sent back. The case can't be finalized until it's replaced and accepted.`,
+      link: `/admin/cases/${d.case_id}?tab=application`,
     }))
   }
 

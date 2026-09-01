@@ -1,4 +1,5 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
+import { REQUIRED_UPLOAD_SLOTS } from "@/config/portal-steps"
 import type { ApplicationValues } from "@/lib/forms/application"
 
 /**
@@ -25,14 +26,9 @@ export interface PortalReadiness {
 const DETAILS = "/portal/details"
 const CHECKLIST = "/portal/checklist"
 
-/** The portal_upload requirements that must be accepted before finalizing. */
-const REQUIRED_UPLOADS: Record<string, string> = {
-  "PHO-01": "Recent photograph",
-  "IDN-01": "Government-issued ID",
-  "IDN-02": "Proof of date of birth",
-  "RES-01": "Proof of residence",
-  "SGI-01": "Safeguard's photo ID",
-}
+// The required uploads come from the ONE source of truth (config/portal-steps.ts —
+// the starred step-13 slots). There is no second list here; that drift is exactly what
+// portal-steps.ts exists to prevent.
 
 export interface ReadinessRequirement {
   reqCode: string
@@ -88,12 +84,18 @@ export function computePortalReadiness(
   // The signed answers + authorization record must be SIGNED.
   need(opts.signedRecordSatisfied, "Sign your answers + authorization", CHECKLIST)
 
-  // Finalize gate: required uploads accepted.
+  // Finalize gate: every STARRED portal upload slot accepted. Each slot may be filled
+  // by one of a small set of requirements (COH-01 or COH-02) — the engine materialises
+  // exactly one per case, so we check the materialised ones and skip a slot that isn't
+  // on this case at all.
   const finalizeMissing: ReadinessItem[] = []
-  for (const [code, label] of Object.entries(REQUIRED_UPLOADS)) {
-    const item = items.find((i) => i.reqCode === code)
-    if (item && item.status !== "na" && item.status !== "satisfied") {
-      finalizeMissing.push({ label, href: CHECKLIST })
+  for (const slot of REQUIRED_UPLOAD_SLOTS) {
+    const slotItems = slot.reqCodes
+      .map((code) => items.find((i) => i.reqCode === code))
+      .filter((i): i is ReadinessRequirement => !!i && i.status !== "na")
+    if (slotItems.length === 0) continue // not applicable to this case
+    if (!slotItems.some((i) => i.status === "satisfied")) {
+      finalizeMissing.push({ label: slot.portalLabel, href: CHECKLIST })
     }
   }
 

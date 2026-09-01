@@ -22,7 +22,7 @@ export async function assembleUploadSet(admin: DB, caseId: string): Promise<{ zi
   const data = await assembleApplicationTab(admin, caseId)
   if (!data) return null
 
-  const zipBaseByCode = new Map(PORTAL_UPLOAD_SLOTS.map((s) => [s.reqCode, s.zipBase]))
+  const zipBaseByLabel = new Map(PORTAL_UPLOAD_SLOTS.map((s) => [s.portalLabel, s.zipBase]))
   const withDoc = data.slots.filter((s) => s.documentId)
   const { data: docRows } = withDoc.length
     ? await admin.from("documents").select("id, file_path, file_name").in("id", withDoc.map((s) => s.documentId!))
@@ -37,7 +37,7 @@ export async function assembleUploadSet(admin: DB, caseId: string): Promise<{ zi
   ]
 
   for (const slot of data.slots) {
-    const zipBase = zipBaseByCode.get(slot.reqCode) ?? slot.reqCode.toLowerCase()
+    const zipBase = zipBaseByLabel.get(slot.portalLabel) ?? slot.portalLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")
     const star = slot.starred ? " (required)" : ""
     if (slot.documentId) {
       const doc = docById.get(slot.documentId)

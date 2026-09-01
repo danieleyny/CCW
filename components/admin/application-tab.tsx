@@ -254,11 +254,10 @@ function SsnReveal({ caseId, revealSsn }: { caseId: string; revealSsn: (caseId: 
 
 function railTone(section: WorksheetSection, slots: PortalSlotView[]): "ok" | "warn" | "danger" | "neutral" {
   if (section.kind === "uploads") {
-    const active = slots
-    if (active.some((s) => s.state === "rejected")) return "danger"
-    if (active.some((s) => s.starred && s.state !== "accepted")) return "warn"
-    if (active.length > 0 && active.every((s) => s.state === "accepted")) return "ok"
-    return "warn"
+    if (slots.some((s) => s.state === "rejected")) return "danger"
+    const required = slots.filter((s) => s.starred)
+    if (required.some((s) => s.state !== "accepted")) return "warn"
+    return required.length > 0 ? "ok" : "neutral"
   }
   if (section.kind === "checkpoint") return "neutral"
   return section.fields.some((f) => f.missing) ? "warn" : "ok"
@@ -338,31 +337,82 @@ function DocumentsStep({
       ) : (
         <div className="divide-y divide-hairline rounded-md border border-hairline">
           {slots.map((slot) => (
-            <SlotRow key={slot.reqCode} slot={slot} openDocument={openDocument} />
+            <SlotRow key={slot.portalLabel} slot={slot} openDocument={openDocument} />
           ))}
         </div>
       )}
 
       {heldForInterview.length > 0 && (
-        <div className="rounded-md border border-hairline bg-surface-2/40 p-3">
+        <div className="space-y-2 rounded-md border border-hairline bg-surface-2/40 p-3">
           <p className="flex items-center gap-1.5 text-xs font-medium text-text-mid">
-            <Lock className="size-3.5" /> Held for the interview — do NOT upload these to the portal
+            <Lock className="size-3.5" /> Held for the interview — do NOT upload these to the portal. The applicant brings the originals to the fingerprint appointment.
           </p>
-          <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-text-low">
+          <div className="divide-y divide-hairline rounded-md border border-hairline bg-card">
             {heldForInterview.map((h) => (
-              <li key={h.reqCode}>· {h.title}</li>
+              <InterviewRow key={h.reqCode} item={h} openDocument={openDocument} />
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </section>
   )
 }
 
+function InterviewRow({ item, openDocument }: { item: ApplicationTabData["heldForInterview"][number]; openDocument: (documentId: string) => Promise<{ url?: string; error?: string }> }) {
+  const [pending, start] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const meta = STATE_META[item.state]
+  const open = () => {
+    if (!item.documentId) return
+    start(async () => {
+      setError(null)
+      const r = await openDocument(item.documentId!)
+      if (r.url) window.open(r.url, "_blank", "noopener,noreferrer")
+      else setError(r.error ?? "Could not open")
+    })
+  }
+  return (
+    <div className={`flex items-start justify-between gap-3 px-3 py-2 ${item.state === "rejected" ? "bg-danger/5" : ""}`}>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 text-sm">
+          {item.title}
+          {item.notarizedRequired && (
+            <span className={`rounded px-1 py-0.5 text-[10px] ${item.notarized ? "bg-ok/10 text-ok" : "bg-surface-3 text-text-low"}`}>
+              {item.notarized ? "notarized" : "needs notary"}
+            </span>
+          )}
+        </div>
+        <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${meta.cls}`}>
+          <meta.Icon className="size-3.5" /> {item.state === "accepted" ? "In hand" : item.state === "submitted" ? "Received — awaiting review" : item.state === "rejected" ? "Sent back" : "Not yet in hand"}
+        </div>
+        {item.fileName && <div className="mt-0.5 truncate text-xs text-text-low">{item.fileName}</div>}
+        {item.rejectionNote && <div className="mt-0.5 text-xs text-danger">Note: {item.rejectionNote}</div>}
+        {error && <div className="mt-0.5 text-xs text-danger">{error}</div>}
+      </div>
+      {item.documentId && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={open}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-hairline px-2.5 py-1.5 text-xs text-text-mid hover:bg-surface-3 hover:text-foreground disabled:opacity-60"
+        >
+          {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ExternalLink className="size-3.5" />}
+          View
+        </button>
+      )}
+    </div>
+  )
+}
+
 function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (documentId: string) => Promise<{ url?: string; error?: string }> }) {
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const meta = STATE_META[slot.state]
+  // The Additional Documents catch-all is optional: an empty one reads neutrally, not
+  // as a missing required upload.
+  const meta =
+    slot.isCatchAll && slot.state === "missing"
+      ? { label: "None parked here", cls: "text-text-low", Icon: CircleDashed }
+      : STATE_META[slot.state]
   // Pre-flight: the portal rejects a PDF in the image-only Photograph slot. Catch it
   // here so a staffer doesn't get bounced mid-entry.
   const imageOnlyViolation = slot.imageOnly && /\.pdf$/i.test(slot.fileName ?? "")

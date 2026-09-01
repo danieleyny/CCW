@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Check, Loader2, ConciergeBell, FileSignature, CalendarClock, ShieldAlert } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { type CaseStageKey, isNypdControlled } from "@/config/stages"
@@ -18,10 +19,13 @@ export async function ConciergeCockpit({
   caseId,
   clientName,
   stage,
+  metricsSlot,
 }: {
   caseId: string
   clientName: string
   stage: CaseStageKey
+  /** The three completion bars, streamed in by the page (same component as the header). */
+  metricsSlot?: ReactNode
 }) {
   const supabase = await createClient()
   const [onboarding, gate, { data: reqs }] = await Promise.all([
@@ -58,6 +62,7 @@ export async function ConciergeCockpit({
         Operating on behalf of {firstName}. They watch your progress on their concierge dashboard — never
         your identity. Every advance you make in the tabs below shows up there.
       </p>
+      {metricsSlot && <div className="mt-3 rounded-md border border-hairline bg-card/60 p-3">{metricsSlot}</div>}
 
       {/* Onboarding status */}
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
