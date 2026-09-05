@@ -3,6 +3,7 @@ import { getAllPosts } from "@/lib/blog"
 import { CANONICAL_ORIGIN, canonical } from "@/lib/seo"
 import { MARKETING_ROUTES } from "@/lib/marketing-routes"
 import { getPublicInstructors } from "@/lib/public-data"
+import { publishedPartners } from "@/config/partners"
 import { I18N_ES_ENABLED, TRANSLATED_PATHS } from "@/config/i18n"
 
 /**
@@ -61,5 +62,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.4,
   }))
 
-  return [...routes, ...esRoutes, ...posts, ...instructors]
+  // Published attorney-referral partners, at their canonical vanity URL (empty until a
+  // partner is published). /partners/{slug} is not listed — it 308s to /{slug}.
+  const partners = publishedPartners().map((p) => ({
+    url: `${CANONICAL_ORIGIN}/${p.slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.4,
+  }))
+
+  return [...routes, ...esRoutes, ...posts, ...instructors, ...partners]
 }

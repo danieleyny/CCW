@@ -192,8 +192,11 @@ export default function DoINeedALawyerPage() {
           </li>
         </ul>
         <p className="mt-4 text-text-mid">
-          If that&apos;s you, tell us and we&apos;ll point you to a New York-licensed attorney. We
-          can still handle the paperwork beside them — but the legal judgment has to come from
+          If that&apos;s you, tell us and we&apos;ll point you to{" "}
+          <Link href="/partners" className="text-signal hover:underline">
+            a New York-licensed attorney
+          </Link>
+          . We can still handle the paperwork beside them — but the legal judgment has to come from
           someone licensed to give it.
         </p>
       </section>
@@ -223,10 +226,10 @@ export default function DoINeedALawyerPage() {
 
       <RelatedLinks
         links={[
+          { label: "Attorneys we refer you to", href: "/partners" },
           { label: "If your NYC gun license is denied", href: "/denied-appeal" },
           { label: "What we charge", href: "/pricing" },
           { label: "How the process works", href: "/how-it-works" },
-          { label: "Common questions", href: "/faq" },
         ]}
       />
     </>

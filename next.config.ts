@@ -123,6 +123,9 @@ const nextConfig: NextConfig = {
       { source: "/blog/nyc-ccw-requirements-2026", destination: "/requirements", permanent: true },
       { source: "/blog/how-long-does-nyc-ccw-take", destination: "/timeline", permanent: true },
       { source: "/blog/documents-you-need-for-nyc-ccw", destination: "/requirements", permanent: true },
+      // 1b. partner profile → its canonical vanity URL (exactly one canonical URL;
+      // both spellings resolve). Each new partner gets the same explicit pair.
+      { source: "/partners/ethanbrecher", destination: "/ethanbrecher", permanent: true },
       // 2. www → apex
       { source: "/:path*", has: [host(`www.${CANONICAL}`)], destination: `https://${CANONICAL}/:path*`, permanent: true },
       // 3a. brand aliases → canonical (path preserved)

@@ -1,6 +1,8 @@
 import { brand } from "@/config/brand"
 import { CANONICAL_ORIGIN, canonical, ogImage } from "@/lib/seo"
 import type { ServicePackage } from "@/lib/packages"
+import type { Partner } from "@/config/partners"
+import { partnerPath, partnerFullName } from "@/config/partners"
 
 /** Inline JSON-LD structured data. */
 export function JsonLd({ data }: { data: object }) {
@@ -293,6 +295,68 @@ export function instructorDirectorySchema(items: { name: string; slug: string }[
       position: i + 1,
       url: canonical(`/instructors/${it.slug}`),
       name: it.name,
+    })),
+  }
+}
+
+/**
+ * An attorney-referral PARTNER's profile — a real, independent person (like the
+ * instructor, distinct from the brand). A standalone Person with its own @id, whose
+ * `worksFor` points at HIS OWN LegalService node (his firm) — never nested under our
+ * organization and never listed as our employee/member/department. Getting this wrong
+ * would be a structured-data claim that we have an attorney on staff, which we do not.
+ */
+export function attorneyProfileSchema(p: Partner) {
+  const url = canonical(partnerPath(p))
+  const firmId = `${url}#firm`
+  const firm = {
+    "@type": "LegalService",
+    "@id": firmId,
+    name: p.firm,
+    telephone: p.phone,
+    url: p.website,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: p.address.street,
+      addressLocality: p.address.city,
+      addressRegion: p.address.state,
+      postalCode: p.address.zip,
+      addressCountry: "US",
+    },
+    ...(p.serves.length
+      ? { areaServed: p.serves.map((s) => ({ "@type": "AdministrativeArea", name: s })) }
+      : {}),
+  }
+  const person = {
+    "@type": "Person",
+    "@id": `${url}#person`,
+    name: partnerFullName(p),
+    jobTitle: "Attorney",
+    url,
+    description: p.headline,
+    worksFor: { "@id": firmId },
+    ...(p.education.length
+      ? { alumniOf: p.education.map((e) => ({ "@type": "EducationalOrganization", name: e.label })) }
+      : {}),
+    ...(p.serves.length
+      ? { areaServed: p.serves.map((s) => ({ "@type": "AdministrativeArea", name: s })) }
+      : {}),
+  }
+  return { "@context": "https://schema.org", "@graph": [person, firm] }
+}
+
+/** The /partners index as an ItemList tied to the site's WebSite node (like instructors). */
+export function attorneyDirectorySchema(partners: Partner[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Attorneys we refer applicants to",
+    isPartOf: { "@id": ID.website },
+    itemListElement: partners.map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: canonical(partnerPath(p)),
+      name: partnerFullName(p),
     })),
   }
 }

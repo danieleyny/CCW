@@ -64,6 +64,7 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: "/eligibility", label: "Eligibility quiz", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Service", llmsDescription: "A two-minute check of whether you likely qualify." },
   { path: "/book", label: "Book a consult", priority: 0.6, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Service" },
   { path: "/about", label: "About us", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Service" },
+  { path: "/partners", label: "Our Partners", priority: 0.6, changeFrequency: "monthly", lastReviewed: "2026-09-05", footerGroup: "Service", nav: true, llmsDescription: "Independent New York-licensed attorneys we refer applicants to when a case needs legal judgment we can't give — retaining one creates an attorney–client relationship with their firm alone, and we take no share of their fees." },
   // ── Boroughs (hub + spokes) ──────────────────────────────────────────────
   { path: "/gun-license", label: "By borough — overview", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
   { path: "/gun-license/manhattan", label: "Manhattan", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
