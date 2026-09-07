@@ -336,7 +336,7 @@ export function attorneyProfileSchema(p: Partner) {
     description: p.headline,
     worksFor: { "@id": firmId },
     ...(p.education.length
-      ? { alumniOf: p.education.map((e) => ({ "@type": "EducationalOrganization", name: e.label })) }
+      ? { alumniOf: p.education.map((e) => ({ "@type": "EducationalOrganization", name: e.value })) }
       : {}),
     ...(p.serves.length
       ? { areaServed: p.serves.map((s) => ({ "@type": "AdministrativeArea", name: s })) }

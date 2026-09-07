@@ -6,10 +6,16 @@
  *
  * Plain data only (no `server-only`) so the client nav can import it too.
  *
+ * The /partners directory is surfaced here ONLY once a partner is actually public — a
+ * coming-soon partner must stay out of nav, footer, sitemap and llms.txt (it's derived
+ * from `publishedPartners()`, a build-time config constant).
+ *
  * `lastReviewed` is an HONEST hand-maintained date — the day the page's CONTENT
  * was last checked, NOT build time. Update it when a page actually changes; the
  * sitemap must never claim every page changed on every deploy.
  */
+
+import { publishedPartners } from "@/config/partners"
 
 export type ChangeFreq = "weekly" | "monthly" | "yearly"
 export type FooterGroup = "Service" | "Answers" | "Situations" | "Boroughs" | "Learn"
@@ -64,7 +70,10 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: "/eligibility", label: "Eligibility quiz", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Service", llmsDescription: "A two-minute check of whether you likely qualify." },
   { path: "/book", label: "Book a consult", priority: 0.6, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Service" },
   { path: "/about", label: "About us", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Service" },
-  { path: "/partners", label: "Our Partners", priority: 0.6, changeFrequency: "monthly", lastReviewed: "2026-09-05", footerGroup: "Service", nav: true, llmsDescription: "Independent New York-licensed attorneys we refer applicants to when a case needs legal judgment we can't give — retaining one creates an attorney–client relationship with their firm alone, and we take no share of their fees." },
+  // Surfaced only when a partner is public — a coming-soon partner stays hidden.
+  ...(publishedPartners().length > 0
+    ? [{ path: "/partners", label: "Our Partners", priority: 0.6, changeFrequency: "monthly" as const, lastReviewed: "2026-09-06", footerGroup: "Service" as const, nav: true, llmsDescription: "Independent New York-licensed attorneys we refer applicants to when a case needs legal judgment we can't give — retaining one creates an attorney–client relationship with their firm alone, and we take no share of their fees." }]
+    : []),
   // ── Boroughs (hub + spokes) ──────────────────────────────────────────────
   { path: "/gun-license", label: "By borough — overview", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
   { path: "/gun-license/manhattan", label: "Manhattan", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
