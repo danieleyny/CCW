@@ -65,6 +65,9 @@ const FILM_DRIVER = `(function(){
 var r=document.getElementById('hero-film');
 if(!r||r.__hfDriver)return;
 r.__hfDriver=1;
+/* Desktop-only: the film is display:none below 900px, so run no timeline there
+   (this also avoids any pre-hydration main-thread work on phones/tablets). */
+if(matchMedia('(max-width: 900px)').matches)return;
 var M=[[0,0],[1,200],['still',5600],[2,5660],[3,6560],[4,9160],[5,10360],[6,12960],[7,18360],[8,21560],['loop',25400]];
 var C={1:'c1',2:'c1',3:'c2',4:'c2',5:'c3',6:'c4',7:'c5',8:'c6'};
 function caps(b){r.querySelectorAll('.capline').forEach(function(e){e.removeAttribute('data-on')});var id=C[b];if(id){var t=r.querySelector('[data-cap="'+id+'"]');if(t)t.setAttribute('data-on','true')}}
@@ -166,6 +169,9 @@ export function HeroFilm() {
     // double-driven. It stays as a fallback for the case where the inline script
     // was blocked.
     if ((root as unknown as { __hfDriver?: number }).__hfDriver) return
+    // Desktop-only (matches the CSS gate + the inline driver): the film is
+    // display:none below 900px, so never start the timeline there.
+    if (window.matchMedia("(max-width: 900px)").matches) return
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
     const setCaps = (b: number) => {

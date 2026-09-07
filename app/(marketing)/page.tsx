@@ -117,8 +117,14 @@ export default async function Home() {
               <p className="hero-micro">Two minutes · no card · no commitment</p>
             </div>
 
-            {/* the 1.85:1 plate — a framed object, no glass card, no footer */}
-            <HeroFilm />
+            {/* the 1.85:1 plate — a framed object, no glass card, no footer.
+                Desktop-only: below the hero's 900px stack breakpoint the film is not
+                rendered (display:none), so its ~20 infinite animations + 25s JS loop +
+                ~200 SVG nodes never run on phones/tablets — the main cause of mobile
+                lag. The driver bails at the same width. */}
+            <div className="max-[900px]:hidden">
+              <HeroFilm />
+            </div>
           </div>
         </div>
 
@@ -290,7 +296,7 @@ export default async function Home() {
 
       {/* ── CLOSING ──────────────────────────────────────────────────────── */}
       <section id="closing" className="section-void relative overflow-hidden border-t border-hairline">
-        <HeroAura variant="still" />
+        <HeroAura />
         <div className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
           <Reveal>
             <h2 className="mx-auto max-w-xl font-display text-3xl font-semibold tracking-tight sm:text-5xl">
