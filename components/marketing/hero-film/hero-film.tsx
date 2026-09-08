@@ -68,7 +68,10 @@ r.__hfDriver=1;
 var M=[[0,0],[1,200],['still',5600],[2,5660],[3,6560],[4,9160],[5,10360],[6,12960],[7,18360],[8,21560],['loop',25400]];
 var C={1:'c1',2:'c1',3:'c2',4:'c2',5:'c3',6:'c4',7:'c5',8:'c6'};
 function caps(b){r.querySelectorAll('.capline').forEach(function(e){e.removeAttribute('data-on')});var id=C[b];if(id){var t=r.querySelector('[data-cap="'+id+'"]');if(t)t.setAttribute('data-on','true')}}
-if(matchMedia('(prefers-reduced-motion: reduce)').matches){r.setAttribute('data-beat','8');caps(8);return}
+/* Mobile (≤900px) AND reduced-motion hold the RESOLVED still frame with no timeline.
+   SVG animation is main-thread, so looping it on a phone starves React's page-transition
+   (a nav from the homepage then takes many seconds). Desktop plays the full film. */
+if(matchMedia('(prefers-reduced-motion: reduce)').matches||matchMedia('(max-width: 900px)').matches){r.setAttribute('data-beat','8');caps(8);return}
 var T=[];function clr(){T.forEach(clearTimeout);T=[]}
 function run(){clr();r.setAttribute('data-beat','0');caps(0);r.setAttribute('data-idle','1');r.removeAttribute('data-playing');void r.offsetWidth;r.setAttribute('data-playing','true');
 M.forEach(function(m){T.push(setTimeout(function(){if(m[0]==='loop'){run();return}if(m[0]==='still'){r.removeAttribute('data-idle');return}r.setAttribute('data-beat',String(m[0]));caps(m[0])},m[1]))})}
@@ -166,7 +169,11 @@ export function HeroFilm() {
     // double-driven. It stays as a fallback for the case where the inline script
     // was blocked.
     if ((root as unknown as { __hfDriver?: number }).__hfDriver) return
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    // Mobile holds the resolved still frame, same as reduced-motion (see the inline
+    // driver): a main-thread SVG loop on a phone starves the page-transition.
+    const reduce =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      window.matchMedia("(max-width: 900px)").matches
 
     const setCaps = (b: number) => {
       root.querySelectorAll<HTMLElement>(".capline").forEach((el) => el.removeAttribute("data-on"))

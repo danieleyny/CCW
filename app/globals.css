@@ -1814,19 +1814,12 @@
 .filmfig .t{font-family:var(--font-mono)}
 .filmfig .ts{font-family:var(--font-sans)}
 
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce), (max-width: 900px){
   .filmfig *{transition:none !important;animation:none !important}
   .filmfig .world-order{clip-path:inset(0 0 0 0) !important}
   .filmfig .cam{transform:none !important}
   .filmfig .sweep, .filmfig .fticker, .filmfig .cf-x{display:none}
   .filmfig .row, .filmfig .rowtick, .filmfig .railfill, .filmfig .lic, .filmfig .fix, .filmfig .screencontent, .filmfig .donecard, .filmfig .stg-c{opacity:1 !important;transform:none !important}
   .filmfig .nextcard{opacity:0 !important}
-}
-
-/* Phone: the film plays the full story, but skip the confetti burst — it's the one
-   heavy paint spike, and the license still issues without it. The blur auras/backdrop
-   are already static, so the rest of the film is light enough to run smoothly here. */
-@media (max-width: 900px) {
-  .filmfig .cf-x { display: none; }
 }
 
