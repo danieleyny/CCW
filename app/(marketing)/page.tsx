@@ -117,14 +117,10 @@ export default async function Home() {
               <p className="hero-micro">Two minutes · no card · no commitment</p>
             </div>
 
-            {/* the 1.85:1 plate — a framed object, no glass card, no footer.
-                Desktop-only: below the hero's 900px stack breakpoint the film is not
-                rendered (display:none), so its ~20 infinite animations + 25s JS loop +
-                ~200 SVG nodes never run on phones/tablets — the main cause of mobile
-                lag. The driver bails at the same width. */}
-            <div className="max-[900px]:hidden">
-              <HeroFilm />
-            </div>
+            {/* the 1.85:1 plate — a framed object, no glass card, no footer. Runs on
+                mobile too now; the heavy pieces (confetti burst, huge blur auras) were
+                cut so it stays smooth on a phone — see hero-film.tsx / globals.css. */}
+            <HeroFilm />
           </div>
         </div>
 

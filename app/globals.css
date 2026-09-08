@@ -1823,3 +1823,10 @@
   .filmfig .nextcard{opacity:0 !important}
 }
 
+/* Phone: the film plays the full story, but skip the confetti burst — it's the one
+   heavy paint spike, and the license still issues without it. The blur auras/backdrop
+   are already static, so the rest of the film is light enough to run smoothly here. */
+@media (max-width: 900px) {
+  .filmfig .cf-x { display: none; }
+}
+

@@ -101,8 +101,10 @@ export type ConfettiPiece = {
 
 function buildConfetti(): ConfettiPiece[] {
   const out: ConfettiPiece[] = []
-  for (let i = 0; i < 56; i++) {
-    const front = i >= 36 // confetti(0,36,false) behind, confetti(36,56,true) in front
+  // Trimmed from 56 → 24 (a lighter burst reads the same but costs far less paint;
+  // the phone drops it entirely — see the @media block in globals.css).
+  for (let i = 0; i < 24; i++) {
+    const front = i >= 15 // ~15 behind the card, ~9 in front
     const x = 202 + rnd(i, 1) * 236
     const y = 198 + rnd(i, 2) * 44
     const dx0 = (rnd(i, 3) - 0.5) * 640
