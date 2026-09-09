@@ -407,14 +407,14 @@
   scroll-margin-top: 9rem;
 }
 
-/* ── Reveal (marketing) — CSS-only scroll-driven fade + rise ───────────────────
-   The <Reveal> component (components/marketing/reveal.tsx) is a server component
-   that renders its children VISIBLE by default. Motion is added here, never
-   there — content is never gated on JS. The hidden `from` keyframe exists ONLY
-   inside @supports, so a browser without scroll-driven-animation support shows
-   the content immediately and unanimated (the safe degradation). Reduced-motion
-   users get no animation. `delay` staggers via --reveal-delay. No will-change:
-   scroll-timeline compositing is already cheap. */
+/* ── Reveal (marketing) — CSS-only scroll-driven RISE ─────────────────────────
+   The content's RESTING STATE MUST BE VISIBLE. This animation only nudges the
+   transform (a small rise) and NEVER touches opacity, so content can never be
+   made invisible by it — even when the scroll timeline doesn't advance (the
+   previous `from { opacity: 0 }` + `both` fill left every below-the-fold section
+   stranded at opacity 0, i.e. black voids). Animation enhances from a visible
+   state; it is never what makes text appear. Reduced-motion users get no motion;
+   `delay` staggers via --reveal-delay. */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     .reveal {
@@ -425,11 +425,9 @@
     }
     @keyframes reveal-rise {
       from {
-        opacity: 0;
-        transform: translateY(1rem);
+        transform: translateY(0.5rem);
       }
       to {
-        opacity: 1;
         transform: none;
       }
     }
@@ -522,13 +520,15 @@
 }
 
 /* Requirements wall — cards settle into their ordered place on scroll-in.
-   Default state is the settled (ordered) state, so reduced-motion + no-JS both
-   render correctly; the "scatter" only exists while not yet in view. */
+   The RESTING STATE MUST BE VISIBLE: the not-yet-in-view state only nudges the
+   transform (a small rise) and NEVER touches opacity. `data-inview` starts
+   "false" in the server-rendered markup, so if JS never runs (or the observer
+   never fires) the cards must still be fully legible — the animation enhances
+   from a visible state, it is never what makes the cards appear. */
 .req-wall .req-card {
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .req-wall[data-inview="false"] .req-card {
-  opacity: 0;
   transform: translateY(14px) scale(0.98);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -536,7 +536,6 @@
     transition: none;
   }
   .req-wall[data-inview="false"] .req-card {
-    opacity: 1;
     transform: none;
   }
 }
