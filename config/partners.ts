@@ -65,7 +65,10 @@ export interface Partner {
   /** src = plain card portrait; cutout = transparent hero figure; panel = hero tonal wash. */
   photo: { src: string; alt: string; cutout?: string; panel?: string }
   address: { street: string; city: string; state: string; zip: string }
+  /** STAFF-ONLY. Never rendered on a public page — every public route to him goes
+   *  through the consultation form (/{slug}/consultation), not a tel:/mailto: link. */
   phone: string
+  /** STAFF-ONLY — see `phone`. Not rendered publicly. */
   email: string
   website: string
   admissions: string[]
@@ -82,7 +85,8 @@ export interface Partner {
   qualifyingQuestions: string[]
   faqs: PartnerFaq[]
   rate: { amount: number; unit: string }
-  /** HIS scheduler — never ours. Omitted until confirmed; CTA falls back to his phone. */
+  /** HIS scheduler — never ours. Reserved for staff/Phase-2 use; the PUBLIC CTA always
+   *  points at our consultation form, never at a scheduler or phone. */
   bookingUrl?: string
 }
 
@@ -166,8 +170,8 @@ export const PARTNERS: Partner[] = [
       },
     ],
     rate: { amount: 300, unit: "hour" },
-    // bookingUrl intentionally omitted — no confirmed scheduler yet; the CTA falls
-    // back to his office phone until one is supplied.
+    // bookingUrl intentionally omitted — the public CTA is our consultation form
+    // regardless; a scheduler here is reserved for staff/Phase-2 use only.
   },
 ]
 
@@ -189,15 +193,15 @@ export const previewablePartners = (): Partner[] =>
 /** The canonical path for a partner — the vanity URL /{slug}. */
 export const partnerPath = (p: Partner): string => `/${p.slug}`
 
+/**
+ * The consultation-request form for a partner — /{slug}/consultation. Every public
+ * route to the attorney goes through this ONE intake form we own (no tel:, no mailto:,
+ * no direct scheduler), so he arrives at the call already briefed and the person is told
+ * up front that the message is not privileged. The form inherits the partner's
+ * visibility gate (a hidden partner 404s the form too).
+ */
+export const partnerConsultationPath = (p: Partner): string => `/${p.slug}/consultation`
+
 /** Full name with suffix, e.g. "Ethan A. Brecher, Esq." */
 export const partnerFullName = (p: Partner): string =>
   p.credentialsSuffix ? `${p.name}, ${p.credentialsSuffix}` : p.name
-
-/**
- * The "schedule" CTA target. His scheduler if we have one (opens in a new tab); until
- * then, his office phone — we never hold his calendar or collect his intake.
- */
-export function partnerSchedule(p: Partner): { href: string; label: string; external: boolean } {
-  if (p.bookingUrl) return { href: p.bookingUrl, label: "Schedule a call", external: true }
-  return { href: `tel:${p.phone.replace(/[^0-9+]/g, "")}`, label: "Call his office to schedule", external: false }
-}

@@ -16,6 +16,7 @@ const ENDPOINT = process.env.FORMSPREE_ENDPOINT || "https://formspree.io/f/xwvgp
 // sensible "where it came from" label with no extra wiring.
 const SOURCE_LABELS: Record<string, string> = {
   contact: "Contact form",
+  attorney_consultation: "Attorney consultation request",
   eligibility_quiz: "Eligibility quiz",
   book: "Book a consult",
   checklist: "Free checklist — run it for me",

@@ -1,6 +1,7 @@
 import Image from "next/image"
+import Link from "next/link"
 import { brand } from "@/config/brand"
-import { type Partner, partnerPath, partnerFullName, partnerSchedule } from "@/config/partners"
+import { type Partner, partnerPath, partnerFullName, partnerConsultationPath } from "@/config/partners"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
@@ -15,9 +16,8 @@ import { INDEPENDENCE_DISCLAIMER, CredentialBadge } from "@/components/marketing
  * the standing brand disclaimer both render at the foot.
  */
 export function PartnerProfile({ partner }: { partner: Partner }) {
-  const schedule = partnerSchedule(partner)
+  const consult = partnerConsultationPath(partner)
   const rate = `$${partner.rate.amount}/${partner.rate.unit}`
-  const comingSoon = partner.visibility === "coming_soon"
 
   return (
     <>
@@ -54,19 +54,12 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                {schedule.external ? (
-                  <a href={schedule.href} target="_blank" rel="noreferrer">{schedule.label} · {rate}</a>
-                ) : (
-                  <a href={schedule.href}>{schedule.label} · {rate}</a>
-                )}
+                <Link href={consult}>Request a consultation · {rate}</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <a href={partner.website} target="_blank" rel="noreferrer">Visit his firm&apos;s site</a>
               </Button>
             </div>
-            {comingSoon && (
-              <p className="mt-3 text-xs text-text-low">Scheduling link to be confirmed with his office.</p>
-            )}
           </div>
 
           <HeroPortrait partner={partner} />
@@ -155,8 +148,8 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
           <h2 className="font-display text-2xl font-semibold tracking-tight">How it works</h2>
           <ol className="mt-6 grid gap-4 sm:grid-cols-3">
             {[
-              { n: "1", t: "Reach out to his office", d: `${schedule.external ? "Book on his calendar" : "Call his office"} directly — the conversation is between you and his firm.` },
-              { n: "2", t: "He runs his own intake", d: "He performs his own conflicts check and intake. We are not in the middle and never see his file." },
+              { n: "1", t: "Send a brief request", d: "Tell us what you need to discuss. We forward it to him — nothing you send is privileged, so leave documents for the call." },
+              { n: "2", t: "He runs his own intake", d: "He reviews each request personally, then performs his own conflicts check and intake. We are not in the middle and never see his file." },
               { n: "3", t: "He bills you directly", d: `You pay his office at his own rate (${rate}). We receive no share of his fees and no referral fee.` },
             ].map((step) => (
               <li key={step.n} className="rounded-xl border border-hairline bg-card p-5">
@@ -180,20 +173,12 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
           </p>
           <div className="mt-4 flex justify-center">
             <Button asChild size="lg">
-              {schedule.external ? (
-                <a href={schedule.href} target="_blank" rel="noreferrer">{schedule.label}</a>
-              ) : (
-                <a href={schedule.href}>{schedule.label}</a>
-              )}
+              <Link href={consult}>Request a consultation</Link>
             </Button>
           </div>
-          {comingSoon && (
-            <p className="mt-3 text-xs text-text-low">Scheduling link to be confirmed with his office.</p>
-          )}
           <p className="mt-4 text-sm text-text-low">
-            <a href={`tel:${partner.phone.replace(/[^0-9+]/g, "")}`} className="text-signal hover:underline">{partner.phone}</a>
-            {" · "}
-            <a href={`mailto:${partner.email}`} className="text-signal hover:underline">{partner.email}</a>
+            Every request reaches him through us and is not privileged — leave documents and
+            anything confidential for the call.
           </p>
         </div>
       </section>

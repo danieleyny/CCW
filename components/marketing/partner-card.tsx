@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { type Partner, partnerPath, partnerFullName, partnerSchedule } from "@/config/partners"
+import { type Partner, partnerPath, partnerFullName, partnerConsultationPath } from "@/config/partners"
 
 /**
  * The reusable partner card — directory today, anywhere a partner is surfaced later.
@@ -29,7 +29,6 @@ export function CredentialBadge({ children, primary }: { children: React.ReactNo
 }
 
 export function PartnerCard({ partner }: { partner: Partner }) {
-  const schedule = partnerSchedule(partner)
   const rate = `$${partner.rate.amount}/${partner.rate.unit}`
 
   return (
@@ -111,13 +110,7 @@ export function PartnerCard({ partner }: { partner: Partner }) {
                   <Link href={partnerPath(partner)}>Read his background</Link>
                 </Button>
                 <Button asChild size="sm">
-                  {schedule.external ? (
-                    <a href={schedule.href} target="_blank" rel="noreferrer">
-                      {schedule.label}
-                    </a>
-                  ) : (
-                    <a href={schedule.href}>{schedule.label}</a>
-                  )}
+                  <Link href={partnerConsultationPath(partner)}>Request a consultation</Link>
                 </Button>
               </div>
             </div>
