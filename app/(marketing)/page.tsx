@@ -16,6 +16,7 @@ import { RefilePromise } from "@/components/marketing/refile-promise"
 import { PlacemakingBand } from "@/components/marketing/placemaking-band"
 import { HeroSkyline } from "@/components/marketing/hero-skyline"
 import { HeroFilm } from "@/components/marketing/hero-film/hero-film"
+import { DesktopOnly } from "@/components/marketing/desktop-only"
 
 // Step 5 — below-fold client components loaded as their own chunks so their JS
 // leaves the initial waterfall. ssr: true keeps the HTML server-rendered (the
@@ -123,7 +124,9 @@ export default async function Home() {
                 a 5-10s glitchy nav — confirmed by testing (nav was only fast with the film
                 off). A lightweight mobile hero visual can be added separately. */}
             <div className="max-[900px]:hidden">
-              <HeroFilm />
+              <DesktopOnly>
+                <HeroFilm />
+              </DesktopOnly>
             </div>
           </div>
         </div>
@@ -158,8 +161,14 @@ export default async function Home() {
       {/* ── PRODUCT (Stripe-style split + video) ─────────────────────────── */}
       <ProductFeature />
 
-      {/* ── THE COUNT (centerpiece) ──────────────────────────────────────── */}
-      <TheCount />
+      {/* ── THE COUNT (centerpiece) — desktop only; removed from the mobile DOM after
+             load so navigating away from the homepage stays fast (it's a 625-node
+             animated section). A lighter mobile version can replace it later. ── */}
+      <div className="max-[900px]:hidden">
+        <DesktopOnly>
+          <TheCount />
+        </DesktopOnly>
+      </div>
 
       {/* ── PLACEMAKING (cinematic full-bleed beat) ──────────────────────── */}
       <PlacemakingBand />
