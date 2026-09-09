@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Directions</title><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Archivo:wdth,wght@85..125,400;85..125,500;85..125,600;85..125,700&family=JetBrains+Mono:wght@400;500&display=swap">
+</head><body>
+<style>
+/* ================= WRAPPER — theme aware ================= */
+:root{
+  --w-bg:#FBFBFA; --w-panel:#FFFFFF; --w-sunk:#F2F2F0;
+  --w-ink:#101114; --w-mid:#5A5D63; --w-low:#8B8E94;
+  --w-rule:rgba(16,17,20,.10); --w-rule2:rgba(16,17,20,.20);
+  --w-accent:#4338CA;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --w-bg:#0B0C0E; --w-panel:#141518; --w-sunk:#0F1012;
+  --w-ink:#F0F1F3; --w-mid:#A0A3A9; --w-low:#71747A;
+  --w-rule:rgba(255,255,255,.11); --w-rule2:rgba(255,255,255,.20);
+  --w-accent:#A5B4FC;
+}}
+:root[data-theme="dark"]{
+  --w-bg:#0B0C0E; --w-panel:#141518; --w-sunk:#0F1012;
+  --w-ink:#F0F1F3; --w-mid:#A0A3A9; --w-low:#71747A;
+  --w-rule:rgba(255,255,255,.11); --w-rule2:rgba(255,255,255,.20);
+  --w-accent:#A5B4FC;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--w-bg);color:var(--w-ink);
+  font-family:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px 100px}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--w-low)}
+
+header.top{padding:70px 0 34px;border-bottom:1px solid var(--w-rule2)}
+header.top h1{font-size:clamp(34px,5vw,52px);line-height:1.03;letter-spacing:-.03em;font-weight:700;margin-top:14px;max-width:16ch}
+header.top p{margin:18px 0 0;font-size:18px;color:var(--w-mid);max-width:60ch}
+
+/* diagnosis */
+.diag{padding:44px 0;border-bottom:1px solid var(--w-rule)}
+.diag h2{font-size:13px;letter-spacing:.02em;font-weight:600;color:var(--w-low);text-transform:uppercase;font-family:"JetBrains Mono",monospace;letter-spacing:.14em;font-size:11px}
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--w-rule);border:1px solid var(--w-rule);margin-top:22px;border-radius:4px;overflow:hidden}
+.dgrid > div{background:var(--w-panel);padding:22px 24px}
+.dgrid h3{font-size:16.5px;font-weight:600;letter-spacing:-.01em}
+.dgrid p{margin:8px 0 0;font-size:14.5px;color:var(--w-mid);line-height:1.65}
+.dgrid .keep{color:var(--w-accent)}
+
+/* direction blocks */
+.dir{padding:60px 0 10px;border-top:1px solid var(--w-rule2)}
+.dir-head{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;justify-content:space-between}
+.dir-head h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.025em;font-weight:700;line-height:1.05}
+.dir-head .n{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;color:var(--w-accent);text-transform:uppercase}
+.dir-head .ref{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--w-low);letter-spacing:.04em;text-align:right;line-height:1.9}
+.thesis{margin:16px 0 0;font-size:17px;color:var(--w-mid);max-width:64ch;line-height:1.65}
+
+.spec{display:flex;flex-wrap:wrap;gap:26px;margin-top:26px;padding:18px 20px;border:1px solid var(--w-rule);border-radius:4px;background:var(--w-panel)}
+.swatches{display:flex;gap:0;border-radius:3px;overflow:hidden;border:1px solid var(--w-rule)}
+.swatches i{width:38px;height:38px;display:block}
+.spec .lab{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--w-low);display:block;margin-bottom:7px}
+.spec .tf{font-size:14px;color:var(--w-mid);line-height:1.5}
+.spec .tf b{color:var(--w-ink);font-weight:600}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:28px;margin-top:30px;align-items:start}
+.desk{border:1px solid var(--w-rule2);border-radius:8px;overflow:hidden;background:#000}
+.deskbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--w-sunk);border-bottom:1px solid var(--w-rule)}
+.deskbar i{width:8px;height:8px;border-radius:50%;background:var(--w-rule2);display:block}
+.deskbar span{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--w-low);margin-left:6px}
+.phone{width:390px;justify-self:end}
+.phone .pf{border:9px solid #17181B;border-radius:38px;overflow:hidden;background:#000;box-shadow:0 24px 60px -30px rgba(0,0,0,.55)}
+.phone .cap{margin-top:10px;text-align:center;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--w-low)}
+.viewport{width:100%;overflow:hidden}
+
+/* ============ SHARED MOCK PRIMITIVES ============ */
+.mk{font-family:"Schibsted Grotesk",sans-serif}
+.mk *{box-sizing:border-box}
+.mk .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px}
+.mk .brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;letter-spacing:-.01em}
+.mk .dot{width:20px;height:20px;border-radius:6px;display:block}
+.mk .links{display:flex;gap:20px;font-size:13px}
+.mk .burger{width:20px;display:flex;flex-direction:column;gap:4px}
+.mk .burger i{height:1.5px;display:block;border-radius:2px}
+.mk h1.hh{letter-spacing:-.035em;line-height:1.0;font-weight:700}
+.mk .sub{line-height:1.55}
+.mk .cta{display:inline-block;border-radius:8px;font-weight:600;text-align:center}
+.mk .micro{font-family:"JetBrains Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
+
+/* ---------- A · APERTURE (dark + spectral) ---------- */
+.A{--bg:#08090D;--s1:#101218;--s2:#171A22;--hair:rgba(255,255,255,.09);--hi:#F4F5F7;--mid:#9AA0AB;--low:#6A707B;
+   --ind:#6366F1;--cy:#22D3EE;--vi:#A855F7;background:var(--bg);color:var(--hi);position:relative;overflow:hidden}
+.A .bloom{position:absolute;pointer-events:none;filter:blur(60px);opacity:.55}
+.A .links span,.A .nav .sign{color:var(--mid)}
+.A .burger i{background:var(--hi)}
+.A .dot{background:linear-gradient(135deg,var(--vi),var(--cy))}
+.A .cta.pri{background:linear-gradient(180deg,#7C7CFF,#5B5BF0);color:#fff;box-shadow:0 8px 24px -10px rgba(99,102,241,.75)}
+.A .cta.ghost{border:1px solid var(--hair);color:var(--hi)}
+.A .grad{background:linear-gradient(96deg,#C4B5FD 0%,#7DD3FC 44%,#5EEAD4 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.A .card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));border:1px solid var(--hair);border-radius:14px;backdrop-filter:blur(6px)}
+
+/* ---------- B · LEDGER (light + editorial serif) ---------- */
+.B{--bg:#FBFAF8;--s1:#FFFFFF;--s2:#F2F1ED;--hair:rgba(15,16,20,.11);--hi:#0F1014;--mid:#5B5F66;--low:#8B8F96;
+   --ink:#141527;--acc:#4338CA;background:var(--bg);color:var(--hi)}
+.B .serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-.015em}
+.B .links span,.B .nav .sign{color:var(--mid)}
+.B .burger i{background:var(--hi)}
+.B .dot{background:var(--ink)}
+.B .cta.pri{background:var(--ink);color:#fff}
+.B .cta.ghost{border:1px solid var(--hair);color:var(--hi)}
+.B .darkcard{background:#101223;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:#EDEEF2;
+  box-shadow:0 34px 70px -34px rgba(16,18,35,.55)}
+
+/* ---------- C · SIGNAL (light + chromatic wash) ---------- */
+.C{--bg:#FCFCFD;--s1:#FFFFFF;--hair:rgba(12,14,20,.10);--hi:#0C0E14;--mid:#585E6B;--low:#878D99;
+   --p1:#6D5EF8;--p2:#F97362;--p3:#2DD4BF;background:var(--bg);color:var(--hi);position:relative;overflow:hidden}
+.C .wash{position:absolute;pointer-events:none;filter:blur(70px);opacity:.5}
+.C .links span,.C .nav .sign{color:var(--mid)}
+.C .burger i{background:var(--hi)}
+.C .dot{background:conic-gradient(from 210deg,#6D5EF8,#F97362,#2DD4BF,#6D5EF8)}
+.C .cta.pri{background:#0C0E14;color:#fff}
+.C .cta.ghost{border:1px solid var(--hair);color:var(--hi)}
+.C .arch{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96}
+.C .card{background:#fff;border:1px solid var(--hair);border-radius:14px;box-shadow:0 22px 48px -30px rgba(12,14,20,.28)}
+
+.closing{margin-top:56px;padding-top:26px;border-top:1px solid var(--w-rule2)}
+.closing h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.closing p{color:var(--w-mid);max-width:66ch;margin-top:10px}
+
+@media (max-width:980px){
+  .stage{grid-template-columns:1fr}
+  .phone{justify-self:start;width:100%;max-width:390px}
+  .dgrid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">Gun License NYC · Marketing site</div>
+  <h1>Three directions for the redesign</h1>
+  <p>Mobile first, because that is where it fails hardest. Each direction is a complete visual system — ground, accent, type and the shape of the first screen — not a skin on what exists.</p>
+</header>
+
+<section class="diag">
+  <h2>What is actually wrong</h2>
+  <div class="dgrid">
+    <div>
+      <h3>The brass is the problem</h3>
+      <p>Gold on near-black is the luxury default — steakhouse, whisky, watch ad, crypto. It cannot read <em>technological</em>. And it is fighting the cyan: two accents, one warm-old, one cool-tech, pulling opposite directions on every screen.</p>
+    </div>
+    <div>
+      <h3>Every section has the same weight</h3>
+      <p>Eleven full-width blocks, each with a bracketed eyebrow, a headline, a paragraph and a visual, in the same rhythm. Nothing dominates, so nothing lands. That sameness <em>is</em> the "generic template" feeling.</p>
+    </div>
+    <div>
+      <h3>It was composed for a desktop</h3>
+      <p>Text-left / visual-right splits collapse into a long text scroll on a phone. The film strip and the document grid are wide-format ideas with no mobile equivalent.</p>
+    </div>
+    <div>
+      <h3>Three illustration languages</h3>
+      <p>A flat vector person at a desk, a paper-document grid, and a product UI mock — three styles on one page. The vector person is the weakest thing on the site; the product mock is the strongest.</p>
+    </div>
+    <div>
+      <h3 class="keep">The copy is not the problem</h3>
+      <p>"24 documents. 13 stages. One thing on your plate." is a better headline than the one you're running. The honest pricing table and the refile promise are real assets. Keep the words; change everything around them.</p>
+    </div>
+    <div>
+      <h3 class="keep">One more thing worth saying</h3>
+      <p>Stripe and nas.io — the two sites you named — are both predominantly <strong>light</strong>. Your site is near-black. I don't think that's a coincidence, so two of these three directions are light.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ A ============================ -->
+<section class="dir">
+  <div class="dir-head">
+    <div>
+      <div class="n">Direction 01</div>
+      <h2>Aperture</h2>
+    </div>
+    <div class="ref">DARK · SPECTRAL GRADIENT<br>REGISTER: LINEAR / VERCEL</div>
+  </div>
+  <p class="thesis">Keep the dark, throw out the gold. One cool spectral accent — violet through blue to cyan — used as light rather than as a colour: a single bloom behind the product, a gradient only on the words that matter. Everything else is white type on near-black with a lot of air.</p>
+
+  <div class="spec">
+    <div><span class="lab">Ground &amp; accent</span>
+      <div class="swatches"><i style="background:#08090D"></i><i style="background:#101218"></i><i style="background:#6366F1"></i><i style="background:#A855F7"></i><i style="background:#22D3EE"></i><i style="background:#F4F5F7"></i></div>
+    </div>
+    <div><span class="lab">Type</span><div class="tf"><b>Schibsted Grotesk</b> 700 display<br>JetBrains Mono for labels</div></div>
+    <div><span class="lab">Signature move</span><div class="tf">The case file lit from behind<br>like a lens aperture</div></div>
+  </div>
+
+  <div class="stage">
+    <div class="desk">
+      <div class="deskbar"><i></i><i></i><i></i><span>gunlicensenyc.com</span></div>
+      <div class="viewport">
+        <div class="mk A" style="padding-bottom:26px">
+          <div class="bloom" style="width:620px;height:420px;right:-60px;top:40px;background:radial-gradient(circle,#5B5BF0 0%,rgba(91,91,240,0) 68%)"></div>
+          <div class="bloom" style="width:420px;height:360px;right:180px;top:200px;background:radial-gradient(circle,#22D3EE 0%,rgba(34,211,238,0) 70%);opacity:.32"></div>
+          <div class="nav" style="border-bottom:1px solid var(--hair);position:relative">
+            <div class="brand"><span class="dot"></span> Gun License NYC</div>
+            <div class="links"><span>How it works</span><span>Pricing</span><span>Checklist</span><span>FAQ</span></div>
+            <div style="display:flex;gap:12px;align-items:center"><span class="sign" style="font-size:13px">Sign in</span><a class="cta pri" style="padding:8px 15px;font-size:13px">Check eligibility</a></div>
+          </div>
+          <div style="position:relative;display:grid;grid-template-columns:1fr 405px;gap:34px;align-items:center;padding:52px 30px 30px">
+            <div>
+              <div class="micro" style="font-size:10px;color:var(--cy);margin-bottom:16px">NYC · Concealed carry</div>
+              <h1 class="hh" style="font-size:46px">24 documents.<br>13 stages.<br><span class="grad">One thing on your plate.</span></h1>
+              <p class="sub" style="margin:20px 0 0;color:var(--mid);font-size:15.5px;max-width:38ch">We run every document, deadline and filing. You get one next step at a time — never a list.</p>
+              <div style="display:flex;gap:11px;align-items:center;margin-top:26px">
+                <a class="cta pri" style="padding:13px 22px;font-size:14.5px">Check your eligibility</a>
+                <a class="cta ghost" style="padding:13px 20px;font-size:14.5px">See how it works</a>
+              </div>
+              <div class="micro" style="font-size:9.5px;color:var(--low);margin-top:16px">Two minutes · No card</div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="micro" style="font-size:9px;color:var(--low)">Case file · NYC carry</span>
+                <span class="micro" style="font-size:9px;color:var(--cy)">Stage 06 / 13</span>
+              </div>
+              <div style="height:4px;border-radius:3px;background:rgba(255,255,255,.08);margin:12px 0 4px;overflow:hidden">
+                <div style="width:46%;height:100%;background:linear-gradient(90deg,#A855F7,#22D3EE)"></div>
+              </div>
+              <div style="margin-top:16px;border-radius:10px;background:rgba(99,102,241,.13);border:1px solid rgba(99,102,241,.34);padding:14px">
+                <div class="micro" style="font-size:9px;color:#A5B4FC">Your next move · this week</div>
+                <div style="font-weight:600;font-size:15px;margin-top:7px">Refresh your safety certificate</div>
+                <div style="font-size:12.5px;color:var(--mid);margin-top:6px;line-height:1.5">It has to be under six months old the day you file. We found a refresher — Saturday 9:00 AM, Queens.</div>
+                <a class="cta pri" style="padding:8px 14px;font-size:12.5px;margin-top:12px">Confirm this slot</a>
+              </div>
+              <div class="micro" style="font-size:9px;color:var(--low);margin:16px 0 8px">Already handled · 17 / 24</div>
+              <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--mid)">
+                <div style="display:flex;justify-content:space-between"><span>Character references — notarized</span><span style="color:#5EEAD4">4/4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>A statement from everyone at home</span><span style="color:#5EEAD4">3/3</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Fingerprints — submitted</span><span style="color:#5EEAD4">✓</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="pf"><div class="viewport">
+        <div class="mk A" style="width:100%;padding-bottom:22px">
+          <div class="bloom" style="width:420px;height:340px;right:-140px;top:150px;background:radial-gradient(circle,#5B5BF0 0%,rgba(91,91,240,0) 68%)"></div>
+          <div class="nav" style="position:relative">
+            <div class="brand"><span class="dot"></span> Gun License NYC</div>
+            <div class="burger"><i></i><i></i><i></i></div>
+          </div>
+          <div style="position:relative;padding:30px 20px 0">
+            <div class="micro" style="font-size:9px;color:var(--cy);margin-bottom:13px">NYC · Concealed carry</div>
+            <h1 class="hh" style="font-size:36px">24 documents.<br>13 stages.<br><span class="grad">One thing on your plate.</span></h1>
+            <p class="sub" style="margin:16px 0 0;color:var(--mid);font-size:14.5px">We run every document, deadline and filing. You get one next step at a time.</p>
+            <a class="cta pri" style="display:block;padding:14px;font-size:15px;margin-top:20px">Check your eligibility</a>
+            <div class="micro" style="font-size:9px;color:var(--low);margin-top:12px;text-align:center">Two minutes · No card</div>
+            <div class="card" style="padding:14px;margin-top:26px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="micro" style="font-size:8.5px;color:var(--low)">Case file</span>
+                <span class="micro" style="font-size:8.5px;color:var(--cy)">Stage 06 / 13</span>
+              </div>
+              <div style="height:4px;border-radius:3px;background:rgba(255,255,255,.08);margin:11px 0 0;overflow:hidden">
+                <div style="width:46%;height:100%;background:linear-gradient(90deg,#A855F7,#22D3EE)"></div>
+              </div>
+              <div style="margin-top:14px;border-radius:10px;background:rgba(99,102,241,.13);border:1px solid rgba(99,102,241,.34);padding:13px">
+                <div class="micro" style="font-size:8.5px;color:#A5B4FC">Your next move</div>
+                <div style="font-weight:600;font-size:14.5px;margin-top:6px">Refresh your safety certificate</div>
+                <div style="font-size:12px;color:var(--mid);margin-top:5px;line-height:1.5">Saturday 9:00 AM, Queens — we already found it.</div>
+                <a class="cta pri" style="display:block;padding:9px;font-size:12.5px;margin-top:11px">Confirm this slot</a>
+              </div>
+              <div class="micro" style="font-size:8.5px;color:var(--low);margin:14px 0 7px">Already handled · 17 / 24</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mid)">
+                <div style="display:flex;justify-content:space-between"><span>References — notarized</span><span style="color:#5EEAD4">4/4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Household statements</span><span style="color:#5EEAD4">3/3</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap">iPhone · 390pt</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ B ============================ -->
+<section class="dir">
+  <div class="dir-head">
+    <div>
+      <div class="n">Direction 02</div>
+      <h2>Ledger</h2>
+    </div>
+    <div class="ref">LIGHT · EDITORIAL SERIF<br>REGISTER: STRIPE / RAMP</div>
+  </div>
+  <p class="thesis">Warm near-white, ink-black type, one deep indigo. The money shot is the product rendered as a dark card floating on light — the single trick that makes Stripe look expensive. A serif display gives it institutional weight, which is exactly right for a licensing service: this reads as a firm, not a startup.</p>
+
+  <div class="spec">
+    <div><span class="lab">Ground &amp; accent</span>
+      <div class="swatches"><i style="background:#FBFAF8"></i><i style="background:#F2F1ED"></i><i style="background:#101223"></i><i style="background:#4338CA"></i><i style="background:#0F1014"></i></div>
+    </div>
+    <div><span class="lab">Type</span><div class="tf"><b>Instrument Serif</b> display<br>Schibsted Grotesk body</div></div>
+    <div><span class="lab">Signature move</span><div class="tf">Dark product card on paper —<br>the contrast is the design</div></div>
+  </div>
+
+  <div class="stage">
+    <div class="desk">
+      <div class="deskbar"><i></i><i></i><i></i><span>gunlicensenyc.com</span></div>
+      <div class="viewport">
+        <div class="mk B" style="padding-bottom:28px">
+          <div class="nav" style="border-bottom:1px solid var(--hair)">
+            <div class="brand"><span class="dot"></span> Gun License NYC</div>
+            <div class="links"><span>How it works</span><span>Pricing</span><span>Checklist</span><span>FAQ</span></div>
+            <div style="display:flex;gap:12px;align-items:center"><span class="sign" style="font-size:13px">Sign in</span><a class="cta pri" style="padding:8px 15px;font-size:13px">Check eligibility</a></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 400px;gap:36px;align-items:center;padding:54px 30px 34px">
+            <div>
+              <div class="micro" style="font-size:10px;color:var(--acc);margin-bottom:18px">NYC · Concealed carry</div>
+              <h1 class="serif" style="font-size:57px;line-height:.98">24 documents.<br>13 stages.<br><em>One</em> thing on your plate.</h1>
+              <p class="sub" style="margin:22px 0 0;color:var(--mid);font-size:16px;max-width:40ch">We run every document, deadline and filing. You get one next step at a time — never a list.</p>
+              <div style="display:flex;gap:11px;align-items:center;margin-top:28px">
+                <a class="cta pri" style="padding:13px 22px;font-size:14.5px">Check your eligibility</a>
+                <a class="cta ghost" style="padding:13px 20px;font-size:14.5px">See how it works</a>
+              </div>
+              <div class="micro" style="font-size:9.5px;color:var(--low);margin-top:18px">Two minutes · No card</div>
+            </div>
+            <div class="darkcard" style="padding:17px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="micro" style="font-size:9px;color:#8A8FA3">Case file · NYC carry</span>
+                <span class="micro" style="font-size:9px;color:#A5B4FC">Stage 06 / 13</span>
+              </div>
+              <div style="height:4px;border-radius:3px;background:rgba(255,255,255,.10);margin:12px 0 0;overflow:hidden">
+                <div style="width:46%;height:100%;background:#6366F1"></div>
+              </div>
+              <div style="margin-top:16px;border-radius:10px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);padding:14px">
+                <div class="micro" style="font-size:9px;color:#A5B4FC">Your next move · this week</div>
+                <div style="font-weight:600;font-size:15px;margin-top:7px">Refresh your safety certificate</div>
+                <div style="font-size:12.5px;color:#9DA2B3;margin-top:6px;line-height:1.5">It has to be under six months old the day you file. We found a refresher — Saturday 9:00 AM, Queens.</div>
+                <a class="cta" style="padding:8px 14px;font-size:12.5px;margin-top:12px;background:#fff;color:#101223">Confirm this slot</a>
+              </div>
+              <div class="micro" style="font-size:9px;color:#7C8194;margin:16px 0 8px">Already handled · 17 / 24</div>
+              <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#9DA2B3">
+                <div style="display:flex;justify-content:space-between"><span>Character references — notarized</span><span style="color:#6EE7B7">4/4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>A statement from everyone at home</span><span style="color:#6EE7B7">3/3</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Fingerprints — submitted</span><span style="color:#6EE7B7">✓</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair);margin-top:6px">
+            <div style="padding:20px 30px;border-right:1px solid var(--hair)"><div class="serif" style="font-size:30px">~6 months</div><div style="font-size:12.5px;color:var(--mid);margin-top:3px">Start to decision letter</div></div>
+            <div style="padding:20px 24px;border-right:1px solid var(--hair)"><div class="serif" style="font-size:30px">$1,000</div><div style="font-size:12.5px;color:var(--mid);margin-top:3px">The only fee we collect</div></div>
+            <div style="padding:20px 24px"><div class="serif" style="font-size:30px">24 / 13 / 1</div><div style="font-size:12.5px;color:var(--mid);margin-top:3px">Documents · stages · your move</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="pf"><div class="viewport">
+        <div class="mk B" style="width:100%;padding-bottom:22px">
+          <div class="nav">
+            <div class="brand"><span class="dot"></span> Gun License NYC</div>
+            <div class="burger"><i></i><i></i><i></i></div>
+          </div>
+          <div style="padding:28px 20px 0">
+            <div class="micro" style="font-size:9px;color:var(--acc);margin-bottom:14px">NYC · Concealed carry</div>
+            <h1 class="serif" style="font-size:42px;line-height:.98">24 documents.<br>13 stages.<br><em>One</em> thing on your plate.</h1>
+            <p class="sub" style="margin:16px 0 0;color:var(--mid);font-size:14.5px">We run every document, deadline and filing. You get one next step at a time.</p>
+            <a class="cta pri" style="display:block;padding:14px;font-size:15px;margin-top:20px">Check your eligibility</a>
+            <div class="micro" style="font-size:9px;color:var(--low);margin-top:12px;text-align:center">Two minutes · No card</div>
+            <div class="darkcard" style="padding:14px;margin-top:26px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="micro" style="font-size:8.5px;color:#8A8FA3">Case file</span>
+                <span class="micro" style="font-size:8.5px;color:#A5B4FC">Stage 06 / 13</span>
+              </div>
+              <div style="height:4px;border-radius:3px;background:rgba(255,255,255,.10);margin:11px 0 0;overflow:hidden">
+                <div style="width:46%;height:100%;background:#6366F1"></div>
+              </div>
+              <div style="margin-top:14px;border-radius:10px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);padding:13px">
+                <div class="micro" style="font-size:8.5px;color:#A5B4FC">Your next move</div>
+                <div style="font-weight:600;font-size:14.5px;margin-top:6px">Refresh your safety certificate</div>
+                <div style="font-size:12px;color:#9DA2B3;margin-top:5px;line-height:1.5">Saturday 9:00 AM, Queens — we already found it.</div>
+                <a class="cta" style="display:block;padding:9px;font-size:12.5px;margin-top:11px;background:#fff;color:#101223">Confirm this slot</a>
+              </div>
+              <div class="micro" style="font-size:8.5px;color:#7C8194;margin:14px 0 7px">Already handled · 17 / 24</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#9DA2B3">
+                <div style="display:flex;justify-content:space-between"><span>References — notarized</span><span style="color:#6EE7B7">4/4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Household statements</span><span style="color:#6EE7B7">3/3</span></div>
+              </div>
+            </div>
+            <div style="margin-top:24px;border-top:1px solid var(--hair);padding-top:16px;display:grid;gap:14px">
+              <div><div class="serif" style="font-size:26px">~6 months</div><div style="font-size:12.5px;color:var(--mid)">Start to decision letter</div></div>
+              <div><div class="serif" style="font-size:26px">$1,000</div><div style="font-size:12.5px;color:var(--mid)">The only fee we collect</div></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap">iPhone · 390pt</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ C ============================ -->
+<section class="dir">
+  <div class="dir-head">
+    <div>
+      <div class="n">Direction 03</div>
+      <h2>Signal</h2>
+    </div>
+    <div class="ref">LIGHT · CHROMATIC WASH<br>REGISTER: NAS.IO / LOOM</div>
+  </div>
+  <p class="thesis">The friendliest of the three. Near-white with soft chromatic blooms — violet, coral, teal — bleeding behind the content, and a wide technical grotesque set very large. Optimistic rather than institutional. It reads modern and human, and it de-risks a subject people are nervous about.</p>
+
+  <div class="spec">
+    <div><span class="lab">Ground &amp; accent</span>
+      <div class="swatches"><i style="background:#FCFCFD"></i><i style="background:#6D5EF8"></i><i style="background:#F97362"></i><i style="background:#2DD4BF"></i><i style="background:#0C0E14"></i></div>
+    </div>
+    <div><span class="lab">Type</span><div class="tf"><b>Archivo</b> variable-width display<br>JetBrains Mono for labels</div></div>
+    <div><span class="lab">Signature move</span><div class="tf">Chromatic blooms behind<br>white cards — depth, no clutter</div></div>
+  </div>
+
+  <div class="stage">
+    <div class="desk">
+      <div class="deskbar"><i></i><i></i><i></i><span>gunlicensenyc.com</span></div>
+      <div class="viewport">
+        <div class="mk C" style="padding-bottom:30px">
+          <div class="wash" style="width:520px;height:380px;left:-90px;top:-60px;background:radial-gradient(circle,#6D5EF8 0%,rgba(109,94,248,0) 68%);opacity:.30"></div>
+          <div class="wash" style="width:460px;height:360px;right:120px;top:-40px;background:radial-gradient(circle,#F97362 0%,rgba(249,115,98,0) 70%);opacity:.26"></div>
+          <div class="wash" style="width:520px;height:380px;right:-100px;top:170px;background:radial-gradient(circle,#2DD4BF 0%,rgba(45,212,191,0) 70%);opacity:.28"></div>
+          <div class="nav" style="position:relative;border-bottom:1px solid var(--hair)">
+            <div class="brand"><span class="dot"></span> Gun License NYC</div>
+            <div class="links"><span>How it works</span><span>Pricing</span><span>Checklist</span><span>FAQ</span></div>
+            <div style="display:flex;gap:12px;align-items:center"><span class="sign" style="font-size:13px">Sign in</span><a class="cta pri" style="padding:8px 15px;font-size:13px">Check eligibility</a></div>
+          </div>
+          <div style="position:relative;display:grid;grid-template-columns:1fr 395px;gap:34px;align-items:center;padding:54px 30px 30px">
+            <div>
+              <div class="micro" style="font-size:10px;color:var(--p1);margin-bottom:16px">NYC · Concealed carry</div>
+              <h1 class="hh arch" style="font-size:50px;font-weight:700;line-height:.99">24 documents.<br>13 stages.<br>One thing on<br>your plate.</h1>
+              <p class="sub" style="margin:20px 0 0;color:var(--mid);font-size:15.5px;max-width:38ch">We run every document, deadline and filing. You get one next step at a time — never a list.</p>
+              <div style="display:flex;gap:11px;align-items:center;margin-top:26px">
+                <a class="cta pri" style="padding:13px 22px;font-size:14.5px">Check your eligibility</a>
+                <a class="cta ghost" style="padding:13px 20px;font-size:14.5px">See how it works</a>
+              </div>
+              <div class="micro" style="font-size:9.5px;color:var(--low);margin-top:16px">Two minutes · No card</div>
+            </div>
+            <div class="card" style="padding:17px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="micro" style="font-size:9px;color:var(--low)">Case file · NYC carry</span>
+                <span class="micro" style="font-size:9px;color:var(--p1)">Stage 06 / 13</span>
+              </div>
+              <div style="height:5px;border-radius:3px;background:#EFEFF3;margin:12px 0 0;overflow:hidden">
+                <div style="width:46%;height:100%;background:linear-gradient(90deg,#6D5EF8,#2DD4BF)"></div>
+              </div>
+              <div style="margin-top:16px;border-radius:10px;background:linear-gradient(135deg,rgba(109,94,248,.10),rgba(45,212,191,.10));border:1px solid rgba(109,94,248,.24);padding:14px">
+                <div class="micro" style="font-size:9px;color:var(--p1)">Your next move · this week</div>
+                <div style="font-weight:700;font-size:15px;margin-top:7px">Refresh your safety certificate</div>
+                <div style="font-size:12.5px;color:var(--mid);margin-top:6px;line-height:1.5">It has to be under six months old the day you file. We found a refresher — Saturday 9:00 AM, Queens.</div>
+                <a class="cta pri" style="padding:8px 14px;font-size:12.5px;margin-top:12px">Confirm this slot</a>
+              </div>
+              <div class="micro" style="font-size:9px;color:var(--low);margin:16px 0 8px">Already handled · 17 / 24</div>
+              <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--mid)">
+                <div style="display:flex;justify-content:space-between"><span>Character references — notarized</span><span style="color:#0EA678">4/4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>A statement from everyone at home</span><span style="color:#0EA678">3/3</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Fingerprints — submitted</span><span style="color:#0EA678">✓</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="pf"><div class="viewport">
+        <div class="mk C" style="width:100%;padding-bottom:22px">
+          <div class="wash" style="width:380px;height:300px;left:-120px;top:-40px;background:radial-gradient(circle,#6D5EF8 0%,rgba(109,94,248,0) 68%);opacity:.32"></div>
+          <div class="wash" style="width:340px;height:280px;right:-110px;top:60px;background:radial-gradient(circle,#F97362 0%,rgba(249,115,98,0) 70%);opacity:.28"></div>
+          <div class="wash" style="width:400px;height:320px;right:-90px;top:330px;background:radial-gradient(circle,#2DD4BF 0%,rgba(45,212,191,0) 70%);opacity:.30"></div>
+          <div class="nav" style="position:relative">
+            <div class="brand"><span class="dot"></span> Gun License NYC</div>
+            <div class="burger"><i></i><i></i><i></i></div>
+          </div>
+          <div style="position:relative;padding:28px 20px 0">
+            <div class="micro" style="font-size:9px;color:var(--p1);margin-bottom:13px">NYC · Concealed carry</div>
+            <h1 class="hh arch" style="font-size:37px;font-weight:700;line-height:1.0">24 documents.<br>13 stages.<br>One thing on<br>your plate.</h1>
+            <p class="sub" style="margin:16px 0 0;color:var(--mid);font-size:14.5px">We run every document, deadline and filing. You get one next step at a time.</p>
+            <a class="cta pri" style="display:block;padding:14px;font-size:15px;margin-top:20px">Check your eligibility</a>
+            <div class="micro" style="font-size:9px;color:var(--low);margin-top:12px;text-align:center">Two minutes · No card</div>
+            <div class="card" style="padding:14px;margin-top:26px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="micro" style="font-size:8.5px;color:var(--low)">Case file</span>
+                <span class="micro" style="font-size:8.5px;color:var(--p1)">Stage 06 / 13</span>
+              </div>
+              <div style="height:5px;border-radius:3px;background:#EFEFF3;margin:11px 0 0;overflow:hidden">
+                <div style="width:46%;height:100%;background:linear-gradient(90deg,#6D5EF8,#2DD4BF)"></div>
+              </div>
+              <div style="margin-top:14px;border-radius:10px;background:linear-gradient(135deg,rgba(109,94,248,.10),rgba(45,212,191,.10));border:1px solid rgba(109,94,248,.24);padding:13px">
+                <div class="micro" style="font-size:8.5px;color:var(--p1)">Your next move</div>
+                <div style="font-weight:700;font-size:14.5px;margin-top:6px">Refresh your safety certificate</div>
+                <div style="font-size:12px;color:var(--mid);margin-top:5px;line-height:1.5">Saturday 9:00 AM, Queens — we already found it.</div>
+                <a class="cta pri" style="display:block;padding:9px;font-size:12.5px;margin-top:11px">Confirm this slot</a>
+              </div>
+              <div class="micro" style="font-size:8.5px;color:var(--low);margin:14px 0 7px">Already handled · 17 / 24</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mid)">
+                <div style="display:flex;justify-content:space-between"><span>References — notarized</span><span style="color:#0EA678">4/4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Household statements</span><span style="color:#0EA678">3/3</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap">iPhone · 390pt</div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <h2>What is true in all three</h2>
+  <p><strong>The product is the hero image.</strong> The case file — one next move, seventeen of twenty-four handled — is the strongest thing you own, and it is currently buried three screens down. In every direction it sits in the first viewport, on mobile too. The flat vector illustration goes.</p>
+  <p style="margin-top:12px"><strong>Eleven sections become five:</strong> the hero with the case file, the twenty-four documents, the five phases, the honest price, and one closing call. Everything else moves to its own page — the content is good, the homepage is just not where all of it belongs.</p>
+  <p style="margin-top:12px"><strong>No always-on animation above the fold.</strong> Every visual here is a static composition. Motion earns its place on scroll or on hover, never as ambient background, which is what is currently costing you the first three seconds.</p>
+</section>
+
+</div>
+</body></html>

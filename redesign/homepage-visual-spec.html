@@ -1,0 +1,2041 @@
+<!--
+GUN LICENSE NYC — HOMEPAGE VISUAL SPECIFICATION
+
+PALETTE — every colour is named and expressed as a hex token
+Light ground: IVORY #F7F5EF; PAPER #FFFEFA; PAPER-DEEP #ECE8DE.
+Light text: INK #0A1019; INK-SOFT #4D5562; INK-MUTED #767D87; RULE #D7D3C9.
+Dark ground: MIDNIGHT #07111F; MIDNIGHT-RAISED #0D1B2D; MIDNIGHT-SOFT #12253D.
+Dark text: LIGHT #F5F7FB; LIGHT-SOFT #B7C1CF; DARK-RULE #263B56.
+Primary interactive accent: ELECTRIC #3978F6. ELECTRIC-DEEP #1D54C8 is used only for active/hover contrast.
+Signature spectrum (illustrative only, never status): CYAN #5BE7F6; BLUE #3978F6; VIOLET #7659FF; MAGENTA #E24BAE; VERMILION #F05B58; TANGERINE #FF8A43.
+Semantic: SUCCESS #10836A; WARNING #B46A12; ERROR #BD4450.
+Light/dark rule: ivory sections use INK/INK-SOFT on IVORY or PAPER; midnight sections use LIGHT/LIGHT-SOFT on MIDNIGHT. ELECTRIC is the sole control accent. The spectrum is restricted to the signature ribbon, progress highlights, and tiny wayfinding ticks.
+
+TYPE
+Families: display = Bodoni Moda, optical sizes 6–96 and weights 400/500/600; body/UI = Hanken Grotesk, weights 400/500/600/700; labels/data = Azeret Mono, weights 400/500. No italic face is used anywhere.
+Literal steps used (size/line-height/letter-spacing): NANO 7–9px/1.45–1.55/0.06–0.13em; MICRO 10px/1.45/0.10–0.13em; EYEBROW 11px/1.4/0.16em uppercase; META 12px/1.45/0.02–0.13em; NOTE 13px/1.55/0; UI 14px/1.45–1.55/0; UI-LARGE 15px/1.55/0; BODY 16px/1.65/-0.006em; CONTROL 17px/1/0; BODY-LARGE 18px/1.55/-0.01em; SMALL-HEADING 19px/1.2/-0.02em; LEDE 20px/1.55/-0.012em; PRODUCT-HEADING 21px/1.16/-0.03em; GUIDE 22px/1.2/-0.02em; PANEL-HEADING 23px/1.18/-0.025em; LARGE-CONTROL 24px/1/0; ARTICLE-MOBILE 30px/1.04–1.08/-0.04em; SPECIMEN/ARTICLE 34px/0.96–1.08/-0.04em; PROMISE-MOBILE 36px/1/-0.035em; TOTAL/RESULT 38px/1–1.04/-0.04em; MOBILE-DISPLAY/FACT 40px/0.98–1/-0.038–0.04em; PROMISE 42px/1/-0.035em; FACT 46px/1/-0.04em; HERO-MOBILE 50px/0.96/-0.06em; PRICE/CLOSING-MOBILE 58px/0.9–0.95/-0.045–0.055em; PRICE 66px/0.95/-0.045em.
+Fluid desktop display applications: DISPLAY clamp(46px,5.5vw,72px)/0.96/-0.045em; GUIDE-HERO clamp(46px,6vw,78px)/0.94/-0.06em; ELIGIBILITY-TITLE clamp(42px,5vw,66px)/0.96/-0.055em; HERO clamp(64px,6.7vw,90px)/0.94/-0.065em; CLOSING clamp(62px,7.8vw,100px)/0.9/-0.055em. Decorative ghost type uses clamp(68px,9vw,128px), clamp(100px,14vw,196px), and clamp(132px,21vw,292px).
+
+SPACING
+Base unit 4px. Named scale: 1=4, 2=8, 3=12, 4=16, 5=20, 6=24, 8=32, 10=40, 12=48, 16=64, 20=80, 24=96, 32=128px.
+Homepage section padding: 128px desktop, 80px tablet, 72px mobile. Reference-template field: 112px desktop, 80px tablet, 72px mobile. Content max width: 1240px. Mobile gutters: 20px.
+
+RADIUS
+SHARP 0px; XS 4px; SM 8px; MD 12px; MD-PLUS 14px; LG 18px; DEVICE 26px/30px; ROUND 999px.
+The editorial page structure stays mostly sharp. Functional product surfaces use MD/LG. Buttons use SM or ROUND only where noted.
+
+MOTION INVENTORY
+No ambient, automatic-looping, marquee, infinite, blur, filter, box-shadow, size, or background-position animation. Every animated declaration is transform or opacity only. No above-fold element begins hidden.
+HERO LOAD: one finite orchestrated entrance on initial paint. Nav 620ms/80ms delay; eyebrow 600ms/80ms; headline 760ms/140ms; paragraph 620ms/260ms; actions 620ms/340ms; case sculpture 840ms/180ms; progress rail 600ms/430ms. Cubic-bezier(.2,.75,.2,1), once, both fill. Starting opacity is 0.82–0.90, so all content is legible before or without animation.
+HERO SCROLL-OUT: five paper planes fan by 12–42px and fade no lower than 0.58 as they leave; the case stack drifts 18px. Linear, scroll-driven by the hero's named CSS view timeline (--hero-exit) through animation-timeline:--hero-exit, range exit 0% to exit 92%; nominal duration 1s mapped to the view timeline. This named view timeline keeps every plane synchronized without JavaScript.
+SECTION ENTRY: copy groups and functional surfaces rise 18px from opacity 0.78 to 1. Linear, scroll-driven through animation-timeline:view(), range entry 0% to cover 28%; nominal duration 1s mapped to the view timeline.
+PHASE SEQUENCE: five equal-height cards use position:sticky; each card's content rises 22px from opacity 0.76 to 1 via animation-timeline:view(), range entry 8% to entry 78%; nominal duration 1s mapped to the view timeline. Sticky behavior is disabled below 840px.
+BUTTON: button lift/press and arrow travel, transform only, 220ms cubic-bezier(.2,.7,.2,1); maximum movement 3px. Colour changes are immediate, not transitioned.
+LINK / CHOICE: navigation and footer opacity plus TOC, back-link and answer-row travel use transform/opacity only, 160–180ms ease-out; maximum horizontal movement 4px. Text-colour and selected-border changes are immediate.
+CARD HOVER: case, phase, fact, price and related-link surfaces lift/scale/settle by no more than 7px/1.01, transform only, 220–240ms cubic-bezier(.2,.7,.2,1). Spectral edge reveals use opacity or scale transforms only.
+GUIDE LINK: line reveal and arrow travel, transform only, 220–240ms cubic-bezier(.2,.7,.2,1); maximum movement +5px horizontally.
+DISCLOSURE / MOBILE MENU: requirement/FAQ rows travel using transform/opacity only, 200ms ease-out; plus and three-line menu glyph rotate/fade using transform and opacity only, 220ms ease-out. Content is present in HTML and never JavaScript-dependent.
+FOCUS: 2px ELECTRIC outline with 3px offset, immediate.
+REDUCED MOTION: @media (prefers-reduced-motion: reduce) disables every animation and transition, removes hover lift/slide transforms, switches disclosure indicators instantly, and keeps scrolling immediate.
+
+ILLUSTRATION / IMAGE DEPENDENCIES
+No raster image, generated image, remote asset, photo, firearm, badge, police, seal, or tactical illustration is used.
+The signature illustration is non-representational and fully defined in CSS: a 19–28px spectral ribbon formed by a linear gradient (CYAN → BLUE → VIOLET → MAGENTA → VERMILION → TANGERINE), threaded through a subtly tilted dimensional set of functional case-file planes. The foreground arc stays below the live card copy and never crosses text. It is static at rest; only the planes separate during the finite scroll-out timeline.
+The hero visual is an inspectable product interface, not a picture: five translucent paper planes for eligibility, documents, application, requirements and next steps, topped by a live case summary showing Stage 06 of 13, one action this week, and progress 14 of 24. The emphasized headline uses a static irregular spectral paint swash with a fine speckle texture; no image file or data URI is required.
+
+CONSTRAINT CHECK
+1. Static by default: pass — no ambient or infinite animation; motion is finite load, hover/focus/native-open, or scroll-driven view-timeline motion using transform and opacity only.
+2. Above fold without JavaScript: pass — semantic text, CTA, case file and native mobile menu render in HTML; entrance keyframes begin from visible opacity and no content is JS-gated.
+3. Mobile primary: pass — core grids stack at 840px, sticky phases become a deliberate vertical sequence, phone refinements apply at 540px, and 390px typography, gutters and touch targets are verified.
+4. First screen, one idea and one primary action: pass — one promise and one visually dominant Check eligibility action; the secondary process link is deliberately outlined and subordinate.
+5. Product in first viewport: pass — the case file shows one action this week and work already handled.
+6. Legal room: pass — dedicated disclosure and refile sections plus full footer disclaimer.
+7. High-end concierge: pass — editorial typography, restrained controls, transparent pricing and private case-management language; no consumer-app badges or gamification.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A visual design specification for Gun License NYC's private document-preparation and case-management service.">
+  <title>Gun License NYC — Homepage Visual Specification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&amp;family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ivory: #F7F5EF;
+      --paper: #FFFEFA;
+      --paper-deep: #ECE8DE;
+      --ink: #0A1019;
+      --ink-soft: #4D5562;
+      --ink-muted: #767D87;
+      --rule: #D7D3C9;
+      --midnight: #07111F;
+      --midnight-raised: #0D1B2D;
+      --midnight-soft: #12253D;
+      --light: #F5F7FB;
+      --light-soft: #B7C1CF;
+      --dark-rule: #263B56;
+      --electric: #3978F6;
+      --electric-deep: #1D54C8;
+      --cyan: #5BE7F6;
+      --blue: #3978F6;
+      --violet: #7659FF;
+      --magenta: #E24BAE;
+      --vermilion: #F05B58;
+      --tangerine: #FF8A43;
+      --success: #10836A;
+      --warning: #B46A12;
+      --error: #BD4450;
+      --spectral: linear-gradient(96deg, var(--cyan), var(--blue) 22%, var(--violet) 45%, var(--magenta) 66%, var(--vermilion) 84%, var(--tangerine));
+      --display: "Bodoni Moda", Didot, "Times New Roman", serif;
+      --sans: "Hanken Grotesk", Arial, sans-serif;
+      --mono: "Azeret Mono", monospace;
+      --content: 1240px;
+      --shadow-soft: 0 24px 70px rgba(7, 17, 31, 0.12);
+      --shadow-dark: 0 32px 90px rgba(0, 0, 0, 0.30);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: auto; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      letter-spacing: -0.006em;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    a { color: inherit; }
+    button, summary { font: inherit; }
+    button, a, summary { -webkit-tap-highlight-color: transparent; }
+    img, svg { display: block; max-width: 100%; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { text-wrap: balance; }
+    p { text-wrap: pretty; }
+    :focus-visible { outline: 2px solid var(--electric); outline-offset: 3px; }
+
+    .shell { width: min(calc(100% - 48px), var(--content)); margin-inline: auto; }
+    .section { padding-block: 128px; }
+    .dark { background: var(--midnight); color: var(--light); }
+    .eyebrow {
+      margin: 0 0 20px;
+      color: var(--electric);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.4;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .dark .eyebrow { color: var(--cyan); }
+    .display {
+      margin-bottom: 24px;
+      font-family: var(--display);
+      font-size: clamp(46px, 5.5vw, 72px);
+      font-weight: 400;
+      line-height: 0.96;
+      letter-spacing: -0.045em;
+    }
+    .section-lede {
+      max-width: 620px;
+      margin-bottom: 0;
+      color: var(--ink-soft);
+      font-size: 20px;
+      line-height: 1.55;
+      letter-spacing: -0.012em;
+    }
+    .dark .section-lede { color: var(--light-soft); }
+    .mono { font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .site-header {
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: 30;
+      padding-top: 16px;
+      background: transparent;
+    }
+    .nav-row {
+      min-height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      padding-inline: 20px;
+      border: 1px solid rgba(215, 211, 201, 0.72);
+      border-radius: 14px;
+      background: rgba(255, 254, 250, 0.91);
+      box-shadow: 0 14px 44px rgba(7, 17, 31, 0.08);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .brand-mark {
+      position: relative;
+      width: 27px;
+      height: 6px;
+      flex: 0 0 27px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--spectral);
+      transform: rotate(-12deg);
+    }
+    .brand-mark::before,
+    .brand-mark::after {
+      display: none;
+    }
+    .brand-mark::before { left: 7px; right: 7px; top: 13px; height: 1px; }
+    .brand-mark::after { top: 7px; bottom: 7px; left: 13px; width: 1px; }
+    .desktop-nav { display: flex; align-items: center; gap: 28px; margin-left: auto; }
+    .desktop-nav a,
+    .sign-in {
+      color: var(--ink-soft);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: opacity 160ms ease-out;
+    }
+    .desktop-nav a:hover,
+    .desktop-nav a:focus-visible,
+    .sign-in:hover,
+    .sign-in:focus-visible { color: var(--ink); opacity: .72; }
+    .nav-actions { display: flex; align-items: center; gap: 18px; }
+
+    .button {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border: 1px solid var(--ink);
+      border-radius: 8px;
+      background: var(--ink);
+      color: var(--light);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.2;
+      text-decoration: none;
+      box-shadow: 0 0 0 rgba(7, 17, 31, 0);
+      transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out;
+    }
+    .button::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: var(--spectral);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out;
+      opacity: .9;
+      pointer-events: none;
+    }
+    .button:hover,
+    .button:focus-visible,
+    .button.is-hover {
+      border-color: var(--electric-deep);
+      background: var(--electric-deep);
+      color: var(--light);
+      transform: translateY(-2px);
+    }
+    .button:hover::before,
+    .button:focus-visible::before,
+    .button.is-hover::before {
+      transform: scaleX(1);
+    }
+    .button:active,
+    .button.is-active { transform: translateY(0); box-shadow: none; }
+    .button-light { border-color: var(--light); background: var(--light); color: var(--midnight); }
+    .button-light:hover,
+    .button-light:focus-visible,
+    .button-light.is-hover { border-color: var(--cyan); background: var(--cyan); color: var(--midnight); }
+    .button-outline { border-color: var(--rule); background: transparent; color: var(--ink); }
+    .button-outline:hover,
+    .button-outline:focus-visible,
+    .button-outline.is-hover { border-color: var(--ink); background: var(--paper); color: var(--ink); }
+    .button-arrow { font-size: 17px; line-height: 1; transition: transform 220ms cubic-bezier(.2,.7,.2,1); }
+    .button:hover .button-arrow,
+    .button:focus-visible .button-arrow,
+    .button.is-hover .button-arrow { transform: translateX(3px); }
+
+    .mobile-menu { display: none; position: static; }
+    .mobile-menu > summary {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      background: var(--paper);
+      cursor: pointer;
+      list-style: none;
+    }
+    .mobile-menu > summary::-webkit-details-marker { display: none; }
+    .menu-glyph { width: 18px; height: 14px; display: grid; align-content: space-between; }
+    .menu-glyph i { display: block; height: 1px; background: var(--ink); transition: transform 220ms ease-out, opacity 220ms ease-out; }
+    .mobile-menu[open] .menu-glyph i:first-child { transform: translateY(6.5px) rotate(45deg); }
+    .mobile-menu[open] .menu-glyph i:nth-child(2) { opacity: 0; }
+    .mobile-menu[open] .menu-glyph i:last-child { transform: translateY(-6.5px) rotate(-45deg); }
+    .mobile-menu-panel {
+      position: absolute;
+      left: max(20px, calc((100vw - var(--content)) / 2));
+      right: max(20px, calc((100vw - var(--content)) / 2));
+      top: 88px;
+      padding: 18px 20px 24px;
+      border: 1px solid var(--dark-rule);
+      border-radius: 14px;
+      background: var(--midnight);
+      color: var(--light);
+      box-shadow: var(--shadow-dark);
+    }
+    .mobile-menu-panel nav { display: grid; }
+    .mobile-menu-panel nav a {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--dark-rule);
+      color: var(--light);
+      font-size: 18px;
+      text-decoration: none;
+    }
+    .mobile-menu-panel .button { width: 100%; margin-top: 20px; }
+    .mobile-menu-note { margin: 14px 0 0; color: var(--light-soft); font-size: 12px; }
+
+    .hero {
+      position: relative;
+      min-height: 900px;
+      display: grid;
+      align-items: center;
+      overflow: hidden;
+      background-color: var(--ivory);
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(7,17,31,.045) .7px, transparent .8px),
+        linear-gradient(112deg, transparent 0 64%, rgba(57,120,246,.045) 64% 64.1%, transparent 64.1%);
+      background-size: 8px 8px, 100% 100%;
+      view-timeline-name: --hero-exit;
+      view-timeline-axis: block;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 82px;
+      background: linear-gradient(176deg, transparent 0 48%, var(--paper) 49% 100%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(540px, 1.08fr);
+      gap: clamp(34px, 5vw, 76px);
+      align-items: center;
+      padding-block: 148px 118px;
+    }
+    .hero-copy { max-width: 670px; }
+    .hero h1 {
+      max-width: 720px;
+      margin: 0 0 28px;
+      font-family: var(--display);
+      font-size: clamp(64px, 6.7vw, 90px);
+      font-weight: 500;
+      line-height: 0.94;
+      letter-spacing: -0.065em;
+    }
+    .hero-highlight {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      margin-top: 5px;
+      padding: 1px 12px 5px 7px;
+      color: var(--light);
+      font-style: normal;
+      letter-spacing: -0.07em;
+      isolation: isolate;
+    }
+    .hero-highlight::before,
+    .hero-highlight::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+    .hero-highlight::before {
+      z-index: -2;
+      inset: 7% -2% 2% -1%;
+      background: var(--spectral);
+      clip-path: polygon(1% 18%, 11% 4%, 30% 9%, 48% 0, 66% 8%, 84% 2%, 100% 19%, 96% 71%, 81% 86%, 62% 81%, 44% 94%, 26% 86%, 5% 96%, 0 72%);
+      transform: rotate(-1.2deg);
+    }
+    .hero-highlight::after {
+      z-index: -1;
+      inset: 9% 0 4%;
+      background-image: radial-gradient(circle, rgba(255,255,255,.7) 0 0.75px, transparent .9px);
+      background-size: 6px 6px;
+      clip-path: polygon(1% 18%, 11% 4%, 30% 9%, 48% 0, 66% 8%, 84% 2%, 100% 19%, 96% 71%, 81% 86%, 62% 81%, 44% 94%, 26% 86%, 5% 96%, 0 72%);
+      opacity: .28;
+    }
+    .hero-lede {
+      max-width: 560px;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 19px;
+      line-height: 1.55;
+      letter-spacing: -0.012em;
+    }
+    .hero-action { margin-top: 32px; }
+    .hero-buttons { display: flex; align-items: center; gap: 12px; }
+    .hero-action .button { min-height: 52px; padding-inline: 24px; }
+    .hero-micro { display: block; margin-top: 11px; color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; }
+    .hero-visual { position: relative; min-height: 620px; display: grid; place-items: center; }
+    .case-sculpture { position: relative; width: min(100%, 620px); height: 620px; perspective: 1200px; }
+    .case-scroll-layer { position: relative; width: 100%; height: 100%; }
+    .paper-sheet,
+    .case-file {
+      position: absolute;
+      left: 88px;
+      width: 410px;
+      border: 1px solid rgba(255,255,255,.78);
+      background: rgba(255, 254, 250, .74);
+      box-shadow: 0 24px 42px rgba(7,17,31,.12);
+      transform: rotate(1.35deg) skewX(-.65deg);
+      transform-origin: center;
+    }
+    .paper-sheet {
+      height: 126px;
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      padding: 0 24px 18px;
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .paper-sheet::before { content: attr(data-index); position: absolute; left: 24px; bottom: 18px; color: var(--electric); font-size: 9px; }
+    .sheet-eligibility { top: 100px; z-index: 7; }
+    .sheet-documents { top: 172px; z-index: 6; left: 74px; }
+    .sheet-application { top: 244px; z-index: 5; left: 60px; }
+    .sheet-requirements { top: 316px; z-index: 4; left: 47px; }
+    .sheet-next { top: 388px; z-index: 3; left: 34px; }
+    .case-file {
+      top: 54px;
+      z-index: 9;
+      min-height: 185px;
+      padding: 22px;
+      border-color: rgba(7,17,31,.12);
+      background: rgba(255,254,250,.94);
+      color: var(--ink);
+      box-shadow: 0 34px 76px rgba(7,17,31,.17);
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
+    }
+    .case-file:hover,
+    .case-file:focus-within { border-color: var(--magenta); transform: translateY(-5px) rotate(.4deg) skewX(-.3deg) scale(1.008); }
+    .case-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .case-top span { color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .stage-number { color: var(--electric-deep) !important; }
+    .progress-track { height: 3px; margin-top: 13px; overflow: hidden; border-radius: 999px; background: var(--rule); }
+    .progress-fill { width: 46.154%; height: 100%; background: var(--spectral); }
+    .next-step { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--rule); }
+    .next-label { margin: 0 0 6px; color: var(--electric-deep); font-family: var(--mono); font-size: 9px; letter-spacing: 0.11em; text-transform: uppercase; }
+    .next-step h2 { margin: 0; font-family: var(--sans); font-size: 21px; font-weight: 600; line-height: 1.16; letter-spacing: -0.03em; }
+    .next-step p { display: none; }
+    .case-stat { display: flex; justify-content: space-between; margin: 15px 0 0; color: var(--ink-soft); font-size: 12px; }
+    .case-stat strong { color: var(--ink); font-weight: 600; }
+    .case-list { display: none; }
+    .case-foot { display: none; }
+    .ribbon {
+      position: absolute;
+      z-index: 8;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--spectral);
+      box-shadow: 0 14px 28px rgba(118,89,255,.14);
+      pointer-events: none;
+    }
+    .ribbon-back { width: 520px; top: 145px; left: 12px; transform: rotate(-28deg); z-index: 2; }
+    .ribbon-front { width: 560px; top: 452px; left: -8px; transform: rotate(9deg); z-index: 8; }
+    .ribbon-loop {
+      position: absolute;
+      z-index: 6;
+      width: 232px;
+      height: 166px;
+      left: 1px;
+      top: 238px;
+      border-radius: 50%;
+      background: conic-gradient(from 110deg, transparent 0 31%, var(--cyan) 34%, var(--blue) 43%, var(--violet) 53%, var(--magenta) 63%, var(--vermilion) 73%, var(--tangerine) 78%, transparent 81%);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 25px), #000 calc(100% - 24px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 25px), #000 calc(100% - 24px));
+      transform: rotate(-7deg);
+      pointer-events: none;
+    }
+    .sculpture-note { position: absolute; right: -4px; top: 262px; width: 86px; margin: 0; color: var(--ink-muted); font-family: var(--mono); font-size: 8px; line-height: 1.55; letter-spacing: .13em; text-transform: uppercase; }
+    .hero-progress { position: absolute; z-index: 4; left: 50%; bottom: 58px; transform: translateX(-50%); display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; }
+    .hero-progress-label { color: var(--ink-soft); font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+    .hero-progress-track { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .hero-progress-track i { height: 2px; background: var(--rule); }
+    .hero-progress-track i:first-child { background: var(--spectral); }
+
+    .proof-rail { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper); }
+    .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .proof-item { min-height: 104px; display: flex; align-items: center; gap: 16px; padding: 24px 32px; border-left: 1px solid var(--rule); }
+    .proof-item:first-child { border-left: 0; }
+    .proof-index { color: var(--electric); font-family: var(--mono); font-size: 11px; }
+    .proof-item p { margin: 0; font-size: 14px; line-height: 1.5; }
+    .proof-item strong { display: block; color: var(--ink); font-size: 16px; }
+
+    .phases-head { display: grid; grid-template-columns: 1fr .82fr; gap: 80px; align-items: end; }
+    .phase-path { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 72px; }
+    .phase-path::before { content: ""; position: absolute; left: 7%; right: 7%; top: 17px; height: 1px; background: var(--dark-rule); }
+    .phase { position: relative; z-index: 1; padding-right: 22px; }
+    .phase-dot {
+      width: 35px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 22px;
+      border: 1px solid var(--dark-rule);
+      border-radius: 50%;
+      background: var(--midnight);
+      color: var(--light-soft);
+      font-family: var(--mono);
+      font-size: 10px;
+      transition: transform 200ms ease-out, opacity 200ms ease-out;
+    }
+    .phase:hover .phase-dot,
+    .phase.is-active .phase-dot { border-color: var(--cyan); background: var(--cyan); color: var(--midnight); transform: scale(1.06); }
+    .phase h3 { margin: 0 0 8px; font-size: 19px; line-height: 1.2; }
+    .phase p { margin: 0; color: var(--light-soft); font-size: 14px; line-height: 1.55; }
+    .phase.is-active h3 { color: var(--cyan); }
+    .phase-note { margin: 52px 0 0; padding-top: 22px; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-size: 14px; }
+    .phase-note strong { color: var(--light); }
+
+    .order-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(56px, 9vw, 124px); align-items: start; }
+    .order-copy { position: sticky; top: 36px; }
+    .order-note { margin-top: 32px; padding-left: 18px; border-left: 2px solid var(--electric); color: var(--ink-soft); font-size: 14px; }
+    .requirement-stack { border-top: 1px solid var(--ink); }
+    .requirement-group { border-bottom: 1px solid var(--rule); }
+    .requirement-group summary {
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: 42px 1fr auto 28px;
+      gap: 18px;
+      align-items: center;
+      list-style: none;
+      cursor: pointer;
+      transition: transform 200ms ease-out, opacity 200ms ease-out;
+    }
+    .requirement-group summary::-webkit-details-marker { display: none; }
+    .requirement-group summary:hover,
+    .requirement-group[open] summary { background: var(--paper); transform: translateX(5px); }
+    .req-index { color: var(--electric); font-family: var(--mono); font-size: 11px; }
+    .req-title { font-size: 18px; font-weight: 600; letter-spacing: -0.015em; }
+    .req-count { color: var(--ink-muted); font-family: var(--mono); font-size: 11px; }
+    .req-plus { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 50%; font-size: 17px; transition: transform 220ms ease-out; }
+    .requirement-group[open] .req-plus { transform: rotate(45deg); }
+    .requirement-body { padding: 0 14px 24px 74px; color: var(--ink-soft); font-size: 14px; }
+    .requirement-body ul { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+    .requirement-body li { position: relative; padding-left: 18px; }
+    .requirement-body li::before { content: "✓"; position: absolute; left: 0; color: var(--success); }
+
+    .reality { overflow: hidden; background: var(--paper); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+    .reality-head { display: flex; justify-content: space-between; gap: 80px; align-items: end; }
+    .reality-head p { max-width: 500px; margin: 0; color: var(--ink-soft); }
+    .fact-grid { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 72px; border-top: 1px solid var(--ink); }
+    .fact { min-height: 190px; padding: 24px 22px; border-right: 1px solid var(--rule); }
+    .fact:last-child { border-right: 0; }
+    .fact-value { margin: 0 0 18px; font-family: var(--display); font-size: 46px; line-height: 1; letter-spacing: -0.04em; }
+    .fact-label { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
+
+    .candor-grid { display: grid; grid-template-columns: 1fr .92fr; gap: clamp(60px, 10vw, 140px); align-items: start; }
+    .candor-copy .display { max-width: 670px; }
+    .candor-panel { padding: 30px; border: 1px solid var(--dark-rule); border-radius: 18px; background: var(--midnight-raised); }
+    .candor-panel h3 { margin: 0 0 16px; font-size: 23px; }
+    .candor-panel p { margin: 0; color: var(--light-soft); font-size: 15px; }
+    .candor-rules { margin: 24px 0 0; padding: 0; list-style: none; }
+    .candor-rules li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-size: 14px; }
+    .candor-rules span { color: var(--cyan); font-family: var(--mono); font-size: 11px; }
+    .attorney-seam { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--dark-rule); }
+    .attorney-seam strong { display: block; margin-bottom: 5px; color: var(--light); font-size: 14px; }
+    .attorney-seam p { font-size: 13px; }
+
+    .pricing-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(64px, 10vw, 144px); align-items: start; }
+    .price-card { padding: 34px; border: 1px solid var(--ink); border-radius: 18px; background: var(--paper); box-shadow: var(--shadow-soft); }
+    .price-top { display: flex; justify-content: space-between; gap: 20px; align-items: start; padding-bottom: 26px; border-bottom: 1px solid var(--rule); }
+    .price-name { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; }
+    .price-number { margin: 8px 0 0; font-family: var(--display); font-size: 66px; line-height: .95; letter-spacing: -.045em; }
+    .only-fee { max-width: 130px; margin: 2px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; text-align: right; }
+    .ledger { margin: 0; }
+    .ledger div { min-height: 56px; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; border-bottom: 1px solid var(--rule); }
+    .ledger dt { color: var(--ink-soft); font-size: 14px; }
+    .ledger dd { margin: 0; font-family: var(--mono); font-size: 12px; }
+    .ledger-total { margin-top: 26px; padding: 22px; border-radius: 12px; background: var(--midnight); color: var(--light); }
+    .ledger-total span { display: block; color: var(--light-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .ledger-total strong { display: block; margin-top: 8px; font-family: var(--display); font-size: 38px; font-weight: 400; line-height: 1; }
+    .price-card .button { width: 100%; margin-top: 18px; }
+
+    .promise { padding-block: 80px; border-top: 1px solid var(--rule); background: var(--paper-deep); }
+    .promise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
+    .promise h2 { margin: 0 0 18px; font-family: var(--display); font-size: 42px; font-weight: 400; line-height: 1; letter-spacing: -.035em; }
+    .promise p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+    .promise-block { padding-left: 24px; border-left: 1px solid var(--ink); }
+    .promise-block .eyebrow { margin-bottom: 14px; }
+
+    .guides-head { display: grid; grid-template-columns: 1fr .8fr; gap: 70px; align-items: end; }
+    .guide-list { margin-top: 64px; border-top: 1px solid var(--ink); }
+    .guide-link {
+      min-height: 108px;
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 24px;
+      align-items: center;
+      border-bottom: 1px solid var(--rule);
+      color: var(--ink);
+      text-decoration: none;
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
+    }
+    .guide-link:hover,
+    .guide-link:focus-visible,
+    .guide-link.is-hover { background: var(--paper); transform: translateX(4px); }
+    .guide-no { color: var(--electric); font-family: var(--mono); font-size: 11px; }
+    .guide-title { display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+    .guide-desc { display: block; margin-top: 4px; color: var(--ink-soft); font-size: 14px; }
+    .guide-arrow { font-size: 24px; transition: transform 220ms ease-out; }
+    .guide-link:hover .guide-arrow,
+    .guide-link:focus-visible .guide-arrow,
+    .guide-link.is-hover .guide-arrow { transform: translateX(5px); }
+
+    .closing { position: relative; overflow: hidden; }
+    .closing::before { content: ""; position: absolute; left: -7%; right: -7%; top: 56%; height: 24px; border-radius: 999px; background: var(--spectral); transform: rotate(-5deg); opacity: .95; }
+    .closing-inner { position: relative; z-index: 1; min-height: 540px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 80px; }
+    .closing-copy { max-width: 790px; padding-block: 90px; }
+    .closing h2 { margin: 0; font-family: var(--display); font-size: clamp(62px, 7.8vw, 100px); font-weight: 400; line-height: .9; letter-spacing: -.055em; }
+    .closing p { max-width: 520px; margin: 28px 0 0; color: var(--light-soft); font-size: 18px; }
+    .closing-action { position: relative; padding: 26px; border: 1px solid var(--dark-rule); border-radius: 18px; background: var(--midnight); box-shadow: var(--shadow-dark); }
+    .closing-action .button { min-width: 220px; }
+    .closing-action p { margin: 12px 0 0; font-family: var(--mono); font-size: 10px; text-align: center; }
+
+    .site-footer { padding-block: 74px 40px; background: var(--midnight); color: var(--light); border-top: 1px solid var(--dark-rule); }
+    .footer-top { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr); gap: 54px; }
+    .footer-intro { max-width: 330px; }
+    .site-footer .brand { color: var(--light); }
+    .site-footer .brand-mark { border-color: var(--light); }
+    .site-footer .brand-mark::before,
+    .site-footer .brand-mark::after { background: var(--light); }
+    .footer-intro p { margin: 22px 0 0; color: var(--light-soft); font-size: 14px; }
+    .footer-col h3 { margin: 0 0 18px; color: var(--light-soft); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; }
+    .footer-col a { min-height: 34px; display: block; color: var(--light); font-size: 14px; text-decoration: none; transition: transform 160ms ease-out, opacity 160ms ease-out; }
+    .footer-col a:hover,
+    .footer-col a:focus-visible { color: var(--cyan); transform: translateX(3px); }
+    .footer-legal { margin-top: 60px; padding-top: 28px; border-top: 1px solid var(--dark-rule); }
+    .footer-legal p { max-width: 1040px; margin: 0; color: var(--light-soft); font-size: 12px; line-height: 1.65; }
+    .footer-bottom { display: flex; justify-content: space-between; gap: 24px; margin-top: 28px; color: var(--light-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .03em; }
+
+    .states { padding-block: 96px; background: var(--paper); border-top: 1px solid var(--rule); }
+    .state-intro { display: flex; justify-content: space-between; gap: 60px; align-items: end; }
+    .state-intro p { max-width: 480px; margin: 0; color: var(--ink-soft); font-size: 14px; }
+    .state-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 46px; }
+    .state-panel { min-width: 0; padding: 26px; border: 1px solid var(--rule); border-radius: 12px; background: var(--ivory); }
+    .state-panel h3 { margin: 0 0 20px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
+    .state-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .state-sample { min-width: 0; padding: 18px; border: 1px dashed var(--rule); border-radius: 8px; }
+    .state-label { display: block; margin-bottom: 14px; color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+    .text-link { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-underline-offset: 4px; transition: transform 160ms ease-out, opacity 160ms ease-out; }
+    .text-link:hover,
+    .text-link:focus-visible,
+    .text-link.is-hover { color: var(--electric-deep); text-underline-offset: 7px; }
+    .sample-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); font-size: 14px; }
+    .sample-row.is-active { padding-inline: 12px; border-color: var(--electric); background: var(--paper); }
+    .sample-row strong { color: var(--success); font-family: var(--mono); font-size: 11px; }
+    .menu-specimens { grid-column: 1 / -1; }
+    .phone-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 390px)); gap: 24px; justify-content: center; }
+    .phone-frame { overflow: hidden; border: 8px solid var(--ink); border-radius: 30px; background: var(--ivory); box-shadow: var(--shadow-soft); }
+    .phone-head { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+    .phone-head .brand { font-size: 13px; }
+    .phone-head .brand-mark { width: 23px; height: 6px; flex-basis: 23px; }
+    .phone-head .brand-mark::before { left: 5px; right: 5px; top: 10px; }
+    .phone-head .brand-mark::after { top: 5px; bottom: 5px; left: 10px; }
+    .mini-menu-button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+    .mini-menu-button span { font-size: 18px; }
+    .phone-closed-body { min-height: 310px; padding: 28px 18px; }
+    .phone-closed-body .eyebrow { margin-bottom: 12px; }
+    .phone-closed-body h4 { margin: 0; font-family: var(--display); font-size: 34px; font-weight: 400; line-height: .96; letter-spacing: -.04em; }
+    .mini-highlight {
+      padding-inline: 3px 5px;
+      color: var(--light);
+      background: var(--spectral);
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+    .phone-open-panel { min-height: 310px; padding: 10px 18px 20px; background: var(--midnight); color: var(--light); }
+    .phone-open-panel a { min-height: 50px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--dark-rule); color: var(--light); text-decoration: none; }
+    .phone-open-panel .button { width: 100%; margin-top: 18px; }
+
+    /* Interior-page reference system */
+    .templates { padding-block: 112px; border-top: 1px solid var(--rule); background: var(--paper-deep); }
+    .template-intro { display: grid; grid-template-columns: 1fr .82fr; gap: 72px; align-items: end; }
+    .template-intro p:last-child { max-width: 560px; margin: 0; color: var(--ink-soft); font-size: 18px; }
+    .template-stage { margin-top: 72px; border: 1px solid var(--rule); background: var(--ivory); box-shadow: 14px 16px 0 rgba(215,211,201,.58); }
+    .template-cap { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 18px; border-bottom: 1px solid var(--rule); color: var(--ink-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+
+    .guide-page { background: var(--paper); }
+    .guide-hero { position: relative; overflow: hidden; padding: 72px clamp(28px,6vw,84px) 64px; background: var(--midnight); color: var(--light); }
+    .guide-hero::after { content: ""; position: absolute; left: 46%; right: -8%; bottom: 46px; height: 68px; background: var(--spectral); clip-path: polygon(0 32%,14% 12%,31% 24%,49% 4%,68% 20%,84% 3%,100% 19%,98% 76%,80% 90%,61% 73%,43% 96%,23% 78%,2% 91%); opacity: .78; transform: rotate(-6deg); }
+    .breadcrumb { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 64px; color: var(--light-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .guide-hero-copy { position: relative; z-index: 1; max-width: 860px; }
+    .guide-hero h2 { max-width: 840px; margin: 0; font-family: var(--display); font-size: clamp(46px,6vw,78px); font-weight: 500; line-height: .94; letter-spacing: -.06em; }
+    .guide-hero-lede { max-width: 680px; margin: 26px 0 0; color: var(--light-soft); font-size: 18px; line-height: 1.55; }
+    .guide-meta { display: flex; flex-wrap: wrap; gap: 14px 28px; margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-family: var(--mono); font-size: 10px; }
+
+    .article-layout { display: grid; grid-template-columns: 230px minmax(0,760px); gap: clamp(48px,8vw,112px); justify-content: center; padding: 80px clamp(28px,6vw,84px) 96px; }
+    .toc-card { position: sticky; top: 32px; align-self: start; padding: 20px; border: 1px solid var(--rule); background: var(--ivory); }
+    .toc-card strong { display: block; margin-bottom: 14px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .toc-card a { min-height: 36px; display: flex; align-items: center; color: var(--ink-soft); font-size: 13px; text-decoration: none; transition: transform 180ms ease-out, opacity 180ms ease-out; }
+    .toc-card a:hover, .toc-card a:focus-visible { color: var(--electric-deep); transform: translateX(4px); }
+    .article-body { min-width: 0; }
+    .article-lede { margin: 0 0 54px; font-family: var(--display); font-size: 34px; font-weight: 500; line-height: 1.08; letter-spacing: -.04em; }
+    .article-body h3 { margin: 56px 0 16px; font-family: var(--display); font-size: 34px; font-weight: 500; line-height: 1.05; letter-spacing: -.04em; }
+    .article-body > p { color: var(--ink-soft); font-size: 17px; }
+    .article-callout { position: relative; margin: 42px 0; padding: 26px 28px 26px 32px; border: 1px solid var(--rule); background: var(--ivory); }
+    .article-callout::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--spectral); }
+    .article-callout strong { display: block; margin-bottom: 7px; font-size: 17px; }
+    .article-callout p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+    .source-note { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--rule); color: var(--ink-muted); font-family: var(--mono); font-size: 11px; line-height: 1.55; }
+    .faq-block { margin-top: 70px; padding-top: 38px; border-top: 1px solid var(--ink); }
+    .faq-block > h3 { margin-top: 0; }
+    .faq-item { border-bottom: 1px solid var(--rule); }
+    .faq-item summary { min-height: 66px; display: grid; grid-template-columns: 1fr 28px; gap: 20px; align-items: center; cursor: pointer; list-style: none; font-weight: 600; transition: transform 200ms ease-out, opacity 200ms ease-out; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { content: "+"; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 50%; transition: transform 220ms ease-out, opacity 220ms ease-out; }
+    .faq-item[open] summary::after { transform: rotate(45deg); }
+    .faq-item p { margin: 0; padding: 0 48px 24px 0; color: var(--ink-soft); font-size: 15px; }
+    .related-block { margin-top: 72px; }
+    .related-block > h3 { margin-bottom: 24px; }
+    .related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .related-card { position: relative; min-height: 148px; padding: 22px; overflow: hidden; border: 1px solid var(--rule); color: var(--ink); text-decoration: none; transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out; }
+    .related-card::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--spectral); transform: scaleX(.24); transform-origin: left; transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out; opacity: .7; }
+    .related-card:hover, .related-card:focus-visible { transform: translateY(-5px) scale(1.006); }
+    .related-card:hover::before, .related-card:focus-visible::before { transform: scaleX(1); opacity: 1; }
+    .related-card span { display: block; color: var(--electric); font-family: var(--mono); font-size: 10px; }
+    .related-card strong { display: block; margin-top: 28px; font-size: 18px; line-height: 1.2; }
+
+    .eligibility-template { padding: 64px clamp(24px,5vw,64px) 72px; background: var(--midnight); color: var(--light); }
+    .eligibility-template-head { display: grid; grid-template-columns: 1fr .78fr; gap: 64px; align-items: end; margin-bottom: 46px; }
+    .eligibility-template-head h3 { margin: 0; font-family: var(--display); font-size: clamp(42px,5vw,66px); font-weight: 500; line-height: .96; letter-spacing: -.055em; }
+    .eligibility-template-head p { margin: 0; color: var(--light-soft); font-size: 16px; }
+    .eligibility-screens { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; align-items: stretch; }
+    .flow-screen { position: relative; min-height: 540px; display: flex; flex-direction: column; padding: 26px; overflow: hidden; border: 1px solid var(--dark-rule); border-radius: 14px; background: var(--paper); color: var(--ink); transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out; }
+    .flow-screen:hover, .flow-screen:focus-within { transform: translateY(-6px) scale(1.006); }
+    .flow-top { display: flex; justify-content: space-between; gap: 18px; color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .flow-progress { display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; margin: 18px 0 38px; }
+    .flow-progress i { height: 3px; background: var(--rule); }
+    .flow-progress i.is-done { background: var(--electric); }
+    .flow-screen h4 { margin: 0 0 10px; font-family: var(--display); font-size: 34px; font-weight: 500; line-height: 1.04; letter-spacing: -.04em; }
+    .flow-screen > p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+    .choice-list { display: grid; gap: 9px; margin-top: 28px; }
+    .choice { min-height: 54px; display: grid; grid-template-columns: 18px 1fr; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 8px; cursor: pointer; transition: transform 180ms ease-out, opacity 180ms ease-out; }
+    .choice:hover, .choice:focus-within { transform: translateX(4px); }
+    .choice.is-selected { border-color: var(--electric); background: rgba(57,120,246,.07); }
+    .choice-dot { width: 16px; height: 16px; display: grid; place-items: center; border: 1px solid var(--ink-muted); border-radius: 50%; }
+    .choice.is-selected .choice-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--electric); }
+    .flow-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 28px; }
+    .flow-back { color: var(--ink-soft); font-size: 14px; text-decoration: none; transition: transform 180ms ease-out, opacity 180ms ease-out; }
+    .flow-back:hover, .flow-back:focus-visible { transform: translateX(-3px); }
+    .result-screen { border-color: rgba(91,231,246,.5); background: var(--midnight-raised); color: var(--light); }
+    .result-screen::before { content: ""; position: absolute; left: -12%; right: -12%; top: 126px; height: 72px; background: var(--spectral); clip-path: polygon(0 29%,14% 8%,32% 24%,49% 3%,66% 21%,84% 6%,100% 19%,98% 73%,81% 91%,62% 74%,45% 97%,25% 78%,2% 92%); opacity: .78; transform: rotate(-7deg); }
+    .result-screen .flow-top, .result-screen > p { color: var(--light-soft); }
+    .result-screen h4 { position: relative; z-index: 1; margin-top: 42px; font-size: 38px; }
+    .result-badge { position: relative; z-index: 1; align-self: flex-start; margin-top: 18px; padding: 7px 10px; border: 1px solid rgba(91,231,246,.46); border-radius: 999px; color: var(--cyan); font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+    .result-list { position: relative; z-index: 1; display: grid; gap: 12px; margin: 30px 0 0; padding: 0; list-style: none; }
+    .result-list li { padding-top: 12px; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-size: 14px; }
+    .result-list strong { display: block; color: var(--light); }
+    .result-screen .button { margin-top: auto; border-color: var(--light); background: var(--light); color: var(--midnight); }
+    .result-disclaimer { margin-top: 12px !important; color: var(--light-soft) !important; font-size: 11px !important; line-height: 1.45; }
+
+    .hover-surface { position: relative; min-height: 120px; padding: 20px; border: 1px solid var(--rule); background: var(--paper); transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out; }
+    .hover-surface::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--spectral); transform: scaleX(.24); transform-origin: left; transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out; opacity: .65; }
+    .hover-surface.is-hover { transform: translateY(-6px) scale(1.008); }
+    .hover-surface.is-hover::before { transform: scaleX(1); opacity: 1; }
+    .hover-surface strong { display: block; margin-top: 20px; }
+    .hover-surface span { color: var(--ink-soft); font-size: 13px; }
+
+    /* Signature composition carried through the full homepage */
+    .display { font-weight: 500; letter-spacing: -.055em; }
+    .proof-rail { position: relative; z-index: 6; margin-top: -24px; border: 0; background: transparent; }
+    .proof-grid {
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      background: var(--paper);
+      box-shadow: 0 18px 48px rgba(7,17,31,.09);
+      transform: rotate(-.45deg);
+    }
+
+    #process { position: relative; overflow: clip; }
+    #process::before {
+      content: "05 / PHASES";
+      position: absolute;
+      left: clamp(24px, 5vw, 72px);
+      right: clamp(24px, 5vw, 72px);
+      top: 18px;
+      color: rgba(245,247,251,.035);
+      font-family: var(--display);
+      font-size: clamp(100px, 14vw, 196px);
+      font-weight: 500;
+      line-height: .8;
+      letter-spacing: -.08em;
+      text-align: right;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #process > .shell {
+      display: grid;
+      grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
+      gap: clamp(48px, 8vw, 112px);
+      align-items: start;
+    }
+    .phases-head {
+      position: sticky;
+      top: 112px;
+      display: block;
+      align-self: start;
+    }
+    .phase-path { position: relative; display: block; margin-top: 0; }
+    .phase-path::before {
+      left: -22px;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      height: auto;
+      background: var(--spectral);
+      transform: none;
+      opacity: .72;
+    }
+    .phase {
+      position: sticky;
+      top: 112px;
+      min-height: 246px;
+      margin: 0 0 22vh;
+      padding: 34px;
+      border: 1px solid var(--dark-rule);
+      border-radius: 12px;
+      background: rgba(13,27,45,.78);
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
+      isolation: isolate;
+    }
+    .phase::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      z-index: -1;
+      border: 1px solid var(--cyan);
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 240ms ease-out;
+      pointer-events: none;
+    }
+    .phase:nth-child(1) { z-index: 1; }
+    .phase:nth-child(2) { z-index: 2; }
+    .phase:nth-child(3) { z-index: 3; }
+    .phase:nth-child(4) { z-index: 4; }
+    .phase:nth-child(5) { z-index: 5; margin-bottom: 48px; }
+    .phase:hover { transform: translateY(-7px) scale(1.008); border-color: var(--blue); background: var(--midnight-soft); }
+    .phase:hover::after,
+    .phase:focus-within::after { opacity: 1; }
+    .phase.is-active { border-color: var(--cyan); background: linear-gradient(145deg, rgba(57,120,246,.2), rgba(13,27,45,.9)); }
+    .phase.is-active::after { opacity: .45; }
+    .phase-card-content { display: grid; grid-template-columns: 58px 1fr; align-items: start; }
+    .phase-card-content .phase-dot { grid-row: 1; margin: 0; }
+    .phase-text h3 { margin-top: 4px; }
+    .phase-note { grid-column: 2; margin-top: 0; }
+
+    .requirement-stack {
+      position: relative;
+      z-index: 2;
+      padding: 18px 24px 24px;
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      box-shadow: 0 30px 70px rgba(7,17,31,.12);
+      transform: rotate(.7deg);
+      isolation: isolate;
+    }
+    .requirement-stack::before,
+    .requirement-stack::after {
+      content: "";
+      position: absolute;
+      inset: 12px -12px -12px 12px;
+      z-index: -1;
+      border: 1px solid var(--rule);
+      background: rgba(255,254,250,.72);
+      transform: rotate(-1.4deg);
+      pointer-events: none;
+    }
+    .requirement-stack::after { inset: 23px -22px -22px 23px; z-index: -2; transform: rotate(1.7deg); background: rgba(236,232,222,.72); }
+    .requirement-group:last-child { border-bottom-color: var(--ink); }
+    .requirement-group[open] summary { box-shadow: inset 4px 0 0 var(--electric); }
+
+    .reality { position: relative; }
+    .reality::before {
+      content: "";
+      position: absolute;
+      width: 46%;
+      height: 18px;
+      right: -4%;
+      top: 82px;
+      border-radius: 999px;
+      background: var(--spectral);
+      transform: rotate(-8deg);
+      opacity: .8;
+    }
+    .fact-grid { gap: 12px; border-top: 0; align-items: stretch; }
+    .fact {
+      position: relative;
+      min-height: 226px;
+      height: 100%;
+      overflow: hidden;
+      border: 1px solid var(--rule);
+      background: rgba(247,245,239,.62);
+      transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out;
+    }
+    .fact::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 4px;
+      background: var(--spectral);
+      transform: scaleX(.22);
+      transform-origin: left;
+      opacity: .7;
+      transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out;
+    }
+    .fact:last-child { border-right: 1px solid var(--rule); }
+    .fact:hover { transform: translateY(-6px) scale(1.008); border-color: var(--electric); }
+    .fact:hover::before,
+    .fact:focus-within::before { transform: scaleX(1); opacity: 1; }
+
+    #legal { position: relative; overflow: hidden; }
+    #legal::before {
+      content: "CANDOR";
+      position: absolute;
+      left: clamp(24px, 5vw, 72px);
+      right: clamp(24px, 5vw, 72px);
+      bottom: -34px;
+      color: rgba(245,247,251,.035);
+      font-family: var(--display);
+      font-size: clamp(132px, 21vw, 292px);
+      font-weight: 500;
+      line-height: .7;
+      letter-spacing: -.08em;
+      text-align: left;
+      pointer-events: none;
+    }
+    .candor-grid { position: relative; z-index: 1; }
+    .candor-panel { position: relative; overflow: hidden; box-shadow: 18px 18px 0 rgba(18,37,61,.5); }
+    .candor-panel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--spectral); }
+
+    #pricing { position: relative; overflow: hidden; }
+    #pricing::before {
+      content: "";
+      position: absolute;
+      left: -10%;
+      bottom: 86px;
+      width: 48%;
+      height: 20px;
+      border-radius: 999px;
+      background: var(--spectral);
+      transform: rotate(12deg);
+      opacity: .84;
+    }
+    .pricing-grid { position: relative; z-index: 1; }
+    .price-card {
+      position: relative;
+      border-radius: 4px;
+      box-shadow: 16px 18px 0 var(--paper-deep), var(--shadow-soft);
+      transform: rotate(.65deg);
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
+    }
+    .price-card::after {
+      content: "";
+      position: absolute;
+      left: -1px;
+      right: -1px;
+      top: -1px;
+      height: 5px;
+      background: var(--spectral);
+      transform: scaleX(.34);
+      transform-origin: left;
+      opacity: .72;
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
+    }
+    .price-card:hover { transform: translateY(-5px) rotate(0) scale(1.004); }
+    .price-card:hover::after,
+    .price-card:focus-within::after { transform: scaleX(1); opacity: 1; }
+
+    .promise { position: relative; overflow: hidden; }
+    .promise::before {
+      content: "OWN THE WORK";
+      position: absolute;
+      right: clamp(24px, 5vw, 72px);
+      bottom: -13px;
+      color: rgba(10,16,25,.035);
+      font-family: var(--display);
+      font-size: clamp(68px, 9vw, 128px);
+      font-weight: 500;
+      line-height: .8;
+      letter-spacing: -.07em;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .promise-grid { position: relative; z-index: 1; }
+
+    .guide-link { position: relative; overflow: hidden; }
+    .guide-link::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: var(--spectral);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    }
+    .guide-link:hover::before,
+    .guide-link:focus-visible::before,
+    .guide-link.is-hover::before { transform: scaleX(1); }
+
+    .closing::before {
+      left: -4%;
+      right: -4%;
+      top: 42%;
+      height: 128px;
+      border-radius: 0;
+      clip-path: polygon(0 31%, 9% 14%, 24% 23%, 39% 6%, 55% 18%, 68% 1%, 84% 21%, 100% 8%, 98% 72%, 83% 89%, 66% 75%, 52% 97%, 35% 81%, 18% 94%, 1% 78%);
+      transform: rotate(-4deg);
+      opacity: .82;
+    }
+    .closing h2 { position: relative; z-index: 1; font-weight: 500; }
+
+    /* Finite motion system: transform and opacity only */
+    .site-header .nav-row { animation: hero-nav-in 620ms cubic-bezier(.2,.75,.2,1) 80ms both; }
+    .hero .eyebrow { animation: hero-rise-in 600ms cubic-bezier(.2,.75,.2,1) 80ms both; }
+    .hero h1 { animation: hero-rise-in 760ms cubic-bezier(.2,.75,.2,1) 140ms both; }
+    .hero-lede { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 260ms both; }
+    .hero-action { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 340ms both; }
+    .case-sculpture { animation: hero-case-in 840ms cubic-bezier(.2,.75,.2,1) 180ms both; }
+    .hero-progress { animation: hero-progress-in 600ms cubic-bezier(.2,.75,.2,1) 430ms both; }
+
+    @keyframes hero-nav-in {
+      from { opacity: .9; transform: translate3d(0,-10px,0); }
+      to { opacity: 1; transform: translate3d(0,0,0); }
+    }
+    @keyframes hero-rise-in {
+      from { opacity: .82; transform: translate3d(0,16px,0); }
+      to { opacity: 1; transform: translate3d(0,0,0); }
+    }
+    @keyframes hero-case-in {
+      from { opacity: .86; transform: translate3d(0,22px,0) scale(.985); }
+      to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+    }
+    @keyframes hero-progress-in {
+      from { opacity: .82; transform: translate3d(-50%,12px,0); }
+      to { opacity: 1; transform: translate3d(-50%,0,0); }
+    }
+    @keyframes plane-fan-out {
+      from { opacity: 1; transform: translate3d(0,0,0) rotate(var(--plane-rest-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
+      to { opacity: var(--fan-opacity,.66); transform: translate3d(var(--fan-x,0),var(--fan-y,0),0) rotate(var(--fan-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
+    }
+    @keyframes case-parallax-out {
+      from { opacity: 1; transform: translate3d(0,0,0); }
+      to { opacity: .9; transform: translate3d(0,18px,0); }
+    }
+    @keyframes view-rise {
+      from { opacity: .78; transform: translate3d(0,18px,0); }
+      to { opacity: 1; transform: translate3d(0,0,0); }
+    }
+    @keyframes phase-content-rise {
+      from { opacity: .76; transform: translate3d(0,22px,0); }
+      to { opacity: 1; transform: translate3d(0,0,0); }
+    }
+
+    .sheet-eligibility { --fan-x: 22px; --fan-y: -34px; --fan-rotate: 4deg; --fan-opacity: .7; }
+    .sheet-documents { --fan-x: 34px; --fan-y: -16px; --fan-rotate: 2.8deg; --fan-opacity: .68; }
+    .sheet-application { --fan-x: 42px; --fan-y: 2px; --fan-rotate: 1.8deg; --fan-opacity: .65; }
+    .sheet-requirements { --fan-x: 28px; --fan-y: 22px; --fan-rotate: .2deg; --fan-opacity: .62; }
+    .sheet-next { --fan-x: 12px; --fan-y: 40px; --fan-rotate: -1.2deg; --fan-opacity: .58; }
+
+    @supports (animation-timeline: view()) {
+      .paper-sheet {
+        animation-name: plane-fan-out;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: --hero-exit;
+        animation-range: exit 0% exit 92%;
+      }
+
+      .case-scroll-layer {
+        animation-name: case-parallax-out;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: --hero-exit;
+        animation-range: exit 0% exit 92%;
+      }
+
+      .phase-card-content {
+        animation-name: phase-content-rise;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 8% entry 78%;
+      }
+
+      .order-copy,
+      .requirement-group,
+      .reality-head,
+      .fact > *,
+      .candor-copy,
+      .candor-panel,
+      .pricing-grid > div:first-child,
+      .price-card > *,
+      .promise-grid > div,
+      .guides-head > *,
+      .guide-link > *,
+      .closing-copy > *,
+      .closing-action,
+      .state-intro,
+      .state-panel,
+      .template-intro,
+      .template-stage {
+        animation-name: view-rise;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 28%;
+      }
+    }
+
+    @media (max-width: 1020px) {
+      .desktop-nav { gap: 18px; }
+      .desktop-nav a:nth-last-child(-n+2) { display: none; }
+      .hero-grid { grid-template-columns: 1fr; gap: 42px; }
+      .hero-copy { max-width: 720px; }
+      .hero-visual { width: min(100%, 680px); justify-self: center; }
+      .phases-head, .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
+      .fact-grid { grid-template-columns: repeat(3, 1fr); }
+      .fact:nth-child(3) { border-right: 0; }
+      .fact:nth-child(n+4) { border-top: 1px solid var(--rule); }
+      .footer-top { grid-template-columns: 1.2fr repeat(2, 1fr); }
+      .footer-col:last-child { grid-column: 2; }
+    }
+
+    @media (max-width: 840px) {
+      .shell { width: min(calc(100% - 40px), var(--content)); }
+      .section { padding-block: 80px; }
+      .desktop-nav, .nav-actions { display: none; }
+      .mobile-menu { display: block; }
+      .hero { min-height: auto; }
+      .hero-grid { grid-template-columns: 1fr; gap: 42px; padding-block: 124px 118px; }
+      .hero-copy { max-width: 660px; }
+      .hero-visual { min-height: 590px; }
+      .proof-grid { transform: none; }
+      .proof-grid { grid-template-columns: 1fr; }
+      .proof-item { border-left: 0; border-top: 1px solid var(--rule); }
+      .proof-item:first-child { border-top: 0; }
+      #process::before, #legal::before, .promise::before { display: none; }
+      #process > .shell { display: block; }
+      .phases-head { position: static; }
+      .phases-head, .order-grid, .candor-grid, .pricing-grid, .guides-head { grid-template-columns: 1fr; gap: 48px; }
+      .order-copy { position: static; }
+      .phase-path { grid-template-columns: 1fr; gap: 0; margin-top: 50px; }
+      .phase-path::before { left: 17px; right: auto; top: 17px; bottom: 17px; width: 1px; height: auto; }
+      .phase, .phase:nth-child(n) { position: relative; top: auto; min-height: 148px; display: block; margin: 0 0 14px; padding: 22px; }
+      .phase-card-content { grid-template-columns: 50px 1fr; }
+      .phase-dot { grid-row: auto; margin-bottom: 0; }
+      .phase h3 { margin-top: 5px; }
+      .phase p { margin-top: 3px; }
+      .phase-note { grid-column: auto; }
+      .reality-head { display: block; }
+      .reality-head p { margin-top: 24px; }
+      .fact-grid { grid-template-columns: repeat(2, 1fr); }
+      .fact, .fact:nth-child(3) { border-right: 1px solid var(--rule); border-top: 1px solid var(--rule); }
+      .fact:nth-child(odd) { border-left: 0; }
+      .fact:nth-child(even) { border-right: 0; }
+      .fact:nth-child(even) { margin-top: 0; }
+      .fact:first-child, .fact:nth-child(2) { border-top: 0; }
+      .requirement-stack { transform: none; box-shadow: 10px 12px 0 var(--paper-deep), 0 24px 54px rgba(7,17,31,.1); }
+      .requirement-stack::before, .requirement-stack::after { display: none; }
+      .price-card { transform: none; }
+      .promise-grid { grid-template-columns: 1fr; gap: 44px; }
+      .closing-inner { min-height: 620px; grid-template-columns: 1fr; align-content: center; gap: 28px; }
+      .closing-copy { padding: 70px 0 0; }
+      .closing-action { justify-self: start; margin-bottom: 70px; }
+      .footer-top { grid-template-columns: 1fr 1fr; }
+      .footer-intro { grid-column: 1 / -1; }
+      .footer-col:last-child { grid-column: auto; }
+      .state-grid { grid-template-columns: 1fr; }
+      .menu-specimens { grid-column: auto; }
+      .templates { padding-block: 80px; }
+      .template-intro, .eligibility-template-head { grid-template-columns: 1fr; gap: 24px; }
+      .article-layout { grid-template-columns: 1fr; gap: 38px; padding-block: 56px 72px; }
+      .toc-card { position: static; display: grid; grid-template-columns: repeat(2,1fr); gap: 0 16px; }
+      .toc-card strong { grid-column: 1 / -1; }
+      .eligibility-screens { grid-template-columns: 1fr; }
+      .flow-screen { min-height: 520px; }
+    }
+
+    @media (max-width: 540px) {
+      .shell { width: calc(100% - 40px); }
+      .nav-row { min-height: 68px; }
+      .brand { gap: 9px; font-size: 14px; }
+      .site-header .brand-mark { width: 24px; height: 6px; flex-basis: 24px; }
+      .site-header .brand-mark::before { left: 5px; right: 5px; top: 11px; }
+      .site-header .brand-mark::after { top: 5px; bottom: 5px; left: 11px; }
+      .mobile-menu-panel { top: 88px; left: 0; right: 0; }
+      .section { padding-block: 72px; }
+      .eyebrow { margin-bottom: 16px; }
+      .display { font-size: 40px; line-height: .98; }
+      .section-lede { font-size: 18px; }
+      .hero-grid { gap: 20px; padding-block: 116px 116px; }
+      .hero h1 { margin-bottom: 22px; font-size: 50px; line-height: .96; letter-spacing: -.06em; }
+      .hero-highlight { padding-inline: 5px 8px; }
+      .hero-lede { font-size: 18px; line-height: 1.55; }
+      .hero-action { display: block; margin-top: 28px; }
+      .hero-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+      .hero-action .button { width: 100%; min-height: 50px; padding-inline: 10px; }
+      .hero-micro { display: block; margin-top: 12px; text-align: center; }
+      .hero-visual { width: 100%; min-height: 535px; }
+      .case-sculpture { width: 350px; height: 535px; }
+      .paper-sheet, .case-file { left: 30px; width: 292px; transform: rotate(1deg) skewX(-.5deg); }
+      .paper-sheet { height: 112px; padding-bottom: 14px; }
+      .paper-sheet::before { left: 18px; bottom: 14px; }
+      .sheet-eligibility { top: 102px; }
+      .sheet-documents { top: 166px; left: 25px; }
+      .sheet-application { top: 230px; left: 20px; }
+      .sheet-requirements { top: 294px; left: 15px; }
+      .sheet-next { top: 358px; left: 10px; }
+      .case-file { top: 42px; left: 19px; width: 312px; min-height: 180px; padding: 17px; border-radius: 2px; }
+      .next-step { padding-top: 13px; }
+      .next-step h2 { font-size: 20px; }
+      .case-stat { font-size: 11px; }
+      .ribbon { height: 19px; }
+      .ribbon-back { width: 340px; top: 128px; left: 4px; }
+      .ribbon-front { width: 390px; top: 418px; left: -34px; }
+      .ribbon-loop { z-index: 6; width: 178px; height: 132px; left: -16px; top: 216px; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); }
+      .sculpture-note { right: 0; top: 456px; width: 116px; font-size: 7px; }
+      .hero-progress { bottom: 42px; grid-template-columns: auto 1fr; gap: 12px; }
+      .hero-progress-label:last-child { display: none; }
+      .proof-item { min-height: 90px; padding: 20px 0; }
+      .phase-note { margin-top: 28px; }
+      .requirement-group summary { min-height: 72px; grid-template-columns: 30px 1fr 28px; gap: 10px; }
+      .req-title { font-size: 16px; }
+      .req-count { display: none; }
+      .requirement-body { padding: 0 12px 22px 40px; }
+      .fact-grid { grid-template-columns: 1fr; margin-top: 48px; }
+      .fact, .fact:nth-child(2), .fact:nth-child(3) { min-height: auto; margin-top: 0; padding: 24px 20px; border: 1px solid var(--rule); }
+      .fact:first-child { border-top: 1px solid var(--rule); }
+      .fact-value { font-size: 40px; }
+      .candor-panel, .price-card { padding: 22px; }
+      .price-top { display: block; }
+      .price-number { font-size: 58px; }
+      .only-fee { max-width: none; margin-top: 10px; text-align: left; }
+      .promise { padding-block: 64px; }
+      .promise h2 { font-size: 36px; }
+      .promise-block { padding-left: 18px; }
+      .guide-list { margin-top: 44px; }
+      .guide-link { min-height: 104px; grid-template-columns: 30px 1fr auto; gap: 12px; }
+      .guide-title { font-size: 18px; }
+      .guide-desc { font-size: 13px; }
+      .closing::before { top: 46%; height: 96px; transform: rotate(-9deg); }
+      .closing-inner { min-height: 600px; }
+      .closing h2 { font-size: 58px; }
+      .closing-action { width: 100%; }
+      .closing-action .button { width: 100%; min-width: 0; }
+      .footer-top { grid-template-columns: 1fr; gap: 38px; }
+      .footer-intro, .footer-col:last-child { grid-column: auto; }
+      .footer-bottom { display: block; }
+      .footer-bottom span { display: block; margin-top: 8px; }
+      .state-intro { display: block; }
+      .state-intro p { margin-top: 18px; }
+      .state-pair { grid-template-columns: 1fr; }
+      .phone-pair { grid-template-columns: 1fr; }
+      .phone-frame { border-width: 6px; border-radius: 26px; }
+      .templates { padding-block: 72px; }
+      .template-intro p:last-child { font-size: 16px; }
+      .template-stage { margin-top: 48px; box-shadow: 8px 10px 0 rgba(215,211,201,.58); }
+      .template-cap { align-items: flex-start; flex-direction: column; gap: 2px; }
+      .guide-hero { padding: 42px 20px 44px; }
+      .breadcrumb { margin-bottom: 42px; }
+      .guide-hero h2 { font-size: 40px; line-height: .98; }
+      .guide-hero-lede { font-size: 16px; }
+      .guide-hero::after { left: 34%; bottom: 58px; height: 52px; }
+      .article-layout { padding: 44px 20px 58px; }
+      .toc-card { grid-template-columns: 1fr; padding: 18px; }
+      .article-lede, .article-body h3 { font-size: 30px; }
+      .article-body > p { font-size: 16px; }
+      .article-callout { padding: 22px 20px 22px 24px; }
+      .related-grid { grid-template-columns: 1fr; }
+      .eligibility-template { padding: 44px 18px 52px; }
+      .eligibility-template-head h3 { font-size: 40px; }
+      .flow-screen { min-height: 500px; padding: 22px 18px; }
+      .flow-screen h4 { font-size: 30px; }
+      .result-screen h4 { font-size: 34px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; transform-duration: 0s !important; }
+      .button:hover, .button:focus-visible, .button.is-hover,
+      .case-file:hover, .case-file:focus-within,
+      .phase:hover, .phase:focus-within,
+      .fact:hover, .fact:focus-within,
+      .price-card:hover, .price-card:focus-within,
+      .guide-link:hover, .guide-link:focus-visible, .guide-link.is-hover,
+      .toc-card a:hover, .toc-card a:focus-visible,
+      .related-card:hover, .related-card:focus-visible,
+      .flow-screen:hover, .flow-screen:focus-within,
+      .choice:hover, .choice:focus-within,
+      .flow-back:hover, .flow-back:focus-visible,
+      .hover-surface.is-hover,
+      .button:hover .button-arrow, .button:focus-visible .button-arrow, .button.is-hover .button-arrow,
+      .guide-link:hover .guide-arrow, .guide-link:focus-visible .guide-arrow, .guide-link.is-hover .guide-arrow,
+      .footer-col a:hover, .footer-col a:focus-visible { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell nav-row">
+      <a class="brand" href="#top" aria-label="Gun License NYC home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Gun License NYC</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        <a href="#process">Process</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#guides">Guides</a>
+        <a href="#legal">Official sources</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="sign-in" href="#portal">Sign in</a>
+        <a class="button" href="#eligibility">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+      </div>
+
+      <details class="mobile-menu">
+        <summary aria-label="Open navigation menu">
+          <span class="menu-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
+        </summary>
+        <div class="mobile-menu-panel">
+          <nav aria-label="Mobile navigation">
+            <a href="#process">Process <span aria-hidden="true">01</span></a>
+            <a href="#requirements">Requirements <span aria-hidden="true">02</span></a>
+            <a href="#pricing">Pricing <span aria-hidden="true">03</span></a>
+            <a href="#guides">Guides <span aria-hidden="true">04</span></a>
+            <a href="#legal">Official sources <span aria-hidden="true">05</span></a>
+            <a href="#portal">Client sign in <span aria-hidden="true">↗</span></a>
+          </nav>
+          <a class="button button-light" href="#eligibility">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+          <p class="mobile-menu-note">Two minutes · no card required</p>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="shell hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">NYC · Private case management</p>
+          <h1 id="hero-title">Complicated by design.<br><span class="hero-highlight">Clear by ours.</span></h1>
+          <p class="hero-lede">We turn New York City’s concealed-carry process into one clear next step at a time—preparing your documents, tracking every requirement, and keeping your case organized while you remain in control of your own application.</p>
+          <div class="hero-action" id="eligibility">
+            <div class="hero-buttons">
+              <a class="button" href="#process">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+              <a class="button button-outline" href="#process">See the process</a>
+            </div>
+            <span class="hero-micro">2 minutes · no card required</span>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Layered client case file preview">
+          <div class="case-sculpture">
+            <div class="case-scroll-layer">
+              <div class="ribbon ribbon-back" aria-hidden="true"></div>
+              <div class="paper-sheet sheet-next" data-index="05"><span>Next steps</span></div>
+              <div class="paper-sheet sheet-requirements" data-index="04"><span>Requirements</span></div>
+              <div class="paper-sheet sheet-application" data-index="03"><span>Application</span></div>
+              <div class="paper-sheet sheet-documents" data-index="02"><span>Documents</span></div>
+              <div class="paper-sheet sheet-eligibility" data-index="01"><span>Eligibility</span></div>
+              <article class="case-file">
+                <div class="case-top">
+                  <span>Case file · NYC carry</span>
+                  <span class="stage-number">Stage 06 / 13</span>
+                </div>
+                <div class="progress-track" role="progressbar" aria-label="Case stage progress" aria-valuenow="6" aria-valuemin="0" aria-valuemax="13">
+                  <div class="progress-fill"></div>
+                </div>
+                <div class="next-step">
+                  <p class="next-label">Your one action this week</p>
+                  <h2>Confirm your training date</h2>
+                </div>
+                <div class="case-stat"><span>Everything already handled</span><strong>14 of 24 ready</strong></div>
+              </article>
+              <div class="ribbon-loop" aria-hidden="true"></div>
+              <div class="ribbon ribbon-front" aria-hidden="true"></div>
+              <p class="sculpture-note">A clearer tomorrow from a brighter New York</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="shell hero-progress" aria-label="Homepage path preview">
+        <span class="hero-progress-label">Your path · 01 of 05</span>
+        <span class="hero-progress-track" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="hero-progress-label">Next: eligibility check</span>
+      </div>
+    </section>
+
+    <section class="proof-rail" aria-label="Service principles">
+      <div class="shell proof-grid">
+        <div class="proof-item">
+          <span class="proof-index">01</span>
+          <p><strong>All five boroughs</strong>One case system built around NYC’s published process.</p>
+        </div>
+        <div class="proof-item">
+          <span class="proof-index">02</span>
+          <p><strong>Every requirement traced</strong>Your file is organized against a source, not a guess.</p>
+        </div>
+        <div class="proof-item">
+          <span class="proof-index">03</span>
+          <p><strong>You remain the applicant</strong>You review and submit your own application.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark" id="process" aria-labelledby="process-title">
+      <div class="shell">
+        <div class="phases-head">
+          <div>
+            <p class="eyebrow">A controlled process</p>
+            <h2 class="display" id="process-title">One clear path.<br>Five phases.</h2>
+          </div>
+          <p class="section-lede">The full journey is long. Your interface is not. At every stage, you see what is yours, what is being prepared, and what comes next.</p>
+        </div>
+
+        <div class="phase-path" aria-label="Five phases of the service">
+          <article class="phase">
+            <div class="phase-card-content">
+              <span class="phase-dot">01</span>
+              <div class="phase-text"><h3>Qualify</h3><p>Understand the license track, basic fit, and what may require an attorney.</p></div>
+            </div>
+          </article>
+          <article class="phase">
+            <div class="phase-card-content">
+              <span class="phase-dot">02</span>
+              <div class="phase-text"><h3>Train</h3><p>Plan the required course and protect the six-month certificate window.</p></div>
+            </div>
+          </article>
+          <article class="phase is-active">
+            <div class="phase-card-content">
+              <span class="phase-dot">03</span>
+              <div class="phase-text"><h3>Assemble</h3><p>Collect references, household statements, records, IDs, and disclosures.</p></div>
+            </div>
+          </article>
+          <article class="phase">
+            <div class="phase-card-content">
+              <span class="phase-dot">04</span>
+              <div class="phase-text"><h3>Review</h3><p>Run a structured completeness check before anything is ready to submit.</p></div>
+            </div>
+          </article>
+          <article class="phase">
+            <div class="phase-card-content">
+              <span class="phase-dot">05</span>
+              <div class="phase-text"><h3>You submit</h3><p>Review your packet, submit it yourself, then prepare for the next NYPD step.</p></div>
+            </div>
+          </article>
+        </div>
+        <p class="phase-note"><strong>Thirteen stages behind the scenes.</strong> Five phases in front of you. Complexity stays in the system instead of in your day.</p>
+      </div>
+    </section>
+
+    <section class="section" id="requirements" aria-labelledby="requirements-title">
+      <div class="shell order-grid">
+        <div class="order-copy">
+          <p class="eyebrow">Your complete file</p>
+          <h2 class="display" id="requirements-title">Everything<br>in order.</h2>
+          <p class="section-lede">One checklist serves your case from the first intake answer to the final pre-submission review.</p>
+          <p class="order-note">Requirements change with license type, renewal status, household, and personal history. Your list is generated for your case—not copied from a generic worksheet.</p>
+        </div>
+
+        <div class="requirement-stack">
+          <details class="requirement-group" open>
+            <summary>
+              <span class="req-index">01</span>
+              <span class="req-title">References and household</span>
+              <span class="req-count">7 items</span>
+              <span class="req-plus" aria-hidden="true">+</span>
+            </summary>
+            <div class="requirement-body">
+              <ul>
+                <li>Four character references, tracked through notarization where required</li>
+                <li>One cohabitant statement for each adult living with you</li>
+                <li>Private outreach links that keep sensitive case information out of view</li>
+              </ul>
+            </div>
+          </details>
+          <details class="requirement-group">
+            <summary>
+              <span class="req-index">02</span>
+              <span class="req-title">Training and timing</span>
+              <span class="req-count">4 items</span>
+              <span class="req-plus" aria-hidden="true">+</span>
+            </summary>
+            <div class="requirement-body">
+              <ul>
+                <li>18-hour training certificate</li>
+                <li>Certificate timing checked against the intended submission date</li>
+                <li>Training-related records organized with the rest of the case file</li>
+              </ul>
+            </div>
+          </details>
+          <details class="requirement-group">
+            <summary>
+              <span class="req-index">03</span>
+              <span class="req-title">Identity and residence</span>
+              <span class="req-count">5 items</span>
+              <span class="req-plus" aria-hidden="true">+</span>
+            </summary>
+            <div class="requirement-body">
+              <ul>
+                <li>Government-issued identity documents</li>
+                <li>Address and residence documentation</li>
+                <li>Photo and document-format checks</li>
+              </ul>
+            </div>
+          </details>
+          <details class="requirement-group">
+            <summary>
+              <span class="req-index">04</span>
+              <span class="req-title">Disclosures and records</span>
+              <span class="req-count">5 items</span>
+              <span class="req-plus" aria-hidden="true">+</span>
+            </summary>
+            <div class="requirement-body">
+              <ul>
+                <li>Complete disclosure intake, including sealed or dismissed matters</li>
+                <li>Supporting records requested and tracked where applicable</li>
+                <li>Attorney referral whenever the question becomes legal advice</li>
+              </ul>
+            </div>
+          </details>
+          <details class="requirement-group">
+            <summary>
+              <span class="req-index">05</span>
+              <span class="req-title">Submission readiness</span>
+              <span class="req-count">3 items</span>
+              <span class="req-plus" aria-hidden="true">+</span>
+            </summary>
+            <div class="requirement-body">
+              <ul>
+                <li>Blocking items resolved before the packet is marked ready</li>
+                <li>Named staff review recorded</li>
+                <li>Your final review completed before you submit</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reality" aria-labelledby="reality-title">
+      <div class="shell">
+        <div class="reality-head">
+          <div>
+            <p class="eyebrow">The real shape of it</p>
+            <h2 class="display" id="reality-title">What it actually takes.</h2>
+          </div>
+          <p>Clear expectations are part of the service. These are planning facts—not promises about what the NYPD will decide or when it will act.</p>
+        </div>
+        <div class="fact-grid">
+          <article class="fact">
+            <p class="fact-value">~6</p>
+            <p class="fact-label"><strong>months</strong><br>Typical planning horizon from start to decision.</p>
+          </article>
+          <article class="fact">
+            <p class="fact-value">18</p>
+            <p class="fact-label"><strong>hours</strong><br>Required training for a concealed-carry application.</p>
+          </article>
+          <article class="fact">
+            <p class="fact-value">4</p>
+            <p class="fact-label"><strong>references</strong><br>For the standard NYC carry track.</p>
+          </article>
+          <article class="fact">
+            <p class="fact-value">1×</p>
+            <p class="fact-label"><strong>each adult</strong><br>A cohabitant statement for every adult at home.</p>
+          </article>
+          <article class="fact">
+            <p class="fact-value">1</p>
+            <p class="fact-label"><strong>interview</strong><br>Prepare for the investigator’s questions and requests.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark" id="legal" aria-labelledby="candor-title">
+      <div class="shell candor-grid">
+        <div class="candor-copy">
+          <p class="eyebrow">Candor, built in</p>
+          <h2 class="display" id="candor-title">The complete story is the safest one.</h2>
+          <p class="section-lede">The process expects full disclosure. Our intake is designed to surface what belongs in the record—not to decide what can be left out.</p>
+        </div>
+        <aside class="candor-panel" aria-label="Disclosure approach">
+          <h3>Nothing important gets minimized.</h3>
+          <p>Sealed and dismissed arrests are still disclosed. Records are gathered and organized. Questions that call for legal judgment move to a New York-licensed attorney.</p>
+          <ol class="candor-rules">
+            <li><span>01</span><div>Tell the complete history in intake.</div></li>
+            <li><span>02</span><div>Collect the records the published process calls for.</div></li>
+            <li><span>03</span><div>Keep document preparation separate from legal advice.</div></li>
+          </ol>
+          <div class="attorney-seam">
+            <strong>When the question is legal, the path changes.</strong>
+            <p>We stop at the boundary and help you reach independent legal counsel. Only a New York-licensed attorney may represent an applicant before the License Division.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="pricing" aria-labelledby="pricing-title">
+      <div class="shell pricing-grid">
+        <div>
+          <p class="eyebrow">Transparent from day one</p>
+          <h2 class="display" id="pricing-title">One fee to us. Everything else, at cost.</h2>
+          <p class="section-lede">You should know the complete financial picture before starting—not discover it one invoice at a time.</p>
+        </div>
+        <article class="price-card">
+          <div class="price-top">
+            <div>
+              <p class="price-name">Full concierge</p>
+              <p class="price-number">$1,000</p>
+            </div>
+            <p class="only-fee">The only service fee collected by Gun License NYC.</p>
+          </div>
+          <dl class="ledger">
+            <div><dt>NYPD application</dt><dd>$340.00</dd></div>
+            <div><dt>Fingerprint fee</dt><dd>$88.25</dd></div>
+            <div><dt>Required training</dt><dd>$500–650</dd></div>
+            <div><dt>Expected notarization</dt><dd>$25–100</dd></div>
+          </dl>
+          <div class="ledger-total">
+            <span>Estimated all-in range</span>
+            <strong>$1,950–2,200</strong>
+          </div>
+          <a class="button" href="#promise">See what the service includes <span class="button-arrow" aria-hidden="true">→</span></a>
+        </article>
+      </div>
+    </section>
+
+    <section class="promise" id="promise" aria-labelledby="promise-title">
+      <div class="shell promise-grid">
+        <div>
+          <p class="eyebrow">Our work, owned</p>
+          <h2 id="promise-title">The refile promise.</h2>
+          <p>If we assemble your filing packet and the License Division returns it as incomplete, we reassemble it so you can resubmit at no additional service charge.</p>
+        </div>
+        <div class="promise-block">
+          <p class="eyebrow">The important boundary</p>
+          <h2>A promise about preparation—not outcome.</h2>
+          <p>Government fees are set by the City and State and are not refundable by us. The NYPD retains full investigative discretion. You review and submit your own application.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="guides" aria-labelledby="guides-title">
+      <div class="shell">
+        <div class="guides-head">
+          <div>
+            <p class="eyebrow">Understand before you begin</p>
+            <h2 class="display" id="guides-title">Clear answers.<br>Primary sources.</h2>
+          </div>
+          <p class="section-lede">Read the requirements, costs, timeline, and legal boundaries in plain language, with a clear path back to the rules that govern the process.</p>
+        </div>
+        <nav class="guide-list" aria-label="Featured guides">
+          <a class="guide-link" href="#requirements">
+            <span class="guide-no">01</span>
+            <span><span class="guide-title">NYC concealed-carry requirements</span><span class="guide-desc">Documents, references, household statements, training, and disclosures.</span></span>
+            <span class="guide-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="guide-link" href="#pricing">
+            <span class="guide-no">02</span>
+            <span><span class="guide-title">The complete cost</span><span class="guide-desc">Service, government, training, fingerprint, and notarization costs.</span></span>
+            <span class="guide-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="guide-link" href="#process">
+            <span class="guide-no">03</span>
+            <span><span class="guide-title">Timeline and process</span><span class="guide-desc">How thirteen internal stages become five understandable phases.</span></span>
+            <span class="guide-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="guide-link" href="#legal">
+            <span class="guide-no">04</span>
+            <span><span class="guide-title">Official sources and legal boundaries</span><span class="guide-desc">Where the rules come from, and when a question belongs with an attorney.</span></span>
+            <span class="guide-arrow" aria-hidden="true">→</span>
+          </a>
+        </nav>
+      </div>
+    </section>
+
+    <section class="closing dark" aria-labelledby="closing-title">
+      <div class="shell closing-inner">
+        <div class="closing-copy">
+          <p class="eyebrow">Start with clarity</p>
+          <h2 id="closing-title">See where<br>you stand.</h2>
+          <p>Answer a short set of questions and see whether our document-preparation and case-management service fits your situation.</p>
+        </div>
+        <div class="closing-action">
+          <a class="button button-light" href="#top">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+          <p>2 minutes · no card required</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="portal">
+    <div class="shell">
+      <div class="footer-top">
+        <div class="footer-intro">
+          <a class="brand" href="#top" aria-label="Gun License NYC home">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span>Gun License NYC</span>
+          </a>
+          <p>Private document preparation and case management for New Yorkers navigating the NYPD licensing process.</p>
+        </div>
+        <nav class="footer-col" aria-label="Service links">
+          <h3>Service</h3>
+          <a href="#process">How it works</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#requirements">Requirements</a>
+          <a href="#eligibility">Eligibility</a>
+        </nav>
+        <nav class="footer-col" aria-label="Answer links">
+          <h3>Answers</h3>
+          <a href="#guides">Timeline</a>
+          <a href="#guides">Training</a>
+          <a href="#legal">Disclosures</a>
+          <a href="#legal">Official sources</a>
+        </nav>
+        <nav class="footer-col" aria-label="Location and account links">
+          <h3>New York City</h3>
+          <a href="#top">Manhattan</a>
+          <a href="#top">Brooklyn</a>
+          <a href="#top">Queens</a>
+          <a href="#top">Bronx &amp; Staten Island</a>
+          <a href="#portal">Client sign in</a>
+        </nav>
+      </div>
+
+      <div class="footer-legal">
+        <p>Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent applicants before the NYPD License Division; only a New York-licensed attorney may do so. We cannot influence timing or outcomes and are not affiliated with or endorsed by the NYPD or any government agency. Applicants review and submit their own applications. The NYPD retains full investigative discretion.</p>
+      </div>
+      <div class="footer-bottom">
+        <span>© Gun License NYC</span>
+        <span>gunlicensenyc@gmail.com · (929) 352-5961</span>
+        <span>Privacy · Terms · Accessibility</span>
+      </div>
+    </div>
+  </footer>
+
+  <aside class="templates" aria-labelledby="templates-title">
+    <div class="shell">
+      <div class="template-intro">
+        <div>
+          <p class="eyebrow">Interior system</p>
+          <h2 class="display" id="templates-title">The experience beyond the homepage.</h2>
+        </div>
+        <p>Guide pages and eligibility screens keep the paper, midnight, and spectral-ribbon language while becoming quieter where reading and decision-making need priority. The full-width footer above and open 390px navigation below complete the shared frame.</p>
+      </div>
+
+      <section class="template-stage" aria-labelledby="guide-template-title">
+        <div class="template-cap"><span>Interior page · Guide</span><span>Desktop composition · responsive to 390px</span></div>
+        <article class="guide-page">
+          <header class="guide-hero">
+            <nav class="breadcrumb" aria-label="Breadcrumb"><span>Home</span><span aria-hidden="true">/</span><span>Guides</span><span aria-hidden="true">/</span><span>Requirements</span></nav>
+            <div class="guide-hero-copy">
+              <p class="eyebrow">Official-source guide</p>
+              <h2 id="guide-template-title">NYC concealed-carry requirements.</h2>
+              <p class="guide-hero-lede">A plain-language map of the documents, training, references, disclosures, and applicant responsibilities that shape a New York City carry application.</p>
+              <div class="guide-meta"><span>Reviewed September 2026</span><span>8 minute read</span><span>Primary sources linked</span></div>
+            </div>
+          </header>
+
+          <div class="article-layout">
+            <aside class="toc-card" aria-label="On this page">
+              <strong>On this page</strong>
+              <a href="#article-track">License track</a>
+              <a href="#article-references">References</a>
+              <a href="#article-disclosures">Disclosures</a>
+              <a href="#article-faq">Questions</a>
+            </aside>
+
+            <div class="article-body">
+              <p class="article-lede">The application is not one form. It is a coordinated file whose requirements change with license type, household, history, and timing.</p>
+
+              <h3 id="article-track">Start with the correct license track.</h3>
+              <p>New York City uses different application paths for concealed carry, premises residence, and renewal. The right starting point determines the training, reference, and document requirements that belong in your checklist.</p>
+
+              <div class="article-callout">
+                <strong>You remain the applicant.</strong>
+                <p>We organize and prepare your file. You review the completed materials, control your NYPD account, and submit your own application.</p>
+              </div>
+
+              <h3 id="article-references">References and household statements.</h3>
+              <p>The standard NYC carry path calls for four character references. Adults who live with you may also need to complete household statements. Each request should be tracked from outreach through signature and notarization where required.</p>
+
+              <h3 id="article-disclosures">Build the complete record.</h3>
+              <p>Disclosure intake should surface the full history, including sealed or dismissed arrests. Records can then be requested and organized against the published requirement. A question requiring judgment about a specific matter belongs with a New York-licensed attorney.</p>
+
+              <p class="source-note">Source trail · NYPD License Division application instructions and current New York State firearms training requirements. Verify the current official instructions before filing.</p>
+
+              <section class="faq-block" id="article-faq" aria-labelledby="faq-title">
+                <h3 id="faq-title">Common questions.</h3>
+                <details class="faq-item" open>
+                  <summary>Do sealed or dismissed arrests still need to be disclosed?</summary>
+                  <p>Yes. The disclosure process includes sealed and dismissed matters. Questions about how a particular history should be addressed require legal counsel.</p>
+                </details>
+                <details class="faq-item">
+                  <summary>Who submits the application?</summary>
+                  <p>You do. The applicant reviews and submits through their own NYPD account; Gun License NYC does not access applicant credentials or file on anyone’s behalf.</p>
+                </details>
+                <details class="faq-item">
+                  <summary>How long should I plan for?</summary>
+                  <p>About six months is a useful planning horizon, but actual timing belongs to the NYPD and varies by case. No private service can control the agency’s timing or decision.</p>
+                </details>
+              </section>
+
+              <section class="related-block" aria-labelledby="related-title">
+                <h3 id="related-title">Continue with context.</h3>
+                <div class="related-grid">
+                  <a class="related-card" href="#pricing"><span>Next guide · 02</span><strong>The complete cost</strong></a>
+                  <a class="related-card" href="#process"><span>Next guide · 03</span><strong>Timeline and process</strong></a>
+                </div>
+              </section>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="template-stage" aria-labelledby="eligibility-template-title">
+        <div class="template-cap"><span>Eligibility flow</span><span>Question screens + service-fit result</span></div>
+        <div class="eligibility-template">
+          <div class="eligibility-template-head">
+            <div><p class="eyebrow">A private first step</p><h3 id="eligibility-template-title">One decision at a time.</h3></div>
+            <p>The flow uses the same visual world with less decoration: visible progress, one question per screen, clear answer states, and a result that describes service fit—not a licensing outcome.</p>
+          </div>
+
+          <div class="eligibility-screens">
+            <article class="flow-screen" aria-label="Eligibility question one">
+              <div class="flow-top"><span>Question 01</span><span>1 of 6</span></div>
+              <div class="flow-progress" aria-hidden="true"><i class="is-done"></i><i></i><i></i><i></i><i></i><i></i></div>
+              <h4>Which path are you exploring?</h4>
+              <p>Choose the closest answer. You can clarify it during intake.</p>
+              <div class="choice-list" role="radiogroup" aria-label="License path">
+                <div class="choice is-selected" role="radio" aria-checked="true" tabindex="0"><span class="choice-dot"></span><span>NYC concealed carry</span></div>
+                <div class="choice" role="radio" aria-checked="false" tabindex="0"><span class="choice-dot"></span><span>Premises residence</span></div>
+                <div class="choice" role="radio" aria-checked="false" tabindex="0"><span class="choice-dot"></span><span>Renew an existing NYC license</span></div>
+                <div class="choice" role="radio" aria-checked="false" tabindex="0"><span class="choice-dot"></span><span>I am not sure yet</span></div>
+              </div>
+              <div class="flow-actions"><a class="flow-back" href="#templates-title">Exit</a><a class="button" href="#eligibility-template-title">Continue <span class="button-arrow" aria-hidden="true">→</span></a></div>
+            </article>
+
+            <article class="flow-screen" aria-label="Eligibility question four">
+              <div class="flow-top"><span>Question 04</span><span>4 of 6</span></div>
+              <div class="flow-progress" aria-hidden="true"><i class="is-done"></i><i class="is-done"></i><i class="is-done"></i><i class="is-done"></i><i></i><i></i></div>
+              <h4>Have you completed the required training?</h4>
+              <p>Your timing helps us build the right preparation sequence.</p>
+              <div class="choice-list" role="radiogroup" aria-label="Training status">
+                <div class="choice" role="radio" aria-checked="false" tabindex="0"><span class="choice-dot"></span><span>Yes, within the last six months</span></div>
+                <div class="choice is-selected" role="radio" aria-checked="true" tabindex="0"><span class="choice-dot"></span><span>Not yet—I need to plan it</span></div>
+                <div class="choice" role="radio" aria-checked="false" tabindex="0"><span class="choice-dot"></span><span>I completed it earlier</span></div>
+                <div class="choice" role="radio" aria-checked="false" tabindex="0"><span class="choice-dot"></span><span>I am not sure which course applies</span></div>
+              </div>
+              <div class="flow-actions"><a class="flow-back" href="#eligibility-template-title">← Back</a><a class="button" href="#eligibility-template-title">Continue <span class="button-arrow" aria-hidden="true">→</span></a></div>
+            </article>
+
+            <article class="flow-screen result-screen" aria-label="Eligibility service-fit result">
+              <div class="flow-top"><span>Your result</span><span>Complete</span></div>
+              <span class="result-badge">Within service scope</span>
+              <h4>Your next best step is a private intake.</h4>
+              <p>Based on these answers, our document-preparation and case-management service appears to fit the path you selected.</p>
+              <ul class="result-list">
+                <li><strong>We map the requirements.</strong>Your checklist is generated around your license track and answers.</li>
+                <li><strong>We organize the file.</strong>Documents, references, training, and disclosures stay in one case system.</li>
+                <li><strong>You stay in control.</strong>You review and submit your own application.</li>
+              </ul>
+              <a class="button" href="#top">Start a private intake <span class="button-arrow" aria-hidden="true">→</span></a>
+              <p class="result-disclaimer">This is a service-fit result, not legal advice or a prediction of any NYPD decision.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <aside class="states" aria-labelledby="states-title">
+    <div class="shell">
+      <div class="state-intro">
+        <div>
+          <p class="eyebrow">Component state reference</p>
+          <h2 class="display" id="states-title">Rest and response.</h2>
+        </div>
+        <p>Static side-by-side specimens document the intended hover, active, expanded, and mobile-menu states. The actual controls above use the same CSS states.</p>
+      </div>
+
+      <div class="state-grid">
+        <section class="state-panel" aria-labelledby="button-states">
+          <h3 id="button-states">Primary action</h3>
+          <div class="state-pair">
+            <div class="state-sample">
+              <span class="state-label">Rest</span>
+              <a class="button" href="#states-title">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+            </div>
+            <div class="state-sample">
+              <span class="state-label">Hover / focus</span>
+              <a class="button is-hover" href="#states-title">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section class="state-panel" aria-labelledby="link-states">
+          <h3 id="link-states">Text and footer links</h3>
+          <div class="state-pair">
+            <div class="state-sample">
+              <span class="state-label">Rest</span>
+              <a class="text-link" href="#states-title">View official sources <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="state-sample">
+              <span class="state-label">Hover / focus</span>
+              <a class="text-link is-hover" href="#states-title">View official sources <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section class="state-panel" aria-labelledby="row-states">
+          <h3 id="row-states">Requirement row</h3>
+          <div class="state-pair">
+            <div class="state-sample">
+              <span class="state-label">Rest</span>
+              <div class="sample-row"><span>Identity and residence</span><strong>READY</strong></div>
+            </div>
+            <div class="state-sample">
+              <span class="state-label">Open / active</span>
+              <div class="sample-row is-active"><span>Identity and residence</span><strong>READY</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="state-panel" aria-labelledby="guide-states">
+          <h3 id="guide-states">Editorial guide link</h3>
+          <div class="state-pair">
+            <div class="state-sample">
+              <span class="state-label">Rest</span>
+              <a class="text-link" href="#states-title">The complete cost <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="state-sample">
+              <span class="state-label">Hover / focus</span>
+              <a class="text-link is-hover" href="#states-title">The complete cost <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section class="state-panel" aria-labelledby="surface-states">
+          <h3 id="surface-states">Elevated paper surface</h3>
+          <div class="state-pair">
+            <div class="state-sample">
+              <span class="state-label">Rest</span>
+              <div class="hover-surface"><strong>Training and timing</strong><span>Four requirements organized.</span></div>
+            </div>
+            <div class="state-sample">
+              <span class="state-label">Hover / focus</span>
+              <div class="hover-surface is-hover"><strong>Training and timing</strong><span>Four requirements organized.</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="state-panel menu-specimens" aria-labelledby="menu-states">
+          <h3 id="menu-states">Mobile navigation · 390px</h3>
+          <div class="phone-pair">
+            <div>
+              <span class="state-label">Closed / resting</span>
+              <div class="phone-frame">
+                <div class="phone-head">
+                  <span class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Gun License NYC</span></span>
+                  <span class="mini-menu-button" aria-hidden="true"><span>☰</span></span>
+                </div>
+                <div class="phone-closed-body">
+                  <p class="eyebrow">NYC · Private guidance</p>
+                  <h4>Complicated by design. <span class="mini-highlight">Clear by ours.</span></h4>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span class="state-label">Open / active</span>
+              <div class="phone-frame">
+                <div class="phone-head">
+                  <span class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Gun License NYC</span></span>
+                  <span class="mini-menu-button" aria-hidden="true"><span>×</span></span>
+                </div>
+                <nav class="phone-open-panel" aria-label="Static open mobile menu specimen">
+                  <a href="#process">Process <span>01</span></a>
+                  <a href="#requirements">Requirements <span>02</span></a>
+                  <a href="#pricing">Pricing <span>03</span></a>
+                  <a href="#guides">Guides <span>04</span></a>
+                  <a href="#legal">Official sources <span>05</span></a>
+                  <a href="#portal">Client sign in <span aria-hidden="true">↗</span></a>
+                  <a class="button button-light" href="#eligibility">Check eligibility <span class="button-arrow" aria-hidden="true">→</span></a>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </aside>
+</body>
+</html>
