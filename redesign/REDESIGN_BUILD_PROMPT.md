@@ -96,6 +96,12 @@ reusable layout, not per-page markup.
 2. The shared chrome — nav, mobile menu, footer.
 3. The interior article template, then migrate content routes onto it.
 4. The eligibility flow.
+5. The partner surfaces — /partners, /ethanbrecher and
+   /ethanbrecher/consultation. They were built in the old design and must be
+   brought into the new one. Keep their behaviour exactly as-is: the
+   coming-soon visibility gate, the preview code, the form's Formspree and
+   Resend delivery, the conflicts question, and every line of the legal
+   disclosure block. Restyle only.
 ```
 
 Commit at each step so any one of them can be reviewed or reverted alone.
