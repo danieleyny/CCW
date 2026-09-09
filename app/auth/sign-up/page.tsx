@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { PasswordField } from "@/components/auth/password-field"
+import { HoneypotField } from "@/components/shared/honeypot-field"
 
 const JOURNEY = ["Account", "Intake", "Checklist"]
 
@@ -76,16 +77,8 @@ export default function SignUpPage() {
         </CardDescription>
       </CardHeader>
       <form action={formAction}>
-        {/* SEC-06 — honeypot: hidden from humans, tempting to bots. Off-screen +
-            aria-hidden + tab-excluded so no real user ever fills it. */}
-        <input
-          type="text"
-          name="company"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
-          className="absolute left-[-9999px] h-0 w-0 opacity-0"
-        />
+        {/* SEC-06 — honeypot: hidden from humans, tempting to bots. */}
+        <HoneypotField />
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-[13px]">Full name</Label>

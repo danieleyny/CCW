@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
 import { brand } from "@/config/brand"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
+import { honeypotTripped } from "@/lib/honeypot"
 import { notifyFormspree } from "@/lib/formspree"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 
@@ -34,9 +35,9 @@ export async function captureLead(
   _prev: LeadState,
   formData: FormData
 ): Promise<LeadState> {
-  // V3-P0.5 — honeypot: real users never see or fill "company". Pretend success
+  // V3-P0.5 — honeypot: real users never see or fill it. Pretend success
   // so bots don't learn they were filtered.
-  if (String(formData.get("company") ?? "").trim() !== "") return { ok: true }
+  if (honeypotTripped(formData)) return { ok: true }
 
   // V3-P0.5 — per-IP brake on this unauthenticated, row-creating action.
   const ip = clientIpFrom(await headers())

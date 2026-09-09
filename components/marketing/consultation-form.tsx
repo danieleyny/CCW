@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { HoneypotField } from "@/components/shared/honeypot-field"
 
 /** The serialisable slice of a Partner this client form needs. */
 export type ConsultationPartner = {
@@ -68,12 +69,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
     <form action={action} noValidate className="space-y-8">
       <input type="hidden" name="partnerSlug" value={partner.slug} />
       {/* Honeypot — off-screen; a bot that fills it gets a silent fake success. */}
-      <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
-        <label>
-          Company
-          <input type="text" name="company" tabIndex={-1} autoComplete="off" />
-        </label>
-      </div>
+      <HoneypotField />
 
       {/* 1 · WHO YOU ARE */}
       <fieldset className="space-y-4">

@@ -3,6 +3,7 @@
 import { headers } from "next/headers"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { notifyFormspree } from "@/lib/formspree"
+import { honeypotTripped } from "@/lib/honeypot"
 import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
 import { brand } from "@/config/brand"
@@ -27,8 +28,8 @@ export async function requestConsultation(
   _prev: ConsultState,
   formData: FormData
 ): Promise<ConsultState> {
-  // Honeypot: humans never see "company". Pretend success so bots don't learn.
-  if (String(formData.get("company") ?? "").trim() !== "") return { ok: true }
+  // Honeypot: humans never see it. Pretend success so bots don't learn.
+  if (honeypotTripped(formData)) return { ok: true }
 
   // Per-IP brake on this unauthenticated endpoint (6th submission in a minute fails).
   const ip = clientIpFrom(await headers())

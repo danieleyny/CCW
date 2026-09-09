@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { ensureClientCaseForProfile } from "@/lib/onboarding"
 import { getSiteUrl } from "@/lib/site-url"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
+import { honeypotTripped } from "@/lib/honeypot"
 import { safeInternalPath } from "@/lib/safe-redirect"
 import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
@@ -71,9 +72,9 @@ export async function signUp(
   _prev: AuthFormState,
   formData: FormData
 ): Promise<AuthFormState> {
-  // SEC-06 — honeypot: a hidden "company" field no human fills. Bots do.
+  // SEC-06 — honeypot: a hidden field no human fills. Bots do.
   // Return the neutral success path so the bot learns nothing.
-  if (String(formData.get("company") ?? "").trim() !== "") {
+  if (honeypotTripped(formData)) {
     redirect("/auth/login")
   }
 

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { HoneypotField } from "@/components/shared/honeypot-field"
 
 /** sessionStorage key the sign-up form reads to pre-fill name + email. */
 export const SIGNUP_PREFILL_KEY = "carry_signup_prefill"
@@ -98,12 +99,7 @@ export function LeadForm({
           <input key={k} type="hidden" name={k} value={v} />
         ))}
       {/* Honeypot — humans never see this; bots that fill it are dropped server-side. */}
-      <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
-        <label>
-          Company
-          <input type="text" name="company" tabIndex={-1} autoComplete="off" />
-        </label>
-      </div>
+      <HoneypotField />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="lead-name">Full name</Label>
