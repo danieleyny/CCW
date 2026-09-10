@@ -8,7 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { checkHistory, type HistoryNotice } from "@/lib/intake/history-check"
 import type { AddressHistoryEntry, EmploymentHistoryEntry } from "@/lib/intake/answers"
+
+/** Soft, non-blocking continuity guidance for a five-year history (task 9). */
+function HistoryNotices({ notices }: { notices: HistoryNotice[] }) {
+  if (notices.length === 0) return null
+  return (
+    <ul className="space-y-1.5">
+      {notices.map((n, i) => (
+        <li key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-signal" />
+          <span>{n.message}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 /**
  * The five-year residence + employment history (PD 643-041 Q29) and the out-of-city
@@ -191,6 +207,7 @@ export function ApplicationHistory({
         <Button variant="outline" size="sm" onClick={() => setRes((c) => [...c, {}])}>
           <Plus className="size-4" /> Add residence
         </Button>
+        <HistoryNotices notices={checkHistory(res, "lived")} />
       </div>
 
       {/* Employment — Q29 */}
@@ -241,6 +258,7 @@ export function ApplicationHistory({
         <Button variant="outline" size="sm" onClick={() => setEmp((c) => [...c, {}])}>
           <Plus className="size-4" /> Add employment
         </Button>
+        <HistoryNotices notices={checkHistory(emp, "worked")} />
       </div>
 
       {/* Other pistol licences (Q9) — its OWN card, not part of employment: it's a

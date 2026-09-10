@@ -19,6 +19,7 @@ import {
   type SocialAccount,
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
+import { checkHistory } from "@/lib/intake/history-check"
 import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
 import { HeightField } from "@/components/portal/intake/height-field"
 import { DateOfBirthField } from "@/components/portal/intake/dob-field"
@@ -1339,6 +1340,11 @@ function StepHistory({
         <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
           <Plus className="size-4" /> Add residence
         </Button>
+        {checkHistory(resHist, "lived").map((n, i) => (
+          <p key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-signal" /> <span>{n.message}</span>
+          </p>
+        ))}
       </div>
 
       <div className="space-y-2">
@@ -1386,6 +1392,11 @@ function StepHistory({
         <Button variant="outline" size="sm" onClick={() => patch({ employmentHistory: [...empHist, {}] })}>
           <Plus className="size-4" /> Add employment
         </Button>
+        {checkHistory(empHist, "worked").map((n, i) => (
+          <p key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-signal" /> <span>{n.message}</span>
+          </p>
+        ))}
       </div>
 
       {/* Training */}
