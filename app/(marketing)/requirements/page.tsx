@@ -2,10 +2,8 @@ import Link from "next/link"
 import { getPublicFees } from "@/lib/public-data"
 import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
-import { Button } from "@/components/ui/button"
-import { PageHero } from "@/components/marketing/page-hero"
-import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
-import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
+import { DirectAnswer, FactList } from "@/components/marketing/page-blocks"
+import { ArticleTemplate } from "@/components/marketing/v2/article-template"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Requirements",
@@ -20,8 +18,10 @@ export const metadata = buildMetadata({
  * 24-document list with citations lives on /how-it-works, and the personalized
  * version lives behind /checklist. This page's job is to make the shape of the
  * thing legible in five minutes, then hand off. Every rule renders from
- * content/facts.ts.
+ * content/facts.ts. Rendered through the v2 interior article template.
  */
+
+const linkStyle = { color: "var(--electric-deep)", textDecoration: "none" as const }
 
 const DOCS = [
   {
@@ -49,6 +49,22 @@ const DOCS = [
     body: "Proof of who you are and where you live, your training certificate, passport photos, the application itself, and the fees. Tedious, not hard.",
   },
 ]
+
+function DocCards() {
+  return (
+    <div style={{ display: "grid", gap: 10, margin: "24px 0" }}>
+      {DOCS.map((d) => (
+        <div
+          key={d.title}
+          style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "18px 20px" }}
+        >
+          <strong style={{ display: "block", fontSize: 17, marginBottom: 6 }}>{d.title}</strong>
+          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.55 }}>{d.body}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default async function RequirementsPage() {
   const fees = await getPublicFees()
@@ -81,119 +97,121 @@ export default async function RequirementsPage() {
   ]
 
   return (
-    <>
-      <Breadcrumbs
-        items={[{ name: "Home", path: "/" }, { name: "Requirements", path: "/requirements" }]}
-      />
-      <PageHero
-        eyebrow="What it takes"
-        title="NYC gun license requirements"
-        subtitle="It's a long list, but it isn't a mystery. Here's the whole shape of it, in plain English."
-      />
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <DirectAnswer>
-          A NYC gun license comes down to four things: you must be <strong>at least 21</strong>, you
-          must complete <strong>18 hours of state-approved training</strong>, you must assemble{" "}
-          <strong>about 24 documents</strong> — including four notarized character references, a
-          notarized statement from every adult in your home, a three-year social media list, and
-          photos of your safe — and you must <strong>file the application yourself</strong> with the
-          NYPD License Division. None of it is hard on its own. All of it together is why people
-          stall.
-        </DirectAnswer>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          First: are you eligible?
-        </h2>
-        <p className="mt-3 text-text-mid">
-          Before you spend a dollar on training, find out whether you can apply at all. The age rule
-          is absolute. Everything else — your history, your household, your address — is worth
-          understanding early, because it changes what your file looks like.
-        </p>
-        <FactList facts={[FACTS.age, FACTS.disclosure]} />
-        <p className="mt-4 text-sm text-text-low">
-          We can explain a rule. We can&apos;t tell you what your specific arrest means for your
-          specific application — that&apos;s legal advice, and it takes a lawyer. If your history is
-          complicated, we&apos;ll say so and point you to one.
-        </p>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">The training</h2>
-        <p className="mt-3 text-text-mid">
-          18 hours, a state-approved instructor, and a test. The part people miss is the clock on it:
-          your certificate goes stale. Take the course too early and you take it twice.
-        </p>
-        <FactList facts={[FACTS.training, FACTS.trainingClock]} />
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">The documents</h2>
-        <p className="mt-3 text-text-mid">
-          Roughly two dozen of them. Here&apos;s what they actually are, without the form numbers:
-        </p>
-        <div className="mt-6 space-y-3">
-          {DOCS.map((d) => (
-            <div key={d.title} className="rounded-xl border border-hairline bg-card p-5">
-              <h3 className="font-display font-semibold text-text-hi">{d.title}</h3>
-              <p className="mt-2 text-text-mid">{d.body}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-6 text-text-mid">
-          Not every item applies to everyone — the list changes depending on your track, your
-          household, and your history.{" "}
-          <Link href="/checklist" className="text-signal hover:underline">
-            Build your free personalized checklist
-          </Link>{" "}
-          to see just your list, or read{" "}
-          <Link href="/how-it-works" className="text-signal hover:underline">
-            how it works
-          </Link>{" "}
-          for the full document list with citations.
-        </p>
-        <FactList
-          facts={[FACTS.references, FACTS.cohabitants, FACTS.socialMedia, FACTS.safe]}
-        />
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          And then it&apos;s filed — by you, or by us
-        </h2>
-        <p className="mt-3 text-text-mid">
-          The application is always yours, and you always sign it. On the Self-Guided plan you file it
-          yourself; with Full Concierge we file it with the NYPD on your behalf. Either way, only a New
-          York-licensed attorney can represent you at the License Division — a document-preparation
-          service prepares and files, it doesn&apos;t represent you. What we do is get the file right
-          before it goes in.
-        </p>
-        <FactList facts={[FACTS.youFile]} />
-      </section>
-
-      <FaqBlock faqs={FAQS} />
-
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
-          <p className="mb-5 text-text-mid">
-            Start where it&apos;s cheapest to start: finding out where you stand.
-          </p>
-          <Button asChild size="lg">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
-        </div>
-      </section>
-
-      <RelatedLinks
-        links={[
-          { label: "Build your free personalized checklist", href: "/checklist" },
-          { label: "Find a DCJS-approved instructor", href: "/instructors" },
-          { label: "What a NYC gun license costs", href: "/cost" },
-          { label: "Glossary of gun-license terms", href: "/glossary" },
-        ]}
-      />
-    </>
+    <ArticleTemplate
+      eyebrow="What it takes"
+      title="NYC gun license requirements"
+      lede="It's a long list, but it isn't a mystery. Here's the whole shape of it, in plain English."
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Requirements", path: "/requirements" },
+      ]}
+      meta={["Reviewed September 2026", "Primary sources linked"]}
+      articleLede="None of it is hard on its own. All of it together is why people stall."
+      sections={[
+        {
+          id: "article-overview",
+          heading: "What it comes down to",
+          navLabel: "Overview",
+          body: (
+            <DirectAnswer>
+              A NYC gun license comes down to four things: you must be <strong>at least 21</strong>, you
+              must complete <strong>18 hours of state-approved training</strong>, you must assemble{" "}
+              <strong>about 24 documents</strong> — including four notarized character references, a
+              notarized statement from every adult in your home, a three-year social media list, and
+              photos of your safe — and you must <strong>file the application yourself</strong> with the
+              NYPD License Division. None of it is hard on its own. All of it together is why people
+              stall.
+            </DirectAnswer>
+          ),
+        },
+        {
+          id: "article-eligible",
+          heading: "First: are you eligible?",
+          navLabel: "Eligibility",
+          body: (
+            <>
+              <p>
+                Before you spend a dollar on training, find out whether you can apply at all. The age rule
+                is absolute. Everything else — your history, your household, your address — is worth
+                understanding early, because it changes what your file looks like.
+              </p>
+              <FactList facts={[FACTS.age, FACTS.disclosure]} />
+              <p style={{ marginTop: 18, color: "var(--ink-muted)", fontSize: 14 }}>
+                We can explain a rule. We can&apos;t tell you what your specific arrest means for your
+                specific application — that&apos;s legal advice, and it takes a lawyer. If your history is
+                complicated, we&apos;ll say so and point you to one.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: "article-training",
+          heading: "The training",
+          navLabel: "Training",
+          body: (
+            <>
+              <p>
+                18 hours, a state-approved instructor, and a test. The part people miss is the clock on
+                it: your certificate goes stale. Take the course too early and you take it twice.
+              </p>
+              <FactList facts={[FACTS.training, FACTS.trainingClock]} />
+            </>
+          ),
+        },
+        {
+          id: "article-documents",
+          heading: "The documents",
+          navLabel: "Documents",
+          body: (
+            <>
+              <p>Roughly two dozen of them. Here&apos;s what they actually are, without the form numbers:</p>
+              <DocCards />
+              <p>
+                Not every item applies to everyone — the list changes depending on your track, your
+                household, and your history.{" "}
+                <Link href="/checklist" style={linkStyle}>
+                  Build your free personalized checklist
+                </Link>{" "}
+                to see just your list, or read{" "}
+                <Link href="/how-it-works" style={linkStyle}>
+                  how it works
+                </Link>{" "}
+                for the full document list with citations.
+              </p>
+              <FactList facts={[FACTS.references, FACTS.cohabitants, FACTS.socialMedia, FACTS.safe]} />
+            </>
+          ),
+        },
+        {
+          id: "article-filing",
+          heading: "And then it's filed — by you, or by us",
+          navLabel: "Filing",
+          body: (
+            <>
+              <p>
+                The application is always yours, and you always sign it. On the Self-Guided plan you file
+                it yourself; with Full Concierge we file it with the NYPD on your behalf. Either way, only
+                a New York-licensed attorney can represent you at the License Division — a
+                document-preparation service prepares and files, it doesn&apos;t represent you. What we do
+                is get the file right before it goes in.
+              </p>
+              <FactList facts={[FACTS.youFile]} />
+            </>
+          ),
+        },
+      ]}
+      faqs={FAQS}
+      cta={{
+        href: "/eligibility",
+        label: "Check your eligibility",
+        note: "Start where it's cheapest to start: finding out where you stand.",
+      }}
+      related={[
+        { label: "Build your free personalized checklist", href: "/checklist" },
+        { label: "Find a DCJS-approved instructor", href: "/instructors" },
+        { label: "What a NYC gun license costs", href: "/cost" },
+        { label: "Glossary of gun-license terms", href: "/glossary" },
+      ]}
+    />
   )
 }

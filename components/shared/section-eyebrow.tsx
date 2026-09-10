@@ -1,6 +1,10 @@
 import { cn } from "@/lib/utils"
 
-/** Engraved mono-caps label with machined bracket marks: [ SECTION ]. */
+/**
+ * Mono-caps section label. Restyled to the marketing v2 vocabulary — it now
+ * renders the `.eyebrow` token (electric mono-caps on light, cyan on `.dark`).
+ * The prop API is unchanged so every caller inherits the new look for free.
+ */
 export function SectionEyebrow({
   children,
   className,
@@ -8,11 +12,5 @@ export function SectionEyebrow({
   children: React.ReactNode
   className?: string
 }) {
-  return (
-    <div className={cn("engraved flex items-center gap-1.5 text-brass", className)}>
-      <span className="text-brass/50">[</span>
-      <span>{children}</span>
-      <span className="text-brass/50">]</span>
-    </div>
-  )
+  return <div className={cn("eyebrow", className)}>{children}</div>
 }

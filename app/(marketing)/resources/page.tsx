@@ -1,4 +1,3 @@
-import { ExternalLink } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
@@ -19,7 +18,7 @@ export default async function ResourcesPage() {
   const resourceGroups = buildResourceGroups(fees)
 
   return (
-    <>
+    <div className="guide-page">
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Resources", path: "/resources" }]} />
       <PageHero
         eyebrow="Resources"
@@ -27,49 +26,70 @@ export default async function ResourcesPage() {
         subtitle="Everything here points to a government source. Every link is dated the day we last verified it."
       />
 
-      <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <div className="space-y-4">
-          {resourceGroups.map((g) => (
-            <details key={g.title} className="group rounded-xl border border-hairline bg-card" open>
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-5 py-3 [&::-webkit-details-marker]:hidden">
-                <span className="font-display text-lg font-semibold">{g.title}</span>
-                <span className="font-mono text-signal transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <div className="px-5 pb-4">
-                {g.intro && <p className="mb-3 text-sm text-text-mid">{g.intro}</p>}
-                <ul className="divide-y divide-hairline">
-                  {g.links.map((l) => (
-                    <li key={`${g.title}-${l.label}`}>
-                      <a
-                        href={l.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex min-h-12 items-center justify-between gap-3 py-2 transition-colors hover:text-foreground"
-                      >
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-1.5 text-sm font-medium">
-                            {l.label} <ExternalLink className="size-3.5 shrink-0 text-text-low" />
+      <section style={{ padding: "56px 0 8px" }}>
+        <div className="article-body" style={{ width: "min(100% - 48px, 820px)", marginInline: "auto" }}>
+          <div className="faq-block" style={{ marginTop: 0, borderTop: "none", paddingTop: 0 }}>
+            {resourceGroups.map((g) => (
+              <details className="faq-item" key={g.title} open>
+                <summary>{g.title}</summary>
+                <div style={{ padding: "0 0 24px" }}>
+                  {g.intro && (
+                    <p style={{ margin: "0 0 12px", color: "var(--ink-soft)", fontSize: 14 }}>{g.intro}</p>
+                  )}
+                  <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                    {g.links.map((l) => (
+                      <li key={`${g.title}-${l.label}`} style={{ borderTop: "1px solid var(--rule)" }}>
+                        <a
+                          href={l.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "flex",
+                            minHeight: 52,
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            padding: "10px 0",
+                            textDecoration: "none",
+                            color: "var(--ink)",
+                          }}
+                        >
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: "block", fontSize: 14, fontWeight: 600 }}>
+                              {l.label} <span aria-hidden="true" style={{ color: "var(--ink-muted)" }}>↗</span>
+                            </span>
+                            {l.note && (
+                              <span style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--ink-soft)" }}>
+                                {l.note}
+                              </span>
+                            )}
                           </span>
-                          {l.note && <span className="mt-0.5 block text-xs text-text-mid">{l.note}</span>}
-                        </span>
-                        <span className="shrink-0 font-mono text-[10px] text-text-low">
-                          verified {l.lastVerified}
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </details>
-          ))}
-        </div>
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              fontFamily: "var(--mono)",
+                              fontSize: 10,
+                              color: "var(--ink-muted)",
+                            }}
+                          >
+                            verified {l.lastVerified}
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            ))}
+          </div>
 
-        <div className="mt-8 text-center">
-          <SectionEyebrow>Note</SectionEyebrow>
-          <p className="mt-2 text-xs text-text-low">
-            Rules change. If a link is stale, tell us — we keep these current, and Law Watch emails you
-            when a requirement actually changes.
-          </p>
+          <div style={{ marginTop: 40, textAlign: "center" }}>
+            <SectionEyebrow>Note</SectionEyebrow>
+            <p style={{ marginTop: 10, fontSize: 12, color: "var(--ink-muted)" }}>
+              Rules change. If a link is stale, tell us — we keep these current, and Law Watch emails you
+              when a requirement actually changes.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -81,6 +101,6 @@ export default async function ResourcesPage() {
           { label: "Common questions, answered", href: "/faq" },
         ]}
       />
-    </>
+    </div>
   )
 }

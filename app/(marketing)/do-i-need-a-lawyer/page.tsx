@@ -1,10 +1,8 @@
 import Link from "next/link"
 import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
-import { Button } from "@/components/ui/button"
-import { PageHero } from "@/components/marketing/page-hero"
-import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
-import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
+import { DirectAnswer, FactList } from "@/components/marketing/page-blocks"
+import { ArticleTemplate } from "@/components/marketing/v2/article-template"
 
 export const metadata = buildMetadata({
   title: "Do I Need a Lawyer for a NYC Gun License?",
@@ -18,7 +16,10 @@ export const metadata = buildMetadata({
  * a straightforward case genuinely doesn't need help, and an arrest history or a
  * denial genuinely needs an attorney, which we are not (FACTS.youFile). Every
  * legal claim renders from content/facts.ts; nothing here is asserted freehand.
+ * Rendered through the v2 interior article template.
  */
+
+const linkStyle = { color: "var(--electric-deep)", textDecoration: "none" as const }
 
 const ROWS: { label: string; diy: string; us: string; attorney: string }[] = [
   {
@@ -80,158 +81,179 @@ const FAQS = [
   },
 ]
 
+const cellStyle: React.CSSProperties = {
+  padding: "14px 16px",
+  color: "var(--ink-soft)",
+  fontSize: 14,
+  lineHeight: 1.5,
+  borderBottom: "1px solid var(--rule)",
+  verticalAlign: "top",
+}
+const headStyle: React.CSSProperties = {
+  padding: "14px 16px",
+  fontFamily: "var(--display)",
+  fontWeight: 600,
+  fontSize: 16,
+  textAlign: "left",
+  borderBottom: "1px solid var(--ink)",
+}
+
+function ComparisonTable() {
+  return (
+    <div style={{ overflowX: "auto", margin: "24px 0", border: "1px solid var(--rule)", background: "var(--ivory)" }}>
+      <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
+        <caption style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, color: "var(--ink-muted)" }}>
+          Doing it yourself is a legitimate option. So is skipping us for an attorney.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" style={{ ...headStyle, width: 150 }}>
+              <span className="sr-only">Compared on</span>
+            </th>
+            <th scope="col" style={headStyle}>
+              Doing it yourself
+            </th>
+            <th scope="col" style={{ ...headStyle, color: "var(--electric-deep)" }}>
+              Gun License NYC
+            </th>
+            <th scope="col" style={headStyle}>
+              A New York attorney
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {ROWS.map((r) => (
+            <tr key={r.label}>
+              <th scope="row" style={{ ...cellStyle, color: "var(--ink)", fontWeight: 600 }}>
+                {r.label}
+              </th>
+              <td style={cellStyle}>{r.diy}</td>
+              <td style={cellStyle}>{r.us}</td>
+              <td style={cellStyle}>{r.attorney}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 export default function DoINeedALawyerPage() {
   return (
-    <>
-      <Breadcrumbs
-        items={[
-          { name: "Home", path: "/" },
-          { name: "Do I need a lawyer?", path: "/do-i-need-a-lawyer" },
-        ]}
-      />
-      <PageHero
-        eyebrow="Choosing help"
-        title="Do I need a lawyer for a NYC gun license?"
-        subtitle="An honest answer, including the parts where the honest answer is “not us.”"
-      />
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <DirectAnswer>
-          For most people, <strong>no</strong>. If you&apos;re over 21 with a clean record, a NYC gun
-          license application is long and fussy but not a legal fight — plenty of people do it
-          themselves. You need a New York-licensed attorney if you have an{" "}
-          <strong>arrest history, an order of protection, a prior denial, or an appeal</strong>,
-          because those call for legal advice and representation. A service like ours sits in the
-          middle: we prepare your documents and manage the case, but we aren&apos;t attorneys, and
-          you file your own application on Self-Guided, or we file it for you with Full Concierge.
-        </DirectAnswer>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          Three ways to do this, side by side
-        </h2>
-        <p className="mt-3 text-text-mid">
-          We&apos;d rather you pick right than pick us. Here&apos;s the real comparison.
-        </p>
-
-        <div className="mt-6 overflow-x-auto rounded-xl border border-hairline bg-card">
-          <table className="w-full min-w-[46rem] caption-bottom text-left text-sm">
-            <caption className="px-5 py-3 text-left text-xs text-text-low">
-              Doing it yourself is a legitimate option. So is skipping us for an attorney.
-            </caption>
-            <thead>
-              <tr className="border-b border-hairline">
-                <th scope="col" className="w-40 px-5 py-3 font-display font-semibold text-text-hi">
-                  <span className="sr-only">Compared on</span>
-                </th>
-                <th scope="col" className="px-5 py-3 font-display font-semibold text-text-hi">
-                  Doing it yourself
-                </th>
-                <th scope="col" className="px-5 py-3 font-display font-semibold text-brass">
-                  Gun License NYC
-                </th>
-                <th scope="col" className="px-5 py-3 font-display font-semibold text-text-hi">
-                  A New York attorney
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS.map((r) => (
-                <tr key={r.label} className="border-b border-hairline last:border-0 align-top">
-                  <th scope="row" className="px-5 py-4 font-medium text-text-hi">
-                    {r.label}
-                  </th>
-                  <td className="px-5 py-4 text-text-mid">{r.diy}</td>
-                  <td className="px-5 py-4 text-text-mid">{r.us}</td>
-                  <td className="px-5 py-4 text-text-mid">{r.attorney}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          When you should do it yourself
-        </h2>
-        <p className="mt-3 text-text-mid">
-          If your record is clean, you&apos;re organized, and you have the evenings to spend on it,
-          you can absolutely do this alone. The rules are published — we link every one of them on
-          our <Link href="/resources" className="text-signal hover:underline">resources page</Link>,
-          for free, whether or not you ever pay us a dollar. What you&apos;re buying from us is time
-          and fewer mistakes, not access. There is no access to buy.
-        </p>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          When you should call an attorney instead
-        </h2>
-        <p className="mt-3 text-text-mid">
-          Call a New York-licensed attorney — not us — if any of this is true:
-        </p>
-        <ul className="mt-4 space-y-2 text-text-mid">
-          <li className="rounded-lg border border-hairline bg-card p-4">
-            You have an <strong className="text-text-hi">arrest history</strong>, including one that
-            was sealed or dismissed. It still gets disclosed, and how you present it is a legal
-            question.
-          </li>
-          <li className="rounded-lg border border-hairline bg-card p-4">
-            There&apos;s an <strong className="text-text-hi">order of protection</strong>, a
-            conviction, or a pending matter anywhere in your past.
-          </li>
-          <li className="rounded-lg border border-hairline bg-card p-4">
-            You&apos;ve <strong className="text-text-hi">already been denied</strong>, or you want to
-            challenge a decision. See{" "}
-            <Link href="/denied-appeal" className="text-signal hover:underline">
-              what to do if you&apos;re denied
-            </Link>
-            .
-          </li>
-        </ul>
-        <p className="mt-4 text-text-mid">
-          If that&apos;s you, tell us and we&apos;ll point you to{" "}
-          <Link href="/partners" className="text-signal hover:underline">
-            a New York-licensed attorney
-          </Link>
-          . We can still handle the paperwork beside them — but the legal judgment has to come from
-          someone licensed to give it.
-        </p>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          The rules that decide this
-        </h2>
-        <p className="mt-3 text-text-mid">
-          We didn&apos;t make these up, and you don&apos;t have to take our word for them:
-        </p>
-        <FactList facts={[FACTS.youFile, FACTS.disclosure, FACTS.discretion]} />
-      </section>
-
-      <FaqBlock faqs={FAQS} />
-
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
-          <p className="mb-5 text-text-mid">
-            Not sure which bucket you&apos;re in? Start here — it takes a couple of minutes.
-          </p>
-          <Button asChild size="lg">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
-        </div>
-      </section>
-
-      <RelatedLinks
-        links={[
-          { label: "Attorneys we refer you to", href: "/partners" },
-          { label: "If your NYC gun license is denied", href: "/denied-appeal" },
-          { label: "What we charge", href: "/pricing" },
-          { label: "How the process works", href: "/how-it-works" },
-        ]}
-      />
-    </>
+    <ArticleTemplate
+      eyebrow="Choosing help"
+      title="Do I need a lawyer for a NYC gun license?"
+      lede="An honest answer, including the parts where the honest answer is “not us.”"
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Do I need a lawyer?", path: "/do-i-need-a-lawyer" },
+      ]}
+      meta={["Reviewed September 2026", "We are not attorneys"]}
+      sections={[
+        {
+          id: "article-answer",
+          heading: "The honest answer",
+          navLabel: "The short answer",
+          body: (
+            <DirectAnswer>
+              For most people, <strong>no</strong>. If you&apos;re over 21 with a clean record, a NYC gun
+              license application is long and fussy but not a legal fight — plenty of people do it
+              themselves. You need a New York-licensed attorney if you have an{" "}
+              <strong>arrest history, an order of protection, a prior denial, or an appeal</strong>,
+              because those call for legal advice and representation. A service like ours sits in the
+              middle: we prepare your documents and manage the case, but we aren&apos;t attorneys, and you
+              file your own application on Self-Guided, or we file it for you with Full Concierge.
+            </DirectAnswer>
+          ),
+        },
+        {
+          id: "article-compare",
+          heading: "Three ways to do this, side by side",
+          navLabel: "Side by side",
+          body: (
+            <>
+              <p>We&apos;d rather you pick right than pick us. Here&apos;s the real comparison.</p>
+              <ComparisonTable />
+            </>
+          ),
+        },
+        {
+          id: "article-diy",
+          heading: "When you should do it yourself",
+          navLabel: "Do it yourself",
+          body: (
+            <p>
+              If your record is clean, you&apos;re organized, and you have the evenings to spend on it, you
+              can absolutely do this alone. The rules are published — we link every one of them on our{" "}
+              <Link href="/resources" style={linkStyle}>
+                resources page
+              </Link>
+              , for free, whether or not you ever pay us a dollar. What you&apos;re buying from us is time
+              and fewer mistakes, not access. There is no access to buy.
+            </p>
+          ),
+        },
+        {
+          id: "article-attorney",
+          heading: "When you should call an attorney instead",
+          navLabel: "Call an attorney",
+          body: (
+            <>
+              <p>Call a New York-licensed attorney — not us — if any of this is true:</p>
+              <ul style={{ listStyle: "none", margin: "16px 0 0", padding: 0, display: "grid", gap: 10 }}>
+                <li style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "14px 16px", fontSize: 15, color: "var(--ink-soft)" }}>
+                  You have an <strong style={{ color: "var(--ink)" }}>arrest history</strong>, including one
+                  that was sealed or dismissed. It still gets disclosed, and how you present it is a legal
+                  question.
+                </li>
+                <li style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "14px 16px", fontSize: 15, color: "var(--ink-soft)" }}>
+                  There&apos;s an <strong style={{ color: "var(--ink)" }}>order of protection</strong>, a
+                  conviction, or a pending matter anywhere in your past.
+                </li>
+                <li style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "14px 16px", fontSize: 15, color: "var(--ink-soft)" }}>
+                  You&apos;ve <strong style={{ color: "var(--ink)" }}>already been denied</strong>, or you
+                  want to challenge a decision. See{" "}
+                  <Link href="/denied-appeal" style={linkStyle}>
+                    what to do if you&apos;re denied
+                  </Link>
+                  .
+                </li>
+              </ul>
+              <p style={{ marginTop: 18 }}>
+                If that&apos;s you, tell us and we&apos;ll point you to{" "}
+                <Link href="/partners" style={linkStyle}>
+                  a New York-licensed attorney
+                </Link>
+                . We can still handle the paperwork beside them — but the legal judgment has to come from
+                someone licensed to give it.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: "article-rules",
+          heading: "The rules that decide this",
+          navLabel: "The rules",
+          body: (
+            <>
+              <p>We didn&apos;t make these up, and you don&apos;t have to take our word for them:</p>
+              <FactList facts={[FACTS.youFile, FACTS.disclosure, FACTS.discretion]} />
+            </>
+          ),
+        },
+      ]}
+      faqs={FAQS}
+      cta={{
+        href: "/eligibility",
+        label: "Check your eligibility",
+        note: "Not sure which bucket you're in? Start here — it takes a couple of minutes.",
+      }}
+      related={[
+        { label: "Attorneys we refer you to", href: "/partners" },
+        { label: "If your NYC gun license is denied", href: "/denied-appeal" },
+        { label: "What we charge", href: "/pricing" },
+        { label: "How the process works", href: "/how-it-works" },
+      ]}
+    />
   )
 }

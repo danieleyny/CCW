@@ -1,24 +1,43 @@
 import Link from "next/link"
-import { ExternalLink } from "lucide-react"
+import type { ReactNode } from "react"
 import type { Fact } from "@/content/facts"
 import { JsonLd, faqSchema } from "@/components/marketing/json-ld"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 
 /**
- * Shared building blocks for the high-intent SEO pages. Extracted rather than
- * copy-pasted a thirteenth time: /faq and /resources each hand-rolled their own
- * <details> markup, and there was no prose or CTA component at all.
+ * Shared building blocks for the high-intent SEO pages, restyled to the
+ * marketing v2 vocabulary (see app/(marketing)/marketing-v2.css). The exported
+ * prop APIs are unchanged — only the internal markup/classes moved to the new
+ * `.article-callout` / `.faq-block` / `.related-block` system — so every page
+ * that imports these inherits the redesign without edits.
  */
+
+/** Centered reading measure for the self-contained blocks below. */
+function Measure({ children, pad }: { children: ReactNode; pad?: string }) {
+  return (
+    <div
+      style={{
+        width: "min(100% - 48px, 820px)",
+        marginInline: "auto",
+        padding: pad ?? "0",
+      }}
+    >
+      {children}
+    </div>
+  )
+}
 
 /**
  * The DIRECT-ANSWER block: 2-4 sentences at the very top that answer the query
  * outright, in plain language, quotable verbatim. This is the thing an AI lifts,
  * so it sits above everything and says the whole answer without hedging.
+ *
+ * Renders the v2 `.article-callout` (spectral edge, ivory field). Wrap it in a
+ * measured container on the page (the guide pages already do).
  */
 export function DirectAnswer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="brass-edge rounded-xl border border-hairline bg-card p-6">
-      <p className="text-lg leading-relaxed text-text-hi">{children}</p>
+    <div className="article-callout">
+      <p style={{ margin: 0, color: "var(--ink)", fontSize: 18, lineHeight: 1.55 }}>{children}</p>
     </div>
   )
 }
@@ -30,17 +49,32 @@ export function DirectAnswer({ children }: { children: React.ReactNode }) {
  */
 export function SourcedFact({ fact }: { fact: Fact }) {
   return (
-    <li className="rounded-lg border border-hairline bg-card p-4">
-      <p className="text-text-hi">{fact.claim}</p>
-      <p className="mt-2 text-xs text-text-low">
+    <li
+      style={{
+        listStyle: "none",
+        border: "1px solid var(--rule)",
+        background: "var(--ivory)",
+        padding: "16px 18px",
+      }}
+    >
+      <p style={{ margin: 0, color: "var(--ink)", fontSize: 15, lineHeight: 1.55 }}>{fact.claim}</p>
+      <p
+        style={{
+          margin: "8px 0 0",
+          color: "var(--ink-muted)",
+          fontFamily: "var(--mono)",
+          fontSize: 11,
+          lineHeight: 1.6,
+        }}
+      >
         Set by {fact.authority} ·{" "}
         <Link
           href={fact.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-signal hover:underline"
+          style={{ color: "var(--electric-deep)", textDecoration: "none" }}
         >
-          source <ExternalLink className="size-3" />
+          source ↗
         </Link>{" "}
         · we last checked {fact.verifiedOn}
       </p>
@@ -50,7 +84,7 @@ export function SourcedFact({ fact }: { fact: Fact }) {
 
 export function FactList({ facts }: { facts: Fact[] }) {
   return (
-    <ul className="mt-6 space-y-3">
+    <ul style={{ listStyle: "none", margin: "24px 0 0", padding: 0, display: "grid", gap: 10 }}>
       {facts.map((f) => (
         <SourcedFact key={f.claim} fact={f} />
       ))}
@@ -60,30 +94,30 @@ export function FactList({ facts }: { facts: Fact[] }) {
 
 /**
  * A page-scoped FAQ that renders the Q&As AND emits FAQPage schema from the same
- * array — one source, so the visible answer and the structured answer can't drift.
+ * array — one source, so the visible answer and the structured answer can't
+ * drift. Native `<details>` so it works with JavaScript disabled.
  */
 export function FaqBlock({
   faqs,
-  title = "Common questions",
+  title = "Common questions.",
 }: {
   faqs: { q: string; a: string }[]
   title?: string
 }) {
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <JsonLd data={faqSchema(faqs)} />
-      <SectionEyebrow>{title}</SectionEyebrow>
-      <div className="mt-5 space-y-3">
-        {faqs.map((f) => (
-          <details key={f.q} className="group rounded-xl border border-hairline bg-card">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 [&::-webkit-details-marker]:hidden">
-              <span className="font-display font-semibold">{f.q}</span>
-              <span className="font-mono text-signal transition-transform group-open:rotate-45">+</span>
-            </summary>
-            <p className="px-5 pb-4 text-text-mid">{f.a}</p>
-          </details>
-        ))}
-      </div>
+    <section style={{ padding: "40px 0 8px" }}>
+      <Measure>
+        <JsonLd data={faqSchema(faqs)} />
+        <div className="faq-block" style={{ marginTop: 0, borderTop: "none", paddingTop: 0 }}>
+          <h3>{title}</h3>
+          {faqs.map((f) => (
+            <details className="faq-item" key={f.q}>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </Measure>
     </section>
   )
 }
@@ -91,22 +125,20 @@ export function FaqBlock({
 /** Hub-and-spoke internal links, so no new page is an orphan. */
 export function RelatedLinks({ links }: { links: { label: string; href: string }[] }) {
   return (
-    <section className="border-t border-hairline">
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <SectionEyebrow>Keep reading</SectionEyebrow>
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-          {links.map((l) => (
-            <li key={l.href}>
-              <Link
-                href={l.href}
-                className="block rounded-lg border border-hairline bg-card px-4 py-3 text-sm font-medium text-text-hi transition-colors hover:border-hairline-strong"
-              >
-                {l.label} <span className="text-signal">&rarr;</span>
+    <section style={{ padding: "40px 0 64px" }}>
+      <Measure>
+        <div className="related-block" style={{ marginTop: 0 }}>
+          <h3>Keep reading.</h3>
+          <div className="related-grid">
+            {links.map((l, i) => (
+              <Link className="related-card" href={l.href} key={l.href}>
+                <span>Related · {String(i + 1).padStart(2, "0")}</span>
+                <strong>{l.label}</strong>
               </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+            ))}
+          </div>
+        </div>
+      </Measure>
     </section>
   )
 }

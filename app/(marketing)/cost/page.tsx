@@ -3,7 +3,6 @@ import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { externalCostEstimates } from "@/config/brand"
 import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
-import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { CostCalculator } from "@/components/marketing/cost-calculator"
@@ -16,6 +15,8 @@ export const metadata = buildMetadata({
   path: "/cost",
   hreflang: "/cost",
 })
+
+const measure: React.CSSProperties = { width: "min(100% - 48px, 820px)", marginInline: "auto" }
 
 export default async function CostPage() {
   const [packages, fees] = await Promise.all([getPublicPackages(), getPublicFees()])
@@ -51,7 +52,7 @@ export default async function CostPage() {
   ]
 
   return (
-    <>
+    <div className="guide-page">
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Cost", path: "/cost" }]} />
       <PageHero
         eyebrow="What it costs"
@@ -59,7 +60,7 @@ export default async function CostPage() {
         subtitle="No games with pricing. Here is every dollar, who it goes to, and which part is actually ours."
       />
 
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
+      <div className="article-body" style={{ ...measure, padding: "56px 0 8px" }}>
         <DirectAnswer>
           A NYC gun license costs roughly <strong>{usd(low)} to {usd(high)} all-in</strong>. That
           breaks down into the {fees.applicationFee} NYPD application fee and the{" "}
@@ -67,28 +68,30 @@ export default async function CostPage() {
           your 18-hour safety course and notarization, which are billed by those providers. Only the
           concierge fee is paid to Gun License NYC, and we never mark up anything else.
         </DirectAnswer>
+      </div>
+
+      <section style={{ padding: "32px 0" }}>
+        <div className="shell">
+          <CostCalculator packages={packages} fees={fees} estimates={externalCostEstimates} />
+        </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <CostCalculator packages={packages} fees={fees} estimates={externalCostEstimates} />
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">Who sets these costs</h2>
-        <p className="mt-3 text-text-mid">
+      <div className="article-body" style={{ ...measure, padding: "8px 0" }}>
+        <h3>Who sets these costs</h3>
+        <p>
           We don&apos;t set any of the government amounts, and we can&apos;t refund them. Here&apos;s
           who does, and where to check us:
         </p>
         <FactList facts={[FACTS.applicationFee, FACTS.fingerprintFee, FACTS.training]} />
-      </section>
+      </div>
 
       <FaqBlock faqs={FAQS} />
 
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
-          <Button asChild size="lg">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
+      <section style={{ padding: "24px 0 8px" }}>
+        <div style={{ ...measure, textAlign: "center" }}>
+          <Link className="button" href="/eligibility">
+            Check your eligibility <span className="button-arrow" aria-hidden="true">→</span>
+          </Link>
         </div>
       </section>
 
@@ -100,6 +103,6 @@ export default async function CostPage() {
           { label: "Compare our packages", href: "/pricing" },
         ]}
       />
-    </>
+    </div>
   )
 }

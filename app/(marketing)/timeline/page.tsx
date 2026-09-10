@@ -1,10 +1,7 @@
-import Link from "next/link"
 import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
-import { Button } from "@/components/ui/button"
-import { PageHero } from "@/components/marketing/page-hero"
-import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
-import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
+import { DirectAnswer, FactList } from "@/components/marketing/page-blocks"
+import { ArticleTemplate } from "@/components/marketing/v2/article-template"
 
 export const metadata = buildMetadata({
   title: "How Long Does a NYC Gun License Take?",
@@ -18,7 +15,7 @@ export const metadata = buildMetadata({
  * Timeline is the second-most-asked question after cost, and the one where a
  * marketing site is most tempted to lie. Every duration here traces to
  * FACTS.timeline; nothing on this page suggests the wait can be shortened,
- * because it can't be (FACTS.discretion).
+ * because it can't be (FACTS.discretion). Rendered through the v2 article template.
  */
 
 const STAGES = [
@@ -95,101 +92,143 @@ const FAQS = [
   },
 ]
 
+function StageList() {
+  return (
+    <ol style={{ listStyle: "none", margin: "24px 0 0", padding: 0, display: "grid", gap: 10 }}>
+      {STAGES.map((s, i) => (
+        <li
+          key={s.stage}
+          style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "18px 20px" }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <span style={{ color: "var(--electric)", fontFamily: "var(--mono)", fontSize: 13 }}>
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <strong style={{ fontSize: 17 }}>{s.stage}</strong>
+          </div>
+          <p
+            style={{
+              margin: "6px 0 0",
+              paddingLeft: 36,
+              color: "var(--ink-muted)",
+              fontFamily: "var(--mono)",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            {s.when}
+          </p>
+          <p style={{ margin: "8px 0 0", paddingLeft: 36, color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.55 }}>
+            {s.body}
+          </p>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function DelayCards() {
+  return (
+    <div style={{ display: "grid", gap: 10, margin: "24px 0 0" }}>
+      {DELAYS.map((d) => (
+        <div
+          key={d.title}
+          style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "18px 20px" }}
+        >
+          <strong style={{ display: "block", fontSize: 17, marginBottom: 6 }}>{d.title}</strong>
+          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.55 }}>{d.body}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function TimelinePage() {
   return (
-    <>
-      <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Timeline", path: "/timeline" }]} />
-      <PageHero
-        eyebrow="How long it takes"
-        title="How long does a NYC gun license take?"
-        subtitle="About six months on the NYPD's side — plus however long you take to get ready. Here's where the time actually goes."
-      />
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <DirectAnswer>
-          A NYC gun license takes <strong>roughly six months</strong> from a complete submission to
-          the decision letter — covering the interview, fingerprinting, the FBI background check,
-          and the character investigation. The clock starts when your application is complete, not
-          when you decide to apply, so the time you spend getting your paperwork right comes on top
-          of that. Nobody can make the NYPD move faster; the only half of the calendar anyone can
-          control is your own.
-        </DirectAnswer>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">Stage by stage</h2>
-        <p className="mt-3 text-text-mid">
-          Two clocks run here, not one. The first is yours and starts today. The second is the
-          NYPD&apos;s and doesn&apos;t start until your file is complete.
-        </p>
-        <ol className="mt-6 space-y-3">
-          {STAGES.map((s, i) => (
-            <li key={s.stage} className="rounded-xl border border-hairline bg-card p-5">
-              <div className="flex items-baseline gap-3">
-                <span className="font-mono text-sm text-signal">{String(i + 1).padStart(2, "0")}</span>
-                <h3 className="font-display font-semibold text-text-hi">{s.stage}</h3>
-              </div>
-              <p className="mt-1 pl-9 text-xs uppercase tracking-wide text-text-low">{s.when}</p>
-              <p className="mt-2 pl-9 text-text-mid">{s.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          What actually causes delays
-        </h2>
-        <p className="mt-3 text-text-mid">
-          Almost every application that runs long runs long for one of these four reasons. All four
-          happen before you file — which means all four are fixable.
-        </p>
-        <div className="mt-6 space-y-3">
-          {DELAYS.map((d) => (
-            <div key={d.title} className="rounded-xl border border-hairline bg-card p-5">
-              <h3 className="font-display font-semibold text-text-hi">{d.title}</h3>
-              <p className="mt-2 text-text-mid">{d.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">
-          The honest part: the wait is the wait
-        </h2>
-        <p className="mt-3 text-text-mid">
-          We won&apos;t pretend otherwise. The License Division decides on its own schedule, and no
-          consultant, course, or fee changes that. What a good process does is make sure the six
-          months is six months — not six months plus three rounds of letters asking for the thing
-          you forgot. Here are the rules behind all of it, with sources:
-        </p>
-        <FactList
-          facts={[FACTS.timeline, FACTS.trainingClock, FACTS.discretion, FACTS.youFile]}
-        />
-      </section>
-
-      <FaqBlock faqs={FAQS} />
-
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
-          <p className="mb-5 text-text-mid">
-            The fastest thing you can do today is find out where you stand.
-          </p>
-          <Button asChild size="lg">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
-        </div>
-      </section>
-
-      <RelatedLinks
-        links={[
-          { label: "What a NYC gun license costs", href: "/cost" },
-          { label: "Everything a NYC gun license requires", href: "/requirements" },
-          { label: "How the process works, step by step", href: "/how-it-works" },
-          { label: "Common questions", href: "/faq" },
-        ]}
-      />
-    </>
+    <ArticleTemplate
+      eyebrow="How long it takes"
+      title="How long does a NYC gun license take?"
+      lede="About six months on the NYPD's side — plus however long you take to get ready. Here's where the time actually goes."
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Timeline", path: "/timeline" },
+      ]}
+      meta={["Reviewed September 2026", "Primary sources linked"]}
+      articleLede="Two clocks run here, not one. The first is yours and starts today. The second is the NYPD's, and it doesn't start until your file is complete."
+      sections={[
+        {
+          id: "article-answer",
+          heading: "The short answer",
+          navLabel: "The short answer",
+          body: (
+            <DirectAnswer>
+              A NYC gun license takes <strong>roughly six months</strong> from a complete submission to
+              the decision letter — covering the interview, fingerprinting, the FBI background check, and
+              the character investigation. The clock starts when your application is complete, not when you
+              decide to apply, so the time you spend getting your paperwork right comes on top of that.
+              Nobody can make the NYPD move faster; the only half of the calendar anyone can control is your
+              own.
+            </DirectAnswer>
+          ),
+        },
+        {
+          id: "article-stages",
+          heading: "Stage by stage",
+          navLabel: "Stage by stage",
+          body: (
+            <>
+              <p>
+                Two clocks run here, not one. The first is yours and starts today. The second is the
+                NYPD&apos;s and doesn&apos;t start until your file is complete.
+              </p>
+              <StageList />
+            </>
+          ),
+        },
+        {
+          id: "article-delays",
+          heading: "What actually causes delays",
+          navLabel: "What causes delays",
+          body: (
+            <>
+              <p>
+                Almost every application that runs long runs long for one of these four reasons. All four
+                happen before you file — which means all four are fixable.
+              </p>
+              <DelayCards />
+            </>
+          ),
+        },
+        {
+          id: "article-honest",
+          heading: "The honest part: the wait is the wait",
+          navLabel: "The wait is the wait",
+          body: (
+            <>
+              <p>
+                We won&apos;t pretend otherwise. The License Division decides on its own schedule, and no
+                consultant, course, or fee changes that. What a good process does is make sure the six
+                months is six months — not six months plus three rounds of letters asking for the thing you
+                forgot. Here are the rules behind all of it, with sources:
+              </p>
+              <FactList facts={[FACTS.timeline, FACTS.trainingClock, FACTS.discretion, FACTS.youFile]} />
+            </>
+          ),
+        },
+      ]}
+      faqs={FAQS}
+      cta={{
+        href: "/eligibility",
+        label: "Check your eligibility",
+        note: "The fastest thing you can do today is find out where you stand.",
+      }}
+      related={[
+        { label: "What a NYC gun license costs", href: "/cost" },
+        { label: "Everything a NYC gun license requires", href: "/requirements" },
+        { label: "How the process works, step by step", href: "/how-it-works" },
+        { label: "Common questions", href: "/faq" },
+      ]}
+    />
   )
 }
