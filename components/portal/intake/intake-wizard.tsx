@@ -1321,6 +1321,19 @@ function StepHistory({
                 }}
               />
             )}
+            {/* Country is required on the portal but defaults to the US — only ask abroad. */}
+            <label className="flex items-center gap-1.5 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={h.country !== undefined}
+                onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.checked ? "" : undefined }; patch({ residenceHistory: c }) }}
+                className="size-4 rounded border-input"
+              />
+              This address is outside the United States
+            </label>
+            {h.country !== undefined && (
+              <Input placeholder="Country" value={h.country ?? ""} onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.value }; patch({ residenceHistory: c }) }} />
+            )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
@@ -1349,8 +1362,20 @@ function StepHistory({
                 // Writing the split field retires the legacy combined `employer`.
                 const c = [...empHist]; c[i] = { ...c[i], employerName: e.target.value, employer: undefined }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="Business address" value={h.employerAddress ?? ""} onChange={(e) => {
+              <Input placeholder="Business street address" value={h.employerAddress ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], employerAddress: e.target.value }; patch({ employmentHistory: c })
+              }} />
+            </div>
+            {/* The portal requires City / State / Zip for every past employer. */}
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], city: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], state: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], zip: e.target.value }; patch({ employmentHistory: c })
               }} />
             </div>
             <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {

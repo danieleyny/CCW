@@ -50,13 +50,23 @@ export interface AddressHistoryEntry {
   city?: string
   state?: string
   zip?: string
+  // The portal makes Country REQUIRED on every residence row (it stays OPTIONAL on
+  // employment rows — keep that asymmetry). Defaults to United States; the UI only
+  // surfaces the field for a non-US address so the common case stays one click shorter.
+  country?: string
 }
 /** Q29 — one row of the five-year employment history. */
 export interface EmploymentHistoryEntry {
   fromMonth?: string
   toMonth?: string
   employerName?: string // business name
-  employerAddress?: string // business address
+  employerAddress?: string // business STREET line; worksheet derives building/street via splitStreet
+  // The portal requires a full structured address (Building No., Street, City, State,
+  // Zip) for every past employer — these give it the city/state/zip the single street
+  // line couldn't (mirrors AddressHistoryEntry; Country stays optional on this table).
+  city?: string
+  state?: string
+  zip?: string
   /** @deprecated legacy combined "name + address"; coalesced into employerName on read. */
   employer?: string
   occupation?: string
@@ -65,10 +75,16 @@ export interface EmploymentHistoryEntry {
 }
 /** One handgun / long-gun the applicant already owns (portal "Do you currently own…"). */
 export interface FirearmEntry {
+  // TODO(portal): the portal's "Make" is a constrained lookup against NYPD's
+  // manufacturer table, not free text — swap this for a select against that list.
   make?: string
   model?: string
   caliber?: string
   serial?: string
+  /** Portal firearm modal: "Is this firearm licensed?" (Yes/No, required). */
+  licensed?: "Yes" | "No"
+  /** Conditional — collected/rendered only when licensed === "Yes". */
+  licenseNumber?: string
 }
 /** One other firearms licence/permit held (the portal table behind "other licences"). */
 export interface OtherLicenseEntry {

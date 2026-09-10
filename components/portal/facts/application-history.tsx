@@ -172,6 +172,20 @@ export function ApplicationHistory({
               <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
               <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
             </div>
+            {/* Country is required on the portal but defaults to the US, so we only ask
+                when the address is abroad — the common case stays one field shorter. */}
+            <label className="flex items-center gap-1.5 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={h.country !== undefined}
+                onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, country: e.target.checked ? "" : undefined } : x)))}
+                className="size-4 rounded border-input"
+              />
+              This address is outside the United States
+            </label>
+            {h.country !== undefined && (
+              <Input placeholder="Country" value={h.country ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, country: e.target.value } : x)))} />
+            )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => setRes((c) => [...c, {}])}>
@@ -206,10 +220,16 @@ export function ApplicationHistory({
                 onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, employerName: e.target.value, employer: undefined } : x)))}
               />
               <Input
-                placeholder="Business address"
+                placeholder="Business street address"
                 value={h.employerAddress ?? ""}
                 onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, employerAddress: e.target.value } : x)))}
               />
+            </div>
+            {/* The portal requires a full City / State / Zip per past employer. */}
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, city: e.target.value } : x)))} />
+              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
+              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
             </div>
             <Input
               placeholder="Occupation"

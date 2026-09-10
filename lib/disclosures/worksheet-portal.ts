@@ -141,6 +141,10 @@ export function buildPortalWorksheet(
         f(`Row ${i + 1} — City`, s(r.city)),
         f(`Row ${i + 1} — State`, s(r.state)),
         f(`Row ${i + 1} — Zip`, s(r.zip)),
+        // Country is REQUIRED on every residence row in the portal (optional on the
+        // employment table — see step 4). Defaults to United States so the common case
+        // is never a red box; a non-US applicant sets it in intake.
+        f(`Row ${i + 1} — Country`, s(r.country) || "United States"),
       ]
     })
   )
@@ -174,6 +178,10 @@ export function buildPortalWorksheet(
           f(`History ${i + 1} — Job Title`, s(r.occupation), { optional: true }),
           fDate(`History ${i + 1} — Start`, s(r.fromMonth), { optional: true }),
           fDate(`History ${i + 1} — End`, s(r.toMonth), { optional: true, presentIfEmpty: true }),
+          // The portal requires a full structured address per past employer. The street
+          // line is split into Building/Street exactly like the residence rows; there is
+          // no Apt on this table, and Country stays optional here (asymmetry with step 2).
+          ...addressFields(`History ${i + 1} — Address`, s(r.employerAddress), "", s(r.city), s(r.state), s(r.zip)),
         ])
       : [f("Prior employers", "None listed", { optional: true })]
   )
@@ -200,6 +208,12 @@ export function buildPortalWorksheet(
       f(`Firearm ${i + 1} — Model`, s(g.model), { optional: true }),
       f(`Firearm ${i + 1} — Caliber`, s(g.caliber), { optional: true }),
       f(`Firearm ${i + 1} — Serial`, s(g.serial), { optional: true }),
+      // Portal modal: "Is this firearm licensed?" (Yes/No, required), then the
+      // License/Permit Number ONLY when Yes — a real conditional, not a visible optional.
+      f(`Firearm ${i + 1} — Is this firearm licensed?`, s(g.licensed)),
+      ...(g.licensed === "Yes"
+        ? [f(`Firearm ${i + 1} — License/Permit Number`, s(g.licenseNumber))]
+        : []),
     ]),
     ...(ctx.isRenewal ? [f("Prior licence number (renewal)", s(v.priorLicenseNumber), { optional: true })] : []),
   ])
@@ -311,7 +325,7 @@ export function buildPortalWorksheet(
   }))
 }
 
-type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string }
+type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; employerAddress?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string; country?: string }
 function asRows(x: unknown): Row[] {
   return Array.isArray(x) ? (x as Row[]) : []
 }
