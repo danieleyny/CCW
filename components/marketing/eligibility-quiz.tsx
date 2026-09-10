@@ -2,13 +2,9 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Crosshair, ShieldCheck, ShieldAlert, ArrowLeft } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
 import { FACTS } from "@/content/facts"
-import { Button } from "@/components/ui/button"
 import { LeadForm } from "@/components/marketing/lead-form"
-import { FactList } from "@/components/marketing/page-blocks"
 
 /**
  * A per-answer explanation shown the instant a disqualifying / needs-a-lawyer
@@ -112,6 +108,8 @@ export function EligibilityQuiz() {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [done, setDone] = useState(false)
+  // The choice highlighted on the current screen, committed on "Continue".
+  const [selected, setSelected] = useState<Answer | null>(null)
 
   // V4-B5 — restore in-progress answers after a refresh so nobody loses their
   // place mid-quiz. Read once on mount (after hydration → no SSR mismatch).
@@ -121,8 +119,13 @@ export function EligibilityQuiz() {
       if (!raw) return
       const saved = JSON.parse(raw) as { step?: number; answers?: Record<string, Answer>; done?: boolean }
       /* eslint-disable react-hooks/set-state-in-effect */
-      if (saved.answers) setAnswers(saved.answers)
-      if (typeof saved.step === "number") setStep(Math.min(saved.step, QUESTIONS.length - 1))
+      const restoredStep =
+        typeof saved.step === "number" ? Math.min(saved.step, QUESTIONS.length - 1) : 0
+      if (saved.answers) {
+        setAnswers(saved.answers)
+        setSelected(saved.answers[QUESTIONS[restoredStep].key] ?? null)
+      }
+      if (typeof saved.step === "number") setStep(restoredStep)
       if (saved.done) setDone(true)
       /* eslint-enable react-hooks/set-state-in-effect */
     } catch {
@@ -140,6 +143,8 @@ export function EligibilityQuiz() {
 
   const q = QUESTIONS[step]
 
+  // Commit the highlighted choice: same scoring, early-exit, and analytics as
+  // before — only the trigger moved from the option click to "Continue".
   function choose(opt: Answer) {
     // Conversion funnel: the very first answer starts the quiz.
     if (Object.keys(answers).length === 0) trackEvent("eligibility_start")
@@ -163,13 +168,17 @@ export function EligibilityQuiz() {
     if (last) {
       setDone(true)
       trackEvent("eligibility_complete")
-    } else setStep(nextStep)
+    } else {
+      setStep(nextStep)
+      setSelected(next[QUESTIONS[nextStep].key] ?? null)
+    }
     persist({ step: nextStep, answers: next, done: last })
   }
 
   function goBack() {
     const prev = step - 1
     setStep(prev)
+    setSelected(answers[QUESTIONS[prev].key] ?? null)
     persist({ step: prev, answers, done: false })
   }
 
@@ -183,6 +192,7 @@ export function EligibilityQuiz() {
     setAnswers({})
     setStep(0)
     setDone(false)
+    setSelected(null)
   }
 
   if (done) {
@@ -204,54 +214,72 @@ export function EligibilityQuiz() {
   }
 
   return (
-    <div className="rounded-lg border border-hairline bg-card p-6 sm:p-8">
-      {/* progress */}
-      <div className="mb-6">
-        <div className="engraved mb-2 flex items-center justify-between">
-          <span>
-            Question {String(step + 1).padStart(2, "0")} / {String(QUESTIONS.length).padStart(2, "0")}
-          </span>
-          <span className="text-signal">{Math.round((step / QUESTIONS.length) * 100)}%</span>
-        </div>
-        <div className="flex gap-1.5">
-          {QUESTIONS.map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                "h-1 flex-1 rounded-full transition-colors",
-                i < step ? "bg-brass" : i === step ? "bg-signal" : "bg-hairline-strong"
-              )}
-            />
-          ))}
-        </div>
+    <article className="flow-screen" aria-label={`Eligibility question ${step + 1}`}>
+      <div className="flow-top">
+        <span>Question {String(step + 1).padStart(2, "0")}</span>
+        <span>
+          {step + 1} of {QUESTIONS.length}
+        </span>
       </div>
 
-      <h2 className="font-display text-xl font-semibold sm:text-2xl">{q.prompt}</h2>
-
-      <div className="mt-6 space-y-2.5">
-        {q.options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => choose(opt)}
-            className="group flex w-full items-center justify-between rounded-md border border-hairline-strong bg-surface-2 px-4 py-3.5 text-left text-sm font-medium transition-colors hover:border-signal/50 hover:bg-surface-3"
-          >
-            {opt.label}
-            <Crosshair className="size-4 text-text-low transition-colors group-hover:text-signal" />
-          </button>
+      <div className="flow-progress" aria-hidden="true">
+        {QUESTIONS.map((_, i) => (
+          <i key={i} className={i <= step ? "is-done" : undefined} />
         ))}
       </div>
 
-      {step > 0 && (
+      <h4>{q.prompt}</h4>
+      <p>Choose the closest answer. You can clarify it during intake.</p>
+
+      <div className="choice-list" role="radiogroup" aria-label={q.prompt}>
+        {q.options.map((opt) => {
+          const isSel = selected?.value === opt.value
+          return (
+            <div
+              key={opt.value}
+              role="radio"
+              aria-checked={isSel}
+              tabIndex={0}
+              className={`choice${isSel ? " is-selected" : ""}`}
+              onClick={() => setSelected(opt)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  setSelected(opt)
+                }
+              }}
+            >
+              <span className="choice-dot" aria-hidden="true" />
+              <span>{opt.label}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flow-actions">
+        {step > 0 ? (
+          <button
+            type="button"
+            className="flow-back"
+            onClick={goBack}
+            style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+          >
+            ← Back
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
         <button
           type="button"
-          onClick={goBack}
-          className="mt-6 inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-mid hover:text-foreground"
+          className="button"
+          onClick={() => selected && choose(selected)}
+          disabled={!selected}
+          style={!selected ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
         >
-          <ArrowLeft className="size-3.5" /> Back
+          Continue <span className="button-arrow" aria-hidden="true">→</span>
         </button>
-      )}
-    </div>
+      </div>
+    </article>
   )
 }
 
@@ -276,37 +304,107 @@ function Result({
     explain?.body ??
     "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline."
 
+  const badge = isIneligible
+    ? "Not eligible yet"
+    : isReview
+      ? "Speak with an attorney"
+      : "Within service scope"
+
+  const fact = explain ? FACTS[explain.factKey] : null
+
   return (
-    <div className="rounded-lg border bg-card p-6 sm:p-8 brass-edge">
-      <div className="flex items-center gap-3">
-        {status === "likely" ? (
-          <ShieldCheck className="size-7 text-brass" />
-        ) : (
-          <ShieldAlert className="size-7 text-warn" />
-        )}
-        <div className="engraved text-brass">Eligibility Result</div>
+    <article className="flow-screen result-screen" aria-label="Eligibility service-fit result">
+      <div className="flow-top">
+        <span>Your result</span>
+        <span>Complete</span>
       </div>
-      <h2 className="mt-4 font-display text-2xl font-semibold sm:text-3xl">{headline}</h2>
-      <p className="mt-2 text-text-mid">{body}</p>
+
+      <span className="result-badge">{badge}</span>
+      <h4>{headline}</h4>
+      <p>{body}</p>
+
+      {/* Clean pass: describe the service fit (mirrors the homepage's principles). */}
+      {status === "likely" && (
+        <ul className="result-list">
+          <li>
+            <strong>We map the requirements.</strong>Your checklist is generated around your license
+            track and answers.
+          </li>
+          <li>
+            <strong>We organize the file.</strong>Documents, references, training, and disclosures
+            stay in one case system.
+          </li>
+          <li>
+            <strong>You stay in control.</strong>You review and submit your own application.
+          </li>
+        </ul>
+      )}
 
       {/* The published RULE behind this result — agency, primary source, date.
           We explain the rule; we never adjudicate a specific record. */}
-      {explain && (
-        <div className="mt-5">
-          <FactList facts={[FACTS[explain.factKey]]} />
+      {fact && explain && (
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            marginTop: 26,
+            paddingTop: 14,
+            borderTop: "1px solid var(--dark-rule)",
+          }}
+        >
+          <p style={{ margin: 0, color: "var(--light)", fontSize: 14, lineHeight: 1.5 }}>
+            {fact.claim}
+          </p>
+          <p
+            style={{
+              margin: "8px 0 0",
+              color: "var(--light-soft)",
+              fontFamily: "var(--mono)",
+              fontSize: 11,
+              letterSpacing: ".04em",
+            }}
+          >
+            Set by {fact.authority} ·{" "}
+            <a
+              href={fact.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--cyan)" }}
+            >
+              source ↗
+            </a>{" "}
+            · we last checked {fact.verifiedOn}
+          </p>
         </div>
       )}
 
       {/* Hard statutory bar (age): an honest dead-end, no lead form. */}
       {isIneligible && (
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Button asChild variant="outline">
-            <Link href="/">Back to home</Link>
-          </Button>
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            marginTop: 30,
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 20,
+          }}
+        >
+          <Link className="button button-light" href="/">
+            Back to home
+          </Link>
           <button
             type="button"
             onClick={onReset}
-            className="font-mono text-xs uppercase tracking-wider text-text-mid hover:text-foreground"
+            className="flow-back"
+            style={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              color: "var(--light-soft)",
+            }}
           >
             Start over
           </button>
@@ -316,38 +414,48 @@ function Result({
       {/* Needs-a-lawyer OR clean pass: both route to us. Review goes to the
           attorney seam (never a denial); a clean pass starts the application. */}
       {!isIneligible && (
-        <div className="mt-6">
+        <div style={{ position: "relative", zIndex: 1, marginTop: 28 }}>
           {isReview && (
-            <p className="text-sm text-text-mid">
+            <p style={{ margin: "0 0 24px", color: "var(--light-soft)", fontSize: 14, lineHeight: 1.55 }}>
               Want to understand how this is treated in general? See{" "}
-              <Link href="/do-i-need-a-lawyer" className="text-signal hover:underline">
+              <Link href="/do-i-need-a-lawyer" style={{ color: "var(--cyan)" }}>
                 do I need a lawyer
               </Link>
               . When you&apos;re ready, request a confidential review below.
             </p>
           )}
-          <div className="mt-6 border-t border-hairline pt-7">
-            <LeadForm
-              source="eligibility_quiz"
-              showBorough={false}
-              submitLabel={isReview ? "Request a confidential review" : "Start my application"}
-              successTitle={isReview ? "Let's get started." : "You're all set."}
-              successBody="we can reach out within one business day."
-              accountCta
-              hidden={{ track, eligibility: eligibilityJson }}
-            />
-          </div>
+          <LeadForm
+            source="eligibility_quiz"
+            showBorough={false}
+            submitLabel={isReview ? "Request a confidential review" : "Start my application"}
+            successTitle={isReview ? "Let's get started." : "You're all set."}
+            successBody="we can reach out within one business day."
+            accountCta
+            hidden={{ track, eligibility: eligibilityJson }}
+          />
           {isReview && (
             <button
               type="button"
               onClick={onReset}
-              className="mt-4 font-mono text-xs uppercase tracking-wider text-text-mid hover:text-foreground"
+              className="flow-back"
+              style={{
+                marginTop: 18,
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                color: "var(--light-soft)",
+              }}
             >
               Start over
             </button>
           )}
         </div>
       )}
-    </div>
+
+      <p className="result-disclaimer">
+        This is a service-fit result, not legal advice or a prediction of any NYPD decision.
+      </p>
+    </article>
   )
 }

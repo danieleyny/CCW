@@ -17,8 +17,12 @@ export default function Eligibility() {
         title="Do you qualify?"
         subtitle="Six quick questions. No payment, no commitment — just a clear read on where you stand."
       />
-      <section className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
-        <EligibilityQuiz />
+      <section className="section">
+        <div className="shell">
+          <div style={{ maxWidth: 560, marginInline: "auto" }}>
+            <EligibilityQuiz />
+          </div>
+        </div>
       </section>
     </>
   )
