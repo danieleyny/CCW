@@ -36,8 +36,9 @@ export function SafeguardInvite({ caseId }: { caseId?: string }) {
   return (
     <div className="mt-3 rounded-md border border-hairline bg-surface-2/40 p-3">
       <p className="text-xs text-text-mid">
-        We can send the person you designated a private link to complete and sign this themselves — they sign
-        it in front of a witness (no notary) and upload it. No account needed.
+        We can send the person you designated a private link to do this themselves — they sign the
+        acknowledgement in front of a witness (no notary), upload it, and add a photo of their own government
+        ID. It goes to the email you entered for them, so you never have to handle their ID. No account needed.
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" onClick={send} disabled={pending}>

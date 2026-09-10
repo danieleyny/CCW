@@ -83,3 +83,63 @@ export async function uploadSignedSafeguard(token: string, formData: FormData): 
   })
   return { ok: true }
 }
+
+/**
+ * CARRY GUARD task 8 — the safeguard person uploads a photo of their OWN government ID
+ * (SGI-01), through the same invite link. This closes the third-party loop: the ID
+ * belongs to the safeguard person, so they provide it directly rather than the applicant
+ * couriering it. Same store-and-bind pattern as the signed acknowledgement above; it does
+ * NOT mark the invite complete (the acknowledgement is the completing step).
+ */
+export async function uploadSafeguardId(token: string, formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const file = formData.get("file")
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose the ID photo to upload." }
+  const check = validateFile({ name: file.name, size: file.size })
+  if (!check.ok) return { error: check.errors[0] ?? "That file can't be uploaded." }
+
+  if (!rateLimit(`g:${token}`, 10)) return { error: "Too many requests — please wait a minute and try again." }
+  const admin = createAdminClient()
+  const { data: invite } = await admin
+    .from("safeguard_invites")
+    .select("id, case_id, token_expires_at, token_revoked_at")
+    .eq("token", token)
+    .maybeSingle()
+  if (!invite || !safeguardTokenActive(invite)) return { error: "This link is invalid or has expired." }
+
+  const { data: kase } = await admin.from("cases").select("client_id").eq("id", invite.case_id).single()
+  if (!kase?.client_id) return { error: "Case not found." }
+
+  const documentId = randomUUID()
+  const path = `clients/${kase.client_id}/${documentId}/${check.sanitizedName}`
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const sniff = sniffFileType(bytes)
+  if (!sniff) return { error: "That file isn't a valid PDF or image. Upload a PDF, JPG, PNG, or HEIC." }
+  const { error: upErr } = await admin.storage
+    .from("documents")
+    .upload(path, bytes, { contentType: sniff.contentType, upsert: true })
+  if (upErr) return { error: "Upload failed. Please try again." }
+
+  await admin.from("documents").insert({
+    id: documentId,
+    case_id: invite.case_id,
+    client_id: kase.client_id,
+    req_code: "SGI-01",
+    type: "safeguard_id",
+    status: "pending",
+    file_path: path,
+    file_name: check.sanitizedName,
+  })
+  // Bind it to SGI-01 for staff review (pending, not auto-satisfied).
+  await admin
+    .from("case_requirements")
+    .update({ status: "pending", document_id: documentId, notes: "Government ID uploaded by the safeguard person themselves — under review." })
+    .eq("case_id", invite.case_id)
+    .eq("req_code", "SGI-01")
+    .in("status", ["pending", "na"])
+
+  await notifyCaseParties(admin, invite.case_id, {
+    title: "The safeguard person's ID was uploaded",
+    body: "The person designated to safeguard the firearm(s) uploaded a photo of their government ID — it's now on the case for review.",
+  })
+  return { ok: true }
+}
