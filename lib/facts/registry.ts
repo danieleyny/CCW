@@ -152,6 +152,11 @@ export const FACTS: FactDef[] = [
   { key: "applicant.phone.cell", label: "Cell phone (primary)", type: "phone", group: "contact", from: (s) => s.client.phone },
   { key: "applicant.phone.work", label: "Work phone (other)", type: "phone", group: "contact", optional: true },
   { key: "applicant.email", label: "Email", type: "text", group: "contact", from: (s) => s.client.email },
+  // Portal step 1 carries a bare "NYS ID" input next to the phones — the NYS driver
+  // licence / non-driver ID number. Optional: not everyone holds one, and the identity
+  // document itself is what NYPD verifies (IDN-03). Captured so staff never have to
+  // stop mid-transcription and go ask for it.
+  { key: "applicant.nysId", label: "NYS driver licence / non-driver ID number", type: "text", group: "contact", optional: true, placeholder: "as printed on the ID" },
 
   // ── Employer (the applicant's own, unless a sponsorship supplies it) ──
   // Employer facts resolve SPONSOR-FIRST when a sponsorship exists (the employer
@@ -203,8 +208,15 @@ export const FACTS: FactDef[] = [
   { key: "safekeeping.city", label: "City", type: "text", group: "safekeeping" },
   { key: "safekeeping.state", label: "State", type: "select", group: "safekeeping", options: US_STATES, from: () => "NY" },
   { key: "safekeeping.zip", label: "ZIP", type: "zip", group: "safekeeping" },
-  // 21+ is the portal's HARD rule for the safeguarding person (NY residency is only
-  // "ideally"). We capture it explicitly so readiness can block an under-21.
+  // 21+ is the portal's HARD rule for the safeguarding person.
+  // NY RESIDENCY — the portal contradicts itself and we must not pick a side in code:
+  //   step 7 (data entry) says the person is "ideally from New York State";
+  //   step 15 (review)     says they "must be at least 21 years old AND a resident of
+  //                        New York State".
+  // We ADVISE clients on the stricter reading (Chery's gather-checklist already says
+  // "they must live in New York State") but do NOT hard-block a non-NY safeguard here.
+  // OPEN: confirm with the License Division, then make this a block or relax the copy.
+  // We capture 21+ explicitly so readiness can block an under-21.
   { key: "safeguard.is21", label: "Is this person at least 21 years old?", type: "select", group: "safeguard", options: ["Yes", "No"] },
 
   // Counsel — the portal asks everyone; most answer "No", the name block only applies

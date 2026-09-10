@@ -76,6 +76,7 @@ export function buildApplicationValues(
     homePhone: f("applicant.phone.home"),
     cellPhone: f("applicant.phone.cell"),
     email: f("applicant.email"),
+    nysId: f("applicant.nysId"),
     alienReg: f("applicant.alienRegistrationNumber"),
     // Legacy tokens ("citizen"/"lpr") and the readable select values ("U.S. citizen"/
     // "Lawful permanent resident") both resolve correctly.
@@ -92,6 +93,12 @@ export function buildApplicationValues(
     employed: f("employer.employed"),
     employmentStartDate: f("employer.startDate"),
     businessUnit: f("employer.unit"),
+    // Gun custodian — the employer's, NOT the applicant's. Portal step 3 ends with
+    // "Please provide your employer's Gun Custodian information" and BOTH fields are
+    // required, so a Carry Guard application cannot be submitted without them. They are
+    // sponsor-owned facts (set once at sponsor provisioning) and resolve sponsor-first.
+    custodianName: f("sponsor.custodianName"),
+    custodianLicenseNumber: f("sponsor.custodianLicenseNumber"),
     priorLicenseNumber: f("applicant.priorLicenseNumber"),
     // Licence type — best effort, applicant confirms.
     licenseType: premises ? "Premises" : LICENSE_TYPE_BY_TRACK[opts.licenseTrack ?? ""] ?? "",

@@ -1,7 +1,7 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { PORTAL_STEPS, type StepKind } from "@/config/portal-steps"
 import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
-import { lonStatementsFor } from "@/lib/requirements/lon"
+import { portalStep12StatementsFor } from "@/lib/requirements/lon"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
@@ -40,6 +40,8 @@ export interface WorksheetSection {
 }
 
 const s = (v: unknown): string => (typeof v === "string" ? v : v == null ? "" : String(v))
+/** The tracks whose portal step 3 carries the employer's Gun Custodian block. */
+const isGuardTrack = (track?: string | null) => track === "carry_guard" || track === "special_carry_guard"
 const isYes = (x: unknown) => x === "yes" || x === "Yes" || x === true
 const isNo = (x: unknown) => x === "no" || x === "No" || x === false
 
@@ -111,7 +113,12 @@ export function buildPortalWorksheet(
     f("Primary Phone", s(v.cellPhone) || s(v.homePhone) || s(ctx.phone)),
     f("Other Phone", s(v.homePhone), { optional: true }),
     f("Email", s(v.email) || s(ctx.email)),
+    f("NYS ID", s(v.nysId), { optional: true }),
     f("Are you a U.S. Citizen?", v.citizenship === "Citizen" ? "Yes" : v.citizenship === "Alien" ? "No" : ""),
+    // The portal reveals this the moment "U.S. Citizen?" is answered No. It was being
+    // collected as a fact but never surfaced here, so a non-citizen's required
+    // follow-up field was invisible to whoever was transcribing.
+    ...(v.citizenship === "Alien" ? [f("Alien Registration OR Visa Number", s(v.alienReg))] : []),
     f("SSN — Last 4 digits", s(ctx.ssnLast4)),
     ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
     f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
@@ -147,6 +154,14 @@ export function buildPortalWorksheet(
     f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
     ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true),
     f("Business Phone", s(v.busPhone), { optional: true }),
+    // "Please provide your employer's Gun Custodian information" — the block that makes
+    // this path different. BOTH fields are required by the portal: a Carry Guard
+    // application cannot be submitted without the employer's custodian name and licence
+    // number, so they are emitted as required (red when empty), not optional.
+    // Only guard tracks see this block on the portal; other licence types never do.
+    ...(isGuardTrack(ctx.licenseTrack)
+      ? [f("Gun Custodian — Name", s(v.custodianName)), f("Gun Custodian — License Number", s(v.custodianLicenseNumber))]
+      : []),
   ])
 
   // Step 4 — Employment History (prior employers)
@@ -254,9 +269,13 @@ export function buildPortalWorksheet(
 
   // Step 12 — Letter of Necessity, SCOPED by licence type (a concealed-carry case answers
   // three of six). Render only the applicable statements so a blank never gets flagged.
+  // The portal shows FIVE boxes here for Carry Guard; lop1 (the § 5-04 business-need
+  // narrative) lives on the Letter of Necessity DOCUMENT, not on this screen. Emitting
+  // it would flag a permanent red box staff can never satisfy — and a red flag nobody
+  // can clear is how staff learn to ignore red flags.
   put(
     12,
-    lonStatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`])))
+    portalStep12StatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`])))
   )
 
   // Step 14 — Counsel and Preparer
