@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { brand } from "@/config/brand"
 import { footerColumns } from "@/lib/marketing-routes"
 
@@ -17,7 +18,8 @@ export function SiteFooter() {
         <div className="footer-top">
           <div className="footer-intro">
             <Link className="brand" href="/" aria-label="Gun License NYC home">
-              <span className="brand-mark" aria-hidden="true" />
+              {/* Footer is midnight → the light shield mark. */}
+              <Image src="/logo-dark.png" alt="" width={27} height={32} className="brand-logo" />
               <span>Gun License NYC</span>
             </Link>
             <p>{brand.tagline}</p>

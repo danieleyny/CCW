@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { NAV_ROUTES } from "@/lib/marketing-routes"
 
 /**
@@ -13,7 +14,8 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="shell nav-row">
         <Link className="brand" href="/" aria-label="Gun License NYC home">
-          <span className="brand-mark" aria-hidden="true" />
+          {/* Nav pill is ivory → the dark shield mark. Fixed w/h so it can't shift layout. */}
+          <Image src="/logo.png" alt="" width={27} height={32} priority className="brand-logo" />
           <span>Gun License NYC</span>
         </Link>
 

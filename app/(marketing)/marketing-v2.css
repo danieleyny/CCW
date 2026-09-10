@@ -81,7 +81,9 @@
       font-family: var(--display);
       font-size: clamp(46px, 5.5vw, 72px);
       font-weight: 400;
-      line-height: 0.96;
+      /* Bodoni Moda has long descenders; multi-line display headings need enough
+         leading that a descender never lands on the ascender beneath it. */
+      line-height: 1.04;
       letter-spacing: -0.045em;
     }
     .mkt2 .section-lede {
@@ -136,21 +138,8 @@
       text-decoration: none;
       white-space: nowrap;
     }
-    .mkt2 .brand-mark {
-      position: relative;
-      width: 27px;
-      height: 6px;
-      flex: 0 0 27px;
-      border: 0;
-      border-radius: 999px;
-      background: var(--spectral);
-      transform: rotate(-12deg);
-    }
-    .mkt2 .brand-mark::before, .mkt2 .brand-mark::after {
-      display: none;
-    }
-    .mkt2 .brand-mark::before { left: 7px; right: 7px; top: 13px; height: 1px; }
-    .mkt2 .brand-mark::after { top: 7px; bottom: 7px; left: 13px; width: 1px; }
+    /* The real shield logo (next/image), sized by width/height on the element. */
+    .mkt2 .brand-logo { flex: 0 0 auto; height: auto; }
     .mkt2 .desktop-nav { display: flex; align-items: center; gap: 28px; margin-left: auto; }
     .mkt2 .desktop-nav a, .mkt2 .sign-in {
       color: var(--ink-soft);
@@ -298,7 +287,7 @@
       font-family: var(--display);
       font-size: clamp(64px, 6.7vw, 90px);
       font-weight: 500;
-      line-height: 0.94;
+      line-height: 1.02;
       letter-spacing: -0.065em;
     }
     .mkt2 .hero-highlight {
@@ -306,7 +295,10 @@
       z-index: 1;
       display: inline-block;
       margin-top: 5px;
-      padding: 1px 12px 5px 7px;
+      /* Paint must extend WELL beyond the glyphs on every side — most at the
+         bottom, where Bodoni's descenders sit — so the ragged edge never bites
+         into the type. */
+      padding: 6px 20px 16px 16px;
       color: var(--light);
       font-style: normal;
       letter-spacing: -0.07em;
@@ -317,19 +309,22 @@
       position: absolute;
       pointer-events: none;
     }
+    /* The ragged polygon's extremes are pulled to the box edges (0%/100%, some
+       beyond) and the box is inset NEGATIVE all round, so the paint fully backs
+       every glyph — caps, descenders, and the final "s" — at every clamp size. */
     .mkt2 .hero-highlight::before {
       z-index: -2;
-      inset: 7% -2% 2% -1%;
+      inset: -8% -5% -12% -5%;
       background: var(--spectral);
-      clip-path: polygon(1% 18%, 11% 4%, 30% 9%, 48% 0, 66% 8%, 84% 2%, 100% 19%, 96% 71%, 81% 86%, 62% 81%, 44% 94%, 26% 86%, 5% 96%, 0 72%);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 88% -2%, 100% 9%, 99% 82%, 82% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
       transform: rotate(-1.2deg);
     }
     .mkt2 .hero-highlight::after {
       z-index: -1;
-      inset: 9% 0 4%;
+      inset: -6% -3% -10% -3%;
       background-image: radial-gradient(circle, rgba(255,255,255,.7) 0 0.75px, transparent .9px);
       background-size: 6px 6px;
-      clip-path: polygon(1% 18%, 11% 4%, 30% 9%, 48% 0, 66% 8%, 84% 2%, 100% 19%, 96% 71%, 81% 86%, 62% 81%, 44% 94%, 26% 86%, 5% 96%, 0 72%);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 88% -2%, 100% 9%, 99% 82%, 82% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
       opacity: .28;
     }
     .mkt2 .hero-lede {
@@ -344,15 +339,21 @@
     .mkt2 .hero-buttons { display: flex; align-items: center; gap: 12px; }
     .mkt2 .hero-action .button { min-height: 52px; padding-inline: 24px; }
     .mkt2 .hero-micro { display: block; margin-top: 11px; color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; }
-    .mkt2 .hero-visual { position: relative; min-height: 620px; display: grid; place-items: center; }
-    .mkt2 .case-sculpture { position: relative; width: min(100%, 620px); height: 620px; perspective: 1200px; }
+    .mkt2 .hero-visual { position: relative; min-height: 620px; display: grid; place-items: center; perspective: 1400px; }
+    /* Pointer tilt lives here (transform), driven by --tilt-x/--tilt-y set in JS on
+       fine pointers only; it eases back to rest on leave. The scroll-out fan lives
+       on the child .case-scroll-layer, so the two never fight over `transform`. */
+    .mkt2 .case-sculpture { position: relative; width: min(100%, 620px); height: 620px; transform-style: preserve-3d; transform: rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg)); transition: transform 260ms cubic-bezier(.2,.7,.2,1); }
     .mkt2 .case-scroll-layer { position: relative; width: 100%; height: 100%; }
     .mkt2 .paper-sheet, .mkt2 .case-file {
       position: absolute;
       left: 88px;
       width: 410px;
-      border: 1px solid rgba(255,255,255,.78);
-      background: rgba(255, 254, 250, .74);
+      border: 1px solid var(--paper-deep);
+      /* Fully OPAQUE — a plane must completely occlude whatever sits beneath it,
+         so no lower label ever ghosts through. Any scroll-out fade happens on the
+         group (.case-scroll-layer), never on individual planes. */
+      background: var(--paper);
       box-shadow: 0 24px 42px rgba(7,17,31,.12);
       transform: rotate(1.35deg) skewX(-.65deg);
       transform-origin: center;
@@ -375,13 +376,30 @@
     .mkt2 .sheet-application { top: 244px; z-index: 5; left: 60px; }
     .mkt2 .sheet-requirements { top: 316px; z-index: 4; left: 47px; }
     .mkt2 .sheet-next { top: 388px; z-index: 3; left: 34px; }
+    /* Entrance: the planes DEAL into the stack — a small staggered slide + settle,
+       once on load. Animating `translate`/`opacity` (not `transform`) lets it compose
+       with the scroll-out fan instead of clobbering it. Starts from a VISIBLE state. */
+    .mkt2 .paper-sheet, .mkt2 .case-file {
+      animation: deal-in 640ms cubic-bezier(.2,.75,.2,1) both;
+      animation-delay: var(--deal-delay, 0ms);
+    }
+    .mkt2 .sheet-eligibility { --deal-delay: 60ms; }
+    .mkt2 .sheet-documents { --deal-delay: 120ms; }
+    .mkt2 .sheet-application { --deal-delay: 180ms; }
+    .mkt2 .sheet-requirements { --deal-delay: 240ms; }
+    .mkt2 .sheet-next { --deal-delay: 300ms; }
+    .mkt2 .case-file { --deal-delay: 360ms; }
+    @keyframes deal-in {
+      from { opacity: .85; translate: var(--deal-x, -16px) var(--deal-y, 26px); }
+      to { opacity: 1; translate: 0 0; }
+    }
     .mkt2 .case-file {
       top: 54px;
       z-index: 9;
       min-height: 185px;
       padding: 22px;
-      border-color: rgba(7,17,31,.12);
-      background: rgba(255,254,250,.94);
+      border-color: rgba(7,17,31,.14);
+      background: var(--paper);
       color: var(--ink);
       box-shadow: 0 34px 76px rgba(7,17,31,.17);
       transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
@@ -478,10 +496,16 @@
       align-items: center;
       list-style: none;
       cursor: pointer;
+      /* Constant left padding (both states) so the open row's 4px electric bar
+         sits BESIDE the number, never on top of it — and adding it in both states
+         means the row doesn't jump sideways when it opens. */
+      padding-left: 16px;
       transition: transform 200ms ease-out, opacity 200ms ease-out;
     }
     .mkt2 .requirement-group summary::-webkit-details-marker { display: none; }
-    .mkt2 .requirement-group summary:hover, .mkt2 .requirement-group[open] summary { background: var(--paper); transform: translateX(5px); }
+    /* The 5px slide is a HOVER affordance only — opening a row must not shift it. */
+    .mkt2 .requirement-group summary:hover { background: var(--paper); transform: translateX(5px); }
+    .mkt2 .requirement-group[open] summary { background: var(--paper); }
     .mkt2 .req-index { color: var(--electric); font-family: var(--mono); font-size: 11px; }
     .mkt2 .req-title { font-size: 18px; font-weight: 600; letter-spacing: -0.015em; }
     .mkt2 .req-count { color: var(--ink-muted); font-family: var(--mono); font-size: 11px; }
@@ -530,7 +554,7 @@
 
     .mkt2 .promise { padding-block: 80px; border-top: 1px solid var(--rule); background: var(--paper-deep); }
     .mkt2 .promise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
-    .mkt2 .promise h2 { margin: 0 0 18px; font-family: var(--display); font-size: 42px; font-weight: 400; line-height: 1; letter-spacing: -.035em; }
+    .mkt2 .promise h2 { margin: 0 0 18px; font-family: var(--display); font-size: 42px; font-weight: 400; line-height: 1.04; letter-spacing: -.035em; }
     .mkt2 .promise p { margin: 0; color: var(--ink-soft); font-size: 15px; }
     .mkt2 .promise-block { padding-left: 24px; border-left: 1px solid var(--ink); }
     .mkt2 .promise-block .eyebrow { margin-bottom: 14px; }
@@ -559,7 +583,7 @@
     .mkt2 .closing::before { content: ""; position: absolute; left: -7%; right: -7%; top: 56%; height: 24px; border-radius: 999px; background: var(--spectral); transform: rotate(-5deg); opacity: .95; }
     .mkt2 .closing-inner { position: relative; z-index: 1; min-height: 540px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 80px; }
     .mkt2 .closing-copy { max-width: 790px; padding-block: 90px; }
-    .mkt2 .closing h2 { margin: 0; font-family: var(--display); font-size: clamp(62px, 7.8vw, 100px); font-weight: 400; line-height: .9; letter-spacing: -.055em; }
+    .mkt2 .closing h2 { margin: 0; font-family: var(--display); font-size: clamp(62px, 7.8vw, 100px); font-weight: 400; line-height: 1.02; letter-spacing: -.055em; }
     .mkt2 .closing p { max-width: 520px; margin: 28px 0 0; color: var(--light-soft); font-size: 18px; }
     .mkt2 .closing-action { position: relative; padding: 26px; border: 1px solid var(--dark-rule); border-radius: 18px; background: var(--midnight); box-shadow: var(--shadow-dark); }
     .mkt2 .closing-action .button { min-width: 220px; }
@@ -569,8 +593,6 @@
     .mkt2 .footer-top { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr); gap: 54px; }
     .mkt2 .footer-intro { max-width: 330px; }
     .mkt2 .site-footer .brand { color: var(--light); }
-    .mkt2 .site-footer .brand-mark { border-color: var(--light); }
-    .mkt2 .site-footer .brand-mark::before, .mkt2 .site-footer .brand-mark::after { background: var(--light); }
     .mkt2 .footer-intro p { margin: 22px 0 0; color: var(--light-soft); font-size: 14px; }
     .mkt2 .footer-col h3 { margin: 0 0 18px; color: var(--light-soft); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; }
     .mkt2 .footer-col a { min-height: 34px; display: block; color: var(--light); font-size: 14px; text-decoration: none; transition: transform 160ms ease-out, opacity 160ms ease-out; }
@@ -598,9 +620,6 @@
     .mkt2 .phone-frame { overflow: hidden; border: 8px solid var(--ink); border-radius: 30px; background: var(--ivory); box-shadow: var(--shadow-soft); }
     .mkt2 .phone-head { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
     .mkt2 .phone-head .brand { font-size: 13px; }
-    .mkt2 .phone-head .brand-mark { width: 23px; height: 6px; flex-basis: 23px; }
-    .mkt2 .phone-head .brand-mark::before { left: 5px; right: 5px; top: 10px; }
-    .mkt2 .phone-head .brand-mark::after { top: 5px; bottom: 5px; left: 10px; }
     .mkt2 .mini-menu-button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
     .mkt2 .mini-menu-button span { font-size: 18px; }
     .mkt2 .phone-closed-body { min-height: 310px; padding: 28px 18px; }
@@ -629,7 +648,7 @@
     .mkt2 .guide-hero::after { content: ""; position: absolute; left: 46%; right: -8%; bottom: 46px; height: 68px; background: var(--spectral); clip-path: polygon(0 32%,14% 12%,31% 24%,49% 4%,68% 20%,84% 3%,100% 19%,98% 76%,80% 90%,61% 73%,43% 96%,23% 78%,2% 91%); opacity: .78; transform: rotate(-6deg); }
     .mkt2 .breadcrumb { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 64px; color: var(--light-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .mkt2 .guide-hero-copy { position: relative; z-index: 1; max-width: 860px; }
-    .mkt2 .guide-hero h2 { max-width: 840px; margin: 0; font-family: var(--display); font-size: clamp(46px,6vw,78px); font-weight: 500; line-height: .94; letter-spacing: -.06em; }
+    .mkt2 .guide-hero h2 { max-width: 840px; margin: 0; font-family: var(--display); font-size: clamp(46px,6vw,78px); font-weight: 500; line-height: 1.02; letter-spacing: -.06em; }
     .mkt2 .guide-hero-lede { max-width: 680px; margin: 26px 0 0; color: var(--light-soft); font-size: 18px; line-height: 1.55; }
     .mkt2 .guide-meta { display: flex; flex-wrap: wrap; gap: 14px 28px; margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-family: var(--mono); font-size: 10px; }
 
@@ -765,7 +784,9 @@
       padding: 34px;
       border: 1px solid var(--dark-rule);
       border-radius: 12px;
-      background: rgba(13,27,45,.78);
+      /* OPAQUE — these cards sticky-stack over one another, so each must fully
+         occlude the one behind it. No see-through, no ghost descriptions. */
+      background: var(--midnight-raised);
       transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
       isolation: isolate;
     }
@@ -787,7 +808,8 @@
     .mkt2 .phase:nth-child(5) { z-index: 5; margin-bottom: 48px; }
     .mkt2 .phase:hover { transform: translateY(-7px) scale(1.008); border-color: var(--blue); background: var(--midnight-soft); }
     .mkt2 .phase:hover::after, .mkt2 .phase:focus-within::after { opacity: 1; }
-    .mkt2 .phase.is-active { border-color: var(--cyan); background: linear-gradient(145deg, rgba(57,120,246,.2), rgba(13,27,45,.9)); }
+    /* Opaque base under the electric tint so the active card still fully occludes. */
+    .mkt2 .phase.is-active { border-color: var(--cyan); background: linear-gradient(145deg, rgba(57,120,246,.28), rgba(57,120,246,0)), var(--midnight-raised); }
     .mkt2 .phase.is-active::after { opacity: .45; }
     .mkt2 .phase-card-content { display: grid; grid-template-columns: 58px 1fr; align-items: start; }
     .mkt2 .phase-card-content .phase-dot { grid-row: 1; margin: 0; }
@@ -965,7 +987,8 @@
     .mkt2 .hero h1 { animation: hero-rise-in 760ms cubic-bezier(.2,.75,.2,1) 140ms both; }
     .mkt2 .hero-lede { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 260ms both; }
     .mkt2 .hero-action { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 340ms both; }
-    .mkt2 .case-sculpture { animation: hero-case-in 840ms cubic-bezier(.2,.75,.2,1) 180ms both; }
+    /* .case-sculpture entrance is now the staggered plane deal-in; the sculpture's
+       own transform is reserved for the pointer tilt (see .case-sculpture above). */
     .mkt2 .hero-progress { animation: hero-progress-in 600ms cubic-bezier(.2,.75,.2,1) 430ms both; }
 
     @keyframes hero-nav-in {
@@ -985,12 +1008,15 @@
       to { opacity: 1; transform: translate3d(-50%,0,0); }
     }
     @keyframes plane-fan-out {
+      /* Planes stay fully opaque as they fan — the fade is applied once, to the
+         whole group (.case-scroll-layer via case-parallax-out), so planes never
+         show through one another. */
       from { opacity: 1; transform: translate3d(0,0,0) rotate(var(--plane-rest-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
-      to { opacity: var(--fan-opacity,.66); transform: translate3d(var(--fan-x,0),var(--fan-y,0),0) rotate(var(--fan-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
+      to { opacity: 1; transform: translate3d(var(--fan-x,0),var(--fan-y,0),0) rotate(var(--fan-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
     }
     @keyframes case-parallax-out {
       from { opacity: 1; transform: translate3d(0,0,0); }
-      to { opacity: .9; transform: translate3d(0,18px,0); }
+      to { opacity: .62; transform: translate3d(0,18px,0); }
     }
     @keyframes view-rise {
       from { opacity: .78; transform: translate3d(0,18px,0); }
@@ -1008,13 +1034,17 @@
     .mkt2 .sheet-next { --fan-x: 12px; --fan-y: 40px; --fan-rotate: -1.2deg; --fan-opacity: .58; }
 
     @supports (animation-timeline: view()) {
+      /* Sheets run BOTH: the one-time deal-in (auto/time) and the scroll-out fan
+         (--hero-exit timeline). deal-in animates translate/opacity, fan-out animates
+         transform, so they compose cleanly. */
       .mkt2 .paper-sheet {
-        animation-name: plane-fan-out;
-        animation-duration: 1s;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --hero-exit;
-        animation-range: exit 0% exit 92%;
+        animation-name: deal-in, plane-fan-out;
+        animation-duration: 640ms, 1s;
+        animation-timing-function: cubic-bezier(.2,.75,.2,1), linear;
+        animation-fill-mode: both, both;
+        animation-delay: var(--deal-delay, 0ms), 0s;
+        animation-timeline: auto, --hero-exit;
+        animation-range: normal, exit 0% exit 92%;
       }
 
       .mkt2 .case-scroll-layer {
@@ -1118,17 +1148,14 @@
       .mkt2 .shell { width: calc(100% - 40px); }
       .mkt2 .nav-row { min-height: 68px; }
       .mkt2 .brand { gap: 9px; font-size: 14px; }
-      .mkt2 .site-header .brand-mark { width: 24px; height: 6px; flex-basis: 24px; }
-      .mkt2 .site-header .brand-mark::before { left: 5px; right: 5px; top: 11px; }
-      .mkt2 .site-header .brand-mark::after { top: 5px; bottom: 5px; left: 11px; }
       .mkt2 .mobile-menu-panel { top: 88px; left: 0; right: 0; }
       .mkt2 .section { padding-block: 72px; }
       .mkt2 .eyebrow { margin-bottom: 16px; }
-      .mkt2 .display { font-size: 40px; line-height: .98; }
+      .mkt2 .display { font-size: 40px; line-height: 1.05; }
       .mkt2 .section-lede { font-size: 18px; }
       .mkt2 .hero-grid { gap: 20px; padding-block: 116px 116px; }
-      .mkt2 .hero h1 { margin-bottom: 22px; font-size: 50px; line-height: .96; letter-spacing: -.06em; }
-      .mkt2 .hero-highlight { padding-inline: 5px 8px; }
+      .mkt2 .hero h1 { margin-bottom: 22px; font-size: 50px; line-height: 1.02; letter-spacing: -.06em; }
+      .mkt2 .hero-highlight { padding: 5px 14px 12px 12px; }
       .mkt2 .hero-lede { font-size: 18px; line-height: 1.55; }
       .mkt2 .hero-action { display: block; margin-top: 28px; }
       .mkt2 .hero-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -1196,7 +1223,7 @@
       .mkt2 .template-cap { align-items: flex-start; flex-direction: column; gap: 2px; }
       .mkt2 .guide-hero { padding: 42px 20px 44px; }
       .mkt2 .breadcrumb { margin-bottom: 42px; }
-      .mkt2 .guide-hero h2 { font-size: 40px; line-height: .98; }
+      .mkt2 .guide-hero h2 { font-size: 40px; line-height: 1.04; }
       .mkt2 .guide-hero-lede { font-size: 16px; }
       .mkt2 .guide-hero::after { left: 34%; bottom: 58px; height: 52px; }
       .mkt2 .article-layout { padding: 44px 20px 58px; }

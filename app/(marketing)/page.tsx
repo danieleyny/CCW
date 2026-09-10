@@ -2,6 +2,7 @@ import Link from "next/link"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
+import { HeroSculpture } from "@/components/marketing/v2/hero-sculpture"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -57,45 +58,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="hero-visual" aria-label="Layered client case file preview">
-            <div className="case-sculpture">
-              <div className="case-scroll-layer">
-                <div className="ribbon ribbon-back" aria-hidden="true" />
-                <div className="paper-sheet sheet-next" data-index="05"><span>Next steps</span></div>
-                <div className="paper-sheet sheet-requirements" data-index="04"><span>Requirements</span></div>
-                <div className="paper-sheet sheet-application" data-index="03"><span>Application</span></div>
-                <div className="paper-sheet sheet-documents" data-index="02"><span>Documents</span></div>
-                <div className="paper-sheet sheet-eligibility" data-index="01"><span>Eligibility</span></div>
-                <article className="case-file">
-                  <div className="case-top">
-                    <span>Case file · NYC carry</span>
-                    <span className="stage-number">Stage 06 / 13</span>
-                  </div>
-                  <div
-                    className="progress-track"
-                    role="progressbar"
-                    aria-label="Case stage progress"
-                    aria-valuenow={6}
-                    aria-valuemin={0}
-                    aria-valuemax={13}
-                  >
-                    <div className="progress-fill" />
-                  </div>
-                  <div className="next-step">
-                    <p className="next-label">Your one action this week</p>
-                    <h2>Confirm your training date</h2>
-                  </div>
-                  <div className="case-stat">
-                    <span>Everything already handled</span>
-                    <strong>14 of 24 ready</strong>
-                  </div>
-                </article>
-                <div className="ribbon-loop" aria-hidden="true" />
-                <div className="ribbon ribbon-front" aria-hidden="true" />
-                <p className="sculpture-note">A clearer tomorrow from a brighter New York</p>
-              </div>
-            </div>
-          </div>
+          <HeroSculpture />
         </div>
         <div className="shell hero-progress" aria-label="Homepage path preview">
           <span className="hero-progress-label">Your path · 01 of 05</span>
