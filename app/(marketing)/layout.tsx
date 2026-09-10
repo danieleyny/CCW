@@ -1,36 +1,54 @@
-import { MarketingNav } from "@/components/marketing/nav"
-import { MarketingFooter } from "@/components/marketing/footer"
+import { Bodoni_Moda, Hanken_Grotesk, Azeret_Mono } from "next/font/google"
 import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketing/json-ld"
-import { MarketingFrame } from "@/components/marketing/marketing-frame"
+import { SiteHeader } from "@/components/marketing/v2/site-header"
+import { SiteFooter } from "@/components/marketing/v2/site-footer"
+import "./marketing-v2.css"
 
 /**
- * V3-P4.1 — restraint pass: BootIntro (fake "CALIBRATING OPTICS" splash) and
- * CursorReticle (crosshair cursor) deleted. The register is "my lawyer's
- * office," not a HUD.
+ * MARKETING v2 frame (redesign/v2). The whole marketing surface runs the new
+ * ivory/electric editorial system from redesign/homepage-visual-spec.html, scoped
+ * under `.mkt2` (see marketing-v2.css) so it never touches the portal/admin/
+ * instructor obsidian theme. config/brand.ts is untouched — this palette lives
+ * only in the scoped stylesheet and these fonts.
  *
- * V5 — the backdrop + theme choice is scoped per route inside MarketingFrame:
- * the homepage ("/") runs the cinematic dark register, every other marketing
- * route stays on warm paper exactly as before.
+ * Fonts are the spec's three families, loaded via next/font (no render-blocking
+ * external stylesheet) and mapped onto --display/--sans/--mono inside the scope.
  */
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+const display = Bodoni_Moda({
+  variable: "--font-bodoni",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+})
+const sans = Hanken_Grotesk({
+  variable: "--font-hanken",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+})
+const mono = Azeret_Mono({
+  variable: "--font-azeret",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  preload: false,
+})
+
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* One @graph across the marketing surface: the Organization anchor plus
-          the WebSite that references it by @id. Page-level schema (Service,
-          FAQPage, BreadcrumbList, HowTo) points back at these same @ids. */}
+      {/* One @graph across the marketing surface: Organization + WebSite by @id. */}
       <JsonLd
         data={{
           "@context": "https://schema.org",
           "@graph": [organizationSchema, websiteSchema],
         }}
       />
-      <MarketingFrame nav={<MarketingNav />} footer={<MarketingFooter />}>
-        {children}
-      </MarketingFrame>
+      <div className={`mkt2 ${display.variable} ${sans.variable} ${mono.variable}`}>
+        <SiteHeader />
+        <main id="top">{children}</main>
+        <SiteFooter />
+      </div>
     </>
   )
 }

@@ -1,46 +1,8 @@
 import Link from "next/link"
-import dynamic from "next/dynamic"
-import { ArrowRight } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
-import { brand, externalCostEstimates } from "@/config/brand"
-import { Button } from "@/components/ui/button"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
-import { RelatedLinks } from "@/components/marketing/page-blocks"
-import { HeroAura } from "@/components/marketing/hero-aura"
-import { Magnetic } from "@/components/marketing/magnetic"
-import { Reveal } from "@/components/marketing/reveal"
-import { ProductFeature } from "@/components/marketing/product-feature"
-import { RefilePromise } from "@/components/marketing/refile-promise"
-import { PlacemakingBand } from "@/components/marketing/placemaking-band"
-import { HeroSkyline } from "@/components/marketing/hero-skyline"
-import { HeroFilm } from "@/components/marketing/hero-film/hero-film"
-import { DesktopOnly } from "@/components/marketing/desktop-only"
 
-// Step 5 — below-fold client components loaded as their own chunks so their JS
-// leaves the initial waterfall. ssr: true keeps the HTML server-rendered (the
-// emitted markup is identical, so crawlers and what a visitor sees don't change);
-// only the client JS is deferred. HeroFilm/HeroAura/HeroSkyline stay eager —
-// they're above the fold.
-const ProcessStepper = dynamic(
-  () => import("@/components/marketing/process-stepper").then((m) => m.ProcessStepper),
-  { ssr: true }
-)
-const CostCard = dynamic(() => import("@/components/marketing/cost-card").then((m) => m.CostCard), {
-  ssr: true,
-})
-const TheCount = dynamic(() => import("@/components/marketing/showcase/the-count").then((m) => m.TheCount), {
-  ssr: true,
-})
-const StickyCta = dynamic(() => import("@/components/marketing/sticky-cta").then((m) => m.StickyCta), {
-  ssr: true,
-})
-
-/**
- * The home page owns the head term ("NYC gun license"). The root layout's title
- * template appends " · Gun License NYC", so the bare title stays under 60 chars.
- */
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
   description:
@@ -50,282 +12,390 @@ export const metadata = buildMetadata({
   ogTitle: "NYC gun license, handled — Gun License NYC",
 })
 
+/**
+ * Homepage — marketing redesign v2 (redesign/homepage-visual-spec.html), scoped
+ * under `.mkt2`. Copy and structure are ported from the spec; links point at real
+ * routes; the Service JSON-LD and the live government fees stay wired to our data.
+ * No JavaScript: every entrance is CSS scroll-driven and starts from a visible
+ * opacity (see marketing-v2.css).
+ */
 export default async function Home() {
-  // Cookieless + cached → this page renders statically (see lib/public-data).
+  // Cookieless + cached → this page stays statically rendered (see lib/public-data).
   const [packages, fees] = await Promise.all([getPublicPackages(), getPublicFees()])
-  const concierge = packages.find((p) => p.key === "full_concierge") ?? packages.find((p) => p.featured)
-
-  const REALITY: [string, string][] = [
-    ["~6 months", "Start to decision letter. No one can rush it — us included."],
-    [`${fees.applicationFee} + ${fees.fingerprintFee}`, "Government fees, paid directly to them."],
-    ["18 hours", "Of training — and it expires six months after it's dated."],
-    ["4 references", "We send your references a link to get their reference completed."],
-    ["1 affidavit", "Completed for each individual over 18 living in your household."],
-    ["1 interview", "We make sure you have a full package ready for your interview and know what to expect beforehand."],
-  ]
 
   return (
     <>
-      {/* Offers come from the live service_packages rows — a price change in
-          admin moves the structured data with it. */}
+      {/* Offers come from the live service_packages rows — a price change in admin
+          moves the structured data with it. */}
       <JsonLd data={serviceSchemaWithOffers(packages)} />
 
-      {/* ── HERO V4 — Manhattan blueprint · two-clock track panel ────────────
-          The city + scrims live under the copy; the H1 is the LCP element and is
-          NOT wrapped in anything that defers its paint. The panel owns only the
-          track state; everything else here is server-rendered. There is no
-          firearm imagery and no process line (HERO_V4_PROMPT §2.1, §7). */}
-      <section id="hero" className="hero-shell">
-        <HeroAura />
-        <HeroSkyline />
-        <span aria-hidden className="hero-veil" />
-        <span aria-hidden className="hero-veil-l" />
-
-        <div className="hero-wrap">
-          <div className="hero-cols">
-            <div className="hero-copy">
-              <div aria-hidden className="hero-eyerule" />
-              <div className="hero-eyebrow">
-                <i aria-hidden>[</i>
-                <span>NYC · gun license, handled</span>
-                <i aria-hidden>]</i>
-              </div>
-              {/* H1 text UNCHANGED and kept contiguous in one span so it survives
-                  a curl grep; only "Handled." breaks to its own line + prestige. */}
-              <h1 className="hero-h1">
-                <span className="hero-h1-lead">The whole NYC gun license process.</span>{" "}
-                <span className="text-prestige">Handled.</span>
-              </h1>
-              <p className="hero-lead">
-                Getting a gun license in New York City is slow, and strict. We make it simple — one team
-                tracking every document, deadline, and requirement from your first question to the day
-                you&apos;re licensed.
-              </p>
-              <div className="hero-ctas">
-                <Link className="hero-btn" href="/eligibility">
-                  Check your eligibility
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
+      {/* ── HERO ─────────────────────────────────────────────────────────────── */}
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="shell hero-grid">
+          <div className="hero-copy">
+            <p className="eyebrow">NYC · Private case management</p>
+            <h1 id="hero-title">
+              Complicated by design.
+              <br />
+              <span className="hero-highlight">Clear by ours.</span>
+            </h1>
+            <p className="hero-lede">
+              We turn New York City’s concealed-carry process into one clear next step at a
+              time—preparing your documents, tracking every requirement, and keeping your case
+              organized while you remain in control of your own application.
+            </p>
+            <div className="hero-action">
+              <div className="hero-buttons">
+                <Link className="button" href="/eligibility">
+                  Check eligibility <span className="button-arrow" aria-hidden="true">→</span>
                 </Link>
-                <Link className="hero-btn2" href="/how-it-works">
-                  See how it works
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
+                <Link className="button button-outline" href="/how-it-works">
+                  See the process
                 </Link>
               </div>
-              <p className="hero-micro">Two minutes · no card · no commitment</p>
+              <span className="hero-micro">2 minutes · no card required</span>
             </div>
+          </div>
 
-            {/* the 1.85:1 plate — DESKTOP ONLY. Below 900px it's display:none: rendering
-                this large, complex SVG in the mobile layout makes navigating AWAY from
-                the homepage expensive on a phone (re-layout/teardown), which showed up as
-                a 5-10s glitchy nav — confirmed by testing (nav was only fast with the film
-                off). A lightweight mobile hero visual can be added separately. */}
-            <div className="max-[900px]:hidden">
-              <DesktopOnly>
-                <HeroFilm />
-              </DesktopOnly>
+          <div className="hero-visual" aria-label="Layered client case file preview">
+            <div className="case-sculpture">
+              <div className="case-scroll-layer">
+                <div className="ribbon ribbon-back" aria-hidden="true" />
+                <div className="paper-sheet sheet-next" data-index="05"><span>Next steps</span></div>
+                <div className="paper-sheet sheet-requirements" data-index="04"><span>Requirements</span></div>
+                <div className="paper-sheet sheet-application" data-index="03"><span>Application</span></div>
+                <div className="paper-sheet sheet-documents" data-index="02"><span>Documents</span></div>
+                <div className="paper-sheet sheet-eligibility" data-index="01"><span>Eligibility</span></div>
+                <article className="case-file">
+                  <div className="case-top">
+                    <span>Case file · NYC carry</span>
+                    <span className="stage-number">Stage 06 / 13</span>
+                  </div>
+                  <div
+                    className="progress-track"
+                    role="progressbar"
+                    aria-label="Case stage progress"
+                    aria-valuenow={6}
+                    aria-valuemin={0}
+                    aria-valuemax={13}
+                  >
+                    <div className="progress-fill" />
+                  </div>
+                  <div className="next-step">
+                    <p className="next-label">Your one action this week</p>
+                    <h2>Confirm your training date</h2>
+                  </div>
+                  <div className="case-stat">
+                    <span>Everything already handled</span>
+                    <strong>14 of 24 ready</strong>
+                  </div>
+                </article>
+                <div className="ribbon-loop" aria-hidden="true" />
+                <div className="ribbon ribbon-front" aria-hidden="true" />
+                <p className="sculpture-note">A clearer tomorrow from a brighter New York</p>
+              </div>
             </div>
           </div>
         </div>
-
-        <span aria-hidden className="hero-spacer" />
+        <div className="shell hero-progress" aria-label="Homepage path preview">
+          <span className="hero-progress-label">Your path · 01 of 05</span>
+          <span className="hero-progress-track" aria-hidden="true">
+            <i /><i /><i /><i /><i />
+          </span>
+          <span className="hero-progress-label">Next: eligibility check</span>
+        </div>
       </section>
 
-      {/* ── PROOF STRIP (sibling floor for the hero — replaces the old Ticker) ── */}
-      <div className="hero-strip">
-        <div className="hero-stripin">
-          <div className="hero-cell">
-            <div className="hero-ck">Where we work</div>
-            <div className="hero-cv">
-              <b>All five boroughs</b> — and the one NYPD division that decides them.
-            </div>
+      {/* ── PROOF RAIL ───────────────────────────────────────────────────────── */}
+      <section className="proof-rail" aria-label="Service principles">
+        <div className="shell proof-grid">
+          <div className="proof-item">
+            <span className="proof-index">01</span>
+            <p><strong>All five boroughs</strong>One case system built around NYC’s published process.</p>
           </div>
-          <div className="hero-cell">
-            <div className="hero-ck">What we run</div>
-            <div className="hero-cv">
-              <b>Carry, premises, renewal</b> — retired LEO and non-resident too.
-            </div>
+          <div className="proof-item">
+            <span className="proof-index">02</span>
+            <p><strong>Every requirement traced</strong>Your file is organized against a source, not a guess.</p>
           </div>
-          <div className="hero-cell">
-            <div className="hero-ck">How we work</div>
-            <div className="hero-cv">
-              <b>Every rule carries its citation</b> — check our work against the source.
-            </div>
+          <div className="proof-item">
+            <span className="proof-index">03</span>
+            <p><strong>You remain the applicant</strong>You review and submit your own application.</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── PRODUCT (Stripe-style split + video) ─────────────────────────── */}
-      <ProductFeature />
-
-      {/* ── THE COUNT (centerpiece) — desktop only; removed from the mobile DOM after
-             load so navigating away from the homepage stays fast (it's a 625-node
-             animated section). A lighter mobile version can replace it later. ── */}
-      <div className="max-[900px]:hidden">
-        <DesktopOnly>
-          <TheCount />
-        </DesktopOnly>
-      </div>
-
-      {/* ── PLACEMAKING (cinematic full-bleed beat) ──────────────────────── */}
-      <PlacemakingBand />
-
-      {/* ── THE PROCESS (click-driven stepper) ───────────────────────────── */}
-      <ProcessStepper />
-
-      {/* ── THE REALITY (narrow list, no cards) ──────────────────────────── */}
-      <section className="section-void py-20 sm:py-28">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <Reveal>
-            <SectionEyebrow>No surprises</SectionEyebrow>
-            <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              Here&apos;s exactly what it takes — no surprises.
-            </h2>
-            <p className="mt-4 text-text-mid">
-              Knowing all of it up front is how this gets done right the first time.
+      {/* ── PROCESS — five phases ────────────────────────────────────────────── */}
+      <section className="section dark" id="process" aria-labelledby="process-title">
+        <div className="shell">
+          <div className="phases-head">
+            <div>
+              <p className="eyebrow">A controlled process</p>
+              <h2 className="display" id="process-title">One clear path.<br />Five phases.</h2>
+            </div>
+            <p className="section-lede">
+              The full journey is long. Your interface is not. At every stage, you see what is yours,
+              what is being prepared, and what comes next.
             </p>
-          </Reveal>
-          <dl className="mt-10 divide-y divide-hairline">
-            {REALITY.map(([fact, clar]) => (
-              <Reveal key={fact}>
-                <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
-                  <dt className="font-display text-xl font-semibold text-brass-bright sm:w-56 sm:shrink-0">
-                    {fact}
-                  </dt>
-                  <dd className="text-text-mid sm:text-right">{clar}</dd>
+          </div>
+
+          <div className="phase-path" aria-label="Five phases of the service">
+            {[
+              ["01", "Qualify", "Understand the license track, basic fit, and what may require an attorney."],
+              ["02", "Train", "Plan the required course and protect the six-month certificate window."],
+              ["03", "Assemble", "Collect references, household statements, records, IDs, and disclosures."],
+              ["04", "Review", "Run a structured completeness check before anything is ready to submit."],
+              ["05", "You submit", "Review your packet, submit it yourself, then prepare for the next NYPD step."],
+            ].map(([n, t, d], i) => (
+              <article className={`phase${i === 2 ? " is-active" : ""}`} key={n}>
+                <div className="phase-card-content">
+                  <span className="phase-dot">{n}</span>
+                  <div className="phase-text"><h3>{t}</h3><p>{d}</p></div>
                 </div>
-              </Reveal>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* ── CANDOR (concealment → disclosure) ────────────────────────────── */}
-      <section className="section-panel relative overflow-hidden py-20 sm:py-28">
-        {/* Backdrop: faint document lines + an embossed seal — texture, not clutter. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 flex flex-col justify-center gap-3 opacity-[0.04]">
-            {["58%", "76%", "50%", "82%", "44%", "68%", "60%"].map((w, i) => (
-              <div key={i} className="mx-auto h-2.5 rounded-full bg-text-hi" style={{ width: w }} />
+              </article>
             ))}
           </div>
-          <svg
-            className="absolute -right-12 -top-12 size-56 text-brass opacity-[0.06]"
-            viewBox="0 0 100 100"
-            fill="none"
-            stroke="currentColor"
-          >
-            <circle cx="50" cy="50" r="47" strokeWidth="1" />
-            <circle cx="50" cy="50" r="38" strokeWidth="0.6" />
-            {Array.from({ length: 16 }).map((_, i) => {
-              const a = (i / 16) * Math.PI * 2
-              return (
-                <line
-                  key={i}
-                  x1={50 + Math.cos(a) * 38}
-                  y1={50 + Math.sin(a) * 38}
-                  x2={50 + Math.cos(a) * 47}
-                  y2={50 + Math.sin(a) * 47}
-                  strokeWidth="0.6"
-                />
-              )
-            })}
-            <circle cx="50" cy="50" r="16" strokeWidth="0.8" />
-          </svg>
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <Reveal>
-            <SectionEyebrow>Nothing slips through</SectionEyebrow>
-            <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              Every detail, handled — so nothing surprises you later.
-            </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-xl leading-relaxed text-text-mid">
-              From the first form to the final review, we track every requirement, deadline, and document,
-              and tell you exactly what&apos;s needed and when. No missed steps, no scramble — just a
-              complete, correct application you can stand behind.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── COST (one number we collect + honest all-in range) ───────────── */}
-      <section className="section-void py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <Reveal>
-            <div className="text-center">
-              <SectionEyebrow>What it costs</SectionEyebrow>
-              <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                One fee to us. Everything else, at cost.
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-text-mid">
-                No games with pricing — one fee to us, and everything else paid straight to the
-                government or your instructor.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={120} className="mt-10">
-            {concierge && (
-              <CostCard
-                concierge={{ name: concierge.name, priceCents: concierge.priceCents }}
-                fees={fees}
-                estimates={externalCostEstimates}
-              />
-            )}
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── TRUST BAND (Refile Promise + the standing disclaimer) ────────── */}
-      <section className="section-void pb-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <Reveal>
-            <RefilePromise withDisclaimer={false} />
-          </Reveal>
-          <p className="mt-6 border-t border-hairline pt-4 text-xs leading-relaxed text-text-low">
-            {brand.disclaimer}
+          <p className="phase-note">
+            <strong>Thirteen stages behind the scenes.</strong> Five phases in front of you. Complexity
+            stays in the system instead of in your day.
           </p>
         </div>
       </section>
 
-      {/* ── EXPLORE (in-content links into the pillar/borough cluster) ─────── */}
-      <RelatedLinks
-        links={[
-          { label: "Everything a NYC gun license requires", href: "/requirements" },
-          { label: "What it costs, all-in", href: "/cost" },
-          { label: "How long it takes", href: "/timeline" },
-          { label: "How the whole process works", href: "/how-it-works" },
-          { label: "Your borough's page", href: "/gun-license" },
-          { label: "Common questions, answered", href: "/faq" },
-        ]}
-      />
-
-      {/* ── CLOSING ──────────────────────────────────────────────────────── */}
-      <section id="closing" className="section-void relative overflow-hidden border-t border-hairline">
-        <HeroAura />
-        <div className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
-          <Reveal>
-            <h2 className="mx-auto max-w-xl font-display text-3xl font-semibold tracking-tight sm:text-5xl">
-              See if you qualify.
-            </h2>
-            <p className="mx-auto mt-4 max-w-md text-text-mid">
-              It takes two minutes, and there&apos;s no commitment.
+      {/* ── REQUIREMENTS — everything in order ───────────────────────────────── */}
+      <section className="section" id="requirements" aria-labelledby="requirements-title">
+        <div className="shell order-grid">
+          <div className="order-copy">
+            <p className="eyebrow">Your complete file</p>
+            <h2 className="display" id="requirements-title">Everything<br />in order.</h2>
+            <p className="section-lede">
+              One checklist serves your case from the first intake answer to the final pre-submission
+              review.
             </p>
-            <Magnetic className="mt-8 inline-block">
-              <Button asChild size="lg" className="min-h-12">
-                <Link href="/eligibility">
-                  Check your eligibility <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            </Magnetic>
-          </Reveal>
+            <p className="order-note">
+              Requirements change with license type, renewal status, household, and personal history.
+              Your list is generated for your case—not copied from a generic worksheet.
+            </p>
+          </div>
+
+          <div className="requirement-stack">
+            {[
+              ["01", "References and household", "7 items", true, [
+                "Four character references, tracked through notarization where required",
+                "One cohabitant statement for each adult living with you",
+                "Private outreach links that keep sensitive case information out of view",
+              ]],
+              ["02", "Training and timing", "4 items", false, [
+                "18-hour training certificate",
+                "Certificate timing checked against the intended submission date",
+                "Training-related records organized with the rest of the case file",
+              ]],
+              ["03", "Identity and residence", "5 items", false, [
+                "Government-issued identity documents",
+                "Address and residence documentation",
+                "Photo and document-format checks",
+              ]],
+              ["04", "Disclosures and records", "5 items", false, [
+                "Complete disclosure intake, including sealed or dismissed matters",
+                "Supporting records requested and tracked where applicable",
+                "Attorney referral whenever the question becomes legal advice",
+              ]],
+              ["05", "Submission readiness", "3 items", false, [
+                "Blocking items resolved before the packet is marked ready",
+                "Named staff review recorded",
+                "Your final review completed before you submit",
+              ]],
+            ].map(([idx, title, count, open, items]) => (
+              <details className="requirement-group" key={idx as string} open={open as boolean}>
+                <summary>
+                  <span className="req-index">{idx as string}</span>
+                  <span className="req-title">{title as string}</span>
+                  <span className="req-count">{count as string}</span>
+                  <span className="req-plus" aria-hidden="true">+</span>
+                </summary>
+                <div className="requirement-body">
+                  <ul>
+                    {(items as string[]).map((it) => <li key={it}>{it}</li>)}
+                  </ul>
+                </div>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
-      <StickyCta watchOutId="hero" hideNearId="closing" />
+      {/* ── REALITY — what it actually takes ─────────────────────────────────── */}
+      <section className="section reality" aria-labelledby="reality-title">
+        <div className="shell">
+          <div className="reality-head">
+            <div>
+              <p className="eyebrow">The real shape of it</p>
+              <h2 className="display" id="reality-title">What it actually takes.</h2>
+            </div>
+            <p>
+              Clear expectations are part of the service. These are planning facts—not promises about
+              what the NYPD will decide or when it will act.
+            </p>
+          </div>
+          <div className="fact-grid">
+            {[
+              ["~6", "months", "Typical planning horizon from start to decision."],
+              ["18", "hours", "Required training for a concealed-carry application."],
+              ["4", "references", "For the standard NYC carry track."],
+              ["1×", "each adult", "A cohabitant statement for every adult at home."],
+              ["1", "interview", "Prepare for the investigator’s questions and requests."],
+            ].map(([v, strong, rest]) => (
+              <article className="fact" key={strong}>
+                <p className="fact-value">{v}</p>
+                <p className="fact-label"><strong>{strong}</strong><br />{rest}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── LEGAL — candor built in ──────────────────────────────────────────── */}
+      <section className="section dark" id="legal" aria-labelledby="candor-title">
+        <div className="shell candor-grid">
+          <div className="candor-copy">
+            <p className="eyebrow">Candor, built in</p>
+            <h2 className="display" id="candor-title">The complete story is the safest one.</h2>
+            <p className="section-lede">
+              The process expects full disclosure. Our intake is designed to surface what belongs in
+              the record—not to decide what can be left out.
+            </p>
+          </div>
+          <aside className="candor-panel" aria-label="Disclosure approach">
+            <h3>Nothing important gets minimized.</h3>
+            <p>
+              Sealed and dismissed arrests are still disclosed. Records are gathered and organized.
+              Questions that call for legal judgment move to a New York-licensed attorney.
+            </p>
+            <ol className="candor-rules">
+              <li><span>01</span><div>Tell the complete history in intake.</div></li>
+              <li><span>02</span><div>Collect the records the published process calls for.</div></li>
+              <li><span>03</span><div>Keep document preparation separate from legal advice.</div></li>
+            </ol>
+            <div className="attorney-seam">
+              <strong>When the question is legal, the path changes.</strong>
+              <p>
+                We stop at the boundary and help you reach independent legal counsel. Only a New
+                York-licensed attorney may represent an applicant before the License Division.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {/* ── PRICING ──────────────────────────────────────────────────────────── */}
+      <section className="section" id="pricing" aria-labelledby="pricing-title">
+        <div className="shell pricing-grid">
+          <div>
+            <p className="eyebrow">Transparent from day one</p>
+            <h2 className="display" id="pricing-title">One fee to us. Everything else, at cost.</h2>
+            <p className="section-lede">
+              You should know the complete financial picture before starting—not discover it one
+              invoice at a time.
+            </p>
+          </div>
+          <article className="price-card">
+            <div className="price-top">
+              <div>
+                <p className="price-name">Full concierge</p>
+                <p className="price-number">$1,000</p>
+              </div>
+              <p className="only-fee">The only service fee collected by Gun License NYC.</p>
+            </div>
+            <dl className="ledger">
+              <div><dt>NYPD application</dt><dd>{fees.applicationFee}</dd></div>
+              <div><dt>Fingerprint fee</dt><dd>{fees.fingerprintFee}</dd></div>
+              <div><dt>Required training</dt><dd>$500–650</dd></div>
+              <div><dt>Expected notarization</dt><dd>$25–100</dd></div>
+            </dl>
+            <div className="ledger-total">
+              <span>Estimated all-in range</span>
+              <strong>$1,950–2,200</strong>
+            </div>
+            <Link className="button" href="/pricing">
+              See what the service includes <span className="button-arrow" aria-hidden="true">→</span>
+            </Link>
+          </article>
+        </div>
+      </section>
+
+      {/* ── PROMISE — the refile promise ─────────────────────────────────────── */}
+      <section className="promise" id="promise" aria-labelledby="promise-title">
+        <div className="shell promise-grid">
+          <div>
+            <p className="eyebrow">Our work, owned</p>
+            <h2 id="promise-title">The refile promise.</h2>
+            <p>
+              If we assemble your filing packet and the License Division returns it as incomplete, we
+              reassemble it so you can resubmit at no additional service charge.
+            </p>
+          </div>
+          <div className="promise-block">
+            <p className="eyebrow">The important boundary</p>
+            <h2>A promise about preparation—not outcome.</h2>
+            <p>
+              Government fees are set by the City and State and are not refundable by us. The NYPD
+              retains full investigative discretion. You review and submit your own application.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── GUIDES ───────────────────────────────────────────────────────────── */}
+      <section className="section" id="guides" aria-labelledby="guides-title">
+        <div className="shell">
+          <div className="guides-head">
+            <div>
+              <p className="eyebrow">Understand before you begin</p>
+              <h2 className="display" id="guides-title">Clear answers.<br />Primary sources.</h2>
+            </div>
+            <p className="section-lede">
+              Read the requirements, costs, timeline, and legal boundaries in plain language, with a
+              clear path back to the rules that govern the process.
+            </p>
+          </div>
+          <nav className="guide-list" aria-label="Featured guides">
+            {[
+              ["01", "/requirements", "NYC concealed-carry requirements", "Documents, references, household statements, training, and disclosures."],
+              ["02", "/cost", "The complete cost", "Service, government, training, fingerprint, and notarization costs."],
+              ["03", "/timeline", "Timeline and process", "How thirteen internal stages become five understandable phases."],
+              ["04", "/resources", "Official sources and legal boundaries", "Where the rules come from, and when a question belongs with an attorney."],
+            ].map(([no, href, title, desc]) => (
+              <Link className="guide-link" href={href} key={no}>
+                <span className="guide-no">{no}</span>
+                <span>
+                  <span className="guide-title">{title}</span>
+                  <span className="guide-desc">{desc}</span>
+                </span>
+                <span className="guide-arrow" aria-hidden="true">→</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
+
+      {/* ── CLOSING ──────────────────────────────────────────────────────────── */}
+      <section className="closing dark" aria-labelledby="closing-title">
+        <div className="shell closing-inner">
+          <div className="closing-copy">
+            <p className="eyebrow">Start with clarity</p>
+            <h2 id="closing-title">See where<br />you stand.</h2>
+            <p>
+              Answer a short set of questions and see whether our document-preparation and
+              case-management service fits your situation.
+            </p>
+          </div>
+          <div className="closing-action">
+            <Link className="button button-light" href="/eligibility">
+              Check eligibility <span className="button-arrow" aria-hidden="true">→</span>
+            </Link>
+            <p>2 minutes · no card required</p>
+          </div>
+        </div>
+      </section>
     </>
   )
 }
