@@ -85,8 +85,8 @@ function Directory({ partners, indexed }: { partners: Partner[]; indexed: boolea
 
         <section className="py-6">
           {partners.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-hairline bg-card p-8 text-center">
-              <p className="text-text-mid">
+            <div className="rounded-xl border border-dashed border-[var(--rule)] bg-[var(--paper)] p-8 text-center">
+              <p className="text-[var(--ink-soft)]">
                 We&apos;re finalising our partner network. In the meantime, if your case needs a
                 lawyer, tell us and we&apos;ll point you to a New York-licensed attorney.
               </p>
@@ -100,8 +100,8 @@ function Directory({ partners, indexed }: { partners: Partner[]; indexed: boolea
           )}
         </section>
 
-        <section className="border-t border-hairline py-8">
-          <p className="text-xs leading-relaxed text-text-low">{brand.disclaimer}</p>
+        <section className="border-t border-[var(--rule)] py-8">
+          <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{brand.disclaimer}</p>
         </section>
       </div>
 

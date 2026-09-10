@@ -11,10 +11,6 @@ import {
   type ConsultState,
   type ConsultationFieldKey,
 } from "@/lib/partners/consultation"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
 import { HoneypotField } from "@/components/shared/honeypot-field"
 
 /** The serialisable slice of a Partner this client form needs. */
@@ -25,9 +21,15 @@ export type ConsultationPartner = {
   rate: { amount: number; unit: string }
 }
 
-/** 16px on mobile (no iOS zoom on focus), 14px from md up — matches Input/Textarea. */
-const SELECT_CLASS =
-  "h-11 w-full rounded-md border border-hairline-strong bg-surface-3 px-3 text-base text-foreground outline-none transition-colors focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/30 md:text-sm"
+/**
+ * v2 field surface. 16px on mobile (no iOS zoom on focus), 14px from md up — the
+ * text-base → md:text-sm step is what keeps iOS from zooming, so keep it.
+ */
+const FIELD_CLASS =
+  "w-full rounded-md border border-[var(--rule)] bg-[var(--paper)] px-3 text-base text-[var(--ink)] outline-none transition-colors placeholder:text-[var(--ink-muted)] focus-visible:border-[var(--electric)] focus-visible:ring-2 focus-visible:ring-[var(--electric)]/30 aria-invalid:border-[var(--error)] aria-invalid:ring-2 aria-invalid:ring-[var(--error)]/25 md:text-sm"
+const INPUT_CLASS = `h-11 ${FIELD_CLASS}`
+const SELECT_CLASS = INPUT_CLASS
+const TEXTAREA_CLASS = `min-h-[9rem] py-2.5 leading-relaxed ${FIELD_CLASS}`
 
 export function ConsultationForm({ partner }: { partner: ConsultationPartner }) {
   const [state, action, pending] = useActionState<ConsultState, FormData>(requestConsultation, {})
@@ -49,15 +51,20 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
 
   if (state.ok) {
     return (
-      <div className="rounded-xl border border-ok/30 bg-ok/8 p-8 text-center">
-        <CheckCircle2 className="mx-auto size-8 text-ok" />
-        <h2 className="mt-3 font-display text-xl font-semibold text-text-hi">Your request is on its way.</h2>
-        <p className="mx-auto mt-2 max-w-md text-text-mid">
+      <div className="rounded-xl border border-[var(--success)]/30 bg-[var(--success)]/8 p-8 text-center">
+        <CheckCircle2 className="mx-auto size-8 text-[var(--success)]" />
+        <h2
+          style={{ fontFamily: "var(--display)" }}
+          className="mt-3 text-xl font-semibold text-[var(--ink)]"
+        >
+          Your request is on its way.
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-[var(--ink-soft)]">
           We&apos;ve forwarded it to {partner.fullName}. He reviews each request personally and will
           reach out at his earliest availability to arrange a call. Consultations are billed at his
           rate of {rate}.
         </p>
-        <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-text-low">
+        <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-[var(--ink-muted)]">
           Nothing you sent is privileged, and no attorney–client relationship has been created. Please
           don&apos;t send documents or anything confidential until he confirms he can act for you.
         </p>
@@ -77,26 +84,27 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="c-name" label="Full name" error={err("name")}>
             {(p) => (
-              <Input name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} {...p} />
+              <input name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLASS} {...p} />
             )}
           </Field>
           <Field id="c-email" label="Email" error={err("email")}>
             {(p) => (
-              <Input name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} {...p} />
+              <input name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT_CLASS} {...p} />
             )}
           </Field>
           <Field id="c-phone" label="Phone" error={err("phone")}>
             {(p) => (
-              <Input name="phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} {...p} />
+              <input name="phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={INPUT_CLASS} {...p} />
             )}
           </Field>
           <Field id="c-times" label="Best times to reach you" optional error={err("bestTimes")}>
             {(p) => (
-              <Input
+              <input
                 name="bestTimes"
                 placeholder="e.g. weekday mornings"
                 value={bestTimes}
                 onChange={(e) => setBestTimes(e.target.value)}
+                className={INPUT_CLASS}
                 {...p}
               />
             )}
@@ -105,7 +113,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
       </fieldset>
 
       {/* 2 · WHAT IT'S ABOUT */}
-      <fieldset className="space-y-4 border-t border-hairline pt-8">
+      <fieldset className="space-y-4 border-t border-[var(--rule)] pt-8">
         <Legend n="2">What it&apos;s about</Legend>
         <Field id="c-topic" label="What is your question about?" error={err("topic")}>
           {(p) => (
@@ -143,7 +151,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
           error={err("targetDate")}
         >
           {(p) => (
-            <Input name="targetDate" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} {...p} />
+            <input name="targetDate" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className={INPUT_CLASS} {...p} />
           )}
         </Field>
         <Field
@@ -153,27 +161,27 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
           error={err("discuss")}
         >
           {(p) => (
-            <Textarea name="discuss" rows={6} value={discuss} onChange={(e) => setDiscuss(e.target.value)} {...p} />
+            <textarea name="discuss" rows={6} value={discuss} onChange={(e) => setDiscuss(e.target.value)} className={TEXTAREA_CLASS} {...p} />
           )}
         </Field>
       </fieldset>
 
       {/* 3 · BEFORE YOU SEND */}
-      <fieldset className="space-y-5 border-t border-hairline pt-8">
+      <fieldset className="space-y-5 border-t border-[var(--rule)] pt-8">
         <Legend n="3">Before you send</Legend>
 
         <div className="space-y-2">
-          <span id="c-rep-label" className="block text-sm font-medium text-text-hi">
+          <span id="c-rep-label" className="block text-sm font-medium text-[var(--ink)]">
             Are you currently represented by another attorney on this matter?
           </span>
-          <p className="text-xs text-text-low">
+          <p className="text-xs text-[var(--ink-muted)]">
             This is a conflicts check. An attorney needs it before taking a call.
           </p>
           <div role="radiogroup" aria-labelledby="c-rep-label" aria-invalid={!!err("represented")} className="flex gap-3">
             {(["no", "yes"] as const).map((val) => (
               <label
                 key={val}
-                className="flex flex-1 cursor-pointer items-center gap-2.5 rounded-md border border-hairline-strong bg-surface-3 px-4 py-3 text-sm text-text-hi has-[:checked]:border-signal/60 has-[:checked]:bg-signal/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal/40"
+                className="flex flex-1 cursor-pointer items-center gap-2.5 rounded-md border border-[var(--rule)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)] has-[:checked]:border-[var(--electric)] has-[:checked]:bg-[var(--electric)]/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--electric)]/30"
               >
                 <input
                   type="radio"
@@ -181,7 +189,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
                   value={val}
                   checked={represented === val}
                   onChange={(e) => setRepresented(e.target.value)}
-                  className="size-4 accent-signal"
+                  className="size-4 accent-[var(--electric)]"
                 />
                 {val === "no" ? "No" : "Yes"}
               </label>
@@ -191,10 +199,10 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
         </div>
 
         {/* Disclosure — muted but legible, NOT fine print. Directly above the ack. */}
-        <div className="space-y-2 rounded-lg border border-hairline bg-surface-2/50 p-4 text-sm leading-relaxed text-text-mid">
+        <div className="space-y-2 rounded-lg border border-[var(--rule)] bg-[var(--ivory)] p-4 text-sm leading-relaxed text-[var(--ink-soft)]">
           <p>
             This form is received by Gun License NYC and forwarded to {partner.fullName}. It is{" "}
-            <strong className="text-text-hi">not an attorney–client communication and it is not privileged.</strong>
+            <strong className="text-[var(--ink)]">not an attorney–client communication and it is not privileged.</strong>
           </p>
           <p>
             Submitting it does not create an attorney–client relationship. That begins only if he
@@ -208,7 +216,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
         </div>
 
         <div className="space-y-2">
-          <label className="flex cursor-pointer items-start gap-3 text-sm text-text-mid">
+          <label className="flex cursor-pointer items-start gap-3 text-sm text-[var(--ink-soft)]">
             <input
               type="checkbox"
               name="acknowledge"
@@ -216,7 +224,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
               checked={acknowledge}
               onChange={(e) => setAcknowledge(e.target.checked)}
               aria-invalid={!!err("acknowledge")}
-              className="mt-0.5 size-4 shrink-0 accent-signal"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--electric)]"
             />
             <span>
               I understand that sending this form does not make {partner.fullName} my attorney, and
@@ -228,16 +236,16 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
       </fieldset>
 
       {state.error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-sm text-[var(--error)]" role="alert">
           {state.error}
         </p>
       )}
 
       <div className="space-y-3">
-        <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
+        <button type="submit" disabled={pending} className="button w-full disabled:opacity-50 sm:w-auto">
           {pending ? "Sending…" : "Send my request"}
-        </Button>
-        <p className="text-sm text-text-low">
+        </button>
+        <p className="text-sm text-[var(--ink-muted)]">
           {partner.fullName} reviews each request personally and will reach out at his earliest
           availability to arrange a call. Consultations are billed at his rate of {rate}.
         </p>
@@ -249,10 +257,18 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
 function Legend({ n, children }: { n: string; children: ReactNode }) {
   return (
     <legend className="flex items-center gap-3">
-      <span className="flex size-6 items-center justify-center rounded-full border border-brass/40 bg-brass/10 font-mono text-xs text-brass">
+      <span
+        style={{ fontFamily: "var(--mono)" }}
+        className="flex size-6 items-center justify-center rounded-full border border-[var(--electric)]/40 bg-[var(--electric)]/10 text-xs text-[var(--electric-deep)]"
+      >
         {n}
       </span>
-      <span className="font-display text-lg font-semibold tracking-tight text-text-hi">{children}</span>
+      <span
+        style={{ fontFamily: "var(--display)" }}
+        className="text-lg font-semibold tracking-tight text-[var(--ink)]"
+      >
+        {children}
+      </span>
     </legend>
   )
 }
@@ -285,12 +301,12 @@ function Field({
   const describedBy = [hint ? hintId : null, error ? errId : null].filter(Boolean).join(" ") || undefined
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>
+      <label htmlFor={id} className="block text-sm font-medium text-[var(--ink)]">
         {label}
-        {optional && <span className="ml-1 font-normal text-text-low">(optional)</span>}
-      </Label>
+        {optional && <span className="ml-1 font-normal text-[var(--ink-muted)]">(optional)</span>}
+      </label>
       {hint && (
-        <p id={hintId} className="text-xs leading-relaxed text-text-low">
+        <p id={hintId} className="text-xs leading-relaxed text-[var(--ink-muted)]">
           {hint}
         </p>
       )}
@@ -302,7 +318,7 @@ function Field({
 
 function FieldError({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <p id={id} className="text-sm text-destructive" role="alert">
+    <p id={id} className="text-sm text-[var(--error)]" role="alert">
       {children}
     </p>
   )
