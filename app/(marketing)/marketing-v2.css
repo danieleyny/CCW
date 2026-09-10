@@ -249,7 +249,9 @@
 
     .mkt2 .hero {
       position: relative;
-      min-height: 900px;
+      /* Taller than the centered content so the grid never overflows upward under
+         the sticky nav — the eyebrow always clears the pill. */
+      min-height: 960px;
       display: grid;
       align-items: center;
       overflow: hidden;
@@ -278,7 +280,7 @@
       grid-template-columns: minmax(0, .92fr) minmax(540px, 1.08fr);
       gap: clamp(34px, 5vw, 76px);
       align-items: center;
-      padding-block: 148px 118px;
+      padding-block: 120px 104px;
     }
     .mkt2 .hero-copy { max-width: 670px; }
     .mkt2 .hero h1 {
@@ -295,10 +297,9 @@
       z-index: 1;
       display: inline-block;
       margin-top: 5px;
-      /* Paint must extend WELL beyond the glyphs on every side — most at the
-         bottom, where Bodoni's descenders sit — so the ragged edge never bites
-         into the type. */
-      padding: 6px 20px 16px 16px;
+      /* Paint extends beyond the glyphs — most at the bottom for descenders — but
+         HUGS the text on the right so it reads as a painted stroke, not a blob. */
+      padding: 6px 9px 16px 16px;
       color: var(--light);
       font-style: normal;
       letter-spacing: -0.07em;
@@ -314,17 +315,17 @@
        every glyph — caps, descenders, and the final "s" — at every clamp size. */
     .mkt2 .hero-highlight::before {
       z-index: -2;
-      inset: -8% -5% -12% -5%;
+      inset: -8% 1% -12% -5%;
       background: var(--spectral);
-      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 88% -2%, 100% 9%, 99% 82%, 82% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 86% -2%, 95% 10%, 93% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
       transform: rotate(-1.2deg);
     }
     .mkt2 .hero-highlight::after {
       z-index: -1;
-      inset: -6% -3% -10% -3%;
+      inset: -6% 2% -10% -3%;
       background-image: radial-gradient(circle, rgba(255,255,255,.7) 0 0.75px, transparent .9px);
       background-size: 6px 6px;
-      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 88% -2%, 100% 9%, 99% 82%, 82% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 86% -2%, 95% 10%, 93% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
       opacity: .28;
     }
     .mkt2 .hero-lede {
@@ -344,7 +345,12 @@
        fine pointers only; it eases back to rest on leave. The scroll-out fan lives
        on the child .case-scroll-layer, so the two never fight over `transform`. */
     .mkt2 .case-sculpture { position: relative; width: min(100%, 620px); height: 620px; transform-style: preserve-3d; transform: rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg)); transition: transform 260ms cubic-bezier(.2,.7,.2,1); }
-    .mkt2 .case-scroll-layer { position: relative; width: 100%; height: 100%; }
+    /* ONE ambient drift so the hero has presence at rest — the whole plane stack,
+       transform only (translate, <8px travel), 15s alternating. It composes with the
+       scroll-out group fade (case-parallax-out animates `transform`, this animates
+       `translate`). Disabled under reduced-motion and below 840px (see end of file). */
+    .mkt2 .case-scroll-layer { position: relative; width: 100%; height: 100%; animation: case-drift 15s ease-in-out infinite alternate; }
+    @keyframes case-drift { from { translate: -3px -2px; } to { translate: 3px 2px; } }
     .mkt2 .paper-sheet, .mkt2 .case-file {
       position: absolute;
       left: 88px;
@@ -371,7 +377,9 @@
       text-transform: uppercase;
     }
     .mkt2 .paper-sheet::before { content: attr(data-index); position: absolute; left: 24px; bottom: 18px; color: var(--electric); font-size: 9px; }
-    .mkt2 .sheet-eligibility { top: 100px; z-index: 7; }
+    /* Tucked right so its left edge seats fully behind the top card (no stray sliver);
+       it peeks only at the bottom, reading as a deliberate layer in the stack. */
+    .mkt2 .sheet-eligibility { top: 96px; left: 100px; z-index: 7; }
     .mkt2 .sheet-documents { top: 172px; z-index: 6; left: 74px; }
     .mkt2 .sheet-application { top: 244px; z-index: 5; left: 60px; }
     .mkt2 .sheet-requirements { top: 316px; z-index: 4; left: 47px; }
@@ -379,18 +387,23 @@
     /* Entrance: the planes DEAL into the stack — a small staggered slide + settle,
        once on load. Animating `translate`/`opacity` (not `transform`) lets it compose
        with the scroll-out fan instead of clobbering it. Starts from a VISIBLE state. */
+    /* deal-in lives HERE (outside @supports) so it ALWAYS runs on load, whether or
+       not the browser supports scroll-driven timelines. It animates translate +
+       opacity — both compose with the scroll-out fan's `transform`, so the @supports
+       block below can add the fan without dropping this. Bottom sheet deals first,
+       the summary card lands last. */
     .mkt2 .paper-sheet, .mkt2 .case-file {
-      animation: deal-in 640ms cubic-bezier(.2,.75,.2,1) both;
+      animation: deal-in 720ms cubic-bezier(.2,.78,.24,1) both;
       animation-delay: var(--deal-delay, 0ms);
     }
-    .mkt2 .sheet-eligibility { --deal-delay: 60ms; }
-    .mkt2 .sheet-documents { --deal-delay: 120ms; }
-    .mkt2 .sheet-application { --deal-delay: 180ms; }
-    .mkt2 .sheet-requirements { --deal-delay: 240ms; }
-    .mkt2 .sheet-next { --deal-delay: 300ms; }
-    .mkt2 .case-file { --deal-delay: 360ms; }
+    .mkt2 .sheet-next { --deal-delay: 0ms; }
+    .mkt2 .sheet-requirements { --deal-delay: 80ms; }
+    .mkt2 .sheet-application { --deal-delay: 160ms; }
+    .mkt2 .sheet-documents { --deal-delay: 240ms; }
+    .mkt2 .sheet-eligibility { --deal-delay: 320ms; }
+    .mkt2 .case-file { --deal-delay: 400ms; }
     @keyframes deal-in {
-      from { opacity: .85; translate: var(--deal-x, -16px) var(--deal-y, 26px); }
+      from { opacity: .82; translate: var(--deal-x, 34px) var(--deal-y, 48px); }
       to { opacity: 1; translate: 0 0; }
     }
     .mkt2 .case-file {
@@ -427,11 +440,13 @@
       box-shadow: 0 14px 28px rgba(118,89,255,.14);
       pointer-events: none;
     }
-    .mkt2 .ribbon-back { width: 520px; top: 145px; left: 12px; transform: rotate(-28deg); z-index: 2; }
-    .mkt2 .ribbon-front { width: 560px; top: 452px; left: -8px; transform: rotate(9deg); z-index: 8; }
+    /* All ribbon parts thread BEHIND the card stack (cards are z-index 3–9) and only
+       show in the gaps outside it — never cutting across a card row. */
+    .mkt2 .ribbon-back { width: 520px; top: 145px; left: 12px; transform: rotate(-28deg); z-index: 1; }
+    .mkt2 .ribbon-front { width: 560px; top: 452px; left: -8px; transform: rotate(9deg); z-index: 1; }
     .mkt2 .ribbon-loop {
       position: absolute;
-      z-index: 6;
+      z-index: 1;
       width: 232px;
       height: 166px;
       left: 1px;
@@ -1008,11 +1023,11 @@
       to { opacity: 1; transform: translate3d(-50%,0,0); }
     }
     @keyframes plane-fan-out {
-      /* Planes stay fully opaque as they fan — the fade is applied once, to the
-         whole group (.case-scroll-layer via case-parallax-out), so planes never
-         show through one another. */
-      from { opacity: 1; transform: translate3d(0,0,0) rotate(var(--plane-rest-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
-      to { opacity: 1; transform: translate3d(var(--fan-x,0),var(--fan-y,0),0) rotate(var(--fan-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
+      /* TRANSFORM ONLY — never opacity. It composes with deal-in (which owns
+         translate + opacity) and lets the group fade happen once on
+         .case-scroll-layer, so planes never show through one another. */
+      from { transform: translate3d(0,0,0) rotate(var(--plane-rest-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
+      to { transform: translate3d(var(--fan-x,0),var(--fan-y,0),0) rotate(var(--fan-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
     }
     @keyframes case-parallax-out {
       from { opacity: 1; transform: translate3d(0,0,0); }
@@ -1039,8 +1054,8 @@
          transform, so they compose cleanly. */
       .mkt2 .paper-sheet {
         animation-name: deal-in, plane-fan-out;
-        animation-duration: 640ms, 1s;
-        animation-timing-function: cubic-bezier(.2,.75,.2,1), linear;
+        animation-duration: 720ms, 1s;
+        animation-timing-function: cubic-bezier(.2,.78,.24,1), linear;
         animation-fill-mode: both, both;
         animation-delay: var(--deal-delay, 0ms), 0s;
         animation-timeline: auto, --hero-exit;
@@ -1048,12 +1063,16 @@
       }
 
       .mkt2 .case-scroll-layer {
-        animation-name: case-parallax-out;
-        animation-duration: 1s;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --hero-exit;
-        animation-range: exit 0% exit 92%;
+        /* ambient drift (auto/time) + the scroll-out group fade (--hero-exit). drift
+           animates translate, fade animates transform + opacity, so they compose. */
+        animation-name: case-drift, case-parallax-out;
+        animation-duration: 15s, 1s;
+        animation-timing-function: ease-in-out, linear;
+        animation-iteration-count: infinite, 1;
+        animation-direction: alternate, normal;
+        animation-fill-mode: none, both;
+        animation-timeline: auto, --hero-exit;
+        animation-range: normal, exit 0% exit 92%;
       }
 
       .mkt2 .phase-card-content {
@@ -1155,7 +1174,7 @@
       .mkt2 .section-lede { font-size: 18px; }
       .mkt2 .hero-grid { gap: 20px; padding-block: 116px 116px; }
       .mkt2 .hero h1 { margin-bottom: 22px; font-size: 50px; line-height: 1.02; letter-spacing: -.06em; }
-      .mkt2 .hero-highlight { padding: 5px 14px 12px 12px; }
+      .mkt2 .hero-highlight { padding: 5px 8px 12px 12px; }
       .mkt2 .hero-lede { font-size: 18px; line-height: 1.55; }
       .mkt2 .hero-action { display: block; margin-top: 28px; }
       .mkt2 .hero-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -1178,7 +1197,7 @@
       .mkt2 .ribbon { height: 19px; }
       .mkt2 .ribbon-back { width: 340px; top: 128px; left: 4px; }
       .mkt2 .ribbon-front { width: 390px; top: 418px; left: -34px; }
-      .mkt2 .ribbon-loop { z-index: 6; width: 178px; height: 132px; left: -16px; top: 216px; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); }
+      .mkt2 .ribbon-loop { z-index: 1; width: 178px; height: 132px; left: -16px; top: 216px; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); }
       .mkt2 .sculpture-note { right: 0; top: 456px; width: 116px; font-size: 7px; }
       .mkt2 .hero-progress { bottom: 42px; grid-template-columns: auto 1fr; gap: 12px; }
       .mkt2 .hero-progress-label:last-child { display: none; }
@@ -1276,4 +1295,10 @@
 @media (max-width: 540px) {
   .mkt2 .footer-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mkt2 .footer-intro { grid-column: 1 / -1; }
+}
+
+/* Ambient hero drift is desktop-only: below 840px the sculpture reflows and the
+   drift is switched off (reduced-motion already disables it everywhere). */
+@media (max-width: 840px) {
+  .mkt2 .case-scroll-layer { animation: none; }
 }
