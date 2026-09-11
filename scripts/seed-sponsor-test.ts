@@ -54,8 +54,20 @@ async function main() {
   console.log(`Seeding sponsor test on ${URL} …`)
   await cleanup()
 
-  // 1. The company.
-  const { data: sponsor } = await db.from("sponsors").insert({ legal_name: "Test Guard Co." }).select("id").single()
+  // 1. The company. Custodian NAME/contact are seeded, but the licence number is left
+  //    NULL on purpose — so the tester sees the Carry Guard step-3 blocking state and can
+  //    clear it by filling the number in the sponsor provisioning form.
+  const { data: sponsor } = await db
+    .from("sponsors")
+    .insert({
+      legal_name: "Test Guard Co.",
+      custodian_name: "Dana Ruiz",
+      custodian_email: "dana.ruiz@testguard.example",
+      custodian_phone: "(212) 555-0170",
+      // custodian_license_number: intentionally omitted (the blocking field).
+    })
+    .select("id")
+    .single()
 
   // 2. The applicant — an UNCLAIMED lead + a case (claim-by-email adopts these).
   //    A real two-token legal name so the fact layer resolves first/last cleanly.
@@ -110,6 +122,30 @@ async function main() {
     prohibitorMentalHealth: false,
     prohibitorActiveOop: false,
     prohibitorUnlawfulDrug: false,
+
+    // ── Carry Guard code-path exercisers (tasks 3, 4, 5, 9) ──
+    // Two firearms: one licensed (renders the conditional licence-number field), one not.
+    firearms: [
+      { make: "Glock", model: "19", caliber: "9mm", serial: "AB12345", licensed: "Yes", licenseNumber: "NYC-778211" },
+      { make: "Remington", model: "870", caliber: "12 ga", serial: "RM99001", licensed: "No" },
+    ],
+    // Two prior employers with full structured addresses; the second ENDS 2022-06 while
+    // the first STARTS 2023-06 → a deliberate ~1-year gap, so the continuity guidance fires.
+    employmentHistory: [
+      { fromMonth: "2023-06", toMonth: "", employerName: "Acme Security LLC", employerAddress: "100 Market St", city: "Bronx", state: "NY", zip: "10451", occupation: "Security officer" },
+      { fromMonth: "2019-01", toMonth: "2022-06", employerName: "Sentinel Guards Inc.", employerAddress: "5 River Rd", city: "Newark", state: "NJ", zip: "07102", occupation: "Guard" },
+    ],
+    // Two residences; the second is non-US so the "outside the United States" toggle renders.
+    residenceHistory: [
+      { fromMonth: "2022-01", toMonth: "", address: "123 Test St", apt: "4B", city: "New York", state: "NY", zip: "10001" },
+      { fromMonth: "2018-03", toMonth: "2021-12", address: "88 King St W", city: "Toronto", country: "Canada" },
+    ],
+    // The designated safeguard person — drives the SGI-01 / SFG-01 third-party invite loop.
+    safeguardName: "Jordan Reyes",
+    safeguardRelation: "Sibling",
+    safeguardPhone: "(212) 555-0199",
+    safeguardMethod: "In a locked safe at my home; ammunition stored separately in the same safe.",
+    safeguardAddress: "123 Test St, New York, NY 10001",
   }
   await db
     .from("intake_sessions")
@@ -143,6 +179,24 @@ async function main() {
   // does — so the applicant's forms resolve from the canonical fact layer.
   await backfillCaseFacts(db, caseId)
 
+  // 5b. Safeguard email is a directly-entered fact (no intake `from`), so set it as a
+  //     shared case_fact, then stand up a PENDING safeguard invite so the tester can walk
+  //     the third-party ID + acknowledgement upload loop at /g/<token>.
+  const SAFEGUARD_EMAIL = "se2018+safeguard@gmail.com"
+  await db.from("case_facts").upsert(
+    { case_id: caseId, key: "safeguard.email", value: SAFEGUARD_EMAIL, source: "applicant", override_req_code: "" },
+    { onConflict: "case_id,key,override_req_code" }
+  )
+  const safeguardToken = randomBytes(24).toString("base64url")
+  await db.from("safeguard_invites").insert({
+    case_id: caseId,
+    email: SAFEGUARD_EMAIL,
+    token: safeguardToken,
+    token_expires_at: new Date(Date.now() + 30 * 864e5).toISOString(),
+    status: "invited",
+    sent_at: new Date().toISOString(),
+  })
+
   // 6. The sponsor rep account (pre-confirmed, role='sponsor').
   const tempPassword = randomBytes(9).toString("base64url")
   const { data: created, error } = await db.auth.admin.createUser({
@@ -166,6 +220,16 @@ async function main() {
           action: "SIGN IN (account already exists) or use the invite link",
           tempPassword,
           inviteUrl: `${SITE}/invite/${token}`,
+        },
+        safeguard: {
+          email: SAFEGUARD_EMAIL,
+          uploadUrl: `${SITE}/g/${safeguardToken}`,
+          note: "Pending invite — the safeguard person uploads their own ID + signed acknowledgement here.",
+        },
+        sponsorCustodian: {
+          name: "Dana Ruiz",
+          licenceNumber: null,
+          note: "Licence # left blank on purpose — fill it in the sponsor provisioning form to clear the Carry Guard step-3 block.",
         },
         caseId,
       },
