@@ -2,6 +2,7 @@ import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { PORTAL_STEPS, type StepKind } from "@/config/portal-steps"
 import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
 import { portalStep12StatementsFor } from "@/lib/requirements/lon"
+import { precinctForZip, PRECINCT_FINDER_URL } from "@/lib/portal/precinct"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
@@ -53,6 +54,16 @@ function f(label: string, value: string, opts: { atFiling?: boolean; optional?: 
 /** A real not-applicable field — greyed, never counted as missing, never a typed "N/A". */
 function na(label: string, reason: string): WorksheetField {
   return { label, value: `Not applicable — ${reason}`, missing: false, notApplicable: true }
+}
+
+/** Precinct is DERIVED from the ZIP, never asked (task 7). When the ZIP is in the table
+ *  we emit it labelled "derived — verify" (staff can override); otherwise we point staff
+ *  at NYPD's Precinct Finder rather than leave a blank required box. */
+function precinctField(label: string, zip: string): WorksheetField[] {
+  const derived = precinctForZip(zip)
+  return derived
+    ? [f(`${label} (derived — verify)`, derived)]
+    : [f(`${label} — look it up at the NYPD Precinct Finder`, PRECINCT_FINDER_URL, { optional: true })]
 }
 
 /** A history date field: renders M/D/YYYY and flags a day we had to assume (the
@@ -121,6 +132,7 @@ export function buildPortalWorksheet(
     ...(v.citizenship === "Alien" ? [f("Alien Registration OR Visa Number", s(v.alienReg))] : []),
     f("SSN — Last 4 digits", s(ctx.ssnLast4)),
     ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
+    ...precinctField("Precinct", s(v.zip)),
     f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
     ...(v.mailingDifferent
       ? addressFields("Mailing Address", s(v.mailingStreet), s(v.mailingApt), s(v.mailingCity), s(v.mailingState), s(v.mailingZip))
@@ -157,6 +169,7 @@ export function buildPortalWorksheet(
     f("Industry / type of business", s(v.businessType), { optional: true }),
     f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
     ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true),
+    ...precinctField("Business Precinct", s(v.businessZip)),
     f("Business Phone", s(v.busPhone), { optional: true }),
     // "Please provide your employer's Gun Custodian information" — the block that makes
     // this path different. BOTH fields are required by the portal: a Carry Guard
