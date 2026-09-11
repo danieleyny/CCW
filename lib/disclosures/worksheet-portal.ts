@@ -1,7 +1,7 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { PORTAL_STEPS, type StepKind } from "@/config/portal-steps"
 import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
-import { lonStatementsFor } from "@/lib/requirements/lon"
+import { portalStep12StatementsFor } from "@/lib/requirements/lon"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
@@ -40,6 +40,8 @@ export interface WorksheetSection {
 }
 
 const s = (v: unknown): string => (typeof v === "string" ? v : v == null ? "" : String(v))
+/** The tracks whose portal step 3 carries the employer's Gun Custodian block. */
+const isGuardTrack = (track?: string | null) => track === "carry_guard" || track === "special_carry_guard"
 const isYes = (x: unknown) => x === "yes" || x === "Yes" || x === true
 const isNo = (x: unknown) => x === "no" || x === "No" || x === false
 
@@ -111,7 +113,12 @@ export function buildPortalWorksheet(
     f("Primary Phone", s(v.cellPhone) || s(v.homePhone) || s(ctx.phone)),
     f("Other Phone", s(v.homePhone), { optional: true }),
     f("Email", s(v.email) || s(ctx.email)),
+    f("NYS ID", s(v.nysId), { optional: true }),
     f("Are you a U.S. Citizen?", v.citizenship === "Citizen" ? "Yes" : v.citizenship === "Alien" ? "No" : ""),
+    // The portal reveals this the moment "U.S. Citizen?" is answered No. It was being
+    // collected as a fact but never surfaced here, so a non-citizen's required
+    // follow-up field was invisible to whoever was transcribing.
+    ...(v.citizenship === "Alien" ? [f("Alien Registration OR Visa Number", s(v.alienReg))] : []),
     f("SSN — Last 4 digits", s(ctx.ssnLast4)),
     ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
     f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
@@ -134,6 +141,10 @@ export function buildPortalWorksheet(
         f(`Row ${i + 1} — City`, s(r.city)),
         f(`Row ${i + 1} — State`, s(r.state)),
         f(`Row ${i + 1} — Zip`, s(r.zip)),
+        // Country is REQUIRED on every residence row in the portal (optional on the
+        // employment table — see step 4). Defaults to United States so the common case
+        // is never a red box; a non-US applicant sets it in intake.
+        f(`Row ${i + 1} — Country`, s(r.country) || "United States"),
       ]
     })
   )
@@ -147,6 +158,14 @@ export function buildPortalWorksheet(
     f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
     ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true),
     f("Business Phone", s(v.busPhone), { optional: true }),
+    // "Please provide your employer's Gun Custodian information" — the block that makes
+    // this path different. BOTH fields are required by the portal: a Carry Guard
+    // application cannot be submitted without the employer's custodian name and licence
+    // number, so they are emitted as required (red when empty), not optional.
+    // Only guard tracks see this block on the portal; other licence types never do.
+    ...(isGuardTrack(ctx.licenseTrack)
+      ? [f("Gun Custodian — Name", s(v.custodianName)), f("Gun Custodian — License Number", s(v.custodianLicenseNumber))]
+      : []),
   ])
 
   // Step 4 — Employment History (prior employers)
@@ -159,6 +178,10 @@ export function buildPortalWorksheet(
           f(`History ${i + 1} — Job Title`, s(r.occupation), { optional: true }),
           fDate(`History ${i + 1} — Start`, s(r.fromMonth), { optional: true }),
           fDate(`History ${i + 1} — End`, s(r.toMonth), { optional: true, presentIfEmpty: true }),
+          // The portal requires a full structured address per past employer. The street
+          // line is split into Building/Street exactly like the residence rows; there is
+          // no Apt on this table, and Country stays optional here (asymmetry with step 2).
+          ...addressFields(`History ${i + 1} — Address`, s(r.employerAddress), "", s(r.city), s(r.state), s(r.zip)),
         ])
       : [f("Prior employers", "None listed", { optional: true })]
   )
@@ -185,6 +208,12 @@ export function buildPortalWorksheet(
       f(`Firearm ${i + 1} — Model`, s(g.model), { optional: true }),
       f(`Firearm ${i + 1} — Caliber`, s(g.caliber), { optional: true }),
       f(`Firearm ${i + 1} — Serial`, s(g.serial), { optional: true }),
+      // Portal modal: "Is this firearm licensed?" (Yes/No, required), then the
+      // License/Permit Number ONLY when Yes — a real conditional, not a visible optional.
+      f(`Firearm ${i + 1} — Is this firearm licensed?`, s(g.licensed)),
+      ...(g.licensed === "Yes"
+        ? [f(`Firearm ${i + 1} — License/Permit Number`, s(g.licenseNumber))]
+        : []),
     ]),
     ...(ctx.isRenewal ? [f("Prior licence number (renewal)", s(v.priorLicenseNumber), { optional: true })] : []),
   ])
@@ -254,9 +283,13 @@ export function buildPortalWorksheet(
 
   // Step 12 — Letter of Necessity, SCOPED by licence type (a concealed-carry case answers
   // three of six). Render only the applicable statements so a blank never gets flagged.
+  // The portal shows FIVE boxes here for Carry Guard; lop1 (the § 5-04 business-need
+  // narrative) lives on the Letter of Necessity DOCUMENT, not on this screen. Emitting
+  // it would flag a permanent red box staff can never satisfy — and a red flag nobody
+  // can clear is how staff learn to ignore red flags.
   put(
     12,
-    lonStatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`])))
+    portalStep12StatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`])))
   )
 
   // Step 14 — Counsel and Preparer
@@ -292,7 +325,7 @@ export function buildPortalWorksheet(
   }))
 }
 
-type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string }
+type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; employerAddress?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string; country?: string }
 function asRows(x: unknown): Row[] {
   return Array.isArray(x) ? (x as Row[]) : []
 }

@@ -50,14 +50,45 @@ export function FirearmsRecords({
       <div className="space-y-2">
         <Label className="text-xs">Firearms you currently own</Label>
         {guns.map((g, i) => (
-          <div key={i} className="grid gap-2 rounded-md border border-hairline p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-            <Input placeholder="Make" value={g.make ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, make: e.target.value } : x)))} />
-            <Input placeholder="Model" value={g.model ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, model: e.target.value } : x)))} />
-            <Input placeholder="Caliber" value={g.caliber ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, caliber: e.target.value } : x)))} />
-            <Input placeholder="Serial number" value={g.serial ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, serial: e.target.value } : x)))} />
-            <Button variant="ghost" size="icon" onClick={() => setGuns((c) => c.filter((_, j) => j !== i))}>
-              <Trash2 className="size-4" />
-            </Button>
+          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+            <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+              <Input placeholder="Make" value={g.make ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, make: e.target.value } : x)))} />
+              <Input placeholder="Model" value={g.model ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, model: e.target.value } : x)))} />
+              <Input placeholder="Caliber" value={g.caliber ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, caliber: e.target.value } : x)))} />
+              <Input placeholder="Serial number" value={g.serial ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, serial: e.target.value } : x)))} />
+              <Button variant="ghost" size="icon" onClick={() => setGuns((c) => c.filter((_, j) => j !== i))}>
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+            {/* Portal asks this per firearm; the number appears only when "Yes". */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-[11px] text-text-low">Is this firearm licensed?</Label>
+                <select
+                  value={g.licensed ?? ""}
+                  onChange={(e) =>
+                    setGuns((c) =>
+                      c.map((x, j) =>
+                        j === i
+                          ? { ...x, licensed: (e.target.value || undefined) as FirearmEntry["licensed"], licenseNumber: e.target.value === "Yes" ? x.licenseNumber : "" }
+                          : x
+                      )
+                    )
+                  }
+                  className="h-10 w-full rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm text-foreground"
+                >
+                  <option value="">Select…</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              {g.licensed === "Yes" && (
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-text-low">License / permit number</Label>
+                  <Input value={g.licenseNumber ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, licenseNumber: e.target.value } : x)))} />
+                </div>
+              )}
+            </div>
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => setGuns((c) => [...c, {}])}>

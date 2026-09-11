@@ -36,6 +36,36 @@ export function lonStatementsFor(track?: string | null): number[] {
   return [1, 2, 3, 4, 5, 6].filter((n) => cats.has(LON_STATEMENT_SCOPE[n]))
 }
 
+/**
+ * WHICH STATEMENTS APPEAR ON **PORTAL STEP 12**, as opposed to which we COLLECT.
+ *
+ * These are two different surfaces and conflating them is the bug this constant exists
+ * to prevent. Verified against a live walk of the portal (10 Sep 2026):
+ *
+ *   Portal step 12 for Carry Guard shows exactly FIVE textareas —
+ *     1. carried only in the course of / in connection with the job   → lop2 [guard]
+ *     2. the manner in which the handgun will be secured              → lop3 [all]
+ *     3. has been trained OR will receive training                    → lop4 [carry]
+ *     4. EMPLOYER aware of its duty to dispose of the handgun and
+ *        return the licence on termination                            → lop5 [guard]
+ *     5. familiar with Penal Law Articles 35, 265 and 400             → lop6 [all]
+ *
+ * `lop1` ("the employment, and why it requires carrying a concealed handgun") is NOT
+ * one of them — but it is still REQUIRED. It is the business-need narrative under
+ * 38 RCNY § 5-04 that the sponsor supplies (it is the first substantive item on the
+ * sponsor onboarding checklist), and the portal's step-15 review page carries a
+ * "Letter of neccessity" heading. So lop1 belongs to the LON DOCUMENT, not to the
+ * step-12 boxes. Do not "fix" this by dropping lop1 from lonStatementsFor() — that
+ * would silently stop collecting something NYPD requires.
+ *
+ * OPEN: confirm whether NYPD expects lop1 on a separate LON document for Carry Guard
+ * or somewhere else in the portal. Until that is answered, REQUIRED_LON_STATEMENTS is
+ * left alone.
+ */
+export function portalStep12StatementsFor(track?: string | null): number[] {
+  return lonStatementsFor(track).filter((n) => n !== 1)
+}
+
 /** Statements marked required on the questionnaire (the employment description and the
  *  safeguarding statement). Keep in step with the `required: true` fields. */
 export const REQUIRED_LON_STATEMENTS = [1, 3]

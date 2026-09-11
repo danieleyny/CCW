@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle2, Download, PenLine } from "lucide-react"
-import { uploadSignedSafeguard } from "@/app/g/actions"
+import { CheckCircle2, Download, PenLine, IdCard } from "lucide-react"
+import { uploadSignedSafeguard, uploadSafeguardId } from "@/app/g/actions"
 import { NotarizedTokenUpload } from "@/components/public/notarized-token-upload"
 import { Button } from "@/components/ui/button"
 
@@ -23,6 +23,7 @@ export function SafeguardFlow({
   initialStatus: string
 }) {
   const [phase, setPhase] = useState<Phase>(initialStatus === "signed" ? "done" : "steps")
+  const [idDone, setIdDone] = useState(false)
 
   if (phase === "done") {
     return (
@@ -74,6 +75,28 @@ export function SafeguardFlow({
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">3</span>
+          <IdCard className="size-4 text-brass" /> Upload a photo of your government ID
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A clear photo of your driver&apos;s licence or state ID — the License Division requires it for the
+          person safeguarding the firearm. This stays private and goes straight onto {applicant}&apos;s case.
+        </p>
+        {idDone ? (
+          <p className="mt-3 flex items-center gap-1.5 text-sm text-ok">
+            <CheckCircle2 className="size-4" /> ID received — thank you.
+          </p>
+        ) : (
+          <NotarizedTokenUpload
+            upload={(fd) => uploadSafeguardId(token, fd)}
+            noun="ID photo"
+            onDone={() => setIdDone(true)}
+          />
+        )}
+      </div>
+
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">4</span>
           Upload the signed copy
         </div>
         <p className="mt-1 text-xs text-muted-foreground">A clear photo or scan of the signed, witnessed form.</p>

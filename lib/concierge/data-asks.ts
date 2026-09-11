@@ -7,6 +7,7 @@ import { hasCaseSsn } from "@/lib/facts/ssn"
 import { buildFactGroups, type FactGroupData } from "@/lib/facts/details-view"
 import type { FactGroup } from "@/lib/facts/registry"
 import type { WizardAnswers } from "@/lib/intake/answers"
+import { portalStep12StatementsFor } from "@/lib/requirements/lon"
 
 type DB = SupabaseClient<Database>
 
@@ -44,11 +45,13 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
   const hasSsn = await hasCaseSsn(admin, caseId)
   const { groups } = buildFactGroups(facts, hasSsn, ["you", "address", "contact", "physical", "employer", "safeguard"], false)
 
-  const [{ data: intakeRow }, { data: reqRows }] = await Promise.all([
+  const [{ data: intakeRow }, { data: reqRows }, { data: caseRow }] = await Promise.all([
     admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
     admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["LON-01", "CON-01"]),
+    admin.from("cases").select("license_track").eq("id", caseId).maybeSingle(),
   ])
   const intake = (intakeRow?.answers ?? {}) as WizardAnswers
+  const licenseTrack = caseRow?.license_track ?? null
   const byCode = new Map((reqRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
   const lon = byCode.get("LON-01") ?? {}
   const con = byCode.get("CON-01") ?? {}
@@ -60,9 +63,13 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
   const resCount = (intake.residenceHistory ?? []).length
   const empCount = (intake.employmentHistory ?? []).length
 
-  // Letter of Necessity — a carry applicant needs the "all"/"carry" statements
-  // (lop3, lop6). Every track this platform serves carries, so it's always asked.
-  const lonHave = ["lop3", "lop6"].filter((k) => typeof lon[k] === "string" && (lon[k] as string).trim()).length
+  // Letter of Necessity — how MANY statements this case needs is TRACK-DEPENDENT: a
+  // concealed-carry case answers three, a Carry Guard case answers five. Derive both the
+  // key list and the total from the single source of truth (portalStep12StatementsFor,
+  // added in task 2) so the concierge progress never reads "complete" while statements
+  // are still missing.
+  const lonKeys = portalStep12StatementsFor(licenseTrack).map((n) => `lop${n}`)
+  const lonHave = lonKeys.filter((k) => typeof lon[k] === "string" && (lon[k] as string).trim()).length
 
   const asks: DataAsk[] = [
     { key: "details", label: "Your details", captured: details.captured, total: details.total, href: "/portal/details#you" },
@@ -72,7 +79,7 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
   ]
   // Concierge home is /portal/concierge — the LON/CON cards live in its vault, each
   // RequirementCard carrying id=reqCode (and opening its questionnaire on the hash).
-  asks.push({ key: "lon", label: "Your written statements", captured: lonHave, total: 2, href: "/portal/concierge#LON-01" })
+  asks.push({ key: "lon", label: "Your written statements", captured: lonHave, total: lonKeys.length, href: "/portal/concierge#LON-01" })
   asks.push({
     key: "confidentiality",
     label: "Confidentiality (optional)",

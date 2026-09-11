@@ -8,7 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { checkHistory, type HistoryNotice } from "@/lib/intake/history-check"
 import type { AddressHistoryEntry, EmploymentHistoryEntry } from "@/lib/intake/answers"
+
+/** Soft, non-blocking continuity guidance for a five-year history (task 9). */
+function HistoryNotices({ notices }: { notices: HistoryNotice[] }) {
+  if (notices.length === 0) return null
+  return (
+    <ul className="space-y-1.5">
+      {notices.map((n, i) => (
+        <li key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-signal" />
+          <span>{n.message}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 /**
  * The five-year residence + employment history (PD 643-041 Q29) and the out-of-city
@@ -172,11 +188,26 @@ export function ApplicationHistory({
               <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
               <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
             </div>
+            {/* Country is required on the portal but defaults to the US, so we only ask
+                when the address is abroad — the common case stays one field shorter. */}
+            <label className="flex items-center gap-1.5 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={h.country !== undefined}
+                onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, country: e.target.checked ? "" : undefined } : x)))}
+                className="size-4 rounded border-input"
+              />
+              This address is outside the United States
+            </label>
+            {h.country !== undefined && (
+              <Input placeholder="Country" value={h.country ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, country: e.target.value } : x)))} />
+            )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => setRes((c) => [...c, {}])}>
           <Plus className="size-4" /> Add residence
         </Button>
+        <HistoryNotices notices={checkHistory(res, "lived")} />
       </div>
 
       {/* Employment — Q29 */}
@@ -206,10 +237,16 @@ export function ApplicationHistory({
                 onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, employerName: e.target.value, employer: undefined } : x)))}
               />
               <Input
-                placeholder="Business address"
+                placeholder="Business street address"
                 value={h.employerAddress ?? ""}
                 onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, employerAddress: e.target.value } : x)))}
               />
+            </div>
+            {/* The portal requires a full City / State / Zip per past employer. */}
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, city: e.target.value } : x)))} />
+              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
+              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
             </div>
             <Input
               placeholder="Occupation"
@@ -221,6 +258,7 @@ export function ApplicationHistory({
         <Button variant="outline" size="sm" onClick={() => setEmp((c) => [...c, {}])}>
           <Plus className="size-4" /> Add employment
         </Button>
+        <HistoryNotices notices={checkHistory(emp, "worked")} />
       </div>
 
       {/* Other pistol licences (Q9) — its OWN card, not part of employment: it's a
