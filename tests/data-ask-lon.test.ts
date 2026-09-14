@@ -11,24 +11,35 @@ import { describe, expect, it, vi } from "vitest"
 // runs from a plain admin stub.
 vi.mock("@/lib/facts/resolve", () => ({ resolveFacts: async () => ({}) }))
 vi.mock("@/lib/facts/ssn", () => ({ hasCaseSsn: async () => false }))
-vi.mock("@/lib/facts/details-view", () => ({ buildFactGroups: () => ({ groups: [] }) }))
+vi.mock("@/lib/facts/details-view", () => ({
+  buildFactGroups: () => ({ groups: [] }),
+  detailsMeter: () => ({ captured: 0, total: 0 }),
+}))
 
 import { buildDataAsks } from "@/lib/concierge/data-asks"
 
-/** Routes reads by table: `cases` → the track, everything else empty. */
+/** Routes reads by table: `cases` → the track, everything else empty (no sponsorship). */
 function fakeAdmin(licenseTrack: string | null) {
+  let table = ""
+  const maybeSingle = async () => ({
+    data:
+      table === "cases"
+        ? { license_track: licenseTrack, is_renewal: false }
+        : table === "intake_sessions"
+          ? { answers: {} }
+          : null, // case_sponsorships → unsponsored
+  })
+  const eqChain = {
+    maybeSingle,
+    in: async () => ({ data: [] }),
+    // case_sponsorships: .is("revoked_at", null).limit(1).maybeSingle()
+    is: () => ({ limit: () => ({ maybeSingle }) }),
+  }
   return {
-    from: (table: string) => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () => ({
-            data:
-              table === "cases" ? { license_track: licenseTrack } : table === "intake_sessions" ? { answers: {} } : null,
-          }),
-          in: async () => ({ data: [] }),
-        }),
-      }),
-    }),
+    from: (t: string) => {
+      table = t
+      return { select: () => ({ eq: () => eqChain }) }
+    },
   } as never
 }
 

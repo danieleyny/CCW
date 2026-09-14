@@ -43,8 +43,8 @@ export default async function FormsPage() {
     { key: "social-media", title: "3-Year Social-Media Disclosure", desc: "Your accounts from the last three years (from intake).", notarize: false, fileable: true, filed: filedSet.has("SOC-01") },
     { key: "arrest-narratives", title: "Written Explanations", desc: "Formatted explanations for your disclosed matters.", notarize: false, fileable: false, filed: false, show: hasArrests },
     { key: "court-letters", title: "Certificate-of-Disposition Requests", desc: "Ready-to-mail letters to the court clerk, one per matter.", notarize: false, fileable: false, filed: false, show: hasArrests },
-    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed; notarize before filing.", notarize: true, fileable: false, filed: false, show: !hasCohabitants },
-    { key: "safeguard-designation", title: "Safeguard-Person Designation", desc: "Names who will take custody of your handgun if you die or become disabled (from intake). The person you named signs it in front of a notary — don't sign it yourself.", notarize: true, fileable: false, filed: false, show: hasSafeguard },
+    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed; notarize before filing.", notarize: "notarize", fileable: false, filed: false, show: !hasCohabitants },
+    { key: "safeguard-designation", title: "Safeguard-Person Designation", desc: "Names who will take custody of your handgun if you die or become disabled (from intake). The person you named signs it in front of a witness (no notary) — don't sign it yourself.", notarize: "witness", fileable: false, filed: false, show: hasSafeguard },
   ].filter((d) => (d as { show?: boolean }).show !== false).map(({ ...d }) => d as FormDoc)
 
   return (
@@ -52,8 +52,8 @@ export default async function FormsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Documents we prepared for you</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pre-filled from your intake answers. Download, sign (and notarize where noted), then upload
-          them under Documents.
+          Pre-filled from your intake answers. Download, sign (and notarize or witness where noted), then
+          upload them under Documents.
         </p>
       </div>
 
@@ -100,8 +100,8 @@ export default async function FormsPage() {
 
       <p className="text-xs text-muted-foreground">
         Character references and cohabitant affidavits are handled on the{" "}
-        <Link href="/portal/people" className="text-signal underline">People</Link> page — each person gets
-        their own self-serve link, so you don&apos;t have to prepare those yourself.
+        <Link href="/portal/people" className="text-signal underline">People</Link>{" "}page — each person
+        gets their own self-serve link, so you don&apos;t have to prepare those yourself.
       </p>
     </div>
   )

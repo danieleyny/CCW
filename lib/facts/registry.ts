@@ -53,6 +53,10 @@ export interface FactDef {
   from?: (s: FactSource) => string | null | undefined
   /** Read-only value computed from other facts at resolve time. */
   derive?: (get: (k: string) => string) => string
+  /** Normalise a resolved value on read — maps a legacy/stored token to a current
+   *  `options` value so a migrated case displays a valid selection. Applied after
+   *  the value is resolved from any source (override/shared/derive/from). */
+  normalize?: (raw: string) => string
   /** Kept for read/backfill but NOT shown in the details editor — a legacy field
    *  superseded by a structured replacement (e.g. the combined safeguard name). */
   hidden?: boolean
@@ -103,6 +107,19 @@ const HEIGHTS = Array.from({ length: (8 - 3) * 12 + 1 }, (_, i) => {
   return `${Math.floor(total / 12)}'${String(total % 12).padStart(2, "0")}"`
 })
 
+/**
+ * Citizenship snaps a legacy intake/case_facts token to the select's option. The
+ * intake wizard historically stored "citizen"/"lpr"; the fill layer already maps
+ * both, but the details editor's select needs an exact option match or it renders
+ * the raw token. Already-valid options pass through unchanged. (P2-3)
+ */
+function normalizeCitizenship(raw: string): string {
+  const v = raw.trim()
+  if (/^lpr$/i.test(v) || /permanent resident/i.test(v)) return "Lawful permanent resident (green card)"
+  if (/^citizen$/i.test(v) || /u\.?\s?s\.?\s?citizen/i.test(v)) return "U.S. citizen"
+  return v // "Neither", or an already-exact option
+}
+
 export const FACTS: FactDef[] = [
   // ── You ──
   { key: "applicant.legalFirstName", label: "First name", type: "text", group: "you", from: (s) => nameParts(s.client.fullName)[0] },
@@ -122,7 +139,7 @@ export const FACTS: FactDef[] = [
   // Exact NYPD portal value lists (PORTAL_ALIGNMENT_REBUILD Part 2, step 1).
   { key: "applicant.hairColor", label: "Hair color", type: "select", group: "physical", options: ["Black", "Brown", "White", "Red", "Gray", "Blond", "Auburn", "Chestnut", "Bald", "Sandy", "Dyed", "Salt & Pepper", "Frosted", "Other"], from: (s) => s.intake.hairColor },
   { key: "applicant.eyeColor", label: "Eye color", type: "select", group: "physical", options: ["Black", "Blue", "Brown", "Gray", "Green", "Hazel", "Two Different", "Other"], from: (s) => s.intake.eyeColor },
-  { key: "applicant.citizenship", label: "Are you a U.S. citizen?", type: "select", group: "you", options: ["U.S. citizen", "Lawful permanent resident (green card)", "Neither"], from: (s) => s.intake.citizenship },
+  { key: "applicant.citizenship", label: "Are you a U.S. citizen?", type: "select", group: "you", options: ["U.S. citizen", "Lawful permanent resident (green card)", "Neither"], from: (s) => s.intake.citizenship, normalize: normalizeCitizenship },
   // Alien registration # — shown ONLY for a lawful permanent resident (a conditional,
   // not an "only if it applies" tag). Required when shown.
   { key: "applicant.alienRegistrationNumber", label: "Alien registration #", type: "text", group: "you", showWhen: { key: "applicant.citizenship", equals: ["Lawful permanent resident (green card)"] }, from: (s) => s.intake.alienRegistrationNumber },
@@ -164,7 +181,11 @@ export const FACTS: FactDef[] = [
   // across all employer.* so `employer.name` is no longer the odd one out.
   // "Currently employed?" gates the rest of the block — every downstream employer
   // field is shown only when the answer is Yes.
-  { key: "employer.employed", label: "Currently employed?", type: "select", group: "employer", options: ["Yes", "No"] },
+  // On a SPONSORED case the employer IS the sponsoring company, so the applicant is
+  // employed by definition — resolve "Yes" from the sponsorship so the whole employer
+  // block (all showWhen: employed=Yes) actually renders its sponsor-supplied values,
+  // instead of hiding behind an unanswered question. Non-sponsored cases still answer it.
+  { key: "employer.employed", label: "Currently employed?", type: "select", group: "employer", options: ["Yes", "No"], from: (s) => (s.sponsor?.legalName ? "Yes" : undefined) },
   { key: "employer.name", label: "Employer name", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.legalName ?? s.intake.businessName },
   { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessStreet ?? s.intake.businessStreet },
   // Unit/suite is part of the address — directly under the street (#5).

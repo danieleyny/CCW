@@ -20,6 +20,7 @@ import { WelcomeCard } from "@/components/portal/welcome-card"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { hasPaidPackage } from "@/lib/packages"
 import { computeNextStep } from "@/lib/portal/next-step"
+import { decideConciergeRouting } from "@/lib/portal/concierge-routing"
 import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Your application" }
@@ -64,6 +65,15 @@ export default async function PortalHome() {
   const view = await loadRequirementView(supabase, myCase)
   const nextStep = computeNextStep({ items: view.items, intakeDone, stage })
   const t = await getMessages()
+  // Track-aware subtitle: never call a Carry Guard case "concealed carry".
+  const licenseTrack = (myCase.license_track as string | null) ?? null
+  const licenseWord =
+    licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
+      ? t.portal.licenseWord.armedGuard
+      : licenseTrack?.includes("premises")
+        ? t.portal.licenseWord.premises
+        : t.portal.licenseWord.concealedCarry
+  const portalTagline = t.portal.tagline.replace("{license}", licenseWord)
 
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
@@ -75,15 +85,39 @@ export default async function PortalHome() {
   // once the concierge package is paid, this is where the two experiences part.
   const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
   const paidConcierge = await hasPaidPackage(supabase, myCase.id, "full_concierge")
-  if (serviceMode === "concierge" && paidConcierge) redirect("/portal/concierge")
+  // A SPONSORED concierge case is unlocked by the sponsorship itself, not a Stripe
+  // purchase — so it must never see a payment card. Detect it exactly as the concierge
+  // page does (any non-revoked sponsorship) and route it to the concierge tower.
+  const { data: sponsorship } = await supabase
+    .from("case_sponsorships")
+    .select("id")
+    .eq("case_id", myCase.id)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle()
+  const isSponsored = !!sponsorship
+  const routing = decideConciergeRouting({
+    intakeDone,
+    serviceMode,
+    paidConcierge,
+    isSponsored,
+    isLicensed,
+    isDenied,
+  })
+  if (routing.redirectToConcierge) redirect("/portal/concierge")
   // Not yet forked: the one decision that comes first is HOW we work together.
   // (The onboarding gate already carries brand-new cases to the fork; this covers
   // anyone who lands on /portal without a path set.)
   const needsPathChoice = !serviceMode && !isLicensed && !isDenied
-  // CONCIERGE QA Phase 2 — payment limbo: chose concierge, abandoned checkout.
-  // Without this they landed on the self-guided home with no way back to pay.
-  const needsConciergePayment =
-    intakeDone && serviceMode === "concierge" && !paidConcierge && !isLicensed && !isDenied
+  // CONCIERGE QA Phase 2 — payment limbo: chose concierge, abandoned checkout. A
+  // sponsored applicant never owes a service fee, so never shows a payment card or a
+  // price (P0-2) — the routing helper encodes and tests that invariant.
+  const needsConciergePayment = routing.needsConciergePayment
+  // P1-5 — a concierge case has no self-guided checklist: /portal/checklist just
+  // redirects them onward (to the concierge tower, or the enrollment fork if not yet
+  // unlocked). Never link them into that silent bounce — point at their real home so
+  // the destination matches the label instead of an unexplained gate.
+  const checklistHref = serviceMode === "concierge" ? "/portal/concierge" : "/portal/checklist"
 
   // V3-P2.1 — to-dos come from the requirements engine (the one checklist).
   const outstanding = (reqs ?? []).filter((r) => r.status === "pending").length
@@ -100,7 +134,7 @@ export default async function PortalHome() {
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           {myCase.client.full_name.split(" ")[0]}
         </h1>
-        <p className="mt-1 text-sm text-text-mid">{t.portal.tagline}</p>
+        <p className="mt-1 text-sm text-text-mid">{portalTagline}</p>
       </div>
 
       <SponsorBanner caseId={myCase.id} />
@@ -159,7 +193,7 @@ export default async function PortalHome() {
               >
                 {nextStep.cta} <ArrowRight className="size-4" />
               </Link>
-              <Link href="/portal/checklist" className="text-sm text-signal underline">
+              <Link href={checklistHref} className="text-sm text-signal underline">
                 View everything left to do
               </Link>
             </div>
@@ -233,7 +267,7 @@ export default async function PortalHome() {
           finishing the wizard visibly registers as progress. */}
       {intakeDone ? (
         <Link
-          href="/portal/checklist"
+          href={checklistHref}
           className="flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
         >
           <span className="flex items-center gap-2 text-sm font-medium">
@@ -318,7 +352,7 @@ export default async function PortalHome() {
       {/* HUD quick cards */}
       <div className="grid grid-cols-3 gap-3">
         <HudCard
-          href="/portal/checklist"
+          href={checklistHref}
           icon={ClipboardList}
           value={String(outstanding)}
           label="To-dos"

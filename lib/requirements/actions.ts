@@ -36,6 +36,7 @@
  */
 import type { Database } from "@/lib/supabase/types"
 import { formTemplateWetInk } from "@/lib/forms/templates"
+import { PORTAL_DISCLOSURE_COUNT } from "@/lib/disclosures/portal-questions"
 
 type DocumentType = Database["public"]["Enums"]["document_type"]
 
@@ -361,7 +362,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Answer the disclosure questions",
     questionnaireId: "disclosure-addendum",
     customerTitle: "The application's disclosure questions",
-    help: "The NYPD online portal asks seventeen questions about your history, in its own words. Every 'yes' needs a written explanation. Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
+    help: `The NYPD online portal asks ${PORTAL_DISCLOSURE_COUNT} questions about your history, in its own words. Every 'yes' needs a written explanation. Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.`,
   },
   // QUE-01 (the PD 643-041A addendum) is RETIRED — the portal captures explanations
   // inline under each question, so there is no separate addendum form.

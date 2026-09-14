@@ -14,7 +14,10 @@ import type { Locale } from "@/config/i18n"
 
 export interface Messages {
   portal: {
+    /** `{license}` is replaced with the track-resolved word from `licenseWord`. */
     tagline: string
+    /** Localized license-type words, chosen by the case's license_track. */
+    licenseWord: { armedGuard: string; concealedCarry: string; premises: string }
     yourData: string
     nextStepEyebrow: string
     finishIntake: string
@@ -36,7 +39,8 @@ export const LEGAL_KEYS = ["legal.filesOwnApplication"] as const
 
 const en: Messages = {
   portal: {
-    tagline: "Tracking your NYC concealed carry application, end to end.",
+    tagline: "Tracking your NYC {license} application, end to end.",
+    licenseWord: { armedGuard: "armed-guard", concealedCarry: "concealed carry", premises: "premises" },
     yourData: "Your data & privacy",
     nextStepEyebrow: "Your next step",
     finishIntake: "Finish your intake",
@@ -57,7 +61,8 @@ const en: Messages = {
 // it falls back to the reviewed English until counsel signs off on a translation.
 const es: Partial<Messages> = {
   portal: {
-    tagline: "Seguimiento de su solicitud de porte oculto de NYC, de principio a fin.",
+    tagline: "Seguimiento de su solicitud de {license} de NYC, de principio a fin.",
+    licenseWord: { armedGuard: "guardia armado", concealedCarry: "porte oculto", premises: "local (premises)" },
     yourData: "Sus datos y privacidad",
     nextStepEyebrow: "Su siguiente paso",
     finishIntake: "Complete su cuestionario",

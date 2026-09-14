@@ -89,6 +89,8 @@ export function SafeguardFlow({
           <NotarizedTokenUpload
             upload={(fd) => uploadSafeguardId(token, fd)}
             noun="ID photo"
+            chooseLabel="Choose a photo of your ID"
+            submitLabel="Upload ID photo"
             onDone={() => setIdDone(true)}
           />
         )}
@@ -103,6 +105,8 @@ export function SafeguardFlow({
         <NotarizedTokenUpload
           upload={(fd) => uploadSignedSafeguard(token, fd)}
           noun="acknowledgement"
+          chooseLabel="Choose the signed form"
+          submitLabel="Upload signed form"
           onDone={() => setPhase("done")}
         />
       </div>

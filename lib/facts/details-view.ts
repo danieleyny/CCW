@@ -58,6 +58,27 @@ function factUsage(): Record<string, number> {
   return counts
 }
 
+/**
+ * Completeness over the "Your details" editor — required, currently-visible,
+ * non-optional, non-SSN scalar facts. Computed with the SAME rules the page's live
+ * meter uses (components/portal/facts/fact-groups.tsx), so any surface that reports
+ * "Your details — N of M" (e.g. the concierge data-ask) agrees with the page it links
+ * to instead of showing a second denominator (P2-4).
+ */
+export function detailsMeter(groups: FactGroupData[]): { captured: number; total: number } {
+  const flat = groups.flatMap((g) => g.rows)
+  const valueOf = (key: string) => flat.find((r) => r.key === key)?.value ?? ""
+  const visible = (r: FactRowMeta) => !r.showWhen || r.showWhen.equals.includes(valueOf(r.showWhen.key).trim())
+  let captured = 0
+  let total = 0
+  for (const r of flat) {
+    if (r.kind !== "editable" || r.optional || !visible(r)) continue
+    total++
+    if (r.value.trim()) captured++
+  }
+  return { captured, total }
+}
+
 export function buildFactGroups(
   facts: Record<string, string>,
   hasSsn: boolean,

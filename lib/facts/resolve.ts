@@ -83,6 +83,10 @@ export async function resolveFacts(db: DB, caseId: string, opts: ResolveOpts = {
     else if (shared.has(key)) val = shared.get(key)!
     else if (def?.derive) val = def.derive(get)
     else if (def?.from) val = def.from(source) ?? ""
+    // Normalise on read — a migrated case may hold a legacy token (e.g. citizenship
+    // "citizen"/"lpr") in case_facts or intake that matches none of the select's
+    // options; snap it to a valid option so every reader agrees. (P2-3)
+    if (def?.normalize && val) val = def.normalize(val)
     cache.set(key, val)
     return val
   }

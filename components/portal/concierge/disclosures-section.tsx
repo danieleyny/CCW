@@ -1,5 +1,6 @@
 import { ShieldCheck } from "lucide-react"
 import { actionFor } from "@/lib/requirements/actions"
+import { PORTAL_DISCLOSURE_RANGE } from "@/lib/disclosures/portal-questions"
 import { isDisclosureItem } from "@/lib/requirements/sections"
 import { RequirementAction } from "@/components/portal/requirement-action"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -42,7 +43,7 @@ export function DisclosuresSection({
         <SectionEyebrow>Your disclosures</SectionEyebrow>
         <h2 className="mt-2 text-lg font-semibold tracking-tight">We prepare them — you sign</h2>
         <p className="mt-1 max-w-prose text-sm text-text-mid">
-          The NYPD application asks about your history (questions 10–28), and every &ldquo;yes&rdquo;
+          The NYPD application asks about your history (questions {PORTAL_DISCLOSURE_RANGE}), and every &ldquo;yes&rdquo;
           needs a written explanation. We draft each one with you from what you already told us. This
           part has to be{" "}
           <span className="text-foreground">your</span>

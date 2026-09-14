@@ -226,8 +226,8 @@ export function DocumentUploader({
           </select>
           {selectedKind && selectedKind.reqCodes.length > 1 && (
             <p className="rounded-md border border-ok/25 bg-ok/8 p-2 text-[11px] text-ok">
-              One {selectedKind.label} covers your {selectedKind.covers} — upload it
-              once and we&apos;ll attach it to each of those, no need to send it again.
+              One {selectedKind.label} covers your {selectedKind.covers}{" "}— upload it once and
+              we&apos;ll attach it to each of those, no need to send it again.
             </p>
           )}
         </div>
