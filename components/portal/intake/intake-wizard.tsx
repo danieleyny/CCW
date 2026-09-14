@@ -35,6 +35,12 @@ import {
   completeIntake,
   updateDisclosureNarrative,
 } from "@/app/portal/intake/actions"
+import {
+  detectSelfDesignation,
+  selfDesignationMessage,
+  SAFEGUARD_NOT_YOU_NOTE,
+  type SelfDesignationField,
+} from "@/lib/safeguard/self-designation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -48,6 +54,23 @@ interface Disclosure {
   question_no: number | null
 }
 
+/** The applicant's own identity, used only to flag naming yourself as the safeguard person. */
+export type ApplicantIdentity = { firstName: string; lastName: string; email: string; phone: string }
+
+/** Which safeguard fields collide with the applicant. Intake collects the safeguard NAME
+ *  as one field and no email, so only name + phone apply here. */
+function safeguardSelfConflicts(a: WizardAnswers, applicant: ApplicantIdentity): SelfDesignationField[] {
+  const toks = (a.safeguardName ?? "").trim().split(/\s+/).filter(Boolean)
+  return detectSelfDesignation({
+    applicant,
+    safeguard: {
+      firstName: toks[0],
+      lastName: toks.length > 1 ? toks[toks.length - 1] : undefined,
+      phone: a.safeguardPhone,
+    },
+  })
+}
+
 export function IntakeWizard({
   caseId,
   isRenewal = false,
@@ -57,6 +80,7 @@ export function IntakeWizard({
   disclosures,
   guard,
   aiEnabled = false,
+  applicant,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -66,6 +90,7 @@ export function IntakeWizard({
   disclosures: Disclosure[]
   guard: SubmissionGuard | null
   aiEnabled?: boolean
+  applicant: ApplicantIdentity
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
@@ -86,6 +111,8 @@ export function IntakeWizard({
   // V3-P0.6 — inline per-step validation (mirrors the server-side rules).
   function issuesForStep(n: number): string[] {
     if (n === 1) return eligibilityStepIssues(a)
+    // Step 3 — the safeguard person cannot be the applicant. Block Next while it conflicts.
+    if (n === 3) return safeguardSelfConflicts(a, applicant).map(selfDesignationMessage)
     if (n === 4) return disclosureStepIssues(a)
     if (n === 5) return historyStepIssues(a, { isRenewal })
     return []
@@ -340,7 +367,7 @@ export function IntakeWizard({
             <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
           )}
           {step === 2 && <StepIdentity a={a} patch={patch} />}
-          {step === 3 && <StepHousehold a={a} patch={patch} />}
+          {step === 3 && <StepHousehold a={a} patch={patch} applicant={applicant} />}
           {step === 4 && (
             <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
           )}
@@ -902,8 +929,11 @@ function StepIdentity({ a, patch }: StepProps) {
   )
 }
 
-function StepHousehold({ a, patch }: StepProps) {
+function StepHousehold({ a, patch, applicant }: StepProps & { applicant: ApplicantIdentity }) {
   const cohabs = a.cohabitants ?? []
+  const conflicts = safeguardSelfConflicts(a, applicant)
+  const nameConflict = conflicts.includes("name")
+  const phoneConflict = conflicts.includes("phone")
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Household &amp; safeguard</h2>
@@ -954,13 +984,25 @@ function StepHousehold({ a, patch }: StepProps) {
       </Field>
 
       <div className="space-y-3 rounded-md border border-hairline p-3">
-        <p className="text-xs text-text-low">
-          Person who will safeguard the handgun if you die or become disabled (form Q31 — must be a
-          N.Y. State resident). This person also signs the NYPD Acknowledgement form.
+        <p className="text-xs font-medium text-foreground">Who will safeguard your handgun (form Q31)</p>
+        <p className="rounded-md border border-hairline bg-surface-2/40 p-2.5 text-[12px] leading-relaxed text-text-mid">
+          {SAFEGUARD_NOT_YOU_NOTE}
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name">
-            <Input placeholder="Full name" value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
+            <Input
+              placeholder="Full name"
+              value={a.safeguardName ?? ""}
+              onChange={(e) => patch({ safeguardName: e.target.value })}
+              aria-invalid={nameConflict || undefined}
+              data-intake-invalid={nameConflict || undefined}
+              className={nameConflict ? "border-danger/60 focus-visible:ring-danger/30" : undefined}
+            />
+            {nameConflict && (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+                <ShieldAlert className="mt-0.5 size-3 shrink-0" /> <span>{selfDesignationMessage("name")}</span>
+              </p>
+            )}
           </Field>
           <Field label="Relationship to you">
             <Input value={a.safeguardRelation ?? ""} placeholder="Spouse, sibling…" onChange={(e) => patch({ safeguardRelation: e.target.value })} />
@@ -977,7 +1019,18 @@ function StepHousehold({ a, patch }: StepProps) {
             <UseHomeAddress a={a} current={a.safeguardAddress} onUse={(v) => patch({ safeguardAddress: v })} />
           </Field>
           <Field label="Telephone">
-            <Input value={a.safeguardPhone ?? ""} onChange={(e) => patch({ safeguardPhone: e.target.value })} />
+            <Input
+              value={a.safeguardPhone ?? ""}
+              onChange={(e) => patch({ safeguardPhone: e.target.value })}
+              aria-invalid={phoneConflict || undefined}
+              data-intake-invalid={phoneConflict || undefined}
+              className={phoneConflict ? "border-danger/60 focus-visible:ring-danger/30" : undefined}
+            />
+            {phoneConflict && (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+                <ShieldAlert className="mt-0.5 size-3 shrink-0" /> <span>{selfDesignationMessage("phone")}</span>
+              </p>
+            )}
           </Field>
         </div>
       </div>

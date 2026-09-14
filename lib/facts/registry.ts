@@ -10,9 +10,19 @@
  * registered but NEVER lives in case_facts — it is handled by lib/facts/ssn.
  */
 import type { WizardAnswers } from "@/lib/intake/answers"
+import { SAFEGUARD_NOT_YOU_NOTE } from "@/lib/safeguard/self-designation"
 
 export type FactType = "text" | "date" | "phone" | "zip" | "select"
 export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel"
+
+/**
+ * An explanatory note rendered ABOVE a group's rows in the details editor — for a rule
+ * that belongs to the whole group rather than one field. The safeguard group carries the
+ * "this can't be you, and here's why" explanation (NYPD step 7).
+ */
+export const GROUP_NOTES: Partial<Record<FactGroup, string>> = {
+  safeguard: SAFEGUARD_NOT_YOU_NOTE,
+}
 
 export interface FactSource {
   intake: WizardAnswers

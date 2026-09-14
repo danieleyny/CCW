@@ -2,7 +2,6 @@
 
 import { useRef, useState, useTransition } from "react"
 import { Check, Pencil, Loader2, AlertCircle } from "lucide-react"
-import { toast } from "sonner"
 import { setCaseFact } from "@/app/portal/facts/actions"
 import type { FactRowMeta } from "@/lib/facts/details-view"
 
@@ -22,6 +21,7 @@ export function FactRow({
   onSaved,
   onSsnSaved,
   focusNext,
+  conflictMessage,
 }: {
   caseId: string
   meta: FactRowMeta
@@ -31,6 +31,9 @@ export function FactRow({
   onSsnSaved: () => void
   /** Move focus to the next editable input in the list (Enter / tab-through). */
   focusNext: (from: HTMLElement) => boolean
+  /** A live validation conflict (e.g. this safeguard field is the applicant's own). Rings
+   *  the field red and shows the message — reuses the save-error inline style. */
+  conflictMessage?: string
 }) {
   const { key, label, type, kind, options, placeholder, uses, onFile, optional, example } = meta
   const [editing, setEditing] = useState(false) // pencil opened a filled/ssn row
@@ -39,6 +42,9 @@ export function FactRow({
   const [draft, setDraft] = useState(value)
   const [saved, setSaved] = useState(value) // last persisted value (ssn: always "")
   const [status, setStatus] = useState<Status>("idle")
+  // The specific server rejection (e.g. "that's your own email address") — shown inline so
+  // the reason lands on the field, not just a toast that scrolls away.
+  const [serverError, setServerError] = useState("")
   const [, start] = useTransition()
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -61,9 +67,10 @@ export function FactRow({
       const r = await setCaseFact(caseId, key, next, { skipRevalidate: true })
       if (r.error) {
         setStatus("error")
-        toast.error(r.error)
-        return // keep the draft in the box; blurring again retries
+        setServerError(r.error)
+        return // keep the draft in the box; editing again clears the error and retries
       }
+      setServerError("")
       setStatus("saved")
       setSaved(next)
       setEditing(false)
@@ -114,7 +121,7 @@ export function FactRow({
     onBlur,
     onKeyDown,
     className: `h-9 w-full max-w-[20rem] rounded-md border bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 ${
-      needsRing ? "border-warn/40 ring-2 ring-warn/15" : "border-hairline-strong"
+      conflictMessage || serverError ? "border-danger/50 ring-2 ring-danger/20" : needsRing ? "border-warn/40 ring-2 ring-warn/15" : "border-hairline-strong"
     }`,
   }
 
@@ -143,6 +150,7 @@ export function FactRow({
                 {...commonProps}
                 onChange={(e) => {
                   setDraft(e.target.value)
+                  if (serverError) setServerError("")
                   commit(e.target.value) // a select IS the commit
                 }}
               >
@@ -161,7 +169,10 @@ export function FactRow({
                 maxLength={type === "zip" ? 5 : kind === "ssn" ? 4 : undefined}
                 autoComplete={kind === "ssn" ? "off" : undefined}
                 placeholder={placeholder ?? (kind === "ssn" ? "last 4 digits" : undefined)}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => {
+                  setDraft(e.target.value)
+                  if (serverError) setServerError("")
+                }}
               />
             )}
             <StatusMark status={status} />
@@ -193,9 +204,15 @@ export function FactRow({
           </div>
         )}
         {usesLabel && <div className="mt-0.5 text-[11px] text-text-low">{usesLabel}</div>}
+        {conflictMessage && (
+          <div className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+            <AlertCircle className="mt-0.5 size-3 shrink-0" /> <span>{conflictMessage}</span>
+          </div>
+        )}
         {status === "error" && (
-          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-danger">
-            <AlertCircle className="size-3" /> Couldn&apos;t save — click away to try again.
+          <div className="mt-0.5 flex items-start gap-1 text-[11px] text-danger">
+            <AlertCircle className="mt-0.5 size-3 shrink-0" />{" "}
+            <span>{serverError || "Couldn't save — click away to try again."}</span>
           </div>
         )}
       </div>

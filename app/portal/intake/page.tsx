@@ -73,6 +73,16 @@ export default async function IntakePage() {
     guard = await evaluateSubmissionGuard(createAdminClient(), myCase.id)
   }
 
+  // The applicant's own identity, so the safeguard step can flag "this can't be you"
+  // (NYPD step 7). Split the client's full name into first/last for the detector.
+  const nameToks = (myCase.client.full_name ?? "").trim().split(/\s+/).filter(Boolean)
+  const applicant = {
+    firstName: nameToks[0] ?? "",
+    lastName: nameToks.length > 1 ? nameToks[nameToks.length - 1] : "",
+    email: myCase.client.email ?? "",
+    phone: myCase.client.phone ?? "",
+  }
+
   return (
     <div>
       {sponsorName && (
@@ -101,6 +111,7 @@ export default async function IntakePage() {
         disclosures={disclosures}
         guard={guard}
         aiEnabled={AI_ENABLED}
+        applicant={applicant}
       />
     </div>
   )
