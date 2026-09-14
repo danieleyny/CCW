@@ -41,6 +41,21 @@ export function SafeguardFlow({
 
   return (
     <div className="mt-6 space-y-5">
+      <div className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">
+        <p>
+          <span className="font-medium text-foreground">What you&apos;re agreeing to.</span> By signing this,
+          you agree to take custody of {applicant}&apos;s firearm and surrender it to the NYPD License Division
+          if {applicant} dies or becomes unable to manage it. The License Division may contact you directly to
+          arrange that.
+        </p>
+        <p className="mt-2">
+          NYPD requires this to be someone <span className="font-medium text-foreground">other than the
+          applicant</span> — at least 21 and a New York State resident — so there is always someone able to act.
+          That is why {applicant} named you. If this isn&apos;t something you can take on, let {applicant} know
+          rather than signing.
+        </p>
+      </div>
+
       <div className="rounded-lg border border-brass/40 bg-brass/10 p-3 text-sm text-brass-bright">
         Sign in front of a witness — not a notary. Leave the signature line blank until your witness is with
         you.

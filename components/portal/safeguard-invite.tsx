@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { sendSafeguardInvite } from "@/app/portal/requirements/actions"
 import { CopyLinkButton } from "@/components/portal/copy-link-button"
 import { Button } from "@/components/ui/button"
+import { SAFEGUARD_NOT_YOU_SHORT } from "@/lib/safeguard/self-designation"
 
 /**
  * SFG-01 — send the designated safeguard person a private link to complete, sign
@@ -35,6 +36,7 @@ export function SafeguardInvite({ caseId }: { caseId?: string }) {
 
   return (
     <div className="mt-3 rounded-md border border-hairline bg-surface-2/40 p-3">
+      <p className="mb-2 text-[11px] font-medium text-text-mid">{SAFEGUARD_NOT_YOU_SHORT}</p>
       <p className="text-xs text-text-mid">
         We can send the person you designated a private link to do this themselves — they sign the
         acknowledgement in front of a witness (no notary), upload it, and add a photo of their own government

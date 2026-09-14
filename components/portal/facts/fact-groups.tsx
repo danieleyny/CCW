@@ -6,6 +6,7 @@ import { FactRow } from "./fact-row"
 import { flagAttorneyReview } from "@/app/portal/facts/actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { FactGroupData, FactRowMeta } from "@/lib/facts/details-view"
+import { detectSelfDesignation, selfDesignationKeyMessages } from "@/lib/safeguard/self-designation"
 
 /**
  * Grouped, inline-editable fact rows — the one preparation surface, reused by the
@@ -65,9 +66,30 @@ export function FactGroups({
     return { requiredKeys: s, liveTotal: s.size }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, values])
+  // The safeguard person cannot be the applicant. Detect it live from the same values
+  // that drive the meter, ring the offending rows, and exclude them from "captured" — a
+  // conflicting safeguard field is filled but not validly complete.
+  const conflictMessages = useMemo(() => {
+    const fields = detectSelfDesignation({
+      applicant: {
+        firstName: values["applicant.legalFirstName"],
+        lastName: values["applicant.legalLastName"],
+        email: values["applicant.email"],
+        phone: values["applicant.phone.cell"],
+      },
+      safeguard: {
+        firstName: values["safeguard.firstName"],
+        lastName: values["safeguard.lastName"],
+        email: values["safeguard.email"],
+        phone: values["safeguard.phone"],
+      },
+    })
+    return selfDesignationKeyMessages(fields)
+  }, [values])
+
   const captured = useMemo(
-    () => [...requiredKeys].filter((k) => (values[k] ?? "").trim() !== "").length,
-    [requiredKeys, values]
+    () => [...requiredKeys].filter((k) => (values[k] ?? "").trim() !== "" && !conflictMessages[k]).length,
+    [requiredKeys, values, conflictMessages]
   )
 
   const citizenship = values["applicant.citizenship"] ?? ""
@@ -157,6 +179,11 @@ export function FactGroups({
           return (
             <section key={g.key} id={g.key} className="scroll-mt-20 rounded-lg border border-hairline bg-card p-4">
               <div className="engraved mb-1 text-text-low">{g.label}</div>
+              {g.note && (
+                <p className="mb-3 rounded-md border border-hairline bg-surface-2/40 p-2.5 text-[12px] leading-relaxed text-text-mid">
+                  {g.note}
+                </p>
+              )}
               {rows.map((r) => (
                 <FactRow
                   key={r.key}
@@ -166,6 +193,7 @@ export function FactGroups({
                   onSaved={(key, next) => setValues((prev) => ({ ...prev, [key]: next }))}
                   onSsnSaved={() => setSsnOnFile((prev) => ({ ...prev, [r.key]: true }))}
                   focusNext={focusNext}
+                  conflictMessage={conflictMessages[r.key]}
                 />
               ))}
               {/* #3 — "Neither" is an ELIGIBILITY answer, not a data point. State the

@@ -21,6 +21,7 @@ import { factDef } from "@/lib/facts/registry"
 import { setCaseSsn, getCaseSsn, ssnConfigured } from "@/lib/facts/ssn"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { inviteSafeguard, loadSafeguardInvite } from "@/lib/safeguard/invite"
+import { safeguardInviteConflict } from "@/lib/safeguard/self-designation"
 import { toUserFacingError } from "@/lib/schema-health"
 import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
 import { recomputeReferenceRequirement } from "@/lib/references/process"
@@ -1064,6 +1065,10 @@ export async function sendSafeguardInvite(
   if (!email) {
     return { error: "Add the safeguard person's email on Your details first, then send them the link." }
   }
+  // LAST LINE OF DEFENCE — never email a "please safeguard this person's firearm" invite
+  // to the applicant themselves. The safeguard person cannot be the applicant (NYPD step 7).
+  const conflict = safeguardInviteConflict(f)
+  if (conflict) return { error: conflict }
   const res = await inviteSafeguard(admin, actor.caseId, email)
   if (!res) return { error: "Couldn't send the link. Please try again." }
   await logActivity({

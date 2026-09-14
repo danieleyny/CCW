@@ -8,6 +8,7 @@ import { buildFactGroups, detailsMeter } from "@/lib/facts/details-view"
 import type { FactGroup } from "@/lib/facts/registry"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { portalStep12StatementsFor } from "@/lib/requirements/lon"
+import { detectSelfDesignation, selfDesignationKeyMessages } from "@/lib/safeguard/self-designation"
 
 type DB = SupabaseClient<Database>
 
@@ -51,7 +52,31 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
     ? ["you", "address", "contact", "physical", "employer", "safeguard", "safekeeping", "counsel", "sponsor"]
     : ["you", "address", "contact", "physical", "employer", "safeguard", "safekeeping", "counsel"]
   const { groups } = buildFactGroups(facts, hasSsn, detailsGroups, false, !!caseRow?.is_renewal)
-  const details = detailsMeter(groups)
+  // The safeguard person cannot be the applicant. A conflicting safeguard field is filled
+  // but not valid, so it must not count toward "captured" — readiness never reads complete
+  // on a self-designation. Identity comes from the fact layer, so this works identically on
+  // a sponsored case where the client record is provisioned rather than self-entered.
+  const selfConflictKeys = new Set(
+    Object.keys(
+      selfDesignationKeyMessages(
+        detectSelfDesignation({
+          applicant: {
+            firstName: facts["applicant.legalFirstName"],
+            lastName: facts["applicant.legalLastName"],
+            email: facts["applicant.email"],
+            phone: facts["applicant.phone.cell"],
+          },
+          safeguard: {
+            firstName: facts["safeguard.firstName"],
+            lastName: facts["safeguard.lastName"],
+            email: facts["safeguard.email"],
+            phone: facts["safeguard.phone"],
+          },
+        })
+      )
+    )
+  )
+  const details = detailsMeter(groups, selfConflictKeys)
 
   const resCount = (intake.residenceHistory ?? []).length
   const empCount = (intake.employmentHistory ?? []).length
