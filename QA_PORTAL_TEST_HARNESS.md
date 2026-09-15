@@ -163,6 +163,38 @@ and that the text survives a page reload.**
 Put one short sentence in each. **Before typing, record how many boxes the UI asks for.**
 Carry Guard must ask for **five**, not two and not six.
 
+### ⛔ Safeguard self-designation — you MUST try to break this
+A recent fix stops an applicant naming **themselves** as the safeguard person. NYPD's step 7 says
+"Identify an individual (**not yourself**)…", and before the fix nothing stopped it. Test all three
+fields, one at a time, reverting after each:
+
+| Enter as the safeguard person | Expect |
+|---|---|
+| First **Marcus**, Last **Powell** (the applicant's own name) | red field + "You can't name yourself as the safeguard person…" |
+| Email **se2018+applicant-qa2@gmail.com** (their own) | red field + a message about the Division needing to reach this person independently |
+| Phone **(212) 555-0148** (their own) | red field + a message about it having to be their number, not the applicant's |
+| All three at once | all three flag |
+
+Then confirm the **negatives** — these must NOT flag, or the guard is too aggressive to trust:
+
+| Enter | Expect |
+|---|---|
+| First **Jordan**, Last **Powell** (same surname, different person — a sibling) | **no flag** |
+| Email **se2018+safeguard-qa2@gmail.com** | **no flag** |
+| Safeguard address identical to the applicant's home address | **no flag** — a spouse or parent at the same address is valid |
+| **Marcus J. Powell** vs **marcus powell** | **flags** — middle initial and case must not defeat it |
+
+Also verify, with a conflicting value in place:
+- the safeguard group does **not** count as "captured" in the concierge data-ask
+- **"Send them the link" refuses** — we must never email a "safeguard this person's firearm" invite
+  to the applicant's own address
+- a page **reload** does not persist a conflicting value (the server should have rejected the write,
+  not just the UI)
+
+And read the explanation copy on all four surfaces — intake wizard, `/portal/details`, the SFG-01
+invite card, and `/g/<token>` — confirming each says **why** it can't be them (custody of the firearm
+if the applicant dies or is incapacitated), not merely that it can't.
+
 ### Safeguard person's page (`/g/<token>`, open in a private window — no login)
 Download the pre-filled acknowledgement, then upload **any** small PDF/JPG to both slots to confirm
 the upload path works. Record the exact button labels and any instruction that contradicts another
@@ -237,6 +269,10 @@ Each was found in the previous QA round. Mark every one **FIXED / STILL BROKEN /
 | P2-4 | One consistent "details captured" denominator across `/portal/details` and the concierge |
 | P2-5 | `/g/<token>/document` returns a PDF reliably; failure copy is not "invalid or has expired" |
 | — | **LON count is 5** for Carry Guard |
+| SFG-1 | Naming yourself as the safeguard person flags red on name, email AND phone — on the individual flow AND the sponsored flow |
+| SFG-2 | A same-surname sibling, a different email, and a shared home address do **not** flag |
+| SFG-3 | A conflicting safeguard blocks the invite and is not counted as captured |
+| SFG-4 | All four surfaces explain **why** it cannot be the applicant |
 
 ### Already investigated and cleared — do NOT re-report
 - Supabase `/auth/v1/verify` Gateway Timeout: transient, auth is fine.
