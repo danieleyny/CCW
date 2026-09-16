@@ -81,6 +81,7 @@ export function IntakeWizard({
   guard,
   aiEnabled = false,
   applicant,
+  licenseTrack = null,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -91,6 +92,9 @@ export function IntakeWizard({
   guard: SubmissionGuard | null
   aiEnabled?: boolean
   applicant: ApplicantIdentity
+  /** The case's derived license_track — so a sponsored Carry Guard case is never
+   *  labelled "Concealed carry" and its track can't be re-picked here (P1.2). */
+  licenseTrack?: string | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
@@ -364,7 +368,7 @@ export function IntakeWizard({
 
         <div className="rounded-lg border bg-card p-5">
           {step === 1 && (
-            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
+            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} />
           )}
           {step === 2 && <StepIdentity a={a} patch={patch} />}
           {step === 3 && <StepHousehold a={a} patch={patch} applicant={applicant} />}
@@ -707,10 +711,15 @@ function StepEligibility({
   patch,
   reasons,
   attempted,
-}: StepProps & { reasons: string[] | null; attempted: boolean }) {
+  licenseTrack,
+}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null }) {
   // Red exactly when (and only when) eligibilityStepIssues blocks on it.
   const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
   const residenceBad = attempted && !a.residence
+  // A sponsored armed-guard case's track is DERIVED (from the sponsorship + residence),
+  // not chosen here. Never label it "Concealed carry", and never show a carry/premises
+  // picker that could silently re-track it (P1.2).
+  const isGuardTrack = licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
@@ -732,20 +741,29 @@ function StepEligibility({
           </select>
         </Field>
       </div>
-      <Field
-        label="License type"
-        hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
-      >
-        <select
-          aria-label="License type"
-          value={a.licenseType ?? "carry"}
-          onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
-          className={SELECT_CLASS}
+      {isGuardTrack ? (
+        <Field
+          label="License type"
+          hint="Your company sponsors this licence. The Carry Guard track is set from your sponsorship — you don't choose it here."
         >
-          <option value="carry">Concealed carry</option>
-          <option value="premises">Premises — business</option>
-        </select>
-      </Field>
+          <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Carry Guard</div>
+        </Field>
+      ) : (
+        <Field
+          label="License type"
+          hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
+        >
+          <select
+            aria-label="License type"
+            value={a.licenseType ?? "carry"}
+            onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
+            className={SELECT_CLASS}
+          >
+            <option value="carry">Concealed carry</option>
+            <option value="premises">Premises — business</option>
+          </select>
+        </Field>
+      )}
       <div className="space-y-2 rounded-md border border-hairline p-3">
         <p className="text-xs text-text-low">Check any that apply (these route to attorney review):</p>
         <Check label="Felony or serious-offense conviction" checked={!!a.prohibitorFelony} onChange={(v) => patch({ prohibitorFelony: v })} />

@@ -75,6 +75,7 @@ export function ApplicationHistory({
   employment,
   employerSeed,
   outOfCity,
+  outOfCityHeld = "",
 }: {
   caseId: string
   residence: AddressHistoryEntry[]
@@ -82,6 +83,9 @@ export function ApplicationHistory({
   /** #9 — seed employment row 1 from the employer we already collected. */
   employerSeed?: { employed: boolean; startDate: string; name: string; address: string; occupation: string }
   outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
+  /** The persisted, explicit answer to "hold a licence from another NY county?" — a
+   *  tri-state so a saved "No" is distinct from "unanswered" (P2.1). "" = unanswered. */
+  outOfCityHeld?: "" | "no" | "yes"
 }) {
   // #9 — when the case has an employer with a start date and no MEANINGFUL employment
   // history yet, seed row 1 with the actual VALUES from it (dates, business name,
@@ -110,7 +114,9 @@ export function ApplicationHistory({
   const [emp, setEmp] = useState<EmploymentHistoryEntry[]>(seededEmp)
   const [ooc, setOoc] = useState(outOfCity)
   const [hasOoc, setHasOoc] = useState<"" | "no" | "yes">(
-    outOfCity.number || outOfCity.county || outOfCity.issuedOn || outOfCity.expiresOn ? "yes" : ""
+    // Prefer the explicit saved answer; fall back to inferring "yes" from legacy detail
+    // rows that predate the persisted tri-state. A saved "no" now survives a reload.
+    outOfCityHeld || (outOfCity.number || outOfCity.county || outOfCity.issuedOn || outOfCity.expiresOn ? "yes" : "")
   )
   const [pending, start] = useTransition()
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
@@ -124,7 +130,10 @@ export function ApplicationHistory({
       const r = await saveApplicationHistory(caseId, {
         residenceHistory: clean(res),
         employmentHistory: empClean,
-        outOfCity: ooc,
+        // "no" persists with the detail fields cleared; "yes" keeps them; "" leaves it
+        // unanswered. This is a sworn answer — the three states stay distinct (P2.1).
+        outOfCity: hasOoc === "yes" ? ooc : { number: "", county: "", issuedOn: "", expiresOn: "" },
+        outOfCityHeld: hasOoc,
       })
       // #11 — a failed save keeps the typed values on screen with an inline error; never revert.
       setStatus(r.error ? "error" : "saved")

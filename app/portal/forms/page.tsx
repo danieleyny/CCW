@@ -43,7 +43,7 @@ export default async function FormsPage() {
     { key: "social-media", title: "3-Year Social-Media Disclosure", desc: "Your accounts from the last three years (from intake).", notarize: false, fileable: true, filed: filedSet.has("SOC-01") },
     { key: "arrest-narratives", title: "Written Explanations", desc: "Formatted explanations for your disclosed matters.", notarize: false, fileable: false, filed: false, show: hasArrests },
     { key: "court-letters", title: "Certificate-of-Disposition Requests", desc: "Ready-to-mail letters to the court clerk, one per matter.", notarize: false, fileable: false, filed: false, show: hasArrests },
-    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed; notarize before filing.", notarize: "notarize", fileable: false, filed: false, show: !hasCohabitants },
+    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed — you sign it under penalty of perjury; no notary needed (per the official form's solo-resident section).", notarize: false, fileable: false, filed: false, show: !hasCohabitants },
     { key: "safeguard-designation", title: "Safeguard-Person Designation", desc: "Names who will take custody of your handgun if you die or become disabled (from intake). The person you named signs it in front of a witness (no notary) — don't sign it yourself.", notarize: "witness", fileable: false, filed: false, show: hasSafeguard },
   ].filter((d) => (d as { show?: boolean }).show !== false).map(({ ...d }) => d as FormDoc)
 

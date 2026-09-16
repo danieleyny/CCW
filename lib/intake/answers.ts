@@ -157,6 +157,9 @@ export interface WizardAnswers {
   outOfCityCounty?: string
   outOfCityIssuedOn?: string
   outOfCityExpiresOn?: string
+  /** Q9 explicit answer — "hold a licence from another NY county?" A tri-state on the
+   *  details screen ("" | "no" | "yes"); stored so a sworn "no" ≠ "unanswered" (P2.1). */
+  outOfCityHeld?: "no" | "yes"
   // Step 3 — household & safeguard
   cohabitants?: CohabitantEntry[]
   safeguardName?: string

@@ -96,6 +96,7 @@ export default async function DetailsPage() {
           issuedOn: intake.outOfCityIssuedOn ?? "",
           expiresOn: intake.outOfCityExpiresOn ?? "",
         }}
+        outOfCityHeld={intake.outOfCityHeld ?? ""}
       />
 
       <FirearmsRecords

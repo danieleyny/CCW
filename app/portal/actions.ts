@@ -8,7 +8,7 @@ import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { inviteReference, inviteCohabitant } from "@/lib/outreach"
 import type { DocumentType } from "@/lib/doc-types"
-import { enforceUploadedFile } from "@/lib/files/enforce"
+import { enforceUploadedFile, UploadRejected } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { smartDocument } from "@/lib/requirements/smart-documents"
@@ -57,11 +57,17 @@ export async function recordDocument(input: {
 
   // FMT-01, server side — the client check is bypassable (see lib/files/enforce).
   // Service role: reading storage metadata and removing a rejected object, both
-  // before we've decided this upload is legitimate enough to record.
-  const fileName = await enforceUploadedFile(createAdminClient(), {
-    path: input.path,
-    fileName: input.fileName,
-  })
+  // before we've decided this upload is legitimate enough to record. A rejection
+  // carries a SAFE, specific reason (wrong type, too large) — return it so the
+  // uploader can show it instead of a generic "try again" (P2.2). Any other failure
+  // still throws and stays generic on the client.
+  let fileName: string
+  try {
+    fileName = await enforceUploadedFile(createAdminClient(), { path: input.path, fileName: input.fileName })
+  } catch (e) {
+    if (e instanceof UploadRejected) return { error: e.message }
+    throw e
+  }
 
   const { count } = await supabase
     .from("documents")

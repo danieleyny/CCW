@@ -32,7 +32,7 @@ export function SafeguardFlow({
           <CheckCircle2 className="size-5" /> All set — thank you.
         </div>
         <p className="mt-2 text-sm">
-          Your signed acknowledgement for {applicant} has been received. Nothing more is needed — they&apos;ve
+          Your signed acknowledgement for {applicant}{" "}has been received. Nothing more is needed — they&apos;ve
           been notified.
         </p>
       </div>

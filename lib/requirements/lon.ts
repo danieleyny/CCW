@@ -58,9 +58,20 @@ export function lonStatementsFor(track?: string | null): number[] {
  * step-12 boxes. Do not "fix" this by dropping lop1 from lonStatementsFor() — that
  * would silently stop collecting something NYPD requires.
  *
- * OPEN: confirm whether NYPD expects lop1 on a separate LON document for Carry Guard
- * or somewhere else in the portal. Until that is answered, REQUIRED_LON_STATEMENTS is
- * left alone.
+ * OPEN (P0.2): confirm whether NYPD expects lop1 on a separate LON document for Carry
+ * Guard or somewhere else in the portal. Until that is answered, REQUIRED_LON_STATEMENTS
+ * is left alone. Owner: NYPD License Division / firearms counsel.
+ *
+ * OPEN (P0.2 + P0.1 interaction): the two-party LON UX in the QA report (applicant sees
+ * "3 of 5" with six boxes, 1/3/5 disabled as sponsor-owned; the sponsor edits box 3) is
+ * being invalidated by the P0.1 privacy lockdown — after it, a sponsor no longer sees or
+ * edits ANY of the applicant's file, including the LON. So the employer-supplied
+ * statements (lop1 business-need, lop5 employer-awareness) need a NEW home that routes
+ * the company's input WITHOUT exposing the applicant's file — e.g. a §5-04 sponsor LON
+ * as part of the company packet (party='sponsor'). That is a design decision, not a
+ * bug fix; do not rebuild the old shared-dialog editing here. Applicant-side count/set
+ * alignment is deferred until the ownership of lop1/lop5 is settled, so a sworn set is
+ * never guessed. See docs/FILING_AUTHORITY_INVENTORY.md's sibling concerns.
  */
 export function portalStep12StatementsFor(track?: string | null): number[] {
   return lonStatementsFor(track).filter((n) => n !== 1)

@@ -36,11 +36,14 @@ export default async function SponsorHome() {
           <SectionEyebrow>Sponsor portal</SectionEyebrow>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your sponsored files</h1>
         </div>
+        {/* P3 — this is a high-touch email seam today, not an in-app flow. Label it
+            honestly so a rep knows it opens an email rather than provisioning instantly.
+            (A minimal in-app request that creates a staff task is the tracked follow-up.) */}
         <a
           href={ADD_APPLICANT_MAILTO}
           className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
         >
-          <UserPlus className="size-4" /> Add another applicant
+          <UserPlus className="size-4" /> Email us to add another applicant
         </a>
       </div>
 
