@@ -15,10 +15,13 @@ interface TrailEntry {
   at: string
 }
 
+// Scope no longer widens what a sponsor sees — every value resolves to the company
+// packet only (party_scope, migration 20260915000100). The label says so plainly at
+// each value, so a case still carrying a legacy 'full'/'assist' scope reads honestly.
 const SCOPE_LABEL: Record<string, string> = {
-  full: "Your full file, including sensitive records",
-  assist: "Ordinary paperwork only — sensitive records stay private",
-  packet_only: "Only their own company packet",
+  full: "Their company packet only — your own file stays private to you",
+  assist: "Their company packet only — your own file stays private to you",
+  packet_only: "Their company packet only — your own file stays private to you",
 }
 
 const ACTION_LABEL: Record<string, string> = {
