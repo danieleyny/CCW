@@ -129,6 +129,9 @@ export async function saveApplicationHistory(
     residenceHistory: unknown[]
     employmentHistory: unknown[]
     outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
+    /** Explicit tri-state for "hold a licence from another NY county?" — "" | "no" | "yes".
+     *  Persisted so a sworn "No" is distinct from "unanswered" and survives a reload (P2.1). */
+    outOfCityHeld?: "" | "no" | "yes"
     /** Portal tables with no scalar home — optional so existing callers stay valid. */
     firearms?: unknown[]
     otherLicenses?: unknown[]
@@ -151,6 +154,7 @@ export async function saveApplicationHistory(
     outOfCityCounty: input.outOfCity.county || undefined,
     outOfCityIssuedOn: input.outOfCity.issuedOn || undefined,
     outOfCityExpiresOn: input.outOfCity.expiresOn || undefined,
+    ...(input.outOfCityHeld !== undefined ? { outOfCityHeld: input.outOfCityHeld || undefined } : {}),
     ...(input.firearms ? { firearms: input.firearms } : {}),
     ...(input.otherLicenses ? { otherLicenses: input.otherLicenses } : {}),
   }

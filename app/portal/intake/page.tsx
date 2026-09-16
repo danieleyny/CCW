@@ -112,6 +112,7 @@ export default async function IntakePage() {
         guard={guard}
         aiEnabled={AI_ENABLED}
         applicant={applicant}
+        licenseTrack={(myCase.license_track as string | null) ?? null}
       />
     </div>
   )

@@ -18,9 +18,10 @@ export default async function ChecklistPage() {
   // V3-P2.1 — ONE source of truth: the versioned requirements engine, loaded by
   // the same function /portal/documents uses so the two views cannot disagree.
   const supabase = await createClient()
-  // For a concierge case, /portal/concierge is home — never a checklist dead end
-  // (Part A). Send them there instead of showing an apologetic banner.
-  if (myCase.service_mode === "concierge") redirect("/portal/concierge")
+  // For a concierge case, /portal/concierge is home — there is no separate checklist.
+  // Land them on the vault WITH a one-time explanation (P1.3) rather than a silent
+  // bounce, so arriving from a stale link or bookmark makes sense.
+  if (myCase.service_mode === "concierge") redirect("/portal/concierge?from=checklist")
   const view = await loadRequirementView(supabase, myCase)
   // A sponsored case always carries party='sponsor' packet items — so if any item is
   // sponsor-managed, the case is sponsored. Used to lock the employer's Letter-of-

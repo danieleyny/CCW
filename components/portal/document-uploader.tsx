@@ -125,7 +125,7 @@ export function DocumentUploader({
       // kind (so a passport tagged under a residence item can't mis-store), and
       // documentKind drives the multi-attach on the server.
       const uploadType = selectedKind ? selectedKind.documentType : type
-      await recordDocument({
+      const res = await recordDocument({
         documentId,
         caseId,
         type: uploadType,
@@ -134,6 +134,12 @@ export function DocumentUploader({
         path,
         fileName: check.sanitizedName,
       })
+      // A rejection returns a safe, specific reason (wrong type, too large) — show it,
+      // not the generic fallback. The server already removed the stored object.
+      if (res?.error) {
+        toast.error(res.error, { duration: 9000 })
+        return
+      }
       toast.success(`Uploaded — ${label} is now pending review.`)
       router.refresh()
     } catch (err) {
