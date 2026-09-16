@@ -1,18 +1,18 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { ShieldAlert, Check, Loader2 } from "lucide-react"
+import { ShieldAlert, ShieldCheck, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { recordSponsorConsent } from "@/app/portal/sponsor/actions"
-import { SPONSOR_SENSITIVE_CATEGORIES, sponsorConsentBody } from "@/config/sponsor-consent"
+import { SPONSOR_CAN_DO, SPONSOR_CANNOT_SEE, sponsorConsentBody } from "@/config/sponsor-consent"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 /**
- * INFORMED consent, gating all sponsor visibility. It names the human + company
- * and spells out the exact sensitive categories the rep can open — generic
- * wording would not be consent for this scope. Nothing turns on until "I consent".
+ * INFORMED consent, gating all sponsor visibility. It names the human + company and
+ * is precise BOTH ways: exactly what the rep can do (the company's side) and exactly
+ * what they can never see (your own file). Nothing turns on until "I consent".
  */
 export function ConsentScreen({
   sponsorshipId,
@@ -46,28 +46,39 @@ export function ConsentScreen({
             {rep} of {company} wants to help with your file
           </h2>
           <p className="mt-1 text-sm text-text-mid">
-            To sponsor your armed-guard licence, {rep} will help complete your application — uploading
-            documents and preparing forms on your behalf — which means seeing sensitive records. Anything
-            sworn stays a draft until <span className="text-foreground">you</span> sign it. Read exactly
-            what this means, then decide.
+            To sponsor your armed-guard licence, {rep} completes the <span className="text-foreground">company&apos;s</span>{" "}
+            part of your application. They never see your own file, and you still file your application
+            yourself. Read exactly what this means, then decide.
           </p>
         </div>
       </div>
 
-      <div className="rounded-md border border-hairline bg-card p-4">
-        <div className="engraved text-text-low">They will be able to open</div>
-        <ul className="mt-2 space-y-1.5 text-sm text-text-mid">
-          {SPONSOR_SENSITIVE_CATEGORIES.map((c) => (
-            <li key={c} className="flex gap-2">
-              <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-brass" />
-              {c}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 border-t border-hairline pt-3 text-xs text-text-low">
-          Every time {rep} opens a sensitive document, it is recorded and shown to you here. You can
-          withdraw this access at any time — it stops immediately.
-        </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-md border border-hairline bg-card p-4">
+          <div className="engraved text-text-low">What {rep} can do</div>
+          <ul className="mt-2 space-y-1.5 text-sm text-text-mid">
+            {SPONSOR_CAN_DO.map((c) => (
+              <li key={c} className="flex gap-2">
+                <Check className="mt-0.5 size-3.5 shrink-0 text-ok" />
+                {c}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-md border border-ok/30 bg-ok/[0.04] p-4">
+          <div className="engraved text-text-low">What {rep} can never see</div>
+          <ul className="mt-2 space-y-1.5 text-sm text-text-mid">
+            {SPONSOR_CANNOT_SEE.map((c) => (
+              <li key={c} className="flex gap-2">
+                <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-ok" />
+                {c}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 border-t border-hairline pt-3 text-xs text-text-low">
+            You can withdraw {rep}&apos;s access at any time — it stops immediately.
+          </p>
+        </div>
       </div>
 
       <p className="max-w-prose text-sm leading-relaxed text-text-mid">{sponsorConsentBody(company, rep)}</p>

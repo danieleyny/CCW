@@ -2,11 +2,14 @@
  * THE ACCEPTANCE GATE for the sponsor portal.
  *
  * A sponsoring company's rep is a third party we let near an applicant's
- * firearms-licence file — including, at full scope, sealed arrest material and
- * SSN. This suite proves the DATABASE refuses what it must, in every direction:
+ * firearms-licence file. P0.1: the rep sees ONLY their own company packet
+ * (party='sponsor') — never the applicant's file, at ANY scope value. This suite
+ * proves the DATABASE refuses what it must, in every direction:
  *   • no binding, no consent, or revoked → the rep sees nothing;
  *   • cross-case isolation;
- *   • at 'assist', disclosure rows/docs never surface (no file_path either);
+ *   • the applicant's requirements/documents (disclosures AND ordinary paperwork)
+ *     never surface to the rep, at full OR assist scope;
+ *   • a disclosure document_id passed straight to sponsor_open_document returns false;
  *   • the rep has NO direct read on cases/case_requirements/documents;
  *   • the rep can never write a signature (guard_signature_signer + RLS);
  *   • REVERSE: the applicant's payload for a sponsor row carries no storage path.
@@ -132,7 +135,7 @@ describe.skipIf(!reachable)("sponsor scope — the two-way firewall", () => {
     expect((await rep.from("sponsor_document_feed").select("document_id")).data ?? []).toEqual([])
   })
 
-  it("after consent, the rep sees the case and (at full scope) the whole file", async () => {
+  it("after consent, the rep sees the case and ONLY the company packet — even at full scope", async () => {
     await admin
       .from("case_sponsorships")
       .update({ applicant_consented_at: new Date().toISOString(), status: "active", scope: "full" })
@@ -143,28 +146,33 @@ describe.skipIf(!reachable)("sponsor scope — the two-way firewall", () => {
 
     const { data: feed } = await rep.from("sponsor_requirement_feed").select("req_code, party, scope")
     const codes = (feed ?? []).map((r) => r.req_code).sort()
-    // Full scope: disclosure (ARR-01), ordinary (IDN-01), and the packet (SPN-01).
-    expect(codes).toContain("ARR-01")
-    expect(codes).toContain("IDN-01")
-    expect(codes).toContain("SPN-01")
+    // P0.1 — the sponsor packet ONLY. The applicant's own file never surfaces:
+    // not a sealed disclosure (ARR-01), not even ordinary paperwork (IDN-01).
+    expect(codes).toEqual(["SPN-01"])
+    expect(codes).not.toContain("ARR-01")
+    expect(codes).not.toContain("IDN-01")
+    // The one row the rep does see is their own, resolved at full.
+    expect((feed ?? []).find((r) => r.req_code === "SPN-01")?.party).toBe("sponsor")
   })
 
-  it("the document feed exposes NO file_path, ever", async () => {
-    const { data } = await rep.from("sponsor_document_feed").select("*").limit(1)
+  it("the document feed exposes NO file_path, ever (and only the packet doc)", async () => {
+    const { data } = await rep.from("sponsor_document_feed").select("*")
+    expect((data ?? []).map((d) => d.req_code)).toEqual(["SPN-01"])
     expect(data!.length).toBeGreaterThan(0)
     expect(Object.keys(data![0])).not.toContain("file_path")
   })
 
-  it("at 'assist', disclosure rows and their documents disappear", async () => {
+  it("at 'assist' too, the applicant's file (disclosure AND ordinary) stays absent", async () => {
     await admin.from("case_sponsorships").update({ scope: "assist" }).eq("id", sponsorshipId)
 
     const { data: feed } = await rep.from("sponsor_requirement_feed").select("req_code")
     const codes = (feed ?? []).map((r) => r.req_code)
-    expect(codes).not.toContain("ARR-01") // hidden disclosure — absent at assist
-    expect(codes).toContain("IDN-01") // ordinary paperwork — still visible
+    expect(codes).not.toContain("ARR-01") // hidden disclosure
+    expect(codes).not.toContain("IDN-01") // ordinary applicant paperwork — also hidden now
+    expect(codes).toEqual(["SPN-01"])
 
     const { data: docs } = await rep.from("sponsor_document_feed").select("req_code")
-    expect((docs ?? []).map((d) => d.req_code)).not.toContain("ARR-01")
+    expect((docs ?? []).map((d) => d.req_code)).toEqual(["SPN-01"])
 
     await admin.from("case_sponsorships").update({ scope: "full" }).eq("id", sponsorshipId)
   })
@@ -187,21 +195,41 @@ describe.skipIf(!reachable)("sponsor scope — the two-way firewall", () => {
     expect(data ?? []).toEqual([]) // nothing was written, by RLS and/or the DB trigger
   })
 
-  it("sponsor_open_document authorizes + logs a full-scope read, and refuses a non-full one", async () => {
+  it("sponsor_open_document opens the packet doc and logs it, but REFUSES applicant docs at full scope", async () => {
     await admin.from("case_sponsorships").update({ scope: "full" }).eq("id", sponsorshipId)
-    const { data: ok } = await rep.rpc("sponsor_open_document", { p_document_id: idDocId })
+
+    // The rep's own packet document opens (and is logged).
+    const { data: ok } = await rep.rpc("sponsor_open_document", { p_document_id: spnDocId })
     expect(ok).toBe(true)
     const { data: log } = await admin
       .from("document_access_log")
       .select("action, viewer_role")
-      .eq("document_id", idDocId)
+      .eq("document_id", spnDocId)
     expect(log?.some((l) => l.action === "view_url_issued" && l.viewer_role === "sponsor")).toBe(true)
 
-    // At 'assist' the disclosure doc leaves the feed → open is refused.
-    await admin.from("case_sponsorships").update({ scope: "assist" }).eq("id", sponsorshipId)
-    const { data: no } = await rep.rpc("sponsor_open_document", { p_document_id: arrestDocId })
-    expect(no).toBe(false)
-    await admin.from("case_sponsorships").update({ scope: "full" }).eq("id", sponsorshipId)
+    // P0.1 acceptance #2 — a known DISCLOSURE document_id passed straight to the RPC
+    // returns false, at FULL scope, and logs nothing. Same for ordinary applicant docs.
+    const { data: noArr } = await rep.rpc("sponsor_open_document", { p_document_id: arrestDocId })
+    expect(noArr).toBe(false)
+    const { data: noId } = await rep.rpc("sponsor_open_document", { p_document_id: idDocId })
+    expect(noId).toBe(false)
+    const { data: arrLog } = await admin
+      .from("document_access_log")
+      .select("id")
+      .eq("document_id", arrestDocId)
+      .eq("viewer_role", "sponsor")
+    expect(arrLog ?? []).toEqual([])
+  })
+
+  it("withdrawal cuts access immediately — the packet disappears too", async () => {
+    await admin.from("case_sponsorships").update({ revoked_at: new Date().toISOString(), status: "revoked" }).eq("id", sponsorshipId)
+    expect((await rep.from("sponsor_case_scope").select("case_id")).data ?? []).toEqual([])
+    expect((await rep.from("sponsor_requirement_feed").select("req_code")).data ?? []).toEqual([])
+    expect((await rep.from("sponsor_document_feed").select("document_id")).data ?? []).toEqual([])
+    const { data: gone } = await rep.rpc("sponsor_open_document", { p_document_id: spnDocId })
+    expect(gone).toBe(false)
+    // Restore for any later assertions.
+    await admin.from("case_sponsorships").update({ revoked_at: null, status: "active" }).eq("id", sponsorshipId)
   })
 
   it("REVERSE DIRECTION: the applicant's payload for a sponsor row has no storage path", async () => {

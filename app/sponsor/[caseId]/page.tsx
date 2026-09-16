@@ -1,26 +1,13 @@
-import { Building2, FileText, Landmark, Mail, IdCard } from "lucide-react"
-import { resolveFacts } from "@/lib/facts/resolve"
-import { FactGroups } from "@/components/portal/facts/fact-groups"
-import { buildFactGroups } from "@/lib/facts/details-view"
-import type { FactGroup } from "@/lib/facts/registry"
+import { Building2, Landmark, Mail, IdCard } from "lucide-react"
 import { sponsorItemState, SPONSOR_ITEM_COPY } from "@/lib/sponsor/status"
-import { sectionFor, SECTIONS, SECTION_ORDER } from "@/lib/requirements/sections"
-import {
-  loadSponsorCase,
-  loadSponsorRequirements,
-  loadSponsorDocuments,
-  loadSponsorRosterProgress,
-} from "@/lib/sponsor/queries"
-import { actionFor, conciergeScopeFor } from "@/lib/requirements/actions"
+import { loadSponsorCase, loadSponsorRequirements, loadSponsorDocuments } from "@/lib/sponsor/queries"
+import { actionFor } from "@/lib/requirements/actions"
 import { brand } from "@/config/brand"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { loadRequirementView } from "@/lib/portal/requirement-view"
-import type { MyCase } from "@/lib/portal"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { SponsorUploader } from "@/components/sponsor/sponsor-uploader"
 import { CompanyProfileForm, type CompanyProfile } from "@/components/sponsor/company-profile-form"
 import { OpenDocumentButton } from "@/components/sponsor/open-document-button"
-import { SponsorApplicantFile, type SponsorFileRow } from "@/components/sponsor/sponsor-applicant-file"
 import { PrepareCompanyFormButton } from "@/components/sponsor/prepare-company-form-button"
 
 export const metadata = { title: "Sponsored file", robots: { index: false, follow: false } }
@@ -45,15 +32,10 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
     )
   }
 
-  const [reqs, docs, roster] = await Promise.all([
-    loadSponsorRequirements(caseId),
-    loadSponsorDocuments(caseId),
-    loadSponsorRosterProgress(caseId),
-  ])
+  const [reqs, docs] = await Promise.all([loadSponsorRequirements(caseId), loadSponsorDocuments(caseId)])
 
   const docByReq = new Map<string, (typeof docs)[number]>()
   for (const d of docs) if (!docByReq.has(d.req_code)) docByReq.set(d.req_code, d)
-  const rosterByReq = new Map(roster.map((r) => [r.req_code, r]))
 
   // The company profile — entered ONCE, then every company document is pre-filled
   // from it. It's the control the SPN-01 pre-fill depends on, so it renders first
@@ -122,56 +104,12 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
 
   // Hide not-applicable items entirely (e.g. REF-01 doesn't apply to the armed
   // track) so the rep never sees a "Four references" row that isn't real.
+  // Only the company packet (party='sponsor') is ever the sponsor's to see or work.
+  // party_scope() ensures the feed returns nothing else, at any scope; we never read
+  // the applicant's requirements, documents or facts here (P0.1).
   const packet = reqs.filter((r) => r.party === "sponsor" && r.status !== "na")
-  const applicant = reqs.filter((r) => r.party === "applicant" && r.status !== "na")
-  // Group the assist-scope list by the shared registry sections (same taxonomy the
-  // applicant's own surfaces use).
-  const applicantGroups = SECTIONS.filter((s) => !s.hidden && s.key !== "sponsor")
-    .map((s) => ({ key: s.key, title: s.title, rows: applicant.filter((r) => sectionFor(r.req_code) === s.key) }))
-    .filter((g) => g.rows.length > 0)
-    .sort((a, b) => SECTION_ORDER[a.key] - SECTION_ORDER[b.key])
-
-  // At full scope the rep gets execution parity on the applicant's file — upload +
-  // prepare drafts through the SAME actions the applicant uses. We load the
-  // requirement view (admin — the rep is already authorized for full scope) only
-  // for the prefills; the scoped feed above still governs what rows exist.
-  let fileRows: SponsorFileRow[] | null = null
-  if (scope.scope === "full") {
-    const { data: cl } = await admin
-      .from("cases")
-      .select("client_id, clients:client_id(full_name, borough, zip)")
-      .eq("id", caseId)
-      .single()
-    if (cl?.client_id) {
-      const client = cl.clients as unknown as { full_name: string; borough: string | null; zip: string | null } | null
-      const myCase = {
-        id: caseId,
-        client_id: cl.client_id,
-        stage: scope.stage,
-        client: { full_name: client?.full_name ?? scope.applicant_name, borough: client?.borough ?? null, zip: client?.zip ?? null },
-      } as unknown as MyCase
-      const view = await loadRequirementView(admin, myCase)
-      fileRows = applicant.map((r) => ({
-        reqCode: r.req_code,
-        title: r.title,
-        status: r.status,
-        hasDoc: !!docByReq.get(r.req_code),
-        docStatus: docByReq.get(r.req_code)?.status ?? null,
-        docNote: docByReq.get(r.req_code)?.review_notes ?? null,
-        documentId: docByReq.get(r.req_code)?.document_id ?? null,
-        prefill: view.prefills[r.req_code] ?? {},
-      }))
-    }
-  }
 
   const title = (code: string, fallback: string) => actionFor(code)?.customerTitle ?? fallback
-
-  // Shared details — the ONE fact layer, editable here through the same resolver
-  // and setCaseFact the applicant uses (attributed as a sponsor edit). Only at full
-  // scope: setCaseFact authorizes a sponsor write solely at full scope, so we show
-  // the editable surface only there. The SSN is NEVER shown to a sponsor.
-  const facts = scope.scope === "full" ? await resolveFacts(admin, caseId) : null
-  const detailGroups: FactGroup[] = ["sponsor", "you", "address", "contact", "physical", "employer", "safeguard"]
 
   return (
     <div className="space-y-6">
@@ -264,83 +202,13 @@ export default async function SponsorCasePage({ params }: { params: Promise<{ ca
         </div>
       </section>
 
-      {/* The applicant's file — rendered through party_scope. */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <FileText className="size-4 text-brass" />
-          <h2 className="text-lg font-semibold tracking-tight">The applicant&apos;s file</h2>
-        </div>
-        {scope.scope === "packet_only" ? (
-          <p className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">
-            Your access covers your company packet only.
-          </p>
-        ) : fileRows ? (
-          // Full scope → execution parity (upload + prepare drafts).
-          <SponsorApplicantFile caseId={caseId} rows={fileRows} />
-        ) : applicant.length === 0 ? (
-          <p className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">
-            Nothing to show yet — the applicant&apos;s documents will appear here as they&apos;re added.
-          </p>
-        ) : (
-          // assist scope → read-only view of the non-disclosure paperwork, grouped
-          // by the shared sections.
-          <div className="space-y-6">
-            {applicantGroups.map((g) => (
-              <div key={g.key}>
-                <h3 className="engraved-sm mb-1.5 text-text-mid">{g.title}</h3>
-                <div className="space-y-2">
-                  {g.rows.map((r) => {
-                    const doc = docByReq.get(r.req_code)
-                    const prog = rosterByReq.get(r.req_code)
-                    const sensitive = conciergeScopeFor(r.req_code) === "hidden"
-                    return (
-                      <div key={r.case_requirement_id} className="flex items-start justify-between gap-3 rounded-lg border border-hairline bg-card p-4">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">{title(r.req_code, r.title)}</div>
-                    <div className="mt-0.5 text-xs text-text-mid">
-                      {r.req_code} ·{" "}
-                      {r.status === "na" ? (
-                        "Not needed"
-                      ) : (
-                        <span className={SPONSOR_ITEM_COPY[sponsorItemState(r.status, doc?.status, !!doc)].className}>
-                          {SPONSOR_ITEM_COPY[sponsorItemState(r.status, doc?.status, !!doc)].label}
-                        </span>
-                      )}
-                      {prog && prog.required_count != null && ` · ${prog.done_count ?? 0} of ${prog.required_count} back`}
-                    </div>
-                    {sponsorItemState(r.status, doc?.status, !!doc) === "changes" && doc?.review_notes && (
-                      <p className="mt-1.5 rounded-md bg-warn/10 px-2 py-1.5 text-xs text-warn">
-                        Sent back: {doc.review_notes}
-                      </p>
-                    )}
-                  </div>
-                  {doc && r.scope === "full" ? (
-                    <OpenDocumentButton documentId={doc.document_id} sensitive={sensitive} />
-                  ) : null}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Shared details — entered once, reused on every form (full scope only). */}
-      {facts && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <IdCard className="size-4 text-brass" />
-            <h2 className="text-lg font-semibold tracking-tight">Shared details</h2>
-          </div>
-          <p className="text-sm text-text-mid">
-            Fix any of these once and it&apos;s corrected on every form that uses it. The applicant&apos;s
-            Social Security number is never shown here.
-          </p>
-          <FactGroups caseId={caseId} {...buildFactGroups(facts, false, detailGroups, false)} />
-        </section>
-      )}
+      {/* The applicant's own file — their identity, history and disclosures — is NEVER
+          shown to a sponsor (P0.1). The sponsor works only their company packet above;
+          the applicant files their own application. This is enforced server-side in
+          party_scope() (migration 20260915000100), not by hiding UI: the sponsor feeds
+          return no applicant rows and sponsor_open_document refuses an applicant
+          document id. There is deliberately no "applicant's file" or "shared details"
+          section here. */}
 
       {scope.license_track === "sponsored_unresolved" && (
         <p className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/10 p-4 text-sm text-warn">

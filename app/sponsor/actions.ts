@@ -62,10 +62,11 @@ export async function uploadSponsorDocument(formData: FormData): Promise<{ ok?: 
   const requirement = req?.requirement as unknown as { party: string; document_type: string | null } | null
   if (!req) return { error: "That requirement isn't on this case." }
   if (!requirement?.document_type) return { error: "This item is completed as a form, not an upload." }
-  // The company packet (party='sponsor') is always the rep's to upload. Uploading
-  // the APPLICANT's own paperwork is parity that only full scope grants
-  // ("Pamela uploaded your utility bill"). Never a signature or a submit.
-  if (requirement.party === "applicant" && scope.scope !== "full") {
+  // The sponsor uploads ONLY their own company packet (party='sponsor'), at any scope.
+  // A sponsor never touches the applicant's own paperwork — that's the applicant's file
+  // (P0.1). This mirrors the party_scope() read boundary on the write side; scope no
+  // longer widens what the sponsor can reach.
+  if (requirement.party !== "sponsor") {
     return { error: "Your access is limited to your company packet." }
   }
 
