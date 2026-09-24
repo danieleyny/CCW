@@ -21,6 +21,14 @@ const ALLOW = new Set([
   "content/trainer-onboarding.ts",
   "config/agreements.ts",
 ])
+// NARROW per-file phrase exemptions — the file is still scanned, but these exact strings
+// are stripped first, so any OTHER banned word in the same file still fails. Used for
+// legitimate proper nouns / negating disclaimers, never to wave a file through.
+const PHRASE_ALLOW: Record<string, RegExp[]> = {
+  // Partner config: the AAA's proper-noun panel name (no claim about NYPD speed), and an
+  // attorney's advertising disclaimer that NEGATES a guarantee (same use as brand.ts).
+  "config/partners.ts": [/Expedited Panels?/g, /Prior results do not guarantee a similar outcome\./g],
+}
 const BANNED: [string, RegExp][] = [
   ["guarantee", /guarantee/i],
   ["expedite", /expedite/i],
@@ -67,7 +75,8 @@ describe("copy guard — AGENTS.md rule 4 (banned marketing words)", () => {
     for (const f of files) {
       const rel = relative(root, f)
       if (ALLOW.has(rel)) continue
-      const text = readFileSync(f, "utf8")
+      let text = readFileSync(f, "utf8")
+      for (const re of PHRASE_ALLOW[rel] ?? []) text = text.replace(re, "")
       for (const [name, re] of BANNED) {
         if (re.test(text)) hits.push(`${rel}: "${name}"`)
       }

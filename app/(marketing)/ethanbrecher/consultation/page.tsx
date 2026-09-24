@@ -10,6 +10,7 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { PartnerComingSoon } from "@/components/marketing/partner-coming-soon"
 import { PartnerPreviewChip } from "@/components/marketing/partner-preview-chip"
 import { CredentialBadge, INDEPENDENCE_DISCLAIMER } from "@/components/marketing/partner-card"
+import { PartnerAdvertisingFooter } from "@/components/marketing/partner-advertising-footer"
 import { ConsultationForm } from "@/components/marketing/consultation-form"
 import type { Partner } from "@/config/partners"
 
@@ -75,15 +76,12 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:py-16">
         <header className="max-w-2xl">
           <SectionEyebrow>Independent legal counsel</SectionEyebrow>
-          <h1
-            style={{ fontFamily: "var(--display)" }}
-            className="mt-3 text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl"
-          >
+          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
             Request a consultation
           </h1>
-          <p className="mt-4 text-lg text-[var(--ink-soft)]">
-            Tell {partnerFullName(partner)} what you need to talk through. We forward your request to
-            him directly — he reviews each one personally and reaches out to arrange the call.
+          <p className="mt-4 text-lg text-text-mid">
+            Your request goes straight to his office. Gun License NYC never sees it. He reviews each
+            request personally and reaches out at his earliest availability to arrange the call.
           </p>
         </header>
 
@@ -102,9 +100,9 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
 
           {/* WHO YOU'RE WRITING TO — compact card, above the form on mobile */}
           <aside className="lg:order-2 lg:col-start-2 lg:row-start-1">
-            <div className="rounded-xl border border-[var(--rule)] bg-[var(--paper)] p-5 shadow-[0_18px_48px_rgba(7,17,31,0.09)]">
+            <div className="rounded-xl border border-hairline bg-card p-5">
               <div className="flex items-center gap-4">
-                <div className="size-16 shrink-0 overflow-hidden rounded-md border border-[var(--rule)] bg-[var(--ivory)]">
+                <div className="size-16 shrink-0 overflow-hidden rounded-md border border-hairline bg-surface-2">
                   <Image
                     src={partner.photo.src}
                     alt={partner.photo.alt}
@@ -115,13 +113,10 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
                   />
                 </div>
                 <div className="min-w-0">
-                  <p
-                    style={{ fontFamily: "var(--display)" }}
-                    className="font-semibold leading-tight text-[var(--ink)]"
-                  >
+                  <p className="font-display font-semibold leading-tight text-text-hi">
                     {partnerFullName(partner)}
                   </p>
-                  <p className="mt-0.5 text-sm text-[var(--electric-deep)]">{partner.firm}</p>
+                  <p className="mt-0.5 text-sm text-brass">{partner.firm}</p>
                 </div>
               </div>
               <ul className="mt-4 flex flex-wrap gap-2">
@@ -132,17 +127,22 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
                   </CredentialBadge>
                 ))}
               </ul>
-              <p className="mt-4 border-t border-[var(--rule)] pt-4 text-sm text-[var(--ink-muted)]">
-                <span className="font-medium text-[var(--ink)]">{rate}</span> · billed by his office
+              <p className="mt-4 border-t border-hairline pt-4 text-sm text-text-low">
+                <span className="font-medium text-text-hi">{rate}</span> · billed by his office
               </p>
             </div>
           </aside>
         </div>
 
         {/* DISCLAIMERS */}
-        <div className="mt-12 max-w-3xl space-y-3 border-t border-[var(--rule)] pt-8">
-          <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{INDEPENDENCE_DISCLAIMER}</p>
-          <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{brand.disclaimer}</p>
+        <div className="mt-12 max-w-3xl space-y-3 border-t border-hairline pt-8">
+          <p className="text-xs leading-relaxed text-text-low">{INDEPENDENCE_DISCLAIMER}</p>
+          <p className="text-xs leading-relaxed text-text-low">{brand.disclaimer}</p>
+        </div>
+
+        {/* ATTORNEY ADVERTISING — last on the page, in both the form and success states */}
+        <div className="max-w-3xl">
+          <PartnerAdvertisingFooter partner={partner} />
         </div>
       </div>
     </>

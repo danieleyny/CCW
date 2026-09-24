@@ -30,6 +30,15 @@ export interface PartnerHonor {
   label: string
   detail?: string
   tier?: "primary"
+  /** When set, the honor renders as an external link (target=_blank rel=noopener). */
+  href?: string
+}
+
+/** A time-sensitive callout on the profile — the attorney's own advertising content,
+ *  attributed to him, never generalized elsewhere on the site. */
+export interface PartnerCallout {
+  heading: string
+  body: string
 }
 
 /** One cell of the credential band under the hero: a big figure + a mono label. */
@@ -65,10 +74,14 @@ export interface Partner {
   /** src = plain card portrait; cutout = transparent hero figure; panel = hero tonal wash. */
   photo: { src: string; alt: string; cutout?: string; panel?: string }
   address: { street: string; city: string; state: string; zip: string }
-  /** STAFF-ONLY. Never rendered on a public page — every public route to him goes
-   *  through the consultation form (/{slug}/consultation), not a tel:/mailto: link. */
+  /** The attorney's OFFICE line. PUBLIC — he asked for it displayed. It is a real
+   *  tel: link ONLY inside partner-advertising-footer.tsx; every other CTA still points
+   *  at the consultation form. */
   phone: string
-  /** STAFF-ONLY — see `phone`. Not rendered publicly. */
+  /** The attorney's CELL line. PUBLIC — rendered (with `phone`) in the advertising footer. */
+  cellPhone: string
+  /** PUBLIC — he asked for it displayed. A real mailto: link ONLY inside the advertising
+   *  footer; every other route to him goes through the consultation form. */
   email: string
   website: string
   admissions: string[]
@@ -85,6 +98,18 @@ export interface Partner {
   qualifyingQuestions: string[]
   faqs: PartnerFaq[]
   rate: { amount: number; unit: string }
+  /** How his office takes payment — rendered in the fees block + FAQ. Paid directly to him. */
+  paymentMethods: string[]
+  /** A card-payment link on HIS OWN Stripe account (his payouts). Never our checkout /
+   *  our Stripe. Unset until set up separately; when present, renders a "pay by card" link. */
+  paymentUrl?: string
+  /** The attorney-advertising line, his words, verbatim. Rendered last on every page of
+   *  his section (NY Rule 7.1). Required for any non-hidden partner. */
+  advertisingDisclaimer: string
+  /** His personal statement — rendered as an attributed pull quote near the bio. */
+  statement?: string
+  /** Time-sensitive advertising callouts (his words), shown above the qualifying list. */
+  callouts?: PartnerCallout[]
   /** HIS scheduler — never ours. Reserved for staff/Phase-2 use; the PUBLIC CTA always
    *  points at our consultation form, never at a scheduler or phone. */
   bookingUrl?: string
@@ -103,7 +128,7 @@ export const PARTNERS: Partner[] = [
     headline:
       "A New York attorney who represents firearms-license applicants before the NYPD License Division.",
     bio: [
-      "Ethan has practised in New York for 34 years, building a litigation and counselling practice for Wall Street professionals, physicians and individuals in high-stakes disputes — and, alongside it, a dedicated NYC firearms licensing practice representing applicants and licensed dealers before the NYPD License Division.",
+      "Ethan has practised in New York for 35 years, building a litigation and counselling practice for Wall Street professionals, physicians and individuals in high-stakes disputes — and, alongside it, a dedicated NYC firearms licensing practice representing applicants and licensed dealers before the NYPD License Division.",
     ],
     photo: {
       src: "/partners/ethan-brecher.jpg",
@@ -113,6 +138,7 @@ export const PARTNERS: Partner[] = [
     },
     address: { street: "244 Fifth Avenue, Suite B241", city: "New York", state: "NY", zip: "10001" },
     phone: "860-590-0138",
+    cellPhone: "929-539-1541",
     email: "ethan@ethanbrecherlaw.com",
     website: "https://ethanbrecherlaw.com",
     admissions: ["New York", "Connecticut", "Various federal courts"],
@@ -122,24 +148,29 @@ export const PARTNERS: Partner[] = [
     ],
     honors: [
       { label: "Super Lawyers", detail: "2009–2011, 2013–2026", tier: "primary" },
-      { label: "Avvo 10.0", detail: "4.9★ across 53 reviews" },
+      { label: "Avvo 10.0", href: "https://www.avvo.com/attorneys/10001-ny-ethan-brecher-910482.html" },
       { label: "AV Preeminent", detail: "peer rating" },
       { label: "American Law Institute", detail: "elected 2013" },
-      { label: "2d Cir. Pro Bono Panel", detail: "appointed" },
+      { label: "2d Cir. Pro Bono Panel", detail: "2013–2015" },
+      { label: "Arbitrator, American Arbitration Association", detail: "Commercial, Employment, Consumer and Expedited Panels", href: "https://www.adr.org/" },
+      { label: "Arbitrator, DecisionLayer", href: "https://www.decisionlayer.ai/" },
+      { label: "18 Google reviews", detail: "Read client reviews", href: "https://www.lawyers.com/new-york/new-york/ethan-brecher-483358-a/#reviews" },
     ],
     highlights: [
-      { figure: "34", label: "Years in practice" },
+      { figure: "35", label: "Years in practice" },
       { figure: "10.0", label: "Avvo rating" },
-      { figure: "4.9★", label: "53 client reviews" },
+      { figure: "18", label: "Google reviews" },
       { figure: "2009–26", label: "Super Lawyers" },
-      { figure: "ALI", label: "Elected member, 2013" },
+      { figure: "AAA", label: "Arbitrator, AAA panels" },
       { figure: "AV", label: "Preeminent peer rating" },
     ],
-    serves: ["New York", "New Jersey", "Connecticut", "Florida"],
-    yearsInPractice: 34,
+    serves: ["New York", "New Jersey", "Connecticut"],
+    yearsInPractice: 35,
     services: [
-      { title: "Premises and carry license applications", detail: "Preparing and presenting the initial application to the NYPD License Division." },
-      { title: "Appeals of denials", detail: "Challenging a denial within the deadline that applies to your case." },
+      // Q11 — he REVIEWS applications; he does not prepare or file them.
+      { title: "Review of premises and carry applications", detail: "A lawyer's review of the application you prepare and file yourself. He does not prepare applications." },
+      { title: "Denials and internal NYPD appeals", detail: "Challenging a denial through the License Division's internal appeal, and in court where that is available." },
+      { title: "Delayed applications", detail: "A letter to the License Division asking it to move a stalled application forward." },
       { title: "Rifle and shotgun permits", detail: "The separate long-gun permitting process." },
       { title: "Suspensions and revocations", detail: "Responding when a licence is suspended or revoked." },
       { title: "Renewals and amendments", detail: "Keeping a licence current and updating its terms." },
@@ -149,7 +180,9 @@ export const PARTNERS: Partner[] = [
       "I have an arrest from years ago that was sealed or dismissed. How does disclosing it affect my application?",
       "I'm not a U.S. citizen. Can I apply for a license at all?",
       "Am I allowed to drive with my firearm in the car — through New Jersey, or upstate?",
-      "My application was denied. What are my options, and how long do I have?",
+      "My application was denied. How do I appeal inside the NYPD, and how long do I have?",
+      "My application was denied for another reason. What are my options?",
+      "My application has been pending for months. Can anything be done?",
       "There's an order of protection in my history. What does that mean for me?",
       "I hold a pistol license in another New York county. How does that interact with a City licence?",
       "What happens to my licence if I'm arrested, or if my employer asks about it?",
@@ -162,14 +195,34 @@ export const PARTNERS: Partner[] = [
       },
       {
         q: "How are his fees handled?",
-        a: "You pay his office directly at his own rate. Gun License NYC receives no share of his fees and no referral fee — we do not profit from sending you to him.",
+        a: "You pay his office directly at his own rate. His office accepts credit card, wire and Zelle, paid directly to him. Gun License NYC receives no share of his fees and no referral fee — we do not profit from sending you to him.",
       },
       {
         q: "Will he see my file, or share it with you?",
-        a: "No. He runs his own intake and conflicts check, and what you tell him is his to keep — protected by attorney–client privilege. He does not review your file for us, and we do not receive his advice to you.",
+        a: "Your consultation request goes straight to his office, and we never see it. What you tell him stays between you and his firm. We don't review your file for him, and we don't receive his advice to you.",
       },
     ],
-    rate: { amount: 300, unit: "hour" },
+    rate: { amount: 350, unit: "hour" },
+    paymentMethods: ["Credit card", "Wire transfer", "Zelle"],
+    // paymentUrl intentionally unset — a card link points to HIS OWN Stripe account,
+    // set up separately; never our checkout / our Stripe.
+    advertisingDisclaimer: "Attorney Advertising. Prior results do not guarantee a similar outcome.",
+    // Q14 — his words; two typos fixed ("Though"→"Through", "then"→"than") and the firm
+    // name punctuation. Confirm the edits with him before flipping to public.
+    statement:
+      "I understand the frustration of having a firearm permit delayed or denied. Through aggressive pursuit of all legal rights, you will have no better friend, and the NYPD no worse enemy, than the Law Office of Ethan A. Brecher, LLC in pursuing all legal avenues to secure your firearm permit.",
+    // Source: E. Brecher written answers, Sept 2026, Q12. His statement, not ours; do not
+    // generalize these deadlines elsewhere on the site (registry, portal, other marketing).
+    callouts: [
+      {
+        heading: "Denied? Time is of the essence.",
+        body: "Contact him as soon as possible after receiving a denial. There is generally only 90 days to file an internal NYPD appeal, and failing to pursue that internal appeal would likely bar an Article 78 proceeding in court.",
+      },
+      {
+        heading: "Waiting too long?",
+        body: "If a carry application has been pending more than 6 months, or a rifle/shotgun permit more than 60 days, a call to have a letter sent to the NYPD may help move it forward.",
+      },
+    ],
     // bookingUrl intentionally omitted — the public CTA is our consultation form
     // regardless; a scheduler here is reserved for staff/Phase-2 use only.
   },

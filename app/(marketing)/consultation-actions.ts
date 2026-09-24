@@ -2,11 +2,9 @@
 
 import { headers } from "next/headers"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
-import { notifyFormspree } from "@/lib/formspree"
 import { honeypotTripped } from "@/lib/honeypot"
 import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
-import { brand } from "@/config/brand"
 import { partnerBySlug, partnerFullName } from "@/config/partners"
 import {
   consultationSchema,
@@ -16,13 +14,15 @@ import {
 
 /**
  * Attorney-consultation request. A legal enquiry is NOT a sales lead: this creates no
- * client, case, task or appointment row and never touches the case pipeline. It only
- * NOTIFIES the business inbox so the attorney can be briefed — over TWO independent
- * channels (Resend + Formspree), because either alone can silently drop a message: a
- * Formspree spam-flag stores the submission but never emails it, and Resend depends on
- * a configured key. Sending both means one path failing doesn't lose the request.
- * Honeypot + per-IP rate limit + zod boundary mirror captureLead's defenses — but
- * deliberately none of its row-creating side effects.
+ * client, case, task or appointment row and never touches the case pipeline.
+ *
+ * PRIVILEGE (Q9) — the request goes DIRECTLY to the attorney and NOWHERE else. Gun
+ * License NYC must not receive or keep a copy: routing it to us could destroy privilege.
+ * So there is exactly one recipient — the partner's own email — no Formspree, no
+ * brand-inbox cc/bcc. And it FAILS CLOSED: if the send is skipped or errors we tell the
+ * person to contact his office directly rather than falsely reporting success. Nothing
+ * logs the body, and the subject carries no name so even the noop log line has no PII.
+ * Honeypot + per-IP rate limit + zod boundary remain; still no row-creating side effects.
  */
 export async function requestConsultation(
   _prev: ConsultState,
@@ -62,23 +62,8 @@ export async function requestConsultation(
     return { error: "This attorney is not available for consultation requests right now." }
   }
 
-  // Notify — no row is written anywhere. Two channels for reliability (see the doc
-  // comment): Formspree, plus a branded Resend email that replies straight to the person.
+  // Notify the attorney ONLY — no row anywhere, no copy to us (privilege, Q9).
   const represented = v.represented === "yes" ? "Yes" : "No"
-
-  await notifyFormspree("attorney_consultation", {
-    attorney: partnerFullName(partner),
-    name: v.name,
-    email: v.email,
-    phone: v.phone,
-    best_times: v.bestTimes,
-    question_about: v.topic,
-    where_in_process: v.stage,
-    target_date: v.targetDate,
-    what_to_discuss: v.discuss,
-    currently_represented: represented,
-    acknowledged_not_privileged: "Yes",
-  })
 
   const { html, text } = renderEmail({
     eyebrow: "Attorney consultation request",
@@ -96,16 +81,25 @@ export async function requestConsultation(
       v.discuss,
     ],
     recipientReason:
-      "An attorney consultation request from the Gun License NYC site. This is a referral enquiry, not a case — no client or case record was created.",
+      "A consultation request submitted through the Gun License NYC site and sent directly to you. Gun License NYC does not receive or keep a copy.",
   })
-  await sendEmail({
-    to: brand.contact.email,
-    subject: `Attorney consultation request: ${v.name}`,
+  const result = await sendEmail({
+    // The ONE recipient — the attorney's own inbox. No brand cc/bcc.
+    to: partner.email,
+    // No person's name in the subject — even the [email:noop] log line stays PII-free.
+    subject: "Consultation request via Gun License NYC",
     html,
     text,
     // Reply goes straight to the person who asked.
     replyTo: v.email,
   })
+  // FAIL CLOSED: if we couldn't actually send it, never claim success — the request
+  // would otherwise vanish silently, and we keep no copy to recover it.
+  if (result.skipped || result.error) {
+    return {
+      error: `We couldn't send your request. Please email his office directly at ${partner.email} or call ${partner.phone}.`,
+    }
+  }
 
   return { ok: true }
 }
