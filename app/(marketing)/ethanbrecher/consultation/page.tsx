@@ -10,6 +10,7 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { PartnerComingSoon } from "@/components/marketing/partner-coming-soon"
 import { PartnerPreviewChip } from "@/components/marketing/partner-preview-chip"
 import { CredentialBadge, INDEPENDENCE_DISCLAIMER } from "@/components/marketing/partner-card"
+import { PartnerAdvertisingFooter } from "@/components/marketing/partner-advertising-footer"
 import { ConsultationForm } from "@/components/marketing/consultation-form"
 import type { Partner } from "@/config/partners"
 
@@ -79,8 +80,8 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
             Request a consultation
           </h1>
           <p className="mt-4 text-lg text-text-mid">
-            Tell {partnerFullName(partner)} what you need to talk through. We forward your request to
-            him directly — he reviews each one personally and reaches out to arrange the call.
+            Your request goes straight to his office. Gun License NYC never sees it. He reviews each
+            request personally and reaches out at his earliest availability to arrange the call.
           </p>
         </header>
 
@@ -137,6 +138,11 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
         <div className="mt-12 max-w-3xl space-y-3 border-t border-hairline pt-8">
           <p className="text-xs leading-relaxed text-text-low">{INDEPENDENCE_DISCLAIMER}</p>
           <p className="text-xs leading-relaxed text-text-low">{brand.disclaimer}</p>
+        </div>
+
+        {/* ATTORNEY ADVERTISING — last on the page, in both the form and success states */}
+        <div className="max-w-3xl">
+          <PartnerAdvertisingFooter partner={partner} />
         </div>
       </div>
     </>

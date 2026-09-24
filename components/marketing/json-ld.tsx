@@ -313,9 +313,10 @@ export function attorneyProfileSchema(p: Partner) {
     "@type": "LegalService",
     "@id": firmId,
     name: p.firm,
-    // NOTE: his phone is deliberately NOT emitted — every route to him goes through
-    // our screened consultation form, and his direct line must not appear in any
-    // rendered marketing HTML (structured data included).
+    // Phone + email are PUBLIC — he asked for them displayed (Q1). They appear in the
+    // advertising footer and here in structured data; other CTAs still use the form.
+    telephone: p.phone,
+    email: p.email,
     url: p.website,
     address: {
       "@type": "PostalAddress",

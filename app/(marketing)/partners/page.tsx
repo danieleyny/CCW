@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { JsonLd, attorneyDirectorySchema } from "@/components/marketing/json-ld"
 import { DirectAnswer, RelatedLinks } from "@/components/marketing/page-blocks"
 import { PartnerCard } from "@/components/marketing/partner-card"
+import { PartnerAdvertisingFooter } from "@/components/marketing/partner-advertising-footer"
 import { PartnerComingSoon } from "@/components/marketing/partner-coming-soon"
 import { PartnerPreviewChip } from "@/components/marketing/partner-preview-chip"
 
@@ -94,7 +95,10 @@ function Directory({ partners, indexed }: { partners: Partner[]; indexed: boolea
           ) : (
             <div className="space-y-8">
               {partners.map((p) => (
-                <PartnerCard key={p.slug} partner={p} />
+                <div key={p.slug}>
+                  <PartnerCard partner={p} />
+                  <PartnerAdvertisingFooter partner={p} />
+                </div>
               ))}
             </div>
           )}

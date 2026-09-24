@@ -8,6 +8,7 @@ import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { JsonLd, attorneyProfileSchema } from "@/components/marketing/json-ld"
 import { FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
 import { INDEPENDENCE_DISCLAIMER, CredentialBadge } from "@/components/marketing/partner-card"
+import { PartnerAdvertisingFooter } from "@/components/marketing/partner-advertising-footer"
 
 /**
  * The full attorney-referral profile body — rendered by BOTH the vanity route (/{slug})
@@ -18,6 +19,12 @@ import { INDEPENDENCE_DISCLAIMER, CredentialBadge } from "@/components/marketing
 export function PartnerProfile({ partner }: { partner: Partner }) {
   const consult = partnerConsultationPath(partner)
   const rate = `$${partner.rate.amount}/${partner.rate.unit}`
+  // A natural-language list of how his office takes payment (config-driven, Q6).
+  const joinList = (arr: string[]) =>
+    arr.length <= 1 ? arr[0] ?? "" : `${arr.slice(0, -1).join(", ")} and ${arr[arr.length - 1]}`
+  const paymentLine = partner.paymentMethods.length
+    ? `His office accepts ${joinList(partner.paymentMethods)}, paid directly to him`
+    : ""
 
   return (
     <>
@@ -45,11 +52,23 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
 
             <ul className="mt-5 flex flex-wrap gap-2">
               <CredentialBadge primary>{partner.yearsInPractice} years in practice</CredentialBadge>
-              {partner.honors.map((h) => (
-                <CredentialBadge key={h.label} primary={h.tier === "primary"}>
-                  {h.label}
-                </CredentialBadge>
-              ))}
+              {partner.honors.map((h) =>
+                h.href ? (
+                  <a
+                    key={h.label}
+                    href={h.href}
+                    target="_blank"
+                    rel="noopener"
+                    className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
+                  >
+                    <CredentialBadge primary={h.tier === "primary"}>{h.label} ↗</CredentialBadge>
+                  </a>
+                ) : (
+                  <CredentialBadge key={h.label} primary={h.tier === "primary"}>
+                    {h.label}
+                  </CredentialBadge>
+                )
+              )}
             </ul>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -89,6 +108,14 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
               <p key={i}>{para}</p>
             ))}
           </div>
+          {partner.statement && (
+            <blockquote className="mt-8 border-l-2 border-brass pl-5">
+              <p className="max-w-[60ch] font-display text-xl font-medium leading-snug text-text-hi">
+                &ldquo;{partner.statement}&rdquo;
+              </p>
+              <footer className="mt-2 engraved text-text-low">— {partnerFullName(partner)}</footer>
+            </blockquote>
+          )}
         </section>
 
         {/* CREDENTIALS — reference data, hairline rules */}
@@ -102,6 +129,30 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
             <CredRow label="Serves" value={partner.serves.join(", ")} />
             <CredRow label="Years in practice" value={String(partner.yearsInPractice)} />
           </dl>
+
+          {partner.honors.length > 0 && (
+            <div className="mt-8">
+              <h3 className="engraved text-text-low">Recognition</h3>
+              <ul className="mt-3 divide-y divide-hairline border-y border-hairline">
+                {partner.honors.map((h) => (
+                  <li key={h.label} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-3">
+                    <span className="text-text-hi">{h.label}</span>
+                    {h.detail && <span className="text-sm text-text-mid">{h.detail}</span>}
+                    {h.href && (
+                      <a
+                        href={h.href}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-sm text-signal hover:underline"
+                      >
+                        View ↗
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
 
         {/* WHAT HE HANDLES — a section that matters: raised surface */}
@@ -126,7 +177,17 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
         <section className="py-8">
           <div className="rounded-xl border border-hairline bg-surface-2 p-6 sm:p-8">
             <h2 className="font-display text-2xl font-semibold tracking-tight">When to call him</h2>
-            <p className="mt-2 text-text-mid">
+            {partner.callouts && partner.callouts.length > 0 && (
+              <div className="mt-4 space-y-3">
+                {partner.callouts.map((c) => (
+                  <div key={c.heading} className="rounded-lg border border-brass/40 bg-brass/10 p-4">
+                    <p className="font-medium text-brass">{c.heading}</p>
+                    <p className="mt-1 text-sm text-text-mid">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mt-4 text-text-mid">
               These are the questions he can answer and we cannot — the ones that turn on your specific
               facts, where an answer is legal advice:
             </p>
@@ -148,9 +209,9 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
           <h2 className="font-display text-2xl font-semibold tracking-tight">How it works</h2>
           <ol className="mt-6 grid gap-4 sm:grid-cols-3">
             {[
-              { n: "1", t: "Send a brief request", d: "Tell us what you need to discuss. We forward it to him — nothing you send is privileged, so leave documents for the call." },
-              { n: "2", t: "He runs his own intake", d: "He reviews each request personally, then performs his own conflicts check and intake. We are not in the middle and never see his file." },
-              { n: "3", t: "He bills you directly", d: `You pay his office at his own rate (${rate}). We receive no share of his fees and no referral fee.` },
+              { n: "1", t: "Send a brief request", d: "Your request goes straight to his office — Gun License NYC never sees it. He reviews each one personally and reaches out at his earliest availability to arrange the call." },
+              { n: "2", t: "He runs his own intake", d: "He performs his own conflicts check and intake. We are not in the middle and never see his file — what you tell him stays between you and his firm." },
+              { n: "3", t: "He bills you directly", d: `You pay his office directly at his own rate (${rate}). ${paymentLine}. We receive no share of his fees and no referral fee.` },
             ].map((step) => (
               <li key={step.n} className="rounded-xl border border-hairline bg-card p-5">
                 <p className="font-mono text-signal">{step.n}</p>
@@ -171,14 +232,19 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
           <p className="text-text-mid">
             <span className="font-medium text-text-hi">{rate}</span> · billed by his office
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
               <Link href={consult}>Request a consultation</Link>
             </Button>
+            {partner.paymentUrl && (
+              <Button asChild variant="outline" size="lg">
+                <a href={partner.paymentUrl} target="_blank" rel="noreferrer">Pay his office by card</a>
+              </Button>
+            )}
           </div>
           <p className="mt-4 text-sm text-text-low">
-            Every request reaches him through us and is not privileged — leave documents and
-            anything confidential for the call.
+            Your request goes straight to his office; Gun License NYC never sees it. Be prepared to
+            email all relevant documentation to his office following the initial call.
           </p>
         </div>
       </section>
@@ -199,6 +265,11 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
           { label: "Contact our team", href: "/contact" },
         ]}
       />
+
+      {/* ATTORNEY ADVERTISING — last on the page (NY Rule 7.1) */}
+      <div className="mx-auto max-w-3xl px-4 pb-10 sm:px-6">
+        <PartnerAdvertisingFooter partner={partner} />
+      </div>
     </>
   )
 }

@@ -6,8 +6,8 @@
  * import.
  *
  * This is a screened referral request, NOT a sales lead: it never creates a client,
- * case, task or appointment row. It is forwarded to the attorney by email so he arrives
- * at the call already briefed, and the person is told up front it is not privileged.
+ * case, task or appointment row. It is sent DIRECTLY to the attorney's own inbox — never
+ * to us — so he arrives at the call already briefed and privilege is not put at risk.
  */
 import { z } from "zod"
 
@@ -22,6 +22,7 @@ export const CONSULTATION_TOPICS = [
   "Where and how I can carry or transport a firearm",
   "Employment or professional-licence consequences",
   "Renewing or amending an existing licence",
+  "An application that is taking longer than expected",
   "Something else",
 ] as const
 
@@ -35,8 +36,10 @@ export const CONSULTATION_STAGES = [
   "Already licensed",
 ] as const
 
-/** The description must be long enough for him to prepare. */
+/** The description must be long enough for him to prepare… */
 export const DISCUSS_MIN = 40
+/** …but a consultation request, not a brief — one or two paragraphs (Q7). */
+export const DISCUSS_MAX = 1500
 
 /** The value a checked acknowledgement submits (an unchecked box submits nothing). */
 export const ACK_VALUE = "agreed"
@@ -52,7 +55,8 @@ export const consultationSchema = z.object({
   discuss: z
     .string()
     .trim()
-    .min(DISCUSS_MIN, `Please add a little more — at least ${DISCUSS_MIN} characters, so he can prepare`),
+    .min(DISCUSS_MIN, `Please add a little more — at least ${DISCUSS_MIN} characters, so he can prepare`)
+    .max(DISCUSS_MAX, "Please keep it to one or two paragraphs"),
   represented: z.enum(["yes", "no"], { message: "This conflicts check is required" }),
   acknowledge: z.literal(ACK_VALUE, { message: "Please confirm you understand before sending" }),
   /** Which partner the request is for — validated server-side against config. */
