@@ -1,5 +1,5 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
-import { REQUIRED_UPLOAD_SLOTS } from "@/config/portal-steps"
+import { requiredUploadSlotsFor } from "@/config/portal-steps"
 import type { ApplicationValues } from "@/lib/forms/application"
 
 /**
@@ -39,7 +39,7 @@ export function computePortalReadiness(
   v: ApplicationValues,
   disclosures: Record<string, unknown>,
   items: ReadinessRequirement[],
-  opts: { licenseTrack?: string | null; signedRecordSatisfied: boolean } = { signedRecordSatisfied: false }
+  opts: { portalTrack?: string | null; signedRecordSatisfied: boolean } = { signedRecordSatisfied: false }
 ): PortalReadiness {
   const has = (k: string) => typeof v[k] === "string" && (v[k] as string).trim() !== ""
   const enterMissing: ReadinessItem[] = []
@@ -89,7 +89,7 @@ export function computePortalReadiness(
   // exactly one per case, so we check the materialised ones and skip a slot that isn't
   // on this case at all.
   const finalizeMissing: ReadinessItem[] = []
-  for (const slot of REQUIRED_UPLOAD_SLOTS) {
+  for (const slot of requiredUploadSlotsFor(opts.portalTrack)) {
     const slotItems = slot.reqCodes
       .map((code) => items.find((i) => i.reqCode === code))
       .filter((i): i is ReadinessRequirement => !!i && i.status !== "na")

@@ -7,7 +7,7 @@ import { computePortalReadiness, type PortalReadiness } from "@/lib/disclosures/
 import { getCaseRequirements } from "@/lib/requirements"
 import { actionFor, actionWetInk } from "@/lib/requirements/actions"
 import { hasCaseSsn } from "@/lib/facts/ssn"
-import { PORTAL_UPLOAD_SLOTS, CLAIMED_UPLOAD_CODES } from "@/config/portal-steps"
+import { uploadSlotsFor, claimedUploadCodesFor, portalTrackForCase } from "@/config/portal-steps"
 import type { CaseRequirementRow } from "@/lib/requirements/materialize"
 import { computeCompletion, type CompletionMetrics } from "@/lib/portal/completion"
 
@@ -75,14 +75,22 @@ export interface ApplicationTabData {
  * so a case page load never logs an SSN decrypt or leaks a bearer URL into history.
  */
 export async function assembleApplicationTab(admin: DB, caseId: string): Promise<ApplicationTabData | null> {
-  const [assembled, { data: kase }, { data: discRows }, reqRows, ssnConfigured] = await Promise.all([
+  const [assembled, { data: kase }, { data: discRows }, reqRows, ssnConfigured, { data: intakeRow }] = await Promise.all([
     assembleApplicationValues(admin, caseId),
-    admin.from("cases").select("is_renewal, license_track, clients:client_id(full_name, email, phone)").eq("id", caseId).maybeSingle(),
+    admin.from("cases").select("is_renewal, license_track, clients:client_id(full_name, email, phone, track)").eq("id", caseId).maybeSingle(),
     admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["DSC-01", "QUE-01", "CON-01"]),
     getCaseRequirements(admin, caseId),
     hasCaseSsn(admin, caseId),
+    admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
   ])
   if (!assembled) return null
+
+  // The portal SEQUENCE and the upload-slot set depend on the resolved PORTAL flow —
+  // Special Carry is the non-resident, non-sponsored individual (not a license_track).
+  const track = kase?.license_track ?? null
+  const clientTrack = (kase?.clients as unknown as { track?: string | null } | null)?.track ?? null
+  const portalTrack = portalTrackForCase({ clientTrack, licenseTrack: track })
+  const isRetiredLeo = !!(intakeRow?.answers as Record<string, unknown> | null)?.isRetiredLeo
 
   const client = (kase?.clients as unknown as { full_name: string; email: string | null; phone: string | null } | null) ?? null
   const disclosures =
@@ -98,7 +106,9 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
     // Placeholder only — the real SSN is revealed on click via a server action, never
     // decrypted at render. Non-empty so the field doesn't read as a missing answer.
     ssnLast4: ssnConfigured ? "•••• — reveal in this tab" : "",
-    licenseTrack: kase?.license_track ?? null,
+    licenseTrack: track,
+    portalTrack,
+    isRetiredLeo,
     confidentiality,
   })
 
@@ -135,12 +145,12 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
   }
 
   const slots: PortalSlotView[] = []
-  for (const slot of PORTAL_UPLOAD_SLOTS) {
+  for (const slot of uploadSlotsFor(portalTrack)) {
     if (slot.reqCodes.length === 0) {
       // Additional Documents — the catch-all. Any leftover portal_upload upload not
       // claimed by a named slot is parked here so it's never silently dropped.
       const leftoverDocs = (docs ?? []).filter(
-        (d) => !d.generated && d.req_code != null && !CLAIMED_UPLOAD_CODES.includes(d.req_code) &&
+        (d) => !d.generated && d.req_code != null && !claimedUploadCodesFor(portalTrack).includes(d.req_code) &&
           reqRows.find((r) => r.req_code === d.req_code)?.requirement?.destination === "portal_upload"
       )
       const doc = leftoverDocs[0] ?? null
@@ -218,7 +228,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
     disclosures,
     reqRows.map((r) => ({ reqCode: r.req_code, status: r.status })),
     {
-      licenseTrack: kase?.license_track ?? null,
+      portalTrack,
       signedRecordSatisfied: !!signedRecord?.satisfied,
     }
   )

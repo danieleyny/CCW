@@ -2,7 +2,10 @@ import "server-only"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { assembleApplicationTab } from "@/lib/portal/application-tab"
-import { PORTAL_UPLOAD_SLOTS } from "@/config/portal-steps"
+// The zipBase lookup is by portal label; this fn has no single case's track in scope, so
+// use the union of every track's slots (labels are unique; special-carry slot 5 has its
+// own label that maps to the same zipBase).
+import { ALL_UPLOAD_SLOTS } from "@/config/portal-steps"
 import { makeZip, type ZipEntry } from "@/lib/packet/zip"
 
 type DB = SupabaseClient<Database>
@@ -22,7 +25,7 @@ export async function assembleUploadSet(admin: DB, caseId: string): Promise<{ zi
   const data = await assembleApplicationTab(admin, caseId)
   if (!data) return null
 
-  const zipBaseByLabel = new Map(PORTAL_UPLOAD_SLOTS.map((s) => [s.portalLabel, s.zipBase]))
+  const zipBaseByLabel = new Map(ALL_UPLOAD_SLOTS.map((s) => [s.portalLabel, s.zipBase]))
   const withDoc = data.slots.filter((s) => s.documentId)
   const { data: docRows } = withDoc.length
     ? await admin.from("documents").select("id, file_path, file_name").in("id", withDoc.map((s) => s.documentId!))

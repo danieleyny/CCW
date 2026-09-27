@@ -6,6 +6,7 @@ import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { computePortalReadiness } from "@/lib/disclosures/readiness"
+import { portalTrackForCase } from "@/config/portal-steps"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
 import { ReadinessCard } from "@/components/portal/readiness-card"
 
@@ -29,7 +30,11 @@ export default async function ChecklistPage() {
   const caseSponsored = view.items.some((i) => i.sponsorManaged)
   // Licence track scopes the Letter-of-Necessity statements (a Concealed Carry
   // applicant is asked 3 of them, not 6).
-  const { data: trackRow } = await supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
+  const { data: trackRow } = await supabase.from("cases").select("license_track, clients:client_id(track)").eq("id", myCase.id).maybeSingle()
+  const portalTrack = portalTrackForCase({
+    licenseTrack: trackRow?.license_track ?? null,
+    clientTrack: (trackRow?.clients as unknown as { track?: string | null } | null)?.track ?? null,
+  })
 
   // Two-gate portal readiness (ready to enter · ready to finalize). Admin: assembles
   // the applicant's own data for the summary (mirrors the signed record).
@@ -47,7 +52,7 @@ export default async function ChecklistPage() {
         (dscRow?.answers ?? {}) as Record<string, unknown>,
         view.items.map((i) => ({ reqCode: i.reqCode, status: i.status })),
         {
-          licenseTrack: assembled.track,
+          portalTrack,
           signedRecordSatisfied: view.items.find((i) => i.reqCode === "DSC-01")?.status === "satisfied",
         }
       )
