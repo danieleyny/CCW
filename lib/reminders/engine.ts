@@ -13,7 +13,9 @@ import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { newReferenceToken } from "@/lib/references/process"
 import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
 import { paidPackageCaseIds } from "@/lib/packages"
-import { REQUIRED_UPLOAD_CODES } from "@/config/portal-steps"
+// Cross-case sweep with no single case's track in hand — use the union across all
+// tracks (a superset is correct: a rejected required upload on any track is caught).
+import { ALL_REQUIRED_UPLOAD_CODES } from "@/config/portal-steps"
 
 type DB = SupabaseClient<Database>
 type Kind = Database["public"]["Enums"]["notification_kind"]
@@ -509,7 +511,7 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     .from("documents")
     .select("id, req_code, case_id")
     .eq("status", "rejected")
-    .in("req_code", [...REQUIRED_UPLOAD_CODES])
+    .in("req_code", [...ALL_REQUIRED_UPLOAD_CODES])
   const blockedCaseIds = [...new Set((rejectedReq ?? []).map((d) => d.case_id))]
   const { data: blockedCases } = blockedCaseIds.length
     ? await admin.from("cases").select("id, service_mode, clients(assigned_staff)").in("id", blockedCaseIds).eq("service_mode", "concierge")

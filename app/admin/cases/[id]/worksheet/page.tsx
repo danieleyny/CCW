@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { getCaseSsn } from "@/lib/facts/ssn"
 import { buildPortalWorksheet } from "@/lib/disclosures/worksheet-portal"
+import { portalTrackForCase } from "@/config/portal-steps"
 import { PortalWorksheet } from "@/components/admin/portal-worksheet"
 
 export const metadata = { title: "Portal-entry worksheet" }
@@ -17,12 +18,15 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
   await requireStaff()
   const admin = createAdminClient()
 
-  const [assembled, { data: kase }, { data: discRows }] = await Promise.all([
+  const [assembled, { data: kase }, { data: discRows }, { data: intakeRow }] = await Promise.all([
     assembleApplicationValues(admin, id),
-    admin.from("cases").select("is_renewal, license_track, clients:client_id(full_name, email, phone)").eq("id", id).maybeSingle(),
+    admin.from("cases").select("is_renewal, license_track, clients:client_id(full_name, email, phone, track)").eq("id", id).maybeSingle(),
     admin.from("requirement_answers").select("req_code, answers").eq("case_id", id).in("req_code", ["DSC-01", "QUE-01", "CON-01"]),
+    admin.from("intake_sessions").select("answers").eq("case_id", id).maybeSingle(),
   ])
-  const client = (kase?.clients as unknown as { full_name: string; email: string | null; phone: string | null } | null) ?? null
+  const client = (kase?.clients as unknown as { full_name: string; email: string | null; phone: string | null; track: string | null } | null) ?? null
+  const portalTrack = portalTrackForCase({ clientTrack: client?.track ?? null, licenseTrack: kase?.license_track ?? null })
+  const isRetiredLeo = !!(intakeRow?.answers as Record<string, unknown> | null)?.isRetiredLeo
   const disclosures =
     (discRows ?? []).find((r) => r.req_code === "DSC-01")?.answers ??
     (discRows ?? []).find((r) => r.req_code === "QUE-01")?.answers ??
@@ -40,6 +44,8 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
     email: client?.email,
     ssnLast4,
     licenseTrack: kase?.license_track ?? null,
+    portalTrack,
+    isRetiredLeo,
     confidentiality,
   })
 

@@ -5990,6 +5990,7 @@ export type Database = {
         | "public_records_exemption"
         | "safeguard_id"
         | "notarized_release"
+        | "filed_application_copy"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6293,6 +6294,7 @@ export const Constants = {
         "public_records_exemption",
         "safeguard_id",
         "notarized_release",
+        "filed_application_copy",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [
