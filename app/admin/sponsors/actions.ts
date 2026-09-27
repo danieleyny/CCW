@@ -1,23 +1,26 @@
 "use server"
 
-import { randomBytes } from "node:crypto"
 import { revalidatePath } from "next/cache"
 import { requireStaff } from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { logActivity } from "@/lib/activity"
-import { materializeSponsorPacket } from "@/lib/requirements/materialize"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { identityResolved } from "@/lib/facts/identity"
-import { seedOperatorBlockers } from "@/lib/sponsor/operator-blockers"
+import { ensureSponsorCompany, ensureSponsorRep, addSponsoredWorker } from "@/lib/sponsor/provision"
 
 /**
  * Staff provisions a sponsorship: the company, a rep account (role='sponsor',
- * minted here via the service role — the ONLY path allowed to set a privileged
- * role), and the case↔sponsor binding with an opaque invite token. Scope defaults
- * to packet_only unless the owner deliberately widens it — a row someone chose,
- * never a default nobody noticed. The applicant must still consent before the rep
- * sees anything.
+ * minted via the service role — the ONLY path allowed to set a privileged role), and
+ * the case↔sponsor binding with an opaque invite token. Scope defaults to packet_only
+ * unless the owner deliberately widens it. The applicant must still consent before the
+ * rep sees anything.
+ *
+ * This is now a thin composition of ensureSponsorCompany / ensureSponsorRep /
+ * addSponsoredWorker (S1) — same form contract, same result — but idempotent: it no
+ * longer duplicates a company or fails when the rep already exists. Its first-case
+ * strictness is preserved here: the applicant must already exist and their exact legal
+ * name must be resolved before this path issues an invite.
  */
 export async function provisionSponsor(
   formData: FormData
@@ -28,8 +31,8 @@ export async function provisionSponsor(
   const repEmail = String(formData.get("repEmail") ?? "").trim().toLowerCase()
   const applicantEmail = String(formData.get("applicantEmail") ?? "").trim().toLowerCase()
   const scope = String(formData.get("scope") ?? "packet_only") as "packet_only" | "assist" | "full"
-  // Operator blocker #2 (§5-06): the designated gun custodian gates the whole
-  // case, so it must be confirmed BEFORE a live invitation goes out.
+  // Operator blocker #2 (§5-06): the designated gun custodian gates the whole case, so
+  // it must be confirmed BEFORE a live invitation goes out.
   const custodianName = String(formData.get("custodianName") ?? "").trim()
   const custodianLicense = String(formData.get("custodianLicenseNumber") ?? "").trim()
   if (!companyName || !repName || !repEmail || !applicantEmail) {
@@ -41,7 +44,7 @@ export async function provisionSponsor(
 
   const admin = createAdminClient()
 
-  // Find the applicant's case by email.
+  // Find the applicant's case by email (this path REQUIRES an existing applicant).
   const { data: client } = await admin.from("clients").select("id").ilike("email", applicantEmail).maybeSingle()
   if (!client) return { error: `No applicant found for ${applicantEmail}.` }
   const { data: kase } = await admin
@@ -60,67 +63,114 @@ export async function provisionSponsor(
     return { error: "Confirm the applicant's exact legal name (from their photo ID) before inviting — a wrong legal name is a rejection." }
   }
 
-  // The company, with its confirmed gun custodian.
-  const { data: sponsor, error: sErr } = await admin
-    .from("sponsors")
-    .insert({ legal_name: companyName, custodian_name: custodianName, custodian_license_number: custodianLicense })
-    .select("id")
-    .single()
-  if (sErr || !sponsor) return { error: "Couldn't create the company record." }
+  const company = await ensureSponsorCompany(admin, { companyName, custodianName, custodianLicenseNumber: custodianLicense })
+  if (company.error || !company.sponsorId) return { error: company.error ?? "Couldn't create the company record." }
 
-  // The rep account. New email only (a dark first-case assumption); on collision,
-  // ask for a fresh address rather than silently binding an existing account.
-  const tempPassword = randomBytes(9).toString("base64url")
-  const { data: created, error: uErr } = await admin.auth.admin.createUser({
-    email: repEmail,
-    password: tempPassword,
-    email_confirm: true,
-    user_metadata: { full_name: repName },
+  const rep = await ensureSponsorRep(admin, { sponsorId: company.sponsorId, repName, repEmail })
+  if (rep.error || !rep.repId) return { error: rep.error }
+
+  const worker = await addSponsoredWorker(admin, {
+    sponsorId: company.sponsorId,
+    repId: rep.repId,
+    repEmail,
+    repName,
+    scope,
+    actorId: userId,
+    caseId: kase.id, // existing, identity already resolved above → invite is ready
   })
-  if (uErr || !created.user) {
-    return { error: "Couldn't create the rep account (is the email already in use?)." }
-  }
-  const repId = created.user.id
-  // Elevate to sponsor + bind to the company (service-role role write).
-  await admin.from("profiles").update({ role: "sponsor", sponsor_id: sponsor.id, full_name: repName }).eq("id", repId)
-
-  const token = randomBytes(24).toString("base64url")
-  const { data: sponsorship, error: bErr } = await admin
-    .from("case_sponsorships")
-    .insert({
-      case_id: kase.id,
-      sponsor_id: sponsor.id,
-      rep_profile_id: repId,
-      invited_email: repEmail,
-      invited_name: repName,
-      invite_token: token,
-      scope,
-      status: "invited",
-    })
-    .select("id")
-    .single()
-  if (bErr || !sponsorship) return { error: "Couldn't create the sponsorship binding." }
-
-  // Seed the company packet now, so the rep can start immediately (even before the
-  // applicant's category resolves).
-  await materializeSponsorPacket(admin, kase.id)
-
-  // Surface the operator blockers as OUR staff tasks (owned by the provisioner) —
-  // never applicant failures. Custodian + legal name are already confirmed above.
-  await seedOperatorBlockers(admin, kase.id, userId)
+  if (worker.error || !worker.sponsorshipId) return { error: worker.error ?? "Couldn't create the sponsorship binding." }
 
   await logActivity({
     action: "sponsor.provisioned",
     caseId: kase.id,
     clientId: client.id,
     entity: "case_sponsorship",
-    entityId: sponsorship.id,
+    entityId: worker.sponsorshipId,
     detail: { company: companyName, rep: repName, scope },
   })
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? ""
   revalidatePath("/admin/sponsors")
-  return { inviteUrl: `${origin}/invite/${token}`, tempPassword }
+  return { inviteUrl: worker.inviteUrl, tempPassword: rep.tempPassword }
+}
+
+/**
+ * Staff approve a sponsor's worker request → run the full worker provisioning with the
+ * admin client (the rep never touches it). Scope defaults to what the rep requested,
+ * but staff may pass a different granted scope. Returns the invite URL only when the
+ * new worker's legal name is already resolved; otherwise the invite is held and the
+ * seeded legal-name task is the next step.
+ */
+export async function approveWorkerRequest(
+  formData: FormData
+): Promise<{ inviteUrl?: string; tempPassword?: string; identityResolved?: boolean; error?: string }> {
+  const { userId } = await requireStaff()
+  const requestId = String(formData.get("requestId") ?? "").trim()
+  const grantedScope = String(formData.get("scope") ?? "").trim() as "packet_only" | "assist" | "full" | ""
+  if (!requestId) return { error: "Request id is required." }
+
+  const admin = createAdminClient()
+  const { data: req } = await admin
+    .from("sponsor_worker_requests")
+    .select("id, sponsor_id, requested_by, applicant_name, applicant_email, requested_scope, status")
+    .eq("id", requestId)
+    .maybeSingle()
+  if (!req) return { error: "Request not found." }
+  if (req.status !== "pending") return { error: "This request has already been resolved." }
+
+  // The requesting rep's identity, for the binding's consent-screen fields.
+  const { data: rep } = await admin.from("profiles").select("id, full_name").eq("id", req.requested_by).maybeSingle()
+  if (!rep) return { error: "The requesting representative no longer exists." }
+  const repUser = (await admin.auth.admin.getUserById(req.requested_by)).data.user
+  const repEmail = repUser?.email ?? ""
+
+  const worker = await addSponsoredWorker(admin, {
+    sponsorId: req.sponsor_id,
+    repId: rep.id,
+    repEmail,
+    repName: rep.full_name ?? "Your representative",
+    scope: (grantedScope || req.requested_scope) as "packet_only" | "assist" | "full",
+    actorId: userId,
+    applicantEmail: req.applicant_email,
+    applicantName: req.applicant_name,
+  })
+  if (worker.error) return { error: worker.error }
+
+  await admin
+    .from("sponsor_worker_requests")
+    .update({ status: "approved", resolved_at: new Date().toISOString(), resolved_by: userId })
+    .eq("id", requestId)
+  await logActivity({
+    action: "sponsor.worker_request_approved",
+    caseId: worker.caseId,
+    entity: "sponsor_worker_request",
+    entityId: requestId,
+    detail: { applicant: req.applicant_name, scope: grantedScope || req.requested_scope },
+  })
+  revalidatePath("/admin/sponsors")
+  // No tempPassword — the requesting rep already has an account.
+  return { inviteUrl: worker.inviteUrl, identityResolved: worker.identityResolved }
+}
+
+/** Staff decline a worker request, with a reason. */
+export async function declineWorkerRequest(formData: FormData): Promise<{ ok?: true; error?: string }> {
+  const { userId } = await requireStaff()
+  const requestId = String(formData.get("requestId") ?? "").trim()
+  const reason = String(formData.get("reason") ?? "").trim()
+  if (!requestId) return { error: "Request id is required." }
+  if (reason.length < 3) return { error: "A short reason is required." }
+
+  const admin = createAdminClient()
+  const { data: req } = await admin.from("sponsor_worker_requests").select("id, status").eq("id", requestId).maybeSingle()
+  if (!req) return { error: "Request not found." }
+  if (req.status !== "pending") return { error: "This request has already been resolved." }
+
+  await admin
+    .from("sponsor_worker_requests")
+    .update({ status: "declined", decline_reason: reason, resolved_at: new Date().toISOString(), resolved_by: userId })
+    .eq("id", requestId)
+  await logActivity({ action: "sponsor.worker_request_declined", entity: "sponsor_worker_request", entityId: requestId, detail: { reason } })
+  revalidatePath("/admin/sponsors")
+  return { ok: true }
 }
 
 /** Staff override of a case's derived licence track (License Division beats our

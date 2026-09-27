@@ -1,76 +1,117 @@
 import Link from "next/link"
-import { ArrowRight, FolderOpen, UserPlus } from "lucide-react"
-import { loadSponsorCases } from "@/lib/sponsor/queries"
-import { brand } from "@/config/brand"
+import { ArrowRight, FolderOpen, UserPlus, AlertTriangle } from "lucide-react"
+import { loadSponsorBoard, type BoardOwner } from "@/lib/sponsor/board"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { formatDate } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
-export const metadata = { title: "Your sponsored files", robots: { index: false, follow: false } }
+export const metadata = { title: "Your workers", robots: { index: false, follow: false } }
 
-// Adding an applicant is an operator step (we provision the case + invite), so the
-// button opens a pre-written email to our team rather than a self-serve form.
-const ADD_APPLICANT_MAILTO = `mailto:${brand.contact.email}?subject=${encodeURIComponent(
-  "New sponsored applicant"
-)}&body=${encodeURIComponent(
-  "Hi Gun License NYC team,\n\nI'd like to sponsor another applicant. Their details:\n\nApplicant full name:\nApplicant email:\nCompany:\nAssignment / role:\n\nThanks,"
-)}`
-
-const TRACK_LABEL: Record<string, string> = {
-  carry_guard: "NYPD Carry Guard",
-  special_carry_guard: "NYPD Special Carry Guard",
-  sponsored_unresolved: "NYPD armed guard (category being confirmed)",
-  concealed_carry: "NYPD licence",
+/** Owner chip tone: brass = you can act on it; everything else is muted/informational. */
+const OWNER_TONE: Record<BoardOwner, string> = {
+  employer: "border-brass/40 bg-brass/10 text-brass",
+  worker: "border-signal/40 bg-signal/10 text-signal",
+  us: "border-hairline bg-surface-2 text-text-mid",
+  nypd: "border-hairline bg-surface-2 text-text-mid",
+  done: "border-ok/30 bg-ok/10 text-ok",
 }
 
 /**
- * The rep's case list. A neutral empty state that neither confirms nor denies any
- * case exists for an email — a sponsor with no active, consented binding sees the
- * same thing whether or not a case is out there.
+ * The employer board. One row per worker: what they're waiting on and who owns it. The
+ * applicant's own file is never shown — only the company's packet items surface, and the
+ * stage explains the rest. NYPD-controlled stages are labelled as such, never as
+ * something we can hurry.
  */
 export default async function SponsorHome() {
-  const cases = await loadSponsorCases()
+  const board = await loadSponsorBoard()
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <SectionEyebrow>Sponsor portal</SectionEyebrow>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your sponsored files</h1>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your workers</h1>
         </div>
-        {/* P3 — this is a high-touch email seam today, not an in-app flow. Label it
-            honestly so a rep knows it opens an email rather than provisioning instantly.
-            (A minimal in-app request that creates a staff task is the tracked follow-up.) */}
-        <a
-          href={ADD_APPLICANT_MAILTO}
+        <Link
+          href="/sponsor/requests"
           className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
         >
-          <UserPlus className="size-4" /> Email us to add another applicant
-        </a>
+          <UserPlus className="size-4" /> Add a worker
+        </Link>
       </div>
 
-      {cases.length === 0 ? (
+      {board.total === 0 ? (
         <div className="rounded-lg border border-hairline bg-card p-6 text-sm text-text-mid">
           <FolderOpen className="mb-2 size-5 text-text-low" />
-          You don&apos;t have any active files right now. A file appears here once the applicant has
-          consented to your access. If you&apos;re expecting one, check with your Gun License NYC contact.
+          You don&apos;t have any active workers right now. A worker appears here once they&apos;ve
+          consented to your access. To add one, use <span className="text-foreground">Add a worker</span>.
         </div>
       ) : (
-        <ul className="space-y-3">
-          {cases.map((c) => (
-            <li key={c.case_id}>
-              <Link
-                href={`/sponsor/${c.case_id}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-hairline bg-card p-4 transition-colors hover:border-brass/40"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium">{c.applicant_name}</div>
-                  <div className="mt-0.5 text-sm text-text-mid">{TRACK_LABEL[c.license_track] ?? c.license_track}</div>
-                </div>
-                <ArrowRight className="size-4 shrink-0 text-text-low" />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* Company summary — blocked-on-you is the number you can act on, so it leads. */}
+          <div className="grid grid-cols-3 gap-3">
+            <Summary figure={board.total} label="Workers" />
+            <Summary figure={board.blockedOnEmployer} label="Waiting on you" tone={board.blockedOnEmployer > 0 ? "brass" : "muted"} />
+            <Summary figure={board.waitingOnNypd} label="Waiting on NYPD" tone="muted" />
+          </div>
+
+          <ul className="space-y-2">
+            {board.rows.map((r) => (
+              <li key={r.caseId}>
+                <Link
+                  href={`/sponsor/${r.caseId}`}
+                  className="block rounded-lg border border-hairline bg-card p-4 transition-colors hover:border-brass/40"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium">{r.applicantName}</div>
+                      <div className="mt-0.5 text-xs text-text-low">
+                        {r.trackLabel} · {r.stageLabel}
+                      </div>
+                    </div>
+                    <span className={cn("shrink-0 rounded-sm border px-2 py-0.5 text-[11px] font-medium", OWNER_TONE[r.owner])}>
+                      {r.ownerLabel}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-sm text-text-mid">{r.blockingItem}</p>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-text-low">
+                    {r.lastMovement && <span>Last movement {formatDate(r.lastMovement)}</span>}
+                    {r.countyExpiry && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1",
+                          (r.countyExpired || r.countyExpiringSoon) && "font-medium text-warn"
+                        )}
+                      >
+                        {(r.countyExpired || r.countyExpiringSoon) && <AlertTriangle className="size-3" />}
+                        County licence {r.countyExpired ? "EXPIRED" : "expires"} {formatDate(r.countyExpiry)}
+                      </span>
+                    )}
+                    <ArrowRight className="ml-auto size-4 text-text-low" />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-text-low">
+            A worker&apos;s own documents and disclosures stay private to them — you see your company
+            packet and where each worker stands.
+          </p>
+        </>
       )}
+    </div>
+  )
+}
+
+function Summary({ figure, label, tone = "muted" }: { figure: number; label: string; tone?: "brass" | "muted" }) {
+  return (
+    <div className={cn("rounded-lg border p-4", tone === "brass" ? "border-brass/40 bg-brass/[0.06]" : "border-hairline bg-card")}>
+      <div className={cn("font-display text-2xl font-semibold tabular-nums", tone === "brass" ? "text-brass" : "text-text-hi")}>
+        {figure}
+      </div>
+      <div className="engraved mt-1 text-text-low">{label}</div>
     </div>
   )
 }
