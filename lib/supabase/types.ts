@@ -3979,6 +3979,73 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsor_worker_requests: {
+        Row: {
+          applicant_email: string
+          applicant_name: string
+          assignment_role: string | null
+          created_at: string
+          decline_reason: string | null
+          id: string
+          requested_by: string
+          requested_scope: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at: string | null
+          resolved_by: string | null
+          sponsor_id: string
+          status: string
+        }
+        Insert: {
+          applicant_email: string
+          applicant_name: string
+          assignment_role?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          requested_by: string
+          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sponsor_id: string
+          status?: string
+        }
+        Update: {
+          applicant_email?: string
+          applicant_name?: string
+          assignment_role?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          requested_by?: string
+          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sponsor_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_worker_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_worker_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_worker_requests_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           agency_license_expires: string | null
@@ -4542,11 +4609,13 @@ export type Database = {
         Row: {
           applicant_name: string | null
           case_id: string | null
+          county_license_expires_on: string | null
           license_track: Database["public"]["Enums"]["license_track"] | null
           scope: Database["public"]["Enums"]["sponsorship_scope"] | null
           sponsor_id: string | null
           sponsorship_id: string | null
           stage: Database["public"]["Enums"]["case_stage"] | null
+          updated_at: string | null
         }
         Relationships: [
           {
