@@ -154,9 +154,9 @@ describe("track-aware: the Special Carry flow is a different composition, not a 
     expect(scW.find((s) => s.kind === "uploads")!.no).toBe(15)
   })
 
-  it("the Special Carry Safeguard upload slot accepts the home-county carry licence (SGI-01 OR SCG-01)", () => {
+  it("the Special Carry Safeguard upload slot accepts the civilian home-county carry licence (SGI-01 OR SPC-01)", () => {
     const scSafeguard = uploadSlotsFor("special_carry").find((s) => /Safeguard/i.test(s.portalLabel))!
-    expect(scSafeguard.reqCodes).toEqual(["SGI-01", "SCG-01"])
+    expect(scSafeguard.reqCodes).toEqual(["SGI-01", "SPC-01"])
     // NYC-resident keeps SGI-01 only (no county licence on that flow).
     expect(uploadSlotsFor("nyc_resident").find((s) => s.portalLabel === "Safeguard")!.reqCodes).toEqual(["SGI-01"])
   })

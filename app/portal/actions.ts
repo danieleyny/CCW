@@ -421,3 +421,26 @@ export async function markEngagementMessagesRead(engagementId: string) {
     .eq("read", false)
     .neq("sender_id", userId)
 }
+
+// ── Referral channel consent ──────────────────────────────────────────────────
+/**
+ * The applicant chooses whether the company that introduced them may see their
+ * PROGRESS STAGE (never their file). Default is no sharing; this is explicit and
+ * revocable. The RPCs are SECURITY DEFINER + owner-guarded — the referrer can never
+ * call them.
+ */
+const REFERRAL_CONSENT_VERSION = "v1"
+
+export async function setReferralConsent(caseId: string, share: boolean) {
+  await requireRole(["client"])
+  const owned = await ownedCase(caseId)
+  if (!owned) return { error: "Case not found." }
+  const supabase = await createClient()
+  const { error } = share
+    ? await supabase.rpc("referral_record_consent", { p_case_id: caseId, p_version: REFERRAL_CONSENT_VERSION })
+    : await supabase.rpc("referral_revoke", { p_case_id: caseId })
+  if (error) return { error: "Couldn't update your sharing choice." }
+  await logActivity({ action: share ? "referral.consent_granted" : "referral.consent_revoked", caseId })
+  revalidatePath("/portal")
+  return { ok: true }
+}

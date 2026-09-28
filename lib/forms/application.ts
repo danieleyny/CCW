@@ -105,6 +105,7 @@ export function buildApplicationValues(
     premisesType: premises ? "Residence" : "",
     // Out-of-city (Special Handgun only)
     outOfCityLicenseNumber: intake.outOfCityLicenseNumber ?? "",
+    outOfCityIssuedBy: intake.outOfCityIssuedBy ?? "",
     outOfCityCounty: intake.outOfCityCounty ?? "",
     outOfCityIssuedOn: intake.outOfCityIssuedOn ?? "",
     outOfCityExpiresOn: intake.outOfCityExpiresOn ?? "",

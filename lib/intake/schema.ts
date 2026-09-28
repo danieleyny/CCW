@@ -82,6 +82,7 @@ export const wizardAnswersSchema = z
     dob: isoDay.optional(),
     residence: z.enum(["nyc", "non_resident"]).optional(),
     licenseType: z.enum(["carry", "premises"]).optional(),
+    nycCarryIntent: z.enum(["personal", "armed_assignment"]).optional(),
     borough: z.string().max(40).optional(),
     prohibitorFelony: z.boolean().optional(),
     prohibitorMentalHealth: z.boolean().optional(),

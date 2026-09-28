@@ -13,7 +13,7 @@ type Admin = ReturnType<typeof createAdminClient>
  */
 export async function ensureClientCaseForProfile(
   admin: Admin,
-  opts: { profileId: string; email: string; fullName: string }
+  opts: { profileId: string; email: string; fullName: string; referredBySponsorId?: string | null }
 ): Promise<{ caseId: string; clientId: string }> {
   const email = opts.email.trim()
 
@@ -94,7 +94,9 @@ export async function ensureClientCaseForProfile(
 
   const { data: kase, error: caseErr } = await admin
     .from("cases")
-    .insert({ client_id: clientId, stage: "lead", status: "active" })
+    // referred_by_sponsor_id is ATTRIBUTION only — it grants the referrer no read access
+    // to this case (see the referral channel migration); it only tags who introduced them.
+    .insert({ client_id: clientId, stage: "lead", status: "active", referred_by_sponsor_id: opts.referredBySponsorId ?? null })
     .select("id")
     .single()
   if (caseErr || !kase) throw new Error(caseErr?.message ?? "Could not open case")

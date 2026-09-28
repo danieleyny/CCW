@@ -1,4 +1,5 @@
 import { isNypdControlled, stageMeta, type CaseStageKey } from "@/config/stages"
+import { countyExpiryStatus } from "@/lib/county-license"
 import { loadSponsorCases, loadSponsorRequirements, type SponsorCaseRow, type SponsorRequirementRow } from "./queries"
 
 /**
@@ -49,8 +50,6 @@ const OWNER_LABEL: Record<BoardOwner, string> = {
   done: "Licensed",
 }
 
-const DAY = 86_400_000
-
 /**
  * Pure per-worker row derivation (unit-testable). `reqs` are ONLY the sponsor-visible
  * requirement rows (party='sponsor' after the P0.1 lockdown) — so the blocking item can
@@ -85,10 +84,7 @@ export function deriveBoardRow(c: SponsorCaseRow, reqs: SponsorRequirementRow[],
     }
   }
 
-  const countyExpiry = c.county_license_expires_on
-  const expMs = countyExpiry ? Date.parse(countyExpiry) : NaN
-  const countyExpired = Number.isFinite(expMs) && expMs < now
-  const countyExpiringSoon = Number.isFinite(expMs) && expMs >= now && expMs <= now + 90 * DAY
+  const { expiry: countyExpiry, expired: countyExpired, expiringSoon: countyExpiringSoon } = countyExpiryStatus(c.county_license_expires_on, now)
 
   return {
     caseId: c.case_id,

@@ -207,12 +207,19 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     systemVerified: "System-verified from the out-of-state license answers given at intake.",
     help: "Disclose any firearms licenses you hold in other jurisdictions. Answered in your intake.",
   },
+  // Civilian Special Carry rests entirely on the applicant's home-county carry licence:
+  // the NYPD portal makes it mandatory data (step 5) PLUS a front/back upload (step 15).
+  // Modelled on SCG-01 (the guard county doc) but written for a personal applicant. It is
+  // blocking — the whole application is void without it.
   "SPC-01": {
-    mode: "attest",
-    actionLabel: "Acknowledge",
-    optional: true,
-    customerTitle: "One thing to know about a Special Carry license",
-    help: "A Special Carry license's validity depends on you also holding a license from your home county (38 RCNY §5-25). This is an advisory — nothing to upload.",
+    mode: "obtain",
+    documentType: "county_pistol_license",
+    actionLabel: "Upload your county licence",
+    customerTitle: "Your home-county carry licence (front and back)",
+    help: "Your active carry/pistol licence from your home county — front and back. Your NYC Special Carry licence is built on top of it: under 38 RCNY §5-25 it voids automatically the moment the county licence is revoked, suspended, cancelled or surrendered. You must carry both licences whenever you carry in the city.",
+    steps: ["Photograph or scan the front and back of your county carry licence.", "Upload both here."],
+    sourceUrl: "https://licensing.nypdonline.org/",
+    sourceLabel: "NYPD License Division",
   },
 
   // ── generate ──────────────────────────────────────────────────────────────

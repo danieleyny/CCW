@@ -45,6 +45,7 @@ const GROUP_LABEL: Record<FactGroup, string> = {
   safeguard: "Safeguard",
   safekeeping: "Safekeeping location",
   counsel: "Counsel",
+  county_license: "Home-county carry licence",
 }
 
 /** How many questionnaires reference each fact — the "used on N forms" line. */

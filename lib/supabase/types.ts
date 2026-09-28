@@ -556,6 +556,62 @@ export type Database = {
           },
         ]
       }
+      case_intent_log: {
+        Row: {
+          case_id: string
+          id: string
+          intent: string
+          note: string | null
+          recorded_at: string
+          recorded_by: string | null
+        }
+        Insert: {
+          case_id: string
+          id?: string
+          intent: string
+          note?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Update: {
+          case_id?: string
+          id?: string
+          intent?: string
+          note?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_intent_log_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_notes: {
         Row: {
           author: string | null
@@ -1029,6 +1085,7 @@ export type Database = {
           opened_at: string
           qa_signed_off_at: string | null
           qa_signed_off_by: string | null
+          referred_by_sponsor_id: string | null
           service_mode: Database["public"]["Enums"]["service_mode"] | null
           stage: Database["public"]["Enums"]["case_stage"]
           stage_entered_at: string
@@ -1054,6 +1111,7 @@ export type Database = {
           opened_at?: string
           qa_signed_off_at?: string | null
           qa_signed_off_by?: string | null
+          referred_by_sponsor_id?: string | null
           service_mode?: Database["public"]["Enums"]["service_mode"] | null
           stage?: Database["public"]["Enums"]["case_stage"]
           stage_entered_at?: string
@@ -1079,6 +1137,7 @@ export type Database = {
           opened_at?: string
           qa_signed_off_at?: string | null
           qa_signed_off_by?: string | null
+          referred_by_sponsor_id?: string | null
           service_mode?: Database["public"]["Enums"]["service_mode"] | null
           stage?: Database["public"]["Enums"]["case_stage"]
           stage_entered_at?: string
@@ -1101,6 +1160,13 @@ export type Database = {
             columns: ["qa_signed_off_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cases_referred_by_sponsor_id_fkey"
+            columns: ["referred_by_sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
         ]
@@ -3266,6 +3332,62 @@ export type Database = {
           },
         ]
       }
+      referral_consent: {
+        Row: {
+          case_id: string
+          consent_version: string | null
+          consented_at: string | null
+          created_at: string
+          revoked_at: string | null
+          sponsor_id: string
+        }
+        Insert: {
+          case_id: string
+          consent_version?: string | null
+          consented_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+          sponsor_id: string
+        }
+        Update: {
+          case_id?: string
+          consent_version?: string | null
+          consented_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "referral_consent_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminder_log: {
         Row: {
           case_id: string | null
@@ -5251,6 +5373,26 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      referral_channel_stats: {
+        Args: never
+        Returns: {
+          completed: number
+          introduced: number
+          signed_up: number
+        }[]
+      }
+      referral_consented_stages: {
+        Args: never
+        Returns: {
+          case_id: string
+          stage: string
+        }[]
+      }
+      referral_record_consent: {
+        Args: { p_case_id: string; p_version: string }
+        Returns: undefined
+      }
+      referral_revoke: { Args: { p_case_id: string }; Returns: undefined }
       sponsor_accept_invite: { Args: { p_token: string }; Returns: string }
       sponsor_active_scope: {
         Args: { p_case_id: string }
