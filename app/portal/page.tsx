@@ -2,6 +2,8 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2, Compass } from "lucide-react"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
+import { ReferralConsentCard } from "@/components/portal/referral-consent-card"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase, getTrainingState } from "@/lib/portal"
 import {
@@ -96,6 +98,22 @@ export default async function PortalHome() {
     .limit(1)
     .maybeSingle()
   const isSponsored = !!sponsorship
+
+  // Referral channel: a company introduced this applicant (attribution only). If so, offer
+  // the applicant control over sharing their STAGE with that company (default: private).
+  const { data: refCase } = await supabase.from("cases").select("referred_by_sponsor_id").eq("id", myCase.id).maybeSingle()
+  let referral: { company: string; sharing: boolean } | null = null
+  if (refCase?.referred_by_sponsor_id) {
+    // Applicants can't read the sponsors table (RLS) — fetch just the referrer's company
+    // name (a public display value) with the service role. The consent row is theirs to read.
+    const admin = createAdminClient()
+    const [{ data: sp }, { data: rc }] = await Promise.all([
+      admin.from("sponsors").select("legal_name").eq("id", refCase.referred_by_sponsor_id).maybeSingle(),
+      supabase.from("referral_consent").select("consented_at, revoked_at").eq("case_id", myCase.id).maybeSingle(),
+    ])
+    referral = { company: sp?.legal_name ?? "the company that introduced you", sharing: !!rc?.consented_at && !rc?.revoked_at }
+  }
+
   const routing = decideConciergeRouting({
     intakeDone,
     serviceMode,
@@ -138,6 +156,8 @@ export default async function PortalHome() {
       </div>
 
       <SponsorBanner caseId={myCase.id} />
+
+      {referral && <ReferralConsentCard caseId={myCase.id} company={referral.company} sharing={referral.sharing} />}
 
       {/* CONCIERGE QA Phase 2 — chose Full Concierge, hasn't paid: a warm,
           recoverable card, ABOVE the fold, instead of the silent self-guided

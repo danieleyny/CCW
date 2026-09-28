@@ -2,14 +2,17 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Users, Building2, Inbox } from "lucide-react"
+import { Users, Building2, Inbox, LineChart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-/** Minimal sponsor nav (S1): Workers · Company · Requests. Brass marks the active tab. */
+/** Sponsor nav: Workers · Company · Requests · Referrals. Brass marks the active tab.
+ *  Referrals is the CHANNEL surface (aggregate counts only) — a different relationship
+ *  from sponsorship; it reads none of the sponsored-case data. */
 const TABS = [
   { href: "/sponsor", label: "Workers", icon: Users, exact: true },
   { href: "/sponsor/company", label: "Company", icon: Building2 },
   { href: "/sponsor/requests", label: "Requests", icon: Inbox },
+  { href: "/sponsor/referrals", label: "Referrals", icon: LineChart },
 ]
 
 export function SponsorNav() {

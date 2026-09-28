@@ -764,6 +764,37 @@ function StepEligibility({
           </select>
         </Field>
       )}
+      {a.residence === "non_resident" && !isGuardTrack && (
+        <Field
+          label="Where do you intend to carry in New York City?"
+          hint="This decides your licence category — it is set by how you'll carry, not by who introduced you to us."
+        >
+          <select
+            aria-label="Intended use in NYC"
+            value={a.nycCarryIntent ?? ""}
+            onChange={(e) => patch({ nycCarryIntent: (e.target.value || undefined) as WizardAnswers["nycCarryIntent"] })}
+            className={SELECT_CLASS}
+          >
+            <option value="">Select…</option>
+            <option value="personal">For my own personal protection — Special Carry</option>
+            <option value="armed_assignment">While working an armed security assignment — Special Carry Guard</option>
+          </select>
+          {a.nycCarryIntent === "personal" && (
+            <div className="mt-2 flex gap-2 rounded-md border-2 border-warn/50 bg-warn/10 p-3 text-sm text-text-hi">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn" />
+              <p>
+                <span className="font-semibold">A personal Special Carry licence does not authorise carrying while working an armed security assignment.</span>{" "}
+                That requires a separate <span className="font-medium">Special Carry Guard</span> licence, plus NY armed-guard registration and training. If you&apos;ll be armed on the job, choose the armed-assignment option above.
+              </p>
+            </div>
+          )}
+          {a.nycCarryIntent === "armed_assignment" && (
+            <p className="mt-2 text-xs text-text-mid">
+              An armed-assignment licence needs your employer&apos;s sponsorship and your qualifying employment. We&apos;ll connect you with the sponsored Special Carry Guard flow.
+            </p>
+          )}
+        </Field>
+      )}
       <div className="space-y-2 rounded-md border border-hairline p-3">
         <p className="text-xs text-text-low">Check any that apply (these route to attorney review):</p>
         <Check label="Felony or serious-offense conviction" checked={!!a.prohibitorFelony} onChange={(v) => patch({ prohibitorFelony: v })} />

@@ -140,11 +140,14 @@ const SLOT_ADDITIONAL: PortalUploadSlot = { portalLabel: "Additional Documents",
 
 const SLOT_SAFEGUARD_RESIDENT: PortalUploadSlot = { portalLabel: "Safeguard", reqCodes: ["SGI-01"], documentType: "safeguard_id", starred: true, zipBase: "05-safeguard-id" }
 // Special Carry: the same slot's real label folds in "All Firearm Licenses" — this is
-// where the home-county carry licence (SCG-01), the document the whole application rests
-// on, belongs. EITHER/OR: SGI-01 (the safeguard's ID) or SCG-01 (the county licence);
-// the requirements engine materialises what the case needs. Before this it mapped SGI-01
+// where the home-county carry licence, the document the whole application rests on,
+// belongs. The Special Carry portal flow only ever serves the CIVILIAN non-resident case
+// (a sponsored armed guard falls back to the resident flow — see portalTrackForCase), so
+// the county doc here is SPC-01, the civilian county-licence requirement, not the guard's
+// SCG-01. EITHER/OR: SGI-01 (the safeguard's ID) or SPC-01 (the county licence); the
+// requirements engine materialises what the case needs. Before this it mapped SGI-01
 // only, so a county-licence upload fell through to the Additional Documents catch-all.
-const SLOT_SAFEGUARD_SPECIAL_CARRY: PortalUploadSlot = { portalLabel: "Safeguard's Government Issued Photo ID / All Firearm Licenses", reqCodes: ["SGI-01", "SCG-01"], documentType: "safeguard_id", starred: true, helpText: "If you have a firearm license, please include the front and back of your license.", zipBase: "05-safeguard-id" }
+const SLOT_SAFEGUARD_SPECIAL_CARRY: PortalUploadSlot = { portalLabel: "Safeguard's Government Issued Photo ID / All Firearm Licenses", reqCodes: ["SGI-01", "SPC-01"], documentType: "safeguard_id", starred: true, helpText: "If you have a firearm license, please include the front and back of your license.", zipBase: "05-safeguard-id" }
 
 const RESIDENT_UPLOAD_SLOTS: readonly PortalUploadSlot[] = [
   SLOT_PHOTO, SLOT_PHOTO_ID, SLOT_DOB, SLOT_RESIDENCE, SLOT_SAFEGUARD_RESIDENT, SLOT_COHABITANT, SLOT_TRAINING, SLOT_ADDITIONAL,

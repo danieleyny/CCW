@@ -138,6 +138,34 @@ export async function processIntake(
     await materializeSponsorPacket(admin, caseId)
   }
 
+  // ── Intended-use routing (Special Carry vs Special Carry Guard) ────────────
+  // Recorded APPEND-ONLY: intake re-runs on every save, so we log only on an actual
+  // CHANGE — and a change between personal and duty carry is a legal-category change, so
+  // it raises a staff task and keeps both values (the history). Referral source never
+  // enters this; the resolver doesn't take it (lib/requirements/carry-intent).
+  if (answers.nycCarryIntent === "personal" || answers.nycCarryIntent === "armed_assignment") {
+    const { data: last } = await admin
+      .from("case_intent_log")
+      .select("intent")
+      .eq("case_id", caseId)
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (last?.intent !== answers.nycCarryIntent) {
+      await admin.from("case_intent_log").insert({ case_id: caseId, intent: answers.nycCarryIntent })
+      if (last?.intent) {
+        // A switch between personal and duty carry — never silent.
+        await admin.from("tasks").insert({
+          case_id: caseId,
+          title: "Carry intent changed — review licence category",
+          description: `Intended NYC carry use changed from "${last.intent}" to "${answers.nycCarryIntent}". Personal Special Carry and Special Carry Guard are different legal categories; confirm the case is on the right track.`,
+          priority: 1,
+          status: "open",
+        })
+      }
+    }
+  }
+
   // ── V3-P1: training is a decaying asset (≤6 months before submission) ──────
   if (answers.trainingStatus === "completed" && answers.trainingDate) {
     const completed = new Date(`${answers.trainingDate}T00:00:00Z`)

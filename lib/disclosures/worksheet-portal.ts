@@ -4,6 +4,7 @@ import { FEE_WAIVER_CATEGORIES, SWORN_STATEMENTS } from "@/lib/disclosures/porta
 import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
 import { portalStep12StatementsFor } from "@/lib/requirements/lon"
 import { precinctForZip, PRECINCT_FINDER_URL } from "@/lib/portal/precinct"
+import { countyExpiryStatus } from "@/lib/county-license"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
@@ -229,15 +230,21 @@ export function buildPortalWorksheet(
   put("additional_licenses", licenseFields)
 
   // Out of city license information (Special Carry step 5) — the home-county carry
-  // licence the whole application rests on. All fields required on the portal.
+  // licence the whole application rests on. All fields required on the portal. The
+  // expiry is the highest-consequence date: when it passes, the NYC licence voids
+  // (38 RCNY §5-25), so flag it at 90 days right on the field.
+  const countyExp = countyExpiryStatus(s(v.outOfCityExpiresOn) || null)
+  const expiryLabel = countyExp.expired
+    ? "Expiration Date ⚠ EXPIRED — the NYC licence is void until the county licence is renewed"
+    : countyExp.expiringSoon
+      ? "Expiration Date ⚠ expires within 90 days — the NYC licence voids when it lapses"
+      : "Expiration Date"
   put("out_of_city", [
     f("Basic License Number", s(v.outOfCityLicenseNumber)),
-    // "Issued By" (the licensing authority) is not a field we capture separately — staff
-    // read it from the licence itself; optional so it is never a red box they can't clear.
-    f("Issued By — read from the county licence", "", { optional: true }),
+    f("Issued By", s(v.outOfCityIssuedBy) || "", { optional: !s(v.outOfCityIssuedBy) }),
     f("County", s(v.outOfCityCounty)),
     f("Date Issued", portalDate(s(v.outOfCityIssuedOn))),
-    f("Expiration Date", portalDate(s(v.outOfCityExpiresOn))),
+    f(expiryLabel, portalDate(s(v.outOfCityExpiresOn))),
   ])
 
   // Existing Guns

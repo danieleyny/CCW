@@ -13,7 +13,7 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 import { SAFEGUARD_NOT_YOU_NOTE } from "@/lib/safeguard/self-designation"
 
 export type FactType = "text" | "date" | "phone" | "zip" | "select"
-export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel"
+export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel" | "county_license"
 
 /**
  * An explanatory note rendered ABOVE a group's rows in the details editor — for a rule
@@ -22,6 +22,8 @@ export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" 
  */
 export const GROUP_NOTES: Partial<Record<FactGroup, string>> = {
   safeguard: SAFEGUARD_NOT_YOU_NOTE,
+  county_license:
+    "Your NYC Special Carry licence rests on your home-county carry licence — the portal asks for these five details (step 5) and they must match the card you upload. The expiration date matters most: your NYC licence voids automatically the moment the county licence lapses (38 RCNY §5-25).",
 }
 
 export interface FactSource {
@@ -260,6 +262,17 @@ export const FACTS: FactDef[] = [
   { key: "counsel.firm", label: "Name of firm", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
   { key: "counsel.email", label: "Attorney email", type: "text", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
   { key: "counsel.phone", label: "Attorney phone", type: "phone", group: "counsel", showWhen: { key: "counsel.represented", equals: ["Yes"] } },
+
+  // ── Home-county carry licence (civilian Special Carry — NYPD portal step 5) ──
+  // The licence NYC Special Carry is built on. Surfaced only when the applicant holds one
+  // (a non-resident on a county carry licence); a NYC resident never sees these.
+  { key: "countyLicense.held", label: "Do you hold a carry licence from another NY county?", type: "select", group: "county_license", options: ["No", "Yes"], from: (s) => (s.intake.outOfCityHeld === "yes" || s.intake.outOfCityLicenseNumber ? "Yes" : s.intake.outOfCityHeld === "no" ? "No" : undefined) },
+  { key: "countyLicense.number", label: "Basic licence number", type: "text", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityLicenseNumber },
+  { key: "countyLicense.issuedBy", label: "Issued by (licensing authority)", type: "text", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, placeholder: "as printed on the licence", from: (s) => s.intake.outOfCityIssuedBy },
+  { key: "countyLicense.county", label: "County", type: "text", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityCounty },
+  { key: "countyLicense.issuedOn", label: "Date issued", type: "date", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityIssuedOn },
+  // The single highest-consequence date in the file: when it passes, the NYC licence is void.
+  { key: "countyLicense.expiresOn", label: "Expiration date", type: "date", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityExpiresOn },
 
   // ── Sponsor-owned ──
   { key: "sponsor.legalName", label: "Company legal name", type: "text", group: "sponsor", owner: "sponsor", from: (s) => s.sponsor?.legalName },

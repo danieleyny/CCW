@@ -113,6 +113,9 @@ export interface WizardAnswers {
   dob?: string
   residence?: "nyc" | "non_resident"
   licenseType?: "carry" | "premises" // default carry
+  /** Intended use in NYC — routes Special Carry vs Special Carry Guard by INTENT, never
+   *  by who referred the applicant (see lib/requirements/carry-intent). */
+  nycCarryIntent?: "personal" | "armed_assignment"
   borough?: string
   prohibitorFelony?: boolean
   prohibitorMentalHealth?: boolean
