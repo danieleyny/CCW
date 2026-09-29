@@ -19,10 +19,11 @@ import {
   type SocialAccount,
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
-import { checkHistory } from "@/lib/intake/history-check"
+import { checkHistory, applyPresentRadio } from "@/lib/intake/history-check"
 import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
 import { HeightField } from "@/components/portal/intake/height-field"
 import { DateOfBirthField } from "@/components/portal/intake/dob-field"
+import { CountyInput } from "@/components/portal/county-input"
 import { SectionHeader } from "@/components/portal/section-header"
 import {
   eligibilityStepIssues,
@@ -963,7 +964,7 @@ function StepIdentity({ a, patch }: StepProps) {
               <Input value={a.outOfCityIssuedBy ?? ""} onChange={(e) => patch({ outOfCityIssuedBy: e.target.value })} />
             </Field>
             <Field label="County">
-              <Input value={a.outOfCityCounty ?? ""} onChange={(e) => patch({ outOfCityCounty: e.target.value })} />
+              <CountyInput value={a.outOfCityCounty ?? ""} onChange={(v) => patch({ outOfCityCounty: v })} />
             </Field>
             <Field label="Date issued">
               <Input type="date" value={a.outOfCityIssuedOn ?? ""} onChange={(e) => patch({ outOfCityIssuedOn: e.target.value })} />
@@ -1208,9 +1209,13 @@ function StepDisclosures({
                 role="radiogroup"
                 aria-label={`Q${item.no}: ${item.text}`}
                 className={cn(
-                  "card-soft p-3.5 transition-opacity",
+                  "card-soft p-3.5 transition-colors",
+                  // Both answers read as ANSWERED — Yes in brass (the accent), No in a
+                  // neutral filled state. Never dim "No": a factual "No" is a complete
+                  // answer, and dimming it reads as "not done yet" (finding 4). Disclosing
+                  // is correct, so neither answer is styled as a bad outcome.
                   isYes && "border-l-[3px] border-l-brass bg-brass/[0.04] glow-neutral",
-                  isNo && "opacity-[0.72]",
+                  isNo && "border-l-[3px] border-l-hairline-strong bg-surface-2/40",
                   !answered && "ring-1 ring-signal/25"
                 )}
               >
@@ -1219,7 +1224,7 @@ function StepDisclosures({
                     aria-hidden
                     className={cn(
                       "mt-0.5 flex h-[22px] min-w-[30px] items-center justify-center rounded-md border font-mono text-[10.5px]",
-                      isNo ? "border-hairline text-text-low" : "border-brass/25 bg-brass/10 text-brass"
+                      isYes ? "border-brass/25 bg-brass/10 text-brass" : isNo ? "border-hairline-strong bg-surface-3 text-text-mid" : "border-hairline text-text-low"
                     )}
                   >
                     Q{item.no}
@@ -1242,7 +1247,8 @@ function StepDisclosures({
                       aria-hidden
                       className={cn(
                         "absolute inset-y-[3px] w-[calc(50%-6px)] rounded-lg transition-[left] duration-200 ease-out motion-reduce:transition-none",
-                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1"
+                        // No gets a solid neutral chip (bordered) — equally clearly "selected", never faint.
+                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1 ring-1 ring-hairline-strong"
                       )}
                     />
                   )}
@@ -1403,7 +1409,7 @@ function StepHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => { const c = [...resHist]; c[i] = { ...c[i], fromMonth: v }; patch({ residenceHistory: c }) }}
-                onTo={(v) => { const c = [...resHist]; c[i] = { ...c[i], toMonth: v }; patch({ residenceHistory: c }) }}
+                onTo={(v) => patch({ residenceHistory: applyPresentRadio(resHist, i, v) })}
               />
               <Button variant="ghost" size="icon" onClick={() => patch({ residenceHistory: resHist.filter((_, j) => j !== i) })}>
                 <Trash2 className="size-4" />
@@ -1459,7 +1465,7 @@ function StepHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => { const c = [...empHist]; c[i] = { ...c[i], fromMonth: v }; patch({ employmentHistory: c }) }}
-                onTo={(v) => { const c = [...empHist]; c[i] = { ...c[i], toMonth: v }; patch({ employmentHistory: c }) }}
+                onTo={(v) => patch({ employmentHistory: applyPresentRadio(empHist, i, v) })}
               />
               <Button variant="ghost" size="icon" onClick={() => patch({ employmentHistory: empHist.filter((_, j) => j !== i) })}>
                 <Trash2 className="size-4" />

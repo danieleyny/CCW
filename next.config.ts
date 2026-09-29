@@ -48,6 +48,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // sharp is a native module used server-side to convert applicant photos toward the
+  // portal's format/dimensions — keep it external rather than bundled.
+  serverExternalPackages: ["sharp"],
   // The form-fill engine (lib/forms/fill.ts) reads the official NYPD PDFs from
   // assets/form-templates/ at runtime; make sure they're traced into the
   // serverless bundle (same as the fonts the PDF builder reads).

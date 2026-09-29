@@ -43,6 +43,9 @@ export interface RosterSyncResult {
    * distinct from needEmail so the UI doesn't say "has no email" when it does.
    */
   sendFailed: string[]
+  /** WHY the sends in `sendFailed` didn't go: "not_configured" (delivery isn't set up —
+   *  we couldn't send) vs "rejected" (the provider refused the address). Drives honest copy. */
+  sendReason?: "not_configured" | "rejected"
   /**
    * Dropped from the list but kept because we already hold their document
    * (received or notarized) — deleting them would orphan filed evidence.
@@ -123,7 +126,7 @@ export async function syncReferences(
     if (match?.notarized) continue
     const invite = await inviteReference(admin, id)
     if (invite?.emailed) result.invited++
-    else if (invite?.hadEmail) result.sendFailed.push(person.name)
+    else if (invite?.hadEmail) { result.sendFailed.push(person.name); if (invite.reason) result.sendReason = invite.reason }
     else result.needEmail.push(person.name)
   }
 
@@ -188,7 +191,7 @@ export async function syncCohabitants(
     if (done(match?.affidavit_status)) continue
     const invite = await inviteCohabitant(admin, id)
     if (invite?.emailed) result.invited++
-    else if (invite?.hadEmail) result.sendFailed.push(person.name)
+    else if (invite?.hadEmail) { result.sendFailed.push(person.name); if (invite.reason) result.sendReason = invite.reason }
     else result.needEmail.push(person.name)
   }
 

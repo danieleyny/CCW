@@ -31,6 +31,9 @@ export interface PortalSlotView {
   documentId: string | null
   /** Rejection note shown to staff when the slot was sent back. */
   rejectionNote: string | null
+  /** What we auto-converted / why a file needs manual conversion (finding 8) — so staff
+   *  know exactly what they're sending to NYPD, and that only format/size was fixed. */
+  conversionNote: string | null
   /** This slot is filled by a file uploaded for another requirement (a shared passport). */
   sharedFromLabel: string | null
 }
@@ -115,7 +118,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
   // Step-13 slots + latest uploaded document per requirement (newest first).
   const { data: docs } = await admin
     .from("documents")
-    .select("id, req_code, type, file_name, status, version, review_notes, generated, created_at, notarized")
+    .select("id, req_code, type, file_name, status, version, review_notes, generated, created_at, notarized, conversion_note")
     .eq("case_id", caseId)
     .order("created_at", { ascending: false })
   const docById = new Map((docs ?? []).map((d) => [d.id, d]))
@@ -164,6 +167,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
         fileName: doc?.file_name ?? null,
         documentId: doc?.id ?? null,
         rejectionNote: doc?.status === "rejected" ? doc.review_notes ?? null : null,
+        conversionNote: doc?.conversion_note ?? null,
         sharedFromLabel: null,
       })
       continue
@@ -185,6 +189,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
       fileName: doc?.file_name ?? null,
       documentId: doc?.id ?? null,
       rejectionNote: doc?.status === "rejected" ? doc.review_notes ?? null : null,
+      conversionNote: doc?.conversion_note ?? null,
       sharedFromLabel,
     })
   }

@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react"
 import { Check, Pencil, Loader2, AlertCircle } from "lucide-react"
 import { setCaseFact } from "@/app/portal/facts/actions"
 import type { FactRowMeta } from "@/lib/facts/details-view"
+import { NY_COUNTIES, isKnownNyCounty } from "@/lib/ny-counties"
 
 /**
  * One fact. An EMPTY editable field is a live input — click and type, no pencil. A
@@ -161,6 +162,27 @@ export function FactRow({
                   </option>
                 ))}
               </select>
+            ) : type === "county" ? (
+              // A county autocompletes the 62 NY counties (shared list) and allows an
+              // out-of-state value, flagged below — never blocked (finding 7).
+              <>
+                <input
+                  {...commonProps}
+                  type="text"
+                  list={`${inputId}-counties`}
+                  autoComplete="off"
+                  placeholder={placeholder ?? "County"}
+                  onChange={(e) => {
+                    setDraft(e.target.value)
+                    if (serverError) setServerError("")
+                  }}
+                />
+                <datalist id={`${inputId}-counties`}>
+                  {NY_COUNTIES.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              </>
             ) : (
               <input
                 {...commonProps}
@@ -177,7 +199,13 @@ export function FactRow({
             )}
             <StatusMark status={status} />
           </div>
-        ) : (
+        ) : null}
+        {asInput && type === "county" && !isKnownNyCounty(draft) && (
+          <p className="mt-1 text-[11px] text-warn">
+            Not a New York county — fine if it&apos;s out of state, just check the spelling matches the licence.
+          </p>
+        )}
+        {!asInput && (
           <div className="mt-0.5 flex items-center gap-2 text-sm text-text-mid">
             {kind === "ssn"
               ? "On file (hidden) · never shared with your sponsor"

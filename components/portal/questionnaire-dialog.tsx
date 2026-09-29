@@ -165,7 +165,10 @@ export function QuestionnaireDialog({
           }
           return
         }
-        toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
+        // A partial/failed send must NOT read as a green success (finding 3b): when some
+        // links couldn't be emailed, use the warning styling so the toast matches the copy.
+        if (r.anyFailed) toast.warning(r.summary ?? "Some links couldn't be emailed — copy them instead.", { duration: 12000 })
+        else toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
         close()
         return
       }

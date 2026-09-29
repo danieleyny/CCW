@@ -443,6 +443,12 @@ function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (
           <div className="mt-0.5 text-xs font-medium text-danger">This slot is image-only — the portal will reject this PDF. Get a photo (JPG/PNG) instead.</div>
         )}
         {slot.sharedFromLabel && <div className="mt-0.5 text-xs text-text-low">Provided from another upload</div>}
+        {slot.conversionNote && (
+          <div className="mt-0.5 flex items-start gap-1 text-xs text-warn">
+            <span aria-hidden>⚙</span>
+            <span>{slot.conversionNote}</span>
+          </div>
+        )}
         {slot.rejectionNote && <div className="mt-0.5 text-xs text-danger">Note: {slot.rejectionNote}</div>}
         {error && <div className="mt-0.5 text-xs text-danger">{error}</div>}
       </div>

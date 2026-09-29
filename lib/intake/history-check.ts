@@ -16,6 +16,31 @@
 export type HistoryRow = { fromMonth?: string; toMonth?: string }
 export type HistoryNotice = { kind: "missing-dates" | "not-present" | "gap" | "overlap"; message: string }
 
+/**
+ * Ticking "Present" (a blank end month) is a RADIO, not a checkbox: a person has exactly
+ * one current address / employer, so making row `i` open-ended must give every OTHER
+ * started row a concrete end month (today, which the applicant can adjust) — never two
+ * open rows. Setting a real end month on row `i` touches nothing else. Pure + testable;
+ * used by both history editors (intake wizard and the facts "Your details" screen).
+ */
+export function applyPresentRadio<T extends { fromMonth?: string; toMonth?: string }>(
+  rows: T[],
+  i: number,
+  value: string,
+  now = new Date()
+): T[] {
+  const month = now.toISOString().slice(0, 7)
+  const next = rows.map((r) => ({ ...r }))
+  next[i] = { ...next[i], toMonth: value }
+  if (value === "") {
+    for (let j = 0; j < next.length; j++) {
+      // Only close OTHER rows that are real (have a start) and currently open.
+      if (j !== i && next[j].fromMonth && !next[j].toMonth) next[j] = { ...next[j], toMonth: month }
+    }
+  }
+  return next
+}
+
 /** Month index (year*12 + monthIndex) from "YYYY-MM" or "YYYY-MM-DD"; null if unset/invalid. */
 function monthIndex(iso?: string): number | null {
   if (!iso) return null
@@ -53,8 +78,11 @@ export function checkHistory(rows: HistoryRow[], noun: "lived" | "worked", now =
   const place = noun === "lived" ? "lived" : "worked"
 
   // 1) Require start AND end on every row — except the single most-recent one, which may
-  //    run to "Present" (blank end).
-  const withFrom = started.map((r) => ({ from: monthIndex(r.fromMonth), to: monthIndex(r.toMonth), row: r }))
+  //    run to "Present" (blank end). Carry the 1-based ORIGINAL index so an overlap can
+  //    name the two rows the applicant sees.
+  const withFrom = rows
+    .map((r, i) => ({ from: monthIndex(r.fromMonth), to: monthIndex(r.toMonth), idx: i + 1 }))
+    .filter((r) => r.from !== null || r.to !== null)
   const newestFrom = Math.max(...withFrom.map((r) => r.from ?? -Infinity))
   let missing = false
   for (const r of withFrom) {
@@ -94,7 +122,7 @@ export function checkHistory(rows: HistoryRow[], noun: "lived" | "worked", now =
     } else if (cur.from !== null && prev.to !== null && cur.from < prev.to) {
       notices.push({
         kind: "overlap",
-        message: `Two entries overlap around ${monthLabel(cur.from)} — check those dates so the timeline is clean.`,
+        message: `Row ${prev.idx} and Row ${cur.idx} overlap around ${monthLabel(cur.from)} — check those dates so the timeline is clean. Only your current entry should be open (“Present”).`,
       })
     }
   }

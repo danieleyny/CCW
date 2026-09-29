@@ -12,7 +12,7 @@
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { SAFEGUARD_NOT_YOU_NOTE } from "@/lib/safeguard/self-designation"
 
-export type FactType = "text" | "date" | "phone" | "zip" | "select"
+export type FactType = "text" | "date" | "phone" | "zip" | "select" | "county"
 export type FactGroup = "you" | "address" | "contact" | "physical" | "employer" | "sponsor" | "safeguard" | "safekeeping" | "counsel" | "county_license"
 
 /**
@@ -132,6 +132,31 @@ function normalizeCitizenship(raw: string): string {
   return v // "Neither", or an already-exact option
 }
 
+/**
+ * The applicant's CURRENT employer, read from the intake five-year employment history:
+ * the open ("Present") row, else the newest. Lets the details editor answer "Currently
+ * employed?" and prefill the employer block from what intake already collected, instead of
+ * asking a self-paying applicant again (the sponsor path is handled separately, above it).
+ */
+function currentEmploymentRow(intake: FactSource["intake"]) {
+  const rows = (intake.employmentHistory ?? []).filter((r) => r.fromMonth || r.employerName || r.employer || r.employerAddress)
+  if (rows.length === 0) return null
+  const open = rows.filter((r) => r.fromMonth && !r.toMonth)
+  const pick = open.length ? open : rows
+  return [...pick].sort((a, b) => (b.fromMonth ?? "").localeCompare(a.fromMonth ?? ""))[0] ?? null
+}
+
+/** "Yes" if intake shows a current employer (an open history row, or the current-employer
+ *  scalars), "No" if there's a completed history but no current one, undefined if we have
+ *  nothing to go on (so the question is still asked). */
+function employedFromIntake(intake: FactSource["intake"]): string | undefined {
+  const rows = (intake.employmentHistory ?? []).filter((r) => r.fromMonth || r.employerName || r.employer)
+  const hasCurrent = rows.some((r) => r.fromMonth && !r.toMonth) || !!intake.businessName
+  if (hasCurrent) return "Yes"
+  if (rows.length > 0) return "No"
+  return undefined
+}
+
 export const FACTS: FactDef[] = [
   // ── You ──
   { key: "applicant.legalFirstName", label: "First name", type: "text", group: "you", from: (s) => nameParts(s.client.fullName)[0] },
@@ -194,20 +219,22 @@ export const FACTS: FactDef[] = [
   // "Currently employed?" gates the rest of the block — every downstream employer
   // field is shown only when the answer is Yes.
   // On a SPONSORED case the employer IS the sponsoring company, so the applicant is
-  // employed by definition — resolve "Yes" from the sponsorship so the whole employer
-  // block (all showWhen: employed=Yes) actually renders its sponsor-supplied values,
-  // instead of hiding behind an unanswered question. Non-sponsored cases still answer it.
-  { key: "employer.employed", label: "Currently employed?", type: "select", group: "employer", options: ["Yes", "No"], from: (s) => (s.sponsor?.legalName ? "Yes" : undefined) },
-  { key: "employer.name", label: "Employer name", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.legalName ?? s.intake.businessName },
-  { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessStreet ?? s.intake.businessStreet },
+  // employed by definition — resolve "Yes" from the sponsorship. A SELF-PAYING applicant
+  // who filled in employment history at intake is also employed; derive that from the
+  // current history row so the portal never asks "Currently employed?" again (finding 2).
+  // Sponsor stays the higher-priority source. The whole block (showWhen: employed=Yes)
+  // then renders its carried-over values, all still editable.
+  { key: "employer.employed", label: "Currently employed?", type: "select", group: "employer", options: ["Yes", "No"], from: (s) => (s.sponsor?.legalName ? "Yes" : employedFromIntake(s.intake)) },
+  { key: "employer.name", label: "Employer name", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.legalName ?? s.intake.businessName ?? currentEmploymentRow(s.intake)?.employerName ?? currentEmploymentRow(s.intake)?.employer },
+  { key: "employer.address.street", label: "Employer street", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessStreet ?? s.intake.businessStreet ?? currentEmploymentRow(s.intake)?.employerAddress },
   // Unit/suite is part of the address — directly under the street (#5).
   { key: "employer.unit", label: "Business unit / suite number", type: "text", group: "employer", optional: true, showWhen: { key: "employer.employed", equals: ["Yes"] }, placeholder: "if any" },
-  { key: "employer.address.city", label: "Employer city", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessCity ?? s.intake.businessCity },
-  { key: "employer.address.state", label: "Employer state", type: "select", group: "employer", options: US_STATES, showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessState ?? s.intake.businessState },
-  { key: "employer.address.zip", label: "Employer ZIP", type: "zip", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessZip ?? s.intake.businessZip },
+  { key: "employer.address.city", label: "Employer city", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessCity ?? s.intake.businessCity ?? currentEmploymentRow(s.intake)?.city },
+  { key: "employer.address.state", label: "Employer state", type: "select", group: "employer", options: US_STATES, showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessState ?? s.intake.businessState ?? currentEmploymentRow(s.intake)?.state },
+  { key: "employer.address.zip", label: "Employer ZIP", type: "zip", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessZip ?? s.intake.businessZip ?? currentEmploymentRow(s.intake)?.zip },
   { key: "employer.phone", label: "Employer phone", type: "phone", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessPhone ?? s.intake.businessPhone },
   { key: "employer.type", label: "Industry / type of business", type: "select", group: "employer", options: INDUSTRIES, showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.sponsor?.businessType ?? s.intake.businessType },
-  { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.intake.occupation },
+  { key: "applicant.jobTitle", label: "Job title", type: "text", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] }, from: (s) => s.intake.occupation ?? currentEmploymentRow(s.intake)?.occupation },
   // Start date — required when employed, hidden entirely when not. Every job has one.
   { key: "employer.startDate", label: "Current employment start date", type: "date", group: "employer", showWhen: { key: "employer.employed", equals: ["Yes"] } },
 
@@ -269,7 +296,7 @@ export const FACTS: FactDef[] = [
   { key: "countyLicense.held", label: "Do you hold a carry licence from another NY county?", type: "select", group: "county_license", options: ["No", "Yes"], from: (s) => (s.intake.outOfCityHeld === "yes" || s.intake.outOfCityLicenseNumber ? "Yes" : s.intake.outOfCityHeld === "no" ? "No" : undefined) },
   { key: "countyLicense.number", label: "Basic licence number", type: "text", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityLicenseNumber },
   { key: "countyLicense.issuedBy", label: "Issued by (licensing authority)", type: "text", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, placeholder: "as printed on the licence", from: (s) => s.intake.outOfCityIssuedBy },
-  { key: "countyLicense.county", label: "County", type: "text", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityCounty },
+  { key: "countyLicense.county", label: "County", type: "county", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityCounty },
   { key: "countyLicense.issuedOn", label: "Date issued", type: "date", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityIssuedOn },
   // The single highest-consequence date in the file: when it passes, the NYC licence is void.
   { key: "countyLicense.expiresOn", label: "Expiration date", type: "date", group: "county_license", showWhen: { key: "countyLicense.held", equals: ["Yes"] }, from: (s) => s.intake.outOfCityExpiresOn },
