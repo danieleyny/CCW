@@ -31,7 +31,7 @@ export default async function ReferencePage({
   }
 
   const [{ data: ref }, { data: kase }] = await Promise.all([
-    admin.from("character_references").select("name, relationship, contact_email").eq("id", req.reference_id).single(),
+    admin.from("character_references").select("name, relationship, contact_email, known_duration").eq("id", req.reference_id).single(),
     admin.from("cases").select("clients(full_name)").eq("id", req.case_id).single(),
   ])
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
@@ -54,6 +54,7 @@ export default async function ReferencePage({
         applicant={applicant}
         initialStatus={req.status}
         invitedEmail={ref?.contact_email ?? ""}
+        prefillKnownDuration={ref?.known_duration ?? null}
       />
     </Shell>
   )

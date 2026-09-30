@@ -1179,6 +1179,7 @@ export type Database = {
           created_at: string
           id: string
           is_family: boolean
+          known_duration: string | null
           name: string
           notarized: boolean
           received: boolean
@@ -1192,6 +1193,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_family?: boolean
+          known_duration?: string | null
           name: string
           notarized?: boolean
           received?: boolean
@@ -1205,6 +1207,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_family?: boolean
+          known_duration?: string | null
           name?: string
           notarized?: boolean
           received?: boolean
@@ -1785,12 +1788,14 @@ export type Database = {
           case_id: string
           checklist_item_id: string | null
           client_id: string
+          conversion_note: string | null
           created_at: string
           file_name: string | null
           file_path: string | null
           generated: boolean
           id: string
           notarized: boolean
+          original_file_path: string | null
           req_code: string | null
           review_notes: string | null
           reviewer: string | null
@@ -1807,12 +1812,14 @@ export type Database = {
           case_id: string
           checklist_item_id?: string | null
           client_id: string
+          conversion_note?: string | null
           created_at?: string
           file_name?: string | null
           file_path?: string | null
           generated?: boolean
           id?: string
           notarized?: boolean
+          original_file_path?: string | null
           req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
@@ -1829,12 +1836,14 @@ export type Database = {
           case_id?: string
           checklist_item_id?: string | null
           client_id?: string
+          conversion_note?: string | null
           created_at?: string
           file_name?: string | null
           file_path?: string | null
           generated?: boolean
           id?: string
           notarized?: boolean
+          original_file_path?: string | null
           req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
@@ -3224,6 +3233,7 @@ export type Database = {
           confirmed_email: string | null
           created_at: string
           document_id: string | null
+          emailed: boolean
           expires_at: string
           id: string
           notarized_at: string | null
@@ -3245,6 +3255,7 @@ export type Database = {
           confirmed_email?: string | null
           created_at?: string
           document_id?: string | null
+          emailed?: boolean
           expires_at?: string
           id?: string
           notarized_at?: string | null
@@ -3266,6 +3277,7 @@ export type Database = {
           confirmed_email?: string | null
           created_at?: string
           document_id?: string | null
+          emailed?: boolean
           expires_at?: string
           id?: string
           notarized_at?: string | null

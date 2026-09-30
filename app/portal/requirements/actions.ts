@@ -45,6 +45,8 @@ export interface RosterResult extends Result {
   summary?: string
   /** People with no email — the applicant sends them the link themselves. */
   needEmail?: string[]
+  /** Some links couldn't be emailed — the toast should warn, not claim success (finding 3b). */
+  anyFailed?: boolean
 }
 
 /** Save (or update) a requirement's questionnaire answers. Client-owned via RLS. */
@@ -550,9 +552,12 @@ export async function submitRequirementRoster(
       )
     }
     if (sync.sendFailed.length > 0) {
-      // Had an address but delivery didn't go through — never claim "sent".
+      // Had an address but delivery didn't go through — never claim "sent". Distinguish
+      // "the address was rejected" (check it) from "we couldn't send" (delivery not set up).
       parts.push(
-        `We couldn't email ${sync.sendFailed.join(", ")} just now — their link is ready to copy from References & household in the meantime.`
+        sync.sendReason === "rejected"
+          ? `The email address for ${sync.sendFailed.join(", ")} was rejected — check it, or copy their link from References & household and send it yourself.`
+          : `We couldn't email ${sync.sendFailed.join(", ")} just now — their link is ready to copy from References & household in the meantime.`
       )
     }
     if (sync.keptWithEvidence.length > 0) {
@@ -564,7 +569,9 @@ export async function submitRequirementRoster(
     }
     parts.push("This completes when the notarized copies come back.")
 
-    return { ok: true, summary: parts.join(" "), needEmail: sync.needEmail }
+    // `anyFailed` lets the dialog style the toast as a WARNING, not a green success,
+    // when some links couldn't be emailed (finding 3b).
+    return { ok: true, summary: parts.join(" "), needEmail: sync.needEmail, anyFailed: sync.sendFailed.length > 0 }
   } catch (e) {
     return { error: toUserFacingError(e, "Could not set up those invitations") }
   }

@@ -6,7 +6,7 @@ import type { PortalSlotView, HeldItem } from "@/lib/portal/application-tab"
 const section = (no: number, fields: WorksheetSection["fields"]): WorksheetSection => ({ no, title: `Step ${no}`, kind: "fields", fields })
 const slot = (over: Partial<PortalSlotView>): PortalSlotView => ({
   portalLabel: "Photo ID", reqCode: "IDN-01", starred: true, imageOnly: false, isCatchAll: false,
-  state: "missing", fileName: null, documentId: null, rejectionNote: null, sharedFromLabel: null, ...over,
+  state: "missing", fileName: null, documentId: null, rejectionNote: null, conversionNote: null, sharedFromLabel: null, ...over,
 })
 const held = (over: Partial<HeldItem>): HeldItem => ({
   reqCode: "REL-01", title: "Notarized release", destination: "interview", state: "missing",

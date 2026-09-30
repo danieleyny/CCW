@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { checkHistory, type HistoryNotice } from "@/lib/intake/history-check"
+import { checkHistory, applyPresentRadio, type HistoryNotice } from "@/lib/intake/history-check"
 import type { AddressHistoryEntry, EmploymentHistoryEntry } from "@/lib/intake/answers"
 
 /** Soft, non-blocking continuity guidance for a five-year history (task 9). */
@@ -180,7 +180,7 @@ export function ApplicationHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => setRes((c) => c.map((x, j) => (j === i ? { ...x, fromMonth: v } : x)))}
-                onTo={(v) => setRes((c) => c.map((x, j) => (j === i ? { ...x, toMonth: v } : x)))}
+                onTo={(v) => setRes((c) => applyPresentRadio(c, i, v))}
               />
               <Button variant="ghost" size="icon" onClick={() => setRes((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
@@ -233,7 +233,7 @@ export function ApplicationHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, fromMonth: v } : x)))}
-                onTo={(v) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, toMonth: v } : x)))}
+                onTo={(v) => setEmp((c) => applyPresentRadio(c, i, v))}
               />
               <Button variant="ghost" size="icon" onClick={() => setEmp((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />

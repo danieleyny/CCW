@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
 import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
-import { normalizeApplicantPhoto } from "@/lib/files/photo-spec"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { StateChip } from "@/components/shared/state-chip"
 import { docStateStyle, type DocState } from "@/lib/ui/doc-state"
@@ -85,16 +84,14 @@ export function DocumentUploader({
     if (!file) return
 
     if (photoSpec) {
-      // V3-P4.2 — the NYPD photo spec, enforced mechanically: square photos
-      // that are merely oversized get auto-downscaled to 1200×1200; anything
-      // unfixable is rejected with the exact reason.
-      const spec = await normalizeApplicantPhoto(file)
-      if (!spec.ok || !spec.file) {
-        toast.error(spec.issues[0] ?? "That photo doesn't meet the NYPD spec.", { duration: 9000 })
-        return
+      // Finding 8 — getting a portal-shaped photo is OUR job, not the applicant's. Accept
+      // any common image OR a PDF; we convert it server-side toward the portal's format
+      // and passport dimensions. A light client compress keeps an image upload small
+      // (incl. HEIC→JPEG); a PDF passes straight through and is flagged for a person.
+      if (file.type !== "application/pdf") {
+        file = await compressImageFile(file)
+        toast.info("We'll format your photo to the portal's size for you.")
       }
-      file = spec.file
-      if ((spec.width ?? 0) > 1200) toast.info("Photo auto-resized to the NYPD 1200×1200 maximum.")
     } else {
       // V3-P0.5 — downscale/re-encode phone photos (incl. HEIC→JPEG) before the
       // size check, so a 12 MB safe photo becomes a compliant ~2 MB JPEG.
@@ -102,9 +99,9 @@ export function DocumentUploader({
     }
 
     // FMT-01: enforce size + type and sanitize the filename (the NYPD portal
-    // silently rejects oversized files, wrong types, and "dirty" names).
-    // The applicant photograph is image-only — the portal rejects a PDF there.
-    const check = validateFile({ name: file.name, size: file.size, imageOnly: type === "applicant_photo" })
+    // silently rejects oversized files, wrong types, and "dirty" names). The photo is NO
+    // LONGER image-only on our side — we accept a PDF and convert/flag it (finding 8).
+    const check = validateFile({ name: file.name, size: file.size, imageOnly: false })
     if (!check.ok) {
       toast.error(check.errors[0] ?? "That file can't be uploaded.")
       return
