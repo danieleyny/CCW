@@ -11,6 +11,7 @@ import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile, UploadRejected } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
 import { convertApplicantPhoto } from "@/lib/files/photo-convert"
+import { raisePhotoConversionTask } from "@/lib/requirements/photo-conversion"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { smartDocument } from "@/lib/requirements/smart-documents"
 import { requiredReferences } from "@/lib/intake/schema"
@@ -84,6 +85,7 @@ export async function recordDocument(input: {
   let filePath = input.path
   let originalPath: string | null = null
   let conversionNote: string | null = null
+  let conversionPending = false
   if (input.type === "applicant_photo") {
     const admin = createAdminClient()
     const { data: blob } = await admin.storage.from("documents").download(input.path)
@@ -102,8 +104,11 @@ export async function recordDocument(input: {
           fileName = "converted-photo.jpg"
         }
       } else {
-        // Not a raster image we can convert (e.g. a PDF).
-        conversionNote = "Received in a format we can't auto-convert (e.g. PDF) — a person needs to turn this into a portal image (JPG/PNG) before filing."
+        // Not a raster image we can convert (e.g. a PDF). It counts as UPLOADED but the
+        // requirement must NOT satisfy until a person converts it — otherwise the case
+        // reports ready to file with a photo the portal will reject (SPC-01 shape).
+        conversionPending = true
+        conversionNote = "Received in a format we can't auto-convert (e.g. PDF) — we're preparing this for the portal (converting it to an image before filing)."
       }
     }
   }
@@ -118,10 +123,17 @@ export async function recordDocument(input: {
     file_name: fileName,
     original_file_path: originalPath,
     conversion_note: conversionNote,
+    conversion_pending: conversionPending,
     req_code: input.reqCode ?? null,
     version,
   })
   if (error) throw error
+
+  // A file that still needs a human to convert it is OUR work — raise a staff task so it
+  // never sits behind a footnote. Idempotent per case (one open photo-conversion task).
+  if (conversionPending) {
+    await raisePhotoConversionTask(createAdminClient(), input.caseId)
+  }
 
   // Bind the upload to its matching requirement(s) so the consultant sees the
   // evidence attached. Status stays pending until staff review approves it —
