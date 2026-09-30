@@ -86,7 +86,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       db.from("requirement_answers").select("req_code, answers, drafted_by").eq("case_id", myCase.id),
       db
         .from("documents")
-        .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at, review_notes, version")
+        .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at, review_notes, version, conversion_pending")
         .eq("case_id", myCase.id)
         .order("created_at", { ascending: false }),
       db
@@ -219,6 +219,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
           review_notes: d.review_notes ?? null,
           version: d.version,
           signedUrl: url,
+          preparingForPortal: !!d.conversion_pending,
         }
       }
     } else {
@@ -246,6 +247,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       version: d.version,
       signedUrl: urlByDocId.get(d.id) ?? null,
       sharedFromName: d.file_name ?? "your uploaded document",
+      preparingForPortal: !!d.conversion_pending,
     }
   }
 

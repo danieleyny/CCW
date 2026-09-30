@@ -29,6 +29,9 @@ export interface CurrentDoc {
    * show "provided from …" instead of asking for the same document again.
    */
   sharedFromName?: string | null
+  /** We accepted a file we still have to convert for the portal (a PDF photo). Reads as
+   *  "we're preparing this" — never a rejection, and the applicant is not asked to re-upload. */
+  preparingForPortal?: boolean
 }
 
 export function DocumentUploader({
@@ -197,6 +200,14 @@ export function DocumentUploader({
       {needsFix && current?.review_notes && (
         <p className="mt-2 rounded-md bg-destructive/10 p-2 text-xs text-destructive">
           Needs a fix: {current.review_notes}
+        </p>
+      )}
+
+      {/* Accepted a file we still have to format for the portal — OUR work, not a
+          rejection, and we never ask the applicant to re-upload. */}
+      {current?.preparingForPortal && (
+        <p className="mt-2 rounded-md bg-signal/10 p-2 text-xs text-signal">
+          Got it — we&apos;re preparing this for the portal. We&apos;ll convert it to the format NYPD needs for you; nothing more to do on your end.
         </p>
       )}
 

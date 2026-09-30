@@ -10,6 +10,7 @@ import { logActivity } from "@/lib/activity"
 import { withOnBehalf } from "@/lib/concierge/on-behalf"
 import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
 import { resolveReviewTargets } from "@/lib/requirements/review-targets"
+import { closePhotoConversionTask } from "@/lib/requirements/photo-conversion"
 import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
 import { getSiteUrl } from "@/lib/site-url"
@@ -306,6 +307,16 @@ export async function reviewDocument(input: {
 }) {
   const { profile, userId } = await requireStaff()
   const supabase = await createClient()
+
+  // A PDF photo still awaiting manual conversion cannot be APPROVED into "satisfied" — that
+  // would file a photo the portal rejects (SPC-01 shape). Convert it first (upload the
+  // converted image), which clears the pending flag; then approval satisfies normally.
+  if (input.status === "approved") {
+    const { data: pending } = await supabase.from("documents").select("conversion_pending").eq("id", input.documentId).maybeSingle()
+    if (pending?.conversion_pending) {
+      return { error: "This photo is still a PDF awaiting conversion. Convert it and upload the image first — then approve." }
+    }
+  }
 
   const { data: doc, error } = await supabase
     .from("documents")
@@ -1267,4 +1278,68 @@ export async function rematerializeCaseRequirements(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Re-materialize failed." }
   }
+}
+
+/**
+ * Staff upload the CONVERTED image for a photo we couldn't auto-convert (a PDF). It lands
+ * as the requirement's current document (conversion_pending cleared), keeps the applicant's
+ * ORIGINAL attached, closes the conversion task, and leaves the requirement for normal
+ * review — approval then satisfies it. Closes the loop opened when the applicant's PDF was
+ * accepted-but-not-satisfied.
+ */
+export async function recordConvertedPhoto(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const { userId } = await requireStaff()
+  const caseId = String(formData.get("caseId") ?? "")
+  const reqCode = String(formData.get("reqCode") || "PHO-01")
+  const file = formData.get("file")
+  if (!caseId || !(file instanceof File) || file.size === 0) return { error: "Choose a converted image to upload." }
+  if (!/^image\/(jpeg|jpg|png|gif|bmp|tiff|webp)$/i.test(file.type)) return { error: "Upload an image (JPG or PNG) — the converted photo, not a PDF." }
+  if (file.size > 6 * 1024 * 1024) return { error: "That image is over 6 MB — compress it and try again." }
+
+  const admin = createAdminClient()
+  const { data: kase } = await admin.from("cases").select("client_id").eq("id", caseId).maybeSingle()
+  if (!kase) return { error: "Case not found." }
+
+  // The applicant's original (the PDF) to keep attached to the converted document.
+  const { data: pendingDoc } = await admin
+    .from("documents")
+    .select("id, file_path, original_file_path")
+    .eq("case_id", caseId)
+    .eq("type", "applicant_photo")
+    .eq("conversion_pending", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const docId = crypto.randomUUID()
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "")
+  const path = `clients/${kase.client_id}/${docId}/converted-photo.${ext}`
+  const up = await admin.storage.from("documents").upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true })
+  if (up.error) return { error: "Upload failed — try again." }
+
+  const { count } = await admin.from("documents").select("id", { count: "exact", head: true }).eq("case_id", caseId).eq("type", "applicant_photo")
+  await admin.from("documents").insert({
+    id: docId,
+    case_id: caseId,
+    client_id: kase.client_id,
+    type: "applicant_photo",
+    status: "pending",
+    file_path: path,
+    file_name: file.name || "converted-photo.jpg",
+    original_file_path: pendingDoc?.original_file_path ?? pendingDoc?.file_path ?? null,
+    conversion_note: "Converted by staff from the applicant's original.",
+    conversion_pending: false,
+    req_code: reqCode,
+    version: (count ?? 0) + 1,
+    reviewer: userId,
+  })
+  // Point the requirement at the converted document, and retire the old pending row so
+  // nothing still reads it as awaiting conversion.
+  await admin.from("case_requirements").update({ document_id: docId }).eq("case_id", caseId).eq("req_code", reqCode)
+  if (pendingDoc) await admin.from("documents").update({ conversion_pending: false }).eq("id", pendingDoc.id)
+
+  await closePhotoConversionTask(admin, caseId)
+  await logActivity({ action: "photo.converted_by_staff", caseId })
+  revalidatePath(`/admin/cases/${caseId}`)
+  return { ok: true }
 }

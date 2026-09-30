@@ -1789,6 +1789,7 @@ export type Database = {
           checklist_item_id: string | null
           client_id: string
           conversion_note: string | null
+          conversion_pending: boolean
           created_at: string
           file_name: string | null
           file_path: string | null
@@ -1813,6 +1814,7 @@ export type Database = {
           checklist_item_id?: string | null
           client_id: string
           conversion_note?: string | null
+          conversion_pending?: boolean
           created_at?: string
           file_name?: string | null
           file_path?: string | null
@@ -1837,6 +1839,7 @@ export type Database = {
           checklist_item_id?: string | null
           client_id?: string
           conversion_note?: string | null
+          conversion_pending?: boolean
           created_at?: string
           file_name?: string | null
           file_path?: string | null

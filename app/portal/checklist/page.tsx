@@ -6,6 +6,7 @@ import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { computePortalReadiness } from "@/lib/disclosures/readiness"
+import { pendingConversionReqCodes } from "@/lib/requirements/photo-conversion"
 import { portalTrackForCase } from "@/config/portal-steps"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
 import { ReadinessCard } from "@/components/portal/readiness-card"
@@ -39,13 +40,11 @@ export default async function ChecklistPage() {
   // Two-gate portal readiness (ready to enter · ready to finalize). Admin: assembles
   // the applicant's own data for the summary (mirrors the signed record).
   const admin = createAdminClient()
-  const assembled = await assembleApplicationValues(admin, myCase.id)
-  const { data: dscRow } = await admin
-    .from("requirement_answers")
-    .select("answers")
-    .eq("case_id", myCase.id)
-    .eq("req_code", "DSC-01")
-    .maybeSingle()
+  const [assembled, { data: dscRow }, conversionPendingReqCodes] = await Promise.all([
+    assembleApplicationValues(admin, myCase.id),
+    admin.from("requirement_answers").select("answers").eq("case_id", myCase.id).eq("req_code", "DSC-01").maybeSingle(),
+    pendingConversionReqCodes(admin, myCase.id),
+  ])
   const readiness = assembled
     ? computePortalReadiness(
         assembled.values,
@@ -54,6 +53,7 @@ export default async function ChecklistPage() {
         {
           portalTrack,
           signedRecordSatisfied: view.items.find((i) => i.reqCode === "DSC-01")?.status === "satisfied",
+          conversionPendingReqCodes,
         }
       )
     : null

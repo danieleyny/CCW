@@ -189,7 +189,8 @@ export function DocumentReview({
   function approve(doc: DocRow) {
     startTransition(async () => {
       try {
-        await reviewDocument({ documentId: doc.id, caseId, clientId, status: "approved" })
+        const r = await reviewDocument({ documentId: doc.id, caseId, clientId, status: "approved" })
+        if (r?.error) return void toast.error(r.error, { duration: 8000 })
         toast.success(`Approved — ${doc.reqTitle ?? humanizeType(doc.type)}`)
       } catch {
         toast.error("Couldn't approve. Try again.")

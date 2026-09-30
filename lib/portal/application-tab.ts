@@ -34,6 +34,9 @@ export interface PortalSlotView {
   /** What we auto-converted / why a file needs manual conversion (finding 8) — so staff
    *  know exactly what they're sending to NYPD, and that only format/size was fixed. */
   conversionNote: string | null
+  /** This upload still needs a person to convert it before filing — a real blocker, not a
+   *  footnote. The requirement can't satisfy and the case can't be ready until it's done. */
+  conversionPending: boolean
   /** This slot is filled by a file uploaded for another requirement (a shared passport). */
   sharedFromLabel: string | null
 }
@@ -118,7 +121,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
   // Step-13 slots + latest uploaded document per requirement (newest first).
   const { data: docs } = await admin
     .from("documents")
-    .select("id, req_code, type, file_name, status, version, review_notes, generated, created_at, notarized, conversion_note")
+    .select("id, req_code, type, file_name, status, version, review_notes, generated, created_at, notarized, conversion_note, conversion_pending")
     .eq("case_id", caseId)
     .order("created_at", { ascending: false })
   const docById = new Map((docs ?? []).map((d) => [d.id, d]))
@@ -168,6 +171,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
         documentId: doc?.id ?? null,
         rejectionNote: doc?.status === "rejected" ? doc.review_notes ?? null : null,
         conversionNote: doc?.conversion_note ?? null,
+        conversionPending: !!doc?.conversion_pending,
         sharedFromLabel: null,
       })
       continue
@@ -190,6 +194,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
       documentId: doc?.id ?? null,
       rejectionNote: doc?.status === "rejected" ? doc.review_notes ?? null : null,
       conversionNote: doc?.conversion_note ?? null,
+        conversionPending: !!doc?.conversion_pending,
       sharedFromLabel,
     })
   }
@@ -228,6 +233,12 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
   const signedRow = reqRows.find((r) => r.req_code === "DSC-01" || r.req_code === "QUE-01")
   const signedRecord = signedRow ? { reqCode: signedRow.req_code, satisfied: signedRow.status === "satisfied" } : null
 
+  // A requirement whose current bound document still needs a person to convert it (a PDF
+  // photo) must not let the case report ready — keyed on the requirement's bound document.
+  const conversionPendingReqCodes = reqRows
+    .filter((r) => r.document_id && docById.get(r.document_id)?.conversion_pending)
+    .map((r) => r.req_code)
+
   const readiness = computePortalReadiness(
     assembled.values,
     disclosures,
@@ -235,6 +246,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
     {
       portalTrack,
       signedRecordSatisfied: !!signedRecord?.satisfied,
+      conversionPendingReqCodes,
     }
   )
 

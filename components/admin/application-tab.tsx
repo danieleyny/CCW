@@ -17,10 +17,13 @@ import {
   Lock,
   Square,
   CheckSquare,
+  Upload,
 } from "lucide-react"
+import { toast } from "sonner"
 import type { ApplicationTabData, PortalSlotView, SlotState } from "@/lib/portal/application-tab"
 import type { WorksheetSection } from "@/lib/disclosures/worksheet-portal"
 import { StepCard, useCopy } from "@/components/admin/portal-worksheet"
+import { recordConvertedPhoto } from "@/app/admin/actions"
 
 const PORTAL_URL = "https://licensing.nypdonline.org"
 
@@ -82,7 +85,7 @@ export function ApplicationTab({
         {sections.map((section) => {
           const toggleEl = <StepToggle entered={entered.has(section.no)} onToggle={() => toggle(section.no)} />
           if (section.kind === "uploads") {
-            return <DocumentsStep key={section.no} section={section} slots={slots} heldForInterview={heldForInterview} openDocument={openDocument} headerRight={toggleEl} />
+            return <DocumentsStep key={section.no} section={section} slots={slots} heldForInterview={heldForInterview} openDocument={openDocument} headerRight={toggleEl} caseId={caseId} />
           }
           if (section.kind === "checkpoint") {
             return <CheckpointCard key={section.no} section={section} headerRight={toggleEl} />
@@ -310,12 +313,14 @@ function DocumentsStep({
   heldForInterview,
   openDocument,
   headerRight,
+  caseId,
 }: {
   section: WorksheetSection
   slots: PortalSlotView[]
   heldForInterview: ApplicationTabData["heldForInterview"]
   openDocument: (documentId: string) => Promise<{ url?: string; error?: string }>
   headerRight?: ReactNode
+  caseId: string
 }) {
   return (
     <section id={`step-${section.no}`} className="scroll-mt-4 space-y-3 rounded-lg border border-hairline bg-card p-4">
@@ -332,12 +337,22 @@ function DocumentsStep({
         {headerRight}
       </div>
 
+      {(() => {
+        const pending = slots.filter((s) => s.conversionPending).length
+        if (pending === 0) return null
+        return (
+          <div className="rounded-md border border-warn/50 bg-warn/12 p-3 text-sm font-medium text-warn">
+            {pending} document{pending === 1 ? "" : "s"} awaiting conversion — convert {pending === 1 ? "it" : "them"} to a portal image before this case can be entered or filed. There{pending === 1 ? "'s" : "'re"} an open staff task for {pending === 1 ? "it" : "each"}.
+          </div>
+        )
+      })()}
+
       {slots.length === 0 ? (
         <p className="text-sm text-text-mid">This application has no portal uploads.</p>
       ) : (
         <div className="divide-y divide-hairline rounded-md border border-hairline">
           {slots.map((slot) => (
-            <SlotRow key={slot.portalLabel} slot={slot} openDocument={openDocument} />
+            <SlotRow key={slot.portalLabel} slot={slot} openDocument={openDocument} caseId={caseId} />
           ))}
         </div>
       )}
@@ -404,7 +419,38 @@ function InterviewRow({ item, openDocument }: { item: ApplicationTabData["heldFo
   )
 }
 
-function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (documentId: string) => Promise<{ url?: string; error?: string }> }) {
+/** Staff upload the converted image for a PDF photo — clears the pending flag, closes the
+ *  task, and leaves the requirement for normal approval. Keeps the applicant's original. */
+function ConvertedUpload({ caseId, reqCode }: { caseId: string; reqCode: string }) {
+  const [busy, start] = useTransition()
+  return (
+    <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-warn/50 bg-warn/10 px-2.5 py-1.5 text-xs font-medium text-warn hover:bg-warn/15 ${busy ? "opacity-60" : ""}`}>
+      <Upload className="size-3.5" /> {busy ? "Uploading…" : "Upload converted image"}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/bmp,image/tiff,image/webp"
+        className="hidden"
+        disabled={busy}
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          e.target.value = ""
+          if (!f) return
+          start(async () => {
+            const fd = new FormData()
+            fd.set("caseId", caseId)
+            fd.set("reqCode", reqCode)
+            fd.set("file", f)
+            const r = await recordConvertedPhoto(fd)
+            if (r?.error) toast.error(r.error, { duration: 8000 })
+            else toast.success("Converted photo uploaded — approve it to satisfy the requirement.")
+          })
+        }}
+      />
+    </label>
+  )
+}
+
+function SlotRow({ slot, openDocument, caseId }: { slot: PortalSlotView; openDocument: (documentId: string) => Promise<{ url?: string; error?: string }>; caseId: string }) {
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   // The Additional Documents catch-all is optional: an empty one reads neutrally, not
@@ -434,6 +480,11 @@ function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (
           {slot.portalLabel}
           {slot.starred && <span className="text-danger" title="Portal-required">*</span>}
           {slot.imageOnly && <span className="rounded bg-surface-3 px-1 py-0.5 text-[10px] font-normal text-text-low">image only — no PDF</span>}
+          {slot.conversionPending && (
+            <span className="rounded border border-warn/50 bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
+              Awaiting conversion — blocks filing
+            </span>
+          )}
         </div>
         <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${meta.cls}`}>
           <meta.Icon className="size-3.5" /> {meta.label}
@@ -449,6 +500,7 @@ function SlotRow({ slot, openDocument }: { slot: PortalSlotView; openDocument: (
             <span>{slot.conversionNote}</span>
           </div>
         )}
+        {slot.conversionPending && <ConvertedUpload caseId={caseId} reqCode={slot.reqCode ?? "PHO-01"} />}
         {slot.rejectionNote && <div className="mt-0.5 text-xs text-danger">Note: {slot.rejectionNote}</div>}
         {error && <div className="mt-0.5 text-xs text-danger">{error}</div>}
       </div>
