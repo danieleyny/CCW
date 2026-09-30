@@ -308,22 +308,23 @@
       position: absolute;
       pointer-events: none;
     }
-    /* The ragged polygon's extremes are pulled to the box edges (0%/100%, some
-       beyond) and the box is inset NEGATIVE all round, so the paint fully backs
-       every glyph — caps, descenders, and the final "s" — at every clamp size. */
+    /* The ragged polygon's extremes hug the box sides and drop BELOW it for the
+       descenders, but the TOP never rises past the box top (top points clamped to
+       0%, top inset 0) so the paint stays behind its own line and never reaches up
+       into "by design." above it. The 6px padding-top still backs the caps. */
     .mkt2 .hero-highlight::before {
       z-index: -2;
-      inset: -8% 1% -12% -5%;
+      inset: 0% 1% -12% -5%;
       background: var(--spectral);
-      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 86% -2%, 95% 10%, 93% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% 0%, 68% 3%, 86% 0%, 95% 10%, 93% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
       transform: rotate(-1.2deg);
     }
     .mkt2 .hero-highlight::after {
       z-index: -1;
-      inset: -6% 2% -10% -3%;
+      inset: 0% 2% -10% -3%;
       background-image: radial-gradient(circle, rgba(255,255,255,.7) 0 0.75px, transparent .9px);
       background-size: 6px 6px;
-      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% -3%, 68% 3%, 86% -2%, 95% 10%, 93% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% 0%, 68% 3%, 86% 0%, 95% 10%, 93% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
       opacity: .28;
     }
     .mkt2 .hero-lede {
