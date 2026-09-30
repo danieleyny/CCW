@@ -20,6 +20,9 @@ const PRIVATE = [
   // never as authorization. Never crawled or indexed.
   "/sponsor",
   "/invite/",
+  // The password-gated redesign-v2 preview — unreviewed marketing copy that must never
+  // compete with the real domain in the index.
+  "/redesignv2",
 ]
 
 /**
