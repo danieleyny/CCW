@@ -72,18 +72,6 @@ function sha256(s: string): Buffer {
 }
 
 /**
- * Timing-safe equality for two secrets. Compares equal-length SHA-256 digests so neither
- * length nor content leaks through response time. THE one timing-safe string compare —
- * reused (e.g. the redesign-v2 preview password check) rather than re-implemented.
- * Node-only (node:crypto); do not import into edge middleware.
- */
-export function timingSafeEqualStrings(a: string, b: string): boolean {
-  const da = sha256(a)
-  const db = sha256(b)
-  return da.length === db.length && timingSafeEqual(da, db)
-}
-
-/**
  * Timing-safe match. Iterates ALL configured codes (no early exit) and compares
  * equal-length SHA-256 digests, so the response time doesn't leak which code — or
  * whether any — matched. Returns the code ONLY if it also allows the requested
