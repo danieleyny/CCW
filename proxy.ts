@@ -1,5 +1,12 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import {
+  previewConfig,
+  verifyPreviewCookie,
+  isPreviewExcludedPath,
+  PREVIEW_COOKIE,
+  PREVIEW_BANNER_HTML,
+} from "@/lib/redesign-preview"
 
 /**
  * Proxy (Next 16's renamed Middleware). Two jobs:
@@ -16,6 +23,27 @@ import { NextResponse, type NextRequest } from "next/server"
  * from the public feed at /api/public/pricing, which is the only coupling left.
  */
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname
+
+  // ── Redesign-v2 preview gateway (kill-switched) ─────────────────────────────
+  // When REDESIGN_V2_ORIGIN/PASSWORD are unset, `enabled` is false and this whole
+  // block is inert — the feature "doesn't exist". When enabled AND the caller holds a
+  // VERIFIED preview cookie, marketing pages are proxied from the v2 origin (with a
+  // banner); /api, /portal, /admin, /auth and the gateway routes are never proxied.
+  const preview = previewConfig()
+  if (preview.enabled && !isPreviewExcludedPath(path)) {
+    const token = request.cookies.get(PREVIEW_COOKIE)?.value
+    if (await verifyPreviewCookie(token, preview.password)) {
+      return proxyRedesignV2(request, preview.origin, preview.bypass)
+    }
+  }
+  // Static assets never needed the Supabase session refresh. The matcher now includes
+  // /_next/* (so the preview can serve v2's own asset hashes above), so return early here
+  // to keep non-preview asset traffic as cheap as before — no Supabase client per chunk.
+  if (path.startsWith("/_next/")) {
+    return NextResponse.next()
+  }
+
   // Forward the pathname to server components (layouts can't read it otherwise).
   // The portal intake soft-gate reads this to exempt /portal/intake itself.
   const requestHeaders = new Headers(request.headers)
@@ -48,7 +76,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const path = request.nextUrl.pathname
   const isGated =
     path.startsWith("/admin") ||
     path.startsWith("/portal") ||
@@ -85,9 +112,57 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
+/**
+ * Proxy a request to the redesign-v2 origin (its own Vercel project). The origin keeps
+ * Vercel Deployment Protection ON, so we forward the Protection-Bypass token as a header
+ * (never a cookie, never in a URL). HTML responses get the preview banner injected right
+ * after <body>; everything else (incl. /_next/* assets) streams straight through. Every
+ * response carries X-Robots-Tag: noindex so unreviewed copy can't be indexed on the real
+ * domain.
+ */
+async function proxyRedesignV2(request: NextRequest, origin: string, bypass: string | null): Promise<Response> {
+  const target = origin + request.nextUrl.pathname + request.nextUrl.search
+  const headers = new Headers(request.headers)
+  headers.set("host", new URL(origin).host)
+  headers.delete("accept-encoding") // ask for identity so we can transform the HTML body
+  if (bypass) {
+    headers.set("x-vercel-protection-bypass", bypass)
+    headers.set("x-vercel-set-bypass-cookie", "false")
+  }
+
+  const init: RequestInit = { method: request.method, headers, redirect: "manual" }
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    init.body = request.body
+    // Streaming a request body requires duplex; not yet in the DOM RequestInit types.
+    ;(init as RequestInit & { duplex: "half" }).duplex = "half"
+  }
+
+  let upstream: Response
+  try {
+    upstream = await fetch(target, init)
+  } catch {
+    return new Response("Preview origin unreachable.", { status: 502, headers: { "x-robots-tag": "noindex" } })
+  }
+
+  const out = new Headers(upstream.headers)
+  out.set("x-robots-tag", "noindex")
+  out.delete("content-encoding") // we requested identity; declared encoding would be wrong
+
+  const contentType = upstream.headers.get("content-type") ?? ""
+  if (contentType.includes("text/html")) {
+    const html = await upstream.text()
+    const withBanner = html.replace(/<body([^>]*)>/i, (m) => `${m}${PREVIEW_BANNER_HTML}`)
+    out.delete("content-length") // body length changed
+    return new Response(withBanner, { status: upstream.status, headers: out })
+  }
+  return new Response(upstream.body, { status: upstream.status, headers: out })
+}
+
 export const config = {
   matcher: [
-    // Run on everything except static assets and image files.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Run on everything except favicon and image files. /_next/* IS included (unlike the
+    // pre-preview matcher) so the gateway can serve the v2 build's own asset hashes;
+    // non-preview /_next/* traffic returns early in proxy() before any Supabase work.
+    "/((?!favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 }
