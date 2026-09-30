@@ -2,7 +2,7 @@ import Link from "next/link"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
-import { HeroSculpture } from "@/components/marketing/v2/hero-sculpture"
+import { HeroJourney } from "@/components/marketing/v2/hero-journey"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -17,8 +17,9 @@ export const metadata = buildMetadata({
  * Homepage — marketing redesign v2 (redesign/homepage-visual-spec.html), scoped
  * under `.mkt2`. Copy and structure are ported from the spec; links point at real
  * routes; the Service JSON-LD and the live government fees stay wired to our data.
- * No JavaScript: every entrance is CSS scroll-driven and starts from a visible
- * opacity (see marketing-v2.css).
+ * Entrances are CSS scroll-driven and start from a visible opacity (see
+ * marketing-v2.css). The one deliberate client island is the hero's <HeroJourney>
+ * walker, which needs the DOM to sample the route path for its motion.
  */
 export default async function Home() {
   // Cookieless + cached → this page stays statically rendered (see lib/public-data).
@@ -58,14 +59,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <HeroSculpture />
-        </div>
-        <div className="shell hero-progress" aria-label="Homepage path preview">
-          <span className="hero-progress-label">Your path · 01 of 05</span>
-          <span className="hero-progress-track" aria-hidden="true">
-            <i /><i /><i /><i /><i />
-          </span>
-          <span className="hero-progress-label">Next: eligibility check</span>
+          <HeroJourney />
         </div>
       </section>
 

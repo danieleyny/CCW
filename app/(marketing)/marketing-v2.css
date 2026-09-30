@@ -260,8 +260,6 @@
         radial-gradient(circle at 1px 1px, rgba(7,17,31,.045) .7px, transparent .8px),
         linear-gradient(112deg, transparent 0 64%, rgba(57,120,246,.045) 64% 64.1%, transparent 64.1%);
       background-size: 8px 8px, 100% 100%;
-      view-timeline-name: --hero-exit;
-      view-timeline-axis: block;
     }
     .mkt2 .hero::after {
       content: "";
@@ -340,130 +338,6 @@
     .mkt2 .hero-buttons { display: flex; align-items: center; gap: 12px; }
     .mkt2 .hero-action .button { min-height: 52px; padding-inline: 24px; }
     .mkt2 .hero-micro { display: block; margin-top: 11px; color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; }
-    .mkt2 .hero-visual { position: relative; min-height: 620px; display: grid; place-items: center; perspective: 1400px; }
-    /* Pointer tilt lives here (transform), driven by --tilt-x/--tilt-y set in JS on
-       fine pointers only; it eases back to rest on leave. The scroll-out fan lives
-       on the child .case-scroll-layer, so the two never fight over `transform`. */
-    .mkt2 .case-sculpture { position: relative; width: min(100%, 620px); height: 620px; transform-style: preserve-3d; transform: rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg)); transition: transform 260ms cubic-bezier(.2,.7,.2,1); }
-    /* ONE ambient drift so the hero has presence at rest — the whole plane stack,
-       transform only (translate, <8px travel), 15s alternating. It composes with the
-       scroll-out group fade (case-parallax-out animates `transform`, this animates
-       `translate`). Disabled under reduced-motion and below 840px (see end of file). */
-    .mkt2 .case-scroll-layer { position: relative; width: 100%; height: 100%; animation: case-drift 15s ease-in-out infinite alternate; }
-    @keyframes case-drift { from { translate: -3px -2px; } to { translate: 3px 2px; } }
-    .mkt2 .paper-sheet, .mkt2 .case-file {
-      position: absolute;
-      left: 88px;
-      width: 410px;
-      border: 1px solid var(--paper-deep);
-      /* Fully OPAQUE — a plane must completely occlude whatever sits beneath it,
-         so no lower label ever ghosts through. Any scroll-out fade happens on the
-         group (.case-scroll-layer), never on individual planes. */
-      background: var(--paper);
-      box-shadow: 0 24px 42px rgba(7,17,31,.12);
-      transform: rotate(1.35deg) skewX(-.65deg);
-      transform-origin: center;
-    }
-    .mkt2 .paper-sheet {
-      height: 126px;
-      display: flex;
-      align-items: end;
-      justify-content: center;
-      padding: 0 24px 18px;
-      color: var(--ink-soft);
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-    .mkt2 .paper-sheet::before { content: attr(data-index); position: absolute; left: 24px; bottom: 18px; color: var(--electric); font-size: 9px; }
-    /* Tucked right so its left edge seats fully behind the top card (no stray sliver);
-       it peeks only at the bottom, reading as a deliberate layer in the stack. */
-    .mkt2 .sheet-eligibility { top: 96px; left: 100px; z-index: 7; }
-    .mkt2 .sheet-documents { top: 172px; z-index: 6; left: 74px; }
-    .mkt2 .sheet-application { top: 244px; z-index: 5; left: 60px; }
-    .mkt2 .sheet-requirements { top: 316px; z-index: 4; left: 47px; }
-    .mkt2 .sheet-next { top: 388px; z-index: 3; left: 34px; }
-    /* Entrance: the planes DEAL into the stack — a small staggered slide + settle,
-       once on load. Animating `translate`/`opacity` (not `transform`) lets it compose
-       with the scroll-out fan instead of clobbering it. Starts from a VISIBLE state. */
-    /* deal-in lives HERE (outside @supports) so it ALWAYS runs on load, whether or
-       not the browser supports scroll-driven timelines. It animates translate +
-       opacity — both compose with the scroll-out fan's `transform`, so the @supports
-       block below can add the fan without dropping this. Bottom sheet deals first,
-       the summary card lands last. */
-    .mkt2 .paper-sheet, .mkt2 .case-file {
-      animation: deal-in 720ms cubic-bezier(.2,.78,.24,1) both;
-      animation-delay: var(--deal-delay, 0ms);
-    }
-    .mkt2 .sheet-next { --deal-delay: 0ms; }
-    .mkt2 .sheet-requirements { --deal-delay: 80ms; }
-    .mkt2 .sheet-application { --deal-delay: 160ms; }
-    .mkt2 .sheet-documents { --deal-delay: 240ms; }
-    .mkt2 .sheet-eligibility { --deal-delay: 320ms; }
-    .mkt2 .case-file { --deal-delay: 400ms; }
-    @keyframes deal-in {
-      from { opacity: .82; translate: var(--deal-x, 34px) var(--deal-y, 48px); }
-      to { opacity: 1; translate: 0 0; }
-    }
-    .mkt2 .case-file {
-      top: 54px;
-      z-index: 9;
-      min-height: 185px;
-      padding: 22px;
-      border-color: rgba(7,17,31,.14);
-      background: var(--paper);
-      color: var(--ink);
-      box-shadow: 0 34px 76px rgba(7,17,31,.17);
-      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
-    }
-    .mkt2 .case-file:hover, .mkt2 .case-file:focus-within { border-color: var(--magenta); transform: translateY(-5px) rotate(.4deg) skewX(-.3deg) scale(1.008); }
-    .mkt2 .case-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-    .mkt2 .case-top span { color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
-    .mkt2 .stage-number { color: var(--electric-deep) !important; }
-    .mkt2 .progress-track { height: 3px; margin-top: 13px; overflow: hidden; border-radius: 999px; background: var(--rule); }
-    .mkt2 .progress-fill { width: 46.154%; height: 100%; background: var(--spectral); }
-    .mkt2 .next-step { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--rule); }
-    .mkt2 .next-label { margin: 0 0 6px; color: var(--electric-deep); font-family: var(--mono); font-size: 9px; letter-spacing: 0.11em; text-transform: uppercase; }
-    .mkt2 .next-step h2 { margin: 0; font-family: var(--sans); font-size: 21px; font-weight: 600; line-height: 1.16; letter-spacing: -0.03em; }
-    .mkt2 .next-step p { display: none; }
-    .mkt2 .case-stat { display: flex; justify-content: space-between; margin: 15px 0 0; color: var(--ink-soft); font-size: 12px; }
-    .mkt2 .case-stat strong { color: var(--ink); font-weight: 600; }
-    .mkt2 .case-list { display: none; }
-    .mkt2 .case-foot { display: none; }
-    .mkt2 .ribbon {
-      position: absolute;
-      z-index: 8;
-      height: 26px;
-      border-radius: 999px;
-      background: var(--spectral);
-      box-shadow: 0 14px 28px rgba(118,89,255,.14);
-      pointer-events: none;
-    }
-    /* All ribbon parts thread BEHIND the card stack (cards are z-index 3–9) and only
-       show in the gaps outside it — never cutting across a card row. */
-    .mkt2 .ribbon-back { width: 520px; top: 145px; left: 12px; transform: rotate(-28deg); z-index: 1; }
-    .mkt2 .ribbon-front { width: 560px; top: 452px; left: -8px; transform: rotate(9deg); z-index: 1; }
-    .mkt2 .ribbon-loop {
-      position: absolute;
-      z-index: 1;
-      width: 232px;
-      height: 166px;
-      left: 1px;
-      top: 238px;
-      border-radius: 50%;
-      background: conic-gradient(from 110deg, transparent 0 31%, var(--cyan) 34%, var(--blue) 43%, var(--violet) 53%, var(--magenta) 63%, var(--vermilion) 73%, var(--tangerine) 78%, transparent 81%);
-      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 25px), #000 calc(100% - 24px));
-      mask: radial-gradient(farthest-side, transparent calc(100% - 25px), #000 calc(100% - 24px));
-      transform: rotate(-7deg);
-      pointer-events: none;
-    }
-    .mkt2 .sculpture-note { position: absolute; right: -4px; top: 262px; width: 86px; margin: 0; color: var(--ink-muted); font-family: var(--mono); font-size: 8px; line-height: 1.55; letter-spacing: .13em; text-transform: uppercase; }
-    .mkt2 .hero-progress { position: absolute; z-index: 4; left: 50%; bottom: 58px; transform: translateX(-50%); display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; }
-    .mkt2 .hero-progress-label { color: var(--ink-soft); font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
-    .mkt2 .hero-progress-track { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-    .mkt2 .hero-progress-track i { height: 2px; background: var(--rule); }
-    .mkt2 .hero-progress-track i:first-child { background: var(--spectral); }
 
     .mkt2 .proof-rail { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper); }
     .mkt2 .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
@@ -1002,9 +876,6 @@
     .mkt2 .hero h1 { animation: hero-rise-in 760ms cubic-bezier(.2,.75,.2,1) 140ms both; }
     .mkt2 .hero-lede { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 260ms both; }
     .mkt2 .hero-action { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 340ms both; }
-    /* .case-sculpture entrance is now the staggered plane deal-in; the sculpture's
-       own transform is reserved for the pointer tilt (see .case-sculpture above). */
-    .mkt2 .hero-progress { animation: hero-progress-in 600ms cubic-bezier(.2,.75,.2,1) 430ms both; }
 
     @keyframes hero-nav-in {
       from { opacity: .9; transform: translate3d(0,-10px,0); }
@@ -1013,25 +884,6 @@
     @keyframes hero-rise-in {
       from { opacity: .82; transform: translate3d(0,16px,0); }
       to { opacity: 1; transform: translate3d(0,0,0); }
-    }
-    @keyframes hero-case-in {
-      from { opacity: .86; transform: translate3d(0,22px,0) scale(.985); }
-      to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
-    }
-    @keyframes hero-progress-in {
-      from { opacity: .82; transform: translate3d(-50%,12px,0); }
-      to { opacity: 1; transform: translate3d(-50%,0,0); }
-    }
-    @keyframes plane-fan-out {
-      /* TRANSFORM ONLY — never opacity. It composes with deal-in (which owns
-         translate + opacity) and lets the group fade happen once on
-         .case-scroll-layer, so planes never show through one another. */
-      from { transform: translate3d(0,0,0) rotate(var(--plane-rest-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
-      to { transform: translate3d(var(--fan-x,0),var(--fan-y,0),0) rotate(var(--fan-rotate,1.35deg)) skewX(var(--plane-rest-skew,-.65deg)); }
-    }
-    @keyframes case-parallax-out {
-      from { opacity: 1; transform: translate3d(0,0,0); }
-      to { opacity: .62; transform: translate3d(0,18px,0); }
     }
     @keyframes view-rise {
       from { opacity: .78; transform: translate3d(0,18px,0); }
@@ -1042,39 +894,7 @@
       to { opacity: 1; transform: translate3d(0,0,0); }
     }
 
-    .mkt2 .sheet-eligibility { --fan-x: 22px; --fan-y: -34px; --fan-rotate: 4deg; --fan-opacity: .7; }
-    .mkt2 .sheet-documents { --fan-x: 34px; --fan-y: -16px; --fan-rotate: 2.8deg; --fan-opacity: .68; }
-    .mkt2 .sheet-application { --fan-x: 42px; --fan-y: 2px; --fan-rotate: 1.8deg; --fan-opacity: .65; }
-    .mkt2 .sheet-requirements { --fan-x: 28px; --fan-y: 22px; --fan-rotate: .2deg; --fan-opacity: .62; }
-    .mkt2 .sheet-next { --fan-x: 12px; --fan-y: 40px; --fan-rotate: -1.2deg; --fan-opacity: .58; }
-
     @supports (animation-timeline: view()) {
-      /* Sheets run BOTH: the one-time deal-in (auto/time) and the scroll-out fan
-         (--hero-exit timeline). deal-in animates translate/opacity, fan-out animates
-         transform, so they compose cleanly. */
-      .mkt2 .paper-sheet {
-        animation-name: deal-in, plane-fan-out;
-        animation-duration: 720ms, 1s;
-        animation-timing-function: cubic-bezier(.2,.78,.24,1), linear;
-        animation-fill-mode: both, both;
-        animation-delay: var(--deal-delay, 0ms), 0s;
-        animation-timeline: auto, --hero-exit;
-        animation-range: normal, exit 0% exit 92%;
-      }
-
-      .mkt2 .case-scroll-layer {
-        /* ambient drift (auto/time) + the scroll-out group fade (--hero-exit). drift
-           animates translate, fade animates transform + opacity, so they compose. */
-        animation-name: case-drift, case-parallax-out;
-        animation-duration: 15s, 1s;
-        animation-timing-function: ease-in-out, linear;
-        animation-iteration-count: infinite, 1;
-        animation-direction: alternate, normal;
-        animation-fill-mode: none, both;
-        animation-timeline: auto, --hero-exit;
-        animation-range: normal, exit 0% exit 92%;
-      }
-
       .mkt2 .phase-card-content {
         animation-name: phase-content-rise;
         animation-duration: 1s;
@@ -1099,7 +919,6 @@
       .mkt2 .desktop-nav a:nth-last-child(-n+2) { display: none; }
       .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; }
       .mkt2 .hero-copy { max-width: 720px; }
-      .mkt2 .hero-visual { width: min(100%, 680px); justify-self: center; }
       .mkt2 .phases-head, .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
       .mkt2 .fact-grid { grid-template-columns: repeat(3, 1fr); }
       .mkt2 .fact:nth-child(3) { border-right: 0; }
@@ -1116,7 +935,6 @@
       .mkt2 .hero { min-height: auto; }
       .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; padding-block: 124px 118px; }
       .mkt2 .hero-copy { max-width: 660px; }
-      .mkt2 .hero-visual { min-height: 590px; }
       .mkt2 .proof-grid { transform: none; }
       .mkt2 .proof-grid { grid-template-columns: 1fr; }
       .mkt2 .proof-item { border-left: 0; border-top: 1px solid var(--rule); }
@@ -1180,27 +998,6 @@
       .mkt2 .hero-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
       .mkt2 .hero-action .button { width: 100%; min-height: 50px; padding-inline: 10px; }
       .mkt2 .hero-micro { display: block; margin-top: 12px; text-align: center; }
-      .mkt2 .hero-visual { width: 100%; min-height: 535px; }
-      .mkt2 .case-sculpture { width: 350px; height: 535px; }
-      .mkt2 .paper-sheet, .mkt2 .case-file { left: 30px; width: 292px; transform: rotate(1deg) skewX(-.5deg); }
-      .mkt2 .paper-sheet { height: 112px; padding-bottom: 14px; }
-      .mkt2 .paper-sheet::before { left: 18px; bottom: 14px; }
-      .mkt2 .sheet-eligibility { top: 102px; }
-      .mkt2 .sheet-documents { top: 166px; left: 25px; }
-      .mkt2 .sheet-application { top: 230px; left: 20px; }
-      .mkt2 .sheet-requirements { top: 294px; left: 15px; }
-      .mkt2 .sheet-next { top: 358px; left: 10px; }
-      .mkt2 .case-file { top: 42px; left: 19px; width: 312px; min-height: 180px; padding: 17px; border-radius: 2px; }
-      .mkt2 .next-step { padding-top: 13px; }
-      .mkt2 .next-step h2 { font-size: 20px; }
-      .mkt2 .case-stat { font-size: 11px; }
-      .mkt2 .ribbon { height: 19px; }
-      .mkt2 .ribbon-back { width: 340px; top: 128px; left: 4px; }
-      .mkt2 .ribbon-front { width: 390px; top: 418px; left: -34px; }
-      .mkt2 .ribbon-loop { z-index: 1; width: 178px; height: 132px; left: -16px; top: 216px; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px)); }
-      .mkt2 .sculpture-note { right: 0; top: 456px; width: 116px; font-size: 7px; }
-      .mkt2 .hero-progress { bottom: 42px; grid-template-columns: auto 1fr; gap: 12px; }
-      .mkt2 .hero-progress-label:last-child { display: none; }
       .mkt2 .proof-item { min-height: 90px; padding: 20px 0; }
       .mkt2 .phase-note { margin-top: 28px; }
       .mkt2 .requirement-group summary { min-height: 72px; grid-template-columns: 30px 1fr 28px; gap: 10px; }
@@ -1261,7 +1058,7 @@
     @media (prefers-reduced-motion: reduce) {
       .mkt2 { scroll-behavior: auto; }
       .mkt2 *, .mkt2 *::before, .mkt2 *::after { animation: none !important; transition: none !important; transform-duration: 0s !important; }
-      .mkt2 .button:hover, .mkt2 .button:focus-visible, .mkt2 .button.is-hover, .mkt2 .case-file:hover, .mkt2 .case-file:focus-within, .mkt2 .phase:hover, .mkt2 .phase:focus-within, .mkt2 .fact:hover, .mkt2 .fact:focus-within, .mkt2 .price-card:hover, .mkt2 .price-card:focus-within, .mkt2 .guide-link:hover, .mkt2 .guide-link:focus-visible, .mkt2 .guide-link.is-hover, .mkt2 .toc-card a:hover, .mkt2 .toc-card a:focus-visible, .mkt2 .related-card:hover, .mkt2 .related-card:focus-visible, .mkt2 .flow-screen:hover, .mkt2 .flow-screen:focus-within, .mkt2 .choice:hover, .mkt2 .choice:focus-within, .mkt2 .flow-back:hover, .mkt2 .flow-back:focus-visible, .mkt2 .hover-surface.is-hover, .mkt2 .button:hover .button-arrow, .mkt2 .button:focus-visible .button-arrow, .mkt2 .button.is-hover .button-arrow, .mkt2 .guide-link:hover .guide-arrow, .mkt2 .guide-link:focus-visible .guide-arrow, .mkt2 .guide-link.is-hover .guide-arrow, .mkt2 .footer-col a:hover, .mkt2 .footer-col a:focus-visible { transform: none; }
+      .mkt2 .button:hover, .mkt2 .button:focus-visible, .mkt2 .button.is-hover, .mkt2 .phase:hover, .mkt2 .phase:focus-within, .mkt2 .fact:hover, .mkt2 .fact:focus-within, .mkt2 .price-card:hover, .mkt2 .price-card:focus-within, .mkt2 .guide-link:hover, .mkt2 .guide-link:focus-visible, .mkt2 .guide-link.is-hover, .mkt2 .toc-card a:hover, .mkt2 .toc-card a:focus-visible, .mkt2 .related-card:hover, .mkt2 .related-card:focus-visible, .mkt2 .flow-screen:hover, .mkt2 .flow-screen:focus-within, .mkt2 .choice:hover, .mkt2 .choice:focus-within, .mkt2 .flow-back:hover, .mkt2 .flow-back:focus-visible, .mkt2 .hover-surface.is-hover, .mkt2 .button:hover .button-arrow, .mkt2 .button:focus-visible .button-arrow, .mkt2 .button.is-hover .button-arrow, .mkt2 .guide-link:hover .guide-arrow, .mkt2 .guide-link:focus-visible .guide-arrow, .mkt2 .guide-link.is-hover .guide-arrow, .mkt2 .footer-col a:hover, .mkt2 .footer-col a:focus-visible { transform: none; }
     }
 
 /* next/font wiring + full-height ground (the spec assumed <link> Google Fonts;
@@ -1297,8 +1094,3 @@
   .mkt2 .footer-intro { grid-column: 1 / -1; }
 }
 
-/* Ambient hero drift is desktop-only: below 840px the sculpture reflows and the
-   drift is switched off (reduced-motion already disables it everywhere). */
-@media (max-width: 840px) {
-  .mkt2 .case-scroll-layer { animation: none; }
-}

@@ -1,0 +1,304 @@
+/* ============================================================================
+   Hero "Hero Journey" walker — ported from redesign/hero-options.html §o1.
+   Every selector is scoped under `.mkt2 .hero-journey`; every animation is gated
+   on the `.is-playing` class the component adds to the root once (never loops).
+   Colours come from the v2 brand tokens in marketing-v2.css — plus the only two
+   new tokens this feature introduces: --shield and --shield-gold.
+   Timeline literals below are kept in lock-step with the T constants in
+   components/marketing/v2/hero-journey.tsx.
+   ========================================================================= */
+
+.mkt2 .hero-journey {
+  /* the two sanctioned new tokens — the personified shield's body + gold check */
+  --shield: #4B4F55;
+  --shield-gold: #E0A93F;
+
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  /* clips the off-map walk-in and finish burst to our own box so a phone viewport
+     never gains horizontal scroll (the prototype clipped at its .frame the same way) */
+  overflow: hidden;
+}
+.mkt2 .hero-journey svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.mkt2 .hero-journey .hj-kicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0 0 4px;
+}
+
+/* ── planned route (dotted ghost) ──────────────────────────────────────── */
+.mkt2 .hero-journey .hj-ghost {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2 9;
+  opacity: 0;
+}
+.mkt2 .hero-journey.is-playing .hj-ghost {
+  animation: hj-ghostIn 600ms ease-out forwards 120ms, hj-ghostOut 1750ms linear forwards 2300ms;
+}
+@keyframes hj-ghostIn { to { opacity: 1 } }
+@keyframes hj-ghostOut { to { opacity: .12 } }
+
+/* ── the route you walked yourself (drawn) ─────────────────────────────── */
+.mkt2 .hero-journey .hj-trace {
+  fill: none;
+  stroke: url(#hjGrad);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--done) var(--gap); /* --gap = len+2: pattern can't wrap */
+  stroke-dashoffset: var(--done);
+}
+.mkt2 .hero-journey.is-playing .hj-trace {
+  animation: hj-draw 900ms cubic-bezier(.4, .05, .2, 1) forwards 260ms;
+}
+@keyframes hj-draw { to { stroke-dashoffset: 0 } }
+
+/* ── the route we lay under the walker's feet (filled as it crosses) ───── */
+.mkt2 .hero-journey .hj-trace2 {
+  fill: none;
+  stroke: url(#hjGrad);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0 var(--done) 0 var(--gap); /* 4 values (even) — avoids browser doubling */
+}
+.mkt2 .hero-journey.is-playing .hj-trace2 {
+  animation: hj-fill 1750ms linear forwards 2300ms;
+}
+@keyframes hj-fill { to { stroke-dasharray: 0 var(--done) var(--rest) var(--gap) } }
+
+/* ── stations ──────────────────────────────────────────────────────────── */
+.mkt2 .hero-journey .stop {
+  fill: var(--paper);
+  stroke: var(--rule);
+  stroke-width: 2.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+}
+.mkt2 .hero-journey.is-playing .stop {
+  animation: hj-pop 420ms cubic-bezier(.2, .9, .3, 1.4) forwards var(--sd);
+}
+@keyframes hj-pop {
+  0% { opacity: 0; transform: scale(.5) }
+  40% { opacity: 1 }
+  60% { transform: scale(1.22) }
+  100% { opacity: 1; transform: scale(1) }
+}
+.mkt2 .hero-journey .stop.done { stroke: var(--electric) }
+.mkt2 .hero-journey .stop.ahead { stroke: var(--rule); stroke-width: 2 }
+.mkt2 .hero-journey.is-playing .stop.ahead {
+  animation: hj-popAhead 420ms ease-out forwards var(--sd),
+             hj-lightUp 380ms cubic-bezier(.2, .9, .3, 1.4) forwards var(--ld);
+}
+@keyframes hj-popAhead {
+  0% { opacity: 0; transform: scale(.6) }
+  100% { opacity: .75; transform: scale(1) }
+}
+@keyframes hj-lightUp {
+  0% { opacity: .75; transform: scale(1); stroke: var(--rule); stroke-width: 2 }
+  55% { opacity: 1; transform: scale(1.32); stroke: var(--electric); stroke-width: 2.5 }
+  100% { opacity: 1; transform: scale(1); stroke: var(--electric); stroke-width: 2.5 }
+}
+/* NYPD-controlled stations wear a dashed ring — same size, same colour as ours,
+   the dash alone marks "their clock, not ours". Honest at a glance. */
+.mkt2 .hero-journey .stop.nypd { stroke-dasharray: 3 3 }
+
+.mkt2 .hero-journey .stop-label.ahead-l { fill: var(--rule) }
+.mkt2 .hero-journey.is-playing .stop-label.ahead-l {
+  animation: hj-labelUp 380ms ease-out forwards var(--ld);
+}
+@keyframes hj-labelUp { to { fill: var(--ink-muted) } }
+
+.mkt2 .hero-journey .stop.here { fill: var(--electric); stroke: var(--paper); stroke-width: 3.5 }
+.mkt2 .hero-journey .halo {
+  fill: var(--electric);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mkt2 .hero-journey.is-playing .halo {
+  animation: hj-halo 900ms ease-out forwards 1080ms;
+}
+@keyframes hj-halo {
+  0% { opacity: .42; transform: scale(.7) }
+  100% { opacity: 0; transform: scale(2.6) }
+}
+.mkt2 .hero-journey .stop-label {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: .13em;
+  fill: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+/* ── the walker: our shield, personified ───────────────────────────────── */
+.mkt2 .hero-journey .hj-walker { opacity: 0 }
+.mkt2 .hero-journey.is-playing .hj-walker {
+  animation: hj-walkerIn 260ms ease-out forwards 1180ms;
+}
+@keyframes hj-walkerIn { to { opacity: 1 } }
+.mkt2 .hero-journey .hj-shield { fill: var(--shield) }
+.mkt2 .hero-journey .hj-check {
+  fill: none;
+  stroke: var(--shield-gold);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mkt2 .hero-journey .hj-spire { stroke: var(--shield); stroke-width: 1.6; stroke-linecap: round }
+.mkt2 .hero-journey .hj-eye-w { fill: var(--paper) }
+.mkt2 .hero-journey .hj-eye-p { fill: var(--ink) }
+.mkt2 .hero-journey .hj-limb {
+  fill: var(--shield);
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+.mkt2 .hero-journey.is-playing .hj-leg-a {
+  animation: hj-swF 170ms linear 4.1 1350ms, hj-swF 170ms linear 10.3 2300ms;
+}
+.mkt2 .hero-journey.is-playing .hj-leg-b {
+  animation: hj-swB 170ms linear 4.1 1350ms, hj-swB 170ms linear 10.3 2300ms;
+}
+/* arms mirror the legs, then the far arm reaches you a hand, then both fly up */
+.mkt2 .hero-journey.is-playing .hj-arm-a {
+  animation: hj-swB 170ms linear 4.1 1350ms, hj-reach 400ms ease-out both 2060ms,
+             hj-swB 170ms linear 10.3 2300ms, hj-cheerR 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 4050ms;
+}
+.mkt2 .hero-journey.is-playing .hj-arm-b {
+  animation: hj-swF 170ms linear 4.1 1350ms, hj-swF 170ms linear 10.3 2300ms,
+             hj-cheerL 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 4050ms;
+}
+@keyframes hj-swF { 0% { transform: rotate(24deg) } 50% { transform: rotate(-24deg) } 100% { transform: rotate(24deg) } }
+@keyframes hj-swB { 0% { transform: rotate(-24deg) } 50% { transform: rotate(24deg) } 100% { transform: rotate(-24deg) } }
+@keyframes hj-reach { to { transform: rotate(-50deg) } }
+@keyframes hj-cheerR { to { transform: rotate(-152deg) } }
+@keyframes hj-cheerL { to { transform: rotate(152deg) } }
+.mkt2 .hero-journey .hj-bob { transform-box: fill-box; transform-origin: 50% 100% }
+.mkt2 .hero-journey.is-playing .hj-bob {
+  animation: hj-bob 85ms linear 8.2 1350ms, hj-bob 85ms linear 20.6 2300ms,
+             hj-arrive 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 4050ms;
+}
+@keyframes hj-bob {
+  0% { transform: translateY(0) rotate(0) }
+  50% { transform: translateY(-1.5px) rotate(-2deg) }
+  100% { transform: translateY(0) rotate(0) }
+}
+@keyframes hj-arrive {
+  0% { transform: translateY(0) scale(1) }
+  32% { transform: translateY(-9px) scale(1.05) }
+  66% { transform: translateY(0) scale(.93, 1.07) }
+  100% { transform: translateY(0) scale(1) }
+}
+.mkt2 .hero-journey.is-playing .hj-check {
+  animation: hj-glint 620ms ease-out 2 1900ms, hj-glint 700ms ease-out 2 4200ms;
+}
+@keyframes hj-glint {
+  0% { stroke: var(--shield-gold) }
+  45% { stroke: color-mix(in srgb, var(--shield-gold) 55%, white) }
+  100% { stroke: var(--shield-gold) }
+}
+/* eyes shut into happy arcs on arrival */
+.mkt2 .hero-journey .hj-eye-p { transform-box: fill-box; transform-origin: center }
+.mkt2 .hero-journey.is-playing .hj-eye-p {
+  animation: hj-squint 520ms ease-out forwards 4120ms;
+}
+@keyframes hj-squint { to { transform: scaleY(.25) translateY(2.4px) } }
+
+/* ── confetti ──────────────────────────────────────────────────────────── */
+.mkt2 .hero-journey .conf {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mkt2 .hero-journey.is-playing .conf {
+  animation: hj-conf var(--cd) cubic-bezier(.15, .6, .5, 1) forwards var(--cdel);
+}
+@keyframes hj-conf {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(.3) }
+  10% { opacity: 1 }
+  40% { transform: translate(calc(var(--dx) * .55), var(--peak)) rotate(calc(var(--rot) * .45)) scale(1) }
+  78% { opacity: 1 }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1) }
+}
+
+/* ── readout: names the stage under the walker's feet ──────────────────── */
+.mkt2 .hero-journey .hj-readout {
+  margin: 22px 0 0;
+  height: 36px;
+  position: relative;
+}
+.mkt2 .hero-journey .hj-readout span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  opacity: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: center;
+  line-height: 1.7;
+}
+.mkt2 .hero-journey .hj-readout b { color: var(--ink); font-weight: 500 }
+.mkt2 .hero-journey .hj-readout .fin b { color: var(--success) }
+.mkt2 .hero-journey.is-playing .hj-readout span {
+  animation: hj-rIn 200ms ease-out forwards var(--in), hj-rOut 180ms ease-in forwards var(--out);
+}
+.mkt2 .hero-journey.is-playing .hj-readout .fin {
+  animation: hj-rIn 300ms ease-out forwards var(--in);
+}
+@keyframes hj-rIn { from { opacity: 0; transform: translateY(3px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes hj-rOut { to { opacity: 0 } }
+
+@media (max-width: 560px) {
+  .mkt2 .hero-journey .hj-readout { height: 40px }
+  .mkt2 .hero-journey .hj-readout span { font-size: 9px; letter-spacing: .1em }
+}
+
+/* ── reduced motion: nothing moves; show the finished state ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .mkt2 .hero-journey.is-playing .hj-ghost,
+  .mkt2 .hero-journey.is-playing .hj-trace,
+  .mkt2 .hero-journey.is-playing .hj-trace2,
+  .mkt2 .hero-journey.is-playing .stop,
+  .mkt2 .hero-journey.is-playing .stop.ahead,
+  .mkt2 .hero-journey.is-playing .hj-walker,
+  .mkt2 .hero-journey.is-playing .hj-bob,
+  .mkt2 .hero-journey.is-playing .hj-leg-a,
+  .mkt2 .hero-journey.is-playing .hj-leg-b,
+  .mkt2 .hero-journey.is-playing .hj-arm-a,
+  .mkt2 .hero-journey.is-playing .hj-arm-b,
+  .mkt2 .hero-journey.is-playing .halo,
+  .mkt2 .hero-journey.is-playing .conf,
+  .mkt2 .hero-journey.is-playing .hj-check,
+  .mkt2 .hero-journey.is-playing .hj-eye-p,
+  .mkt2 .hero-journey.is-playing .stop-label.ahead-l,
+  .mkt2 .hero-journey.is-playing .hj-readout span {
+    animation: none !important;
+  }
+  .mkt2 .hero-journey .hj-ghost { opacity: .12 }
+  .mkt2 .hero-journey .hj-trace { stroke-dashoffset: 0 }
+  .mkt2 .hero-journey .hj-trace2 { stroke-dasharray: 0 var(--done) var(--rest) var(--gap) }
+  .mkt2 .hero-journey .stop { opacity: 1 }
+  .mkt2 .hero-journey .stop.ahead { stroke: var(--electric); stroke-width: 2.5; opacity: 1 }
+  .mkt2 .hero-journey .stop.nypd { stroke-dasharray: 3 3 }
+  .mkt2 .hero-journey .hj-walker { opacity: 1 }
+  .mkt2 .hero-journey .hj-readout .fin { opacity: 1 }
+}
