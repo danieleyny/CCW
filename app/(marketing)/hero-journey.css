@@ -1,11 +1,15 @@
 /* ============================================================================
    Hero "Hero Journey" walker — ported from redesign/hero-options.html §o1.
    Every selector is scoped under `.mkt2 .hero-journey`; every animation is gated
-   on the `.is-playing` class the component adds to the root once (never loops).
+   on the `.is-playing` class the component adds to the root (once on view, again on
+   Replay — nothing loops, nothing runs at rest).
    Colours come from the v2 brand tokens in marketing-v2.css — plus the only two
    new tokens this feature introduces: --shield and --shield-gold.
-   Timeline literals below are kept in lock-step with the T constants in
-   components/marketing/v2/hero-journey.tsx.
+
+   Timeline literals here are kept in LOCK-STEP with the derived T in
+   components/marketing/v2/hero-journey.tsx (geometry is fixed, so they are stable):
+     cross 2050 · step 300 · hold 500 · segDur 800 · crossDur 5600 (= 800 × 7)
+     arrive 7650 · landAt 7150 (= arrive − hold, when the foot lands on stage 13)
    ========================================================================= */
 
 .mkt2 .hero-journey {
@@ -36,6 +40,58 @@
   margin: 0 0 4px;
 }
 
+/* ── background layers (behind the route + stations; all on the once-only timeline) ── */
+.mkt2 .hero-journey .hj-bg { pointer-events: none }
+
+/* 2b · colour wash under the route — #hjGrad (cool left/travelled → warm right/ahead). */
+.mkt2 .hero-journey .hj-wash {
+  opacity: 0;
+  filter: blur(6px);
+}
+.mkt2 .hero-journey.is-playing .hj-wash {
+  animation: hj-washIn 1000ms ease-out forwards var(--wash-in);
+}
+@keyframes hj-washIn { to { opacity: .08 } }
+
+/* 2a · the NYPD stretch band under stations 09–12 (extent derived in JS from their x's). */
+.mkt2 .hero-journey .hj-band {
+  fill: var(--ink-muted);
+  opacity: 0;
+}
+.mkt2 .hero-journey.is-playing .hj-band {
+  animation: hj-bandIn 800ms ease-out forwards var(--band-in);
+}
+@keyframes hj-bandIn { to { opacity: .08 } }
+.mkt2 .hero-journey .hj-band-label {
+  fill: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+.mkt2 .hero-journey.is-playing .hj-band-label {
+  animation: hj-bandIn 800ms ease-out forwards var(--band-in);
+}
+/* label rides the same reveal but settles a touch brighter than the band */
+.mkt2 .hero-journey.is-playing .hj-band-label { animation-name: hj-bandLabelIn }
+@keyframes hj-bandLabelIn { to { opacity: .7 } }
+
+/* 2c · arrival bloom at stage 13 (the one layer allowed past 10%, still under the station). */
+.mkt2 .hero-journey .hj-bloom {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mkt2 .hero-journey.is-playing .hj-bloom {
+  animation: hj-bloomIn 1200ms ease-out forwards var(--bloom-in);
+}
+@keyframes hj-bloomIn {
+  0% { opacity: 0; transform: scale(.4) }
+  45% { opacity: .4; transform: scale(1.04) }
+  100% { opacity: .16; transform: scale(1) }
+}
+
 /* ── planned route (dotted ghost) ──────────────────────────────────────── */
 .mkt2 .hero-journey .hj-ghost {
   fill: none;
@@ -47,7 +103,8 @@
   opacity: 0;
 }
 .mkt2 .hero-journey.is-playing .hj-ghost {
-  animation: hj-ghostIn 600ms ease-out forwards 120ms, hj-ghostOut 1750ms linear forwards 2300ms;
+  /* fade the plan in, then dim it across the whole crossing as the real route fills */
+  animation: hj-ghostIn 600ms ease-out forwards 120ms, hj-ghostOut 5600ms linear forwards 2050ms;
 }
 @keyframes hj-ghostIn { to { opacity: 1 } }
 @keyframes hj-ghostOut { to { opacity: .12 } }
@@ -67,7 +124,9 @@
 }
 @keyframes hj-draw { to { stroke-dashoffset: 0 } }
 
-/* ── the route we lay under the walker's feet (filled as it crosses) ───── */
+/* ── the route we lay under the walker's feet — STEP-HOLD so colour never runs
+      ahead of the foot. The visible dash grows one station per step, holds per hold.
+      Offsets match crossKeyframes() in the component exactly. ─────────────── */
 .mkt2 .hero-journey .hj-trace2 {
   fill: none;
   stroke: url(#hjGrad);
@@ -77,9 +136,25 @@
   stroke-dasharray: 0 var(--done) 0 var(--gap); /* 4 values (even) — avoids browser doubling */
 }
 .mkt2 .hero-journey.is-playing .hj-trace2 {
-  animation: hj-fill 1750ms linear forwards 2300ms;
+  animation: hj-fill 5600ms linear forwards 2050ms;
 }
-@keyframes hj-fill { to { stroke-dasharray: 0 var(--done) var(--rest) var(--gap) } }
+@keyframes hj-fill {
+  0%      { stroke-dasharray: 0 var(--done) calc(var(--rest) * 0)       var(--gap) }
+  5.357%  { stroke-dasharray: 0 var(--done) calc(var(--rest) * .142857) var(--gap) }
+  14.286% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .142857) var(--gap) }
+  19.643% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .285714) var(--gap) }
+  28.571% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .285714) var(--gap) }
+  33.929% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .428571) var(--gap) }
+  42.857% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .428571) var(--gap) }
+  48.214% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .571429) var(--gap) }
+  57.143% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .571429) var(--gap) }
+  62.5%   { stroke-dasharray: 0 var(--done) calc(var(--rest) * .714286) var(--gap) }
+  71.429% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .714286) var(--gap) }
+  76.786% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .857143) var(--gap) }
+  85.714% { stroke-dasharray: 0 var(--done) calc(var(--rest) * .857143) var(--gap) }
+  91.071% { stroke-dasharray: 0 var(--done) calc(var(--rest) * 1)       var(--gap) }
+  100%    { stroke-dasharray: 0 var(--done) calc(var(--rest) * 1)       var(--gap) }
+}
 
 /* ── stations ──────────────────────────────────────────────────────────── */
 .mkt2 .hero-journey .stop {
@@ -168,34 +243,56 @@
   transform-box: fill-box;
   transform-origin: 50% 0;
 }
+/* Walk-in uses the quick continuous swing; the CROSSING uses a per-segment keyframe
+   (hj-step-*) that swings during the 300ms step and HOLDS still during the 500ms hold,
+   run once per station (7×) — so the legs stop when the walker stops. */
 .mkt2 .hero-journey.is-playing .hj-leg-a {
-  animation: hj-swF 170ms linear 4.1 1350ms, hj-swF 170ms linear 10.3 2300ms;
+  animation: hj-swF 170ms linear 4.1 1350ms, hj-step-a 800ms linear 7 2050ms;
 }
 .mkt2 .hero-journey.is-playing .hj-leg-b {
-  animation: hj-swB 170ms linear 4.1 1350ms, hj-swB 170ms linear 10.3 2300ms;
+  animation: hj-swB 170ms linear 4.1 1350ms, hj-step-b 800ms linear 7 2050ms;
 }
-/* arms mirror the legs, then the far arm reaches you a hand, then both fly up */
+/* arms mirror the legs, then both fly up on landing */
 .mkt2 .hero-journey.is-playing .hj-arm-a {
-  animation: hj-swB 170ms linear 4.1 1350ms, hj-reach 400ms ease-out both 2060ms,
-             hj-swB 170ms linear 10.3 2300ms, hj-cheerR 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 4050ms;
+  animation: hj-swB 170ms linear 4.1 1350ms, hj-step-b 800ms linear 7 2050ms,
+             hj-cheerR 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 7150ms;
 }
 .mkt2 .hero-journey.is-playing .hj-arm-b {
-  animation: hj-swF 170ms linear 4.1 1350ms, hj-swF 170ms linear 10.3 2300ms,
-             hj-cheerL 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 4050ms;
+  animation: hj-swF 170ms linear 4.1 1350ms, hj-step-a 800ms linear 7 2050ms,
+             hj-cheerL 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 7150ms;
 }
 @keyframes hj-swF { 0% { transform: rotate(24deg) } 50% { transform: rotate(-24deg) } 100% { transform: rotate(24deg) } }
 @keyframes hj-swB { 0% { transform: rotate(-24deg) } 50% { transform: rotate(24deg) } 100% { transform: rotate(-24deg) } }
-@keyframes hj-reach { to { transform: rotate(-50deg) } }
+/* one stride during the step (0–37.5% = 300ms), then held through the hold (37.5–100%) */
+@keyframes hj-step-a {
+  0% { transform: rotate(26deg) }
+  18.75% { transform: rotate(-26deg) }
+  37.5% { transform: rotate(26deg) }
+  100% { transform: rotate(26deg) }
+}
+@keyframes hj-step-b {
+  0% { transform: rotate(-26deg) }
+  18.75% { transform: rotate(26deg) }
+  37.5% { transform: rotate(-26deg) }
+  100% { transform: rotate(-26deg) }
+}
 @keyframes hj-cheerR { to { transform: rotate(-152deg) } }
 @keyframes hj-cheerL { to { transform: rotate(152deg) } }
 .mkt2 .hero-journey .hj-bob { transform-box: fill-box; transform-origin: 50% 100% }
 .mkt2 .hero-journey.is-playing .hj-bob {
-  animation: hj-bob 85ms linear 8.2 1350ms, hj-bob 85ms linear 20.6 2300ms,
-             hj-arrive 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 4050ms;
+  animation: hj-bob 85ms linear 8.2 1350ms, hj-step-bob 800ms linear 7 2050ms,
+             hj-arrive 520ms cubic-bezier(.2, .9, .3, 1.5) forwards 7150ms;
 }
 @keyframes hj-bob {
   0% { transform: translateY(0) rotate(0) }
   50% { transform: translateY(-1.5px) rotate(-2deg) }
+  100% { transform: translateY(0) rotate(0) }
+}
+/* bob during the step, settle flat during the hold */
+@keyframes hj-step-bob {
+  0% { transform: translateY(0) rotate(0) }
+  18.75% { transform: translateY(-1.5px) rotate(-2deg) }
+  37.5% { transform: translateY(0) rotate(0) }
   100% { transform: translateY(0) rotate(0) }
 }
 @keyframes hj-arrive {
@@ -205,7 +302,7 @@
   100% { transform: translateY(0) scale(1) }
 }
 .mkt2 .hero-journey.is-playing .hj-check {
-  animation: hj-glint 620ms ease-out 2 1900ms, hj-glint 700ms ease-out 2 4200ms;
+  animation: hj-glint 620ms ease-out 2 1900ms, hj-glint 700ms ease-out 2 7250ms;
 }
 @keyframes hj-glint {
   0% { stroke: var(--shield-gold) }
@@ -215,7 +312,7 @@
 /* eyes shut into happy arcs on arrival */
 .mkt2 .hero-journey .hj-eye-p { transform-box: fill-box; transform-origin: center }
 .mkt2 .hero-journey.is-playing .hj-eye-p {
-  animation: hj-squint 520ms ease-out forwards 4120ms;
+  animation: hj-squint 520ms ease-out forwards 7220ms;
 }
 @keyframes hj-squint { to { transform: scaleY(.25) translateY(2.4px) } }
 
@@ -236,9 +333,10 @@
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1) }
 }
 
-/* ── readout: names the stage under the walker's feet ──────────────────── */
+/* ── readout: ONE row at a time. It appears as the foot lands, holds for the whole
+      hold, then clears during the next step (no mid-hold crossfade). ─────── */
 .mkt2 .hero-journey .hj-readout {
-  margin: 22px 0 0;
+  margin: 10px 0 0;
   height: 36px;
   position: relative;
 }
@@ -259,21 +357,48 @@
 .mkt2 .hero-journey .hj-readout b { color: var(--ink); font-weight: 500 }
 .mkt2 .hero-journey .hj-readout .fin b { color: var(--success) }
 .mkt2 .hero-journey.is-playing .hj-readout span {
-  animation: hj-rIn 200ms ease-out forwards var(--in), hj-rOut 180ms ease-in forwards var(--out);
+  animation: hj-rIn 70ms ease-out forwards var(--in), hj-rOut 150ms ease-in forwards var(--out);
 }
 .mkt2 .hero-journey.is-playing .hj-readout .fin {
-  animation: hj-rIn 300ms ease-out forwards var(--in);
+  animation: hj-rIn 90ms ease-out forwards var(--in);
 }
 @keyframes hj-rIn { from { opacity: 0; transform: translateY(3px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes hj-rOut { to { opacity: 0 } }
+
+/* ── Replay (quiet utility under the readout) ──────────────────────────── */
+.mkt2 .hero-journey .hj-replay {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin: 6px auto 0;
+  padding: 4px 9px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.mkt2 .hero-journey .hj-replay:hover { color: var(--ink) }
+.mkt2 .hero-journey .hj-replay:focus-visible { outline: 2px solid var(--electric); outline-offset: 2px }
 
 @media (max-width: 560px) {
   .mkt2 .hero-journey .hj-readout { height: 40px }
   .mkt2 .hero-journey .hj-readout span { font-size: 9px; letter-spacing: .1em }
 }
 
-/* ── reduced motion: nothing moves; show the finished state ────────────── */
+/* ── reduced motion: nothing moves; show the finished state with each new layer
+      at its resting opacity (not merely switched off). ─────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  .mkt2 .hero-journey.is-playing .hj-wash,
+  .mkt2 .hero-journey.is-playing .hj-band,
+  .mkt2 .hero-journey.is-playing .hj-band-label,
+  .mkt2 .hero-journey.is-playing .hj-bloom,
   .mkt2 .hero-journey.is-playing .hj-ghost,
   .mkt2 .hero-journey.is-playing .hj-trace,
   .mkt2 .hero-journey.is-playing .hj-trace2,
@@ -293,6 +418,10 @@
   .mkt2 .hero-journey.is-playing .hj-readout span {
     animation: none !important;
   }
+  .mkt2 .hero-journey .hj-wash { opacity: .08 }
+  .mkt2 .hero-journey .hj-band { opacity: .08 }
+  .mkt2 .hero-journey .hj-band-label { opacity: .7 }
+  .mkt2 .hero-journey .hj-bloom { opacity: .16; transform: scale(1) }
   .mkt2 .hero-journey .hj-ghost { opacity: .12 }
   .mkt2 .hero-journey .hj-trace { stroke-dashoffset: 0 }
   .mkt2 .hero-journey .hj-trace2 { stroke-dasharray: 0 var(--done) var(--rest) var(--gap) }
@@ -301,4 +430,6 @@
   .mkt2 .hero-journey .stop.nypd { stroke-dasharray: 3 3 }
   .mkt2 .hero-journey .hj-walker { opacity: 1 }
   .mkt2 .hero-journey .hj-readout .fin { opacity: 1 }
+  /* nothing to replay */
+  .mkt2 .hero-journey .hj-replay { display: none }
 }
