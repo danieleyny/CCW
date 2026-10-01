@@ -194,21 +194,41 @@ export function HeroJourney() {
       wash.style.setProperty("--wash-in", T.cross + "ms")
       bg.appendChild(wash)
 
-      // 2a · the NYPD stretch band — extent derived from the NYPD station x's.
+      // 2a · the NYPD stretch band — extent derived from the NYPD station x's. Asymmetric
+      // pads: a wider RIGHT pad so stage 12's number clears the fade and sits in the solid
+      // middle; left pad keeps stage 09's number inside too.
       if (nypdX.length) {
-        const pad = 18
-        const minX = Math.min(...nypdX) - pad
-        const maxX = Math.max(...nypdX) + pad
+        const padL = 30
+        const padR = 40
+        const minX = Math.min(...nypdX) - padL
+        const maxX = Math.max(...nypdX) + padR
+        const W = maxX - minX
+
+        // Soft left/right edges: a horizontal gradient fading each end to transparent, so the
+        // band dissolves into the page instead of ending in a hard rounded rectangle. The
+        // ~16px fade stays well inside the padding, so neither end station's number is dimmed.
+        const fadeFrac = Math.min(0.4, 16 / W)
+        const grad = document.createElementNS(SVGNS, "linearGradient")
+        grad.setAttribute("id", "hjBandFade") // objectBoundingBox + default direction = horizontal
+        for (const [off, op] of [[0, 0], [fadeFrac, 1], [1 - fadeFrac, 1], [1, 0]] as [number, number][]) {
+          const st = document.createElementNS(SVGNS, "stop")
+          st.setAttribute("offset", String(off))
+          st.style.stopColor = "var(--ink-muted)"
+          st.style.stopOpacity = String(op)
+          grad.appendChild(st)
+        }
+        bg.appendChild(grad)
+
         const band = document.createElementNS(SVGNS, "rect")
         band.setAttribute("x", String(minX)); band.setAttribute("y", "122")
-        band.setAttribute("width", String(maxX - minX)); band.setAttribute("height", "132")
-        band.setAttribute("rx", "10")
+        band.setAttribute("width", String(W)); band.setAttribute("height", "132")
+        band.setAttribute("fill", "url(#hjBandFade)")
         band.setAttribute("class", "hj-band")
         band.style.setProperty("--band-in", landTime(2) + "ms") // reveal around when the walker reaches stage 08
         bg.appendChild(band)
 
         const bl = document.createElementNS(SVGNS, "text")
-        bl.setAttribute("x", String(minX + 10)); bl.setAttribute("y", "133")
+        bl.setAttribute("x", String(minX + padL)); bl.setAttribute("y", "133")
         bl.setAttribute("class", "hj-band-label")
         bl.style.setProperty("--band-in", landTime(2) + "ms")
         bl.textContent = "NYPD’S CLOCK"

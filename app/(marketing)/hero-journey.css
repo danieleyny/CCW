@@ -55,7 +55,8 @@
 
 /* 2a · the NYPD stretch band under stations 09–12 (extent derived in JS from their x's). */
 .mkt2 .hero-journey .hj-band {
-  fill: var(--ink-muted);
+  /* fill is a horizontal fade gradient (#hjBandFade) set in JS, so the left/right
+     edges dissolve to transparent instead of ending in a hard rounded rectangle. */
   opacity: 0;
 }
 .mkt2 .hero-journey.is-playing .hj-band {
