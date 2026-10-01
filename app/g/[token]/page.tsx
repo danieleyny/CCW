@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { LogoLockup } from "@/components/brand/logo"
-import { safeguardTokenActive } from "@/lib/safeguard/invite"
+import { safeguardTokenActive, findSafeguardInviteByToken } from "@/lib/safeguard/invite"
 import { SafeguardFlow } from "@/components/public/safeguard-flow"
 
 export const metadata = { title: "Safeguarding acknowledgement — Gun License NYC", robots: { index: false, follow: false } }
@@ -9,18 +9,22 @@ export default async function SafeguardPage({ params }: { params: Promise<{ toke
   const { token } = await params
   const admin = createAdminClient()
 
-  const { data: invite } = await admin
-    .from("safeguard_invites")
-    .select("id, case_id, status, token_expires_at, token_revoked_at, opened_at")
-    .eq("token", token)
-    .maybeSingle()
+  const invite = await findSafeguardInviteByToken(async () => {
+    const { data } = await admin
+      .from("safeguard_invites")
+      .select("id, case_id, status, token_expires_at, token_revoked_at, opened_at")
+      .eq("token", token)
+      .maybeSingle()
+    return data
+  })
 
   if (!invite || !safeguardTokenActive(invite)) {
     return (
       <Shell>
-        <h1 className="text-xl font-semibold">This link isn&apos;t valid</h1>
+        <h1 className="text-xl font-semibold">We couldn&apos;t open this link just now</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          The link may have expired or been mistyped. Please ask the applicant to resend it.
+          If you just received it, wait a moment and refresh this page. If it still doesn&apos;t open, the
+          link may have expired or been mistyped — please ask the applicant to resend it.
         </p>
       </Shell>
     )
@@ -37,7 +41,7 @@ export default async function SafeguardPage({ params }: { params: Promise<{ toke
     <Shell>
       <h1 className="text-xl font-semibold tracking-tight">Safeguarding acknowledgement</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {applicant} designated you to safeguard and surrender their firearm(s) if they die or become
+        {applicant}{" "}designated you to safeguard and surrender their firearm(s) if they die or become
         incapacitated. Complete NYPD&apos;s short acknowledgement — no account needed. We build it from what
         they told us; you sign it in front of a witness and upload it.
       </p>

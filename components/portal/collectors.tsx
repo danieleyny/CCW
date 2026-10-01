@@ -178,6 +178,17 @@ export function ReferenceCollector({
               <Input id="ref-phone" name="contactPhone" placeholder="optional" />
             </div>
           </div>
+          {/* How long they've known the applicant — captured here, pre-filled into the
+              reference's own invitation, and makes for a stronger letter. NEVER a block:
+              38 RCNY §5-03 sets no minimum acquaintance period (finding 9). */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ref-known">How long have you known them?</Label>
+            <Input id="ref-known" name="knownDuration" placeholder="e.g. 8 years, since college" />
+            <p className="text-[11px] text-text-low">
+              Any length is fine. Investigators do weigh how well a reference knows you, so a longer
+              acquaintance makes for a stronger letter — we&apos;ll add this to their invitation.
+            </p>
+          </div>
           {/* The family control appears ONLY on a track that allows a family
               reference (Carry Guard / Premises allow none, so it isn't offered at
               all). Once the family cap is full, it's disabled with the reason. */}

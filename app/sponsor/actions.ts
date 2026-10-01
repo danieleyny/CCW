@@ -62,10 +62,11 @@ export async function uploadSponsorDocument(formData: FormData): Promise<{ ok?: 
   const requirement = req?.requirement as unknown as { party: string; document_type: string | null } | null
   if (!req) return { error: "That requirement isn't on this case." }
   if (!requirement?.document_type) return { error: "This item is completed as a form, not an upload." }
-  // The company packet (party='sponsor') is always the rep's to upload. Uploading
-  // the APPLICANT's own paperwork is parity that only full scope grants
-  // ("Pamela uploaded your utility bill"). Never a signature or a submit.
-  if (requirement.party === "applicant" && scope.scope !== "full") {
+  // The sponsor uploads ONLY their own company packet (party='sponsor'), at any scope.
+  // A sponsor never touches the applicant's own paperwork — that's the applicant's file
+  // (P0.1). This mirrors the party_scope() read boundary on the write side; scope no
+  // longer widens what the sponsor can reach.
+  if (requirement.party !== "sponsor") {
     return { error: "Your access is limited to your company packet." }
   }
 
@@ -275,5 +276,44 @@ export async function saveCompanyProfile(formData: FormData): Promise<{ ok?: tru
 
   await logActivity({ action: "sponsor.company_profile_saved", caseId, entity: "case", entityId: caseId })
   revalidatePath(`/sponsor/${caseId}`)
+  return { ok: true }
+}
+
+/**
+ * A rep REQUESTS a new worker (S1). The rep never self-provisions — this only records
+ * a request; staff approve it and approval runs addSponsoredWorker with the admin
+ * client. Written through the rep's OWN client, so RLS is the authority: the row is
+ * accepted only for the rep's own sponsor_id, and the DB trigger raises the staff task
+ * (a rep cannot write `tasks`). No case is created or looked up here — a later decline
+ * can't reveal whether the applicant already had a file.
+ */
+export async function requestWorker(formData: FormData): Promise<{ ok?: true; error?: string }> {
+  const { userId } = await requireRole(["sponsor"])
+  const applicantName = String(formData.get("applicantName") ?? "").trim()
+  const applicantEmail = String(formData.get("applicantEmail") ?? "").trim().toLowerCase()
+  const assignmentRole = String(formData.get("assignmentRole") ?? "").trim()
+  const requestedScope = String(formData.get("requestedScope") ?? "packet_only")
+  if (!applicantName || !applicantEmail) return { error: "The worker's name and email are required." }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(applicantEmail)) return { error: "Enter a valid email for the worker." }
+  const scope = (["packet_only", "assist", "full"] as const).includes(requestedScope as never)
+    ? (requestedScope as "packet_only" | "assist" | "full")
+    : "packet_only"
+
+  const db = await createClient()
+  const { data: prof } = await db.from("profiles").select("sponsor_id").eq("id", userId).maybeSingle()
+  if (!prof?.sponsor_id) return { error: "Your account isn't linked to a company yet — contact your Gun License NYC team." }
+
+  // RLS re-checks sponsor_id = our own and requested_by = us; the trigger raises the task.
+  const { error } = await db.from("sponsor_worker_requests").insert({
+    sponsor_id: prof.sponsor_id,
+    requested_by: userId,
+    applicant_name: applicantName,
+    applicant_email: applicantEmail,
+    assignment_role: assignmentRole || null,
+    requested_scope: scope,
+  })
+  if (error) return { error: "Couldn't submit your request. Please try again." }
+
+  revalidatePath("/sponsor/requests")
   return { ok: true }
 }

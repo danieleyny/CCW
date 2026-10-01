@@ -1,4 +1,4 @@
-import { FACTS, type FactDef, type FactGroup, type FactType } from "@/lib/facts/registry"
+import { FACTS, GROUP_NOTES, type FactDef, type FactGroup, type FactType } from "@/lib/facts/registry"
 import { QUESTIONNAIRES } from "@/lib/requirements/questionnaires"
 
 /**
@@ -30,6 +30,8 @@ export interface FactRowMeta {
 export interface FactGroupData {
   key: FactGroup
   label: string
+  /** A group-level explanation rendered above the rows (e.g. the safeguard "not you" rule). */
+  note?: string
   rows: FactRowMeta[]
 }
 
@@ -43,6 +45,7 @@ const GROUP_LABEL: Record<FactGroup, string> = {
   safeguard: "Safeguard",
   safekeeping: "Safekeeping location",
   counsel: "Counsel",
+  county_license: "Home-county carry licence",
 }
 
 /** How many questionnaires reference each fact — the "used on N forms" line. */
@@ -56,6 +59,32 @@ function factUsage(): Record<string, number> {
     for (const g of q.groups ?? []) bump(g.fields)
   }
   return counts
+}
+
+/**
+ * Completeness over the "Your details" editor — required, currently-visible,
+ * non-optional, non-SSN scalar facts. Computed with the SAME rules the page's live
+ * meter uses (components/portal/facts/fact-groups.tsx), so any surface that reports
+ * "Your details — N of M" (e.g. the concierge data-ask) agrees with the page it links
+ * to instead of showing a second denominator (P2-4).
+ */
+export function detailsMeter(
+  groups: FactGroupData[],
+  /** Keys that are filled but INVALID (e.g. a safeguard field that is the applicant's own)
+   *  — counted toward the total but never toward captured, so a conflict blocks completeness. */
+  invalidKeys?: ReadonlySet<string>
+): { captured: number; total: number } {
+  const flat = groups.flatMap((g) => g.rows)
+  const valueOf = (key: string) => flat.find((r) => r.key === key)?.value ?? ""
+  const visible = (r: FactRowMeta) => !r.showWhen || r.showWhen.equals.includes(valueOf(r.showWhen.key).trim())
+  let captured = 0
+  let total = 0
+  for (const r of flat) {
+    if (r.kind !== "editable" || r.optional || !visible(r)) continue
+    total++
+    if (r.value.trim() && !invalidKeys?.has(r.key)) captured++
+  }
+  return { captured, total }
 }
 
 export function buildFactGroups(
@@ -100,7 +129,7 @@ export function buildFactGroups(
         onFile: kind === "ssn" ? hasSsn : undefined,
       }
     })
-    out.push({ key: g, label: GROUP_LABEL[g], rows })
+    out.push({ key: g, label: GROUP_LABEL[g], note: GROUP_NOTES[g], rows })
   }
   return { groups: out, total }
 }

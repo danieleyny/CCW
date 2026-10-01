@@ -33,7 +33,12 @@ export const metadata = { title: "Your concierge" }
  * signed; then the intro call. Phases 3–4 add the secure vault and the live
  * control tower into this same page.
  */
-export default async function ConciergeHome() {
+export default async function ConciergeHome({
+  searchParams,
+}: {
+  searchParams?: Promise<{ from?: string }>
+}) {
+  const cameFromChecklist = (await searchParams)?.from === "checklist"
   const myCase = await getMyCase()
   if (!myCase) redirect("/portal")
 
@@ -141,6 +146,12 @@ export default async function ConciergeHome() {
     <div className="space-y-6">
       <ScrollToTop />
       <DeepLinkHighlight />
+      {cameFromChecklist && (
+        <div className="rounded-lg border border-brass/30 bg-brass/[0.06] px-4 py-3 text-sm text-brass">
+          On Full Concierge there&apos;s no separate checklist — this is your home, and we track every step
+          for you here. What we need from you is under &ldquo;Your information&rdquo; below.
+        </div>
+      )}
       <div>
         <SectionEyebrow>Full Concierge</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Welcome, {firstName}.</h1>

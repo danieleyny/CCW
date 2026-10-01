@@ -556,6 +556,62 @@ export type Database = {
           },
         ]
       }
+      case_intent_log: {
+        Row: {
+          case_id: string
+          id: string
+          intent: string
+          note: string | null
+          recorded_at: string
+          recorded_by: string | null
+        }
+        Insert: {
+          case_id: string
+          id?: string
+          intent: string
+          note?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Update: {
+          case_id?: string
+          id?: string
+          intent?: string
+          note?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_intent_log_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_notes: {
         Row: {
           author: string | null
@@ -1029,6 +1085,7 @@ export type Database = {
           opened_at: string
           qa_signed_off_at: string | null
           qa_signed_off_by: string | null
+          referred_by_sponsor_id: string | null
           service_mode: Database["public"]["Enums"]["service_mode"] | null
           stage: Database["public"]["Enums"]["case_stage"]
           stage_entered_at: string
@@ -1054,6 +1111,7 @@ export type Database = {
           opened_at?: string
           qa_signed_off_at?: string | null
           qa_signed_off_by?: string | null
+          referred_by_sponsor_id?: string | null
           service_mode?: Database["public"]["Enums"]["service_mode"] | null
           stage?: Database["public"]["Enums"]["case_stage"]
           stage_entered_at?: string
@@ -1079,6 +1137,7 @@ export type Database = {
           opened_at?: string
           qa_signed_off_at?: string | null
           qa_signed_off_by?: string | null
+          referred_by_sponsor_id?: string | null
           service_mode?: Database["public"]["Enums"]["service_mode"] | null
           stage?: Database["public"]["Enums"]["case_stage"]
           stage_entered_at?: string
@@ -1103,6 +1162,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cases_referred_by_sponsor_id_fkey"
+            columns: ["referred_by_sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
         ]
       }
       character_references: {
@@ -1113,6 +1179,7 @@ export type Database = {
           created_at: string
           id: string
           is_family: boolean
+          known_duration: string | null
           name: string
           notarized: boolean
           received: boolean
@@ -1126,6 +1193,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_family?: boolean
+          known_duration?: string | null
           name: string
           notarized?: boolean
           received?: boolean
@@ -1139,6 +1207,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_family?: boolean
+          known_duration?: string | null
           name?: string
           notarized?: boolean
           received?: boolean
@@ -1719,12 +1788,15 @@ export type Database = {
           case_id: string
           checklist_item_id: string | null
           client_id: string
+          conversion_note: string | null
+          conversion_pending: boolean
           created_at: string
           file_name: string | null
           file_path: string | null
           generated: boolean
           id: string
           notarized: boolean
+          original_file_path: string | null
           req_code: string | null
           review_notes: string | null
           reviewer: string | null
@@ -1741,12 +1813,15 @@ export type Database = {
           case_id: string
           checklist_item_id?: string | null
           client_id: string
+          conversion_note?: string | null
+          conversion_pending?: boolean
           created_at?: string
           file_name?: string | null
           file_path?: string | null
           generated?: boolean
           id?: string
           notarized?: boolean
+          original_file_path?: string | null
           req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
@@ -1763,12 +1838,15 @@ export type Database = {
           case_id?: string
           checklist_item_id?: string | null
           client_id?: string
+          conversion_note?: string | null
+          conversion_pending?: boolean
           created_at?: string
           file_name?: string | null
           file_path?: string | null
           generated?: boolean
           id?: string
           notarized?: boolean
+          original_file_path?: string | null
           req_code?: string | null
           review_notes?: string | null
           reviewer?: string | null
@@ -3158,6 +3236,7 @@ export type Database = {
           confirmed_email: string | null
           created_at: string
           document_id: string | null
+          emailed: boolean
           expires_at: string
           id: string
           notarized_at: string | null
@@ -3179,6 +3258,7 @@ export type Database = {
           confirmed_email?: string | null
           created_at?: string
           document_id?: string | null
+          emailed?: boolean
           expires_at?: string
           id?: string
           notarized_at?: string | null
@@ -3200,6 +3280,7 @@ export type Database = {
           confirmed_email?: string | null
           created_at?: string
           document_id?: string | null
+          emailed?: boolean
           expires_at?: string
           id?: string
           notarized_at?: string | null
@@ -3262,6 +3343,62 @@ export type Database = {
             columns: ["reference_id"]
             isOneToOne: false
             referencedRelation: "character_references"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_consent: {
+        Row: {
+          case_id: string
+          consent_version: string | null
+          consented_at: string | null
+          created_at: string
+          revoked_at: string | null
+          sponsor_id: string
+        }
+        Insert: {
+          case_id: string
+          consent_version?: string | null
+          consented_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+          sponsor_id: string
+        }
+        Update: {
+          case_id?: string
+          consent_version?: string | null
+          consented_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "referral_consent_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
         ]
@@ -3979,6 +4116,73 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsor_worker_requests: {
+        Row: {
+          applicant_email: string
+          applicant_name: string
+          assignment_role: string | null
+          created_at: string
+          decline_reason: string | null
+          id: string
+          requested_by: string
+          requested_scope: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at: string | null
+          resolved_by: string | null
+          sponsor_id: string
+          status: string
+        }
+        Insert: {
+          applicant_email: string
+          applicant_name: string
+          assignment_role?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          requested_by: string
+          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sponsor_id: string
+          status?: string
+        }
+        Update: {
+          applicant_email?: string
+          applicant_name?: string
+          assignment_role?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          requested_by?: string
+          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sponsor_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_worker_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_worker_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_worker_requests_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           agency_license_expires: string | null
@@ -4542,11 +4746,13 @@ export type Database = {
         Row: {
           applicant_name: string | null
           case_id: string | null
+          county_license_expires_on: string | null
           license_track: Database["public"]["Enums"]["license_track"] | null
           scope: Database["public"]["Enums"]["sponsorship_scope"] | null
           sponsor_id: string | null
           sponsorship_id: string | null
           stage: Database["public"]["Enums"]["case_stage"] | null
+          updated_at: string | null
         }
         Relationships: [
           {
@@ -5182,6 +5388,26 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      referral_channel_stats: {
+        Args: never
+        Returns: {
+          completed: number
+          introduced: number
+          signed_up: number
+        }[]
+      }
+      referral_consented_stages: {
+        Args: never
+        Returns: {
+          case_id: string
+          stage: string
+        }[]
+      }
+      referral_record_consent: {
+        Args: { p_case_id: string; p_version: string }
+        Returns: undefined
+      }
+      referral_revoke: { Args: { p_case_id: string }; Returns: undefined }
       sponsor_accept_invite: { Args: { p_token: string }; Returns: string }
       sponsor_active_scope: {
         Args: { p_case_id: string }
@@ -5921,6 +6147,7 @@ export type Database = {
         | "public_records_exemption"
         | "safeguard_id"
         | "notarized_release"
+        | "filed_application_copy"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
       jurisdiction_key:
         | "nyc"
@@ -6224,6 +6451,7 @@ export const Constants = {
         "public_records_exemption",
         "safeguard_id",
         "notarized_release",
+        "filed_application_copy",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       jurisdiction_key: [

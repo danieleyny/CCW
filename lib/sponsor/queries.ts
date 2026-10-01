@@ -18,6 +18,10 @@ export interface SponsorCaseRow {
   stage: string
   license_track: string
   applicant_name: string
+  /** Home-county pistol-licence expiry (Special Carry Guard) — null until known. */
+  county_license_expires_on: string | null
+  /** The case's last-movement timestamp, for the board. */
+  updated_at: string | null
 }
 
 /** The sponsorships (cases) this rep may currently work — one card each. */
@@ -100,4 +104,26 @@ export async function loadSponsorRosterProgress(caseId: string): Promise<Sponsor
   const db = await createClient()
   const { data } = await db.from("sponsor_roster_progress").select("*").eq("case_id", caseId)
   return (data ?? []) as SponsorRosterRow[]
+}
+
+export interface SponsorWorkerRequestRow {
+  id: string
+  applicant_name: string
+  applicant_email: string
+  assignment_role: string | null
+  requested_scope: "packet_only" | "assist" | "full"
+  status: "pending" | "approved" | "declined"
+  decline_reason: string | null
+  created_at: string
+  resolved_at: string | null
+}
+
+/** This rep's own worker requests (RLS scopes to requested_by = them). */
+export async function loadMyWorkerRequests(): Promise<SponsorWorkerRequestRow[]> {
+  const db = await createClient()
+  const { data } = await db
+    .from("sponsor_worker_requests")
+    .select("id, applicant_name, applicant_email, assignment_role, requested_scope, status, decline_reason, created_at, resolved_at")
+    .order("created_at", { ascending: false })
+  return (data ?? []) as SponsorWorkerRequestRow[]
 }

@@ -28,13 +28,23 @@ export function NotarizedTokenUpload({
   upload,
   noun,
   onDone,
+  chooseLabel = "Choose the notarized file",
+  submitLabel,
 }: {
   /** Server action already bound to the token; resolves { error } on failure. */
   upload: (formData: FormData) => Promise<{ error?: string }>
-  /** e.g. "reference" or "affidavit" — used in the button label. */
+  /** e.g. "reference" or "affidavit" — used in the default submit label. */
   noun: string
   onDone: () => void
+  /** Picker button text. The safeguard flow is witnessed, not notarized — it
+   *  overrides this ("Choose a photo of your ID" / "Choose the signed form") so
+   *  the button never contradicts a no-notary page (P2-2). */
+  chooseLabel?: string
+  /** Submit button text. Defaults to `Upload notarized {noun}`; overridable so a
+   *  non-notarized flow doesn't say "notarized". */
+  submitLabel?: string
 }) {
+  const uploadLabel = submitLabel ?? `Upload notarized ${noun}`
   const inputRef = useRef<HTMLInputElement>(null)
   const [chosen, setChosen] = useState<File | null>(null)
   const [error, setError] = useState("")
@@ -70,7 +80,7 @@ export function NotarizedTokenUpload({
   }
 
   function submit() {
-    if (!chosen) return setError('Choose the notarized file first — tap "Choose the notarized file" above.')
+    if (!chosen) return setError(`Choose a file first — tap "${chooseLabel}" above.`)
     setError("")
     start(async () => {
       try {
@@ -104,7 +114,7 @@ export function NotarizedTokenUpload({
       <input ref={inputRef} type="file" accept={ACCEPT} className="sr-only" onChange={onChange} />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" size="sm" onClick={openPicker} disabled={pending}>
-          <Upload className="size-4" /> {chosen ? "Choose a different file" : "Choose the notarized file"}
+          <Upload className="size-4" /> {chosen ? "Choose a different file" : chooseLabel}
         </Button>
         {chosen && (
           <span className="inline-flex min-w-0 items-center gap-1 text-xs text-ok">
@@ -115,7 +125,7 @@ export function NotarizedTokenUpload({
 
       {chosen && (
         <Button onClick={submit} disabled={pending} size="sm" className="mt-3">
-          <Upload className="size-4" /> {pending ? "Uploading…" : `Upload notarized ${noun}`}
+          <Upload className="size-4" /> {pending ? "Uploading…" : uploadLabel}
         </Button>
       )}
 

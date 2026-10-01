@@ -83,7 +83,7 @@ const EXAMPLES: Record<
     goodLabel: "Square, plain background, head centred",
     badLabel: "Rectangular, busy background, off-centre",
     description:
-      "A square photo — the same width and height, between 600×600 and 1200×1200 pixels — taken in the last 30 days against a plain light background, with your head centred and facing the camera. We check the shape and size for you when you upload.",
+      "A recent passport-style photo taken in the last 30 days against a plain light background, head centred and facing the camera. You don't need to crop or resize it — upload any common photo and we shape it to the portal's spec for you. What you do need to get right: a front view, no hats or headgear, no glasses (except for religious purposes), and no selfies.",
     good: (
       <>
         <rect x="33" y="12" width="54" height="54" rx="2" fill="none" stroke={OK} strokeWidth="1.6" />

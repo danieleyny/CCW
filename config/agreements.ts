@@ -12,6 +12,19 @@
  * License Division, and we NEVER complete or sign the applicant's certification —
  * the applicant alone attests that the facts are true and is solely responsible
  * for their truth. Do not add guarantee/expedite/approval-rate language.
+ *
+ * OPEN (P0.3) — the engagement CONTRADICTS ITSELF on who files. These agreements say
+ * "we may enter and file … on your behalf" / "file and submit … on my behalf as my
+ * preparer" (engagement_limited_scope v2, applicant_files_ack v2), while the concierge
+ * signature block at app/portal/concierge/actions.ts:23 says "I file my own NYPD
+ * application … does not file for me." Both are e-signed together. The underlying
+ * question — whether a non-attorney preparer may enter/submit at the applicant's
+ * direction — is UNSETTLED (NYPD step 14 collects a preparer org name; its notice
+ * restricts representation, not data entry). DO NOT rewrite either side on our own
+ * judgment. Owner: a New York firearms attorney. Full string inventory for the ruling:
+ * docs/FILING_AUTHORITY_INVENTORY.md. Once counsel rules, make every surface consistent,
+ * bump the affected version(s) here (forcing re-accept), preserve history, and only then
+ * add a copy-guard test asserting the APPROVED position.
  */
 
 export const AGREEMENTS = [

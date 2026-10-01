@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
 import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
-import { normalizeApplicantPhoto } from "@/lib/files/photo-spec"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { StateChip } from "@/components/shared/state-chip"
 import { docStateStyle, type DocState } from "@/lib/ui/doc-state"
@@ -30,6 +29,9 @@ export interface CurrentDoc {
    * show "provided from …" instead of asking for the same document again.
    */
   sharedFromName?: string | null
+  /** We accepted a file we still have to convert for the portal (a PDF photo). Reads as
+   *  "we're preparing this" — never a rejection, and the applicant is not asked to re-upload. */
+  preparingForPortal?: boolean
 }
 
 export function DocumentUploader({
@@ -85,16 +87,14 @@ export function DocumentUploader({
     if (!file) return
 
     if (photoSpec) {
-      // V3-P4.2 — the NYPD photo spec, enforced mechanically: square photos
-      // that are merely oversized get auto-downscaled to 1200×1200; anything
-      // unfixable is rejected with the exact reason.
-      const spec = await normalizeApplicantPhoto(file)
-      if (!spec.ok || !spec.file) {
-        toast.error(spec.issues[0] ?? "That photo doesn't meet the NYPD spec.", { duration: 9000 })
-        return
+      // Finding 8 — getting a portal-shaped photo is OUR job, not the applicant's. Accept
+      // any common image OR a PDF; we convert it server-side toward the portal's format
+      // and passport dimensions. A light client compress keeps an image upload small
+      // (incl. HEIC→JPEG); a PDF passes straight through and is flagged for a person.
+      if (file.type !== "application/pdf") {
+        file = await compressImageFile(file)
+        toast.info("We'll format your photo to the portal's size for you.")
       }
-      file = spec.file
-      if ((spec.width ?? 0) > 1200) toast.info("Photo auto-resized to the NYPD 1200×1200 maximum.")
     } else {
       // V3-P0.5 — downscale/re-encode phone photos (incl. HEIC→JPEG) before the
       // size check, so a 12 MB safe photo becomes a compliant ~2 MB JPEG.
@@ -102,9 +102,9 @@ export function DocumentUploader({
     }
 
     // FMT-01: enforce size + type and sanitize the filename (the NYPD portal
-    // silently rejects oversized files, wrong types, and "dirty" names).
-    // The applicant photograph is image-only — the portal rejects a PDF there.
-    const check = validateFile({ name: file.name, size: file.size, imageOnly: type === "applicant_photo" })
+    // silently rejects oversized files, wrong types, and "dirty" names). The photo is NO
+    // LONGER image-only on our side — we accept a PDF and convert/flag it (finding 8).
+    const check = validateFile({ name: file.name, size: file.size, imageOnly: false })
     if (!check.ok) {
       toast.error(check.errors[0] ?? "That file can't be uploaded.")
       return
@@ -125,7 +125,7 @@ export function DocumentUploader({
       // kind (so a passport tagged under a residence item can't mis-store), and
       // documentKind drives the multi-attach on the server.
       const uploadType = selectedKind ? selectedKind.documentType : type
-      await recordDocument({
+      const res = await recordDocument({
         documentId,
         caseId,
         type: uploadType,
@@ -134,6 +134,12 @@ export function DocumentUploader({
         path,
         fileName: check.sanitizedName,
       })
+      // A rejection returns a safe, specific reason (wrong type, too large) — show it,
+      // not the generic fallback. The server already removed the stored object.
+      if (res?.error) {
+        toast.error(res.error, { duration: 9000 })
+        return
+      }
       toast.success(`Uploaded — ${label} is now pending review.`)
       router.refresh()
     } catch (err) {
@@ -197,6 +203,14 @@ export function DocumentUploader({
         </p>
       )}
 
+      {/* Accepted a file we still have to format for the portal — OUR work, not a
+          rejection, and we never ask the applicant to re-upload. */}
+      {current?.preparingForPortal && (
+        <p className="mt-2 rounded-md bg-signal/10 p-2 text-xs text-signal">
+          Got it — we&apos;re preparing this for the portal. We&apos;ll convert it to the format NYPD needs for you; nothing more to do on your end.
+        </p>
+      )}
+
       {sharedProvided && (
         <div className="mt-3 rounded-md border border-ok/25 bg-ok/8 p-2.5">
           <p className="text-xs text-ok">
@@ -226,8 +240,8 @@ export function DocumentUploader({
           </select>
           {selectedKind && selectedKind.reqCodes.length > 1 && (
             <p className="rounded-md border border-ok/25 bg-ok/8 p-2 text-[11px] text-ok">
-              One {selectedKind.label} covers your {selectedKind.covers} — upload it
-              once and we&apos;ll attach it to each of those, no need to send it again.
+              One {selectedKind.label} covers your {selectedKind.covers}{" "}— upload it once and
+              we&apos;ll attach it to each of those, no need to send it again.
             </p>
           )}
         </div>

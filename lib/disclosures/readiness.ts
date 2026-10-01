@@ -1,5 +1,5 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
-import { REQUIRED_UPLOAD_SLOTS } from "@/config/portal-steps"
+import { requiredUploadSlotsFor } from "@/config/portal-steps"
 import type { ApplicationValues } from "@/lib/forms/application"
 
 /**
@@ -39,9 +39,17 @@ export function computePortalReadiness(
   v: ApplicationValues,
   disclosures: Record<string, unknown>,
   items: ReadinessRequirement[],
-  opts: { licenseTrack?: string | null; signedRecordSatisfied: boolean } = { signedRecordSatisfied: false }
+  opts: {
+    portalTrack?: string | null
+    signedRecordSatisfied: boolean
+    /** req_codes whose uploaded document still needs a person to convert it (a PDF photo).
+     *  Such a document counts as uploaded but NOT satisfied — the case is not ready until
+     *  it's converted (and the ready-to-enter email must hold). It is not a rejection. */
+    conversionPendingReqCodes?: string[]
+  } = { signedRecordSatisfied: false }
 ): PortalReadiness {
   const has = (k: string) => typeof v[k] === "string" && (v[k] as string).trim() !== ""
+  const conversionPending = new Set(opts.conversionPendingReqCodes ?? [])
   const enterMissing: ReadinessItem[] = []
   const need = (ok: boolean, label: string, href: string) => {
     if (!ok) enterMissing.push({ label, href })
@@ -84,17 +92,26 @@ export function computePortalReadiness(
   // The signed answers + authorization record must be SIGNED.
   need(opts.signedRecordSatisfied, "Sign your answers + authorization", CHECKLIST)
 
+  // A document we still have to convert by hand (a PDF photo) is OUR work — the case is
+  // NOT ready to enter until it's done, so the ready-to-enter staff email holds. Framed as
+  // our task, never a rejection.
+  if (conversionPending.size > 0) {
+    enterMissing.push({ label: "We're preparing your photo for the portal", href: CHECKLIST })
+  }
+
   // Finalize gate: every STARRED portal upload slot accepted. Each slot may be filled
   // by one of a small set of requirements (COH-01 or COH-02) — the engine materialises
   // exactly one per case, so we check the materialised ones and skip a slot that isn't
   // on this case at all.
   const finalizeMissing: ReadinessItem[] = []
-  for (const slot of REQUIRED_UPLOAD_SLOTS) {
+  for (const slot of requiredUploadSlotsFor(opts.portalTrack)) {
     const slotItems = slot.reqCodes
       .map((code) => items.find((i) => i.reqCode === code))
       .filter((i): i is ReadinessRequirement => !!i && i.status !== "na")
     if (slotItems.length === 0) continue // not applicable to this case
-    if (!slotItems.some((i) => i.status === "satisfied")) {
+    // A conversion-pending requirement never counts as satisfied here — a photo the portal
+    // will reject can't make the case ready to finalize.
+    if (!slotItems.some((i) => i.status === "satisfied" && !conversionPending.has(i.reqCode))) {
       finalizeMissing.push({ label: slot.portalLabel, href: CHECKLIST })
     }
   }

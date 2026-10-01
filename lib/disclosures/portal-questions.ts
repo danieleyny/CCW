@@ -67,3 +67,15 @@ export const PORTAL_DISCLOSURES: PortalDisclosure[] = [
 export const disclosureKey = (no: number) => `q${no}`
 /** The explanation key for a portal disclosure question. */
 export const disclosureExplainKey = (no: number) => `q${no}_explain`
+
+/**
+ * Derived so no surface hardcodes the count or range again (they drift when the portal
+ * changes — the old "10–28 / seventeen" paper-form numbering outlived the paper form).
+ * The live NYPD portal numbers these 1..N in order.
+ */
+export const PORTAL_DISCLOSURE_COUNT = PORTAL_DISCLOSURES.length
+const _disclosureNos = PORTAL_DISCLOSURES.map((q) => q.no)
+export const PORTAL_DISCLOSURE_FIRST = Math.min(..._disclosureNos)
+export const PORTAL_DISCLOSURE_LAST = Math.max(..._disclosureNos)
+/** e.g. "1–16" (en dash). */
+export const PORTAL_DISCLOSURE_RANGE = `${PORTAL_DISCLOSURE_FIRST}–${PORTAL_DISCLOSURE_LAST}`

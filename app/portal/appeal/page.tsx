@@ -41,7 +41,7 @@ export default async function AppealPage() {
         <p className="rounded-lg border bg-card p-6 text-sm text-text-mid">
           This page becomes active only if an application is denied. If that happens: there is a strict
           <b> 90-day window</b> to appeal, the appeal must be sworn and notarized, no new documents are
-          considered, and — by NYPD rule — <b>only you or a New York–licensed attorney</b> may submit it.
+          considered, and — by NYPD rule — <b>only you or a New York–licensed attorney</b>{" "}may submit it.
           We can&apos;t file it for you, but we assemble your complete record and connect you with a
           partner attorney immediately.
         </p>

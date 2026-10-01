@@ -12,6 +12,7 @@ import { SignDocument } from "@/components/portal/sign-document"
 import { DocumentExample } from "@/components/portal/document-example"
 import { RequestHelpButton } from "@/components/portal/request-help-button"
 import { SafeguardInvite } from "@/components/portal/safeguard-invite"
+import { CopyLinkButton } from "@/components/portal/copy-link-button"
 import { NotaryRoutes } from "@/components/shared/notary-options"
 import type { DmvApplicant } from "@/lib/portal/requirement-view"
 import { DocumentUploader, type CurrentDoc } from "@/components/portal/document-uploader"
@@ -35,7 +36,8 @@ export type RefPersonState = "not_invited" | "invited" | "opened" | "submitted" 
 export interface ReferenceProgress {
   /** How many notarized references this track needs (4 carry / 2 premises). */
   required: number
-  people: { name: string; state: RefPersonState }[]
+  /** `emailed` = the invite actually delivered; `token` powers a per-row copy-link. */
+  people: { name: string; state: RefPersonState; emailed?: boolean; token?: string | null }[]
   invitedCount: number
   notarizedCount: number
 }
@@ -343,6 +345,18 @@ export function RequirementAction({
     const soleOccupancy = action.roster === "cohabitants" && !!generated
     // References already invited → the primary button becomes a reminder resend.
     const refsInvited = action.roster === "references" && (referenceProgress?.invitedCount ?? 0) > 0
+    // Reference SEND TRUTH (finding 3): among the invited references, how many actually
+    // got an email vs still need their link copied. Drives the card's three states.
+    const invitedRefPeople = (referenceProgress?.people ?? []).filter((p) => p.state !== "not_invited")
+    const notEmailedRefs = invitedRefPeople.filter((p) => !p.emailed)
+    const someEmailed = invitedRefPeople.some((p) => p.emailed)
+    const referenceStatusCopy = !refsInvited
+      ? "Each reference writes and notarizes their own letter through a private link. This completes when the notarized letters are uploaded."
+      : notEmailedRefs.length === 0
+        ? "We've emailed your references — they each write and notarize their own letter through a private link. This completes when the notarized letters are uploaded. Send a reminder if they're taking a while."
+        : someEmailed
+          ? `We emailed some of your references. We couldn't email ${notEmailedRefs.map((p) => p.name).join(", ")} — copy their link below and send it yourself. This completes when the notarized letters are uploaded.`
+          : "Your reference links are ready, but we couldn't email them — copy each link below and send it yourself. This completes when the notarized letters are uploaded."
 
     return (
       <div className="mt-3 space-y-2">
@@ -390,8 +404,13 @@ export function RequirementAction({
                 {progress.people.map((p, i) => (
                   <li key={i} className="flex items-center justify-between gap-2">
                     <span className="truncate text-text-mid">{p.name}</span>
-                    <span className={`shrink-0 text-[11px] ${REF_STATE_COPY[p.state].tone}`}>
-                      {REF_STATE_COPY[p.state].label}
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <span className={`text-[11px] ${REF_STATE_COPY[p.state].tone}`}>{REF_STATE_COPY[p.state].label}</span>
+                      {/* Copy-link on every invited row (finding 5) — the only way to share
+                          the link when the email didn't send. Inline confirm, no toast. */}
+                      {p.token && p.state !== "notarized" && (
+                        <CopyLinkButton token={p.token} basePath={action.roster === "references" ? "/r/" : "/c/"} silent />
+                      )}
                     </span>
                   </li>
                 ))}
@@ -406,9 +425,7 @@ export function RequirementAction({
             {soleOccupancy
               ? "Don't sign it yet — take it to a notary and sign it in front of them, then upload the notarized copy. That's what completes this."
               : action.roster === "references"
-                ? refsInvited
-                  ? "We've emailed your references — they each write and notarize their own letter through a private link. This completes when the notarized letters are uploaded. Send a reminder if they're taking a while."
-                  : "Each reference writes and notarizes their own letter through a private link. This completes when the notarized letters are uploaded."
+                ? referenceStatusCopy
                 : "Each adult in your home signs and notarizes their own affidavit through a private link. This completes when the notarized copies are uploaded."}
           </p>
         )}

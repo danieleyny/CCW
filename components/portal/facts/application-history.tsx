@@ -8,7 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { checkHistory, applyPresentRadio, type HistoryNotice } from "@/lib/intake/history-check"
 import type { AddressHistoryEntry, EmploymentHistoryEntry } from "@/lib/intake/answers"
+
+/** Soft, non-blocking continuity guidance for a five-year history (task 9). */
+function HistoryNotices({ notices }: { notices: HistoryNotice[] }) {
+  if (notices.length === 0) return null
+  return (
+    <ul className="space-y-1.5">
+      {notices.map((n, i) => (
+        <li key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-signal" />
+          <span>{n.message}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 /**
  * The five-year residence + employment history (PD 643-041 Q29) and the out-of-city
@@ -59,6 +75,7 @@ export function ApplicationHistory({
   employment,
   employerSeed,
   outOfCity,
+  outOfCityHeld = "",
 }: {
   caseId: string
   residence: AddressHistoryEntry[]
@@ -66,6 +83,9 @@ export function ApplicationHistory({
   /** #9 — seed employment row 1 from the employer we already collected. */
   employerSeed?: { employed: boolean; startDate: string; name: string; address: string; occupation: string }
   outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
+  /** The persisted, explicit answer to "hold a licence from another NY county?" — a
+   *  tri-state so a saved "No" is distinct from "unanswered" (P2.1). "" = unanswered. */
+  outOfCityHeld?: "" | "no" | "yes"
 }) {
   // #9 — when the case has an employer with a start date and no MEANINGFUL employment
   // history yet, seed row 1 with the actual VALUES from it (dates, business name,
@@ -94,7 +114,9 @@ export function ApplicationHistory({
   const [emp, setEmp] = useState<EmploymentHistoryEntry[]>(seededEmp)
   const [ooc, setOoc] = useState(outOfCity)
   const [hasOoc, setHasOoc] = useState<"" | "no" | "yes">(
-    outOfCity.number || outOfCity.county || outOfCity.issuedOn || outOfCity.expiresOn ? "yes" : ""
+    // Prefer the explicit saved answer; fall back to inferring "yes" from legacy detail
+    // rows that predate the persisted tri-state. A saved "no" now survives a reload.
+    outOfCityHeld || (outOfCity.number || outOfCity.county || outOfCity.issuedOn || outOfCity.expiresOn ? "yes" : "")
   )
   const [pending, start] = useTransition()
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
@@ -108,7 +130,10 @@ export function ApplicationHistory({
       const r = await saveApplicationHistory(caseId, {
         residenceHistory: clean(res),
         employmentHistory: empClean,
-        outOfCity: ooc,
+        // "no" persists with the detail fields cleared; "yes" keeps them; "" leaves it
+        // unanswered. This is a sworn answer — the three states stay distinct (P2.1).
+        outOfCity: hasOoc === "yes" ? ooc : { number: "", county: "", issuedOn: "", expiresOn: "" },
+        outOfCityHeld: hasOoc,
       })
       // #11 — a failed save keeps the typed values on screen with an inline error; never revert.
       setStatus(r.error ? "error" : "saved")
@@ -155,7 +180,7 @@ export function ApplicationHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => setRes((c) => c.map((x, j) => (j === i ? { ...x, fromMonth: v } : x)))}
-                onTo={(v) => setRes((c) => c.map((x, j) => (j === i ? { ...x, toMonth: v } : x)))}
+                onTo={(v) => setRes((c) => applyPresentRadio(c, i, v))}
               />
               <Button variant="ghost" size="icon" onClick={() => setRes((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
@@ -172,11 +197,26 @@ export function ApplicationHistory({
               <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
               <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
             </div>
+            {/* Country is required on the portal but defaults to the US, so we only ask
+                when the address is abroad — the common case stays one field shorter. */}
+            <label className="flex items-center gap-1.5 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={h.country !== undefined}
+                onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, country: e.target.checked ? "" : undefined } : x)))}
+                className="size-4 rounded border-input"
+              />
+              This address is outside the United States
+            </label>
+            {h.country !== undefined && (
+              <Input placeholder="Country" value={h.country ?? ""} onChange={(e) => setRes((c) => c.map((x, j) => (j === i ? { ...x, country: e.target.value } : x)))} />
+            )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => setRes((c) => [...c, {}])}>
           <Plus className="size-4" /> Add residence
         </Button>
+        <HistoryNotices notices={checkHistory(res, "lived")} />
       </div>
 
       {/* Employment — Q29 */}
@@ -193,7 +233,7 @@ export function ApplicationHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, fromMonth: v } : x)))}
-                onTo={(v) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, toMonth: v } : x)))}
+                onTo={(v) => setEmp((c) => applyPresentRadio(c, i, v))}
               />
               <Button variant="ghost" size="icon" onClick={() => setEmp((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
@@ -206,10 +246,16 @@ export function ApplicationHistory({
                 onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, employerName: e.target.value, employer: undefined } : x)))}
               />
               <Input
-                placeholder="Business address"
+                placeholder="Business street address"
                 value={h.employerAddress ?? ""}
                 onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, employerAddress: e.target.value } : x)))}
               />
+            </div>
+            {/* The portal requires a full City / State / Zip per past employer. */}
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, city: e.target.value } : x)))} />
+              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, state: e.target.value } : x)))} />
+              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, zip: e.target.value } : x)))} />
             </div>
             <Input
               placeholder="Occupation"
@@ -221,6 +267,7 @@ export function ApplicationHistory({
         <Button variant="outline" size="sm" onClick={() => setEmp((c) => [...c, {}])}>
           <Plus className="size-4" /> Add employment
         </Button>
+        <HistoryNotices notices={checkHistory(emp, "worked")} />
       </div>
 
       {/* Other pistol licences (Q9) — its OWN card, not part of employment: it's a

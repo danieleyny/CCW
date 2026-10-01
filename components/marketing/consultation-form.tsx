@@ -6,12 +6,16 @@ import { requestConsultation } from "@/app/(marketing)/consultation-actions"
 import {
   CONSULTATION_TOPICS,
   CONSULTATION_STAGES,
-  DISCUSS_MIN,
+  DISCUSS_MAX,
   ACK_VALUE,
   type ConsultState,
   type ConsultationFieldKey,
 } from "@/lib/partners/consultation"
 import { HoneypotField } from "@/components/shared/honeypot-field"
+
+/** The documents go to the attorney's office after the call, never through this form. */
+const DOCUMENTATION_LINE =
+  "Be prepared to email all relevant documentation to his office following the initial call."
 
 /** The serialisable slice of a Partner this client form needs. */
 export type ConsultationPartner = {
@@ -60,13 +64,12 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
           Your request is on its way.
         </h2>
         <p className="mx-auto mt-2 max-w-md text-[var(--ink-soft)]">
-          We&apos;ve forwarded it to {partner.fullName}. He reviews each request personally and will
-          reach out at his earliest availability to arrange a call. Consultations are billed at his
-          rate of {rate}.
+          Your request has been sent directly to {partner.fullName}&apos;s office. He reviews each
+          request personally and will reach out at his earliest availability to arrange a call.
+          Consultations are billed at his rate of {rate}.
         </p>
         <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-[var(--ink-muted)]">
-          Nothing you sent is privileged, and no attorney–client relationship has been created. Please
-          don&apos;t send documents or anything confidential until he confirms he can act for you.
+          {DOCUMENTATION_LINE}
         </p>
       </div>
     )
@@ -156,12 +159,33 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
         </Field>
         <Field
           id="c-discuss"
-          label="What would you like to discuss?"
-          hint={`Enough for him to prepare — what happened, when, and what you need to know. Don't include documents or anything you'd consider confidential; you can bring those to the call. (At least ${DISCUSS_MIN} characters.)`}
+          label="Briefly describe your issue"
+          hint="One or two paragraphs is enough: what happened, when, and what you need to know."
           error={err("discuss")}
         >
           {(p) => (
-            <textarea name="discuss" rows={6} value={discuss} onChange={(e) => setDiscuss(e.target.value)} className={TEXTAREA_CLASS} {...p} />
+            <>
+              <textarea
+                name="discuss"
+                rows={6}
+                maxLength={DISCUSS_MAX}
+                value={discuss}
+                onChange={(e) => setDiscuss(e.target.value)}
+                className={TEXTAREA_CLASS}
+                {...p}
+              />
+              <div className="mt-1 flex items-start justify-between gap-3">
+                <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{DOCUMENTATION_LINE}</p>
+                <span
+                  className={`shrink-0 text-xs tabular-nums ${
+                    discuss.length > DISCUSS_MAX ? "text-[var(--error)]" : "text-[var(--ink-muted)]"
+                  }`}
+                  aria-live="polite"
+                >
+                  {discuss.length}/{DISCUSS_MAX}
+                </span>
+              </div>
+            </>
           )}
         </Field>
       </fieldset>
@@ -201,16 +225,12 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
         {/* Disclosure — muted but legible, NOT fine print. Directly above the ack. */}
         <div className="space-y-2 rounded-lg border border-[var(--rule)] bg-[var(--ivory)] p-4 text-sm leading-relaxed text-[var(--ink-soft)]">
           <p>
-            This form is received by Gun License NYC and forwarded to {partner.fullName}. It is{" "}
-            <strong className="text-[var(--ink)]">not an attorney–client communication and it is not privileged.</strong>
+            This form is sent directly to {partner.fullName}&apos;s office. Gun License NYC does not
+            receive, read or keep a copy.
           </p>
           <p>
             Submitting it does not create an attorney–client relationship. That begins only if he
             agrees to represent you and you sign his engagement letter.
-          </p>
-          <p>
-            Please don&apos;t attach documents or send anything you would consider confidential until
-            he has confirmed he can act for you.
           </p>
           <p>Gun License NYC is not a law firm and receives no share of his fees.</p>
         </div>
@@ -226,10 +246,7 @@ export function ConsultationForm({ partner }: { partner: ConsultationPartner }) 
               aria-invalid={!!err("acknowledge")}
               className="mt-0.5 size-4 shrink-0 accent-[var(--electric)]"
             />
-            <span>
-              I understand that sending this form does not make {partner.fullName} my attorney, and
-              that this message is not confidential or privileged.
-            </span>
+            <span>I understand that sending this form does not make {partner.fullName} my attorney.</span>
           </label>
           {err("acknowledge") && <FieldError id="c-ack-err">{err("acknowledge")}</FieldError>}
         </div>

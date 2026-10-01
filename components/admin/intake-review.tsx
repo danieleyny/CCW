@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/format"
+import { PORTAL_DISCLOSURE_RANGE } from "@/lib/disclosures/portal-questions"
 import { INTAKE_STEPS, QUESTIONNAIRE, type WizardAnswers } from "@/lib/intake/answers"
 
 /**
@@ -206,7 +207,7 @@ export function IntakeReview({ intake }: { intake: IntakeData | null }) {
         />
         <div className="mt-3">
           <div className="engraved mb-2 text-text-low">
-            Questionnaire (Q10–28) — {qYes.length} answered &ldquo;yes&rdquo;
+            Questionnaire (Q{PORTAL_DISCLOSURE_RANGE}) — {qYes.length} answered &ldquo;yes&rdquo;
           </div>
           {q.length === 0 ? (
             <p className="text-sm text-text-low">—</p>

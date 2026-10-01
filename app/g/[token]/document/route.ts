@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { fillTemplate } from "@/lib/forms/fill"
-import { safeguardTokenActive, safeguardFillValues } from "@/lib/safeguard/invite"
+import { safeguardTokenActive, safeguardFillValues, findSafeguardInviteByToken } from "@/lib/safeguard/invite"
 
 /**
  * The safeguard person's acknowledgement, pre-filled from what the applicant entered.
@@ -12,12 +12,16 @@ import { safeguardTokenActive, safeguardFillValues } from "@/lib/safeguard/invit
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const admin = createAdminClient()
-  const { data: invite } = await admin
-    .from("safeguard_invites")
-    .select("case_id, token_expires_at, token_revoked_at")
-    .eq("token", token)
-    .maybeSingle()
-  if (!invite || !safeguardTokenActive(invite)) return new Response("This link is invalid or has expired.", { status: 404 })
+  const invite = await findSafeguardInviteByToken(async () => {
+    const { data } = await admin
+      .from("safeguard_invites")
+      .select("case_id, token_expires_at, token_revoked_at")
+      .eq("token", token)
+      .maybeSingle()
+    return data
+  })
+  if (!invite || !safeguardTokenActive(invite))
+    return new Response("We couldn't open this document just now. If you just received the link, wait a moment and try again — otherwise ask the applicant to resend it.", { status: 404 })
 
   const values = await safeguardFillValues(admin, invite.case_id)
   const filled = await fillTemplate("nypd_safeguard_acknowledgement", values)

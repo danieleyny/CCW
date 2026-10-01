@@ -86,7 +86,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       db.from("requirement_answers").select("req_code, answers, drafted_by").eq("case_id", myCase.id),
       db
         .from("documents")
-        .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at, review_notes, version")
+        .select("id, req_code, type, file_name, file_path, created_at, status, generated, signed_at, review_notes, version, conversion_pending")
         .eq("case_id", myCase.id)
         .order("created_at", { ascending: false }),
       db
@@ -219,6 +219,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
           review_notes: d.review_notes ?? null,
           version: d.version,
           signedUrl: url,
+          preparingForPortal: !!d.conversion_pending,
         }
       }
     } else {
@@ -246,6 +247,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       version: d.version,
       signedUrl: urlByDocId.get(d.id) ?? null,
       sharedFromName: d.file_name ?? "your uploaded document",
+      preparingForPortal: !!d.conversion_pending,
     }
   }
 
@@ -262,7 +264,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
   if (reqRows.some((r) => isRefRoster(r.req_code))) {
     const [{ data: refs }, { data: refReqs }] = await Promise.all([
       db.from("character_references").select("id, name, received, notarized").eq("case_id", myCase.id).order("created_at"),
-      db.from("reference_requests").select("reference_id, status, revoked_at").eq("case_id", myCase.id),
+      db.from("reference_requests").select("reference_id, status, revoked_at, emailed, token").eq("case_id", myCase.id),
     ])
     const reqByRef = new Map((refReqs ?? []).map((r) => [r.reference_id, r]))
     const people = (refs ?? []).map((r) => {
@@ -274,7 +276,9 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       else if (active && rr!.status === "opened") state = "opened"
       else if (active && rr!.status !== "pending") state = "invited"
       else state = "not_invited"
-      return { name: r.name, state }
+      // `emailed` = the invite email ACTUALLY delivered (not just "a link exists"), so the
+      // card can be honest; `token` powers a per-row copy-link (findings 3 + 5).
+      return { name: r.name, state, emailed: active ? !!rr!.emailed : false, token: active ? rr!.token ?? null : null }
     })
     referenceProgress = {
       // Track-aware: carry_guard / special_carry_guard need TWO references, not four.
@@ -304,7 +308,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       .eq("case_id", myCase.id)
       .order("created_at")
     if (cohabs && cohabs.length > 0) {
-      const people = cohabs.map((c) => ({ name: c.name, state: cohabitantState(c) as RefPersonState }))
+      const people = cohabs.map((c) => ({ name: c.name, state: cohabitantState(c) as RefPersonState, emailed: false, token: c.token_revoked_at ? null : c.token ?? null }))
       cohabitantProgress = {
         required: people.length,
         people,

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { ConsentScreen } from "@/components/portal/sponsor/consent-screen"
 import { WhoCanSee } from "@/components/portal/sponsor/who-can-see"
+import { decideSponsorPage } from "@/lib/portal/sponsor-routing"
 
 export const metadata = { title: "Who can see your file", robots: { index: false, follow: false } }
 
@@ -17,14 +18,40 @@ export default async function PortalSponsorPage() {
   if (!myCase) redirect("/portal")
 
   const db = await createClient()
-  const { data: sponsorships } = await db
+  // No `.order("created_at")` here: the applicant-side banner runs the same RLS-scoped
+  // read WITHOUT it and works, so ordering was the one difference that could null the
+  // result (a bad order/embed makes PostgREST return `data: null`). There is at most a
+  // handful of sponsorships per case, so ordering buys nothing.
+  const { data: sponsorships, error } = await db
     .from("case_sponsorships")
     .select("id, status, scope, applicant_consented_at, invited_email, invited_name, revoked_at, sponsor:sponsors(legal_name)")
     .eq("case_id", myCase.id)
-    .order("created_at", { ascending: true })
 
+  // NEVER silently bounce from a route the UI just linked to. A query ERROR is not the
+  // same as "no sponsorship" — treating it as such is exactly why this survived to
+  // production. Surface it; the applicant can retry rather than be dumped back home.
   const rows = sponsorships ?? []
-  if (rows.length === 0) redirect("/portal")
+  const outcome = decideSponsorPage({ hasError: !!error, rowCount: rows.length })
+  if (outcome === "error") {
+    console.error(`[portal/sponsor] sponsorship query failed for case ${myCase.id}:`, error?.message)
+    return (
+      <div className="space-y-4">
+        <div>
+          <SectionEyebrow>Your sponsor</SectionEyebrow>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Who can see your file</h1>
+        </div>
+        <div className="rounded-lg border border-hairline bg-card p-5 text-sm text-text-mid">
+          We couldn&apos;t load your sponsor details just now. Please refresh — if it keeps happening,
+          reach out to your Gun License NYC contact.
+        </div>
+      </div>
+    )
+  }
+
+  if (outcome === "redirect") {
+    console.warn(`[portal/sponsor] no sponsorship on case ${myCase.id} — redirecting home`)
+    redirect("/portal")
+  }
 
   // Read trail — every sensitive read a rep has made, newest first.
   const { data: trail } = await db

@@ -5,7 +5,12 @@ import { authorizeCaseActor } from "@/lib/case-actor"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { factDef } from "@/lib/facts/registry"
 import { setCaseSsn } from "@/lib/facts/ssn"
+import { resolveFacts } from "@/lib/facts/resolve"
+import { safeguardFactWriteConflict } from "@/lib/safeguard/self-designation"
 import { logActivity } from "@/lib/activity"
+
+/** The safeguard identity fields the self-designation guard applies to. */
+const SAFEGUARD_IDENTITY_KEYS = new Set(["safeguard.firstName", "safeguard.lastName", "safeguard.email", "safeguard.phone"])
 
 /**
  * Edit a fact. Default is PROPAGATE — write the shared case_facts row so the
@@ -39,6 +44,14 @@ export async function setCaseFact(
     await logActivity({ action: "fact.ssn_updated", caseId, entity: "case", entityId: caseId })
     if (!opts?.skipRevalidate) revalidatePath("/portal/details")
     return { ok: true }
+  }
+
+  // The safeguard person cannot be the applicant (NYPD step 7). The client rings this
+  // live, but the client is a convenience — this is the authority. Identity comes from
+  // the fact layer, so it holds on a sponsored case too.
+  if (SAFEGUARD_IDENTITY_KEYS.has(key)) {
+    const conflict = safeguardFactWriteConflict(key, value, await resolveFacts(admin, caseId))
+    if (conflict) return { error: conflict }
   }
 
   const overrideReq = opts?.reqCode ?? ""
@@ -116,6 +129,9 @@ export async function saveApplicationHistory(
     residenceHistory: unknown[]
     employmentHistory: unknown[]
     outOfCity: { number: string; county: string; issuedOn: string; expiresOn: string }
+    /** Explicit tri-state for "hold a licence from another NY county?" — "" | "no" | "yes".
+     *  Persisted so a sworn "No" is distinct from "unanswered" and survives a reload (P2.1). */
+    outOfCityHeld?: "" | "no" | "yes"
     /** Portal tables with no scalar home — optional so existing callers stay valid. */
     firearms?: unknown[]
     otherLicenses?: unknown[]
@@ -138,6 +154,7 @@ export async function saveApplicationHistory(
     outOfCityCounty: input.outOfCity.county || undefined,
     outOfCityIssuedOn: input.outOfCity.issuedOn || undefined,
     outOfCityExpiresOn: input.outOfCity.expiresOn || undefined,
+    ...(input.outOfCityHeld !== undefined ? { outOfCityHeld: input.outOfCityHeld || undefined } : {}),
     ...(input.firearms ? { firearms: input.firearms } : {}),
     ...(input.otherLicenses ? { otherLicenses: input.otherLicenses } : {}),
   }

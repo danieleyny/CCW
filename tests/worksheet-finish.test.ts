@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { buildApplicationValues } from "@/lib/forms/application"
 import { buildPortalWorksheet } from "@/lib/disclosures/worksheet-portal"
 import { portalDate, isDayAssumed } from "@/lib/forms/format"
-import { lonStatementsFor } from "@/lib/requirements/lon"
+import { lonStatementsFor, portalStep12StatementsFor } from "@/lib/requirements/lon"
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 const sectionByTitle = (w: ReturnType<typeof buildPortalWorksheet>, t: string) => w.find((s) => s.title === t)!
@@ -102,6 +102,66 @@ describe("#7 Letter of Necessity is gated by licence type", () => {
     expect(lon.fields.map((f) => f.label)).toEqual(["Statement 3", "Statement 4", "Statement 6"])
     // Statement 1 (Carry Guard only) must not appear as a flagged omission.
     expect(lon.fields.some((f) => f.label === "Statement 1")).toBe(false)
+  })
+})
+
+describe("Carry Guard alignment (tasks 1–5)", () => {
+  it("task 1 — the employer's gun custodian is emitted on step 3 for a guard track", () => {
+    const facts = { "sponsor.custodianName": "Pat Custodian", "sponsor.custodianLicenseNumber": "CUS-4471" }
+    const w = buildPortalWorksheet(buildApplicationValues(facts, {} as WizardAnswers, {}), {}, { licenseTrack: "carry_guard" })
+    expect(fieldVal(w, "Employment", "Gun Custodian — Name")).toBe("Pat Custodian")
+    expect(fieldVal(w, "Employment", "Gun Custodian — License Number")).toBe("CUS-4471")
+  })
+  it("task 1 — a non-guard track never renders the custodian block", () => {
+    const w = buildPortalWorksheet(buildApplicationValues({}, {} as WizardAnswers, {}), {}, { licenseTrack: "concealed_carry" })
+    expect(sectionByTitle(w, "Employment").fields.some((f) => f.label.startsWith("Gun Custodian"))).toBe(false)
+  })
+
+  it("task 2 — portal step 12 yields exactly five statements for carry_guard (lop1 stays on the LON doc)", () => {
+    expect(portalStep12StatementsFor("carry_guard")).toEqual([2, 3, 4, 5, 6])
+    expect(lonStatementsFor("carry_guard")).toContain(1) // still collected for the § 5-04 letter
+    const w = buildPortalWorksheet(buildApplicationValues({}, {} as WizardAnswers, {}), {}, { licenseTrack: "carry_guard" })
+    const lon = sectionByTitle(w, "Letter of Necessity")
+    expect(lon.fields.map((f) => f.label)).toEqual(["Statement 2", "Statement 3", "Statement 4", "Statement 5", "Statement 6"])
+    expect(lon.fields.some((f) => f.label === "Statement 1")).toBe(false)
+  })
+
+  it("task 3 — a licensed firearm round-trips its licence number; an unlicensed one shows no number field", () => {
+    const intake = {
+      firearms: [
+        { make: "Glock", model: "19", caliber: "9mm", serial: "AB123", licensed: "Yes", licenseNumber: "LIC-9987" },
+        { make: "Ruger", model: "10/22", caliber: ".22", serial: "ZZ9", licensed: "No" },
+      ],
+    } as WizardAnswers
+    const w = buildPortalWorksheet(buildApplicationValues({}, intake, {}), {}, {})
+    expect(fieldVal(w, "Existing Guns", "Firearm 1 — Is this firearm licensed?")).toBe("Yes")
+    expect(fieldVal(w, "Existing Guns", "Firearm 1 — License/Permit Number")).toBe("LIC-9987")
+    expect(fieldVal(w, "Existing Guns", "Firearm 2 — Is this firearm licensed?")).toBe("No")
+    expect(sectionByTitle(w, "Existing Guns").fields.some((f) => f.label === "Firearm 2 — License/Permit Number")).toBe(false)
+  })
+
+  it("task 4 — an employment-history row round-trips a structured city/state/zip", () => {
+    const intake = {
+      employmentHistory: [{ fromMonth: "2020-01", employerName: "Acme Security", employerAddress: "100 Market St", city: "Bronx", state: "NY", zip: "10451", occupation: "Guard" }],
+    } as WizardAnswers
+    const w = buildPortalWorksheet(buildApplicationValues({}, intake, {}), {}, {})
+    expect(fieldVal(w, "Employment History", "History 1 — Address — Building Number")).toBe("100")
+    expect(fieldVal(w, "Employment History", "History 1 — Address — City")).toBe("Bronx")
+    expect(fieldVal(w, "Employment History", "History 1 — Address — State")).toBe("NY")
+    expect(fieldVal(w, "Employment History", "History 1 — Address — Zip")).toBe("10451")
+  })
+
+  it("task 5 — residence Country is required and defaults to United States; a non-US row keeps its country", () => {
+    const intake = {
+      residenceHistory: [
+        { fromMonth: "2022-01", address: "1 Main St", city: "Bronx", state: "NY", zip: "10451" },
+        { fromMonth: "2019-01", toMonth: "2021-12", address: "1 Rue de Rivoli", city: "Paris", country: "France" },
+      ],
+    } as WizardAnswers
+    const w = buildPortalWorksheet(buildApplicationValues({}, intake, {}), {}, {})
+    const res = sectionByTitle(w, "Residence History")
+    expect(res.fields.find((f) => f.label === "Row 1 — Country")?.value).toBe("United States")
+    expect(res.fields.find((f) => f.label === "Row 2 — Country")?.value).toBe("France")
   })
 })
 

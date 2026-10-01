@@ -12,7 +12,8 @@ export type FormDoc = {
   key: string
   title: string
   desc: string
-  notarize: boolean
+  /** Wet-ink execution chip: "notarize" (before a notary), "witness" (before a witness), or false (plain signature). */
+  notarize: "notarize" | "witness" | false
   fileable: boolean
   filed: boolean
 }
@@ -104,7 +105,7 @@ export function FormsSigning({ docs, hasSignature }: { docs: FormDoc[]; hasSigna
                         {filing === d.key ? "Filing…" : "Sign & file"}
                       </Button>
                     ))}
-                  {d.notarize && <span className="text-[10px] uppercase tracking-wide text-brass">notarize</span>}
+                  {d.notarize && <span className="text-[10px] uppercase tracking-wide text-brass">{d.notarize}</span>}
                 </div>
                 {d.fileable && !hasSig && !isFiled && (
                   <p className="mt-2 text-[11px] text-muted-foreground">Add your signature above to file this in one tap.</p>

@@ -1,7 +1,10 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
-import { PORTAL_STEPS, type StepKind } from "@/config/portal-steps"
+import { portalStepsFor, type StepKind, type PortalStepKey } from "@/config/portal-steps"
+import { FEE_WAIVER_CATEGORIES, SWORN_STATEMENTS } from "@/lib/disclosures/portal-forms"
 import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
-import { lonStatementsFor } from "@/lib/requirements/lon"
+import { portalStep12StatementsFor } from "@/lib/requirements/lon"
+import { precinctForZip, PRECINCT_FINDER_URL } from "@/lib/portal/precinct"
+import { countyExpiryStatus } from "@/lib/county-license"
 import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
@@ -29,9 +32,9 @@ export interface WorksheetField {
   notApplicable?: boolean
 }
 export interface WorksheetSection {
-  /** Portal step number (1–17), from PORTAL_STEPS. */
+  /** Portal step number on the RESOLVED track (differs per track), from portalStepsFor. */
   no: number
-  /** The portal's own heading, verbatim, from PORTAL_STEPS. */
+  /** The portal's own heading, verbatim, from the resolved track's step list. */
   title: string
   kind: StepKind
   fields: WorksheetField[]
@@ -40,6 +43,8 @@ export interface WorksheetSection {
 }
 
 const s = (v: unknown): string => (typeof v === "string" ? v : v == null ? "" : String(v))
+/** The tracks whose portal step 3 carries the employer's Gun Custodian block. */
+const isGuardTrack = (track?: string | null) => track === "carry_guard" || track === "special_carry_guard"
 const isYes = (x: unknown) => x === "yes" || x === "Yes" || x === true
 const isNo = (x: unknown) => x === "no" || x === "No" || x === false
 
@@ -51,6 +56,16 @@ function f(label: string, value: string, opts: { atFiling?: boolean; optional?: 
 /** A real not-applicable field — greyed, never counted as missing, never a typed "N/A". */
 function na(label: string, reason: string): WorksheetField {
   return { label, value: `Not applicable — ${reason}`, missing: false, notApplicable: true }
+}
+
+/** Precinct is DERIVED from the ZIP, never asked (task 7). When the ZIP is in the table
+ *  we emit it labelled "derived — verify" (staff can override); otherwise we point staff
+ *  at NYPD's Precinct Finder rather than leave a blank required box. */
+function precinctField(label: string, zip: string): WorksheetField[] {
+  const derived = precinctForZip(zip)
+  return derived
+    ? [f(`${label} (derived — verify)`, derived)]
+    : [f(`${label} — look it up at the NYPD Precinct Finder`, PRECINCT_FINDER_URL, { optional: true })]
 }
 
 /** A history date field: renders M/D/YYYY and flags a day we had to assume (the
@@ -85,18 +100,29 @@ export function buildPortalWorksheet(
     email?: string | null
     leo?: boolean
     ssnLast4?: string
-    /** Scopes the Letter of Necessity — a concealed-carry case answers three of six. */
+    /** Scopes the Letter of Necessity and the step-3 Gun Custodian block (armed guards). */
     licenseTrack?: string | null
-    /** CON-01 answers (requirement_answers) — the step-11 confidentiality election. */
+    /** The resolved PORTAL flow (portalTrackForCase) — drives the step SEQUENCE. Not the
+     *  license_track: "special_carry" is the non-resident individual, which has no
+     *  license_track value of its own. */
+    portalTrack?: string | null
+    /** Retired-LEO fee-waiver qualifier — surfaced on the Special Carry fee-waiver screen. */
+    isRetiredLeo?: boolean
+    /** CON-01 answers (requirement_answers) — the confidentiality election. */
     confidentiality?: Record<string, unknown>
   }
 ): WorksheetSection[] {
-  // Fill each portal step's fields into a map, then emit strictly in PORTAL_STEPS order.
-  const byStep = new Map<number, WorksheetField[]>()
-  const put = (no: number, fields: WorksheetField[]) => byStep.set(no, fields)
+  // The portal SEQUENCE is flow-specific; content attaches to a step by its stable KEY,
+  // never its number (Safekeeping is step 7 on NYC-resident, 8 on Special Carry).
+  const steps = portalStepsFor(ctx.portalTrack)
+  const byKey = new Map<PortalStepKey, WorksheetField[]>()
+  const put = (key: PortalStepKey, fields: WorksheetField[]) => byKey.set(key, fields)
 
-  // Step 1 — Verify Your Information (identity, contact, citizenship, SSN last-4, home/mailing address)
-  put(1, [
+  // Verify Your Information (identity, contact, citizenship, SSN last-4, home/mailing address).
+  // Physical description (height/weight/eye/hair) is portal card data — collected in intake
+  // (facts group `physical`, exact NYPD option lists) and surfaced here so a gap shows in
+  // the tab rather than being discovered in the portal.
+  put("verify_info", [
     f("Application Type", ctx.applicationType || "Concealed Carry"),
     f("Are you renewing an existing license/permit?", ctx.isRenewal ? "Yes" : "No"),
     f("First Name", s(v.firstName)),
@@ -111,18 +137,24 @@ export function buildPortalWorksheet(
     f("Primary Phone", s(v.cellPhone) || s(v.homePhone) || s(ctx.phone)),
     f("Other Phone", s(v.homePhone), { optional: true }),
     f("Email", s(v.email) || s(ctx.email)),
+    f("NYS ID", s(v.nysId), { optional: true }),
     f("Are you a U.S. Citizen?", v.citizenship === "Citizen" ? "Yes" : v.citizenship === "Alien" ? "No" : ""),
+    // The portal reveals this the moment "U.S. Citizen?" is answered No. It was being
+    // collected as a fact but never surfaced here, so a non-citizen's required
+    // follow-up field was invisible to whoever was transcribing.
+    ...(v.citizenship === "Alien" ? [f("Alien Registration OR Visa Number", s(v.alienReg))] : []),
     f("SSN — Last 4 digits", s(ctx.ssnLast4)),
     ...addressFields("Home Address", s(v.street), s(v.apt), s(v.city), s(v.state), s(v.zip)),
+    ...precinctField("Precinct", s(v.zip)),
     f("Mailing address different from home?", v.mailingDifferent ? "Yes" : "No"),
     ...(v.mailingDifferent
       ? addressFields("Mailing Address", s(v.mailingStreet), s(v.mailingApt), s(v.mailingCity), s(v.mailingState), s(v.mailingZip))
       : []),
   ])
 
-  // Step 2 — Residence History (past 5 years). The portal's residence table is eight columns.
+  // Residence History (past 5 years). The portal's residence table is eight columns.
   put(
-    2,
+    "residence",
     asRows(v.residenceHistory).flatMap((r, i) => {
       const { buildingNumber, streetName } = splitStreet(s(r.address))
       return [
@@ -134,38 +166,57 @@ export function buildPortalWorksheet(
         f(`Row ${i + 1} — City`, s(r.city)),
         f(`Row ${i + 1} — State`, s(r.state)),
         f(`Row ${i + 1} — Zip`, s(r.zip)),
+        // Country is REQUIRED on every residence row in the portal (optional on the
+        // employment table — see step 4). Defaults to United States so the common case
+        // is never a red box; a non-US applicant sets it in intake.
+        f(`Row ${i + 1} — Country`, s(r.country) || "United States"),
       ]
     })
   )
 
-  // Step 3 — Employment (current employer only; the portal keeps prior jobs on step 4)
-  put(3, [
+  // Employment (current employer only; the portal keeps prior jobs on the next screen)
+  put("employment", [
     f("Currently employed?", s(v.employed), { optional: true }),
     f("Name of Business", s(v.businessName), { optional: true }),
     f("Job Title", s(v.occupation), { optional: true }),
     f("Industry / type of business", s(v.businessType), { optional: true }),
     f("Current employment start date", portalDate(s(v.employmentStartDate)), { optional: true }),
     ...addressFields("Business Address", s(v.businessStreet), s(v.businessUnit), s(v.businessCity), s(v.businessState), s(v.businessZip), true),
+    ...precinctField("Business Precinct", s(v.businessZip)),
     f("Business Phone", s(v.busPhone), { optional: true }),
+    // "Please provide your employer's Gun Custodian information" — the block that makes
+    // this path different. BOTH fields are required by the portal: a Carry Guard
+    // application cannot be submitted without the employer's custodian name and licence
+    // number, so they are emitted as required (red when empty), not optional.
+    // Only guard tracks see this block on the portal; other licence types never do.
+    ...(isGuardTrack(ctx.licenseTrack)
+      ? [f("Gun Custodian — Name", s(v.custodianName)), f("Gun Custodian — License Number", s(v.custodianLicenseNumber))]
+      : []),
   ])
 
-  // Step 4 — Employment History (prior employers)
+  // Employment History (prior employers)
   const empHistory = asRows(v.employmentHistory)
   put(
-    4,
+    "employment_history",
     empHistory.length
       ? empHistory.flatMap((r, i) => [
           f(`History ${i + 1} — Business Name`, s(r.employerName) || s(r.employer), { optional: true }),
           f(`History ${i + 1} — Job Title`, s(r.occupation), { optional: true }),
           fDate(`History ${i + 1} — Start`, s(r.fromMonth), { optional: true }),
           fDate(`History ${i + 1} — End`, s(r.toMonth), { optional: true, presentIfEmpty: true }),
+          // The portal requires a full structured address per past employer. The street
+          // line is split into Building/Street exactly like the residence rows; there is
+          // no Apt on this table, and Country stays optional here (asymmetry with step 2).
+          ...addressFields(`History ${i + 1} — Address`, s(r.employerAddress), "", s(r.city), s(r.state), s(r.zip)),
         ])
       : [f("Prior employers", "None listed", { optional: true })]
   )
 
-  // Step 5 — Other Licenses
+  // Other / Additional Licenses. Same content, two step keys: the NYC-resident flow
+  // titles this "Other Licenses" (step 5); Special Carry titles it "Additional licenses"
+  // (step 6, after the out-of-city screen). Built once so the two never drift.
   const otherLicenses = asRecords(v.otherLicenses)
-  put(5, [
+  const licenseFields = [
     f("Do you have other licenses?", otherLicenses.length ? "Yes" : "No", { optional: true }),
     ...otherLicenses.flatMap((l, i) => [
       f(`Licence ${i + 1} — Number`, s(l.number), { optional: true }),
@@ -174,23 +225,49 @@ export function buildPortalWorksheet(
       f(`Licence ${i + 1} — Date Issued`, portalDate(s(l.issuedOn)), { optional: true }),
       f(`Licence ${i + 1} — Expiration`, portalDate(s(l.expiresOn)), { optional: true }),
     ]),
+  ]
+  put("other_licenses", licenseFields)
+  put("additional_licenses", licenseFields)
+
+  // Out of city license information (Special Carry step 5) — the home-county carry
+  // licence the whole application rests on. All fields required on the portal. The
+  // expiry is the highest-consequence date: when it passes, the NYC licence voids
+  // (38 RCNY §5-25), so flag it at 90 days right on the field.
+  const countyExp = countyExpiryStatus(s(v.outOfCityExpiresOn) || null)
+  const expiryLabel = countyExp.expired
+    ? "Expiration Date ⚠ EXPIRED — the NYC licence is void until the county licence is renewed"
+    : countyExp.expiringSoon
+      ? "Expiration Date ⚠ expires within 90 days — the NYC licence voids when it lapses"
+      : "Expiration Date"
+  put("out_of_city", [
+    f("Basic License Number", s(v.outOfCityLicenseNumber)),
+    f("Issued By", s(v.outOfCityIssuedBy) || "", { optional: !s(v.outOfCityIssuedBy) }),
+    f("County", s(v.outOfCityCounty)),
+    f("Date Issued", portalDate(s(v.outOfCityIssuedOn))),
+    f(expiryLabel, portalDate(s(v.outOfCityExpiresOn))),
   ])
 
-  // Step 6 — Existing Guns
+  // Existing Guns
   const firearms = asRecords(v.firearms)
-  put(6, [
+  put("existing_guns", [
     f("Do you currently own any handguns or rifle/shotguns?", firearms.length ? "Yes" : "No", { optional: true }),
     ...firearms.flatMap((g, i) => [
       f(`Firearm ${i + 1} — Make`, s(g.make), { optional: true }),
       f(`Firearm ${i + 1} — Model`, s(g.model), { optional: true }),
       f(`Firearm ${i + 1} — Caliber`, s(g.caliber), { optional: true }),
       f(`Firearm ${i + 1} — Serial`, s(g.serial), { optional: true }),
+      // Portal modal: "Is this firearm licensed?" (Yes/No, required), then the
+      // License/Permit Number ONLY when Yes — a real conditional, not a visible optional.
+      f(`Firearm ${i + 1} — Is this firearm licensed?`, s(g.licensed)),
+      ...(g.licensed === "Yes"
+        ? [f(`Firearm ${i + 1} — License/Permit Number`, s(g.licenseNumber))]
+        : []),
     ]),
     ...(ctx.isRenewal ? [f("Prior licence number (renewal)", s(v.priorLicenseNumber), { optional: true })] : []),
   ])
 
-  // Step 7 — Safekeeping and Safeguarding (one portal screen: where it's secured + who safeguards it)
-  put(7, [
+  // Safekeeping and Safeguarding (one portal screen: where it's secured + who safeguards it)
+  put("safekeeping", [
     f("How will it be secured when not in use?", s(v.safeguardMethod)),
     ...addressFields("Safekeeping Location", s(v.safekeepingStreet), s(v.safekeepingApt), s(v.safekeepingCity), s(v.safekeepingState), s(v.safekeepingZip)),
     f("Safeguard — First Name", s(v.safeguardFirstName)),
@@ -202,12 +279,13 @@ export function buildPortalWorksheet(
     ...addressFields("Safeguard Address", s(v.safeguardAddress), s(v.safeguardApt), s(v.safeguardCity), s(v.safeguardState), s(v.safeguardZip), true),
   ])
 
-  // Steps 8/9/10 — the disclosure questions, grouped by the portal's own screen ranges.
-  for (const step of PORTAL_STEPS) {
+  // The disclosure questions, grouped by the portal's own screen ranges (8/9/10 on
+  // NYC-resident, 9/10/11 on Special Carry — same ranges, keyed by identity).
+  for (const step of steps) {
     if (step.kind !== "questions" || !step.range) continue
     const [lo, hi] = step.range
     put(
-      step.no,
+      step.key,
       PORTAL_DISCLOSURES.filter((q) => q.no >= lo && q.no <= hi).flatMap((q) => {
         const raw = disclosures[`q${q.no}`]
         // A real not-applicable state — only when genuinely unanswered AND the portal
@@ -239,7 +317,8 @@ export function buildPortalWorksheet(
     ["g3", "Spouse/partner/household member of a person above"],
     ["g4", "May be subject to unwarranted harassment on disclosure"],
   ]
-  put(11, [
+  const g1bChecked = con.g1b === true || con.g1b === "true" || con.g1b === "on"
+  const conFields: WorksheetField[] = [
     f("Requesting confidentiality?", con.requesting == null ? "" : conRequesting ? "Yes" : "No", { optional: true }),
     ...(conRequesting
       ? [
@@ -250,18 +329,66 @@ export function buildPortalWorksheet(
           f("Scope of request", con.election === "all" ? "Apply to all my applications/licences" : con.election === "withdraw" ? "Not submitting / withdraw previous" : "", { optional: true }),
         ]
       : []),
-  ])
+  ]
+  // The "withdraw" election is a consequential, easily-missed act: an applicant who
+  // already holds confidentiality on another NYC licence and picks B here silently
+  // revokes it. Surface it, greyed (not counted as missing), so staff confirm intent.
+  if (con.election === "withdraw") {
+    conFields.push(na("⚠ Withdrawal election", "picking B withdraws any confidentiality request already on file for other NYC licences — confirm this is intended"))
+  }
+  // Ground 1B is the same fact as disclosure Q14 (protected person on an order of
+  // protection). If Q14 is Yes but 1B is unchecked, that is an INCONSISTENCY to review,
+  // not an error — the applicant may simply not be requesting confidentiality.
+  if (isYes(disclosures.q14) && !g1bChecked) {
+    conFields.push(na("⚠ Cross-check (Q14 vs Ground 1B)", "Q14 (protected person on an order of protection) is Yes but confidentiality Ground 1B is unchecked — review whether 1B should apply"))
+  }
+  put("confidentiality", conFields)
 
   // Step 12 — Letter of Necessity, SCOPED by licence type (a concealed-carry case answers
   // three of six). Render only the applicable statements so a blank never gets flagged.
+  // The portal shows FIVE boxes here for Carry Guard; lop1 (the § 5-04 business-need
+  // narrative) lives on the Letter of Necessity DOCUMENT, not on this screen. Emitting
+  // it would flag a permanent red box staff can never satisfy — and a red flag nobody
+  // can clear is how staff learn to ignore red flags.
   put(
-    12,
-    lonStatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`])))
+    "letter_of_necessity",
+    portalStep12StatementsFor(ctx.licenseTrack).map((n) => f(`Statement ${n}`, s(v[`lop${n}`])))
   )
 
-  // Step 14 — Counsel and Preparer
+  // Law Enforcement Application Fee Waiver (Special Carry step 13). A qualifying retired
+  // officer is exempt from the $340 fee (lib/fees.ts, intake isRetiredLeo). We capture
+  // the qualifier, not the specific CPL category — staff pick the matching option in the
+  // portal. The category list is shown so the right one is chosen, not guessed.
+  put("fee_waiver", [
+    f(
+      "Does a fee-waiver category apply?",
+      ctx.isRetiredLeo == null ? "" : ctx.isRetiredLeo ? "Yes — retired law enforcement (pick the matching category)" : "No — “None of these categories apply to me”",
+      { optional: true }
+    ),
+    ...(ctx.isRetiredLeo
+      ? FEE_WAIVER_CATEGORIES.filter((c) => c.value !== "none").map((c) =>
+          f(`Category — ${c.label}`, c.cite, { optional: true })
+        )
+      : []),
+  ])
+
+  // Required Statements (Special Carry step 14) — five sworn boxes. Box 2 duplicates the
+  // step-8 safekeeping free-text, so it is populated from the same value, collected once.
+  // Boxes 1 and 4 are Carry Guard/Security-only; they carry the portal's required marker
+  // regardless of track — greyed here (whether the portal blocks on them is unverified).
+  put(
+    "sworn_statements",
+    SWORN_STATEMENTS.map((st) => {
+      const label = `${st.no}. (${st.appliesTo}) ${st.text}`
+      if (st.notForSpecialCarry) return na(label, "addressed to Carry Guard/Security applicants — the portal shows it but it does not apply to Special Carry")
+      const value = st.prefillFrom ? s(v[st.prefillFrom]) : ""
+      return f(label, value, { optional: !st.prefillFrom })
+    })
+  )
+
+  // Counsel and Preparer
   const counselYes = v.counselRepresented === "Yes"
-  put(14, [
+  put("counsel_preparer", [
     f("Are you being represented by counsel?", s(v.counselRepresented) || "No", { optional: true }),
     ...(counselYes
       ? [
@@ -278,13 +405,13 @@ export function buildPortalWorksheet(
     f("Assistant — Phone", brand.contact.phone),
   ])
 
-  // Emit sections strictly in PORTAL_STEPS order. Uploads (13) and checkpoints (15/16/17)
-  // carry a note instead of fields — step 13 is transcribed as documents in the tab.
-  return PORTAL_STEPS.map((step) => ({
+  // Emit sections strictly in the RESOLVED track's order. The uploads step is transcribed
+  // as documents in the tab; checkpoints carry a note instead of fields.
+  return steps.map((step) => ({
     no: step.no,
     title: step.title,
     kind: step.kind,
-    fields: byStep.get(step.no) ?? [],
+    fields: byKey.get(step.key) ?? [],
     note:
       step.kind === "uploads"
         ? "The portal's file uploads — transcribed below as documents, not fields."
@@ -292,7 +419,7 @@ export function buildPortalWorksheet(
   }))
 }
 
-type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string }
+type Row = { fromMonth?: string; toMonth?: string; address?: string; employer?: string; employerName?: string; employerAddress?: string; occupation?: string; buildingNumber?: string; streetName?: string; streetConfirmed?: boolean; apt?: string; city?: string; state?: string; zip?: string; country?: string }
 function asRows(x: unknown): Row[] {
   return Array.isArray(x) ? (x as Row[]) : []
 }

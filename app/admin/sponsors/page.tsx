@@ -2,7 +2,9 @@ import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { ProvisionSponsorForm } from "@/components/admin/provision-sponsor-form"
+import { WorkerRequestActions } from "@/components/admin/worker-request-actions"
 import { setCaseTrack } from "@/app/admin/sponsors/actions"
+import { formatDate } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -33,6 +35,12 @@ export default async function AdminSponsorsPage() {
     .select("id, scope, status, applicant_consented_at, invited_name, invited_email, sponsor:sponsors(legal_name), case:cases(id, license_track, client:clients(full_name))")
     .order("created_at", { ascending: false })
 
+  const { data: pendingRequests } = await db
+    .from("sponsor_worker_requests")
+    .select("id, applicant_name, applicant_email, assignment_role, requested_scope, created_at, sponsor:sponsors(legal_name)")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+
   return (
     <div className="space-y-6">
       <div>
@@ -45,6 +53,37 @@ export default async function AdminSponsorsPage() {
       </div>
 
       <ProvisionSponsorForm />
+
+      {/* Pending worker requests — a rep asked to add a worker; approval provisions it. */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-tight">
+          Pending worker requests{(pendingRequests ?? []).length > 0 ? ` (${(pendingRequests ?? []).length})` : ""}
+        </h2>
+        {(pendingRequests ?? []).length === 0 ? (
+          <p className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">No pending requests.</p>
+        ) : (
+          <ul className="space-y-2">
+            {(pendingRequests ?? []).map((r) => {
+              const company = (r.sponsor as unknown as { legal_name: string } | null)?.legal_name ?? "—"
+              return (
+                <li key={r.id} className="rounded-lg border border-brass/30 bg-brass/[0.04] p-4 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="font-medium">{company}</span> → {r.applicant_name}
+                      <span className="ml-2 text-xs text-text-mid">
+                        {r.applicant_email}
+                        {r.assignment_role ? ` · ${r.assignment_role}` : ""} · requested {SCOPE_LABEL[r.requested_scope] ?? r.requested_scope}
+                      </span>
+                    </div>
+                    <span className="text-xs text-text-low">{formatDate(r.created_at)}</span>
+                  </div>
+                  <WorkerRequestActions requestId={r.id} requestedScope={r.requested_scope} />
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
 
       {/* Staff override of a derived track — the License Division's answer beats
           our inference (e.g. confirming a non-resident's category). Required note. */}

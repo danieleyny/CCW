@@ -8,8 +8,10 @@ import { requireRole } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
 import { inviteReference, inviteCohabitant } from "@/lib/outreach"
 import type { DocumentType } from "@/lib/doc-types"
-import { enforceUploadedFile } from "@/lib/files/enforce"
+import { enforceUploadedFile, UploadRejected } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
+import { convertApplicantPhoto } from "@/lib/files/photo-convert"
+import { raisePhotoConversionTask } from "@/lib/requirements/photo-conversion"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { smartDocument } from "@/lib/requirements/smart-documents"
 import { requiredReferences } from "@/lib/intake/schema"
@@ -57,11 +59,17 @@ export async function recordDocument(input: {
 
   // FMT-01, server side — the client check is bypassable (see lib/files/enforce).
   // Service role: reading storage metadata and removing a rejected object, both
-  // before we've decided this upload is legitimate enough to record.
-  const fileName = await enforceUploadedFile(createAdminClient(), {
-    path: input.path,
-    fileName: input.fileName,
-  })
+  // before we've decided this upload is legitimate enough to record. A rejection
+  // carries a SAFE, specific reason (wrong type, too large) — return it so the
+  // uploader can show it instead of a generic "try again" (P2.2). Any other failure
+  // still throws and stays generic on the client.
+  let fileName: string
+  try {
+    fileName = await enforceUploadedFile(createAdminClient(), { path: input.path, fileName: input.fileName })
+  } catch (e) {
+    if (e instanceof UploadRejected) return { error: e.message }
+    throw e
+  }
 
   const { count } = await supabase
     .from("documents")
@@ -70,18 +78,62 @@ export async function recordDocument(input: {
     .eq("type", input.type)
   const version = (count ?? 0) + 1
 
+  // Applicant PHOTO: convert toward the portal's format/dimensions for a concierge client
+  // (finding 8). The converted JPEG becomes the filed file; the ORIGINAL is kept, and a
+  // note records what changed. A PDF/unsupported file is kept as-is and flagged for a
+  // person to convert — never silently accepted as compliant.
+  let filePath = input.path
+  let originalPath: string | null = null
+  let conversionNote: string | null = null
+  let conversionPending = false
+  if (input.type === "applicant_photo") {
+    const admin = createAdminClient()
+    const { data: blob } = await admin.storage.from("documents").download(input.path)
+    if (blob) {
+      const contentType = blob.type || `image/${(fileName.split(".").pop() ?? "").toLowerCase()}`
+      const buf = Buffer.from(await blob.arrayBuffer())
+      const converted = await convertApplicantPhoto(buf, contentType)
+      if (converted) {
+        const dir = input.path.replace(/\/[^/]+$/, "")
+        const convPath = `${dir}/converted-photo.jpg`
+        const up = await admin.storage.from("documents").upload(convPath, converted.buffer, { contentType: "image/jpeg", upsert: true })
+        if (!up.error) {
+          filePath = convPath
+          originalPath = input.path
+          conversionNote = `Auto-converted: ${converted.note}. This fixes format and size only — a person must still confirm the photo itself (no hat/glasses, facing forward, recent).`
+          fileName = "converted-photo.jpg"
+        }
+      } else {
+        // Not a raster image we can convert (e.g. a PDF). It counts as UPLOADED but the
+        // requirement must NOT satisfy until a person converts it — otherwise the case
+        // reports ready to file with a photo the portal will reject (SPC-01 shape).
+        conversionPending = true
+        conversionNote = "Received in a format we can't auto-convert (e.g. PDF) — we're preparing this for the portal (converting it to an image before filing)."
+      }
+    }
+  }
+
   const { error } = await supabase.from("documents").insert({
     id: input.documentId,
     case_id: input.caseId,
     client_id: kase.client_id,
     type: input.type,
     status: "pending",
-    file_path: input.path,
+    file_path: filePath,
     file_name: fileName,
+    original_file_path: originalPath,
+    conversion_note: conversionNote,
+    conversion_pending: conversionPending,
     req_code: input.reqCode ?? null,
     version,
   })
   if (error) throw error
+
+  // A file that still needs a human to convert it is OUR work — raise a staff task so it
+  // never sits behind a footnote. Idempotent per case (one open photo-conversion task).
+  if (conversionPending) {
+    await raisePhotoConversionTask(createAdminClient(), input.caseId)
+  }
 
   // Bind the upload to its matching requirement(s) so the consultant sees the
   // evidence attached. Status stays pending until staff review approves it —
@@ -177,6 +229,7 @@ const referenceSchema = z.object({
   isFamily: z.string().optional(),
   contactEmail: z.string().email().or(z.literal("")).optional(),
   contactPhone: z.string().optional(),
+  knownDuration: z.string().max(120).optional(),
 })
 
 export type CollectorState = { error?: string; ok?: boolean }
@@ -190,6 +243,7 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
     isFamily: formData.get("isFamily") ?? undefined,
     contactEmail: formData.get("contactEmail") ?? "",
     contactPhone: formData.get("contactPhone") ?? "",
+    knownDuration: formData.get("knownDuration") ?? "",
   })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
   const v = parsed.data
@@ -231,6 +285,7 @@ export async function addReference(_prev: CollectorState, formData: FormData): P
       is_family: v.isFamily === "on",
       contact_email: v.contactEmail || null,
       contact_phone: v.contactPhone || null,
+      known_duration: v.knownDuration?.trim() || null,
       received: false,
     })
     .select("id")
@@ -414,4 +469,27 @@ export async function markEngagementMessagesRead(engagementId: string) {
     .eq("staff_only", false)
     .eq("read", false)
     .neq("sender_id", userId)
+}
+
+// ── Referral channel consent ──────────────────────────────────────────────────
+/**
+ * The applicant chooses whether the company that introduced them may see their
+ * PROGRESS STAGE (never their file). Default is no sharing; this is explicit and
+ * revocable. The RPCs are SECURITY DEFINER + owner-guarded — the referrer can never
+ * call them.
+ */
+const REFERRAL_CONSENT_VERSION = "v1"
+
+export async function setReferralConsent(caseId: string, share: boolean) {
+  await requireRole(["client"])
+  const owned = await ownedCase(caseId)
+  if (!owned) return { error: "Case not found." }
+  const supabase = await createClient()
+  const { error } = share
+    ? await supabase.rpc("referral_record_consent", { p_case_id: caseId, p_version: REFERRAL_CONSENT_VERSION })
+    : await supabase.rpc("referral_revoke", { p_case_id: caseId })
+  if (error) return { error: "Couldn't update your sharing choice." }
+  await logActivity({ action: share ? "referral.consent_granted" : "referral.consent_revoked", caseId })
+  revalidatePath("/portal")
+  return { ok: true }
 }

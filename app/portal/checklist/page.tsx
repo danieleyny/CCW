@@ -6,6 +6,8 @@ import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { computePortalReadiness } from "@/lib/disclosures/readiness"
+import { pendingConversionReqCodes } from "@/lib/requirements/photo-conversion"
+import { portalTrackForCase } from "@/config/portal-steps"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
 import { ReadinessCard } from "@/components/portal/readiness-card"
 
@@ -18,9 +20,10 @@ export default async function ChecklistPage() {
   // V3-P2.1 — ONE source of truth: the versioned requirements engine, loaded by
   // the same function /portal/documents uses so the two views cannot disagree.
   const supabase = await createClient()
-  // For a concierge case, /portal/concierge is home — never a checklist dead end
-  // (Part A). Send them there instead of showing an apologetic banner.
-  if (myCase.service_mode === "concierge") redirect("/portal/concierge")
+  // For a concierge case, /portal/concierge is home — there is no separate checklist.
+  // Land them on the vault WITH a one-time explanation (P1.3) rather than a silent
+  // bounce, so arriving from a stale link or bookmark makes sense.
+  if (myCase.service_mode === "concierge") redirect("/portal/concierge?from=checklist")
   const view = await loadRequirementView(supabase, myCase)
   // A sponsored case always carries party='sponsor' packet items — so if any item is
   // sponsor-managed, the case is sponsored. Used to lock the employer's Letter-of-
@@ -28,26 +31,29 @@ export default async function ChecklistPage() {
   const caseSponsored = view.items.some((i) => i.sponsorManaged)
   // Licence track scopes the Letter-of-Necessity statements (a Concealed Carry
   // applicant is asked 3 of them, not 6).
-  const { data: trackRow } = await supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
+  const { data: trackRow } = await supabase.from("cases").select("license_track, clients:client_id(track)").eq("id", myCase.id).maybeSingle()
+  const portalTrack = portalTrackForCase({
+    licenseTrack: trackRow?.license_track ?? null,
+    clientTrack: (trackRow?.clients as unknown as { track?: string | null } | null)?.track ?? null,
+  })
 
   // Two-gate portal readiness (ready to enter · ready to finalize). Admin: assembles
   // the applicant's own data for the summary (mirrors the signed record).
   const admin = createAdminClient()
-  const assembled = await assembleApplicationValues(admin, myCase.id)
-  const { data: dscRow } = await admin
-    .from("requirement_answers")
-    .select("answers")
-    .eq("case_id", myCase.id)
-    .eq("req_code", "DSC-01")
-    .maybeSingle()
+  const [assembled, { data: dscRow }, conversionPendingReqCodes] = await Promise.all([
+    assembleApplicationValues(admin, myCase.id),
+    admin.from("requirement_answers").select("answers").eq("case_id", myCase.id).eq("req_code", "DSC-01").maybeSingle(),
+    pendingConversionReqCodes(admin, myCase.id),
+  ])
   const readiness = assembled
     ? computePortalReadiness(
         assembled.values,
         (dscRow?.answers ?? {}) as Record<string, unknown>,
         view.items.map((i) => ({ reqCode: i.reqCode, status: i.status })),
         {
-          licenseTrack: assembled.track,
+          portalTrack,
           signedRecordSatisfied: view.items.find((i) => i.reqCode === "DSC-01")?.status === "satisfied",
+          conversionPendingReqCodes,
         }
       )
     : null

@@ -47,6 +47,9 @@ export interface InviteResult {
    * apart from "we tried to email but it didn't go" (a delivery/config problem).
    */
   hadEmail: boolean
+  /** When `hadEmail` but not `emailed`: WHY. "not_configured" = delivery isn't set up (we
+   *  couldn't send); "rejected" = the provider tried and refused the address. */
+  reason?: "not_configured" | "rejected"
 }
 
 /** Mint (or rotate) a reference's link and email it if we have an address. */
@@ -114,8 +117,14 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
   })
   const res = await sendEmail({ to: ref.contact_email, subject: `Character reference request — ${brand.name}`, html, text })
   // emailed reflects ACTUAL delivery, not "an address exists": if the send was a
-  // no-op (no key) or errored, the applicant is told to copy the link instead.
-  return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
+  // no-op (no key) or errored, the applicant is told to copy the link instead. Persist it
+  // so the card/progress can be honest on reload (the row already says status:'sent').
+  const emailed = res.skipped === false && !("error" in res)
+  await admin.from("reference_requests").update({ emailed }).eq("reference_id", referenceId)
+  // reason distinguishes "we couldn't send" (delivery not configured) from "that address
+  // was rejected" (the provider tried and refused) — different messages to the applicant.
+  const reason = emailed ? undefined : res.skipped ? ("not_configured" as const) : ("rejected" as const)
+  return { link, emailed, hadEmail: true, reason }
 }
 
 /** Mint (or rotate) a household member's link and email it if we have an address. */
@@ -158,5 +167,7 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
   })
   const res = await sendEmail({ to: cohab.contact_email, subject: `Please complete a cohabitant affidavit — ${brand.name}`, html, text })
   // emailed reflects ACTUAL delivery (see inviteReference).
-  return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
+  const emailed = res.skipped === false && !("error" in res)
+  const reason = emailed ? undefined : res.skipped ? ("not_configured" as const) : ("rejected" as const)
+  return { link, emailed, hadEmail: true, reason }
 }

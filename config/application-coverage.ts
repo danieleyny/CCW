@@ -77,9 +77,9 @@ export const APPLICATION_COVERAGE = [
     formLabel:
       "License type: Carry Business · Carry Guard/Security · Retired Police Officer · Limited Carry · Gun Custodian · Premises (Residence/Business) · Special Carry",
     capture: { kind: "intake", ref: "licenseType" },
-    status: "partial",
+    status: "ok",
     notes:
-      "We capture carry vs premises + residence/non-resident (→ track). We do NOT distinguish Carry-Business vs Carry-Guard vs Limited Carry vs Gun Custodian sub-types.",
+      "We capture carry vs premises + residence/non-resident (→ track), and CARRY GUARD is now distinguished: the guard track (carry_guard / special_carry_guard → isGuardTrack, lib/disclosures/worksheet-portal.ts) drives the employer gun-custodian block on step 3, the guard-scoped five step-12 statements, and the firearm licensed/licence-number fields on step 6. Residual niche sub-types (standalone Gun Custodian, Limited Carry) still fold into the nearest track.",
   },
   {
     id: "renewal_license_number",

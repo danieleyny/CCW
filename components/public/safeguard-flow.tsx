@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle2, Download, PenLine } from "lucide-react"
-import { uploadSignedSafeguard } from "@/app/g/actions"
+import { CheckCircle2, Download, PenLine, IdCard } from "lucide-react"
+import { uploadSignedSafeguard, uploadSafeguardId } from "@/app/g/actions"
 import { NotarizedTokenUpload } from "@/components/public/notarized-token-upload"
 import { Button } from "@/components/ui/button"
 
@@ -23,6 +23,7 @@ export function SafeguardFlow({
   initialStatus: string
 }) {
   const [phase, setPhase] = useState<Phase>(initialStatus === "signed" ? "done" : "steps")
+  const [idDone, setIdDone] = useState(false)
 
   if (phase === "done") {
     return (
@@ -31,7 +32,7 @@ export function SafeguardFlow({
           <CheckCircle2 className="size-5" /> All set — thank you.
         </div>
         <p className="mt-2 text-sm">
-          Your signed acknowledgement for {applicant} has been received. Nothing more is needed — they&apos;ve
+          Your signed acknowledgement for {applicant}{" "}has been received. Nothing more is needed — they&apos;ve
           been notified.
         </p>
       </div>
@@ -40,6 +41,21 @@ export function SafeguardFlow({
 
   return (
     <div className="mt-6 space-y-5">
+      <div className="rounded-lg border border-hairline bg-card p-4 text-sm text-text-mid">
+        <p>
+          <span className="font-medium text-foreground">What you&apos;re agreeing to.</span> By signing this,
+          you agree to take custody of {applicant}&apos;s firearm and surrender it to the NYPD License Division
+          if {applicant} dies or becomes unable to manage it. The License Division may contact you directly to
+          arrange that.
+        </p>
+        <p className="mt-2">
+          NYPD requires this to be someone <span className="font-medium text-foreground">other than the
+          applicant</span> — at least 21 and a New York State resident — so there is always someone able to act.
+          That is why {applicant} named you. If this isn&apos;t something you can take on, let {applicant} know
+          rather than signing.
+        </p>
+      </div>
+
       <div className="rounded-lg border border-brass/40 bg-brass/10 p-3 text-sm text-brass-bright">
         Sign in front of a witness — not a notary. Leave the signature line blank until your witness is with
         you.
@@ -74,12 +90,38 @@ export function SafeguardFlow({
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">3</span>
+          <IdCard className="size-4 text-brass" /> Upload a photo of your government ID
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A clear photo of your driver&apos;s licence or state ID — the License Division requires it for the
+          person safeguarding the firearm. This stays private and goes straight onto {applicant}&apos;s case.
+        </p>
+        {idDone ? (
+          <p className="mt-3 flex items-center gap-1.5 text-sm text-ok">
+            <CheckCircle2 className="size-4" /> ID received — thank you.
+          </p>
+        ) : (
+          <NotarizedTokenUpload
+            upload={(fd) => uploadSafeguardId(token, fd)}
+            noun="ID photo"
+            chooseLabel="Choose a photo of your ID"
+            submitLabel="Upload ID photo"
+            onDone={() => setIdDone(true)}
+          />
+        )}
+      </div>
+
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <span className="flex size-5 items-center justify-center rounded-full bg-brass text-[10px] font-bold text-brand-foreground">4</span>
           Upload the signed copy
         </div>
         <p className="mt-1 text-xs text-muted-foreground">A clear photo or scan of the signed, witnessed form.</p>
         <NotarizedTokenUpload
           upload={(fd) => uploadSignedSafeguard(token, fd)}
           noun="acknowledgement"
+          chooseLabel="Choose the signed form"
+          submitLabel="Upload signed form"
           onDone={() => setPhase("done")}
         />
       </div>

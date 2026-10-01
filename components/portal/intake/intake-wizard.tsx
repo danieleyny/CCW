@@ -19,9 +19,11 @@ import {
   type SocialAccount,
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
+import { checkHistory, applyPresentRadio } from "@/lib/intake/history-check"
 import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
 import { HeightField } from "@/components/portal/intake/height-field"
 import { DateOfBirthField } from "@/components/portal/intake/dob-field"
+import { CountyInput } from "@/components/portal/county-input"
 import { SectionHeader } from "@/components/portal/section-header"
 import {
   eligibilityStepIssues,
@@ -34,6 +36,12 @@ import {
   completeIntake,
   updateDisclosureNarrative,
 } from "@/app/portal/intake/actions"
+import {
+  detectSelfDesignation,
+  selfDesignationMessage,
+  SAFEGUARD_NOT_YOU_NOTE,
+  type SelfDesignationField,
+} from "@/lib/safeguard/self-designation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,6 +55,23 @@ interface Disclosure {
   question_no: number | null
 }
 
+/** The applicant's own identity, used only to flag naming yourself as the safeguard person. */
+export type ApplicantIdentity = { firstName: string; lastName: string; email: string; phone: string }
+
+/** Which safeguard fields collide with the applicant. Intake collects the safeguard NAME
+ *  as one field and no email, so only name + phone apply here. */
+function safeguardSelfConflicts(a: WizardAnswers, applicant: ApplicantIdentity): SelfDesignationField[] {
+  const toks = (a.safeguardName ?? "").trim().split(/\s+/).filter(Boolean)
+  return detectSelfDesignation({
+    applicant,
+    safeguard: {
+      firstName: toks[0],
+      lastName: toks.length > 1 ? toks[toks.length - 1] : undefined,
+      phone: a.safeguardPhone,
+    },
+  })
+}
+
 export function IntakeWizard({
   caseId,
   isRenewal = false,
@@ -56,6 +81,8 @@ export function IntakeWizard({
   disclosures,
   guard,
   aiEnabled = false,
+  applicant,
+  licenseTrack = null,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -65,6 +92,10 @@ export function IntakeWizard({
   disclosures: Disclosure[]
   guard: SubmissionGuard | null
   aiEnabled?: boolean
+  applicant: ApplicantIdentity
+  /** The case's derived license_track — so a sponsored Carry Guard case is never
+   *  labelled "Concealed carry" and its track can't be re-picked here (P1.2). */
+  licenseTrack?: string | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
@@ -85,6 +116,8 @@ export function IntakeWizard({
   // V3-P0.6 — inline per-step validation (mirrors the server-side rules).
   function issuesForStep(n: number): string[] {
     if (n === 1) return eligibilityStepIssues(a)
+    // Step 3 — the safeguard person cannot be the applicant. Block Next while it conflicts.
+    if (n === 3) return safeguardSelfConflicts(a, applicant).map(selfDesignationMessage)
     if (n === 4) return disclosureStepIssues(a)
     if (n === 5) return historyStepIssues(a, { isRenewal })
     return []
@@ -336,10 +369,10 @@ export function IntakeWizard({
 
         <div className="rounded-lg border bg-card p-5">
           {step === 1 && (
-            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
+            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} />
           )}
           {step === 2 && <StepIdentity a={a} patch={patch} />}
-          {step === 3 && <StepHousehold a={a} patch={patch} />}
+          {step === 3 && <StepHousehold a={a} patch={patch} applicant={applicant} />}
           {step === 4 && (
             <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
           )}
@@ -679,10 +712,15 @@ function StepEligibility({
   patch,
   reasons,
   attempted,
-}: StepProps & { reasons: string[] | null; attempted: boolean }) {
+  licenseTrack,
+}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null }) {
   // Red exactly when (and only when) eligibilityStepIssues blocks on it.
   const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
   const residenceBad = attempted && !a.residence
+  // A sponsored armed-guard case's track is DERIVED (from the sponsorship + residence),
+  // not chosen here. Never label it "Concealed carry", and never show a carry/premises
+  // picker that could silently re-track it (P1.2).
+  const isGuardTrack = licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
@@ -704,20 +742,60 @@ function StepEligibility({
           </select>
         </Field>
       </div>
-      <Field
-        label="License type"
-        hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
-      >
-        <select
-          aria-label="License type"
-          value={a.licenseType ?? "carry"}
-          onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
-          className={SELECT_CLASS}
+      {isGuardTrack ? (
+        <Field
+          label="License type"
+          hint="Your company sponsors this licence. The Carry Guard track is set from your sponsorship — you don't choose it here."
         >
-          <option value="carry">Concealed carry</option>
-          <option value="premises">Premises — business</option>
-        </select>
-      </Field>
+          <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Carry Guard</div>
+        </Field>
+      ) : (
+        <Field
+          label="License type"
+          hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
+        >
+          <select
+            aria-label="License type"
+            value={a.licenseType ?? "carry"}
+            onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
+            className={SELECT_CLASS}
+          >
+            <option value="carry">Concealed carry</option>
+            <option value="premises">Premises — business</option>
+          </select>
+        </Field>
+      )}
+      {a.residence === "non_resident" && !isGuardTrack && (
+        <Field
+          label="Where do you intend to carry in New York City?"
+          hint="This decides your licence category — it is set by how you'll carry, not by who introduced you to us."
+        >
+          <select
+            aria-label="Intended use in NYC"
+            value={a.nycCarryIntent ?? ""}
+            onChange={(e) => patch({ nycCarryIntent: (e.target.value || undefined) as WizardAnswers["nycCarryIntent"] })}
+            className={SELECT_CLASS}
+          >
+            <option value="">Select…</option>
+            <option value="personal">For my own personal protection — Special Carry</option>
+            <option value="armed_assignment">While working an armed security assignment — Special Carry Guard</option>
+          </select>
+          {a.nycCarryIntent === "personal" && (
+            <div className="mt-2 flex gap-2 rounded-md border-2 border-warn/50 bg-warn/10 p-3 text-sm text-text-hi">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn" />
+              <p>
+                <span className="font-semibold">A personal Special Carry licence does not authorise carrying while working an armed security assignment.</span>{" "}
+                That requires a separate <span className="font-medium">Special Carry Guard</span> licence, plus NY armed-guard registration and training. If you&apos;ll be armed on the job, choose the armed-assignment option above.
+              </p>
+            </div>
+          )}
+          {a.nycCarryIntent === "armed_assignment" && (
+            <p className="mt-2 text-xs text-text-mid">
+              An armed-assignment licence needs your employer&apos;s sponsorship and your qualifying employment. We&apos;ll connect you with the sponsored Special Carry Guard flow.
+            </p>
+          )}
+        </Field>
+      )}
       <div className="space-y-2 rounded-md border border-hairline p-3">
         <p className="text-xs text-text-low">Check any that apply (these route to attorney review):</p>
         <Check label="Felony or serious-offense conviction" checked={!!a.prohibitorFelony} onChange={(v) => patch({ prohibitorFelony: v })} />
@@ -886,7 +964,7 @@ function StepIdentity({ a, patch }: StepProps) {
               <Input value={a.outOfCityIssuedBy ?? ""} onChange={(e) => patch({ outOfCityIssuedBy: e.target.value })} />
             </Field>
             <Field label="County">
-              <Input value={a.outOfCityCounty ?? ""} onChange={(e) => patch({ outOfCityCounty: e.target.value })} />
+              <CountyInput value={a.outOfCityCounty ?? ""} onChange={(v) => patch({ outOfCityCounty: v })} />
             </Field>
             <Field label="Date issued">
               <Input type="date" value={a.outOfCityIssuedOn ?? ""} onChange={(e) => patch({ outOfCityIssuedOn: e.target.value })} />
@@ -901,8 +979,11 @@ function StepIdentity({ a, patch }: StepProps) {
   )
 }
 
-function StepHousehold({ a, patch }: StepProps) {
+function StepHousehold({ a, patch, applicant }: StepProps & { applicant: ApplicantIdentity }) {
   const cohabs = a.cohabitants ?? []
+  const conflicts = safeguardSelfConflicts(a, applicant)
+  const nameConflict = conflicts.includes("name")
+  const phoneConflict = conflicts.includes("phone")
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Household &amp; safeguard</h2>
@@ -953,13 +1034,25 @@ function StepHousehold({ a, patch }: StepProps) {
       </Field>
 
       <div className="space-y-3 rounded-md border border-hairline p-3">
-        <p className="text-xs text-text-low">
-          Person who will safeguard the handgun if you die or become disabled (form Q31 — must be a
-          N.Y. State resident). This person also signs the NYPD Acknowledgement form.
+        <p className="text-xs font-medium text-foreground">Who will safeguard your handgun (form Q31)</p>
+        <p className="rounded-md border border-hairline bg-surface-2/40 p-2.5 text-[12px] leading-relaxed text-text-mid">
+          {SAFEGUARD_NOT_YOU_NOTE}
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name">
-            <Input placeholder="Full name" value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
+            <Input
+              placeholder="Full name"
+              value={a.safeguardName ?? ""}
+              onChange={(e) => patch({ safeguardName: e.target.value })}
+              aria-invalid={nameConflict || undefined}
+              data-intake-invalid={nameConflict || undefined}
+              className={nameConflict ? "border-danger/60 focus-visible:ring-danger/30" : undefined}
+            />
+            {nameConflict && (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+                <ShieldAlert className="mt-0.5 size-3 shrink-0" /> <span>{selfDesignationMessage("name")}</span>
+              </p>
+            )}
           </Field>
           <Field label="Relationship to you">
             <Input value={a.safeguardRelation ?? ""} placeholder="Spouse, sibling…" onChange={(e) => patch({ safeguardRelation: e.target.value })} />
@@ -976,7 +1069,18 @@ function StepHousehold({ a, patch }: StepProps) {
             <UseHomeAddress a={a} current={a.safeguardAddress} onUse={(v) => patch({ safeguardAddress: v })} />
           </Field>
           <Field label="Telephone">
-            <Input value={a.safeguardPhone ?? ""} onChange={(e) => patch({ safeguardPhone: e.target.value })} />
+            <Input
+              value={a.safeguardPhone ?? ""}
+              onChange={(e) => patch({ safeguardPhone: e.target.value })}
+              aria-invalid={phoneConflict || undefined}
+              data-intake-invalid={phoneConflict || undefined}
+              className={phoneConflict ? "border-danger/60 focus-visible:ring-danger/30" : undefined}
+            />
+            {phoneConflict && (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+                <ShieldAlert className="mt-0.5 size-3 shrink-0" /> <span>{selfDesignationMessage("phone")}</span>
+              </p>
+            )}
           </Field>
         </div>
       </div>
@@ -1105,9 +1209,13 @@ function StepDisclosures({
                 role="radiogroup"
                 aria-label={`Q${item.no}: ${item.text}`}
                 className={cn(
-                  "card-soft p-3.5 transition-opacity",
+                  "card-soft p-3.5 transition-colors",
+                  // Both answers read as ANSWERED — Yes in brass (the accent), No in a
+                  // neutral filled state. Never dim "No": a factual "No" is a complete
+                  // answer, and dimming it reads as "not done yet" (finding 4). Disclosing
+                  // is correct, so neither answer is styled as a bad outcome.
                   isYes && "border-l-[3px] border-l-brass bg-brass/[0.04] glow-neutral",
-                  isNo && "opacity-[0.72]",
+                  isNo && "border-l-[3px] border-l-hairline-strong bg-surface-2/40",
                   !answered && "ring-1 ring-signal/25"
                 )}
               >
@@ -1116,7 +1224,7 @@ function StepDisclosures({
                     aria-hidden
                     className={cn(
                       "mt-0.5 flex h-[22px] min-w-[30px] items-center justify-center rounded-md border font-mono text-[10.5px]",
-                      isNo ? "border-hairline text-text-low" : "border-brass/25 bg-brass/10 text-brass"
+                      isYes ? "border-brass/25 bg-brass/10 text-brass" : isNo ? "border-hairline-strong bg-surface-3 text-text-mid" : "border-hairline text-text-low"
                     )}
                   >
                     Q{item.no}
@@ -1139,7 +1247,8 @@ function StepDisclosures({
                       aria-hidden
                       className={cn(
                         "absolute inset-y-[3px] w-[calc(50%-6px)] rounded-lg transition-[left] duration-200 ease-out motion-reduce:transition-none",
-                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1"
+                        // No gets a solid neutral chip (bordered) — equally clearly "selected", never faint.
+                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1 ring-1 ring-hairline-strong"
                       )}
                     />
                   )}
@@ -1300,7 +1409,7 @@ function StepHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => { const c = [...resHist]; c[i] = { ...c[i], fromMonth: v }; patch({ residenceHistory: c }) }}
-                onTo={(v) => { const c = [...resHist]; c[i] = { ...c[i], toMonth: v }; patch({ residenceHistory: c }) }}
+                onTo={(v) => patch({ residenceHistory: applyPresentRadio(resHist, i, v) })}
               />
               <Button variant="ghost" size="icon" onClick={() => patch({ residenceHistory: resHist.filter((_, j) => j !== i) })}>
                 <Trash2 className="size-4" />
@@ -1321,11 +1430,29 @@ function StepHistory({
                 }}
               />
             )}
+            {/* Country is required on the portal but defaults to the US — only ask abroad. */}
+            <label className="flex items-center gap-1.5 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={h.country !== undefined}
+                onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.checked ? "" : undefined }; patch({ residenceHistory: c }) }}
+                className="size-4 rounded border-input"
+              />
+              This address is outside the United States
+            </label>
+            {h.country !== undefined && (
+              <Input placeholder="Country" value={h.country ?? ""} onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.value }; patch({ residenceHistory: c }) }} />
+            )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
           <Plus className="size-4" /> Add residence
         </Button>
+        {checkHistory(resHist, "lived").map((n, i) => (
+          <p key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-signal" /> <span>{n.message}</span>
+          </p>
+        ))}
       </div>
 
       <div className="space-y-2">
@@ -1338,7 +1465,7 @@ function StepHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => { const c = [...empHist]; c[i] = { ...c[i], fromMonth: v }; patch({ employmentHistory: c }) }}
-                onTo={(v) => { const c = [...empHist]; c[i] = { ...c[i], toMonth: v }; patch({ employmentHistory: c }) }}
+                onTo={(v) => patch({ employmentHistory: applyPresentRadio(empHist, i, v) })}
               />
               <Button variant="ghost" size="icon" onClick={() => patch({ employmentHistory: empHist.filter((_, j) => j !== i) })}>
                 <Trash2 className="size-4" />
@@ -1349,8 +1476,20 @@ function StepHistory({
                 // Writing the split field retires the legacy combined `employer`.
                 const c = [...empHist]; c[i] = { ...c[i], employerName: e.target.value, employer: undefined }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="Business address" value={h.employerAddress ?? ""} onChange={(e) => {
+              <Input placeholder="Business street address" value={h.employerAddress ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], employerAddress: e.target.value }; patch({ employmentHistory: c })
+              }} />
+            </div>
+            {/* The portal requires City / State / Zip for every past employer. */}
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], city: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], state: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], zip: e.target.value }; patch({ employmentHistory: c })
               }} />
             </div>
             <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
@@ -1361,6 +1500,11 @@ function StepHistory({
         <Button variant="outline" size="sm" onClick={() => patch({ employmentHistory: [...empHist, {}] })}>
           <Plus className="size-4" /> Add employment
         </Button>
+        {checkHistory(empHist, "worked").map((n, i) => (
+          <p key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-signal" /> <span>{n.message}</span>
+          </p>
+        ))}
       </div>
 
       {/* Training */}

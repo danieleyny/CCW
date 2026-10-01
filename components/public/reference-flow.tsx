@@ -20,6 +20,7 @@ export function ReferenceFlow({
   applicant,
   initialStatus,
   invitedEmail,
+  prefillKnownDuration,
 }: {
   token: string
   referenceName: string
@@ -27,11 +28,16 @@ export function ReferenceFlow({
   applicant: string
   initialStatus: string
   invitedEmail: string
+  /** What the applicant said about how long they've known each other — pre-filled as the
+   *  reference's answer (they can correct it). Finding 9. */
+  prefillKnownDuration?: string | null
 }) {
   const [phase, setPhase] = useState<Phase>(
     initialStatus === "notarized" ? "done" : initialStatus === "submitted" ? "notarize" : "answers"
   )
-  const [answers, setAnswers] = useState<ReferenceAnswers>({})
+  const [answers, setAnswers] = useState<ReferenceAnswers>(
+    prefillKnownDuration ? { knownDuration: prefillKnownDuration } : {}
+  )
   const [area, setArea] = useState("")
   const [email, setEmail] = useState(invitedEmail)
   const [attest, setAttest] = useState(false)

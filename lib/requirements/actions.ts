@@ -36,6 +36,7 @@
  */
 import type { Database } from "@/lib/supabase/types"
 import { formTemplateWetInk } from "@/lib/forms/templates"
+import { PORTAL_DISCLOSURE_COUNT } from "@/lib/disclosures/portal-questions"
 
 type DocumentType = Database["public"]["Enums"]["document_type"]
 
@@ -206,12 +207,19 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     systemVerified: "System-verified from the out-of-state license answers given at intake.",
     help: "Disclose any firearms licenses you hold in other jurisdictions. Answered in your intake.",
   },
+  // Civilian Special Carry rests entirely on the applicant's home-county carry licence:
+  // the NYPD portal makes it mandatory data (step 5) PLUS a front/back upload (step 15).
+  // Modelled on SCG-01 (the guard county doc) but written for a personal applicant. It is
+  // blocking — the whole application is void without it.
   "SPC-01": {
-    mode: "attest",
-    actionLabel: "Acknowledge",
-    optional: true,
-    customerTitle: "One thing to know about a Special Carry license",
-    help: "A Special Carry license's validity depends on you also holding a license from your home county (38 RCNY §5-25). This is an advisory — nothing to upload.",
+    mode: "obtain",
+    documentType: "county_pistol_license",
+    actionLabel: "Upload your county licence",
+    customerTitle: "Your home-county carry licence (front and back)",
+    help: "Your active carry/pistol licence from your home county — front and back. Your NYC Special Carry licence is built on top of it: under 38 RCNY §5-25 it voids automatically the moment the county licence is revoked, suspended, cancelled or surrendered. You must carry both licences whenever you carry in the city.",
+    steps: ["Photograph or scan the front and back of your county carry licence.", "Upload both here."],
+    sourceUrl: "https://licensing.nypdonline.org/",
+    sourceLabel: "NYPD License Division",
   },
 
   // ── generate ──────────────────────────────────────────────────────────────
@@ -361,7 +369,7 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Answer the disclosure questions",
     questionnaireId: "disclosure-addendum",
     customerTitle: "The application's disclosure questions",
-    help: "The NYPD online portal asks seventeen questions about your history, in its own words. Every 'yes' needs a written explanation. Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.",
+    help: `The NYPD online portal asks ${PORTAL_DISCLOSURE_COUNT} questions about your history, in its own words. Every 'yes' needs a written explanation. Disclose everything — including sealed, dismissed, or nullified matters. Non-disclosure is more damaging than the underlying event.`,
   },
   // QUE-01 (the PD 643-041A addendum) is RETIRED — the portal captures explanations
   // inline under each question, so there is no separate addendum form.
@@ -479,12 +487,11 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     actionLabel: "Upload your photograph",
     example: "applicant-photo",
     customerTitle: "A recent passport-type photograph",
-    help: "A recent color passport-type photo, front view, taken within the last 30 days (same rules as a U.S. Passport Book). No hats, headgear, or glasses except for religious purposes; head straight; well lit. No selfies. Upload an IMAGE file — a PDF is rejected here. We check it against the NYPD spec as you upload, so it can't get bounced later.",
+    help: "A recent color passport-type photo, front view, taken within the last 30 days (same rules as a U.S. Passport Book). No hats or headgear, no glasses except for religious purposes; head straight; well lit; no selfies. Upload it in any common format — a photo or even a PDF — and we'll format it to the portal's size and shape for you. We can't fix the photo itself, though, so make sure those rules are met before you upload.",
     steps: [
       "Take or obtain a passport-style color photo, front view, within the last 30 days.",
-      "Remove hats, headgear, and glasses (except for religious purposes); keep your head straight and the background plain.",
-      "Save it as an image (jpg, jpeg, png, gif, bmp, or tif) — NOT a PDF.",
-      "Upload it here — we verify the size and shape before it counts.",
+      "Remove hats and headgear, and glasses except for religious purposes; keep your head straight, facing forward, well lit, on a plain background — no selfies.",
+      "Upload it in any common format (a photo file or a PDF is fine) — we handle the format and cropping.",
     ],
     sourceUrl: NYPD_REQUIRED_DOCS,
     sourceLabel: "NYPD photo spec",
@@ -494,11 +501,11 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     documentType: "safeguard_id",
     actionLabel: "Upload the safeguard's ID",
     customerTitle: "Your safeguard person's photo ID",
-    help: "A copy of the government-issued photo ID of the person who will safeguard your firearm(s). If you already hold a firearm licence, also upload its front and back.",
+    help: "A photo of the government-issued ID of the person who will safeguard your firearm(s). The simplest way is to have them upload it themselves through their safeguard link — the same one they use to sign the acknowledgement — so you never have to handle their ID. You can also upload a copy here if that's easier.",
     steps: [
-      "Get a clear copy of the safeguard person's government-issued photo ID (driver's licence or state ID).",
+      "Send your safeguard person their link — they can upload a photo of their own ID and sign the acknowledgement there.",
+      "Or, if it's easier, upload a clear copy of their government-issued photo ID (driver's licence or state ID) here yourself.",
       "If you already hold a firearm licence, also include its front and back.",
-      "Upload it here.",
     ],
     sourceUrl: NYPD_REQUIRED_DOCS,
   },

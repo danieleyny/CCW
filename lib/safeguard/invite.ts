@@ -16,6 +16,23 @@ const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:300
 export const safeguardTokenActive = (i: { token_expires_at?: string | null; token_revoked_at?: string | null }) =>
   tokenActive({ expires_at: i.token_expires_at, revoked_at: i.token_revoked_at })
 
+/**
+ * Look up an invite by token, retrying briefly on a cold miss. The real shape is
+ * "invite row written → email sent → link clicked seconds later": on a cold
+ * serverless route the first read can land before the just-written row is visible
+ * (fresh pooled connection / read replica), returning null. A page or download that
+ * gave up there told the recipient the link was dead. A couple of short retries close
+ * that window without slowing a normal hit (the first read almost always succeeds). (P2-5)
+ */
+export async function findSafeguardInviteByToken<T>(load: () => Promise<T | null>): Promise<T | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const data = await load()
+    if (data) return data
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 150 * (attempt + 1)))
+  }
+  return null
+}
+
 export interface SafeguardInviteRow {
   id: string
   case_id: string

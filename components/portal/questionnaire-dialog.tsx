@@ -13,7 +13,7 @@ import {
 import { actionFor } from "@/lib/requirements/actions"
 import { lonCategoriesFor } from "@/lib/requirements/lon"
 import { SignDocument } from "@/components/portal/sign-document"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -165,7 +165,10 @@ export function QuestionnaireDialog({
           }
           return
         }
-        toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
+        // A partial/failed send must NOT read as a green success (finding 3b): when some
+        // links couldn't be emailed, use the warning styling so the toast matches the copy.
+        if (r.anyFailed) toast.warning(r.summary ?? "Some links couldn't be emailed — copy them instead.", { duration: 12000 })
+        else toast.success(r.summary ?? "Invitations sent.", { duration: 9000 })
         close()
         return
       }
@@ -342,6 +345,11 @@ export function QuestionnaireDialog({
       <DialogContent className="dark flex max-h-[90dvh] w-full flex-col overflow-hidden bg-background p-0 text-foreground sm:max-w-2xl">
         <DialogHeader className="border-b border-hairline px-4 py-3">
           <DialogTitle>{questionnaire.title}</DialogTitle>
+          {/* Accessible description so assistive tech (and Radix) always has one — the
+              full intro is shown in the body below; this is the sr-only summary. */}
+          <DialogDescription className="sr-only">
+            {questionnaire.intro ?? "Answer the questions in this form; your answers save as you go."}
+          </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
 

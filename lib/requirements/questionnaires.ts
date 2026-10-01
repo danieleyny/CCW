@@ -15,7 +15,7 @@
  * more damaging than the underlying event. Nothing here may suggest omitting.
  */
 import { type WizardAnswers } from "@/lib/intake/answers"
-import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
+import { PORTAL_DISCLOSURES, PORTAL_DISCLOSURE_COUNT } from "@/lib/disclosures/portal-questions"
 import { lonStatementsFor } from "@/lib/requirements/lon"
 
 /**
@@ -137,8 +137,8 @@ const CANDOR_NOTICE =
  */
 /**
  * The disclosure questionnaire fields, built from the verbatim NYPD ONLINE PORTAL
- * question set (lib/disclosures/portal-questions). Seventeen questions; a "Yes"
- * reveals a free-text explanation. Q6 nests under Q5 (only asked if Q5 is yes); Q7
+ * question set (lib/disclosures/portal-questions), whose length is the source of truth
+ * for the count. A "Yes" reveals a free-text explanation. Q6 nests under Q5 (only asked if Q5 is yes); Q7
  * carries the verbatim arrest note and a felony/serious-offense sub-question that
  * drives the Certificate of Relief; Q16 is law-enforcement only (leoOnly, hidden
  * unless the case is a LEO applicant); Q17 is a confidentiality REQUEST (no
@@ -533,7 +533,7 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
     id: "disclosure-addendum",
     title: "The application's disclosure questions",
     intro:
-      "The NYPD online portal asks these seventeen questions about your history, in these exact words. Answer each honestly; for every 'yes', add a written explanation. These are the answers we record and enter for you — the part people get wrong. Disclose everything, including anything sealed, dismissed, or nullified.",
+      `The NYPD online portal asks these ${PORTAL_DISCLOSURE_COUNT} questions about your history, in these exact words. Answer each honestly; for every 'yes', add a written explanation. These are the answers we record and enter for you — the part people get wrong. Disclose everything, including anything sealed, dismissed, or nullified.`,
     notice: CANDOR_NOTICE,
     attorneySeam: true,
     submitLabel: "Save my answers",
