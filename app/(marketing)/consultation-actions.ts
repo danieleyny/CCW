@@ -28,6 +28,10 @@ export async function requestConsultation(
   _prev: ConsultState,
   formData: FormData
 ): Promise<ConsultState> {
+  if (process.env.MARKETING_PREVIEW_MODE === "1") {
+    return { error: "This design preview does not send consultation requests." }
+  }
+
   // Honeypot: humans never see it. Pretend success so bots don't learn.
   if (honeypotTripped(formData)) return { ok: true }
 

@@ -79,4 +79,11 @@ async function compute(): Promise<TrustStat[]> {
 }
 
 /** Cached 1h. Returns [] or a partial list; render the band only when ≥2 clear. */
-export const getTrustStats = unstable_cache(compute, ["trust-stats-v1"], { revalidate: 3600 })
+const readTrustStats = unstable_cache(compute, ["trust-stats-v1"], { revalidate: 3600 })
+
+export async function getTrustStats(): Promise<TrustStat[]> {
+  // The isolated visual-review project has no production database credentials.
+  // Empty is also the component's normal below-threshold state, so the preview
+  // remains truthful instead of inventing case-volume claims.
+  return process.env.MARKETING_PREVIEW_MODE === "1" ? [] : readTrustStats()
+}

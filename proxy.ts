@@ -22,6 +22,47 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
   let response = NextResponse.next({ request: { headers: requestHeaders } })
 
+  const path = request.nextUrl.pathname
+  const isGated =
+    path.startsWith("/admin") ||
+    path.startsWith("/portal") ||
+    // The instructor APP surface (singular) — NOT the public "/instructors"
+    // marketing directory (plural), which must stay reachable signed-out.
+    path === "/instructor" ||
+    path.startsWith("/instructor/") ||
+    // The (unlisted) sponsor surface. /invite/[token] stays UNGATED — it's a
+    // public capability link that carries the sign-in prompt itself.
+    path === "/sponsor" ||
+    path.startsWith("/sponsor/")
+
+  if (process.env.MARKETING_PREVIEW_MODE === "1") {
+    const isApi = path === "/api" || path.startsWith("/api/")
+    const isNonMarketingSurface =
+      isGated ||
+      path === "/auth" ||
+      path.startsWith("/auth/") ||
+      path.startsWith("/r/") ||
+      path.startsWith("/c/") ||
+      path.startsWith("/g/") ||
+      path.startsWith("/invite/")
+
+    if (isApi) {
+      return new NextResponse("Not available in the visual-review environment.", {
+        status: 404,
+      })
+    }
+    if (isNonMarketingSurface) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/"
+      url.search = ""
+      return NextResponse.redirect(url)
+    }
+
+    // Marketing-only preview: do not construct a Supabase client or refresh
+    // auth cookies. This deployment receives no production credentials.
+    return response
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -47,19 +88,6 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const path = request.nextUrl.pathname
-  const isGated =
-    path.startsWith("/admin") ||
-    path.startsWith("/portal") ||
-    // The instructor APP surface (singular) — NOT the public "/instructors"
-    // marketing directory (plural), which must stay reachable signed-out.
-    path === "/instructor" ||
-    path.startsWith("/instructor/") ||
-    // The (unlisted) sponsor surface. /invite/[token] stays UNGATED — it's a
-    // public capability link that carries the sign-in prompt itself.
-    path === "/sponsor" ||
-    path.startsWith("/sponsor/")
 
   if (!user && isGated) {
     const url = request.nextUrl.clone()

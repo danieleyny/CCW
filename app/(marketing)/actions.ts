@@ -35,6 +35,10 @@ export async function captureLead(
   _prev: LeadState,
   formData: FormData
 ): Promise<LeadState> {
+  if (process.env.MARKETING_PREVIEW_MODE === "1") {
+    return { error: "This design preview does not send or save submissions." }
+  }
+
   // V3-P0.5 — honeypot: real users never see or fill it. Pretend success
   // so bots don't learn they were filtered.
   if (honeypotTripped(formData)) return { ok: true }
