@@ -1,15 +1,15 @@
 /* ============================================================================
    CONCEPT A — CONSTELLATION ASSEMBLY
 
-   One visual language only: a six-panel graphite sculpture resolving inside a
-   connected dot-and-line field. Motion is finite and compositor-only (transform
-   + opacity). The base rules are the resolved still, so no-JS and reduced-motion
-   users never receive an incomplete hero.
+   A premium exploded-view product rendering inside one connected spectral
+   field. Motion is finite and compositor-only (transform + opacity). The base
+   rules are the complete still, so no-JS and reduced-motion users receive the
+   full composition immediately.
    ========================================================================== */
 
 .mkt2 .hero-precision {
   position: relative;
-  width: min(100%, 760px);
+  width: min(100%, 820px);
   min-width: 0;
   align-self: center;
   justify-self: end;
@@ -19,14 +19,13 @@
 .mkt2 .hero-precision::before {
   content: "";
   position: absolute;
-  inset: 7% 0 5% 3%;
+  inset: 5% -4% 3% 0;
   z-index: -1;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 54% 47%, rgba(57, 120, 246, 0.095), transparent 43%),
-    radial-gradient(circle at 76% 33%, rgba(226, 75, 174, 0.07), transparent 30%),
-    radial-gradient(circle at 30% 62%, rgba(91, 231, 246, 0.075), transparent 34%);
-  opacity: 1;
+    radial-gradient(circle at 45% 48%, rgba(57, 120, 246, 0.11), transparent 42%),
+    radial-gradient(circle at 78% 38%, rgba(226, 75, 174, 0.075), transparent 33%),
+    radial-gradient(circle at 27% 65%, rgba(91, 231, 246, 0.08), transparent 34%);
 }
 
 .mkt2 .hero-precision .sr-only {
@@ -41,37 +40,76 @@
   border: 0;
 }
 
-.mkt2 .hero-precision .hp-svg {
-  width: 100%;
-  height: auto;
-  max-height: min(640px, calc(100svh - 138px));
-  display: block;
-  overflow: visible;
-  transform-origin: 52% 50%;
-  animation: hp-scene-arrive 860ms cubic-bezier(.2, .78, .2, 1) backwards;
+/* ── high-fidelity exploded product rendering ─────────────────────────── */
+.mkt2 .hero-precision .hp-product-stage {
+  position: absolute;
+  inset: 6% -2% 6% -8%;
+  z-index: 1;
+  pointer-events: none;
+  transform-origin: 54% 51%;
 }
 
-@keyframes hp-scene-arrive {
-  from { opacity: .82; transform: translate3d(0, 14px, 0) scale(.985) }
-  to { opacity: 1; transform: none }
+.mkt2 .hero-precision .hp-product-stage::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--ivory) 0, transparent 8%, transparent 92%, var(--ivory) 100%),
+    linear-gradient(180deg, var(--ivory) 0, transparent 8%, transparent 91%, var(--ivory) 100%);
+}
+
+.mkt2 .hero-precision .hp-product {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  transform-origin: 54% 51%;
+  transition: transform 420ms cubic-bezier(.2, .78, .2, 1), opacity 260ms ease-out;
+  animation: hp-product-arrive 1120ms cubic-bezier(.16, .84, .22, 1) 120ms backwards;
+}
+
+@keyframes hp-product-arrive {
+  0% { opacity: .84; transform: translate3d(24px, 14px, 0) scale(.972) }
+  72% { opacity: 1; transform: translate3d(-2px, -1px, 0) scale(1.003) }
+  100% { opacity: 1; transform: none }
 }
 
 /* ── constellation field ───────────────────────────────────────────────── */
+.mkt2 .hero-precision .hp-svg {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: auto;
+  max-height: min(660px, calc(100svh - 126px));
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  transform-origin: 52% 50%;
+  animation: hp-scene-arrive 880ms cubic-bezier(.2, .78, .2, 1) backwards;
+}
+
+@keyframes hp-scene-arrive {
+  from { opacity: .8; transform: translate3d(0, 12px, 0) scale(.982) }
+  to { opacity: 1; transform: none }
+}
+
 .mkt2 .hero-precision .hp-aura { opacity: 1 }
 .mkt2 .hero-precision .hp-orbit {
   fill: none;
-  stroke: color-mix(in srgb, var(--ink) 13%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 14%, transparent);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
   transform-box: fill-box;
   transform-origin: center;
-  animation: hp-field-resolve 920ms cubic-bezier(.2, .78, .2, 1) backwards;
+  animation: hp-field-resolve 940ms cubic-bezier(.2, .78, .2, 1) backwards;
 }
-.mkt2 .hero-precision .hp-orbit--b { animation-delay: 90ms; opacity: .72 }
-.mkt2 .hero-precision .hp-orbit--c { animation-delay: 170ms; opacity: .56 }
+.mkt2 .hero-precision .hp-orbit--b { animation-delay: 90ms; opacity: .74 }
+.mkt2 .hero-precision .hp-orbit--c { animation-delay: 170ms; opacity: .58 }
 
 .mkt2 .hero-precision .hp-link {
-  stroke: color-mix(in srgb, var(--electric) 30%, var(--rule));
+  stroke: color-mix(in srgb, var(--electric) 34%, var(--rule));
   stroke-width: .8;
   vector-effect: non-scaling-stroke;
   transform-box: fill-box;
@@ -80,8 +118,8 @@
   animation-delay: calc(70ms + var(--i) * 34ms);
 }
 .mkt2 .hero-precision .hp-link--1,
-.mkt2 .hero-precision .hp-link--4 { stroke: color-mix(in srgb, var(--magenta) 24%, var(--rule)) }
-.mkt2 .hero-precision .hp-link--2 { stroke: color-mix(in srgb, var(--cyan) 28%, var(--rule)) }
+.mkt2 .hero-precision .hp-link--4 { stroke: color-mix(in srgb, var(--magenta) 27%, var(--rule)) }
+.mkt2 .hero-precision .hp-link--2 { stroke: color-mix(in srgb, var(--cyan) 32%, var(--rule)) }
 
 .mkt2 .hero-precision .hp-node {
   transform-box: fill-box;
@@ -89,183 +127,94 @@
   animation: hp-node-resolve 560ms cubic-bezier(.2, .78, .2, 1) backwards;
   animation-delay: calc(120ms + var(--i) * 42ms);
 }
-.mkt2 .hero-precision .hp-node-halo { opacity: .12 }
-.mkt2 .hero-precision .hp-node-core { opacity: .95 }
+.mkt2 .hero-precision .hp-node-halo { opacity: .14 }
+.mkt2 .hero-precision .hp-node-core { opacity: .98 }
 .mkt2 .hero-precision .hp-node--cyan circle { fill: var(--cyan) }
 .mkt2 .hero-precision .hp-node--blue circle { fill: var(--electric) }
 .mkt2 .hero-precision .hp-node--violet circle { fill: var(--violet) }
 .mkt2 .hero-precision .hp-node--magenta circle { fill: var(--magenta) }
 .mkt2 .hero-precision .hp-node--coral circle { fill: var(--tangerine) }
-.mkt2 .hero-precision .hp-node--quiet { opacity: .64 }
+.mkt2 .hero-precision .hp-node--quiet { opacity: .62 }
+
+.mkt2 .hero-precision .hp-dust-dot {
+  opacity: .72;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hp-dust-resolve 520ms cubic-bezier(.2, .78, .2, 1) backwards;
+  animation-delay: calc(180ms + var(--i) * 28ms);
+}
+.mkt2 .hero-precision .hp-dust-dot--cyan { fill: var(--cyan) }
+.mkt2 .hero-precision .hp-dust-dot--blue { fill: var(--electric) }
+.mkt2 .hero-precision .hp-dust-dot--violet { fill: var(--violet) }
+.mkt2 .hero-precision .hp-dust-dot--magenta { fill: var(--magenta) }
+.mkt2 .hero-precision .hp-dust-dot--coral { fill: var(--tangerine) }
 
 @keyframes hp-field-resolve {
-  from { opacity: .52; transform: scale(.965) rotate(-1deg) }
+  from { opacity: .5; transform: scale(.96) rotate(-1deg) }
   to { opacity: 1; transform: none }
 }
 @keyframes hp-link-resolve {
-  from { opacity: .28; transform: scale(.91) }
-  to { opacity: .8; transform: none }
+  from { opacity: .25; transform: scale(.9) }
+  to { opacity: .82; transform: none }
 }
 @keyframes hp-node-resolve {
-  from { opacity: .42; transform: scale(.68) }
+  from { opacity: .4; transform: scale(.68) }
   to { opacity: 1; transform: none }
 }
+@keyframes hp-dust-resolve {
+  from { opacity: .32; transform: translate3d(-6px, 8px, 0) scale(.7) }
+  to { opacity: .72; transform: none }
+}
 
-/* ── one directional particle current ─────────────────────────────────── */
+/* ── one directional spectral current ─────────────────────────────────── */
 .mkt2 .hero-precision .hp-particle-stream path {
   fill: none;
   stroke: url(#hpSpectral);
-  stroke-width: 1.5;
+  stroke-width: 1.65;
   stroke-linecap: round;
-  opacity: .52;
+  opacity: .7;
   transform-box: fill-box;
   transform-origin: left center;
-  animation: hp-current 940ms cubic-bezier(.4, 0, .2, 1) 280ms backwards;
+  animation: hp-current 980ms cubic-bezier(.4, 0, .2, 1) 280ms backwards;
 }
 .mkt2 .hero-precision .hp-stream-dot {
   fill: url(#hpSpectral);
   transform-box: fill-box;
   transform-origin: center;
   animation: hp-current-dot 560ms cubic-bezier(.2, .78, .2, 1) backwards;
-  animation-delay: calc(310ms + var(--i) * 70ms);
+  animation-delay: calc(310ms + var(--i) * 62ms);
 }
 @keyframes hp-current {
-  from { opacity: .24; transform: scaleX(.36) }
-  to { opacity: .52; transform: scaleX(1) }
+  from { opacity: .24; transform: scaleX(.34) }
+  to { opacity: .7; transform: scaleX(1) }
 }
 @keyframes hp-current-dot {
-  from { opacity: .35; transform: translate3d(-18px, 8px, 0) scale(.68) }
+  from { opacity: .34; transform: translate3d(-18px, 8px, 0) scale(.68) }
   to { opacity: 1; transform: none }
 }
 
-/* ── sculpture ─────────────────────────────────────────────────────────── */
-.mkt2 .hero-precision .hp-silhouette {
-  fill: color-mix(in srgb, var(--electric) 8%, transparent);
-  stroke: color-mix(in srgb, var(--electric) 14%, transparent);
-  stroke-width: 1;
-  opacity: .72;
-}
-.mkt2 .hero-precision .hp-piece {
-  fill: url(#hpMetal);
-  stroke: color-mix(in srgb, var(--paper) 32%, var(--ink));
-  stroke-width: 1.2;
-  stroke-linejoin: round;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 380ms cubic-bezier(.2, .78, .2, 1), opacity 260ms ease-out;
-  animation: hp-piece-lock 1080ms cubic-bezier(.16, .84, .22, 1) backwards;
-  animation-delay: var(--delay);
-}
-.mkt2 .hero-precision .hp-piece--slide { --tx: -42px; --ty: -24px; --rot: -2.2deg; --delay: 180ms; --hx: -5px; --hy: -3px }
-.mkt2 .hero-precision .hp-piece--front { --tx: 54px; --ty: -5px; --rot: 2deg; --delay: 300ms; --hx: 7px; --hy: -1px }
-.mkt2 .hero-precision .hp-piece--frame { --tx: -28px; --ty: 14px; --rot: .8deg; --delay: 390ms; --hx: -3px; --hy: 3px }
-.mkt2 .hero-precision .hp-piece--guard { --tx: 12px; --ty: 38px; --rot: -3deg; --delay: 480ms; --hx: 2px; --hy: 5px }
-.mkt2 .hero-precision .hp-piece--grip { --tx: 26px; --ty: 56px; --rot: 3deg; --delay: 570ms; --hx: 4px; --hy: 7px }
-.mkt2 .hero-precision .hp-piece--rear { --tx: -44px; --ty: 5px; --rot: -4deg; --delay: 340ms; --hx: -7px; --hy: 1px }
-
-.mkt2 .hero-precision .hp-piece-glint {
-  fill: none;
-  stroke: rgba(255, 255, 255, .58);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
-.mkt2 .hero-precision .hp-piece-seam {
-  fill: none;
-  stroke: url(#hpSpectral);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  opacity: .8;
-}
-.mkt2 .hero-precision .hp-piece-glass {
-  fill: url(#hpGlass);
-  stroke: rgba(255, 255, 255, .42);
-  stroke-width: 1;
-}
-.mkt2 .hero-precision .hp-grip-inset {
-  fill: color-mix(in srgb, var(--ink) 90%, transparent);
-  stroke: color-mix(in srgb, var(--electric) 28%, transparent);
-  stroke-width: 1;
-}
-
-@keyframes hp-piece-lock {
-  0% { opacity: .8; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)) scale(.992) }
-  72% { opacity: 1; transform: translate3d(2px, -1px, 0) rotate(0deg) scale(1.002) }
-  100% { opacity: 1; transform: none }
-}
-
-/* ── final spectral seam + lock mark ───────────────────────────────────── */
-.mkt2 .hero-precision .hp-spectral-lock path {
-  fill: none;
-  stroke: url(#hpSpectral);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  transform-box: fill-box;
-  transform-origin: left center;
-  animation: hp-lock-line 760ms cubic-bezier(.4, 0, .2, 1) 1020ms backwards;
-}
-.mkt2 .hero-precision .hp-spectral-lock circle {
-  fill: var(--paper);
-  stroke: url(#hpSpectral);
-  stroke-width: 2;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: hp-lock-node 420ms cubic-bezier(.2, .78, .2, 1) 1420ms backwards;
-}
-.mkt2 .hero-precision .hp-lock-mark {
-  fill: color-mix(in srgb, var(--paper) 78%, transparent);
-  stroke: var(--electric);
-  stroke-width: 1.4;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: hp-lock-mark 520ms cubic-bezier(.16, .84, .22, 1) 1660ms backwards;
-}
-.mkt2 .hero-precision .hp-lock-mark path {
-  fill: none;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-@keyframes hp-lock-line {
-  from { opacity: .28; transform: scaleX(.24) }
-  to { opacity: 1; transform: scaleX(1) }
-}
-@keyframes hp-lock-node {
-  from { opacity: .35; transform: scale(.58) }
-  to { opacity: 1; transform: none }
-}
-@keyframes hp-lock-mark {
-  from { opacity: .3; transform: scale(.76) }
-  to { opacity: 1; transform: none }
-}
-
-/* ── hover: a small, coherent exploded-view response after the load settles ─ */
+/* ── hover: a subtle product-table response after the load settles ─────── */
 @media (hover: hover) and (pointer: fine) {
-  .mkt2 .hero-precision:hover .hp-piece {
-    transform: translate3d(var(--hx), var(--hy), 0);
+  .mkt2 .hero-precision:hover .hp-product {
+    transform: translate3d(0, -6px, 0) scale(1.012);
   }
   .mkt2 .hero-precision:hover .hp-link { opacity: 1 }
-  .mkt2 .hero-precision:hover .hp-node-halo { opacity: .22 }
+  .mkt2 .hero-precision:hover .hp-node-halo { opacity: .24 }
+  .mkt2 .hero-precision:hover .hp-dust-dot { opacity: .92 }
 }
 
-/* ── scroll exit: outer wrappers fan apart; inner load animations stay isolated ─ */
+/* ── scroll exit: product and constellation separate on different planes ─ */
 @supports (animation-timeline: view()) {
-  .mkt2 .hero-precision .hp-scroll-piece {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: hp-scroll-fan linear both;
+  .mkt2 .hero-precision .hp-product-stage {
+    animation: hp-product-exit linear both;
     animation-timeline: view();
-    animation-range: exit 5% exit 82%;
+    animation-range: exit 5% exit 84%;
   }
-  .mkt2 .hero-precision .hp-scroll-piece--slide { --sx: -34px; --sy: -22px; --sr: -1.8deg }
-  .mkt2 .hero-precision .hp-scroll-piece--front { --sx: 42px; --sy: -4px; --sr: 2deg }
-  .mkt2 .hero-precision .hp-scroll-piece--frame { --sx: -22px; --sy: 12px; --sr: .8deg }
-  .mkt2 .hero-precision .hp-scroll-piece--guard { --sx: 8px; --sy: 24px; --sr: -2deg }
-  .mkt2 .hero-precision .hp-scroll-piece--grip { --sx: 18px; --sy: 40px; --sr: 2.4deg }
-  .mkt2 .hero-precision .hp-scroll-piece--rear { --sx: -32px; --sy: 3px; --sr: -2deg }
-  @keyframes hp-scroll-fan {
+  @keyframes hp-product-exit {
     from { opacity: 1; transform: none }
-    to { opacity: .68; transform: translate3d(var(--sx), var(--sy), 0) rotate(var(--sr)) }
+    to { opacity: .72; transform: translate3d(22px, -14px, 0) scale(.988) }
   }
+
   .mkt2 .hero-precision .hp-field {
     animation: hp-field-exit linear both;
     animation-timeline: view();
@@ -273,36 +222,40 @@
   }
   @keyframes hp-field-exit {
     from { opacity: 1; transform: none }
-    to { opacity: .42; transform: translate3d(0, -22px, 0) scale(1.035) }
+    to { opacity: .42; transform: translate3d(-14px, -28px, 0) scale(1.04) }
   }
 }
 
 /* ── responsive composition ─────────────────────────────────────────────── */
 @media (max-width: 1180px) {
-  .mkt2 .hero-precision { width: min(100%, 650px) }
+  .mkt2 .hero-precision { width: min(100%, 700px) }
+  .mkt2 .hero-precision .hp-product-stage { inset-inline: -7% -2% }
 }
 
 @media (max-width: 1024px) {
   .mkt2 .hero-precision {
-    width: min(100%, 680px);
+    width: min(100%, 720px);
     justify-self: center;
   }
   .mkt2 .hero-precision .hp-svg { max-height: none }
+  .mkt2 .hero-precision .hp-product-stage { inset: 5% -3% 5% -5% }
 }
 
 @media (max-width: 540px) {
   .mkt2 .hero-precision {
-    width: calc(100% + 20px);
-    margin-inline: -10px;
+    width: calc(100% + 28px);
+    margin-inline: -14px;
   }
-  .mkt2 .hero-precision .hp-svg { min-height: 330px }
+  .mkt2 .hero-precision .hp-product-stage { inset: 4% -2% 4% -2% }
+  .mkt2 .hero-precision .hp-svg { min-height: 336px }
   .mkt2 .hero-precision .hp-node--quiet,
   .mkt2 .hero-precision .hp-orbit--c,
   .mkt2 .hero-precision .hp-link--3,
   .mkt2 .hero-precision .hp-link--4 { display: none }
+  .mkt2 .hero-precision .hp-dust-dot { opacity: .58 }
 }
 
-/* ── accessibility: fully resolved still, no motion and no transition ───── */
+/* ── accessibility: fully resolved still, no motion or transition ───────── */
 @media (prefers-reduced-motion: reduce) {
   .mkt2 .hero-precision,
   .mkt2 .hero-precision *,

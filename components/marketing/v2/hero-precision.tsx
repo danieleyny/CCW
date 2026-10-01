@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 type FieldNode = {
   x: number
   y: number
@@ -56,41 +58,50 @@ const FIELD_LINKS = [
   [11, 21], [14, 22], [16, 24], [22, 32], [25, 34],
 ] as const
 
+const DUST_TONES = ["cyan", "blue", "violet", "magenta", "coral"] as const
+const SPECTRAL_DUST = Array.from({ length: 96 }, (_, index) => {
+  const angle = index * 2.399963
+  const radius = 34 + ((index * 47) % 292)
+
+  return {
+    x: 360 + Math.cos(angle) * radius * 1.08,
+    y: 306 + Math.sin(angle) * radius * 0.74,
+    size: index % 13 === 0 ? 2.2 : index % 5 === 0 ? 1.35 : 0.8,
+    tone: DUST_TONES[index % DUST_TONES.length],
+  }
+})
+
 /**
  * Concept A — Constellation Assembly.
  *
- * One abstract, deliberately non-operational firearm-shaped sculpture resolves from six
- * broad exterior panels inside a single connected dot-and-line field. It contains no
- * ammunition, working internals, instructions, geographic layer, stage cards, dashboard
- * furniture, or secondary visual metaphor.
- *
- * The illustration is server-rendered SVG. Motion is CSS-only, finite, and limited to
- * transform + opacity. The resting composition is the base state, so no-JS, unsupported
- * browsers, and reduced-motion users receive the complete illustration immediately.
+ * A premium exploded-view product rendering sits inside a server-rendered SVG
+ * constellation. The image is intentionally inert and non-instructional; the
+ * connected field supplies the metaphor of many requirements becoming one
+ * coherent system. Motion is CSS-only, finite, and transform/opacity-only.
  */
 export function HeroPrecision() {
   return (
     <div className="hero-precision">
       <p className="sr-only">
-        An abstract graphite sculpture assembles from six broad panels while a field of
-        connected spectral points resolves around it, representing a complicated process
-        becoming one coherent system.
+        An exploded-view graphite and glass sculpture aligns inside a field of connected
+        spectral points, representing a complicated process becoming one coherent system.
       </p>
+
+      <div className="hp-product-stage" aria-hidden="true">
+        <Image
+          className="hp-product"
+          src="/images/marketing/hero-constellation-assembly-v2.png"
+          alt=""
+          width={1536}
+          height={1024}
+          sizes="(max-width: 540px) 112vw, (max-width: 1024px) 82vw, 52vw"
+          preload
+        />
+      </div>
 
       <svg className="hp-svg" viewBox="0 0 720 610" aria-hidden="true" focusable="false">
         <defs>
-          <linearGradient id="hpMetal" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#263140" />
-            <stop offset="0.42" stopColor="#0a1019" />
-            <stop offset="0.72" stopColor="#1b2430" />
-            <stop offset="1" stopColor="#05090f" />
-          </linearGradient>
-          <linearGradient id="hpGlass" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#ffffff" stopOpacity="0.86" />
-            <stop offset="0.42" stopColor="#dfe8f6" stopOpacity="0.42" />
-            <stop offset="1" stopColor="#66758b" stopOpacity="0.22" />
-          </linearGradient>
-          <linearGradient id="hpSpectral" gradientUnits="userSpaceOnUse" x1="150" y1="392" x2="640" y2="210">
+          <linearGradient id="hpSpectral" gradientUnits="userSpaceOnUse" x1="92" y1="414" x2="670" y2="188">
             <stop offset="0" stopColor="var(--cyan)" />
             <stop offset="0.25" stopColor="var(--electric)" />
             <stop offset="0.5" stopColor="var(--violet)" />
@@ -98,8 +109,8 @@ export function HeroPrecision() {
             <stop offset="1" stopColor="var(--tangerine)" />
           </linearGradient>
           <radialGradient id="hpAura">
-            <stop offset="0" stopColor="var(--electric)" stopOpacity="0.12" />
-            <stop offset="0.48" stopColor="var(--violet)" stopOpacity="0.055" />
+            <stop offset="0" stopColor="var(--electric)" stopOpacity="0.11" />
+            <stop offset="0.48" stopColor="var(--violet)" stopOpacity="0.05" />
             <stop offset="1" stopColor="var(--ivory)" stopOpacity="0" />
           </radialGradient>
         </defs>
@@ -142,84 +153,33 @@ export function HeroPrecision() {
               </g>
             ))}
           </g>
+
+          <g className="hp-dust">
+            {SPECTRAL_DUST.map((particle, index) => (
+              <circle
+                key={index}
+                className={`hp-dust-dot hp-dust-dot--${particle.tone}`}
+                style={{ ["--i" as string]: index % 16 }}
+                cx={particle.x}
+                cy={particle.y}
+                r={particle.size}
+              />
+            ))}
+          </g>
         </g>
 
         <g className="hp-particle-stream">
-          <path d="M88 386 C210 430 300 420 406 350 C506 285 574 234 664 218" />
-          {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => (
+          <path d="M76 420 C190 454 282 432 388 362 C496 291 582 226 678 204" />
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((index) => (
             <circle
               key={index}
               className="hp-stream-dot"
               style={{ ["--i" as string]: index }}
-              cx={126 + index * 58}
-              cy={397 - Math.sin(index * 0.7) * 46 - index * 13}
+              cx={108 + index * 53}
+              cy={421 - Math.sin(index * 0.7) * 42 - index * 16}
               r={index % 3 === 0 ? 3 : 1.8}
             />
           ))}
-        </g>
-
-        <g className="hp-silhouette">
-          <path d="M194 222 Q194 207 211 204 L568 204 Q592 204 598 226 L606 264 L568 286 L539 341 L427 341 L388 504 L302 504 L329 342 L252 342 Q224 342 216 315 L202 270 Q194 246 194 222 Z" />
-        </g>
-
-        <g className="hp-assembly">
-          <g className="hp-scroll-piece hp-scroll-piece--slide">
-            <g className="hp-piece hp-piece--slide">
-              <path d="M198 218 Q198 205 216 202 L564 202 Q585 202 593 219 L602 252 L577 271 L216 271 Q198 268 198 251 Z" />
-              <path className="hp-piece-glint" d="M224 216 H553 Q570 216 576 229" />
-              <path className="hp-piece-seam" d="M244 259 H568" />
-            </g>
-          </g>
-
-          <g className="hp-scroll-piece hp-scroll-piece--front">
-            <g className="hp-piece hp-piece--front">
-              <path d="M577 271 L621 276 Q635 279 635 294 L635 316 Q633 330 618 333 L557 333 L539 341 L539 286 Z" />
-              <path className="hp-piece-glass" d="M603 283 L625 286 L625 321 L598 323 Z" />
-            </g>
-          </g>
-
-          <g className="hp-scroll-piece hp-scroll-piece--frame">
-            <g className="hp-piece hp-piece--frame">
-              <path d="M223 274 L577 274 L551 325 Q545 341 525 341 L426 341 L401 372 L342 372 L329 342 L254 342 Q228 342 220 318 L210 289 Q207 278 223 274 Z" />
-              <path className="hp-piece-glass" d="M248 288 H548 L531 321 H269 Q250 321 246 306 Z" />
-              <path className="hp-piece-seam" d="M276 333 H515" />
-            </g>
-          </g>
-
-          <g className="hp-scroll-piece hp-scroll-piece--guard">
-            <g className="hp-piece hp-piece--guard">
-              <path fillRule="evenodd" d="M401 341 H473 L461 378 Q451 405 416 405 H378 Q350 405 344 379 L342 368 H367 L370 378 Q373 387 386 387 H414 Q435 387 440 369 L445 356 H396 Z" />
-              <path className="hp-piece-glint" d="M365 370 Q370 395 393 395 H417" />
-            </g>
-          </g>
-
-          <g className="hp-scroll-piece hp-scroll-piece--grip">
-            <g className="hp-piece hp-piece--grip">
-              <path d="M353 368 L430 368 L389 506 Q386 517 374 517 H302 Q290 516 294 503 L329 375 Q331 368 353 368 Z" />
-              <path className="hp-grip-inset" d="M350 390 H402 L371 492 H321 Z" />
-              <path className="hp-piece-seam" d="M332 468 L380 391" />
-            </g>
-          </g>
-
-          <g className="hp-scroll-piece hp-scroll-piece--rear">
-            <g className="hp-piece hp-piece--rear">
-              <path d="M173 231 Q173 217 187 212 L205 207 V270 L183 265 Q173 262 173 249 Z" />
-              <path className="hp-piece-glass" d="M181 225 L197 219 V258 L181 254 Z" />
-            </g>
-          </g>
-        </g>
-
-        <g className="hp-spectral-lock">
-          <path d="M181 286 C296 250 396 278 492 246 C554 225 604 212 660 218" />
-          <circle cx="214" cy="278" r="3.4" />
-          <circle cx="346" cy="268" r="3.4" />
-          <circle cx="492" cy="246" r="3.4" />
-          <circle cx="602" cy="224" r="3.4" />
-        </g>
-
-        <g className="hp-lock-mark">
-          <circle cx="389" cy="302" r="19" />
-          <path d="M380 302 L387 309 L399 294" />
         </g>
       </svg>
     </div>

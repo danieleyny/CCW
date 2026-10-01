@@ -18,8 +18,9 @@ export const metadata = buildMetadata({
  * under `.mkt2`. Copy and structure are ported from the spec; links point at real
  * routes; the Service JSON-LD and the live government fees stay wired to our data.
  * Entrances are CSS scroll-driven and start from a visible opacity (see
- * marketing-v2.css). The hero's <HeroPrecision> sculpture is fully server-rendered;
- * its entrance and scroll response are CSS-only, finite, and progressively enhanced.
+ * marketing-v2.css). The hero's <HeroPrecision> combines an optimized local product
+ * rendering with a server-rendered SVG field; its entrance and scroll response are
+ * CSS-only, finite, and progressively enhanced.
  */
 export default async function Home() {
   // Cookieless + cached → this page stays statically rendered (see lib/public-data).
