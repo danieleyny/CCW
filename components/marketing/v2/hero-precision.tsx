@@ -21,10 +21,12 @@ import { HeroPrecisionReplay } from "./hero-precision-replay"
  */
 
 // Plane geometry for stage index i (0 = stage 01, front/bottom-left … 12 = stage 13, back/top-right).
-const PLANE_W = 172
-const PLANE_H = 24
-const planeX = (i: number) => 104 + i * 20
-const planeY = (i: number) => 420 - i * 17
+// Wide planes with a tight horizontal stagger so their numerals/tags cascade in a clear
+// column on the LEFT leading edge — out from under the (translucent) precision object.
+const PLANE_W = 330
+const PLANE_H = 22
+const planeX = (i: number) => 104 + i * 4
+const planeY = (i: number) => 432 - i * 17
 
 export function HeroPrecision() {
   const N = CASE_STAGES.length // 13 — the source of truth
@@ -44,9 +46,10 @@ export function HeroPrecision() {
       >
         <rect className="hp-plane-face" x={x} y={y} width={PLANE_W} height={PLANE_H} rx="4" />
         <rect className="hp-plane-edge" x={x} y={y} width={PLANE_W} height={PLANE_H} rx="4" />
-        <text className="hp-plane-num" x={x + 13} y={y + 16}>{num}</text>
-        <circle className="hp-tick" cx={x + PLANE_W - 16} cy={y + PLANE_H / 2} r="4.4" />
-        {nypd && <text className="hp-plane-tag" x={x + 34} y={y + 16}>NYPD</text>}
+        {/* numeral + NYPD tag on the exposed LEFT leading edge, clear of the firearm */}
+        <text className="hp-plane-num" x={x + 7} y={y + 15}>{num}</text>
+        {nypd && <text className="hp-plane-tag" x={x + 28} y={y + 15}>NYPD</text>}
+        <circle className="hp-tick" cx={x + PLANE_W - 16} cy={y + PLANE_H / 2} r="4.2" />
       </g>
     )
   })
@@ -62,7 +65,7 @@ export function HeroPrecision() {
       {/* The sculpture is decorative; its meaning is in the copy and the description above. */}
       <svg className="hp-svg" viewBox="0 0 640 600" role="img" aria-hidden="true" focusable="false">
         <defs>
-          <linearGradient id="hpSpectral" gradientUnits="userSpaceOnUse" x1="150" y1="320" x2="440" y2="200">
+          <linearGradient id="hpSpectral" gradientUnits="userSpaceOnUse" x1="210" y1="320" x2="520" y2="230">
             <stop offset="0" style={{ stopColor: "var(--cyan)" }} />
             <stop offset=".3" style={{ stopColor: "var(--electric)" }} />
             <stop offset=".55" style={{ stopColor: "var(--violet)" }} />
@@ -123,43 +126,45 @@ export function HeroPrecision() {
             non-operational side-profile silhouette on a glass base with brass anchors. */}
         <g className="hp-plates">
           {/* glass base + brass anchors (the archival chamber footing) */}
-          <rect className="hp-base" x="150" y="450" width="310" height="13" rx="3" />
-          <rect className="hp-brass" x="176" y="461" width="11" height="15" rx="2" />
-          <rect className="hp-brass" x="421" y="461" width="11" height="15" rx="2" />
+          <rect className="hp-base" x="206" y="456" width="312" height="13" rx="3" />
+          <rect className="hp-brass" x="232" y="467" width="11" height="15" rx="2" />
+          <rect className="hp-brass" x="481" y="467" width="11" height="15" rx="2" />
 
-          {/* cohesive object BODY — a single side-profile silhouette (slide + frame over a
-              raked grip) that reads as an abstract pistol at a glance. Near-opaque so the
-              case-plane numerals behind it never ghost through (§2.2 occlusion). */}
-          <path className="hp-object-bed"
-            d="M150 296 L446 296 L446 332 L292 332 L292 344 L250 452 L194 452 L230 344 L230 332 L150 332 Z" />
+          {/* ONE continuous side-profile silhouette — slide+frame over a raked grip, with the
+              trigger-guard VOID cut out (evenodd). The five plates below share these edges and
+              only articulate / separate the acrylic; the object always reads as one piece.
+              Translucent (acrylic) — nothing text sits behind it, so nothing ghosts through. */}
+          <path className="hp-object-bed" fillRule="evenodd"
+            d="M200 292 L516 292 L516 348 L308 348 L266 450 L210 450 L250 348 L200 348 Z
+               M352 348 L352 366 Q352 374 376 374 Q400 374 400 366 L400 348 L392 348 L392 364 Q392 368 376 368 Q360 368 360 364 L360 348 Z" />
 
-          {/* plate 5 · grip (smoked acrylic), raked ~25° down-back */}
+          {/* plate 5 · grip (smoked), shares its top edge with the frame bottom */}
           <path className="hp-plate hp-plate--grip" style={{ ["--i" as string]: 4 }}
-            d="M292 344 L250 452 L194 452 L230 344 Z" />
-          <circle className="hp-grip-dot" cx="242" cy="398" r="5" />
+            d="M308 348 L266 450 L210 450 L250 348 Z" />
+          <circle className="hp-grip-dot" cx="276" cy="398" r="5" />
 
-          {/* plate 4 · the trigger-guard VOID — a bold ring (structure, never a trigger) */}
-          <rect className="hp-plate hp-plate--guard" style={{ ["--i" as string]: 3 }}
-            x="300" y="332" width="62" height="46" rx="21" />
+          {/* plate 4 · trigger-guard ring, joined to the frame at both ends (never a trigger) */}
+          <path className="hp-plate hp-plate--guard" fillRule="evenodd" style={{ ["--i" as string]: 3 }}
+            d="M352 348 L352 366 Q352 374 376 374 Q400 374 400 366 L400 348 L392 348 L392 364 Q392 368 376 368 Q360 368 360 364 L360 348 Z" />
 
-          {/* plate 3 · frame / receiver line (connects slide to grip) */}
+          {/* plate 3 · frame / receiver — shares its top edge with the slide, bottom with grip+guard */}
           <rect className="hp-plate hp-plate--frame" style={{ ["--i" as string]: 2 }}
-            x="194" y="318" width="244" height="16" rx="4" />
+            x="240" y="318" width="276" height="30" rx="5" />
 
-          {/* plate 2 · barrel tip beyond the muzzle */}
+          {/* plate 2 · barrel tip, flush to the slide front */}
           <rect className="hp-plate hp-plate--muzzle" style={{ ["--i" as string]: 1 }}
-            x="446" y="303" width="15" height="15" rx="3" />
+            x="516" y="305" width="18" height="15" rx="3" />
 
-          {/* plate 1 · slide (top) — carries the spectral datum + ejection-port cut */}
+          {/* plate 1 · slide (top) — shares its bottom edge with the frame; carries the datum */}
           <rect className="hp-plate hp-plate--slide" style={{ ["--i" as string]: 0 }}
-            x="148" y="296" width="298" height="27" rx="8" />
-          <rect className="hp-slide-cut" x="304" y="301" width="78" height="4.5" rx="2" />
+            x="200" y="292" width="316" height="28" rx="8" />
+          <rect className="hp-slide-cut" x="372" y="297" width="84" height="4.5" rx="2" />
         </g>
 
         {/* Layer 7 — spectral signal: a scaleX datum along the slide + staggered spectral
             nodes that light each plane. One system threading the whole case. */}
         <g className="hp-signal">
-          <line className="hp-datum" x1="156" y1="308" x2="430" y2="308" />
+          <line className="hp-datum" x1="210" y1="306" x2="508" y2="306" />
           {CASE_STAGES.map((stage, i) => (
             <circle
               key={stage.key}
