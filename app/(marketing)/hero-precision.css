@@ -33,6 +33,9 @@
   height: auto;
   display: block;
   overflow: visible;
+  /* on short viewports the sculpture scales down (preserving aspect) instead of growing
+     the hero past the fold and pushing the CTAs under it */
+  max-height: calc(100svh - 168px);
 }
 
 /* ── group settle (whole sculpture) ─────────────────────────────────────── */
@@ -108,12 +111,14 @@
 .mkt2 .hero-precision .hp-plate--slide  { --px: -10px; --py: -8px }
 .mkt2 .hero-precision .hp-plate--muzzle { --px: 24px;  --py: 0px }
 .mkt2 .hero-precision .hp-plate--frame  { --px: -6px;  --py: 5px }
-.mkt2 .hero-precision .hp-plate--guard  { fill: none; --px: 0px; --py: 16px }
+.mkt2 .hero-precision .hp-plate--guard  { fill: none; stroke-width: 5; --px: 0px; --py: 16px }
 .mkt2 .hero-precision .hp-plate--grip   { fill: var(--smoked); stroke: none; --px: -14px; --py: 18px }
 .mkt2 .hero-precision .hp-object-bed {
-  fill: color-mix(in srgb, var(--paper) 82%, transparent);
-  stroke: color-mix(in srgb, var(--ink) 20%, transparent);
-  stroke-width: 1.2;
+  /* near-opaque frosted body — strong enough that case-plane numerals behind the object
+     never ghost through the translucent plates on top (§2.2 occlusion) */
+  fill: color-mix(in srgb, var(--paper) 95%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 24%, transparent);
+  stroke-width: 1.3;
   stroke-linejoin: round;
 }
 .mkt2 .hero-precision .hp-slide-cut { fill: color-mix(in srgb, var(--ink) 16%, transparent) }
