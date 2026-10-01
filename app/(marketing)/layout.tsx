@@ -3,7 +3,7 @@ import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketin
 import { SiteHeader } from "@/components/marketing/v2/site-header"
 import { SiteFooter } from "@/components/marketing/v2/site-footer"
 import "./marketing-v2.css"
-import "./hero-journey.css"
+import "./hero-precision.css"
 
 /**
  * MARKETING v2 frame (redesign/v2). The whole marketing surface runs the new

@@ -2,7 +2,7 @@ import Link from "next/link"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
-import { HeroJourney } from "@/components/marketing/v2/hero-journey"
+import { HeroPrecision } from "@/components/marketing/v2/hero-precision"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -18,8 +18,8 @@ export const metadata = buildMetadata({
  * under `.mkt2`. Copy and structure are ported from the spec; links point at real
  * routes; the Service JSON-LD and the live government fees stay wired to our data.
  * Entrances are CSS scroll-driven and start from a visible opacity (see
- * marketing-v2.css). The one deliberate client island is the hero's <HeroJourney>
- * walker, which needs the DOM to sample the route path for its motion.
+ * marketing-v2.css). The hero's <HeroPrecision> sculpture is fully server-rendered;
+ * only its tiny Replay control is a client island.
  */
 export default async function Home() {
   // Cookieless + cached → this page stays statically rendered (see lib/public-data).
@@ -59,7 +59,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <HeroJourney />
+          <HeroPrecision />
         </div>
       </section>
 

@@ -1,0 +1,260 @@
+/* ============================================================================
+   Homepage hero sculpture — "Precision Becomes Process".
+   Scoped under `.mkt2 .hero-precision`. Colours come only from the v2 brand tokens
+   (+ one derived --brass via color-mix). transform + opacity only; no infinite
+   animation, no filter/shadow/clip/stroke-dash/background-position animation.
+
+   The BASE styles are the RESOLVED (final) composition — so reduced motion, no-JS,
+   and unsupported browsers all get the finished still. The once-only ~3.85s entrance
+   is pure CSS: each layer departs from the designed "Ready" frame and settles on base.
+   Timeline (ms): group settle 0–650 · plates separate 300–1250 · planes reveal
+   850–2050 · signal thread 1400–2900 · focus align 2250–3250 · finish 3150–3650 ·
+   settle overshoot 3100–3850.
+   ========================================================================= */
+
+.mkt2 .hero-precision {
+  --brass: color-mix(in srgb, var(--tangerine) 66%, var(--ink) 34%);
+  --plate: color-mix(in srgb, var(--paper) 72%, transparent);
+  --plate-edge: color-mix(in srgb, var(--ink) 30%, transparent);
+  --smoked: color-mix(in srgb, var(--ink) 82%, transparent);
+  position: relative;
+  width: 100%;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+.mkt2 .hero-precision .sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.mkt2 .hero-precision .hp-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* ── group settle (whole sculpture) ─────────────────────────────────────── */
+.mkt2 .hero-precision .hp-svg {
+  transform-origin: 55% 50%;
+  animation: hp-settle 650ms cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes hp-settle {
+  from { opacity: .82; transform: translateY(16px) scale(.986) }
+  to   { opacity: 1; transform: none }
+}
+
+/* ── the thirteen case planes ───────────────────────────────────────────── */
+.mkt2 .hero-precision .hp-plane-face { fill: var(--ivory) } /* OPAQUE — planes fully occlude */
+.mkt2 .hero-precision .hp-plane-edge {
+  fill: none;
+  stroke: var(--plate-edge);
+  stroke-width: 1;
+}
+.mkt2 .hero-precision .hp-plane--nypd .hp-plane-edge {
+  /* NYPD-controlled stages: a quiet dashed edge — marked, never implied to be ours */
+  stroke: color-mix(in srgb, var(--ink) 34%, transparent);
+  stroke-dasharray: 4 3;
+}
+.mkt2 .hero-precision .hp-plane-num {
+  fill: var(--ink);
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+.mkt2 .hero-precision .hp-plane-tag {
+  fill: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: .14em;
+}
+.mkt2 .hero-precision .hp-tick {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1.4;
+}
+.mkt2 .hero-precision .hp-plane {
+  animation: hp-plane-in 460ms cubic-bezier(.22,1,.36,1) both;
+  animation-delay: calc(850ms + var(--i) * 78ms);
+}
+@keyframes hp-plane-in {
+  from { opacity: .72; transform: translate(-18px, 22px) rotate(3deg) }
+  to   { opacity: 1; transform: none }
+}
+/* beat 6 · a 4px settle overshoot on the whole stack (fill:none so hover still works) */
+.mkt2 .hero-precision .hp-planes {
+  animation: hp-overshoot 750ms cubic-bezier(.2,.9,.25,1.12) 3100ms none;
+}
+@keyframes hp-overshoot {
+  0% { transform: none } 45% { transform: translateY(-4px) } 100% { transform: none }
+}
+
+/* ── the precision object (five translucent plates) ─────────────────────── */
+.mkt2 .hero-precision .hp-plate {
+  fill: url(#hpGlass);
+  stroke: var(--plate-edge);
+  stroke-width: 1.2;
+  /* precision separation: the plates spread apart on a shallow axis then RESETTLE into
+     one cohesive silhouette (rest = the clean object, matching storyboard frame 06). */
+  animation: hp-separate 950ms cubic-bezier(.4,0,.2,1) both;
+  animation-delay: calc(300ms + var(--i) * 70ms);
+}
+@keyframes hp-separate {
+  0%   { opacity: .82; transform: none }
+  48%  { opacity: 1; transform: translate(var(--px, 0px), var(--py, 0px)) }
+  100% { opacity: 1; transform: none }
+}
+.mkt2 .hero-precision .hp-plate--slide  { --px: -10px; --py: -8px }
+.mkt2 .hero-precision .hp-plate--muzzle { --px: 24px;  --py: 0px }
+.mkt2 .hero-precision .hp-plate--frame  { --px: -6px;  --py: 5px }
+.mkt2 .hero-precision .hp-plate--guard  { fill: none; --px: 0px; --py: 16px }
+.mkt2 .hero-precision .hp-plate--grip   { fill: var(--smoked); stroke: none; --px: -14px; --py: 18px }
+.mkt2 .hero-precision .hp-object-bed {
+  fill: color-mix(in srgb, var(--paper) 82%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 20%, transparent);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.mkt2 .hero-precision .hp-slide-cut { fill: color-mix(in srgb, var(--ink) 16%, transparent) }
+.mkt2 .hero-precision .hp-grip-dot { fill: var(--brass) }
+.mkt2 .hero-precision .hp-base { fill: color-mix(in srgb, var(--paper) 40%, transparent); stroke: var(--plate-edge); stroke-width: 1 }
+.mkt2 .hero-precision .hp-brass { fill: var(--brass) }
+/* the plate group carries the same settle overshoot + hover */
+.mkt2 .hero-precision .hp-plates {
+  animation: hp-overshoot 750ms cubic-bezier(.2,.9,.25,1.12) 3150ms none;
+  transition: transform 320ms cubic-bezier(.22,1,.36,1);
+}
+
+/* ── spectral signal ────────────────────────────────────────────────────── */
+.mkt2 .hero-precision .hp-datum {
+  stroke: url(#hpSpectral);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: hp-thread 700ms cubic-bezier(.4,0,.2,1) 1400ms both;
+}
+@keyframes hp-thread {
+  from { opacity: .3; transform: scaleX(.18) }
+  to   { opacity: 1; transform: scaleX(1) }
+}
+.mkt2 .hero-precision .hp-node {
+  fill: url(#hpSpectral);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hp-node-in 260ms cubic-bezier(.22,1,.36,1) both;
+  animation-delay: calc(1500ms + var(--i) * 95ms);
+}
+@keyframes hp-node-in { from { opacity: 0; transform: scale(.2) } to { opacity: 1; transform: none } }
+
+/* ── focus field: NYC relief, apertures, annotation ─────────────────────── */
+.mkt2 .hero-precision .hp-ring { fill: none; stroke: color-mix(in srgb, var(--ink) 12%, transparent); stroke-width: 1 }
+.mkt2 .hero-precision .hp-ring--faint { stroke: color-mix(in srgb, var(--ink) 7%, transparent) }
+.mkt2 .hero-precision .hp-relief { fill: color-mix(in srgb, var(--ink) 6%, transparent) }
+.mkt2 .hero-precision .hp-boro {
+  fill: var(--ink-muted); opacity: .55; text-anchor: middle;
+  font-family: var(--mono); font-size: 8px; letter-spacing: .16em;
+}
+.mkt2 .hero-precision .hp-coord { fill: var(--ink-muted); opacity: .7; font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em }
+.mkt2 .hero-precision .hp-cal { stroke: var(--ink-muted); opacity: .5; stroke-width: 1 }
+.mkt2 .hero-precision .hp-focus {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hp-align 1000ms cubic-bezier(.4,0,.2,1) 2250ms both;
+}
+@keyframes hp-align {
+  from { opacity: .68; transform: translate(16px, -8px) scale(1.06) }
+  to   { opacity: 1; transform: none }
+}
+
+/* ── "YOUR LICENCE — ALL THIRTEEN STAGES" bracket ───────────────────────── */
+.mkt2 .hero-precision .hp-bracket-line { fill: none; stroke: var(--rule); stroke-width: 1.2 }
+.mkt2 .hero-precision .hp-bracket-cap { fill: var(--ink-muted); font-family: var(--mono); font-size: 9px; letter-spacing: .16em }
+.mkt2 .hero-precision .hp-bracket-sub { fill: var(--ink-muted); opacity: .75; font-family: var(--mono); font-size: 9px; letter-spacing: .16em }
+.mkt2 .hero-precision .hp-scale { fill: var(--ink-muted); opacity: .7; text-anchor: middle; font-family: var(--mono); font-size: 8px; letter-spacing: .1em }
+.mkt2 .hero-precision .hp-bracket {
+  animation: hp-bracket-in 600ms cubic-bezier(.22,1,.36,1) 950ms both;
+}
+@keyframes hp-bracket-in { from { opacity: .7; transform: translateX(-10px) } to { opacity: 1; transform: none } }
+
+/* ── stage-13 completion mark (brass) — only at the end ─────────────────── */
+.mkt2 .hero-precision .hp-finish-ring { fill: none; stroke: var(--brass); stroke-width: 1.6 }
+.mkt2 .hero-precision .hp-finish-check { fill: none; stroke: var(--brass); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round }
+.mkt2 .hero-precision .hp-finish {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hp-finish-in 500ms cubic-bezier(.2,.9,.25,1.12) 3150ms both;
+}
+@keyframes hp-finish-in { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: none } }
+
+/* ── hover (pointer-capable only) — plates ease apart, signal brightens ──── */
+@media (hover: hover) and (pointer: fine) {
+  .mkt2 .hero-precision:hover .hp-plates,
+  .mkt2 .hero-precision:focus-within .hp-plates { transform: translate(5px, -3px) }
+  .mkt2 .hero-precision .hp-datum { transition: opacity 320ms ease }
+  .mkt2 .hero-precision:hover .hp-datum,
+  .mkt2 .hero-precision:focus-within .hp-datum { opacity: 1 }
+}
+
+/* ── quiet Replay utility ───────────────────────────────────────────────── */
+.mkt2 .hero-precision .hp-replay {
+  position: absolute;
+  right: 6px;
+  bottom: -4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.mkt2 .hero-precision .hp-replay:hover { color: var(--ink) }
+.mkt2 .hero-precision .hp-replay:focus-visible { outline: 2px solid var(--electric); outline-offset: 2px }
+
+/* restart: null every descendant animation for one reflow, then restore (see replay button) */
+.mkt2 .hero-precision.hp-replaying .hp-svg,
+.mkt2 .hero-precision.hp-replaying .hp-svg * { animation: none !important }
+
+/* ── scroll-exit parallax — progressive enhancement only, never a scroll listener ── */
+@supports (animation-timeline: view()) {
+  /* on the root (which carries no load animation, so no conflict) */
+  .mkt2 .hero-precision {
+    animation: hp-exit linear both;
+    animation-timeline: view();
+    animation-range: exit 10% exit 95%;
+  }
+  @keyframes hp-exit {
+    from { opacity: 1; transform: none }
+    to   { opacity: .72; transform: translateY(-24px) }
+  }
+}
+
+/* ── reduced motion: the resolved still, nothing moving, no replay ──────── */
+@media (prefers-reduced-motion: reduce) {
+  .mkt2 .hero-precision .hp-svg,
+  .mkt2 .hero-precision .hp-svg * { animation: none !important }
+  .mkt2 .hero-precision .hp-replay { display: none }
+}
+
+/* ── responsive sizing ──────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .mkt2 .hero-precision { justify-content: center }
+  .mkt2 .hero-precision .hp-svg { max-width: 560px }
+}
+@media (max-width: 540px) {
+  .mkt2 .hero-precision .hp-svg { max-width: 100%; min-height: 330px }
+  /* drop the quietest annotations so 390px stays uncluttered and legible */
+  .mkt2 .hero-precision .hp-cal,
+  .mkt2 .hero-precision .hp-coord,
+  .mkt2 .hero-precision .hp-boro { display: none }
+  .mkt2 .hero-precision .hp-plane-tag { display: none }
+}
