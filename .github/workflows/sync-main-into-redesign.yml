@@ -1,0 +1,48 @@
+name: Sync main into redesign
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-main-into-redesign
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge main into the redesign branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the redesign branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/redesign-concept-a
+          fetch-depth: 0
+
+      - name: Merge the latest platform changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          before="$(git rev-parse HEAD)"
+          if ! git merge --no-edit origin/main; then
+            git merge --abort || true
+            echo "::error::Automatic main-to-redesign sync has a merge conflict. Resolve it in codex/redesign-concept-a; main was not changed."
+            exit 1
+          fi
+
+          after="$(git rev-parse HEAD)"
+          if [[ "$before" == "$after" ]]; then
+            echo "Redesign already contains the latest main commit."
+            exit 0
+          fi
+
+          git push origin HEAD:codex/redesign-concept-a
