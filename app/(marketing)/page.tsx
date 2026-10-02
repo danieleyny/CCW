@@ -2,7 +2,7 @@ import Link from "next/link"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
-import { HeroPrecision } from "@/components/marketing/v2/hero-precision"
+import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -18,9 +18,9 @@ export const metadata = buildMetadata({
  * under `.mkt2`. Copy and structure are ported from the spec; links point at real
  * routes; the Service JSON-LD and the live government fees stay wired to our data.
  * Entrances are CSS scroll-driven and start from a visible opacity (see
- * marketing-v2.css). The hero's <HeroPrecision> combines an optimized local product
- * rendering with a server-rendered SVG field; its entrance and scroll response are
- * CSS-only, finite, and progressively enhanced.
+ * marketing-v2.css). The hero's <HeroGuidedPath> is a server-rendered architectural
+ * illustration; its entrance and scroll response are CSS-only, finite, and
+ * progressively enhanced.
  */
 export default async function Home() {
   // Cookieless + cached → this page stays statically rendered (see lib/public-data).
@@ -60,7 +60,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <HeroPrecision />
+          <HeroGuidedPath />
         </div>
       </section>
 
