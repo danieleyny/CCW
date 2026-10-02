@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     q: "Do you submit the application for me?",
-    a: "It depends on your plan. On Self-Guided you file your own application; with Full Concierge we prepare, review, and file it with the NYPD on your behalf. Either way, we're not attorneys and don't represent you before the License Division.",
+    a: "On every plan, you remain the applicant and submit your own application. Full Concierge adds hands-on preparation, organization, and review. We're not attorneys and don't represent you before the License Division.",
   },
   {
     q: "Why do you insist on disclosing sealed and dismissed arrests?",
@@ -67,9 +67,9 @@ export default function AboutPage() {
           Gun License NYC is a New York City gun-license (concealed-carry)
           document-preparation and case-management service that guides applicants through the NYPD
           License Division process end to end. We are not attorneys and we don&apos;t represent you
-          before the License Division — only a New York-licensed attorney may do that. You review it,
-          and on Self-Guided you file it yourself; with Full Concierge we file it with the NYPD on
-          your behalf. What we handle is everything around it: what you need, getting it right, and
+          before the License Division — only a New York-licensed attorney may do that. You review and
+          submit your own application on every plan. Full Concierge adds hands-on preparation and review.
+          What we handle is everything around it: what you need, getting it right, and
           keeping it current while the NYPD does its work.
         </DirectAnswer>
       </section>
@@ -129,8 +129,8 @@ export default function AboutPage() {
               d: "A case can't reach the filing stage until the blocking requirements are satisfied, disclosures are written out, training is inside its window, and a named person on our team signs off. It's a gate, not a suggestion.",
             },
             {
-              t: "It gets filed, and we stay with the case",
-              d: "On Self-Guided you file your own application; with Full Concierge we file it for you. Then we track the interview, the fingerprints, the investigation, and what comes after — including the clocks that start once you're licensed.",
+              t: "You submit, and we stay with the case",
+              d: "On every plan, you review and submit your own application. Then we track the interview, the fingerprints, the investigation, and what comes after — including the clocks that start once you're licensed.",
             },
           ].map((s, i) => (
             <li key={s.t} className="rounded-lg border border-hairline bg-card p-5">

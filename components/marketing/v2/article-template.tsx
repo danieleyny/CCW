@@ -2,6 +2,10 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { Fragment } from "react"
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/components/marketing/json-ld"
+import {
+  inferInteriorHeroVariant,
+  InteriorHeroVisual,
+} from "@/components/marketing/v2/interior-hero-visual"
 
 /**
  * The reusable interior ARTICLE TEMPLATE for the marketing redesign (v2).
@@ -55,19 +59,6 @@ export type ArticleCta = {
   note?: ReactNode
 }
 
-// The spec styles the hero headline through `.mkt2 .guide-hero h2`. Real pages
-// need a single semantic <h1>, so we replicate that one declaration inline
-// rather than change the shared stylesheet.
-const heroTitleStyle: React.CSSProperties = {
-  margin: 0,
-  maxWidth: 840,
-  fontFamily: "var(--display)",
-  fontSize: "clamp(46px, 6vw, 78px)",
-  fontWeight: 500,
-  lineHeight: 0.94,
-  letterSpacing: "-0.06em",
-}
-
 export function ArticleTemplate({
   eyebrow,
   title,
@@ -100,9 +91,11 @@ export function ArticleTemplate({
   /** Extra nodes appended to the end of the article body, before related. */
   children?: ReactNode
 }) {
+  const visualVariant = inferInteriorHeroVariant(eyebrow, title)
+
   return (
     <article className="guide-page">
-      <header className="guide-hero">
+      <header className={`guide-hero guide-hero--${visualVariant}`}>
         <JsonLd data={breadcrumbSchema(breadcrumb)} />
         <nav className="breadcrumb" aria-label="Breadcrumb">
           {breadcrumb.map((c, i) => {
@@ -119,17 +112,20 @@ export function ArticleTemplate({
             )
           })}
         </nav>
-        <div className="guide-hero-copy">
-          <p className="eyebrow">{eyebrow}</p>
-          <h1 style={heroTitleStyle}>{title}</h1>
-          <p className="guide-hero-lede">{lede}</p>
-          {meta && meta.length > 0 && (
-            <div className="guide-meta">
-              {meta.map((m) => (
-                <span key={m}>{m}</span>
-              ))}
-            </div>
-          )}
+        <div className="guide-hero-layout">
+          <div className="guide-hero-copy">
+            <p className="eyebrow">{eyebrow}</p>
+            <h1>{title}</h1>
+            <p className="guide-hero-lede">{lede}</p>
+            {meta && meta.length > 0 && (
+              <div className="guide-meta">
+                {meta.map((m) => (
+                  <span key={m}>{m}</span>
+                ))}
+              </div>
+            )}
+          </div>
+          <InteriorHeroVisual variant={visualVariant} />
         </div>
       </header>
 

@@ -45,7 +45,7 @@ export default async function Pricing() {
       <PageHero
         eyebrow="Membership"
         title="Pick how much you want us to handle"
-        subtitle="From guided support to fully done-for-you — every tier keeps your application complete and on schedule. Deposit to start, balance on filing."
+        subtitle="From guided support to fully managed preparation — every tier keeps your application organized and on schedule. Deposit to start, balance when your packet is ready."
       />
 
       <section style={{ padding: "56px 0 8px" }}>

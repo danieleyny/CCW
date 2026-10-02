@@ -204,17 +204,21 @@ export function EligibilityQuiz() {
     )
 
     return (
-      <Result
-        flagged={flagged}
-        track={track}
-        eligibilityJson={eligibilityJson}
-        onReset={reset}
-      />
+      <div className="eligibility-workbench is-complete">
+        <Result
+          flagged={flagged}
+          track={track}
+          eligibilityJson={eligibilityJson}
+          onReset={reset}
+        />
+        <EligibilitySignalMap step={QUESTIONS.length - 1} complete />
+      </div>
     )
   }
 
   return (
-    <article className="flow-screen" aria-label={`Eligibility question ${step + 1}`}>
+    <div className="eligibility-workbench">
+      <article className="flow-screen" aria-label={`Eligibility question ${step + 1}`}>
       <div className="flow-top">
         <span>Question {String(step + 1).padStart(2, "0")}</span>
         <span>
@@ -279,7 +283,37 @@ export function EligibilityQuiz() {
           Continue <span className="button-arrow" aria-hidden="true">→</span>
         </button>
       </div>
-    </article>
+      </article>
+      <EligibilitySignalMap step={step} />
+    </div>
+  )
+}
+
+function EligibilitySignalMap({ step, complete = false }: { step: number; complete?: boolean }) {
+  const signals = ["Age", "Location", "Training", "History", "Disclosure", "Storage"]
+
+  return (
+    <aside className="eligibility-signal-map" aria-label="Eligibility check progress">
+      <div className="signal-map-head">
+        <span>FIT / SIGNAL MAP</span>
+        <b>{complete ? "COMPLETE" : `${String(step + 1).padStart(2, "0")} / 06`}</b>
+      </div>
+      <div className="signal-map-core" aria-hidden="true">
+        <span className="signal-orbit signal-orbit-one" />
+        <span className="signal-orbit signal-orbit-two" />
+        <strong>{complete ? "✓" : "?"}</strong>
+        <small>{complete ? "service fit" : "your answers"}</small>
+      </div>
+      <ol className="signal-list">
+        {signals.map((signal, index) => (
+          <li className={index < step || complete ? "is-done" : index === step ? "is-current" : undefined} key={signal}>
+            <i>{index < step || complete ? "✓" : String(index + 1).padStart(2, "0")}</i>
+            <span>{signal}</span>
+          </li>
+        ))}
+      </ol>
+      <p>Each answer changes the route—not your responsibility to make the final legal call.</p>
+    </aside>
   )
 }
 

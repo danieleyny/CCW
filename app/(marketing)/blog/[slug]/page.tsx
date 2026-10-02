@@ -1,14 +1,11 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import type { Metadata } from "next"
 import { getAllPosts, getPost } from "@/lib/blog"
 import { formatDate } from "@/lib/format"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { TechGrid } from "@/components/shared/tech-grid"
 import { JsonLd, ID, breadcrumbSchema } from "@/components/marketing/json-ld"
+import { InteriorHeroVisual } from "@/components/marketing/v2/interior-hero-visual"
 import { buildMetadata, canonical, ogImage } from "@/lib/seo"
 
 export function generateStaticParams() {
@@ -97,39 +94,41 @@ export default async function Article({
   ])
 
   return (
-    <article>
+    <article className="editorial-page">
       <JsonLd data={{ "@context": "https://schema.org", "@graph": [articleSchema, crumbs] }} />
-      <section className="relative overflow-hidden border-b border-hairline">
-        <TechGrid glow="brass" />
-        <div className="relative mx-auto max-w-3xl px-4 py-16 sm:px-6">
-          <Button asChild variant="link" className="mb-6 px-0">
-            <Link href="/blog">
-              <ArrowLeft className="size-4" /> All guides
-            </Link>
-          </Button>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline">{post.meta.tag}</Badge>
-            <span className="font-mono text-xs text-text-low">
-              {formatDate(post.meta.date)} · {post.meta.readingMinutes} min read
-            </span>
+      <header className="guide-hero guide-hero--editorial">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <Link href="/">Home</Link><span>›</span><Link href="/blog">Guides</Link><span>›</span><span>Article</span>
+        </nav>
+        <div className="guide-hero-layout">
+          <div className="guide-hero-copy">
+            <p className="eyebrow">{post.meta.tag} · Primary-source guide</p>
+            <h1>{post.meta.title}</h1>
+            <div className="guide-meta">
+              <span>{formatDate(post.meta.date)}</span>
+              <span>{post.meta.readingMinutes} min read</span>
+              <span>Plain English</span>
+            </div>
           </div>
-          <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {post.meta.title}
-          </h1>
+          <InteriorHeroVisual variant="editorial" />
         </div>
-      </section>
+      </header>
 
-      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
-        <MDXRemote source={post.content} components={mdxComponents} />
+      <div className="editorial-layout">
+        <aside className="editorial-rail">
+          <Link href="/blog">← All guides</Link>
+          <span>READING NOTE</span>
+          <p>Rules can change. Source dates and agency links appear wherever a legal claim is made.</p>
+        </aside>
+        <div className="editorial-body">
+          <MDXRemote source={post.content} components={mdxComponents} />
 
-        <div className="mt-12 rounded-lg border bg-card p-6 brass-edge">
-          <h2 className="font-display text-lg font-semibold">Ready to begin?</h2>
-          <p className="mt-1 text-sm text-text-mid">
-            Check your eligibility in two minutes — no payment, no commitment.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
+          <aside className="editorial-cta">
+            <p className="eyebrow">Turn reading into a next step</p>
+            <h2>Ready to see where you stand?</h2>
+            <p>Check your service fit in two minutes—no payment and no commitment.</p>
+            <Link href="/eligibility" className="button">Check your eligibility <span aria-hidden="true">→</span></Link>
+          </aside>
         </div>
       </div>
     </article>

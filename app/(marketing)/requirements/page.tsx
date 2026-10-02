@@ -8,7 +8,7 @@ import { ArticleTemplate } from "@/components/marketing/v2/article-template"
 export const metadata = buildMetadata({
   title: "NYC Gun License Requirements",
   description:
-    "What a NYC gun license actually requires — be 21, 18 hours of training, about 24 documents, filed by you or by us. In plain English, with sources.",
+    "What a NYC gun license actually requires — be 21, complete 18 hours of training, and organize about 24 documents. In plain English, with sources.",
   path: "/requirements",
   hreflang: "/requirements",
 })
@@ -184,16 +184,14 @@ export default async function RequirementsPage() {
         },
         {
           id: "article-filing",
-          heading: "And then it's filed — by you, or by us",
+          heading: "And then it is ready for you to submit",
           navLabel: "Filing",
           body: (
             <>
               <p>
-                The application is always yours, and you always sign it. On the Self-Guided plan you file
-                it yourself; with Full Concierge we file it with the NYPD on your behalf. Either way, only
-                a New York-licensed attorney can represent you at the License Division — a
-                document-preparation service prepares and files, it doesn&apos;t represent you. What we do
-                is get the file right before it goes in.
+                The application is always yours, and you always sign and submit it. Full Concierge adds
+                hands-on preparation, organization, and review. Only a New York-licensed attorney can
+                represent you at the License Division. What we do is get the file right before you send it.
               </p>
               <FactList facts={[FACTS.youFile]} />
             </>

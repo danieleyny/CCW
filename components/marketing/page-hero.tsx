@@ -1,3 +1,9 @@
+import {
+  inferInteriorHeroVariant,
+  InteriorHeroVisual,
+  type InteriorHeroVariant,
+} from "@/components/marketing/v2/interior-hero-visual"
+
 /**
  * The shared interior PAGE HERO, restyled to marketing v2 — it now renders the
  * dark `.guide-hero` from the interior article template (spectral-ribbon
@@ -8,31 +14,28 @@
  * single semantic <h1>, so that one declaration is replicated inline here rather
  * than by touching the shared stylesheet.
  */
-const heroTitleStyle: React.CSSProperties = {
-  margin: 0,
-  maxWidth: 840,
-  fontFamily: "var(--display)",
-  fontSize: "clamp(46px, 6vw, 78px)",
-  fontWeight: 500,
-  lineHeight: 0.94,
-  letterSpacing: "-0.06em",
-}
-
 export function PageHero({
   eyebrow,
   title,
   subtitle,
+  variant,
 }: {
   eyebrow: string
   title: string
   subtitle?: string
+  variant?: InteriorHeroVariant
 }) {
+  const visualVariant = variant ?? inferInteriorHeroVariant(eyebrow, title)
+
   return (
-    <header className="guide-hero">
-      <div className="guide-hero-copy">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1 style={heroTitleStyle}>{title}</h1>
-        {subtitle && <p className="guide-hero-lede">{subtitle}</p>}
+    <header className={`guide-hero guide-hero--${visualVariant}`}>
+      <div className="guide-hero-layout">
+        <div className="guide-hero-copy">
+          <p className="eyebrow">{eyebrow}</p>
+          <h1>{title}</h1>
+          {subtitle && <p className="guide-hero-lede">{subtitle}</p>}
+        </div>
+        <InteriorHeroVisual variant={visualVariant} />
       </div>
     </header>
   )

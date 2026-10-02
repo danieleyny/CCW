@@ -20,7 +20,7 @@ export const metadata = buildMetadata({
 const buildFaqs = (fees: Fees) => [
   {
     q: "How do I get a gun license in NYC?",
-    a: "You apply through the NYPD License Division: confirm you're eligible, complete New York's 18-hour firearms course, assemble your documents (references, cohabitant affidavits, proof of residence, photos, and disclosures), then file, get fingerprinted, and attend an interview. On Self-Guided you file the application yourself; with Full Concierge we file it for you — and the NYPD decides the outcome.",
+    a: "You apply through the NYPD License Division: confirm you're eligible, complete New York's 18-hour firearms course, assemble your documents (references, cohabitant affidavits, proof of residence, photos, and disclosures), then submit, get fingerprinted, and attend an interview. On every plan, you review and submit the application yourself — and the NYPD decides the outcome.",
   },
   {
     q: "How long does the NYC concealed carry process take?",

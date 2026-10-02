@@ -147,9 +147,9 @@ export default function NonResidentBusinessPage() {
             the sequence straight so nothing goes stale while you&apos;re chasing something else.
           </li>
           <li className="rounded-lg border border-hairline bg-card p-4">
-            <strong className="text-text-hi">It gets filed — by you, or by us.</strong> On Self-Guided
-            you file it; with Full Concierge we file it for you. Either way we prepare and manage, and
-            the application is yours to review.
+            <strong className="text-text-hi">It becomes ready for your submission.</strong> On every plan,
+            you review and submit it. Full Concierge adds hands-on preparation and review, and the
+            application remains yours throughout.
           </li>
         </ul>
       </section>

@@ -17,11 +17,9 @@ export default function Eligibility() {
         title="Do you qualify?"
         subtitle="Six quick questions. No payment, no commitment — just a clear read on where you stand."
       />
-      <section className="section">
-        <div className="shell">
-          <div style={{ maxWidth: 560, marginInline: "auto" }}>
-            <EligibilityQuiz />
-          </div>
+      <section className="section eligibility-page-stage">
+        <div className="shell eligibility-stage-shell">
+          <EligibilityQuiz />
         </div>
       </section>
     </>

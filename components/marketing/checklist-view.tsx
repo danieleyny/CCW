@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { ExternalLink, FileText, Mail, Check } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
-import { Button } from "@/components/ui/button"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { LeadForm } from "@/components/marketing/lead-form"
 import { StickyCta } from "@/components/marketing/sticky-cta"
 import { applicableFor, groupBySeverity, type RegistryItem } from "@/lib/requirements/preview"
@@ -53,99 +50,113 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
   }, [])
 
   return (
-    <div className="pb-24 md:pb-0">
-      <section id="checklist-hero" className="mx-auto max-w-3xl px-4 pt-14 sm:px-6">
-        <SectionEyebrow>Your free NYC checklist</SectionEyebrow>
-        <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Every document NYC asks you for.
-        </h1>
-        <p className="mt-3 text-text-mid">
-          Free, personalized to your situation, and no account needed. This is the standard
-          checklist — we refine it to your exact case during intake.
-        </p>
+    <div className="checklist-experience">
+      <section id="checklist-hero" className="checklist-hero">
+        <div className="shell checklist-hero-grid">
+          <div>
+            <p className="eyebrow">Your free NYC checklist</p>
+            <h1>Every requirement.<br /><span>One case file.</span></h1>
+            <p className="checklist-hero-lede">
+              See the standard requirements for your track, tied to the source behind each item.
+              No account needed. Your final list is refined during intake.
+            </p>
 
-        {/* Track selector */}
-        <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="Your situation">
-          {TRACKS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTrack(t.value)}
-              aria-pressed={track === t.value}
-              className={cn(
-                "min-h-11 rounded-lg border px-4 text-sm font-medium transition-colors",
-                track === t.value
-                  ? "border-brass bg-brass/10 text-brass-bright"
-                  : "border-hairline text-text-mid hover:text-foreground"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+            <div className="track-switch" role="group" aria-label="Your situation">
+              {TRACKS.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setTrack(t.value)}
+                  aria-pressed={track === t.value}
+                >
+                  <i aria-hidden="true" />{t.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <div className="mt-6 flex items-baseline gap-3">
-          <span className="font-display text-4xl font-bold tabular-nums text-brass-bright">{items.length}</span>
-          <span className="text-text-mid">documents apply to you</span>
+          <div className="checklist-packet" aria-label={`${items.length} requirements apply to this track`}>
+            <span className="packet-tab">{track.replace("_", " ")} / active</span>
+            <div className="packet-sheet sheet-back" aria-hidden="true" />
+            <div className="packet-sheet sheet-middle" aria-hidden="true" />
+            <div className="packet-sheet sheet-front">
+              <span>CASE REQUIREMENTS</span>
+              <strong>{items.length}</strong>
+              <p>items mapped to your selected track</p>
+              <ol aria-hidden="true"><li /><li /><li /><li /></ol>
+            </div>
+            <small>Generated from the current public requirements registry</small>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto mt-8 max-w-3xl px-4 sm:px-6">
-        {groups.map((g) => (
-          <div key={g.severity} className="mb-8">
-            <h2 className="sticky top-16 z-10 -mx-4 bg-background/90 px-4 py-2 engraved text-brass-bright backdrop-blur sm:top-16">
-              {g.label} · {g.items.length}
-            </h2>
-            <ul className="mt-2 space-y-2">
+      <section className="shell checklist-layout">
+        <aside className="checklist-summary">
+          <p className="eyebrow">Case map</p>
+          <strong>{items.length}</strong>
+          <span>applicable items</span>
+          <dl>
+            {groups.map((group) => (
+              <div key={group.severity}><dt>{group.label}</dt><dd>{group.items.length}</dd></div>
+            ))}
+          </dl>
+          <p className="checklist-summary-note">Your intake may add conditional requirements based on your household and history.</p>
+        </aside>
+
+        <div className="checklist-groups">
+          {groups.map((g, groupIndex) => (
+          <section key={g.severity} className="checklist-group">
+            <div className="checklist-group-head">
+              <span>0{groupIndex + 1}</span>
+              <h2>{g.label}</h2>
+              <b>{g.items.length} items</b>
+            </div>
+            <ul>
               {g.items.map((r) => (
-                <li key={r.reqCode} className="flex items-start gap-3 rounded-lg border border-hairline bg-card p-4">
-                  <FileText className="mt-0.5 size-4 shrink-0 text-brass" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-text-mid">
-                        {r.reqCode}
-                      </span>
-                      <span className="text-sm font-medium">{r.title}</span>
+                <li key={r.reqCode} className="checklist-item">
+                  <span className="checklist-item-icon"><FileText aria-hidden="true" /></span>
+                  <div>
+                    <div className="checklist-item-title">
+                      <code>{r.reqCode}</code>
+                      <strong>{r.title}</strong>
                       {r.blocking && (
-                        <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] uppercase text-danger">
-                          Required to file
-                        </span>
+                        <span>Required before submission</span>
                       )}
                     </div>
                     {r.authority && (
-                      <div className="mt-1 font-mono text-[11px] text-text-low">{r.authority}</div>
+                      <p>{r.authority}</p>
                     )}
                     {r.sourceUrl && (
                       <a
                         href={r.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-[11px] text-signal hover:underline"
                       >
-                        Official source <ExternalLink className="size-3" />
+                        Official source <ExternalLink aria-hidden="true" />
                       </a>
                     )}
                   </div>
                 </li>
               ))}
             </ul>
-          </div>
-        ))}
+          </section>
+          ))}
+        </div>
       </section>
 
       {/* Two CTAs — value first (email), conversion second (run it). */}
-      <section id="checklist-cta" className="mx-auto mt-4 max-w-3xl px-4 sm:px-6">
-        <div className="rounded-xl border border-hairline bg-surface-1/40 p-6">
+      <section id="checklist-cta" className="shell checklist-cta-grid">
+        <div className="checklist-email-card">
           <EmailChecklist track={track} />
         </div>
-        <div className="mt-4 rounded-xl border border-hairline brass-edge bg-card p-6">
-          <SectionEyebrow>Ready to hand it off?</SectionEyebrow>
-          <h3 className="mt-2 font-display text-xl font-semibold">Have us run it</h3>
-          <p className="mt-1 text-sm text-text-mid">
-            We collect every document, keep it on schedule, and assemble your filing packet. You review
-            and file your own application — or, with Full Concierge, we file it for you.
+        <div className="checklist-service-card">
+          <p className="eyebrow">Ready for an organized case?</p>
+          <h3>Have us run the process.</h3>
+          <p>
+            We track every requirement, keep the work on schedule, and assemble the packet for your
+            final review. You remain the applicant and submit your own application.
           </p>
-          <div className="mt-4">
+          <div className="checklist-lead-form">
             <LeadForm
               source="checklist"
               showBorough={false}
@@ -192,34 +203,33 @@ function EmailChecklist({ track }: { track: Track }) {
 
   if (state === "done") {
     return (
-      <div className="flex items-center gap-2 text-sm text-ok">
-        <Check className="size-4" /> Sent — check your inbox.
+      <div className="checklist-email-success">
+        <Check aria-hidden="true" /> Sent — check your inbox.
       </div>
     )
   }
 
   return (
-    <form onSubmit={submit}>
-      <div className="flex items-center gap-2 text-brass-bright">
-        <Mail className="size-4" />
-        <span className="engraved">Email me this checklist</span>
+    <form onSubmit={submit} className="checklist-email-form">
+      <div className="checklist-email-title">
+        <Mail aria-hidden="true" />
+        <span>Email me this checklist</span>
       </div>
-      <p className="mt-1 text-sm text-text-mid">One field. No phone, no commitment.</p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+      <p>One field. No phone, no commitment.</p>
+      <div className="checklist-email-fields">
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="min-h-11 flex-1 rounded-lg border border-hairline bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
-        <Button type="submit" disabled={state === "sending"} className="min-h-11">
+        <button type="submit" disabled={state === "sending"} className="button">
           {state === "sending" ? "Sending…" : "Email it to me"}
-        </Button>
+        </button>
       </div>
       {state === "error" && (
-        <p className="mt-2 text-sm text-danger">Something went wrong — please try again.</p>
+        <p className="checklist-email-error">Something went wrong — please try again.</p>
       )}
     </form>
   )
