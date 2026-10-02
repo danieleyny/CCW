@@ -24,6 +24,18 @@ const GRID_NODES = [
 
 const FLOW_PARTICLES = [0, 1, 2] as const
 
+const DOCUMENT_PACKETS = [0, 1] as const
+
+const CASE_INPUTS = ["Identity", "Training", "References", "Disclosures"] as const
+
+const PHASES = [
+  { number: "01", title: "Qualify", detail: "Track + fit", position: "one", tone: "cyan" },
+  { number: "02", title: "Train", detail: "18-hour course", position: "two", tone: "blue" },
+  { number: "03", title: "Assemble", detail: "Docs + people", position: "three", tone: "violet" },
+  { number: "04", title: "Review", detail: "Every requirement", position: "four", tone: "magenta" },
+  { number: "05", title: "You submit", detail: "Your application", position: "five", tone: "orange" },
+] as const
+
 /**
  * NYC Guided Path — a premium architectural model of a complicated case
  * becoming an organized, five-phase journey. The complete artwork is always
@@ -33,8 +45,9 @@ export function HeroGuidedPath() {
   return (
     <div className="hero-guided-path">
       <p className="sr-only">
-        An abstract New York City model with a luminous five-stop path leading through
-        organized document stacks to a completed case file.
+        Identity records, training, references, and disclosures move through five phases:
+        qualify, train, assemble, review, and applicant submission, becoming one organized
+        New York City licensing case file.
       </p>
 
       <div className="gp-scroll-plane" aria-hidden="true">
@@ -76,6 +89,22 @@ export function HeroGuidedPath() {
             sizes="(max-width: 540px) 112vw, (max-width: 1024px) 88vw, 52vw"
           />
 
+          <div className="gp-input-deck">
+            <span className="gp-input-kicker">Your case inputs</span>
+            <div className="gp-input-list">
+              {CASE_INPUTS.map((input, index) => (
+                <span
+                  className="gp-input-card"
+                  key={input}
+                  style={{ "--i": index } as CSSProperties}
+                >
+                  <i aria-hidden="true" />
+                  {input}
+                </span>
+              ))}
+            </div>
+          </div>
+
           <span className="gp-scan" />
 
           <svg className="gp-route-overlay" viewBox="0 0 1448 1086" focusable="false">
@@ -114,6 +143,20 @@ export function HeroGuidedPath() {
               </g>
             ))}
 
+            {DOCUMENT_PACKETS.map((packet) => (
+              <g
+                className="gp-document-packet"
+                key={packet}
+                style={{ "--i": packet } as CSSProperties}
+              >
+                <rect className="gp-packet-sheet gp-packet-sheet--back" x="-20" y="-25" width="40" height="50" rx="5" />
+                <rect className="gp-packet-sheet" x="-24" y="-30" width="40" height="50" rx="5" />
+                <path className="gp-packet-line" d="M-15-17H7M-15-8H4M-15 1H10M-15 10H1" />
+                <circle className="gp-packet-check" cx="7" cy="10" r="6" />
+                <path className="gp-packet-tick" d="m4 10 2 2 4-5" />
+              </g>
+            ))}
+
             {MILESTONES.map((milestone, index) => (
               <g key={`${milestone.x}-${milestone.y}`} transform={`translate(${milestone.x} ${milestone.y})`}>
                 <g
@@ -122,6 +165,7 @@ export function HeroGuidedPath() {
                 >
                   <circle className="gp-milestone-halo" r="29" />
                   <circle className="gp-milestone-core" r="8" />
+                  <path className="gp-milestone-check" d="m-4 0 3 3 6-7" />
                 </g>
                 <g
                   className={`gp-lock gp-lock--${milestone.tone}`}
@@ -145,9 +189,25 @@ export function HeroGuidedPath() {
             </g>
           </svg>
 
+          <div className="gp-phase-labels">
+            {PHASES.map((phase, index) => (
+              <span
+                className={`gp-phase-label gp-phase-label--${phase.position} gp-phase-label--${phase.tone}`}
+                key={phase.number}
+                style={{ "--i": index } as CSSProperties}
+              >
+                <b>{phase.number}</b>
+                <span>
+                  <strong>{phase.title}</strong>
+                  <small>{phase.detail}</small>
+                </span>
+              </span>
+            ))}
+          </div>
+
           <span className="gp-resolved" aria-hidden="true">
-            <span>05</span>
-            <b>CASE READY</b>
+            <span>✓</span>
+            <b>ONE ORGANIZED FILE</b>
           </span>
         </div>
       </div>
