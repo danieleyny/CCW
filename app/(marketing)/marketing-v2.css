@@ -928,7 +928,7 @@
         animation-range: entry 8% entry 78%;
       }
 
-      .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .reality-head, .mkt2 .fact > *, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .pricing-grid > div:first-child, .mkt2 .price-card > *, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
+      .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .nyc-coverage-head > *, .mkt2 .reality-head, .mkt2 .fact > *, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .pricing-grid > div:first-child, .mkt2 .price-card > *, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
         animation-name: view-rise;
         animation-duration: 1s;
         animation-timing-function: linear;
@@ -1230,6 +1230,170 @@
 .mkt2 .journey-boundary i { flex: 1; height: 1px; background: linear-gradient(90deg,var(--cyan),var(--violet),var(--champagne)); }
 .mkt2 .journey-boundary strong { color: var(--champagne); font-size: 9px; font-weight: 500; letter-spacing: .12em; white-space: nowrap; }
 
+/* ── NYC concierge coverage map ───────────────────────────────────────────── */
+.mkt2 .nyc-coverage { position: relative; overflow: hidden; isolation: isolate; }
+.mkt2 .nyc-coverage::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 840px;
+  height: 840px;
+  right: -330px;
+  top: -360px;
+  border: 1px solid rgba(91,231,246,.1);
+  border-radius: 50%;
+  box-shadow: 0 0 0 96px rgba(57,120,246,.018),0 0 0 192px rgba(118,89,255,.012);
+}
+.mkt2 .nyc-coverage-head { display: grid; grid-template-columns: minmax(0,1fr) minmax(340px,.72fr); gap: clamp(54px,9vw,130px); align-items: end; }
+.mkt2 .nyc-coverage-head .display { margin-bottom: 0; }
+.mkt2 .nyc-coverage-intro > p { max-width: 590px; margin: 0; color: var(--light-soft); font-size: 18px; line-height: 1.55; }
+.mkt2 .nyc-coverage-intro > span { display: block; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--dark-rule); color: var(--champagne); font-family: var(--mono); font-size: 8px; letter-spacing: .12em; }
+.mkt2 .nyc-map-console { margin-top: 66px; overflow: hidden; border: 1px solid #31465f; border-radius: 28px; background: #081423; box-shadow: 0 34px 90px rgba(0,0,0,.28); }
+.mkt2 .nyc-map-toolbar,
+.mkt2 .nyc-map-boundary { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 0 28px; color: var(--steel); font-family: var(--mono); font-size: 8px; letter-spacing: .13em; }
+.mkt2 .nyc-map-toolbar { border-bottom: 1px solid var(--dark-rule); background: rgba(18,37,61,.46); }
+.mkt2 .nyc-map-status { display: inline-flex; align-items: center; gap: 9px; color: var(--cyan); }
+.mkt2 .nyc-map-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 7px rgba(91,231,246,.08); }
+.mkt2 .nyc-map-layout { display: grid; grid-template-columns: minmax(0,1.18fr) minmax(360px,.82fr); }
+.mkt2 .nyc-map-stage { position: relative; min-width: 0; min-height: 680px; overflow: hidden; border-right: 1px solid var(--dark-rule); background: radial-gradient(circle at 56% 42%,rgba(57,120,246,.14),transparent 34%),linear-gradient(145deg,#0b1a2b,#07111f 70%); isolation: isolate; }
+.mkt2 .nyc-map-grid { position: absolute; inset: 0; z-index: -1; opacity: .22; background-image: radial-gradient(circle,rgba(168,180,195,.72) 1px,transparent 1px); background-size: 18px 18px; mask-image: radial-gradient(circle at 52% 43%,#000 0 42%,transparent 78%); }
+.mkt2 .nyc-map-stage::before,
+.mkt2 .nyc-map-stage::after { content: ""; position: absolute; z-index: -1; pointer-events: none; }
+.mkt2 .nyc-map-stage::before { width: 76%; height: 49%; left: 12%; top: 22%; border: 1px solid rgba(91,231,246,.13); border-radius: 50%; transform: rotate(-18deg); }
+.mkt2 .nyc-map-stage::after { width: 62%; height: 63%; left: 19%; top: 12%; border: 1px solid rgba(226,75,174,.1); border-radius: 50%; transform: rotate(29deg); }
+.mkt2 .nyc-map-sight { position: absolute; z-index: 2; width: 92px; height: 92px; right: 30px; top: 30px; border: 1px solid rgba(168,180,195,.19); border-radius: 50%; pointer-events: none; }
+.mkt2 .nyc-map-sight::before,
+.mkt2 .nyc-map-sight::after { content: ""; position: absolute; background: rgba(168,180,195,.2); }
+.mkt2 .nyc-map-sight::before { width: 1px; top: -12px; bottom: -12px; left: 50%; }
+.mkt2 .nyc-map-sight::after { height: 1px; left: -12px; right: -12px; top: 50%; }
+.mkt2 .nyc-map-sight i { position: absolute; inset: 27px; border: 1px solid rgba(201,168,106,.4); border-radius: 50%; }
+.mkt2 .nyc-map-sight i:last-child { inset: 42px; border: 0; background: var(--champagne); }
+.mkt2 .nyc-map-readout { position: absolute; z-index: 2; left: 28px; top: 28px; display: flex; gap: 16px; color: rgba(168,180,195,.56); font-family: var(--mono); font-size: 7px; letter-spacing: .08em; pointer-events: none; }
+.mkt2 .nyc-borough-map { position: relative; z-index: 1; width: min(100%,740px); margin: 28px auto 88px; overflow: visible; }
+.mkt2 .nyc-map-waterline { fill: none; stroke: rgba(91,231,246,.16); stroke-width: 1; stroke-dasharray: 5 11; }
+.mkt2 .nyc-map-waterline-two { stroke: rgba(226,75,174,.11); }
+.mkt2 .nyc-borough-shape { fill: url(#borough-rest); stroke: rgba(168,180,195,.52); stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: pointer; transform-box: fill-box; transform-origin: center; transition: transform 220ms cubic-bezier(.2,.75,.2,1),opacity 220ms ease-out; }
+.mkt2 .nyc-borough:hover .nyc-borough-shape,
+.mkt2 .nyc-borough-shape:focus-visible { opacity: 1; transform: translate3d(0,-4px,0) scale(1.01); stroke: var(--champagne); }
+.mkt2 .nyc-borough.is-active .nyc-borough-shape { fill: url(#borough-active); stroke: rgba(255,255,255,.9); filter: url(#active-map-glow); opacity: 1; transform: translate3d(0,-5px,0) scale(1.015); }
+.mkt2 .nyc-borough-label { pointer-events: none; transition: transform 220ms cubic-bezier(.2,.75,.2,1),opacity 220ms ease-out; }
+.mkt2 .nyc-borough-label circle { fill: #07111f; stroke: rgba(168,180,195,.55); }
+.mkt2 .nyc-borough-label text { fill: var(--light-soft); font-family: var(--mono); font-size: 8px; text-anchor: middle; }
+.mkt2 .nyc-borough.is-active .nyc-borough-label { transform: translate3d(0,-5px,0) scale(1.08); }
+.mkt2 .nyc-borough.is-active .nyc-borough-label circle { fill: var(--champagne); stroke: #fff; }
+.mkt2 .nyc-borough.is-active .nyc-borough-label text { fill: var(--midnight); font-weight: 600; }
+.mkt2 .nyc-map-origin { opacity: .72; pointer-events: none; }
+.mkt2 .nyc-map-origin circle,
+.mkt2 .nyc-map-origin path { fill: none; stroke: rgba(201,168,106,.54); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.mkt2 .nyc-map-origin circle:last-of-type { fill: var(--champagne); stroke: 0; }
+.mkt2 .nyc-borough-tabs { position: absolute; z-index: 3; left: 20px; right: 20px; bottom: 20px; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 6px; padding: 7px; border: 1px solid rgba(168,180,195,.18); border-radius: 12px; background: rgba(7,17,31,.9); }
+.mkt2 .nyc-borough-tabs button { min-width: 0; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 6px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--light-soft); cursor: pointer; font-size: 10px; white-space: nowrap; transition: transform 180ms ease-out,opacity 180ms ease-out; }
+.mkt2 .nyc-borough-tabs button:hover,
+.mkt2 .nyc-borough-tabs button:focus-visible { color: var(--light); transform: translate3d(0,-2px,0); }
+.mkt2 .nyc-borough-tabs button[aria-selected="true"] { border-color: rgba(91,231,246,.34); background: rgba(91,231,246,.08); color: var(--light); }
+.mkt2 .nyc-borough-tabs button span { color: var(--cyan); font-family: var(--mono); font-size: 7px; }
+.mkt2 .nyc-map-detail { min-width: 0; display: flex; flex-direction: column; padding: 42px clamp(28px,3.2vw,46px); background: linear-gradient(155deg,rgba(18,37,61,.88),rgba(7,17,31,.98)); color: var(--light); animation: nyc-detail-in 360ms cubic-bezier(.2,.75,.2,1) both; }
+.mkt2 .nyc-map-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--dark-rule); }
+.mkt2 .nyc-map-kicker { margin: 0 0 9px; color: var(--cyan); font-family: var(--mono); font-size: 8px; letter-spacing: .1em; }
+.mkt2 .nyc-map-detail h3 { margin: 0; font-family: var(--display); font-size: clamp(43px,4vw,60px); font-weight: 500; line-height: .92; letter-spacing: -.05em; }
+.mkt2 .nyc-service-badge { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border: 1px solid rgba(16,131,106,.42); border-radius: 999px; color: #8CE0CB; font-family: var(--mono); font-size: 7px; letter-spacing: .08em; text-transform: uppercase; }
+.mkt2 .nyc-service-badge i { width: 5px; height: 5px; border-radius: 50%; background: #8CE0CB; }
+.mkt2 .nyc-map-coverage { margin: 30px 0 0; color: var(--light); font-size: 17px; line-height: 1.5; }
+.mkt2 .nyc-map-focus { margin: 10px 0 0; color: var(--light-soft); font-size: 12px; line-height: 1.55; }
+.mkt2 .nyc-map-facts { margin: 28px 0 0; }
+.mkt2 .nyc-map-facts div { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--dark-rule); }
+.mkt2 .nyc-map-facts div:last-child { border-bottom: 1px solid var(--dark-rule); }
+.mkt2 .nyc-map-facts dt { color: var(--steel); font-family: var(--mono); font-size: 8px; letter-spacing: .04em; }
+.mkt2 .nyc-map-facts dd { margin: 0; color: var(--light); font-size: 11px; text-align: right; }
+.mkt2 .nyc-concierge-rail { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-top: 26px; }
+.mkt2 .nyc-concierge-rail > div { min-width: 0; min-height: 102px; padding: 12px 10px; border: 1px solid var(--dark-rule); border-radius: 10px; background: rgba(18,37,61,.52); }
+.mkt2 .nyc-concierge-rail > div > span { color: var(--champagne); font-family: var(--mono); font-size: 7px; }
+.mkt2 .nyc-concierge-rail p { margin: 17px 0 0; }
+.mkt2 .nyc-concierge-rail strong,
+.mkt2 .nyc-concierge-rail small { display: block; }
+.mkt2 .nyc-concierge-rail strong { font-size: 11px; }
+.mkt2 .nyc-concierge-rail small { margin-top: 3px; color: var(--steel); font-size: 8px; line-height: 1.35; }
+.mkt2 .nyc-carry-note { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 14px; margin-top: 24px; padding: 17px; border: 1px solid rgba(201,168,106,.32); border-radius: 12px; background: rgba(201,168,106,.055); }
+.mkt2 .nyc-carry-mark { position: relative; width: 38px; height: 38px; border: 1px solid rgba(201,168,106,.6); border-radius: 50%; }
+.mkt2 .nyc-carry-mark::before,
+.mkt2 .nyc-carry-mark::after { content: ""; position: absolute; background: rgba(201,168,106,.62); }
+.mkt2 .nyc-carry-mark::before { width: 1px; top: 6px; bottom: 6px; left: 50%; }
+.mkt2 .nyc-carry-mark::after { height: 1px; left: 6px; right: 6px; top: 50%; }
+.mkt2 .nyc-carry-mark i { position: absolute; inset: 12px; border: 1px solid rgba(201,168,106,.62); border-radius: 50%; }
+.mkt2 .nyc-carry-mark i:last-child { inset: 17px; border: 0; background: var(--champagne); }
+.mkt2 .nyc-carry-note strong { color: var(--champagne); font-size: 11px; }
+.mkt2 .nyc-carry-note p { margin: 6px 0 0; color: var(--steel); font-size: 9px; line-height: 1.55; }
+.mkt2 .nyc-carry-note a { display: inline-flex; gap: 5px; margin-top: 9px; color: var(--light); font-size: 9px; text-decoration: none; }
+.mkt2 .nyc-carry-note a:hover,
+.mkt2 .nyc-carry-note a:focus-visible { color: var(--cyan); }
+.mkt2 .nyc-map-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: auto; padding-top: 28px; }
+.mkt2 .nyc-map-actions .button { min-height: 44px; padding-inline: 15px; }
+.mkt2 .nyc-official-link { color: var(--light-soft); font-size: 10px; text-decoration: none; }
+.mkt2 .nyc-official-link:hover,
+.mkt2 .nyc-official-link:focus-visible { color: var(--cyan); }
+.mkt2 .nyc-map-boundary { justify-content: flex-start; border-top: 1px solid var(--dark-rule); background: rgba(18,37,61,.46); }
+.mkt2 .nyc-map-boundary i { flex: 1; height: 1px; background: linear-gradient(90deg,var(--cyan),var(--violet),var(--champagne)); }
+.mkt2 .nyc-map-boundary strong { color: var(--champagne); font-size: 8px; font-weight: 500; white-space: nowrap; }
+
+@keyframes nyc-detail-in {
+  from { opacity: .8; transform: translate3d(14px,0,0); }
+  to { opacity: 1; transform: translate3d(0,0,0); }
+}
+
+@media (max-width: 1020px) {
+  .mkt2 .nyc-map-layout { grid-template-columns: minmax(0,1.08fr) minmax(340px,.92fr); }
+  .mkt2 .nyc-map-detail { padding-inline: 26px; }
+  .mkt2 .nyc-concierge-rail { grid-template-columns: 1fr; }
+  .mkt2 .nyc-concierge-rail > div { min-height: 68px; display: grid; grid-template-columns: 22px minmax(0,1fr); align-items: center; }
+  .mkt2 .nyc-concierge-rail p { margin: 0; }
+}
+
+@media (max-width: 840px) {
+  .mkt2 .nyc-coverage-head { grid-template-columns: minmax(0,1fr); gap: 48px; }
+  .mkt2 .nyc-map-console { margin-top: 48px; }
+  .mkt2 .nyc-map-layout { grid-template-columns: minmax(0,1fr); }
+  .mkt2 .nyc-map-stage { min-height: 650px; border-right: 0; border-bottom: 1px solid var(--dark-rule); }
+  .mkt2 .nyc-map-detail { min-height: 620px; padding: 42px; }
+  .mkt2 .nyc-concierge-rail { grid-template-columns: repeat(3,1fr); }
+  .mkt2 .nyc-concierge-rail > div { min-height: 102px; display: block; }
+  .mkt2 .nyc-concierge-rail p { margin-top: 17px; }
+}
+
+@media (max-width: 540px) {
+  .mkt2 .nyc-coverage-head { gap: 28px; }
+  .mkt2 .nyc-coverage-intro > p { font-size: 16px; }
+  .mkt2 .nyc-map-console { margin-top: 38px; border-radius: 20px; }
+  .mkt2 .nyc-map-toolbar,
+  .mkt2 .nyc-map-boundary { min-height: 68px; flex-wrap: wrap; gap: 8px 14px; padding: 13px 16px; line-height: 1.4; }
+  .mkt2 .nyc-map-status { margin-left: auto; }
+  .mkt2 .nyc-map-stage { min-height: 568px; }
+  .mkt2 .nyc-map-readout { left: 16px; top: 18px; }
+  .mkt2 .nyc-map-sight { width: 62px; height: 62px; right: 18px; top: 18px; }
+  .mkt2 .nyc-map-sight i { inset: 18px; }
+  .mkt2 .nyc-map-sight i:last-child { inset: 28px; }
+  .mkt2 .nyc-borough-map { width: 100%; max-width: none; margin: 46px 0 176px; }
+  .mkt2 .nyc-borough-tabs { left: 14px; right: 14px; bottom: 14px; grid-template-columns: 1fr 1fr; }
+  .mkt2 .nyc-borough-tabs button:last-child { grid-column: 1 / -1; }
+  .mkt2 .nyc-map-detail { min-height: 0; padding: 30px 18px; }
+  .mkt2 .nyc-map-detail-head { display: block; }
+  .mkt2 .nyc-service-badge { margin-top: 16px; }
+  .mkt2 .nyc-map-detail h3 { font-size: 46px; }
+  .mkt2 .nyc-map-facts div { align-items: flex-start; padding-block: 10px; }
+  .mkt2 .nyc-map-facts dt { max-width: 44%; line-height: 1.45; }
+  .mkt2 .nyc-map-facts dd { max-width: 52%; line-height: 1.45; }
+  .mkt2 .nyc-concierge-rail { grid-template-columns: 1fr; }
+  .mkt2 .nyc-concierge-rail > div { min-height: 68px; display: grid; grid-template-columns: 26px minmax(0,1fr); align-items: center; }
+  .mkt2 .nyc-concierge-rail p { margin: 0; }
+  .mkt2 .nyc-carry-note { grid-template-columns: 34px minmax(0,1fr); padding: 14px; }
+  .mkt2 .nyc-carry-mark { width: 32px; height: 32px; }
+  .mkt2 .nyc-carry-mark i { inset: 10px; }
+  .mkt2 .nyc-carry-mark i:last-child { inset: 14px; }
+  .mkt2 .nyc-map-actions { display: grid; gap: 14px; }
+  .mkt2 .nyc-map-actions .button { width: 100%; }
+  .mkt2 .nyc-official-link { text-align: center; }
+  .mkt2 .nyc-map-boundary strong { white-space: normal; }
+}
+
 /* ── Planning profile ──────────────────────────────────────────────────────── */
 .mkt2 .planning-board { display: grid; grid-template-columns: minmax(300px,.76fr) minmax(480px,1.24fr); margin-top: 70px; overflow: hidden; border: 1px solid var(--rule); border-radius: 24px; background: var(--ivory); }
 .mkt2 .planning-window { min-height: 430px; display: flex; flex-direction: column; padding: clamp(34px,4vw,52px); background: var(--midnight); color: var(--light); }
@@ -1302,7 +1466,8 @@
 .mkt2 .ih-visual { animation: visual-settle 760ms cubic-bezier(.2,.75,.2,1) 120ms both; }
 @supports (animation-timeline: view()) {
   .mkt2 .journey-console,
-  .mkt2 .planning-board {
+  .mkt2 .planning-board,
+  .mkt2 .nyc-map-console {
     animation: console-reveal 1s linear both;
     animation-timeline: view();
     animation-range: entry 0% cover 24%;
@@ -1382,8 +1547,13 @@
 @media (prefers-reduced-motion: reduce) {
   .mkt2 .ih-visual,
   .mkt2 .journey-console,
-  .mkt2 .planning-board { animation: none !important; }
-  .mkt2 .journey-sequence li { transition: none !important; transform: none !important; }
+  .mkt2 .planning-board,
+  .mkt2 .nyc-map-console,
+  .mkt2 .nyc-map-detail { animation: none !important; }
+  .mkt2 .journey-sequence li,
+  .mkt2 .nyc-borough-shape,
+  .mkt2 .nyc-borough-label,
+  .mkt2 .nyc-borough-tabs button { transition: none !important; transform: none !important; }
 }
 
 /* ── Eligibility workbench ─────────────────────────────────────────────────── */

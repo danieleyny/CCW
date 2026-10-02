@@ -3,6 +3,7 @@ import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
+import { NycServiceMap } from "@/components/marketing/v2/nyc-service-map"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -212,6 +213,26 @@ export default async function Home() {
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── NYC COVERAGE — five boroughs, one standard ─────────────────────── */}
+      <section className="section nyc-coverage dark" id="coverage" aria-labelledby="coverage-title">
+        <div className="shell">
+          <div className="nyc-coverage-head">
+            <div>
+              <p className="eyebrow">NYC, borough by borough</p>
+              <h2 className="display" id="coverage-title">Five boroughs.<br />One concierge standard.</h2>
+            </div>
+            <div className="nyc-coverage-intro">
+              <p>
+                We currently serve New York City only. Select your borough to see where our private
+                case-management service operates—and what stays identical everywhere in the city.
+              </p>
+              <span>REAL NYC GEOMETRY · CITYWIDE SERVICE</span>
+            </div>
+          </div>
+          <NycServiceMap />
         </div>
       </section>
 
