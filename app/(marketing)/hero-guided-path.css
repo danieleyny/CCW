@@ -219,7 +219,7 @@
 .mkt2 .hero-guided-path .gp-input-deck {
   position: absolute;
   left: 1.5%;
-  bottom: 1.5%;
+  top: 7%;
   z-index: 5;
   width: 218px;
   padding: 11px;
@@ -1211,8 +1211,8 @@
   .mkt2 .hero-guided-path .gp-outcome--licensed { min-width: 118px }
   .mkt2 .hero-guided-path .gp-outcome--licensed b { font-size: 8px }
   .mkt2 .hero-guided-path .gp-input-deck {
-    left: 9%;
-    bottom: 0;
+    left: 4%;
+    top: 5%;
     width: 156px;
     padding: 7px;
     border-radius: 9px;
