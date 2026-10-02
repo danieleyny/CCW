@@ -1107,7 +1107,14 @@
   .mkt2 .hero-guided-path {
     width: min(100%, 800px);
     justify-self: center;
+    overflow: clip;
   }
+
+  .mkt2 .hero-guided-path::before { inset: 3% 0 1% }
+  .mkt2 .hero-guided-path::after { inset: 13% 1% 8% 7% }
+  .mkt2 .hero-guided-path .gp-art-stage { inset: 0 }
+  .mkt2 .hero-guided-path .gp-input-deck { left: 2% }
+  .mkt2 .hero-guided-path .gp-outcome-cycle { right: 4% }
 }
 
 @media (max-width: 540px) {
@@ -1118,7 +1125,6 @@
     aspect-ratio: 1.08;
   }
 
-  .mkt2 .hero-guided-path .gp-art-stage { inset: -1% -10% -1% -10% }
   .mkt2 .hero-guided-path .gp-world-grid { opacity: .55 }
   .mkt2 .hero-guided-path .gp-outcome-cycle {
     top: 4.5%;
@@ -1170,7 +1176,7 @@
   .mkt2 .hero-guided-path .gp-phase-label--two { left: 28%; top: 50% }
   .mkt2 .hero-guided-path .gp-phase-label--three { left: 44%; top: 39% }
   .mkt2 .hero-guided-path .gp-phase-label--four { left: 57%; top: 28% }
-  .mkt2 .hero-guided-path .gp-phase-label--five { left: 70%; top: 20% }
+  .mkt2 .hero-guided-path .gp-phase-label--five { left: 65%; top: 20% }
   .mkt2 .hero-guided-path .gp-phase-label--five { min-width: 109px }
   .mkt2 .hero-guided-path .gp-stage-index {
     right: 5%;
