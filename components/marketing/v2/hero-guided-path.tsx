@@ -55,14 +55,14 @@ export function HeroGuidedPath() {
             <path className="gp-grid-arc gp-grid-arc--two" d="M142 914 C388 1028 797 1017 1115 842 C1280 751 1351 600 1323 426" />
             <path className="gp-grid-arc gp-grid-arc--three" d="M222 294 C507 179 918 209 1219 399 C1320 463 1361 558 1356 655" />
             {GRID_NODES.map((node, index) => (
-              <g
-                className={`gp-grid-node gp-grid-node--${node.tone}`}
-                key={`${node.x}-${node.y}`}
-                style={{ "--i": index } as CSSProperties}
-                transform={`translate(${node.x} ${node.y})`}
-              >
-                <circle className="gp-grid-node-halo" r="19" />
-                <circle className="gp-grid-node-core" r="5" />
+              <g key={`${node.x}-${node.y}`} transform={`translate(${node.x} ${node.y})`}>
+                <g
+                  className={`gp-grid-node gp-grid-node--${node.tone}`}
+                  style={{ "--i": index } as CSSProperties}
+                >
+                  <circle className="gp-grid-node-halo" r="19" />
+                  <circle className="gp-grid-node-core" r="5" />
+                </g>
               </g>
             ))}
           </svg>
