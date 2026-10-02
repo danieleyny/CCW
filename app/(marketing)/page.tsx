@@ -226,10 +226,10 @@ export default async function Home() {
             </div>
             <div className="nyc-coverage-intro">
               <p>
-                We currently serve New York City only. Select your borough to see where our private
-                case-management service operates—and what stays identical everywhere in the city.
+                We currently serve New York City only. The map shows our complete service area;
+                the useful distinction is the kind of case you bring into the citywide process.
               </p>
-              <span>REAL NYC GEOMETRY · CITYWIDE SERVICE</span>
+              <span>05 BOROUGHS · ONE NYPD AUTHORITY</span>
             </div>
           </div>
           <NycServiceMap />

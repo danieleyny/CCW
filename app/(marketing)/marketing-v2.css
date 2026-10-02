@@ -1394,6 +1394,145 @@
   .mkt2 .nyc-map-boundary strong { white-space: normal; }
 }
 
+/* ── NYC map: service footprint + applicant-path navigator ───────────────── */
+.mkt2 .nyc-map-layout { grid-template-columns: minmax(0,1.07fr) minmax(420px,.93fr); }
+.mkt2 .nyc-map-stage { min-height: 806px; }
+.mkt2 .nyc-borough-map { width: min(100%,760px); margin: 50px auto 126px; }
+.mkt2 .nyc-borough-shape {
+  fill: var(--electric);
+  stroke: rgba(235,239,244,.74);
+  stroke-width: 1.4;
+  cursor: default;
+  opacity: .84;
+  transform: none;
+  transition: opacity 180ms ease-out;
+}
+.mkt2 .borough--manhattan .nyc-borough-shape { fill: url(#borough-manhattan); }
+.mkt2 .borough--brooklyn .nyc-borough-shape { fill: url(#borough-brooklyn); }
+.mkt2 .borough--queens .nyc-borough-shape { fill: url(#borough-queens); }
+.mkt2 .borough--bronx .nyc-borough-shape { fill: url(#borough-bronx); }
+.mkt2 .borough--staten-island .nyc-borough-shape { fill: url(#borough-staten-island); }
+.mkt2 .nyc-borough:hover .nyc-borough-shape { transform: none; stroke: rgba(235,239,244,.74); }
+.mkt2 .nyc-borough-label { transition: opacity 180ms ease-out; }
+.mkt2 .nyc-borough-label circle { fill: var(--midnight); stroke: var(--light); stroke-width: 1.3; }
+.mkt2 .nyc-borough-label text { fill: var(--light); font-size: 7px; font-weight: 600; letter-spacing: -.03em; }
+.mkt2 .nyc-map-stage:has(.nyc-borough-guide:hover) .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.nyc-borough-guide:focus-visible) .nyc-borough-shape { opacity: .24; }
+.mkt2 .nyc-map-stage:has(.borough-guide--manhattan:hover) .borough--manhattan .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--manhattan:focus-visible) .borough--manhattan .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--brooklyn:hover) .borough--brooklyn .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--brooklyn:focus-visible) .borough--brooklyn .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--queens:hover) .borough--queens .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--queens:focus-visible) .borough--queens .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--bronx:hover) .borough--bronx .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--bronx:focus-visible) .borough--bronx .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--staten-island:hover) .borough--staten-island .nyc-borough-shape,
+.mkt2 .nyc-map-stage:has(.borough-guide--staten-island:focus-visible) .borough--staten-island .nyc-borough-shape { opacity: 1; stroke: var(--light); }
+
+.mkt2 .nyc-borough-guides {
+  position: absolute;
+  z-index: 3;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(5,minmax(0,1fr));
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid rgba(168,180,195,.18);
+  border-radius: 12px;
+  background: rgba(7,17,31,.94);
+}
+.mkt2 .nyc-borough-guide {
+  min-width: 0;
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  align-content: center;
+  gap: 3px 8px;
+  padding: 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--light-soft);
+  text-decoration: none;
+  transition: transform 180ms ease-out,opacity 180ms ease-out;
+}
+.mkt2 .nyc-borough-guide:hover,
+.mkt2 .nyc-borough-guide:focus-visible { border-color: rgba(91,231,246,.34); color: var(--light); transform: translate3d(0,-2px,0); }
+.mkt2 .nyc-borough-guide > span { grid-row: 1 / 3; align-self: center; color: var(--cyan); font-family: var(--mono); font-size: 7px; }
+.mkt2 .nyc-borough-guide strong { overflow: hidden; font-size: 9px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.mkt2 .nyc-borough-guide small { color: var(--steel); font-family: var(--mono); font-size: 6px; letter-spacing: .08em; text-transform: uppercase; }
+.mkt2 .nyc-borough-guide small b { color: var(--champagne); font-weight: 500; }
+
+.mkt2 .nyc-path-panel { min-height: 806px; padding: 36px clamp(26px,2.8vw,42px); animation: none; }
+.mkt2 .nyc-path-panel .nyc-map-detail-head { align-items: flex-start; padding-bottom: 22px; }
+.mkt2 .nyc-path-panel .nyc-map-detail-head > div { min-width: 0; }
+.mkt2 .nyc-path-panel h3 { max-width: 440px; font-size: clamp(34px,3vw,46px); line-height: .98; }
+.mkt2 .nyc-path-panel .nyc-map-focus { max-width: 540px; margin-top: 20px; font-size: 11px; }
+.mkt2 .nyc-path-panel .nyc-map-facts { margin-top: 20px; }
+.mkt2 .nyc-path-list { margin-top: 24px; border-top: 1px solid var(--dark-rule); }
+.mkt2 .nyc-path-list > a {
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr) 22px;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 4px;
+  border-bottom: 1px solid var(--dark-rule);
+  color: var(--light);
+  text-decoration: none;
+}
+.mkt2 .nyc-path-list > a > span { color: var(--cyan); font-family: var(--mono); font-size: 7px; }
+.mkt2 .nyc-path-list p { min-width: 0; margin: 0; }
+.mkt2 .nyc-path-list small,
+.mkt2 .nyc-path-list strong,
+.mkt2 .nyc-path-list em { display: block; }
+.mkt2 .nyc-path-list small { color: var(--steel); font-family: var(--mono); font-size: 6px; letter-spacing: .08em; }
+.mkt2 .nyc-path-list strong { margin-top: 3px; font-size: 12px; line-height: 1.25; }
+.mkt2 .nyc-path-list em { margin-top: 3px; overflow: hidden; color: var(--light-soft); font-size: 8px; font-style: normal; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.mkt2 .nyc-path-list > a > b { color: var(--champagne); font-size: 16px; font-weight: 400; transition: transform 180ms ease-out,opacity 180ms ease-out; }
+.mkt2 .nyc-path-list > a:hover,
+.mkt2 .nyc-path-list > a:focus-visible { background: rgba(91,231,246,.045); }
+.mkt2 .nyc-path-list > a:hover > b,
+.mkt2 .nyc-path-list > a:focus-visible > b { color: var(--cyan); transform: translate3d(4px,0,0); }
+.mkt2 .nyc-path-panel .nyc-carry-note { margin-top: 20px; }
+.mkt2 .nyc-carry-links { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 9px; }
+.mkt2 .nyc-carry-links a { margin-top: 0; }
+.mkt2 .nyc-path-panel .nyc-map-actions { padding-top: 22px; }
+
+@media (max-width: 1120px) {
+  .mkt2 .nyc-map-layout { grid-template-columns: minmax(0,1fr) minmax(390px,.96fr); }
+  .mkt2 .nyc-map-stage,
+  .mkt2 .nyc-path-panel { min-height: 830px; }
+  .mkt2 .nyc-borough-guide { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .mkt2 .nyc-borough-guide > span { grid-row: auto; }
+  .mkt2 .nyc-borough-guide small { display: none; }
+}
+
+@media (max-width: 840px) {
+  .mkt2 .nyc-map-layout { grid-template-columns: minmax(0,1fr); }
+  .mkt2 .nyc-map-stage { min-height: 730px; }
+  .mkt2 .nyc-path-panel { min-height: 0; padding: 42px; }
+  .mkt2 .nyc-borough-guide { grid-template-columns: auto minmax(0,1fr); justify-items: stretch; text-align: left; }
+  .mkt2 .nyc-borough-guide > span { grid-row: 1 / 3; }
+  .mkt2 .nyc-borough-guide small { display: block; }
+}
+
+@media (max-width: 540px) {
+  .mkt2 .nyc-map-stage { min-height: 674px; }
+  .mkt2 .nyc-borough-map { width: 100%; margin: 50px 0 226px; }
+  .mkt2 .nyc-map-sight { display: none; }
+  .mkt2 .nyc-borough-guides { grid-template-columns: 1fr 1fr; }
+  .mkt2 .nyc-borough-guide { min-height: 52px; }
+  .mkt2 .nyc-borough-guide:last-child { grid-column: 1 / -1; }
+  .mkt2 .nyc-path-panel { padding: 30px 18px; }
+  .mkt2 .nyc-path-panel h3 { max-width: 310px; font-size: 38px; }
+  .mkt2 .nyc-path-panel .nyc-map-detail-head { display: block; }
+  .mkt2 .nyc-path-list > a { min-height: 82px; }
+  .mkt2 .nyc-path-list em { white-space: normal; }
+  .mkt2 .nyc-carry-links { display: grid; }
+}
+
 /* ── Planning profile ──────────────────────────────────────────────────────── */
 .mkt2 .planning-board { display: grid; grid-template-columns: minmax(300px,.76fr) minmax(480px,1.24fr); margin-top: 70px; overflow: hidden; border: 1px solid var(--rule); border-radius: 24px; background: var(--ivory); }
 .mkt2 .planning-window { min-height: 430px; display: flex; flex-direction: column; padding: clamp(34px,4vw,52px); background: var(--midnight); color: var(--light); }
