@@ -85,11 +85,12 @@ export function HeroGuidedPath() {
             alt=""
             fill
             preload
+            draggable={false}
             sizes="(max-width: 540px) 112vw, (max-width: 1024px) 88vw, 52vw"
           />
 
           <div className="gp-input-deck">
-            <span className="gp-input-kicker">Your case inputs</span>
+            <span className="gp-input-kicker">What shapes your path</span>
             <div className="gp-input-list">
               {CASE_INPUTS.map((input, index) => (
                 <span
@@ -97,11 +98,18 @@ export function HeroGuidedPath() {
                   key={input}
                   style={{ "--i": index } as CSSProperties}
                 >
-                  <i aria-hidden="true" />
-                  {input}
+                  <i aria-hidden="true">✓</i>
+                  <span>{input}</span>
                 </span>
               ))}
             </div>
+            <span className="gp-input-result">
+              <i aria-hidden="true">→</i>
+              <span>
+                <small>Organized into</small>
+                <b>Your case checklist</b>
+              </span>
+            </span>
           </div>
 
           <svg className="gp-route-overlay" viewBox="0 0 1448 1086" focusable="false">

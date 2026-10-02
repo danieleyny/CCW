@@ -17,6 +17,8 @@
   align-self: center;
   justify-self: end;
   isolation: isolate;
+  pointer-events: none;
+  user-select: none;
 }
 
 .mkt2 .hero-guided-path::before,
@@ -209,7 +211,9 @@
   z-index: 2;
   object-fit: contain;
   object-position: center;
+  pointer-events: none;
   user-select: none;
+  -webkit-user-drag: none;
 }
 
 .mkt2 .hero-guided-path .gp-input-deck {
@@ -217,10 +221,10 @@
   left: 1.5%;
   bottom: 1.5%;
   z-index: 5;
-  width: 184px;
-  padding: 10px;
+  width: 218px;
+  padding: 11px;
   border: 1px solid color-mix(in srgb, var(--cyan) 24%, var(--line));
-  border-radius: 12px;
+  border-radius: 14px;
   background: color-mix(in srgb, var(--paper) 88%, transparent);
   opacity: .97;
   animation: gp-input-deck-arrive 900ms cubic-bezier(.2, .78, .2, 1) 240ms backwards;
@@ -249,9 +253,9 @@
   align-items: center;
   gap: 5px;
   min-width: 0;
-  padding: 5px 6px;
+  padding: 6px 7px;
   border: 1px solid color-mix(in srgb, var(--electric) 15%, var(--line));
-  border-radius: 6px;
+  border-radius: 8px;
   background: color-mix(in srgb, #fff 88%, transparent);
   color: color-mix(in srgb, var(--ink) 74%, transparent);
   font: 650 7px/1 var(--mono);
@@ -266,11 +270,68 @@
 .mkt2 .hero-guided-path .gp-input-card:nth-child(4) { --input-x: 16px; --input-y: 9px; --input-r: -5deg }
 
 .mkt2 .hero-guided-path .gp-input-card i {
+  display: grid;
   flex: 0 0 auto;
-  width: 6px;
+  width: 13px;
   aspect-ratio: 1;
-  border-radius: 2px;
+  place-items: center;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--cyan), var(--electric) 52%, var(--violet));
+  color: #fff;
+  font: 760 7px/1 var(--mono);
+  font-style: normal;
+  transform-origin: center;
+}
+
+.mkt2 .hero-guided-path .gp-input-result {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--violet) 20%, var(--line));
+  border-radius: 9px;
+  background: linear-gradient(105deg, color-mix(in srgb, var(--electric) 8%, #fff), color-mix(in srgb, var(--magenta) 8%, #fff));
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+  transform-origin: left center;
+}
+
+.mkt2 .hero-guided-path .gp-input-result > i {
+  display: grid;
+  width: 20px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--electric), var(--violet) 52%, var(--magenta));
+  color: #fff;
+  font: 740 9px/1 var(--mono);
+  font-style: normal;
+}
+
+.mkt2 .hero-guided-path .gp-input-result > span {
+  display: grid;
+  gap: 2px;
+}
+
+.mkt2 .hero-guided-path .gp-input-result small,
+.mkt2 .hero-guided-path .gp-input-result b {
+  white-space: nowrap;
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+
+.mkt2 .hero-guided-path .gp-input-result small {
+  color: color-mix(in srgb, var(--ink) 48%, transparent);
+  font-size: 5.5px;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+
+.mkt2 .hero-guided-path .gp-input-result b {
+  font-size: 7px;
+  font-weight: 740;
+  letter-spacing: .07em;
 }
 
 @keyframes gp-input-deck-arrive {
@@ -773,7 +834,15 @@
    -------------------------------------------------------------------------- */
 
 .mkt2 .hero-guided-path[data-motion] .gp-input-card {
-  animation: gp-input-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(var(--i) * 90ms) infinite both paused;
+  animation: gp-input-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(var(--i) * 380ms) infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-input-card > i {
+  animation: gp-input-check-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) calc(var(--i) * 380ms) infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-input-result {
+  animation: gp-input-result-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
 }
 
 .mkt2 .hero-guided-path[data-motion] .gp-journey-layer {
@@ -881,6 +950,8 @@
 }
 
 .mkt2 .hero-guided-path[data-motion="running"] .gp-input-card,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-input-card > i,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-input-result,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-journey-layer,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-guide,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-guide-figure,
@@ -903,10 +974,24 @@
 }
 
 @keyframes gp-input-cycle {
-  0%, 100% { opacity: .5; transform: translate3d(var(--input-x), var(--input-y), 0) rotate(var(--input-r)) scale(.92) }
-  7% { opacity: 1; transform: translate3d(0, -1px, 0) rotate(0) scale(1.035) }
+  0%, 100% { opacity: .38; transform: translate3d(var(--input-x), var(--input-y), 0) rotate(var(--input-r)) scale(.9) }
+  6% { opacity: 1; transform: translate3d(0, -2px, 0) rotate(0) scale(1.045) }
   11%, 88% { opacity: .94; transform: none }
-  96% { opacity: .54; transform: translate3d(var(--input-x), var(--input-y), 0) rotate(var(--input-r)) scale(.94) }
+  96% { opacity: .48; transform: translate3d(var(--input-x), var(--input-y), 0) rotate(var(--input-r)) scale(.93) }
+}
+
+@keyframes gp-input-check-cycle {
+  0%, 2%, 100% { opacity: .34; transform: scale(.45) rotate(-24deg) }
+  6% { opacity: 1; transform: scale(1.18) rotate(4deg) }
+  10%, 90% { opacity: 1; transform: none }
+  96% { opacity: .42; transform: scale(.7) rotate(12deg) }
+}
+
+@keyframes gp-input-result-cycle {
+  0%, 12%, 100% { opacity: .34; transform: translate3d(-9px, 3px, 0) scale(.94) }
+  17% { opacity: 1; transform: translate3d(2px, 0, 0) scale(1.025) }
+  21%, 89% { opacity: .98; transform: none }
+  96% { opacity: .48; transform: translate3d(-5px, 2px, 0) scale(.96) }
 }
 
 @keyframes gp-journey-layer-cycle {
@@ -1068,23 +1153,6 @@
   96%, 100% { opacity: 0; transform: rotate(-130deg) scale(1.08) }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .mkt2 .hero-guided-path:hover .gp-art-stage { transform: translate3d(0, -7px, 0) scale(1.012) }
-  .mkt2 .hero-guided-path:hover .gp-world-grid { opacity: .9; transform: scale(1.012) }
-  .mkt2 .hero-guided-path:hover .gp-milestone { opacity: .9; transform: scale(1.08) }
-  .mkt2 .hero-guided-path:hover .gp-phase-label { opacity: 1; transform: translate3d(0, -3px, 0) }
-  .mkt2 .hero-guided-path:hover .gp-input-deck { opacity: 1; transform: translate3d(-2px, -3px, 0) }
-  .mkt2 .hero-guided-path:hover .gp-outcome-cycle { transform: translate3d(-3px, -2px, 0) }
-
-  .mkt2 .hero-guided-path .gp-world-grid,
-  .mkt2 .hero-guided-path .gp-milestone,
-  .mkt2 .hero-guided-path .gp-phase-label,
-  .mkt2 .hero-guided-path .gp-input-deck,
-  .mkt2 .hero-guided-path .gp-outcome-cycle {
-    transition: transform 420ms cubic-bezier(.2, .78, .2, 1), opacity 260ms ease-out;
-  }
-}
-
 @supports (animation-timeline: view()) {
   .mkt2 .hero-guided-path .gp-scroll-plane {
     animation: gp-plane-scroll linear both;
@@ -1145,7 +1213,7 @@
   .mkt2 .hero-guided-path .gp-input-deck {
     left: 9%;
     bottom: 0;
-    width: 138px;
+    width: 156px;
     padding: 7px;
     border-radius: 9px;
   }
@@ -1159,7 +1227,22 @@
     padding: 4px;
     font-size: 5.5px;
   }
-  .mkt2 .hero-guided-path .gp-input-card i { width: 5px }
+  .mkt2 .hero-guided-path .gp-input-card i {
+    width: 10px;
+    font-size: 5px;
+  }
+  .mkt2 .hero-guided-path .gp-input-result {
+    gap: 4px;
+    margin-top: 4px;
+    padding: 5px;
+    border-radius: 7px;
+  }
+  .mkt2 .hero-guided-path .gp-input-result > i {
+    width: 14px;
+    font-size: 6px;
+  }
+  .mkt2 .hero-guided-path .gp-input-result small { font-size: 4px }
+  .mkt2 .hero-guided-path .gp-input-result b { font-size: 5.5px }
   .mkt2 .hero-guided-path .gp-phase-label {
     gap: 4px;
     min-width: 68px;
