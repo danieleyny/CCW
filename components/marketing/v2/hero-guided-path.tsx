@@ -24,10 +24,6 @@ const GRID_NODES = [
   { x: 849, y: 901, tone: "violet" },
 ] as const
 
-const FLOW_PARTICLES = [0, 1, 2] as const
-
-const DOCUMENT_PACKETS = [0, 1] as const
-
 const CASE_INPUTS = ["Identity", "Training", "References", "Disclosures"] as const
 
 const PHASES = [
@@ -47,10 +43,10 @@ export function HeroGuidedPath() {
   return (
     <HeroMotionViewport>
       <p className="sr-only">
-        Identity records, training, references, and disclosures move through five phases:
-        qualify, train, assemble, review, and application submission by the applicant. The
-        application then awaits an independent NYPD decision and, if approved, a license is
-        issued.
+        A case guide moves through five phases: qualify, train, assemble, review, and
+        application submission by the applicant. Each phase appears only when the guide
+        reaches it. The application then awaits an independent NYPD decision and, if
+        approved, a license is issued.
       </p>
 
       <div className="gp-scroll-plane" aria-hidden="true">
@@ -108,8 +104,6 @@ export function HeroGuidedPath() {
             </div>
           </div>
 
-          <span className="gp-scan" />
-
           <svg className="gp-route-overlay" viewBox="0 0 1448 1086" focusable="false">
             <defs>
               <linearGradient id="gpRouteOverlay" gradientUnits="userSpaceOnUse" x1="180" y1="850" x2="1160" y2="270">
@@ -119,11 +113,16 @@ export function HeroGuidedPath() {
                 <stop offset="0.78" stopColor="var(--magenta)" />
                 <stop offset="1" stopColor="var(--tangerine)" />
               </linearGradient>
-              <radialGradient id="gpFlowCore">
-                <stop offset="0" stopColor="#fff" />
-                <stop offset="0.38" stopColor="var(--cyan)" />
-                <stop offset="1" stopColor="var(--violet)" stopOpacity="0" />
-              </radialGradient>
+              <linearGradient id="gpGuideCoat" x1="-18" y1="-24" x2="24" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="var(--electric)" />
+                <stop offset="0.52" stopColor="var(--violet)" />
+                <stop offset="1" stopColor="var(--magenta)" />
+              </linearGradient>
+              <linearGradient id="gpGuideRing" x1="-30" y1="24" x2="32" y2="-25" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="var(--cyan)" />
+                <stop offset="0.55" stopColor="var(--violet)" />
+                <stop offset="1" stopColor="var(--tangerine)" />
+              </linearGradient>
               <linearGradient id="gpLicenseCard" x1="-60" y1="-38" x2="62" y2="42" gradientUnits="userSpaceOnUse">
                 <stop offset="0" stopColor="var(--electric)" />
                 <stop offset="0.46" stopColor="var(--violet)" />
@@ -137,69 +136,70 @@ export function HeroGuidedPath() {
               </linearGradient>
             </defs>
 
-            <path
-              className="gp-route-bed"
-              d="M202 825 C318 775 384 708 477 661 C562 618 642 568 713 536 C767 511 800 456 850 427 C930 380 990 410 1057 373 C1102 348 1120 302 1154 276"
-            />
-            <path
-              className="gp-route-echo"
-              d="M202 825 C318 775 384 708 477 661 C562 618 642 568 713 536 C767 511 800 456 850 427 C930 380 990 410 1057 373 C1102 348 1120 302 1154 276"
-            />
+            <g className="gp-journey-layer">
+              <path
+                className="gp-route-bed"
+                d="M202 825 C318 775 384 708 477 661 C562 618 642 568 713 536 C767 511 800 456 850 427 C930 380 990 410 1057 373 C1102 348 1120 302 1154 276"
+              />
+              <path
+                className="gp-route-echo"
+                d="M202 825 C318 775 384 708 477 661 C562 618 642 568 713 536 C767 511 800 456 850 427 C930 380 990 410 1057 373 C1102 348 1120 302 1154 276"
+              />
 
-            {FLOW_PARTICLES.map((particle) => (
-              <g
-                className="gp-flow-particle"
-                key={particle}
-                style={{ "--i": particle } as CSSProperties}
-              >
-                <circle className="gp-flow-halo" r="34" />
-                <circle className="gp-flow-core" r="10" />
-              </g>
-            ))}
-
-            {DOCUMENT_PACKETS.map((packet) => (
-              <g
-                className="gp-document-packet"
-                key={packet}
-                style={{ "--i": packet } as CSSProperties}
-              >
-                <rect className="gp-packet-sheet gp-packet-sheet--back" x="-20" y="-25" width="40" height="50" rx="5" />
-                <rect className="gp-packet-sheet" x="-24" y="-30" width="40" height="50" rx="5" />
-                <path className="gp-packet-line" d="M-15-17H7M-15-8H4M-15 1H10M-15 10H1" />
-                <circle className="gp-packet-check" cx="7" cy="10" r="6" />
-                <path className="gp-packet-tick" d="m4 10 2 2 4-5" />
-              </g>
-            ))}
-
-            {MILESTONES.map((milestone, index) => (
-              <g key={`${milestone.x}-${milestone.y}`} transform={`translate(${milestone.x} ${milestone.y})`}>
-                <g
-                  className={`gp-milestone gp-lock--${milestone.tone}`}
-                  style={{ "--i": index } as CSSProperties}
-                >
-                  <circle className="gp-milestone-halo" r="29" />
-                  <circle className="gp-milestone-core" r="8" />
-                  <path className="gp-milestone-check" d="m-4 0 3 3 6-7" />
+              {MILESTONES.map((milestone, index) => (
+                <g key={`${milestone.x}-${milestone.y}`} transform={`translate(${milestone.x} ${milestone.y})`}>
+                  <g
+                    className={`gp-milestone gp-lock--${milestone.tone}`}
+                    style={{ "--i": index } as CSSProperties}
+                  >
+                    <circle className="gp-milestone-halo" r="29" />
+                    <circle className="gp-milestone-core" r="8" />
+                    <path className="gp-milestone-check" d="m-4 0 3 3 6-7" />
+                  </g>
+                  <g
+                    className={`gp-lock gp-lock--${milestone.tone}`}
+                    style={{ "--i": index } as CSSProperties}
+                  >
+                    <circle className="gp-lock-ring gp-lock-ring--outer" r="38" />
+                    <circle className="gp-lock-ring gp-lock-ring--inner" r="22" />
+                  </g>
                 </g>
-                <g
-                  className={`gp-lock gp-lock--${milestone.tone}`}
-                  style={{ "--i": index } as CSSProperties}
-                >
-                  <circle className="gp-lock-ring gp-lock-ring--outer" r="38" />
-                  <circle className="gp-lock-ring gp-lock-ring--inner" r="22" />
+              ))}
+
+              <g className="gp-guide">
+                <ellipse className="gp-guide-shadow" cx="0" cy="17" rx="23" ry="7" />
+                <circle className="gp-guide-beacon" cx="0" cy="8" r="32" />
+                <g className="gp-guide-figure" transform="translate(0 -18)">
+                  <circle className="gp-guide-head" cx="0" cy="-30" r="10" />
+                  <path className="gp-guide-hair" d="M-9-32c2-9 15-10 19-1l-3 1c-3-4-8-6-16 0Z" />
+                  <path className="gp-guide-coat" d="M-12-18 0-22l13 5 5 28-15 7-18-6Z" />
+                  <path className="gp-guide-shirt" d="m-5-18 5 9 6-10-6-3Z" />
+                  <path className="gp-guide-arm gp-guide-arm--back" d="m-10-14-13 17 7 5L-2-7" />
+                  <path className="gp-guide-arm gp-guide-arm--front" d="m11-13 13 17-6 5L4-6" />
+                  <path className="gp-guide-leg gp-guide-leg--back" d="m-7 11-7 25" />
+                  <path className="gp-guide-leg gp-guide-leg--front" d="m7 12 8 24" />
+                  <path className="gp-guide-shoe gp-guide-shoe--back" d="M-15 35h10" />
+                  <path className="gp-guide-shoe gp-guide-shoe--front" d="M14 35h10" />
+                  <g className="gp-guide-folio">
+                    <rect x="18" y="5" width="17" height="14" rx="3" />
+                    <path d="M23 5V1h7v4" />
+                  </g>
                 </g>
               </g>
-            ))}
+
+              <g transform="translate(1154 276)">
+                <g className="gp-file-lock">
+                  <circle r="54" />
+                  <circle className="gp-file-lock-inner" r="31" />
+                </g>
+                <g className="gp-file-check">
+                  <circle className="gp-file-check-disc" r="22" />
+                  <path d="m-10 0 7 7 15-17" />
+                </g>
+              </g>
+            </g>
 
             <g transform="translate(1154 276)">
-              <g className="gp-file-lock">
-                <circle r="54" />
-                <circle className="gp-file-lock-inner" r="31" />
-              </g>
-              <g className="gp-file-check">
-                <circle className="gp-file-check-disc" r="22" />
-                <path d="m-10 0 7 7 15-17" />
-              </g>
               <g className="gp-license-celebration">
                 <circle className="gp-license-orbit gp-license-orbit--outer" r="106" />
                 <circle className="gp-license-orbit gp-license-orbit--inner" r="82" />

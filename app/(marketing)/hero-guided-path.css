@@ -9,7 +9,7 @@
    ========================================================================== */
 
 .mkt2 .hero-guided-path {
-  --gp-loop: 10s;
+  --gp-loop: 12s;
   position: relative;
   width: min(100%, 880px);
   min-width: 0;
@@ -284,25 +284,6 @@
   to { opacity: .94; transform: none }
 }
 
-.mkt2 .hero-guided-path .gp-scan {
-  position: absolute;
-  inset: 9% auto 7% -8%;
-  z-index: 3;
-  width: 24%;
-  clip-path: polygon(42% 0, 100% 0, 58% 100%, 0 100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .38) 43%, rgba(90, 224, 247, .22) 55%, transparent);
-  opacity: 0;
-  transform: translate3d(-30%, 8%, 0) skewX(-14deg);
-  animation: gp-scan-pass 2350ms cubic-bezier(.3, .02, .2, 1) 260ms both;
-}
-
-@keyframes gp-scan-pass {
-  0% { opacity: .12; transform: translate3d(-30%, 8%, 0) skewX(-14deg) }
-  16% { opacity: .48 }
-  74% { opacity: .3 }
-  100% { opacity: 0; transform: translate3d(485%, -8%, 0) skewX(-14deg) }
-}
-
 .mkt2 .hero-guided-path .gp-route-overlay {
   z-index: 4;
 }
@@ -339,75 +320,92 @@
   to { opacity: .34; transform: none }
 }
 
-.mkt2 .hero-guided-path .gp-flow-particle {
+.mkt2 .hero-guided-path .gp-journey-layer,
+.mkt2 .hero-guided-path .gp-guide {
   transform-box: view-box;
   transform-origin: 0 0;
-  animation: gp-flow-run 2900ms cubic-bezier(.42, 0, .16, 1) both;
-  animation-delay: calc(360ms + var(--i) * 230ms);
 }
 
-.mkt2 .hero-guided-path .gp-flow-halo { fill: url(#gpFlowCore); opacity: .38 }
-.mkt2 .hero-guided-path .gp-flow-core { fill: #fff; stroke: var(--cyan); stroke-width: 4 }
-
-@keyframes gp-flow-run {
-  0% { opacity: .42; transform: translate3d(202px, 825px, 0) scale(.68) }
-  16% { opacity: .92; transform: translate3d(477px, 661px, 0) scale(1) }
-  34% { opacity: .9; transform: translate3d(713px, 536px, 0) scale(.9) }
-  51% { opacity: .94; transform: translate3d(850px, 427px, 0) scale(1.04) }
-  70% { opacity: .9; transform: translate3d(1057px, 373px, 0) scale(.9) }
-  88% { opacity: .86; transform: translate3d(1154px, 276px, 0) scale(1.12) }
-  100% { opacity: 0; transform: translate3d(1154px, 276px, 0) scale(.36) }
+.mkt2 .hero-guided-path .gp-guide {
+  opacity: 1;
+  transform: translate3d(202px, 825px, 0);
 }
 
-.mkt2 .hero-guided-path .gp-document-packet {
-  color: var(--electric);
-  transform-box: view-box;
-  transform-origin: 0 0;
-  animation: gp-packet-assemble 3500ms cubic-bezier(.42, 0, .16, 1) both;
-  animation-delay: calc(540ms + var(--i) * 620ms);
+.mkt2 .hero-guided-path .gp-guide-shadow {
+  fill: color-mix(in srgb, var(--ink) 20%, transparent);
+  opacity: .42;
 }
 
-.mkt2 .hero-guided-path .gp-packet-sheet {
-  fill: color-mix(in srgb, #fff 88%, transparent);
-  stroke: currentColor;
-  stroke-width: 2;
+.mkt2 .hero-guided-path .gp-guide-beacon {
+  fill: color-mix(in srgb, var(--paper) 56%, transparent);
+  stroke: url(#gpGuideRing);
+  stroke-width: 4;
+  stroke-dasharray: 3 8;
+  opacity: .88;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
-.mkt2 .hero-guided-path .gp-packet-sheet--back {
-  fill: color-mix(in srgb, var(--violet) 13%, #fff);
-  opacity: .62;
-  transform: translate3d(7px, 6px, 0);
+.mkt2 .hero-guided-path .gp-guide-figure {
+  transform-box: fill-box;
+  transform-origin: 50% 88%;
 }
 
-.mkt2 .hero-guided-path .gp-packet-line {
+.mkt2 .hero-guided-path .gp-guide-head {
+  fill: color-mix(in srgb, #f5c8ac 88%, var(--paper));
+  stroke: color-mix(in srgb, var(--ink) 26%, transparent);
+  stroke-width: 1;
+}
+
+.mkt2 .hero-guided-path .gp-guide-hair { fill: color-mix(in srgb, var(--ink) 90%, var(--violet)) }
+
+.mkt2 .hero-guided-path .gp-guide-coat {
+  fill: url(#gpGuideCoat);
+  stroke: rgba(255, 255, 255, .78);
+  stroke-width: 1.5;
+}
+
+.mkt2 .hero-guided-path .gp-guide-shirt { fill: rgba(255, 255, 255, .94) }
+
+.mkt2 .hero-guided-path .gp-guide-arm {
   fill: none;
-  stroke: color-mix(in srgb, currentColor 62%, transparent);
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-.mkt2 .hero-guided-path .gp-packet-check {
-  fill: color-mix(in srgb, var(--paper) 82%, transparent);
-  stroke: var(--magenta);
-  stroke-width: 2;
-}
-
-.mkt2 .hero-guided-path .gp-packet-tick {
-  fill: none;
-  stroke: var(--magenta);
-  stroke-width: 2;
+  stroke: url(#gpGuideCoat);
+  stroke-width: 7;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: top center;
 }
 
-@keyframes gp-packet-assemble {
-  0% { opacity: .38; transform: translate3d(202px, 825px, 0) rotate(-12deg) scale(.74) }
-  18% { opacity: .96; transform: translate3d(477px, 637px, 0) rotate(6deg) scale(.88) }
-  37% { opacity: .94; transform: translate3d(713px, 510px, 0) rotate(-4deg) scale(.82) }
-  56% { opacity: .96; transform: translate3d(850px, 401px, 0) rotate(4deg) scale(.76) }
-  74% { opacity: .9; transform: translate3d(1057px, 347px, 0) rotate(-2deg) scale(.66) }
-  91% { opacity: .82; transform: translate3d(1154px, 276px, 0) rotate(0) scale(.52) }
-  100% { opacity: 0; transform: translate3d(1167px, 264px, 0) rotate(0) scale(.24) }
+.mkt2 .hero-guided-path .gp-guide-leg {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 86%, var(--violet));
+  stroke-width: 8;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+.mkt2 .hero-guided-path .gp-guide-shoe {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mkt2 .hero-guided-path .gp-guide-folio rect {
+  fill: color-mix(in srgb, var(--ink) 88%, var(--violet));
+  stroke: var(--tangerine);
+  stroke-width: 1.5;
+}
+
+.mkt2 .hero-guided-path .gp-guide-folio path {
+  fill: none;
+  stroke: var(--tangerine);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .mkt2 .hero-guided-path .gp-milestone,
@@ -589,11 +587,11 @@
 .mkt2 .hero-guided-path .gp-phase-label--magenta { --phase-color: var(--magenta) }
 .mkt2 .hero-guided-path .gp-phase-label--orange { --phase-color: var(--tangerine) }
 
-.mkt2 .hero-guided-path .gp-phase-label--one { left: 13%; top: 69% }
-.mkt2 .hero-guided-path .gp-phase-label--two { left: 30%; top: 55% }
-.mkt2 .hero-guided-path .gp-phase-label--three { left: 46%; top: 43% }
-.mkt2 .hero-guided-path .gp-phase-label--four { left: 58%; top: 31% }
-.mkt2 .hero-guided-path .gp-phase-label--five { left: 71%; top: 24% }
+.mkt2 .hero-guided-path .gp-phase-label--one { left: 18%; top: 69% }
+.mkt2 .hero-guided-path .gp-phase-label--two { left: 36%; top: 55% }
+.mkt2 .hero-guided-path .gp-phase-label--three { left: 52%; top: 43% }
+.mkt2 .hero-guided-path .gp-phase-label--four { left: 62%; top: 31% }
+.mkt2 .hero-guided-path .gp-phase-label--five { left: 76%; top: 24% }
 .mkt2 .hero-guided-path .gp-phase-label--five { min-width: 152px }
 
 @keyframes gp-phase-arrive {
@@ -778,28 +776,44 @@
   animation: gp-input-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(var(--i) * 90ms) infinite both paused;
 }
 
-.mkt2 .hero-guided-path[data-motion] .gp-scan {
-  animation: gp-scan-cycle var(--gp-loop) cubic-bezier(.3, .02, .2, 1) infinite both paused;
+.mkt2 .hero-guided-path[data-motion] .gp-journey-layer {
+  animation: gp-journey-layer-cycle var(--gp-loop) ease-in-out infinite both paused;
 }
 
-.mkt2 .hero-guided-path[data-motion] .gp-flow-particle {
-  animation: gp-flow-cycle var(--gp-loop) cubic-bezier(.42, 0, .16, 1) calc(var(--i) * 210ms) infinite both paused;
+.mkt2 .hero-guided-path[data-motion] .gp-guide {
+  animation: gp-guide-route var(--gp-loop) cubic-bezier(.38, 0, .18, 1) infinite both paused;
 }
 
-.mkt2 .hero-guided-path[data-motion] .gp-document-packet {
-  animation: gp-packet-cycle var(--gp-loop) cubic-bezier(.42, 0, .16, 1) calc(280ms + var(--i) * 520ms) infinite both paused;
+.mkt2 .hero-guided-path[data-motion] .gp-guide-figure {
+  animation: gp-guide-bob 640ms ease-in-out infinite alternate both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-guide-arm--back,
+.mkt2 .hero-guided-path[data-motion] .gp-guide-leg--front,
+.mkt2 .hero-guided-path[data-motion] .gp-guide-shoe--front {
+  animation: gp-guide-limb-back 640ms ease-in-out infinite alternate both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-guide-arm--front,
+.mkt2 .hero-guided-path[data-motion] .gp-guide-leg--back,
+.mkt2 .hero-guided-path[data-motion] .gp-guide-shoe--back {
+  animation: gp-guide-limb-front 640ms ease-in-out infinite alternate both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-guide-beacon {
+  animation: gp-guide-beacon-cycle 1280ms ease-in-out infinite alternate both paused;
 }
 
 .mkt2 .hero-guided-path[data-motion] .gp-milestone {
-  animation: gp-milestone-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(var(--i) * 520ms) infinite both paused;
+  animation: gp-milestone-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(var(--i) * 1450ms) infinite both paused;
 }
 
 .mkt2 .hero-guided-path[data-motion] .gp-milestone-check {
-  animation: gp-step-check-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) calc(180ms + var(--i) * 520ms) infinite both paused;
+  animation: gp-step-check-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) calc(160ms + var(--i) * 1450ms) infinite both paused;
 }
 
 .mkt2 .hero-guided-path[data-motion] .gp-lock {
-  animation: gp-lock-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(50ms + var(--i) * 520ms) infinite both paused;
+  animation: gp-lock-cycle var(--gp-loop) cubic-bezier(.2, .78, .2, 1) calc(50ms + var(--i) * 1450ms) infinite both paused;
 }
 
 .mkt2 .hero-guided-path[data-motion] .gp-file-lock {
@@ -810,8 +824,28 @@
   animation: gp-file-check-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
 }
 
-.mkt2 .hero-guided-path[data-motion] .gp-phase-label {
-  animation: gp-phase-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) calc(120ms + var(--i) * 520ms) infinite both paused;
+.mkt2 .hero-guided-path[data-motion] .gp-phase-labels {
+  animation: gp-phase-field-cycle var(--gp-loop) ease-in-out infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-phase-label--one {
+  animation: gp-phase-one-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-phase-label--two {
+  animation: gp-phase-two-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-phase-label--three {
+  animation: gp-phase-three-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-phase-label--four {
+  animation: gp-phase-four-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
+}
+
+.mkt2 .hero-guided-path[data-motion] .gp-phase-label--five {
+  animation: gp-phase-five-cycle var(--gp-loop) cubic-bezier(.14, .86, .22, 1) infinite both paused;
 }
 
 .mkt2 .hero-guided-path[data-motion] .gp-outcome--file {
@@ -847,14 +881,19 @@
 }
 
 .mkt2 .hero-guided-path[data-motion="running"] .gp-input-card,
-.mkt2 .hero-guided-path[data-motion="running"] .gp-scan,
-.mkt2 .hero-guided-path[data-motion="running"] .gp-flow-particle,
-.mkt2 .hero-guided-path[data-motion="running"] .gp-document-packet,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-journey-layer,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-guide,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-guide-figure,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-guide-arm,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-guide-leg,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-guide-shoe,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-guide-beacon,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-milestone,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-milestone-check,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-lock,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-file-lock,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-file-check,
+.mkt2 .hero-guided-path[data-motion="running"] .gp-phase-labels,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-phase-label,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-outcome,
 .mkt2 .hero-guided-path[data-motion="running"] .gp-license-celebration,
@@ -870,33 +909,42 @@
   96% { opacity: .54; transform: translate3d(var(--input-x), var(--input-y), 0) rotate(var(--input-r)) scale(.94) }
 }
 
-@keyframes gp-scan-cycle {
-  0% { opacity: 0; transform: translate3d(-30%, 8%, 0) skewX(-14deg) }
-  6% { opacity: .48 }
-  38% { opacity: .3 }
-  45%, 100% { opacity: 0; transform: translate3d(485%, -8%, 0) skewX(-14deg) }
+@keyframes gp-journey-layer-cycle {
+  0%, 65% { opacity: 1 }
+  71%, 93% { opacity: .22 }
+  98%, 100% { opacity: 1 }
 }
 
-@keyframes gp-flow-cycle {
-  0% { opacity: .34; transform: translate3d(202px, 825px, 0) scale(.66) }
-  8% { opacity: .94; transform: translate3d(202px, 825px, 0) scale(.82) }
-  15% { opacity: .92; transform: translate3d(477px, 661px, 0) scale(1) }
-  23% { opacity: .92; transform: translate3d(713px, 536px, 0) scale(.9) }
-  31% { opacity: .96; transform: translate3d(850px, 427px, 0) scale(1.04) }
-  39% { opacity: .92; transform: translate3d(1057px, 373px, 0) scale(.9) }
-  46% { opacity: .9; transform: translate3d(1154px, 276px, 0) scale(1.16) }
-  50%, 100% { opacity: 0; transform: translate3d(1154px, 276px, 0) scale(.36) }
+@keyframes gp-guide-route {
+  0%, 10% { opacity: 1; transform: translate3d(202px, 825px, 0) scale(1) }
+  16%, 22% { opacity: 1; transform: translate3d(477px, 661px, 0) scale(1) }
+  28%, 34% { opacity: 1; transform: translate3d(713px, 536px, 0) scale(1) }
+  40%, 46% { opacity: 1; transform: translate3d(850px, 427px, 0) scale(1) }
+  52%, 59% { opacity: 1; transform: translate3d(1057px, 373px, 0) scale(1) }
+  63% { opacity: .9; transform: translate3d(1154px, 276px, 0) scale(.82) }
+  67%, 96% { opacity: 0; transform: translate3d(1154px, 276px, 0) scale(.38) }
+  98% { opacity: 0; transform: translate3d(202px, 825px, 0) scale(.74) }
+  100% { opacity: 1; transform: translate3d(202px, 825px, 0) scale(1) }
 }
 
-@keyframes gp-packet-cycle {
-  0% { opacity: .28; transform: translate3d(202px, 825px, 0) rotate(-12deg) scale(.7) }
-  9% { opacity: .96; transform: translate3d(202px, 825px, 0) rotate(-7deg) scale(.76) }
-  17% { opacity: .96; transform: translate3d(477px, 637px, 0) rotate(6deg) scale(.88) }
-  26% { opacity: .94; transform: translate3d(713px, 510px, 0) rotate(-4deg) scale(.82) }
-  35% { opacity: .96; transform: translate3d(850px, 401px, 0) rotate(4deg) scale(.76) }
-  43% { opacity: .9; transform: translate3d(1057px, 347px, 0) rotate(-2deg) scale(.66) }
-  49% { opacity: .84; transform: translate3d(1154px, 276px, 0) rotate(0) scale(.52) }
-  53%, 100% { opacity: 0; transform: translate3d(1167px, 264px, 0) rotate(0) scale(.24) }
+@keyframes gp-guide-bob {
+  from { transform: translate3d(0, -19px, 0) rotate(-1deg) }
+  to { transform: translate3d(0, -15px, 0) rotate(1deg) }
+}
+
+@keyframes gp-guide-limb-front {
+  from { transform: rotate(-15deg) }
+  to { transform: rotate(15deg) }
+}
+
+@keyframes gp-guide-limb-back {
+  from { transform: rotate(14deg) }
+  to { transform: rotate(-14deg) }
+}
+
+@keyframes gp-guide-beacon-cycle {
+  from { opacity: .54; transform: scale(.86) rotate(-8deg) }
+  to { opacity: .92; transform: scale(1.08) rotate(8deg) }
 }
 
 @keyframes gp-milestone-cycle {
@@ -919,11 +967,44 @@
   17%, 100% { opacity: 0; transform: scale(1.62) }
 }
 
-@keyframes gp-phase-cycle {
-  0%, 5% { opacity: .34; transform: translate3d(-8px, 11px, 0) scale(.88) }
+@keyframes gp-phase-field-cycle {
+  0%, 65% { opacity: 1 }
+  70%, 95% { opacity: 0 }
+  99%, 100% { opacity: 1 }
+}
+
+@keyframes gp-phase-one-cycle {
+  0%, 8% { opacity: .98; transform: none }
   11% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.035) }
-  16%, 91% { opacity: .97; transform: none }
-  98%, 100% { opacity: .34; transform: translate3d(-7px, 8px, 0) scale(.9) }
+  14%, 100% { opacity: 0; transform: translate3d(-8px, 3px, 0) scale(.9) }
+}
+
+@keyframes gp-phase-two-cycle {
+  0%, 12% { opacity: 0; transform: translate3d(-8px, 8px, 0) scale(.88) }
+  16% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.035) }
+  18%, 22% { opacity: .98; transform: none }
+  25%, 100% { opacity: 0; transform: translate3d(-8px, 3px, 0) scale(.9) }
+}
+
+@keyframes gp-phase-three-cycle {
+  0%, 24% { opacity: 0; transform: translate3d(-8px, 8px, 0) scale(.88) }
+  28% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.035) }
+  30%, 34% { opacity: .98; transform: none }
+  37%, 100% { opacity: 0; transform: translate3d(-8px, 3px, 0) scale(.9) }
+}
+
+@keyframes gp-phase-four-cycle {
+  0%, 36% { opacity: 0; transform: translate3d(-8px, 8px, 0) scale(.88) }
+  40% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.035) }
+  42%, 46% { opacity: .98; transform: none }
+  49%, 100% { opacity: 0; transform: translate3d(-8px, 3px, 0) scale(.9) }
+}
+
+@keyframes gp-phase-five-cycle {
+  0%, 48% { opacity: 0; transform: translate3d(-8px, 8px, 0) scale(.88) }
+  52% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.035) }
+  54%, 61% { opacity: 1; transform: none }
+  65%, 100% { opacity: 0; transform: translate3d(-8px, 3px, 0) scale(.9) }
 }
 
 @keyframes gp-file-lock-cycle {
@@ -1107,9 +1188,6 @@
     transition: none !important;
   }
 
-  .mkt2 .hero-guided-path .gp-flow-particle,
-  .mkt2 .hero-guided-path .gp-document-packet,
-  .mkt2 .hero-guided-path .gp-scan,
   .mkt2 .hero-guided-path .gp-lock,
   .mkt2 .hero-guided-path .gp-file-lock {
     display: none;
