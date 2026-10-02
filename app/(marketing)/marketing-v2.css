@@ -31,6 +31,9 @@
       --success: #10836A;
       --warning: #B46A12;
       --error: #BD4450;
+      --champagne: #C9A86A;
+      --steel: #A8B4C3;
+      --gunmetal: #182433;
       --spectral: linear-gradient(96deg, var(--cyan), var(--blue) 22%, var(--violet) 45%, var(--magenta) 66%, var(--vermilion) 84%, var(--tangerine));
       --display: "Bodoni Moda", Didot, "Times New Roman", serif;
       --sans: "Hanken Grotesk", Arial, sans-serif;
@@ -664,16 +667,15 @@
       pointer-events: none;
     }
     .mkt2 #process > .shell {
-      display: grid;
-      grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
-      gap: clamp(48px, 8vw, 112px);
-      align-items: start;
+      display: block;
     }
     .mkt2 .phases-head {
-      position: sticky;
-      top: 112px;
-      display: block;
-      align-self: start;
+      position: relative;
+      top: auto;
+      display: grid;
+      grid-template-columns: 1fr .82fr;
+      gap: clamp(52px, 8vw, 100px);
+      align-items: end;
     }
     .mkt2 .phase-path { position: relative; display: block; margin-top: 0; }
     .mkt2 .phase-path::before {
@@ -725,7 +727,7 @@
     .mkt2 .phase-card-content { display: grid; grid-template-columns: 58px 1fr; align-items: start; }
     .mkt2 .phase-card-content .phase-dot { grid-row: 1; margin: 0; }
     .mkt2 .phase-text h3 { margin-top: 4px; }
-    .mkt2 .phase-note { grid-column: 2; margin-top: 0; }
+    .mkt2 .phase-note { max-width: 760px; margin: 34px 0 0 auto; }
 
     .mkt2 .requirement-stack {
       position: relative;
@@ -1116,27 +1118,25 @@
   .mkt2 .footer-intro { grid-column: 1 / -1; }
 }
 
-/* ── Case operations map ─────────────────────────────────────────────────────
-   The five phases are one connected system, not five equal template cards. */
+/* ── Concierge case desk ─────────────────────────────────────────────────────
+   The visual is intentionally built from normal grid flow. No label relies on
+   an absolute position, so the story remains legible at every breakpoint. */
 .mkt2 .journey-console {
   margin-top: 58px;
   overflow: hidden;
   border: 1px solid var(--dark-rule);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 75% 28%, rgba(118,89,255,.14), transparent 28%),
-    radial-gradient(circle at 20% 75%, rgba(91,231,246,.1), transparent 32%),
-    var(--midnight-raised);
-  box-shadow: 0 34px 90px rgba(0,0,0,.22);
+  border-radius: 28px;
+  background: var(--midnight-raised);
+  box-shadow: 0 34px 90px rgba(0,0,0,.24);
 }
 .mkt2 .journey-toolbar,
 .mkt2 .journey-boundary {
-  min-height: 48px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 0 20px;
+  padding: 0 24px;
   border-bottom: 1px solid var(--dark-rule);
   color: var(--light-soft);
   font-family: var(--mono);
@@ -1144,66 +1144,108 @@
   letter-spacing: .13em;
   text-transform: uppercase;
 }
-.mkt2 .journey-live { display: inline-flex; align-items: center; gap: 8px; color: var(--cyan); }
+.mkt2 .journey-live { display: inline-flex; align-items: center; gap: 9px; color: var(--cyan); }
 .mkt2 .journey-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 5px rgba(91,231,246,.1); }
-.mkt2 .journey-workspace { position: relative; min-height: 470px; overflow: hidden; }
+.mkt2 .journey-workspace {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(320px,.86fr) minmax(440px,1.14fr);
+  gap: clamp(38px,5vw,76px);
+  padding: clamp(34px,5vw,68px);
+  overflow: hidden;
+}
 .mkt2 .journey-workspace::before {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: .24;
-  background-image: radial-gradient(circle, rgba(183,193,207,.55) 1px, transparent 1px);
+  opacity: .15;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(183,193,207,.72) 1px, transparent 1px);
   background-size: 18px 18px;
-  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg,#000,transparent 42%,transparent 58%,#000);
 }
-.mkt2 .journey-route { position: absolute; inset: 18px 1.5% 10px; width: 97%; height: calc(100% - 28px); overflow: visible; }
-.mkt2 .journey-route path { fill: none; vector-effect: non-scaling-stroke; }
-.mkt2 .journey-route-ghost { stroke: rgba(183,193,207,.18); stroke-width: 18; }
-.mkt2 .journey-route-color { stroke: url("#journey-gradient"); stroke: #5BE7F6; stroke-width: 2; stroke-linecap: round; filter: none; }
-.mkt2 .journey-node { position: absolute; left: var(--x); top: var(--y); display: flex; align-items: center; gap: 10px; transform: translate(-50%,-50%); z-index: 3; }
-.mkt2 .journey-node-ring { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid rgba(91,231,246,.42); border-radius: 50%; background: rgba(7,17,31,.88); box-shadow: 0 0 0 8px rgba(91,231,246,.06); }
-.mkt2 .journey-node-ring::before { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--cyan); opacity: .2; }
-.mkt2 .journey-node-ring i { position: relative; z-index: 1; color: var(--cyan); font-family: var(--mono); font-size: 9px; font-style: normal; }
-.mkt2 .journey-node.is-active .journey-node-ring { border-color: var(--magenta); background: linear-gradient(135deg, var(--blue), var(--magenta)); box-shadow: 0 0 0 10px rgba(226,75,174,.08); }
-.mkt2 .journey-node.is-active .journey-node-ring i { color: #fff; }
-.mkt2 .journey-node-copy { min-width: 116px; padding: 10px 12px; border: 1px solid rgba(38,59,86,.92); border-radius: 9px; background: rgba(13,27,45,.9); }
-.mkt2 .journey-node-copy strong,
-.mkt2 .journey-node-copy small { display: block; white-space: nowrap; }
-.mkt2 .journey-node-copy strong { color: var(--light); font-size: 13px; line-height: 1.2; }
-.mkt2 .journey-node-copy small { margin-top: 3px; color: var(--light-soft); font-family: var(--mono); font-size: 8px; letter-spacing: .04em; }
-.mkt2 .journey-file { position: absolute; left: 39%; top: 31%; z-index: 2; width: 184px; height: 154px; padding: 25px 20px 18px; border: 1px solid rgba(91,231,246,.38); border-radius: 8px 17px 17px 8px; background: linear-gradient(145deg, rgba(18,37,61,.96), rgba(7,17,31,.98)); transform: rotate(-3deg); box-shadow: 16px 18px 0 rgba(57,120,246,.06); }
-.mkt2 .journey-file::before,
-.mkt2 .journey-file::after { content: ""; position: absolute; inset: 7px -9px -7px 8px; z-index: -1; border: 1px solid rgba(118,89,255,.24); border-radius: inherit; }
-.mkt2 .journey-file::after { inset: 14px -17px -14px 16px; }
-.mkt2 .journey-file-tab { position: absolute; left: 14px; top: -14px; padding: 5px 18px; border-radius: 7px 7px 0 0; background: var(--blue); color: #fff; font-family: var(--mono); font-size: 8px; }
-.mkt2 .journey-file-line { display: block; width: 100%; height: 1px; margin-bottom: 10px; background: var(--dark-rule); }
-.mkt2 .journey-file-line.is-short { width: 64%; }
-.mkt2 .journey-file b { display: block; margin-top: 17px; color: var(--light); font-family: var(--display); font-size: 43px; font-weight: 500; line-height: .8; }
-.mkt2 .journey-file small { color: var(--light-soft); font-family: var(--mono); font-size: 8px; letter-spacing: .06em; }
-.mkt2 .journey-readout { position: absolute; right: 22px; bottom: 20px; z-index: 2; display: flex; gap: 7px; }
-.mkt2 .journey-readout span { min-width: 102px; padding: 10px 12px; border: 1px solid var(--dark-rule); border-radius: 8px; background: rgba(7,17,31,.76); color: var(--light-soft); font-family: var(--mono); font-size: 7px; line-height: 1.35; text-transform: uppercase; }
-.mkt2 .journey-readout b { display: block; color: var(--light); font-size: 14px; }
-.mkt2 .journey-boundary { min-height: 54px; justify-content: flex-start; border-top: 1px solid var(--dark-rule); border-bottom: 0; }
-.mkt2 .journey-boundary i { flex: 1; height: 1px; background: linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta)); }
-.mkt2 .journey-boundary strong { color: var(--light); font-family: var(--sans); font-size: 12px; letter-spacing: 0; text-transform: none; }
+.mkt2 .journey-dossier,
+.mkt2 .journey-sequence-wrap { position: relative; z-index: 1; min-width: 0; }
+.mkt2 .journey-dossier {
+  min-height: 470px;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(28px,3.4vw,44px);
+  overflow: hidden;
+  border: 1px solid rgba(201,168,106,.44);
+  border-radius: 4px 28px 28px 4px;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.035),transparent 34%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 7px),
+    var(--gunmetal);
+  box-shadow: 18px 22px 0 rgba(0,0,0,.1);
+}
+.mkt2 .journey-dossier::before,
+.mkt2 .journey-dossier::after { content: ""; position: absolute; width: 34px; height: 34px; border-color: rgba(201,168,106,.65); }
+.mkt2 .journey-dossier::before { left: 14px; top: 14px; border-left: 1px solid; border-top: 1px solid; }
+.mkt2 .journey-dossier::after { right: 14px; bottom: 14px; border-right: 1px solid; border-bottom: 1px solid; }
+.mkt2 .dossier-sight { position: absolute; right: 34px; top: 72px; width: 96px; height: 96px; border: 1px solid rgba(168,180,195,.22); border-radius: 50%; }
+.mkt2 .dossier-sight::before,
+.mkt2 .dossier-sight::after { content: ""; position: absolute; background: rgba(168,180,195,.24); }
+.mkt2 .dossier-sight::before { left: 50%; top: -12px; bottom: -12px; width: 1px; }
+.mkt2 .dossier-sight::after { left: -12px; right: -12px; top: 50%; height: 1px; }
+.mkt2 .dossier-sight i { position: absolute; inset: 31px; border: 1px solid rgba(91,231,246,.28); border-radius: 50%; }
+.mkt2 .dossier-sight i:last-child { inset: 44px; background: var(--cyan); border: 0; }
+.mkt2 .dossier-topline { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid rgba(168,180,195,.2); color: var(--steel); font-family: var(--mono); font-size: 8px; letter-spacing: .14em; }
+.mkt2 .dossier-kicker { margin: 54px 0 10px; color: var(--champagne); font-family: var(--mono); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; }
+.mkt2 .journey-dossier h3 { max-width: 360px; margin: 0; color: var(--light); font-family: var(--display); font-size: clamp(36px,3.7vw,54px); font-weight: 500; line-height: .98; letter-spacing: -.045em; }
+.mkt2 .dossier-count { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: end; margin-top: auto; padding-top: 38px; }
+.mkt2 .dossier-count strong { color: var(--light); font-family: var(--display); font-size: 82px; font-weight: 500; line-height: .72; letter-spacing: -.07em; }
+.mkt2 .dossier-count span { padding-bottom: 2px; color: var(--steel); font-size: 11px; line-height: 1.35; }
+.mkt2 .dossier-status { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-top: 30px; padding-top: 18px; border-top: 1px solid rgba(168,180,195,.2); }
+.mkt2 .dossier-status span { display: flex; align-items: center; gap: 8px; color: var(--light-soft); font-size: 11px; }
+.mkt2 .dossier-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--champagne); }
+.mkt2 .dossier-note { margin: 22px 0 0; color: var(--steel); font-family: var(--mono); font-size: 7px; letter-spacing: .06em; text-transform: uppercase; }
+.mkt2 .journey-sequence-label { margin: 0 0 14px; color: var(--champagne); font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+.mkt2 .journey-sequence { position: relative; display: grid; margin: 0; padding: 0; list-style: none; }
+.mkt2 .journey-sequence::before { content: ""; position: absolute; left: 22px; top: 38px; bottom: 38px; width: 1px; background: linear-gradient(var(--cyan),var(--blue),var(--violet),var(--magenta),var(--champagne)); }
+.mkt2 .journey-sequence li {
+  position: relative;
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 46px minmax(0,1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--dark-rule);
+  transition: transform 180ms ease-out, opacity 180ms ease-out;
+}
+.mkt2 .journey-sequence li:last-child { border-bottom: 0; }
+.mkt2 .journey-sequence li:hover { transform: translateX(4px); }
+.mkt2 .journey-step-number { position: relative; z-index: 1; width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid var(--dark-rule); border-radius: 50%; background: var(--midnight-raised); color: var(--cyan); font-family: var(--mono); font-size: 9px; }
+.mkt2 .journey-step-copy { min-width: 0; }
+.mkt2 .journey-step-copy strong,
+.mkt2 .journey-step-copy small { display: block; }
+.mkt2 .journey-step-copy strong { color: var(--light); font-size: 16px; line-height: 1.2; }
+.mkt2 .journey-step-copy small { max-width: 390px; margin-top: 5px; color: var(--light-soft); font-size: 11px; line-height: 1.45; }
+.mkt2 .journey-step-state { padding: 5px 7px; border: 1px solid var(--dark-rule); border-radius: 999px; color: var(--steel); font-family: var(--mono); font-size: 7px; letter-spacing: .08em; white-space: nowrap; }
+.mkt2 .journey-sequence .is-final .journey-step-number { border-color: var(--champagne); background: var(--champagne); color: var(--midnight); }
+.mkt2 .journey-sequence .is-final .journey-step-state { border-color: rgba(201,168,106,.42); color: var(--champagne); }
+.mkt2 .journey-boundary { min-height: 60px; justify-content: flex-start; border-top: 1px solid var(--dark-rule); border-bottom: 0; }
+.mkt2 .journey-boundary i { flex: 1; height: 1px; background: linear-gradient(90deg,var(--cyan),var(--violet),var(--champagne)); }
+.mkt2 .journey-boundary strong { color: var(--champagne); font-size: 9px; font-weight: 500; letter-spacing: .12em; white-space: nowrap; }
 
-/* ── Case clock ─────────────────────────────────────────────────────────────── */
-.mkt2 .planning-board { display: grid; grid-template-columns: minmax(280px,.7fr) 1.3fr; gap: clamp(46px,8vw,112px); align-items: center; margin-top: 70px; padding: 54px; border: 1px solid var(--rule); border-radius: 24px; background: var(--ivory); }
-.mkt2 .planning-clock { position: relative; aspect-ratio: 1; display: grid; place-items: center; max-width: 330px; margin-inline: auto; border: 1px solid var(--rule); border-radius: 50%; background: radial-gradient(circle, #fff 0 35%, transparent 36%), conic-gradient(from -45deg, rgba(91,231,246,.22), rgba(57,120,246,.11), rgba(118,89,255,.22), rgba(226,75,174,.14), rgba(255,138,67,.21), rgba(91,231,246,.22)); }
-.mkt2 .planning-clock::before { content: ""; position: absolute; inset: 12%; border: 1px dashed rgba(57,120,246,.35); border-radius: 50%; }
-.mkt2 .planning-clock p { position: relative; z-index: 2; display: flex; align-items: baseline; margin: -26px 0 0; line-height: .8; }
-.mkt2 .planning-clock strong { font-family: var(--display); font-size: clamp(64px,8vw,108px); font-weight: 500; letter-spacing: -.07em; }
-.mkt2 .planning-clock p span { color: var(--electric); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
-.mkt2 .planning-clock small { position: absolute; top: 62%; color: var(--ink-soft); font-family: var(--mono); font-size: 9px; line-height: 1.5; text-align: center; text-transform: uppercase; }
-.mkt2 .planning-orbit { position: absolute; border-radius: 50%; border: 1px solid rgba(57,120,246,.24); }
-.mkt2 .orbit-one { inset: -10%; transform: rotate(18deg) scaleY(.63); }
-.mkt2 .orbit-two { inset: 3%; transform: rotate(-32deg) scaleY(.72); border-color: rgba(226,75,174,.26); }
-.mkt2 .planning-track { position: relative; display: grid; margin: 0; padding: 0; list-style: none; }
-.mkt2 .planning-track::before { content: ""; position: absolute; left: 34px; top: 34px; bottom: 34px; width: 1px; background: linear-gradient(var(--cyan),var(--blue),var(--violet),var(--magenta)); }
-.mkt2 .planning-track li { position: relative; min-height: 86px; display: grid; grid-template-columns: 68px 70px 1fr; align-items: center; border-bottom: 1px solid var(--rule); }
+/* ── Planning profile ──────────────────────────────────────────────────────── */
+.mkt2 .planning-board { display: grid; grid-template-columns: minmax(300px,.76fr) minmax(480px,1.24fr); margin-top: 70px; overflow: hidden; border: 1px solid var(--rule); border-radius: 24px; background: var(--ivory); }
+.mkt2 .planning-window { min-height: 430px; display: flex; flex-direction: column; padding: clamp(34px,4vw,52px); background: var(--midnight); color: var(--light); }
+.mkt2 .planning-window-top { display: flex; align-items: center; gap: 14px; color: var(--steel); font-family: var(--mono); font-size: 8px; letter-spacing: .12em; }
+.mkt2 .planning-window-top i { flex: 1; height: 1px; background: linear-gradient(90deg,rgba(201,168,106,.8),transparent); }
+.mkt2 .planning-window-value { display: flex; align-items: flex-end; gap: 12px; margin-top: auto; }
+.mkt2 .planning-window-value strong { font-family: var(--display); font-size: clamp(94px,10vw,148px); font-weight: 500; line-height: .72; letter-spacing: -.08em; }
+.mkt2 .planning-window-value span { padding-bottom: 6px; color: var(--champagne); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.mkt2 .planning-window > p { max-width: 330px; margin: 34px 0 0; color: var(--light-soft); font-size: 14px; line-height: 1.55; }
+.mkt2 .planning-window > small { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--dark-rule); color: var(--steel); font-family: var(--mono); font-size: 7px; letter-spacing: .09em; }
+.mkt2 .planning-track { position: relative; display: grid; align-content: center; margin: 0; padding: 28px clamp(30px,4vw,54px); list-style: none; background: var(--paper); }
+.mkt2 .planning-track::before { content: ""; position: absolute; left: calc(clamp(30px,4vw,54px) + 13px); top: 70px; bottom: 70px; width: 1px; background: linear-gradient(var(--cyan),var(--blue),var(--violet),var(--champagne)); }
+.mkt2 .planning-track li { position: relative; min-height: 90px; display: grid; grid-template-columns: 54px 82px minmax(0,1fr); align-items: center; border-bottom: 1px solid var(--rule); }
 .mkt2 .planning-track li:last-child { border-bottom: 0; }
-.mkt2 .planning-index { position: relative; z-index: 1; width: 26px; height: 26px; display: grid; place-items: center; margin-left: 21px; border: 1px solid var(--electric); border-radius: 50%; background: var(--ivory); color: var(--electric-deep); font-family: var(--mono); font-size: 8px; }
-.mkt2 .planning-track li > strong { font-family: var(--display); font-size: 36px; font-weight: 500; letter-spacing: -.05em; }
+.mkt2 .planning-index { position: relative; z-index: 1; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--electric); border-radius: 50%; background: var(--paper); color: var(--electric-deep); font-family: var(--mono); font-size: 8px; }
+.mkt2 .planning-track li > strong { font-family: var(--display); font-size: 42px; font-weight: 500; line-height: 1; letter-spacing: -.05em; }
 .mkt2 .planning-track p { margin: 0; font-size: 14px; }
 .mkt2 .planning-track b,
 .mkt2 .planning-track small { display: block; }
@@ -1253,10 +1295,6 @@
   from { opacity: .8; transform: translate3d(0,18px,0); }
   to { opacity: 1; transform: translate3d(0,0,0); }
 }
-@keyframes node-arrive {
-  from { opacity: .72; transform: translate(-50%,-50%) scale(.92); }
-  to { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-}
 @keyframes visual-settle {
   from { opacity: .78; transform: translate3d(10px,0,0) scale(.985); }
   to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
@@ -1269,38 +1307,31 @@
     animation-timeline: view();
     animation-range: entry 0% cover 24%;
   }
-  .mkt2 .journey-node {
-    animation: node-arrive 1s linear both;
-    animation-timeline: view();
-    animation-range: entry calc(6% + var(--i) * 3%) cover 28%;
-  }
 }
 
 @media (max-width: 1020px) {
   .mkt2 .guide-hero-layout { grid-template-columns: 1fr minmax(330px,.8fr); gap: 40px; }
-  .mkt2 .journey-node-copy { display: none; }
-  .mkt2 .journey-file { left: 42%; }
-  .mkt2 .planning-board { padding: 38px; }
+  .mkt2 .journey-workspace { grid-template-columns: minmax(280px,.82fr) minmax(370px,1.18fr); gap: 32px; padding: 34px; }
+  .mkt2 .journey-dossier { padding: 30px; }
+  .mkt2 .journey-dossier h3 { font-size: 40px; }
+  .mkt2 .dossier-sight { right: 24px; top: 68px; width: 78px; height: 78px; }
+  .mkt2 .dossier-sight i { inset: 25px; }
+  .mkt2 .dossier-sight i:last-child { inset: 36px; }
+  .mkt2 .journey-step-state { display: none; }
+  .mkt2 .planning-board { grid-template-columns: minmax(280px,.82fr) minmax(420px,1.18fr); }
 }
 
 @media (max-width: 840px) {
   .mkt2 .journey-console { margin-top: 42px; }
-  .mkt2 .journey-workspace { min-height: auto; padding: 28px 20px; }
-  .mkt2 .journey-route,
-  .mkt2 .journey-file,
-  .mkt2 .journey-readout { display: none; }
-  .mkt2 .journey-nodes { position: relative; display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
-  .mkt2 .journey-nodes::before { content: ""; position: absolute; left: 24px; top: 24px; bottom: 24px; width: 1px; background: linear-gradient(var(--cyan),var(--blue),var(--violet),var(--magenta),var(--tangerine)); }
-  .mkt2 .journey-node { position: relative; left: auto; top: auto; display: grid; grid-template-columns: 50px 1fr; transform: none; }
-  .mkt2 .journey-node { animation: none !important; transform: none !important; }
-  .mkt2 .journey-node-ring { width: 48px; height: 48px; box-shadow: none; }
-  .mkt2 .journey-node-copy { display: block; min-width: 0; }
-  .mkt2 .journey-node-copy strong,
-  .mkt2 .journey-node-copy small { white-space: normal; }
+  .mkt2 .journey-workspace { grid-template-columns: 1fr; gap: 44px; padding: 28px 20px 36px; }
+  .mkt2 .journey-dossier { min-height: 430px; }
+  .mkt2 .journey-step-state { display: inline-flex; }
   .mkt2 .journey-boundary { flex-wrap: wrap; padding-block: 12px; }
   .mkt2 .journey-boundary strong { flex-basis: 100%; }
-  .mkt2 .planning-board { grid-template-columns: 1fr; gap: 50px; }
-  .mkt2 .planning-clock { width: min(74vw,300px); }
+  .mkt2 .planning-board { grid-template-columns: 1fr; }
+  .mkt2 .planning-window { min-height: 360px; }
+  .mkt2 .planning-window-value strong { font-size: clamp(108px,22vw,148px); }
+  .mkt2 .planning-track { padding-block: 24px; }
   .mkt2 .guide-hero { min-height: 0; }
   .mkt2 .guide-hero-layout { grid-template-columns: 1fr; gap: 42px; }
   .mkt2 .guide-hero-copy { max-width: 680px; }
@@ -1308,14 +1339,37 @@
 }
 
 @media (max-width: 540px) {
-  .mkt2 .journey-toolbar { padding: 0 14px; }
-  .mkt2 .journey-live { max-width: 150px; text-align: right; }
-  .mkt2 .journey-workspace { padding: 22px 14px; }
-  .mkt2 .planning-board { margin-top: 44px; padding: 34px 18px; }
-  .mkt2 .planning-track li { grid-template-columns: 52px 58px 1fr; }
-  .mkt2 .planning-index { margin-left: 13px; }
-  .mkt2 .planning-track::before { left: 26px; }
-  .mkt2 .planning-track li > strong { font-size: 30px; }
+  .mkt2 .journey-toolbar { min-height: 56px; padding: 0 14px; font-size: 7px; }
+  .mkt2 .journey-toolbar > span:first-child { max-width: 120px; }
+  .mkt2 .journey-live { max-width: 140px; justify-content: flex-end; text-align: right; }
+  .mkt2 .journey-workspace { gap: 38px; padding: 16px 14px 28px; }
+  .mkt2 .journey-dossier { min-height: 420px; padding: 28px 22px; border-radius: 4px 22px 22px 4px; }
+  .mkt2 .dossier-sight { right: 24px; top: 68px; width: 68px; height: 68px; }
+  .mkt2 .dossier-sight i { inset: 21px; }
+  .mkt2 .dossier-sight i:last-child { inset: 31px; }
+  .mkt2 .dossier-kicker { max-width: 145px; margin-top: 48px; }
+  .mkt2 .journey-dossier h3 { max-width: 260px; font-size: 34px; }
+  .mkt2 .dossier-count strong { font-size: 68px; }
+  .mkt2 .dossier-status { gap-inline: 12px; }
+  .mkt2 .dossier-note { max-width: 250px; line-height: 1.5; }
+  .mkt2 .journey-sequence li { min-height: 94px; grid-template-columns: 42px minmax(0,1fr); gap: 12px; }
+  .mkt2 .journey-sequence::before { left: 20px; }
+  .mkt2 .journey-step-number { width: 42px; height: 42px; }
+  .mkt2 .journey-step-state { display: none; }
+  .mkt2 .journey-step-copy strong { font-size: 15px; }
+  .mkt2 .journey-boundary { gap: 10px; padding-inline: 14px; }
+  .mkt2 .journey-boundary i { min-width: 32px; }
+  .mkt2 .planning-board { margin-top: 44px; border-radius: 20px; }
+  .mkt2 .planning-window { min-height: 330px; padding: 30px 24px; }
+  .mkt2 .planning-window-value { gap: 10px; }
+  .mkt2 .planning-window-value strong { font-size: 94px; }
+  .mkt2 .planning-window > p { margin-top: 28px; font-size: 13px; }
+  .mkt2 .planning-track { padding: 18px; }
+  .mkt2 .planning-track::before { left: 31px; top: 62px; bottom: 62px; }
+  .mkt2 .planning-track li { min-height: 92px; grid-template-columns: 44px 62px minmax(0,1fr); }
+  .mkt2 .planning-track li > strong { font-size: 32px; }
+  .mkt2 .planning-track p { font-size: 13px; }
+  .mkt2 .planning-track small { font-size: 11px; line-height: 1.35; }
   .mkt2 .guide-hero { padding: 42px 20px 46px; }
   .mkt2 .guide-hero h1 { font-size: 40px; line-height: 1.04; }
   .mkt2 .ih-visual { min-height: 252px; border-radius: 20px; }
@@ -1328,8 +1382,8 @@
 @media (prefers-reduced-motion: reduce) {
   .mkt2 .ih-visual,
   .mkt2 .journey-console,
-  .mkt2 .planning-board,
-  .mkt2 .journey-node { animation: none !important; }
+  .mkt2 .planning-board { animation: none !important; }
+  .mkt2 .journey-sequence li { transition: none !important; transform: none !important; }
 }
 
 /* ── Eligibility workbench ─────────────────────────────────────────────────── */

@@ -1,5 +1,4 @@
 import Link from "next/link"
-import type { CSSProperties } from "react"
 import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
@@ -99,50 +98,52 @@ export default async function Home() {
 
           <div className="journey-console" aria-label="Five phases of the service">
             <div className="journey-toolbar">
-              <span>CASE / NYC-CCW</span>
-              <span className="journey-live"><i aria-hidden="true" /> ONE ORGANIZED FILE</span>
+              <span>PRIVATE CASE DESK / NYC</span>
+              <span className="journey-live"><i aria-hidden="true" /> CONTROLLED + TRACEABLE</span>
             </div>
             <div className="journey-workspace">
-              <svg className="journey-route" viewBox="0 0 1000 430" preserveAspectRatio="none" aria-hidden="true">
-                <path className="journey-route-ghost" d="M55 338 C150 338 145 112 295 112 S410 320 520 320 S635 90 738 90 S820 254 946 188" />
-                <path className="journey-route-color" d="M55 338 C150 338 145 112 295 112 S410 320 520 320 S635 90 738 90 S820 254 946 188" />
-              </svg>
-
-              <div className="journey-file" aria-hidden="true">
-                <span className="journey-file-tab">CASE</span>
-                <span className="journey-file-line" />
-                <span className="journey-file-line is-short" />
-                <b>24</b><small>tracked requirements</small>
+              <div className="journey-dossier">
+                <div className="dossier-sight" aria-hidden="true"><i /><i /></div>
+                <div className="dossier-topline">
+                  <span>NYC / CCW</span><span>CASE 001</span>
+                </div>
+                <p className="dossier-kicker">One organized case file</p>
+                <h3>Precision around every requirement.</h3>
+                <div className="dossier-count">
+                  <strong>24</strong>
+                  <span>requirements<br />tracked together</span>
+                </div>
+                <div className="dossier-status">
+                  <span><i aria-hidden="true" /> Identity</span>
+                  <span><i aria-hidden="true" /> Training</span>
+                  <span><i aria-hidden="true" /> References</span>
+                  <span><i aria-hidden="true" /> Disclosures</span>
+                </div>
+                <p className="dossier-note">Document preparation · timing control · source traceability</p>
               </div>
 
-              <ol className="journey-nodes">
-                {[
-                  ["01", "Qualify", "Track + fit", "6", "78"],
-                  ["02", "Train", "18-hour timing", "29", "25"],
-                  ["03", "Assemble", "Docs + people", "51", "74"],
-                  ["04", "Review", "Completeness gate", "73", "20"],
-                  ["05", "You submit", "Applicant-controlled", "94", "44"],
-                ].map(([n, t, d, x, y], i) => (
-                  <li
-                    className={`journey-node${i === 2 ? " is-active" : ""}`}
-                    key={n}
-                    style={{ "--x": `${x}%`, "--y": `${y}%`, "--i": i } as CSSProperties}
-                  >
-                    <span className="journey-node-ring"><i>{n}</i></span>
-                    <span className="journey-node-copy"><strong>{t}</strong><small>{d}</small></span>
-                  </li>
-                ))}
-              </ol>
-
-              <div className="journey-readout">
-                <span><b>13</b> internal stages</span>
-                <span><b>05</b> phases you see</span>
-                <span><b>01</b> next step</span>
+              <div className="journey-sequence-wrap">
+                <p className="journey-sequence-label">Your guided sequence</p>
+                <ol className="journey-sequence">
+                  {[
+                    ["01", "Qualify", "Confirm the track and identify legal-review boundaries."],
+                    ["02", "Train", "Plan the required course inside the usable certificate window."],
+                    ["03", "Assemble", "Bring documents, people, records, and disclosures into one file."],
+                    ["04", "Review", "Pass a structured completeness gate before submission."],
+                    ["05", "You submit", "Review the finished packet and submit your own application."],
+                  ].map(([n, t, d], i) => (
+                    <li className={i === 4 ? "is-final" : undefined} key={n}>
+                      <span className="journey-step-number">{n}</span>
+                      <span className="journey-step-copy"><strong>{t}</strong><small>{d}</small></span>
+                      <span className="journey-step-state">{i === 4 ? "YOUR CONTROL" : "GUIDED"}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </div>
             <div className="journey-boundary">
-              <span>OUR SYSTEM</span><i aria-hidden="true" /><span>YOUR DECISION</span>
-              <strong>You review. You submit.</strong>
+              <span>WE PREPARE + ORGANIZE</span><i aria-hidden="true" />
+              <strong>YOU REVIEW + SUBMIT</strong>
             </div>
           </div>
           <p className="phase-note">
@@ -228,11 +229,17 @@ export default async function Home() {
             </p>
           </div>
           <div className="planning-board">
-            <div className="planning-clock">
-              <span className="planning-orbit orbit-one" aria-hidden="true" />
-              <span className="planning-orbit orbit-two" aria-hidden="true" />
-              <p><strong>~6</strong><span>months</span></p>
-              <small>typical planning horizon<br />start → decision</small>
+            <div className="planning-window">
+              <div className="planning-window-top">
+                <span>NYC CARRY / PLANNING PROFILE</span>
+                <i aria-hidden="true" />
+              </div>
+              <div className="planning-window-value">
+                <strong>~6</strong>
+                <span>months</span>
+              </div>
+              <p>Typical planning horizon from a complete submission to a decision.</p>
+              <small>PLANNING RANGE · NOT AN OUTCOME PROMISE</small>
             </div>
             <ol className="planning-track">
               {[
@@ -241,7 +248,7 @@ export default async function Home() {
                 ["1×", "each adult at home", "One statement per cohabitant."],
                 ["01", "NYPD interview", "Prepare for questions and requests."],
               ].map(([value, label, detail], i) => (
-                <li key={label} style={{ "--i": i } as CSSProperties}>
+                <li key={label}>
                   <span className="planning-index">0{i + 1}</span>
                   <strong>{value}</strong>
                   <p><b>{label}</b><small>{detail}</small></p>
