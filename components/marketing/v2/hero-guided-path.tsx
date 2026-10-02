@@ -1,6 +1,8 @@
 import Image from "next/image"
 import type { CSSProperties } from "react"
 
+import { HeroMotionViewport } from "./hero-motion-viewport"
+
 const GUIDED_PATH_IMAGE = "/images/marketing/hero-nyc-guided-path-v2.png"
 
 const MILESTONES = [
@@ -33,21 +35,22 @@ const PHASES = [
   { number: "02", title: "Train", detail: "18-hour course", position: "two", tone: "blue" },
   { number: "03", title: "Assemble", detail: "Docs + people", position: "three", tone: "violet" },
   { number: "04", title: "Review", detail: "Every requirement", position: "four", tone: "magenta" },
-  { number: "05", title: "You submit", detail: "Your application", position: "five", tone: "orange" },
+  { number: "05", title: "Application submitted", detail: "By the applicant", position: "five", tone: "orange" },
 ] as const
 
 /**
  * NYC Guided Path — a premium architectural model of a complicated case
  * becoming an organized, five-phase journey. The complete artwork is always
- * visible; finite CSS/SVG overlays add hierarchy without requiring JavaScript.
+ * visible; a small client boundary only pauses the replaying motion offscreen.
  */
 export function HeroGuidedPath() {
   return (
-    <div className="hero-guided-path">
+    <HeroMotionViewport>
       <p className="sr-only">
         Identity records, training, references, and disclosures move through five phases:
-        qualify, train, assemble, review, and applicant submission, becoming one organized
-        New York City licensing case file.
+        qualify, train, assemble, review, and application submission by the applicant. The
+        application then awaits an independent NYPD decision and, if approved, a license is
+        issued.
       </p>
 
       <div className="gp-scroll-plane" aria-hidden="true">
@@ -121,6 +124,17 @@ export function HeroGuidedPath() {
                 <stop offset="0.38" stopColor="var(--cyan)" />
                 <stop offset="1" stopColor="var(--violet)" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="gpLicenseCard" x1="-60" y1="-38" x2="62" y2="42" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="var(--electric)" />
+                <stop offset="0.46" stopColor="var(--violet)" />
+                <stop offset="0.76" stopColor="var(--magenta)" />
+                <stop offset="1" stopColor="var(--tangerine)" />
+              </linearGradient>
+              <linearGradient id="gpLicenseOrbit" x1="-100" y1="-90" x2="105" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="var(--cyan)" />
+                <stop offset="0.52" stopColor="var(--violet)" />
+                <stop offset="1" stopColor="var(--tangerine)" />
+              </linearGradient>
             </defs>
 
             <path
@@ -186,6 +200,21 @@ export function HeroGuidedPath() {
                 <circle className="gp-file-check-disc" r="22" />
                 <path d="m-10 0 7 7 15-17" />
               </g>
+              <g className="gp-license-celebration">
+                <circle className="gp-license-orbit gp-license-orbit--outer" r="106" />
+                <circle className="gp-license-orbit gp-license-orbit--inner" r="82" />
+                <path
+                  className="gp-license-rays"
+                  d="M0-93V-122M66-66l21-21M93 0h29M66 66l21 21M0 93v29M-66 66l-21 21M-93 0h-29M-66-66l-21-21"
+                />
+                <g className="gp-license-card">
+                  <rect className="gp-license-card-shell" x="-64" y="-40" width="128" height="80" rx="15" />
+                  <rect className="gp-license-card-inner" x="-56" y="-32" width="112" height="64" rx="10" />
+                  <circle className="gp-license-seal" cx="-32" cy="0" r="17" />
+                  <path className="gp-license-tick" d="m-40 0 6 6 12-15" />
+                  <path className="gp-license-line" d="M-7-11H38M-7 1H29M-7 13H43" />
+                </g>
+              </g>
             </g>
           </svg>
 
@@ -205,14 +234,30 @@ export function HeroGuidedPath() {
             ))}
           </div>
 
-          <span className="gp-resolved" aria-hidden="true">
-            <span>✓</span>
-            <b>ONE ORGANIZED FILE</b>
-          </span>
+          <div className="gp-outcome-cycle" aria-hidden="true">
+            <span className="gp-outcome gp-outcome--file">
+              <i>✓</i>
+              <b>ONE ORGANIZED FILE</b>
+            </span>
+            <span className="gp-outcome gp-outcome--decision">
+              <i>→</i>
+              <span>
+                <b>NYPD DECISION</b>
+                <small>INDEPENDENT REVIEW</small>
+              </span>
+            </span>
+            <span className="gp-outcome gp-outcome--licensed">
+              <i>✓</i>
+              <span>
+                <small>IF APPROVED BY NYPD</small>
+                <b>LICENSED</b>
+              </span>
+            </span>
+          </div>
         </div>
       </div>
 
       <span className="gp-stage-index" aria-hidden="true">GUIDED CASE PATH / NYC</span>
-    </div>
+    </HeroMotionViewport>
   )
 }
