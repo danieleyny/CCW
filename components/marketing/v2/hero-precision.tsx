@@ -81,8 +81,9 @@ export function HeroPrecision() {
   return (
     <div className="hero-precision">
       <p className="sr-only">
-        An exploded-view graphite and glass sculpture aligns inside a field of connected
-        spectral points, representing a complicated process becoming one coherent system.
+        A graphite-and-glass pistol assembles from five aligned vector components inside a
+        field of connected spectral points, representing a complicated process becoming one
+        coherent system.
       </p>
 
       <svg className="hp-svg" viewBox="36 105 650 470" aria-hidden="true" focusable="false">
@@ -154,6 +155,11 @@ export function HeroPrecision() {
             <stop offset="0.9" stopColor="#131c29" />
             <stop offset="1" stopColor="#080c13" />
           </radialGradient>
+          <mask id="hpSlideCutouts" maskUnits="userSpaceOnUse" x="84" y="146" width="540" height="154">
+            <rect x="84" y="146" width="540" height="154" fill="white" />
+            <ellipse cx="121" cy="224" rx="18" ry="29" fill="black" />
+            <path d="M332 192 L444 194 L468 211 L453 232 L338 228 L316 211 Z" fill="black" />
+          </mask>
         </defs>
 
         <ellipse className="hp-aura" cx="390" cy="306" rx="326" ry="260" fill="url(#hpAura)" />
@@ -227,113 +233,108 @@ export function HeroPrecision() {
         </g>
 
         <g className="hp-assembly-guides">
-          <path className="hp-assembly-axis" d="M82 229 C232 221 435 226 661 229" />
-          <path className="hp-assembly-axis hp-assembly-axis--lower" d="M203 286 C337 296 488 300 620 332" />
-          <circle cx="185" cy="227" r="5" />
-          <circle cx="545" cy="229" r="5" />
-          <circle cx="520" cy="334" r="4" />
-          <path className="hp-assembly-tick" d="M184 210 V244 M545 210 V247 M522 317 V350" />
+          <path className="hp-assembly-axis" d="M91 224 C238 218 416 219 612 224" />
+          <path className="hp-assembly-axis hp-assembly-axis--lower" d="M142 293 C294 304 451 304 579 291" />
+          <circle cx="121" cy="224" r="5" />
+          <circle cx="576" cy="224" r="5" />
+          <circle cx="501" cy="330" r="4" />
+          <path className="hp-assembly-tick" d="M121 204 V246 M576 203 V246 M501 313 V348" />
         </g>
 
-        <ellipse className="hp-gun-ground" cx="397" cy="521" rx="230" ry="31" />
+        <ellipse className="hp-gun-ground" cx="357" cy="540" rx="260" ry="28" />
 
-        <g className="hp-assembly-plane hp-assembly-plane--muzzle">
+        <g className="hp-assembly-plane hp-assembly-plane--magazine">
           <g className="hp-assembly-part">
-            <path
-              className="hp-gun-dark"
-              d="M88 188 H158 C174 188 184 199 184 215 V238 C184 253 173 261 158 261 H88 Z"
-            />
-            <path className="hp-gun-facet" d="M101 192 H160 C171 192 178 201 178 213 V221 H101 Z" />
-            <ellipse className="hp-gun-muzzle-ring" cx="88" cy="224" rx="25" ry="38" />
-            <ellipse className="hp-gun-muzzle-bore" cx="88" cy="224" rx="14" ry="25" />
-            <path className="hp-gun-rim hp-gun-rim--cyan" d="M88 186 C72 187 63 203 63 224 C63 247 73 261 88 262" />
-            <path className="hp-gun-detail" d="M111 246 H160 C170 246 176 240 178 231" />
-            <path className="hp-gun-sheen" d="M107 198 H158 C167 198 173 204 174 211" />
+            <path className="hp-pistol-magazine" d="M443 349 L501 341 L539 514 L510 541 L449 528 L414 422 Z" />
+            <path className="hp-pistol-magazine-facet" d="M457 365 L492 359 L523 505 L505 522 L461 514 L432 427 Z" />
+            <path className="hp-pistol-magazine-line" d="M470 378 L504 500 M454 394 L487 511" />
+            <path className="hp-pistol-magazine-base" d="M445 525 L515 536 L509 551 L452 545 Z" />
           </g>
         </g>
 
-        <g className="hp-assembly-plane hp-assembly-plane--slide">
+        <g className="hp-assembly-plane hp-assembly-plane--recoil">
           <g className="hp-assembly-part">
-            <path
-              className="hp-gun-dark"
-              d="M190 181 L218 156 L475 158 L535 188 L539 230 L514 247 L220 238 L188 215 Z"
-            />
-            <path className="hp-gun-facet" d="M221 156 L476 158 L518 179 L207 178 Z" />
-            <path className="hp-gun-panel" d="M221 186 L495 188 L514 201 L506 229 L224 221 L201 207 Z" />
-            <path className="hp-gun-port" d="M278 181 H374 L396 192 L383 207 H291 L271 196 Z" />
-            <path className="hp-gun-port-inner" d="M290 187 H369 L382 194 L376 201 H296 L285 195 Z" />
-            <path className="hp-gun-rim hp-gun-rim--cyan" d="M188 181 L217 156 L233 157" />
-            <path className="hp-gun-rim" d="M232 157 L475 159 L526 185" />
-            <path className="hp-gun-sheen" d="M240 166 C332 164 417 168 491 176" />
-            <path className="hp-gun-detail" d="M231 230 L509 238" />
-          </g>
-        </g>
-
-        <g className="hp-assembly-plane hp-assembly-plane--rear">
-          <g className="hp-assembly-part">
-            <path className="hp-gun-dark" d="M561 183 L631 192 L663 215 L671 247 L589 252 L556 223 Z" />
-            <path className="hp-gun-facet" d="M570 185 L628 193 L652 209 L577 204 Z" />
-            <path className="hp-gun-panel" d="M580 207 L648 214 L659 225 L662 241 L597 243 Z" />
-            <path className="hp-gun-rim" d="M561 183 L631 192 L663 215 L671 247" />
-            {[0, 1, 2, 3].map((index) => (
-              <path key={index} className="hp-gun-groove" d={`M${585 + index * 12} 210 L${596 + index * 12} 240`} />
+            <path className="hp-pistol-guide-rod" d="M151 254 H468 C477 254 482 260 482 267 C482 274 477 279 468 279 H151 Z" />
+            <ellipse className="hp-pistol-guide-cap" cx="151" cy="266.5" rx="9" ry="13" />
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((index) => (
+              <path
+                key={index}
+                className="hp-pistol-spring"
+                d={`M${181 + index * 19} 257 L${189 + index * 19} 276`}
+              />
             ))}
           </g>
         </g>
 
-        <g className="hp-assembly-plane hp-assembly-plane--rail">
+        <g className="hp-assembly-plane hp-assembly-plane--barrel">
           <g className="hp-assembly-part">
-            <path className="hp-gun-chrome" d="M205 250 L519 252 L552 268 L536 287 L220 281 L194 267 Z" />
-            <path className="hp-gun-glass" d="M218 256 L511 258 L536 269 L526 278 L224 273 L207 266 Z" />
-            <path className="hp-gun-rim hp-gun-rim--cyan" d="M205 250 L194 267 L220 281" />
-            <path className="hp-gun-rim" d="M219 252 L519 253 L549 267" />
-            <circle className="hp-gun-pin" cx="242" cy="266" r="5" />
-            <circle className="hp-gun-pin" cx="505" cy="270" r="4" />
+            <path className="hp-pistol-barrel" d="M120 199 H457 L487 214 L482 241 L456 252 H120 Z" />
+            <path className="hp-pistol-barrel-facet" d="M139 203 H451 L473 214 L462 224 H139 Z" />
+            <path className="hp-pistol-barrel-hood" d="M326 190 L447 192 L468 209 L452 230 L337 227 L316 210 Z" />
+            <ellipse className="hp-gun-muzzle-ring" cx="121" cy="224" rx="25" ry="37" />
+            <ellipse className="hp-gun-muzzle-bore" cx="121" cy="224" rx="15" ry="27" />
+            <path className="hp-gun-rim hp-gun-rim--cyan" d="M121 186 C105 187 96 203 96 224 C96 247 106 261 121 262" />
+            <path className="hp-gun-sheen" d="M146 206 H447 C458 206 467 211 473 217" />
           </g>
         </g>
 
         <g className="hp-assembly-plane hp-assembly-plane--frame">
           <g className="hp-assembly-part">
             <path
-              className="hp-gun-glass hp-gun-frame"
+              className="hp-pistol-frame"
               fillRule="evenodd"
-              d="M216 286 L528 289 L545 309 L526 333 L486 344 L476 389 L478 492 L449 522 L414 504 L396 401 L373 366 H313 C262 366 227 337 216 286 Z M306 316 C313 302 331 300 350 301 L412 303 C433 304 447 318 447 336 C447 354 433 362 414 362 H333 C313 362 299 350 297 335 C296 328 300 321 306 316 Z"
+              d="M150 282 L560 282 L579 300 L566 320 L523 334 L509 360 L552 510 L516 547 L428 535 L400 432 L365 404 H290 C230 404 184 373 165 329 Z M291 319 C304 309 322 306 342 307 L421 309 C451 310 468 329 467 350 C466 376 446 393 417 394 H330 C298 394 276 376 274 350 C273 337 279 326 291 319 Z"
             />
-            <path className="hp-gun-frame-facet" d="M229 294 L518 297 L529 308 L517 320 L254 316 Z" />
-            <path className="hp-gun-frame-line" d="M261 324 C284 348 302 351 330 352" />
-            <path className="hp-gun-frame-line" d="M461 344 L446 477 L431 493" />
-            <circle className="hp-gun-pin" cx="482" cy="316" r="6" />
-            <circle className="hp-gun-pin hp-gun-pin--small" cx="456" cy="323" r="3" />
-            <path className="hp-gun-trigger" d="M383 318 C382 337 373 349 359 356" />
-            <path className="hp-gun-rim hp-gun-rim--cyan" d="M216 286 C227 337 262 366 313 366" />
-            <path className="hp-gun-rim" d="M216 286 L528 289 L545 309" />
+            <path className="hp-pistol-frame-facet" d="M164 289 L550 289 L563 301 L548 314 L192 316 Z" />
+            <path className="hp-pistol-dust-cover" d="M184 317 H269 C280 317 286 326 286 336 V347 H214 C198 347 188 335 184 317 Z" />
+            <path className="hp-pistol-grip-panel" d="M450 361 L500 344 L536 503 L508 529 L452 519 L417 427 Z" />
+            <path className="hp-pistol-grip-inset" d="M463 377 L491 365 L521 496 L502 513 L464 505 L435 429 Z" />
+            <path className="hp-pistol-grip-line" d="M473 388 L506 491 M458 402 L490 505" />
+            <path className="hp-pistol-frame-line" d="M199 328 C220 369 251 385 296 388" />
+            <path className="hp-pistol-frame-line" d="M518 342 L536 500 L512 524" />
+            <path className="hp-pistol-trigger" d="M399 323 C399 348 388 367 370 380" />
+            <circle className="hp-gun-pin" cx="506" cy="309" r="6" />
+            <circle className="hp-gun-pin hp-gun-pin--small" cx="478" cy="313" r="3" />
+            <path className="hp-gun-rim hp-gun-rim--cyan" d="M150 282 L165 329 C184 373 230 404 290 404" />
+            <path className="hp-gun-rim" d="M150 282 L560 282 L579 300" />
           </g>
         </g>
 
-        <g className="hp-assembly-plane hp-assembly-plane--core">
+        <g className="hp-assembly-plane hp-assembly-plane--slide">
           <g className="hp-assembly-part">
-            <path className="hp-gun-grip" d="M486 350 L528 340 L566 490 L510 537 L455 508 L448 399 Z" />
-            <path className="hp-gun-grip-facet" d="M496 360 L520 353 L550 483 L511 520 L480 504 Z" />
-            <path className="hp-gun-grip-line" d="M501 374 L533 486" />
-            <path className="hp-gun-grip-line" d="M487 390 L519 506" />
-            <path className="hp-gun-rim" d="M486 350 L528 340 L566 490" />
-          </g>
-        </g>
-
-        <g className="hp-assembly-plane hp-assembly-plane--grip">
-          <g className="hp-assembly-part">
-            <path className="hp-gun-grip" d="M586 354 L621 359 L650 390 L670 493 L622 535 L582 516 L569 397 Z" />
-            <path className="hp-gun-grip-facet" d="M597 368 L617 370 L638 396 L656 486 L623 519 L602 505 L588 400 Z" />
-            <path className="hp-gun-grip-line" d="M606 384 L638 494" />
-            <path className="hp-gun-grip-line" d="M592 398 L621 510" />
-            <path className="hp-gun-rim" d="M586 354 L621 359 L650 390 L670 493" />
+            <path
+              className="hp-pistol-slide"
+              mask="url(#hpSlideCutouts)"
+              d="M116 174 L520 174 L568 188 L598 214 L592 251 L560 278 L143 278 L114 258 L104 226 L109 195 Z"
+            />
+            <path
+              className="hp-pistol-slide-facet"
+              mask="url(#hpSlideCutouts)"
+              d="M126 174 H519 L559 187 L144 191 L112 207 L116 190 Z"
+            />
+            <path
+              className="hp-pistol-slide-panel"
+              mask="url(#hpSlideCutouts)"
+              d="M151 195 L517 194 L568 211 L562 251 L542 263 L148 258 L127 239 L129 211 Z"
+            />
+            <path className="hp-pistol-port-rim" d="M332 192 L444 194 L468 211 L453 232 L338 228 L316 211 Z" />
+            <ellipse className="hp-pistol-muzzle-rim" cx="121" cy="224" rx="20" ry="32" />
+            {[0, 1, 2, 3, 4].map((index) => (
+              <path key={index} className="hp-pistol-serration" d={`M${518 + index * 10} 202 L${528 + index * 10} 249`} />
+            ))}
+            <path className="hp-pistol-front-sight" d="M158 174 L163 160 H181 L187 174 Z" />
+            <path className="hp-pistol-rear-sight" d="M524 174 L533 158 H564 L571 180 Z" />
+            <path className="hp-gun-rim hp-gun-rim--cyan" d="M109 195 L116 174 L163 174" />
+            <path className="hp-gun-rim" d="M187 174 H520 L568 188 L598 214" />
+            <path className="hp-gun-sheen" d="M196 183 C320 180 433 182 532 191" />
+            <path className="hp-pistol-slide-line" d="M150 264 L545 269" />
           </g>
         </g>
 
         <g className="hp-assembly-finish">
-          <path d="M91 276 C241 305 447 295 659 267" />
-          <circle cx="91" cy="276" r="2.5" />
-          <circle cx="659" cy="267" r="2.5" />
+          <path d="M91 306 C236 334 420 324 612 286" />
+          <circle cx="91" cy="306" r="2.5" />
+          <circle cx="612" cy="286" r="2.5" />
         </g>
       </svg>
     </div>

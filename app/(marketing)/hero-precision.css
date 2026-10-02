@@ -47,88 +47,64 @@
   transform-origin: center;
 }
 
-.mkt2 .hero-precision .hp-assembly-plane--muzzle {
-  --assemble-x: -72px;
-  --assemble-y: -18px;
-  --assemble-rotation: -4deg;
-  --assemble-delay: 70ms;
-  --hover-x: -5px;
-  --hover-y: -2px;
-  --scroll-x: -28px;
-  --scroll-y: -8px;
-  --scroll-rotation: -1.4deg;
+.mkt2 .hero-precision .hp-assembly-plane--barrel {
+  --assemble-x: -96px;
+  --assemble-y: -10px;
+  --assemble-rotation: -3deg;
+  --assemble-delay: 65ms;
+  --hover-x: -4px;
+  --hover-y: -1px;
+  --scroll-x: -30px;
+  --scroll-y: -7px;
+  --scroll-rotation: -1.2deg;
 }
 
-.mkt2 .hero-precision .hp-assembly-plane--slide {
-  --assemble-x: -26px;
-  --assemble-y: -56px;
-  --assemble-rotation: -2deg;
-  --assemble-delay: 130ms;
-  --hover-x: -1px;
-  --hover-y: -4px;
-  --scroll-x: -12px;
-  --scroll-y: -24px;
-  --scroll-rotation: -.8deg;
-}
-
-.mkt2 .hero-precision .hp-assembly-plane--rear {
-  --assemble-x: 70px;
-  --assemble-y: -34px;
-  --assemble-rotation: 3.5deg;
-  --assemble-delay: 205ms;
-  --hover-x: 5px;
-  --hover-y: -3px;
-  --scroll-x: 28px;
-  --scroll-y: -14px;
-  --scroll-rotation: 1.5deg;
-}
-
-.mkt2 .hero-precision .hp-assembly-plane--rail {
-  --assemble-x: -28px;
-  --assemble-y: 44px;
-  --assemble-rotation: 1deg;
-  --assemble-delay: 250ms;
-  --hover-x: -2px;
+.mkt2 .hero-precision .hp-assembly-plane--recoil {
+  --assemble-x: 92px;
+  --assemble-y: 38px;
+  --assemble-rotation: 1.8deg;
+  --assemble-delay: 135ms;
+  --hover-x: 2px;
   --hover-y: 2px;
-  --scroll-x: -12px;
-  --scroll-y: 18px;
+  --scroll-x: 18px;
+  --scroll-y: 14px;
   --scroll-rotation: .6deg;
 }
 
+.mkt2 .hero-precision .hp-assembly-plane--magazine {
+  --assemble-x: 48px;
+  --assemble-y: 116px;
+  --assemble-rotation: 4deg;
+  --assemble-delay: 205ms;
+  --hover-x: 3px;
+  --hover-y: 4px;
+  --scroll-x: 18px;
+  --scroll-y: 34px;
+  --scroll-rotation: 1.4deg;
+}
+
 .mkt2 .hero-precision .hp-assembly-plane--frame {
-  --assemble-x: -24px;
-  --assemble-y: 66px;
-  --assemble-rotation: 1.4deg;
-  --assemble-delay: 310ms;
+  --assemble-x: -18px;
+  --assemble-y: 78px;
+  --assemble-rotation: 1.2deg;
+  --assemble-delay: 285ms;
   --hover-x: -2px;
   --hover-y: 3px;
   --scroll-x: -10px;
-  --scroll-y: 22px;
+  --scroll-y: 24px;
   --scroll-rotation: .5deg;
 }
 
-.mkt2 .hero-precision .hp-assembly-plane--core {
-  --assemble-x: 28px;
-  --assemble-y: 76px;
-  --assemble-rotation: 2.5deg;
+.mkt2 .hero-precision .hp-assembly-plane--slide {
+  --assemble-x: 16px;
+  --assemble-y: -82px;
+  --assemble-rotation: -1.8deg;
   --assemble-delay: 365ms;
-  --hover-x: 3px;
-  --hover-y: 4px;
-  --scroll-x: 14px;
-  --scroll-y: 30px;
-  --scroll-rotation: 1.2deg;
-}
-
-.mkt2 .hero-precision .hp-assembly-plane--grip {
-  --assemble-x: 82px;
-  --assemble-y: 72px;
-  --assemble-rotation: 4deg;
-  --assemble-delay: 420ms;
-  --hover-x: 5px;
-  --hover-y: 4px;
-  --scroll-x: 24px;
-  --scroll-y: 28px;
-  --scroll-rotation: 1.8deg;
+  --hover-x: 1px;
+  --hover-y: -4px;
+  --scroll-x: 12px;
+  --scroll-y: -26px;
+  --scroll-rotation: -.7deg;
 }
 
 .mkt2 .hero-precision .hp-assembly-part {
@@ -179,75 +155,150 @@
   to { opacity: .42; transform: none }
 }
 
-.mkt2 .hero-precision .hp-gun-dark {
-  fill: url(#hpGunInk);
-  stroke: color-mix(in srgb, var(--ink) 74%, var(--electric));
-  stroke-width: 1.5;
-  stroke-linejoin: round;
-}
-.mkt2 .hero-precision .hp-gun-facet {
-  fill: url(#hpGunFacet);
-  stroke: color-mix(in srgb, var(--electric) 34%, var(--ink));
-  stroke-width: 1;
-  stroke-linejoin: round;
-}
-.mkt2 .hero-precision .hp-gun-panel {
-  fill: color-mix(in srgb, #0b121d 92%, var(--violet));
-  stroke: color-mix(in srgb, var(--violet) 34%, #263144);
-  stroke-width: 1;
-  stroke-linejoin: round;
-}
-.mkt2 .hero-precision .hp-gun-port { fill: #03070c; stroke: #556174; stroke-width: 1 }
-.mkt2 .hero-precision .hp-gun-port-inner { fill: #111a25 }
-.mkt2 .hero-precision .hp-gun-chrome {
+.mkt2 .hero-precision .hp-pistol-barrel {
   fill: url(#hpGunChrome);
-  stroke: color-mix(in srgb, var(--electric) 35%, #b4c0d1);
+  stroke: color-mix(in srgb, var(--electric) 36%, #708096);
   stroke-width: 1.5;
   stroke-linejoin: round;
 }
-.mkt2 .hero-precision .hp-gun-glass {
-  fill: url(#hpGunGlass);
-  stroke: color-mix(in srgb, var(--electric) 40%, #a9b8c8);
-  stroke-width: 1.35;
-  stroke-linejoin: round;
-}
-.mkt2 .hero-precision .hp-gun-frame { stroke-width: 2 }
-.mkt2 .hero-precision .hp-gun-frame-facet {
-  fill: color-mix(in srgb, #ffffff 68%, var(--electric));
-  fill-opacity: .62;
-  stroke: color-mix(in srgb, var(--violet) 27%, #c8d2e0);
+.mkt2 .hero-precision .hp-pistol-barrel-facet {
+  fill: color-mix(in srgb, #ffffff 58%, #9dacbf);
+  stroke: color-mix(in srgb, var(--cyan) 30%, #7a8799);
   stroke-width: .9;
 }
-.mkt2 .hero-precision .hp-gun-frame-line {
-  fill: none;
-  stroke: color-mix(in srgb, var(--ink) 25%, var(--electric));
-  stroke-width: 1.1;
-  stroke-linecap: round;
-  opacity: .75;
+.mkt2 .hero-precision .hp-pistol-barrel-hood {
+  fill: color-mix(in srgb, #536174 78%, var(--violet));
+  stroke: url(#hpGunEdge);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
 }
-.mkt2 .hero-precision .hp-gun-trigger {
+.mkt2 .hero-precision .hp-pistol-guide-rod {
+  fill: url(#hpGunChrome);
+  stroke: color-mix(in srgb, var(--electric) 34%, #7d8a9c);
+  stroke-width: 1.2;
+}
+.mkt2 .hero-precision .hp-pistol-guide-cap {
+  fill: #121a26;
+  stroke: var(--cyan);
+  stroke-width: 1.5;
+}
+.mkt2 .hero-precision .hp-pistol-spring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--violet) 32%, #667386);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.mkt2 .hero-precision .hp-pistol-magazine {
+  fill: url(#hpGunInk);
+  stroke: color-mix(in srgb, var(--magenta) 32%, #273345);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.mkt2 .hero-precision .hp-pistol-magazine-facet {
+  fill: color-mix(in srgb, #1b2738 84%, var(--violet));
+  stroke: color-mix(in srgb, var(--violet) 38%, #39465a);
+  stroke-width: 1;
+}
+.mkt2 .hero-precision .hp-pistol-magazine-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--magenta) 28%, #617084);
+  stroke-width: .9;
+  opacity: .7;
+}
+.mkt2 .hero-precision .hp-pistol-magazine-base {
+  fill: #080d15;
+  stroke: url(#hpGunEdge);
+  stroke-width: 1.2;
+}
+.mkt2 .hero-precision .hp-pistol-frame {
+  fill: url(#hpGunGlass);
+  stroke: color-mix(in srgb, var(--electric) 46%, #8797ab);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.mkt2 .hero-precision .hp-pistol-frame-facet {
+  fill: color-mix(in srgb, #ffffff 72%, #9eb5cd);
+  stroke: color-mix(in srgb, var(--violet) 25%, #a9b7c9);
+  stroke-width: 1;
+}
+.mkt2 .hero-precision .hp-pistol-dust-cover {
+  fill: color-mix(in srgb, #dae8f3 72%, var(--cyan));
+  stroke: color-mix(in srgb, var(--electric) 30%, #8495aa);
+  stroke-width: 1;
+}
+.mkt2 .hero-precision .hp-pistol-grip-panel {
+  fill: url(#hpGunGrip);
+  stroke: color-mix(in srgb, var(--magenta) 32%, #263244);
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+.mkt2 .hero-precision .hp-pistol-grip-inset {
+  fill: color-mix(in srgb, #182437 83%, var(--violet));
+  stroke: color-mix(in srgb, var(--violet) 36%, #3d4b61);
+  stroke-width: 1;
+}
+.mkt2 .hero-precision .hp-pistol-grip-line,
+.mkt2 .hero-precision .hp-pistol-frame-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--electric) 31%, #5d6a7d);
+  stroke-width: 1;
+  stroke-linecap: round;
+  opacity: .72;
+}
+.mkt2 .hero-precision .hp-pistol-trigger {
   fill: none;
   stroke: url(#hpGunEdge);
-  stroke-width: 4;
+  stroke-width: 5;
   stroke-linecap: round;
 }
-.mkt2 .hero-precision .hp-gun-grip {
-  fill: url(#hpGunGrip);
-  stroke: color-mix(in srgb, var(--magenta) 30%, #1d2836);
-  stroke-width: 1.5;
+.mkt2 .hero-precision .hp-pistol-slide {
+  fill: url(#hpGunInk);
+  stroke: color-mix(in srgb, var(--electric) 38%, #1d2938);
+  stroke-width: 2;
   stroke-linejoin: round;
 }
-.mkt2 .hero-precision .hp-gun-grip-facet {
-  fill: color-mix(in srgb, #14202e 82%, var(--violet));
-  stroke: color-mix(in srgb, var(--magenta) 36%, #253142);
+.mkt2 .hero-precision .hp-pistol-slide-facet {
+  fill: url(#hpGunFacet);
+  stroke: color-mix(in srgb, var(--cyan) 36%, #263346);
   stroke-width: 1;
 }
-.mkt2 .hero-precision .hp-gun-grip-line {
-  fill: none;
-  stroke: color-mix(in srgb, var(--magenta) 30%, #5b6675);
-  stroke-width: .9;
-  opacity: .64;
+.mkt2 .hero-precision .hp-pistol-slide-panel {
+  fill: color-mix(in srgb, #101824 91%, var(--violet));
+  stroke: color-mix(in srgb, var(--violet) 37%, #344154);
+  stroke-width: 1.2;
 }
+.mkt2 .hero-precision .hp-pistol-port-rim {
+  fill: none;
+  stroke: url(#hpGunEdge);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  opacity: .9;
+}
+.mkt2 .hero-precision .hp-pistol-muzzle-rim {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cyan) 54%, #66758a);
+  stroke-width: 2;
+}
+.mkt2 .hero-precision .hp-pistol-serration {
+  fill: none;
+  stroke: color-mix(in srgb, #97a6b9 38%, var(--magenta));
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.mkt2 .hero-precision .hp-pistol-front-sight,
+.mkt2 .hero-precision .hp-pistol-rear-sight {
+  fill: #080d15;
+  stroke: color-mix(in srgb, var(--electric) 50%, #283548);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.mkt2 .hero-precision .hp-pistol-slide-line {
+  fill: none;
+  stroke: color-mix(in srgb, #9ba8b8 42%, transparent);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
 .mkt2 .hero-precision .hp-gun-muzzle-ring {
   fill: url(#hpGunMuzzle);
   stroke: color-mix(in srgb, var(--cyan) 60%, #39485b);
@@ -267,13 +318,6 @@
   opacity: .9;
 }
 .mkt2 .hero-precision .hp-gun-rim--cyan { stroke: var(--cyan) }
-.mkt2 .hero-precision .hp-gun-detail,
-.mkt2 .hero-precision .hp-gun-groove {
-  fill: none;
-  stroke: color-mix(in srgb, #b8c4d4 40%, transparent);
-  stroke-width: 1;
-  stroke-linecap: round;
-}
 .mkt2 .hero-precision .hp-gun-sheen {
   fill: none;
   stroke: url(#hpGunSheen);
@@ -422,30 +466,17 @@
 
 /* ── hover: a subtle product-table response after the load settles ─────── */
 @media (hover: hover) and (pointer: fine) {
-  .mkt2 .hero-precision:hover .hp-assembly-part {
-    transform: translate3d(var(--hover-x), var(--hover-y), 0);
-  }
   .mkt2 .hero-precision:hover .hp-assembly-guides { opacity: .62 }
+  .mkt2 .hero-precision:hover .hp-gun-sheen { opacity: 1 }
+  .mkt2 .hero-precision:hover .hp-pistol-port-rim,
+  .mkt2 .hero-precision:hover .hp-pistol-muzzle-rim { stroke-width: 2.2 }
   .mkt2 .hero-precision:hover .hp-link { opacity: 1 }
   .mkt2 .hero-precision:hover .hp-node-halo { opacity: .24 }
   .mkt2 .hero-precision:hover .hp-dust-dot { opacity: .92 }
 }
 
-/* ── scroll exit: product and constellation separate on different planes ─ */
+/* ── scroll exit: the field recedes while the assembled object stays exact ─ */
 @supports (animation-timeline: view()) {
-  .mkt2 .hero-precision .hp-assembly-plane {
-    animation: hp-piece-exit linear both;
-    animation-timeline: view();
-    animation-range: exit 5% exit 84%;
-  }
-  @keyframes hp-piece-exit {
-    from { opacity: 1; transform: none }
-    to {
-      opacity: .72;
-      transform: translate3d(var(--scroll-x), var(--scroll-y), 0) rotate(var(--scroll-rotation));
-    }
-  }
-
   .mkt2 .hero-precision .hp-field {
     animation: hp-field-exit linear both;
     animation-timeline: view();
