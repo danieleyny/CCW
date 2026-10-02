@@ -59,6 +59,7 @@ const FIELD_LINKS = [
 ] as const
 
 const DUST_TONES = ["cyan", "blue", "violet", "magenta", "coral"] as const
+const PRODUCT_PIECES = ["muzzle", "slide", "rear", "frame", "grip"] as const
 const SPECTRAL_DUST = Array.from({ length: 96 }, (_, index) => {
   const angle = index * 2.399963
   const radius = 34 + ((index * 47) % 292)
@@ -86,18 +87,6 @@ export function HeroPrecision() {
         An exploded-view graphite and glass sculpture aligns inside a field of connected
         spectral points, representing a complicated process becoming one coherent system.
       </p>
-
-      <div className="hp-product-stage" aria-hidden="true">
-        <Image
-          className="hp-product"
-          src="/images/marketing/hero-constellation-assembly-v2.png"
-          alt=""
-          width={1536}
-          height={1024}
-          sizes="(max-width: 540px) 112vw, (max-width: 1024px) 82vw, 52vw"
-          preload
-        />
-      </div>
 
       <svg className="hp-svg" viewBox="0 0 720 610" aria-hidden="true" focusable="false">
         <defs>
@@ -182,6 +171,25 @@ export function HeroPrecision() {
           ))}
         </g>
       </svg>
+
+      <div className="hp-product-stage" aria-hidden="true">
+        {PRODUCT_PIECES.map((piece, index) => (
+          <div className={`hp-product-plane hp-product-plane--${piece}`} key={piece}>
+            <div className="hp-product-piece">
+              <Image
+                className="hp-product"
+                src="/images/marketing/hero-constellation-assembly-v2.png"
+                alt=""
+                width={1536}
+                height={1024}
+                sizes="(max-width: 540px) 112vw, (max-width: 1024px) 82vw, 52vw"
+                preload={index === 0}
+                loading={index === 0 ? undefined : "eager"}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

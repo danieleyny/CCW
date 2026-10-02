@@ -44,7 +44,7 @@
 .mkt2 .hero-precision .hp-product-stage {
   position: absolute;
   inset: 6% -2% 6% -8%;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   transform-origin: 54% 51%;
 }
@@ -53,10 +53,89 @@
   content: "";
   position: absolute;
   inset: -2px;
+  z-index: 10;
   pointer-events: none;
   background:
     linear-gradient(90deg, var(--ivory) 0, transparent 8%, transparent 92%, var(--ivory) 100%),
     linear-gradient(180deg, var(--ivory) 0, transparent 8%, transparent 91%, var(--ivory) 100%);
+}
+
+.mkt2 .hero-precision .hp-product-plane,
+.mkt2 .hero-precision .hp-product-piece {
+  position: absolute;
+  inset: 0;
+  transform-origin: 54% 51%;
+}
+
+.mkt2 .hero-precision .hp-product-plane--muzzle {
+  --assemble-x: -72px;
+  --assemble-y: -12px;
+  --assemble-rotation: -3deg;
+  --assemble-delay: 80ms;
+  --hover-x: -5px;
+  --hover-y: -2px;
+  --scroll-x: -28px;
+  --scroll-y: -8px;
+  --scroll-rotation: -1.4deg;
+  --piece-clip: polygon(0 9%, 21% 9%, 21% 34%, 0 34%);
+}
+
+.mkt2 .hero-precision .hp-product-plane--slide {
+  --assemble-x: -32px;
+  --assemble-y: -56px;
+  --assemble-rotation: -1.8deg;
+  --assemble-delay: 150ms;
+  --hover-x: -1px;
+  --hover-y: -4px;
+  --scroll-x: -12px;
+  --scroll-y: -24px;
+  --scroll-rotation: -.8deg;
+  --piece-clip: polygon(16% 2%, 74% 2%, 74% 31%, 16% 31%);
+}
+
+.mkt2 .hero-precision .hp-product-plane--rear {
+  --assemble-x: 70px;
+  --assemble-y: -30px;
+  --assemble-rotation: 3deg;
+  --assemble-delay: 230ms;
+  --hover-x: 5px;
+  --hover-y: -3px;
+  --scroll-x: 28px;
+  --scroll-y: -14px;
+  --scroll-rotation: 1.5deg;
+  --piece-clip: polygon(68% 8%, 100% 8%, 100% 36%, 68% 36%);
+}
+
+.mkt2 .hero-precision .hp-product-plane--frame {
+  --assemble-x: -20px;
+  --assemble-y: 48px;
+  --assemble-rotation: .9deg;
+  --assemble-delay: 300ms;
+  --hover-x: -2px;
+  --hover-y: 3px;
+  --scroll-x: -10px;
+  --scroll-y: 22px;
+  --scroll-rotation: .5deg;
+  --piece-clip: polygon(16% 22%, 79% 22%, 79% 48%, 76% 50%, 79% 95%, 59% 100%, 52% 58%, 22% 55%, 16% 42%);
+}
+
+.mkt2 .hero-precision .hp-product-plane--grip {
+  --assemble-x: 62px;
+  --assemble-y: 58px;
+  --assemble-rotation: 3.2deg;
+  --assemble-delay: 380ms;
+  --hover-x: 5px;
+  --hover-y: 4px;
+  --scroll-x: 24px;
+  --scroll-y: 28px;
+  --scroll-rotation: 1.8deg;
+  --piece-clip: polygon(75% 34%, 91% 34%, 100% 42%, 100% 92%, 84% 96%, 75% 43%);
+}
+
+.mkt2 .hero-precision .hp-product-piece {
+  clip-path: var(--piece-clip);
+  transition: transform 420ms cubic-bezier(.2, .78, .2, 1), opacity 260ms ease-out;
+  animation: hp-piece-assemble 1360ms cubic-bezier(.16, .84, .22, 1) var(--assemble-delay) backwards;
 }
 
 .mkt2 .hero-precision .hp-product {
@@ -65,21 +144,21 @@
   display: block;
   object-fit: contain;
   object-position: center;
-  transform-origin: 54% 51%;
-  transition: transform 420ms cubic-bezier(.2, .78, .2, 1), opacity 260ms ease-out;
-  animation: hp-product-arrive 1120ms cubic-bezier(.16, .84, .22, 1) 120ms backwards;
 }
 
-@keyframes hp-product-arrive {
-  0% { opacity: .84; transform: translate3d(24px, 14px, 0) scale(.972) }
-  72% { opacity: 1; transform: translate3d(-2px, -1px, 0) scale(1.003) }
+@keyframes hp-piece-assemble {
+  0% {
+    opacity: .82;
+    transform: translate3d(var(--assemble-x), var(--assemble-y), 0) rotate(var(--assemble-rotation)) scale(.985);
+  }
+  76% { opacity: 1; transform: translate3d(2px, -1px, 0) rotate(0deg) scale(1.002) }
   100% { opacity: 1; transform: none }
 }
 
 /* ── constellation field ───────────────────────────────────────────────── */
 .mkt2 .hero-precision .hp-svg {
   position: relative;
-  z-index: 2;
+  z-index: 0;
   width: 100%;
   height: auto;
   max-height: min(660px, calc(100svh - 126px));
@@ -195,8 +274,8 @@
 
 /* ── hover: a subtle product-table response after the load settles ─────── */
 @media (hover: hover) and (pointer: fine) {
-  .mkt2 .hero-precision:hover .hp-product {
-    transform: translate3d(0, -6px, 0) scale(1.012);
+  .mkt2 .hero-precision:hover .hp-product-piece {
+    transform: translate3d(var(--hover-x), var(--hover-y), 0);
   }
   .mkt2 .hero-precision:hover .hp-link { opacity: 1 }
   .mkt2 .hero-precision:hover .hp-node-halo { opacity: .24 }
@@ -205,14 +284,17 @@
 
 /* ── scroll exit: product and constellation separate on different planes ─ */
 @supports (animation-timeline: view()) {
-  .mkt2 .hero-precision .hp-product-stage {
-    animation: hp-product-exit linear both;
+  .mkt2 .hero-precision .hp-product-plane {
+    animation: hp-piece-exit linear both;
     animation-timeline: view();
     animation-range: exit 5% exit 84%;
   }
-  @keyframes hp-product-exit {
+  @keyframes hp-piece-exit {
     from { opacity: 1; transform: none }
-    to { opacity: .72; transform: translate3d(22px, -14px, 0) scale(.988) }
+    to {
+      opacity: .72;
+      transform: translate3d(var(--scroll-x), var(--scroll-y), 0) rotate(var(--scroll-rotation));
+    }
   }
 
   .mkt2 .hero-precision .hp-field {
