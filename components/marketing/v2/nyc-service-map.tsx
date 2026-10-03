@@ -143,13 +143,20 @@ export function NycServiceMap() {
             <path className="nyc-map-waterline nyc-map-waterline-two" d="M96 184C207 205 294 186 377 137C449 94 530 92 640 126" />
 
             {BOROUGHS.map((borough, index) => (
-              <g className={`nyc-borough borough--${borough.id}`} key={borough.id}>
-                <path className="nyc-borough-shape" d={borough.path} />
-                <g className="nyc-borough-label" aria-hidden="true" transform={`translate(${borough.labelX} ${borough.labelY})`}>
-                  <circle r="17" />
-                  <text y="3">{String(index + 1).padStart(2, "0")}</text>
+              <a
+                aria-label={`Open ${borough.name === "The Bronx" ? "the Bronx" : `the ${borough.name}`} gun-license guide`}
+                className={`nyc-borough-link borough-link--${borough.id}`}
+                href={borough.href}
+                key={borough.id}
+              >
+                <g className={`nyc-borough borough--${borough.id}`}>
+                  <path className="nyc-borough-shape" d={borough.path} />
+                  <g className="nyc-borough-label" aria-hidden="true" transform={`translate(${borough.labelX} ${borough.labelY})`}>
+                    <circle r="17" />
+                    <text y="3">{String(index + 1).padStart(2, "0")}</text>
+                  </g>
                 </g>
-              </g>
+              </a>
             ))}
 
             <g className="nyc-map-origin" aria-hidden="true" transform="translate(405 246)">
