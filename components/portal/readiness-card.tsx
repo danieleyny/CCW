@@ -4,8 +4,8 @@ import type { PortalReadiness } from "@/lib/disclosures/readiness"
 
 /**
  * The two-gate readiness summary (Part 9): ready-to-ENTER (data + disclosures +
- * signed) and ready-to-FINALIZE (uploads accepted). Finalize-and-Pay is irreversible,
- * so the second gate is shown plainly and never claimed early.
+ * signed) and ready for APPLICANT FINALISATION (uploads accepted and no process/legal
+ * stop remains). Finalize-and-Pay is irreversible, so the second gate is shown plainly.
  */
 export function ReadinessCard({ readiness }: { readiness: PortalReadiness }) {
   return (
@@ -19,8 +19,8 @@ export function ReadinessCard({ readiness }: { readiness: PortalReadiness }) {
       <div className="border-t border-hairline pt-3">
         <Gate
           done={readiness.readyToFinalize}
-          title="Ready to finalize & pay"
-          doneText="All required uploads are accepted. Finalizing and paying is irreversible — do it when you're sure."
+          title="Ready for you to finalize & pay"
+          doneText="All required uploads are accepted. You must personally review, initial, finalize, and pay while controlling your NYPD account. Finalize and Pay is irreversible."
           missing={readiness.finalizeMissing}
           blockedText={readiness.readyToEnter ? undefined : "Finish the items above first."}
         />

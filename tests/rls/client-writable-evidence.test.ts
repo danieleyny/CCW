@@ -73,7 +73,15 @@ describe.skipIf(!reachable)("applicant cannot write verification state", () => {
 
     const { data: doc } = await admin
       .from("documents")
-      .insert({ case_id: caseId, client_id: clientAId, type: "id", file_name: "id.png", status: "approved", notarized: true })
+      .insert({
+        case_id: caseId,
+        client_id: clientAId,
+        type: "id",
+        file_name: "id.png",
+        file_path: `clients/${clientAId}/${caseId}/id.png`,
+        status: "approved",
+        notarized: true,
+      })
       .select("id")
       .single()
     docId = doc!.id
@@ -120,6 +128,16 @@ describe.skipIf(!reachable)("applicant cannot write verification state", () => {
     expect(data!.notarized).toBe(false)
     expect(data!.reviewer).toBeNull()
     await admin.from("documents").delete().eq("id", data!.id)
+  })
+
+  it("rejects even a privileged approval when no uploaded file is bound", async () => {
+    const { error } = await admin.from("documents").insert({
+      case_id: caseId,
+      client_id: clientAId,
+      type: "proof_residence",
+      status: "approved",
+    })
+    expect(error?.message).toContain("documents_approved_requires_file")
   })
 
   it("cannot approve an existing document (update)", async () => {

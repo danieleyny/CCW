@@ -28,9 +28,9 @@ export function buildApplicationValues(
   opts: {
     licenseTrack?: string | null
     /** The disclosure questionnaire answers (requirement_answers, DSC-01/QUE-01) —
-     *  the CANONICAL store for Section B. Keys are `q10`…`q28` (+ `q20a`) with values
-     *  "yes"/"no", plus `qN_explain`. This is the ONLY source that sets a sworn
-     *  Section B box; an absent answer is "not asked", never "no". */
+     *  the canonical answer store. Current portal cases use `q1`…`q16`; legacy paper
+     *  cases may contain `q10`…`q28`/`q20a`. An absent answer is "not asked", never
+     *  "no". */
     disclosures?: Record<string, unknown>
     /** The Letter of Necessity's six statements (LON-01, requirement_answers) —
      *  lop1…lop6. They fill page 4 of the application AND the standalone LON form. */
@@ -156,12 +156,12 @@ export function buildApplicationValues(
     lop6: String(lon.lop6 ?? ""),
   }
 
-  // Section B 10–28 — set ONLY from an EXPLICIT recorded answer. Three states matter:
+  // Disclosure answers — set ONLY from an EXPLICIT recorded answer. Three states matter:
   // answered-yes, answered-no, NOT-ASKED. The disclosure questionnaire (DSC-01/QUE-01,
   // requirement_answers) is canonical; an absent answer means "not asked", NOT "no",
   // and leaves the box /Off. We NEVER infer a sworn "No" from an empty collection — a
   // wrong tick is a false written statement (Penal Law §210.45), sworn by the applicant.
-  const isSectionBKey = (k: string) => /^q\d+a?$/.test(k) // q10, q20a, q23 — not qN_explain
+  const isSectionBKey = (k: string) => /^q\d+a?$/.test(k) // q1, q10, q20a — not qN_explain
   const hasDisclosureStore = Object.keys(disclosures).some(isSectionBKey)
   if (hasDisclosureStore) {
     for (const [k, val] of Object.entries(disclosures)) {
@@ -177,8 +177,8 @@ export function buildApplicationValues(
     console.warn("buildApplicationValues: Section B fell back to legacy intake.questionnaire (no DSC-01/QUE-01 answers)")
     for (const q of intake.questionnaire ?? []) v[`q${q.no}`] = q.yes ? "Yes" : "No"
   }
-  // NOTE: q23/q24/q27/q28 are NO LONGER inferred from intake.arrays — an empty array
-  // is "not asked". Their explicit yes/no lives in the disclosure store above.
+  // Legacy paper q23/q24/q27/q28 are NOT inferred from intake arrays — an empty
+  // collection means "not asked". Any explicit yes/no lives in the store above.
 
   return v
 }

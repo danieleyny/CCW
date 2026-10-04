@@ -10,6 +10,15 @@ export function money(cents: number | null | undefined, currency = "usd"): strin
 
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—"
+  // A PostgreSQL `date` is a calendar value, not a UTC instant. `new
+  // Date("2024-01-15")` parses at UTC midnight and renders as Jan 14 in New York.
+  // Format date-only strings in UTC so the displayed day is stable in every TZ;
+  // timestamps and Date objects retain the viewer's local-time semantics.
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split("-").map(Number)
+    const d = new Date(Date.UTC(year, month - 1, day))
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+  }
   const d = typeof value === "string" ? new Date(value) : value
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }

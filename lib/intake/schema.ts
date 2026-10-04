@@ -7,15 +7,16 @@
  *     reach the jsonb column.
  *
  *  2. `completionIssues()` — BUSINESS rules enforced when the applicant hits
- *     "Generate my requirements": DOB present, the 4-reference rule with valid
- *     emails, and complete arrest rows. (Disclosure narratives may still be
- *     finished at the review step — the submission guard, and later the CP-5
- *     QA gate, block filing until they exist.)
+ *     "Generate my requirements": DOB present, every applicable live-portal
+ *     disclosure explicitly answered (with a narrative for each Yes), complete
+ *     arrest rows, coherent training dates, and valid emails on any references
+ *     they chose to enter. Reference count remains a checklist/CP-5 concern.
  *
  * No `server-only` so the wizard runs the same rules client-side for inline errors.
  */
 import { z } from "zod"
 import { ageFromDob, type WizardAnswers } from "./answers"
+import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 
 const short = z.string().max(200)
 const narrative = z.string().max(8000)
@@ -56,6 +57,21 @@ const socialSchema = z.object({
   platform: z.string().max(40),
   handle: z.string().max(200),
 })
+const firearmSchema = z.object({
+  make: short.optional(),
+  model: short.optional(),
+  caliber: z.string().max(100).optional(),
+  serial: z.string().max(120).optional(),
+  licensed: z.enum(["Yes", "No"]).optional(),
+  licenseNumber: z.string().max(120).optional(),
+})
+const otherLicenseSchema = z.object({
+  number: z.string().max(120).optional(),
+  agency: short.optional(),
+  stateCounty: short.optional(),
+  issuedOn: isoDay.optional(),
+  expiresOn: isoDay.optional(),
+})
 const yearMonth = z
   .string()
   .regex(/^\d{4}-\d{2}$/, "Use YYYY-MM")
@@ -64,6 +80,11 @@ const addressHistorySchema = z.object({
   fromMonth: yearMonth.optional(),
   toMonth: yearMonth.optional(),
   address: z.string().max(400).optional(),
+  apt: z.string().max(40).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(40).optional(),
+  zip: z.string().max(20).optional(),
+  country: z.string().max(100).optional(),
 })
 const employmentHistorySchema = z.object({
   fromMonth: yearMonth.optional(),
@@ -73,6 +94,9 @@ const employmentHistorySchema = z.object({
   // Legacy combined field — kept optional so in-progress sessions that still
   // hold `employer` survive the .strip() and can be coalesced on read.
   employer: z.string().max(400).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(40).optional(),
+  zip: z.string().max(20).optional(),
   occupation: short.optional(),
 })
 
@@ -100,6 +124,7 @@ export const wizardAnswersSchema = z
     legalApt: z.string().max(40).optional(),
     legalCity: z.string().max(100).optional(),
     legalState: z.string().max(40).optional(),
+    legalZip: z.string().max(20).optional(),
     alienRegistrationNumber: z.string().max(40).optional(),
     placeOfBirth: short.optional(),
     heightInches: z.number().int().min(24).max(96).optional(),
@@ -122,6 +147,10 @@ export const wizardAnswersSchema = z
     outOfCityCounty: z.string().max(100).optional(),
     outOfCityIssuedOn: isoDay.optional(),
     outOfCityExpiresOn: isoDay.optional(),
+    outOfCityHeld: z.enum(["no", "yes"]).optional(),
+    homeCountyPistolLicense: z.enum(["yes", "no", "unsure"]).optional(),
+    nycAssignment: z.boolean().optional(),
+    otherPistolLicense: z.boolean().optional(),
     // Step 3 — household & safeguard
     cohabitants: z.array(cohabitantSchema).max(20).optional(),
     safeguardName: short.optional(),
@@ -134,13 +163,18 @@ export const wizardAnswersSchema = z
     arrests: z.array(arrestSchema).max(50).optional(),
     ordersOfProtection: z.array(oopSchema).max(50).optional(),
     domesticIncidents: z.array(domesticSchema).max(50).optional(),
+    questionnaireVersion: z.literal("nypd_portal_v1").optional(),
     questionnaire: z.array(questionSchema).max(40).optional(),
     // Step 5 — carry-specific & history
     trainingStatus: z.enum(["completed", "planned"]).optional(),
     trainingInstructor: short.optional(),
     trainingDate: isoDay.optional(),
     references: z.array(referenceSchema).max(10).optional(),
-    socialAccounts: z.array(socialSchema).max(30).optional(),
+    socialAccounts: z
+      .array(socialSchema)
+      .max(30)
+      .transform((rows) => rows.filter((r) => r.platform.trim() || r.handle.trim()))
+      .optional(),
     socialHandles: z.string().max(2000).optional(), // legacy free-text
     isVeteran: z.boolean().optional(),
     isRetiredLeo: z.boolean().optional(),
@@ -149,6 +183,8 @@ export const wizardAnswersSchema = z
     // Q29 — five-year histories
     residenceHistory: z.array(addressHistorySchema).max(20).optional(),
     employmentHistory: z.array(employmentHistorySchema).max(20).optional(),
+    firearms: z.array(firearmSchema).max(50).optional(),
+    otherLicenses: z.array(otherLicenseSchema).max(50).optional(),
   })
   .strip()
 
@@ -204,9 +240,37 @@ export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): 
   return issues
 }
 
-/** Step-4 rules: every disclosed arrest must be a complete row — candor-maximizing. */
+/** The exact portal questions applicable to this applicant. Q6 follows Q5; Q16
+ * is law-enforcement-only. An old unversioned paper questionnaire never counts
+ * as an answer to the live portal set. */
+export function applicablePortalDisclosures(a: WizardAnswers) {
+  const answers = a.questionnaireVersion === "nypd_portal_v1" ? a.questionnaire ?? [] : []
+  const byNo = new Map(answers.map((q) => [q.no, q]))
+  return PORTAL_DISCLOSURES.filter((q) => {
+    if (q.leoOnly && !a.isRetiredLeo) return false
+    if (q.conditionalOnYesOf && byNo.get(q.conditionalOnYesOf)?.yes !== true) return false
+    return true
+  })
+}
+
+/** Step-4 rules: all applicable live portal questions must have an explicit
+ * answer, every Yes needs its explanation, and each structured arrest row must
+ * be complete. This is candor-maximizing: unanswered is never treated as No. */
 export function disclosureStepIssues(a: WizardAnswers): string[] {
   const issues: string[] = []
+  const answers = a.questionnaireVersion === "nypd_portal_v1" ? a.questionnaire ?? [] : []
+  const byNo = new Map(answers.map((q) => [q.no, q]))
+  const applicable = applicablePortalDisclosures(a)
+  const missing = applicable.filter((q) => !byNo.has(q.no)).map((q) => `Q${q.no}`)
+  if (missing.length) {
+    issues.push(`Answer every applicable NYPD disclosure question (missing ${missing.join(", ")}).`)
+  }
+  for (const q of applicable) {
+    const answer = byNo.get(q.no)
+    if (answer?.yes && !q.conditionalOnYesOf && !answer.narrative?.trim()) {
+      issues.push(`Q${q.no} is Yes — add the explanation NYPD asks for.`)
+    }
+  }
   ;(a.arrests ?? []).forEach((ar, i) => {
     if (!ar.jurisdiction?.trim() || !ar.disposition?.trim()) {
       issues.push(`Arrest / summons #${i + 1} needs its court/jurisdiction and disposition.`)

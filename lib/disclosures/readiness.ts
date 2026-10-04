@@ -1,15 +1,16 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { requiredUploadSlotsFor } from "@/config/portal-steps"
+import { SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT } from "@/lib/disclosures/portal-forms"
 import type { ApplicationValues } from "@/lib/forms/application"
 
 /**
  * Portal readiness (PORTAL_ALIGNMENT_REBUILD Part 9), split into two gates:
  *  · ready-to-ENTER    — all the data is in, the disclosures are answered, and the
- *                        signed answers+authorization record is signed. Staff can
- *                        start transcribing into the portal.
- *  · ready-to-FINALIZE — additionally, every required portal upload is accepted and
- *                        the photograph passed. "Finalize and Pay" is irreversible, so
- *                        this gate must be honest.
+ *                        signed answers+preparation record is signed. The applicant can
+ *                        start entering/confirming information with staff guidance.
+ *  · ready-to-FINALIZE — additionally, every required portal upload is accepted, the
+ *                        photograph passed, and no unresolved process/legal stop remains.
+ *                        "Finalize and Pay" is applicant-only and irreversible.
  * Nothing here fills a form; it reports "you're ready" / "here's what's missing".
  */
 export interface ReadinessItem {
@@ -114,6 +115,17 @@ export function computePortalReadiness(
     if (!slotItems.some((i) => i.status === "satisfied" && !conversionPending.has(i.reqCode))) {
       finalizeMissing.push({ label: slot.portalLabel, href: CHECKLIST })
     }
+  }
+
+  // The live civilian Special Carry screen marks two Carry Guard/Security-only
+  // statements required. No consultant should invent sworn text to get past a portal
+  // contradiction. This is deliberately a hard finalisation stop until documented NYPD
+  // or firearms-counsel direction lets us replace it with a validated rule.
+  if (opts.portalTrack === "special_carry" && SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT.unresolved) {
+    finalizeMissing.push({
+      label: SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT.message,
+      href: CHECKLIST,
+    })
   }
 
   const readyToEnter = enterMissing.length === 0

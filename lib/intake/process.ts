@@ -13,14 +13,35 @@ import { runIntakeSystemChecks } from "@/lib/requirements/system-checks"
 import { materializeCaseRequirements, materializeSponsorPacket } from "@/lib/requirements/materialize"
 import { resolveArmedTrack, type ArmedTrackResult } from "@/lib/requirements/track"
 import { backfillCaseFacts } from "@/lib/facts/resolve"
+import { syncCohabitants, syncReferences } from "@/lib/requirements/roster"
+import { applicablePortalDisclosures } from "./schema"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
 
 type DB = SupabaseClient<Database>
 
 export interface ProcessIntakeResult {
   cohabitants: number
+  references: number
   disclosures: number
   applicable: number
+}
+
+/** Translate the intake representation into the canonical DSC-01 answer store.
+ * Legacy paper-form sessions are deliberately rejected: Q10 meant something
+ * different there, so guessing would create a false sworn answer. */
+export function canonicalDisclosureAnswers(answers: WizardAnswers): Record<string, unknown> | null {
+  if (answers.questionnaireVersion !== "nypd_portal_v1") return null
+  const source = new Map((answers.questionnaire ?? []).map((q) => [q.no, q]))
+  const out: Record<string, unknown> = {}
+  for (const question of applicablePortalDisclosures(answers)) {
+    const answer = source.get(question.no)
+    if (!answer) continue // completion validation rejects this; never infer No
+    out[`q${question.no}`] = answer.yes ? "yes" : "no"
+    if (answer.yes && !question.conditionalOnYesOf && answer.narrative?.trim()) {
+      out[`q${question.no}_explain`] = answer.narrative.trim()
+    }
+  }
+  return out
 }
 
 export async function processIntake(
@@ -29,20 +50,55 @@ export async function processIntake(
   jurisdictionKey: string,
   answers: WizardAnswers
 ): Promise<ProcessIntakeResult> {
-  // ── Household: intake owns the cohabitant set; rebuild it idempotently ─────
-  await admin.from("cohabitants").delete().eq("case_id", caseId)
-  const cohabRows = (answers.cohabitants ?? [])
+  // ── People rosters: sync by name and NEVER delete returned evidence ────────
+  // Editing intake used to delete/recreate both rosters, which lost accepted
+  // affidavits and left the admin portal showing stale references. The shared
+  // roster synchronizer preserves received/notarized rows and updates the real
+  // operational tables used by both applicant and admin.
+  const cohabPeople = (answers.cohabitants ?? [])
     .filter((c) => c.name?.trim())
     .map((c) => ({
-      case_id: caseId,
       name: c.name.trim(),
-      relationship: c.relationship ?? null,
-      affidavit_status: "not_started" as const,
+      relationship: c.relationship?.trim() || undefined,
     }))
-  if (cohabRows.length) await admin.from("cohabitants").insert(cohabRows)
+  await syncCohabitants(admin, caseId, cohabPeople)
+
+  const referencePeople = (answers.references ?? [])
+    .filter((r) => r.name?.trim())
+    .map((r) => ({ name: r.name.trim(), email: r.email?.trim() || undefined }))
+  await syncReferences(admin, caseId, referencePeople)
+
+  // ── Canonical portal disclosures (DSC-01) ─────────────────────────────────
+  const canonical = canonicalDisclosureAnswers(answers)
+  if (canonical) {
+    const { data: prior, error: priorError } = await admin
+      .from("requirement_answers")
+      .select("answers")
+      .eq("case_id", caseId)
+      .eq("req_code", "DSC-01")
+      .maybeSingle()
+    if (priorError) throw priorError
+    const old = (prior?.answers ?? {}) as Record<string, unknown>
+    // Preserve portal-only subanswers the compact intake does not collect (for
+    // example q7_felony). Replace only Q1–16 and their explanation keys.
+    const preserved = Object.fromEntries(
+      Object.entries(old).filter(([key]) => !/^q(?:[1-9]|1[0-6])(?:_explain)?$/.test(key))
+    )
+    const { error } = await admin.from("requirement_answers").upsert(
+      {
+        case_id: caseId,
+        req_code: "DSC-01",
+        answers: { ...preserved, ...canonical } as never,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "case_id,req_code" }
+    )
+    if (error) throw error
+  }
 
   // ── Disclosures: rebuild idempotently from the interview ───────────────────
-  await admin.from("disclosures").delete().eq("case_id", caseId)
+  const { error: deleteDisclosureError } = await admin.from("disclosures").delete().eq("case_id", caseId)
+  if (deleteDisclosureError) throw deleteDisclosureError
   type DiscIns = Database["public"]["Tables"]["disclosures"]["Insert"]
   const discRows: DiscIns[] = []
   for (const a of answers.arrests ?? []) {
@@ -75,20 +131,27 @@ export async function processIntake(
       spawned_req_code: "DIR-01",
     })
   }
-  for (const q of answers.questionnaire ?? []) {
-    if (q.yes) {
+  for (const q of answers.questionnaireVersion === "nypd_portal_v1" ? answers.questionnaire ?? [] : []) {
+    if (q.yes && q.no !== 6) {
+      // Where a structured row exists it carries better dates/court detail; do
+      // not duplicate the same matter as a generic Yes row.
+      if (q.no === 7 && (answers.arrests?.length ?? 0) > 0) continue
+      if (q.no === 13 && (answers.ordersOfProtection?.length ?? 0) > 0) continue
+      if (q.no === 15 && (answers.domesticIncidents?.length ?? 0) > 0) continue
+      const spawned = q.no === 7 ? "ARR-01" : q.no === 13 ? "OOP-01" : q.no === 15 ? "DIR-01" : null
       discRows.push({
         case_id: caseId,
         type: "question_yes",
         question_no: q.no,
         narrative: q.narrative ?? "",
-        spawned_req_code: "QUE-01",
+        spawned_req_code: spawned,
       })
     }
   }
   let insertedDisc: { id: string; spawned_req_code: string | null }[] = []
   if (discRows.length) {
-    const { data } = await admin.from("disclosures").insert(discRows).select("id, spawned_req_code")
+    const { data, error } = await admin.from("disclosures").insert(discRows).select("id, spawned_req_code")
+    if (error) throw error
     insertedDisc = data ?? []
   }
 
@@ -242,7 +305,8 @@ export async function processIntake(
   await runIntakeSystemChecks(admin, caseId, answers)
 
   return {
-    cohabitants: cohabRows.length,
+    cohabitants: cohabPeople.length,
+    references: referencePeople.length,
     disclosures: discRows.length,
     applicable: result.applicable,
   }

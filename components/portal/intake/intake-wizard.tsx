@@ -8,7 +8,6 @@ import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkle
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   INTAKE_STEPS,
-  QUESTIONNAIRE,
   SOCIAL_PLATFORMS,
   eligibilityGate,
   ageFromDob,
@@ -30,7 +29,11 @@ import {
   disclosureStepIssues,
   historyStepIssues,
   requiredReferences,
+  applicablePortalDisclosures,
 } from "@/lib/intake/schema"
+import {
+  PORTAL_DISCLOSURE_RANGE,
+} from "@/lib/disclosures/portal-questions"
 import {
   saveIntakeStep,
   completeIntake,
@@ -234,7 +237,7 @@ export function IntakeWizard({
             <h2 className="text-lg font-semibold">Requirements generated</h2>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your personalized checklist is ready. Before we can assemble and file,
+            Your personalized checklist is ready. Before we can assemble your filing pack,
             finish the items below.
           </p>
         </div>
@@ -358,8 +361,8 @@ export function IntakeWizard({
               <ShieldAlert className="size-4" /> You&apos;re editing answers you already submitted.
             </div>
             <p className="mt-1 text-xs">
-              When you finish, we rebuild your checklist from these answers — that can reset
-              household-affidavit progress and clear disclosure explanations. Change only what you need to.
+              When you finish, we update your checklist from these answers. Completed reference
+              letters and household affidavits are preserved.
             </p>
             <Button variant="ghost" size="sm" className="mt-2" onClick={() => setEditing(false)}>
               Cancel — keep my current answers
@@ -856,14 +859,19 @@ function StepIdentity({ a, patch }: StepProps) {
             <Input value={a.legalApt ?? ""} onChange={(e) => patch({ legalApt: e.target.value })} />
           </Field>
         </div>
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-2">
           <Field label="City / town">
             <Input value={a.legalCity ?? ""} onChange={(e) => patch({ legalCity: e.target.value })} />
           </Field>
         </div>
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-2">
           <Field label="State">
             <Input value={a.legalState ?? "NY"} onChange={(e) => patch({ legalState: e.target.value })} />
+          </Field>
+        </div>
+        <div className="sm:col-span-2">
+          <Field label="ZIP code">
+            <Input inputMode="numeric" value={a.legalZip ?? ""} onChange={(e) => patch({ legalZip: e.target.value })} />
           </Field>
         </div>
       </div>
@@ -995,6 +1003,7 @@ function StepHousehold({ a, patch, applicant }: StepProps & { applicant: Applica
         {cohabs.map((c, i) => (
           <div key={i} className="flex gap-2">
             <Input
+              aria-label={`Household member ${i + 1} full name`}
               placeholder="Full name"
               value={c.name}
               onChange={(e) => {
@@ -1004,6 +1013,7 @@ function StepHousehold({ a, patch, applicant }: StepProps & { applicant: Applica
               }}
             />
             <Input
+              aria-label={`Household member ${i + 1} relationship`}
               placeholder="Relationship"
               value={c.relationship ?? ""}
               onChange={(e) => {
@@ -1099,9 +1109,10 @@ function StepDisclosures({
   // Don't pre-seed every question as "No" — an unanswered question shows neither
   // button selected, so the applicant makes a conscious Yes/No choice instead of
   // inheriting an answer (and there's no checkbox to mistake for "I agree").
-  const q: QuestionAnswer[] = a.questionnaire ?? []
+  const q: QuestionAnswer[] = a.questionnaireVersion === "nypd_portal_v1" ? a.questionnaire ?? [] : []
+  const visibleQuestions = applicablePortalDisclosures(a)
   const answeredNos = new Set(q.filter((x) => typeof x.yes === "boolean").map((x) => x.no))
-  const answeredCount = QUESTIONNAIRE.filter((i) => answeredNos.has(i.no)).length
+  const answeredCount = visibleQuestions.filter((i) => answeredNos.has(i.no)).length
   return (
     <div className="space-y-5">
       {/* Candor callout — the intro is doing legal work, so give it the weight. */}
@@ -1178,22 +1189,20 @@ function StepDisclosures({
         </div>
       </section>
 
-      {/* Section B — a card per question, a full-width segmented Yes/No, and the
-          explanation revealed inline on "Yes". Separation comes from surface, not
-          a 1px line, so thirteen questions read as discrete objects. */}
+      {/* The live NYPD online-portal questions — not the retired paper Q10–28 set. */}
       <section>
-        <SectionHeader label="Section B · Q10–22" count={`${answeredCount} / ${QUESTIONNAIRE.length}`} />
+        <SectionHeader label={`NYPD disclosures · Q${PORTAL_DISCLOSURE_RANGE}`} count={`${answeredCount} / ${visibleQuestions.length}`} />
         <div className="mb-3 rounded-md border border-hairline bg-surface-2 p-2.5">
-          <div className="text-[12px] text-text-mid">{answeredCount} of {QUESTIONNAIRE.length} answered</div>
+          <div className="text-[12px] text-text-mid">{answeredCount} of {visibleQuestions.length} applicable questions answered</div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
             <div
               className="h-full rounded-full bg-brass transition-[width] duration-300 motion-reduce:transition-none"
-              style={{ width: `${(answeredCount / QUESTIONNAIRE.length) * 100}%` }}
+              style={{ width: `${visibleQuestions.length ? (answeredCount / visibleQuestions.length) * 100 : 100}%` }}
             />
           </div>
         </div>
         <div className="space-y-3">
-          {QUESTIONNAIRE.map((item) => {
+          {visibleQuestions.map((item) => {
             const cur = q.find((x) => x.no === item.no)
             const isYes = cur?.yes === true
             const isNo = cur?.yes === false
@@ -1208,6 +1217,8 @@ function StepDisclosures({
                 key={item.no}
                 role="radiogroup"
                 aria-label={`Q${item.no}: ${item.text}`}
+                data-intake-invalid={attempted && !answered ? "" : undefined}
+                tabIndex={attempted && !answered ? -1 : undefined}
                 className={cn(
                   "card-soft p-3.5 transition-colors",
                   // Both answers read as ANSWERED — Yes in brass (the accent), No in a
@@ -1233,6 +1244,11 @@ function StepDisclosures({
                     {main} {paren && <span className="text-[13px] text-text-low">{paren}</span>}
                   </p>
                 </div>
+                {item.note && (
+                  <p className="mt-2 rounded-md border border-warn/25 bg-warn/[0.06] p-2 text-[11px] leading-relaxed text-text-mid">
+                    {item.note}
+                  </p>
+                )}
 
                 {/* Full-width segmented control — a 50/50 grid, each half IS the
                     target. No leftover track to the right of "No". */}
@@ -1279,7 +1295,7 @@ function StepDisclosures({
                 </div>
 
                 {/* The answer has a visible consequence in the moment. */}
-                {isYes && (
+                {isYes && !item.conditionalOnYesOf && (
                   <div aria-live="polite" className="mt-3 border-t border-dashed border-hairline pt-3">
                     <label htmlFor={`q-narr-${item.no}`} className="engraved-sm text-warn">
                       Your explanation · required before filing
@@ -1288,9 +1304,10 @@ function StepDisclosures({
                       id={`q-narr-${item.no}`}
                       rows={2}
                       className="mt-1.5"
-                      placeholder="What happened, when, and how it resolved."
+                      placeholder={item.explainHelp ?? "What happened, when, and how it resolved."}
                       value={cur?.narrative ?? ""}
                       onChange={(e) => setQNarrative(item.no, e.target.value)}
+                      {...invalidAttrs(attempted && !cur?.narrative?.trim())}
                     />
                   </div>
                 )}
@@ -1310,15 +1327,15 @@ function StepDisclosures({
 
   function setQ(no: number, yes: boolean) {
     const cur = q.find((x) => x.no === no)
-    const others = q.filter((x) => x.no !== no)
-    patch({ questionnaire: [...others, { no, yes, narrative: cur?.narrative }] })
+    const others = q.filter((x) => x.no !== no && !(no === 5 && !yes && x.no === 6))
+    patch({ questionnaireVersion: "nypd_portal_v1", questionnaire: [...others, { no, yes, narrative: yes ? cur?.narrative : undefined }] })
   }
 
   /** Persist the explanation to the SAME place the review step reads. */
   function setQNarrative(no: number, narrative: string) {
     const cur = q.find((x) => x.no === no)
     const others = q.filter((x) => x.no !== no)
-    patch({ questionnaire: [...others, { no, yes: cur?.yes ?? true, narrative }] })
+    patch({ questionnaireVersion: "nypd_portal_v1", questionnaire: [...others, { no, yes: cur?.yes ?? true, narrative }] })
   }
 }
 
@@ -1387,7 +1404,11 @@ function StepHistory({
 
   function updSocial(i: number, p: Partial<SocialAccount>) {
     const copy = [...social]
-    copy[i] = { ...copy[i], ...p }
+    // The first row is rendered synthetically when the stored array is empty.
+    // Seed both controlled fields before applying the edit so an initial platform
+    // selection never creates `{ platform }` with an undefined handle.
+    const current = copy[i]
+    copy[i] = { ...(current ?? { platform: "", handle: "" }), ...p }
     patch({ socialAccounts: copy })
   }
 
@@ -1415,9 +1436,25 @@ function StepHistory({
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            <Input list="known-addresses" placeholder="Address (street, city, state, county, zip, apt)" value={h.address ?? ""} onChange={(e) => {
-              const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
-            }} />
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,3fr)_minmax(5rem,1fr)]">
+              <Input aria-label={`Residence ${i + 1} street address`} list="known-addresses" placeholder="Street address" value={h.address ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
+              }} />
+              <Input aria-label={`Residence ${i + 1} apartment`} placeholder="Apt / unit" value={h.apt ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], apt: e.target.value }; patch({ residenceHistory: c })
+              }} />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input aria-label={`Residence ${i + 1} city`} placeholder="City" value={h.city ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], city: e.target.value }; patch({ residenceHistory: c })
+              }} />
+              <Input aria-label={`Residence ${i + 1} state`} placeholder="State" value={h.state ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], state: e.target.value }; patch({ residenceHistory: c })
+              }} />
+              <Input aria-label={`Residence ${i + 1} ZIP code`} placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], zip: e.target.value }; patch({ residenceHistory: c })
+              }} />
+            </div>
             {/* The newest row is usually where they live now — offer it, never force it. */}
             {i === 0 && (
               <UseHomeAddress
@@ -1425,7 +1462,14 @@ function StepHistory({
                 current={h.address}
                 onUse={(v) => {
                   const c = [...resHist]
-                  c[0] = { ...c[0], address: v }
+                  c[0] = {
+                    ...c[0],
+                    address: a.legalStreet || v,
+                    apt: a.legalApt,
+                    city: a.legalCity,
+                    state: a.legalState || "NY",
+                    zip: a.legalZip,
+                  }
                   patch({ residenceHistory: c })
                 }}
               />
@@ -1441,7 +1485,7 @@ function StepHistory({
               This address is outside the United States
             </label>
             {h.country !== undefined && (
-              <Input placeholder="Country" value={h.country ?? ""} onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.value }; patch({ residenceHistory: c }) }} />
+              <Input aria-label={`Residence ${i + 1} country`} placeholder="Country" value={h.country ?? ""} onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.value }; patch({ residenceHistory: c }) }} />
             )}
           </div>
         ))}
@@ -1472,27 +1516,27 @@ function StepHistory({
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Input placeholder="Business name" value={h.employerName ?? h.employer ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} business name`} placeholder="Business name" value={h.employerName ?? h.employer ?? ""} onChange={(e) => {
                 // Writing the split field retires the legacy combined `employer`.
                 const c = [...empHist]; c[i] = { ...c[i], employerName: e.target.value, employer: undefined }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="Business street address" value={h.employerAddress ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} street address`} placeholder="Business street address" value={h.employerAddress ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], employerAddress: e.target.value }; patch({ employmentHistory: c })
               }} />
             </div>
             {/* The portal requires City / State / Zip for every past employer. */}
             <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
-              <Input placeholder="City" value={h.city ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} city`} placeholder="City" value={h.city ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], city: e.target.value }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="State" value={h.state ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} state`} placeholder="State" value={h.state ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], state: e.target.value }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} ZIP code`} placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], zip: e.target.value }; patch({ employmentHistory: c })
               }} />
             </div>
-            <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
+            <Input aria-label={`Employment ${i + 1} occupation`} placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
               const c = [...empHist]; c[i] = { ...c[i], occupation: e.target.value }; patch({ employmentHistory: c })
             }} />
           </div>
@@ -1574,13 +1618,14 @@ function StepHistory({
         </Hint>
         {refs.map((r, i) => (
           <div key={i} className="flex gap-2">
-            <Input placeholder="Full name" value={r.name} onChange={(e) => {
+            <Input aria-label={`Reference ${i + 1} full name`} placeholder="Full name" value={r.name} onChange={(e) => {
               const copy = [...refs]; copy[i] = { ...copy[i], name: e.target.value }; patch({ references: copy })
             }} />
             {/* Only a TYPED but malformed email is flagged — a blank one is fine
                 (they can add it later); intake never blocks on references. */}
             <Input
               placeholder="name@email.com"
+              aria-label={`Reference ${i + 1} email`}
               type="email"
               value={r.email ?? ""}
               onChange={(e) => {
@@ -1610,7 +1655,7 @@ function StepHistory({
         {(social.length ? social : [{ platform: "", handle: "" }]).map((s, i) => (
           <div key={i} className="flex gap-2">
             <select
-              aria-label="Social platform"
+              aria-label={`Social account ${i + 1} platform`}
               value={s.platform}
               onChange={(e) => updSocial(i, { platform: e.target.value })}
               className={cn(SELECT_CLASS, "max-w-[44%]")}
@@ -1622,7 +1667,8 @@ function StepHistory({
             </select>
             <Input
               placeholder="@username"
-              value={s.handle}
+              aria-label={`Social account ${i + 1} username`}
+              value={s.handle ?? ""}
               onChange={(e) => updSocial(i, { handle: e.target.value })}
             />
             {social.length > 0 && (
@@ -1633,7 +1679,16 @@ function StepHistory({
           </div>
         ))}
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => patch({ socialAccounts: [...social, { platform: "", handle: "" }] })}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={social.some((s) => !s.platform.trim() && !s.handle.trim())}
+            onClick={() =>
+              patch({
+                socialAccounts: social.length ? [...social, { platform: "", handle: "" }] : [{ platform: "", handle: "" }],
+              })
+            }
+          >
             <Plus className="size-4" /> Add account
           </Button>
           <span className="text-[11px] text-text-low">No public accounts? Leave this empty.</span>

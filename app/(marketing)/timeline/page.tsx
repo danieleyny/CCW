@@ -30,7 +30,7 @@ const STAGES = [
   {
     stage: "It gets filed",
     when: "One day",
-    body: "On Self-Guided you file your own application with the NYPD and pay the fees directly; with Full Concierge, Gun License NYC files it for you. Either way, we don't represent you before the License Division.",
+    body: "You file your own application with the NYPD and pay the fees directly. Full Concierge prepares, checks, organizes, and guides you through the portal, but you keep control of the account and submit. We don't represent you before the License Division.",
   },
   {
     stage: "Interview and fingerprinting",

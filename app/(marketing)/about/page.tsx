@@ -28,7 +28,7 @@ export const metadata = buildMetadata({
 const FAQS = [
   {
     q: "What is Gun License NYC?",
-    a: "Gun License NYC is a New York City gun-license (concealed-carry) document-preparation and case-management service. We guide applicants through the NYPD License Division process end to end — eligibility, training, documents, notarization, and the wait — while the applicant reviews it — filing it themselves on Self-Guided, or having us file it with Full Concierge.",
+    a: "Gun License NYC is a New York City gun-license (concealed-carry) document-preparation and case-management service. We guide applicants through the NYPD License Division process end to end — eligibility, training, documents, notarization, filing, and the wait. On every plan, the applicant controls the NYPD account and submits the application; Full Concierge adds preparation, review, organization, and screen-by-screen guidance.",
   },
   {
     q: "Are you a law firm?",
@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     q: "Do you submit the application for me?",
-    a: "It depends on your plan. On Self-Guided you file your own application; with Full Concierge we prepare, review, and file it with the NYPD on your behalf. Either way, we're not attorneys and don't represent you before the License Division.",
+    a: "No. On every plan, you control your NYPD portal account, enter or confirm the information, complete the final acknowledgements, pay, and submit. Full Concierge prepares, reviews, organizes, and guides you screen by screen. We are not attorneys and don't represent you before the License Division.",
   },
   {
     q: "Why do you insist on disclosing sealed and dismissed arrests?",
@@ -67,10 +67,9 @@ export default function AboutPage() {
           Gun License NYC is a New York City gun-license (concealed-carry)
           document-preparation and case-management service that guides applicants through the NYPD
           License Division process end to end. We are not attorneys and we don&apos;t represent you
-          before the License Division — only a New York-licensed attorney may do that. You review it,
-          and on Self-Guided you file it yourself; with Full Concierge we file it with the NYPD on
-          your behalf. What we handle is everything around it: what you need, getting it right, and
-          keeping it current while the NYPD does its work.
+          before the License Division — only a New York-licensed attorney may do that. On every plan,
+          you control the NYPD account, review the information, and submit your own application. Full
+          Concierge prepares, checks, organizes, and guides you screen by screen.
         </DirectAnswer>
       </section>
 
@@ -129,8 +128,8 @@ export default function AboutPage() {
               d: "A case can't reach the filing stage until the blocking requirements are satisfied, disclosures are written out, training is inside its window, and a named person on our team signs off. It's a gate, not a suggestion.",
             },
             {
-              t: "It gets filed, and we stay with the case",
-              d: "On Self-Guided you file your own application; with Full Concierge we file it for you. Then we track the interview, the fingerprints, the investigation, and what comes after — including the clocks that start once you're licensed.",
+              t: "You file, and we stay with the case",
+              d: "You control the NYPD account and submit your own application. With Full Concierge we guide you screen by screen, then track the interview, fingerprints, investigation, and the clocks that start once you're licensed.",
             },
           ].map((s, i) => (
             <li key={s.t} className="rounded-lg border border-hairline bg-card p-5">

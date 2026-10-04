@@ -69,7 +69,7 @@ export const JOURNEY: Record<CaseStageKey, JourneyStep> = {
   filed: {
     label: "The application is filed",
     description:
-      "On Self-Guided you file the application yourself; with Full Concierge we file it with the NYPD on your behalf. Our job is making sure that when it goes in, nothing is missing.",
+      "You control the NYPD portal account and submit your own application. With Full Concierge we prepare, review, organize, and guide you screen by screen so nothing is missing when you send it.",
   },
   fingerprinting_booked: {
     label: "Fingerprints and your interview",

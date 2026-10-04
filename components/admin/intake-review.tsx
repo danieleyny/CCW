@@ -1,7 +1,7 @@
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/format"
-import { PORTAL_DISCLOSURE_RANGE } from "@/lib/disclosures/portal-questions"
-import { INTAKE_STEPS, QUESTIONNAIRE, type WizardAnswers } from "@/lib/intake/answers"
+import { PORTAL_DISCLOSURES, PORTAL_DISCLOSURE_RANGE } from "@/lib/disclosures/portal-questions"
+import { INTAKE_STEPS, type WizardAnswers } from "@/lib/intake/answers"
 
 /**
  * ADMIN-ONLY read-only playback of the raw intake answers a client typed into
@@ -112,7 +112,7 @@ export function IntakeReview({ intake }: { intake: IntakeData | null }) {
         <Row
           label="Legal address"
           value={dash(
-            [a.legalStreet, a.legalApt && `Apt ${a.legalApt}`, a.legalCity, a.legalState]
+            [a.legalStreet, a.legalApt && `Apt ${a.legalApt}`, a.legalCity, [a.legalState, a.legalZip].filter(Boolean).join(" ")]
               .filter(Boolean)
               .join(", ") || undefined
           )}
@@ -217,7 +217,7 @@ export function IntakeReview({ intake }: { intake: IntakeData | null }) {
                 .slice()
                 .sort((x, y) => x.no - y.no)
                 .map((item) => {
-                  const text = QUESTIONNAIRE.find((qq) => qq.no === item.no)?.text ?? `Question ${item.no}`
+                  const text = PORTAL_DISCLOSURES.find((qq) => qq.no === item.no)?.text ?? `Question ${item.no}`
                   return (
                     <li key={item.no} className="rounded-md border border-hairline p-2.5 text-sm">
                       <div className="flex items-start gap-2">
@@ -266,16 +266,27 @@ export function IntakeReview({ intake }: { intake: IntakeData | null }) {
           {a.socialHandles && <Row label="Social (legacy free-text)" value={a.socialHandles} />}
           <SubTable
             caption="Residence history (past 5 years)"
-            columns={["Dates", "Address"]}
-            rows={(a.residenceHistory ?? []).map((h) => [monthRange(h.fromMonth, h.toMonth), dash(h.address)])}
+            columns={["Dates", "Street", "Apt", "City", "State", "ZIP", "Country"]}
+            rows={(a.residenceHistory ?? []).map((h) => [
+              monthRange(h.fromMonth, h.toMonth),
+              dash(h.address),
+              dash(h.apt),
+              dash(h.city),
+              dash(h.state),
+              dash(h.zip),
+              dash(h.country ?? "United States"),
+            ])}
           />
           <SubTable
             caption="Employment history (past 5 years)"
-            columns={["Dates", "Employer", "Address", "Occupation"]}
+            columns={["Dates", "Employer", "Street", "City", "State", "ZIP", "Occupation"]}
             rows={(a.employmentHistory ?? []).map((h) => [
               monthRange(h.fromMonth, h.toMonth),
               dash(h.employerName ?? h.employer),
               dash(h.employerAddress),
+              dash(h.city),
+              dash(h.state),
+              dash(h.zip),
               dash(h.occupation),
             ])}
           />

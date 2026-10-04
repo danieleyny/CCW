@@ -15,9 +15,9 @@ const SLOT_STATE_WORD: Record<SlotState, string> = {
 }
 
 /**
- * The INTERNAL 17-step application record — a work-product snapshot of exactly what
- * staff transcribe into the NYPD portal, in the portal's order and headings. Never the
- * applicant's document and never filed; it's the office's paper trail of the entry.
+ * The INTERNAL, track-aware application record — a work-product snapshot used to QA and
+ * guide the applicant through the NYPD portal in its own order and headings. Staff never
+ * control the portal or file; the applicant enters/confirms the information and submits.
  *
  * The SSN is deliberately NOT in it — a downloaded file persists, so the SSN stays
  * click-to-reveal in the app only. Same reason the worksheet field shows a placeholder.
@@ -30,15 +30,15 @@ export async function assembleApplicationRecord(admin: DB, caseId: string): Prom
     (c) => {
       c.heading("NYPD portal — application record", `${data.applicant} · internal work product`)
       c.para(
-        "This is the office record of what was entered into the NYPD online portal, in the portal's own order and headings. It is not an application, is never filed, and is never given to the applicant. The SSN is omitted here — it is revealed in the app only.",
+        "This is the office preparation and filing-support record, arranged in the NYPD portal's own order and headings. The applicant controls the portal, enters or confirms the information, and files. This record is not an application, is never filed, and is never given to the applicant. The SSN is omitted here — it is revealed in the app only.",
         { color: "muted", size: 9.5, gap: 12 }
       )
 
       const readiness = data.readiness.readyToFinalize
-        ? "Ready to finalize"
+        ? "Ready for applicant finalization"
         : data.readiness.readyToEnter
-          ? "Ready to enter (uploads still outstanding)"
-          : "Not ready to enter"
+          ? "Ready for applicant entry (finalization blockers remain)"
+          : "Not ready for applicant entry"
       c.para(`Readiness: ${readiness}`, { medium: true, gap: 14 })
 
       for (const section of data.sections) {
@@ -73,10 +73,13 @@ export async function assembleApplicationRecord(admin: DB, caseId: string): Prom
           continue
         }
         for (const field of section.fields) {
-          const value = field.notApplicable
+          const value = field.notApplicable || field.attention
             ? field.value
             : field.value || (field.atFiling ? "— enter at filing —" : "— MISSING —")
-          c.para(`${field.label}: ${value}`, field.missing && !field.notApplicable ? { color: "brass", medium: true } : {})
+          c.para(
+            `${field.label}: ${value}`,
+            field.attention || (field.missing && !field.notApplicable) ? { color: "brass", medium: true } : {}
+          )
         }
       }
     },

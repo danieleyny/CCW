@@ -94,7 +94,8 @@ export async function assembleFilingPack(admin: DB, caseId: string): Promise<Fil
     : []
 
   // PORTAL_ALIGNMENT_REBUILD: we no longer produce a filled PD 643-041 — the portal
-  // is the filing surface and staff transcribe from the worksheet. The paper-form fill
+  // is the filing surface and the applicant enters/confirms from the worksheet, with
+  // staff guidance. The paper-form fill
   // is retired here (deleted in the final phase); the pack leads with the worksheet.
   const preparedApp: Uint8Array | null = null
 

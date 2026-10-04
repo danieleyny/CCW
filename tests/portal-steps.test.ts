@@ -13,6 +13,11 @@ import {
 } from "@/config/portal-steps"
 import { buildApplicationValues } from "@/lib/forms/application"
 import { buildPortalWorksheet } from "@/lib/disclosures/worksheet-portal"
+import {
+  FINAL_ACKNOWLEDGEMENTS,
+  SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT,
+} from "@/lib/disclosures/portal-forms"
+import { computePortalReadiness } from "@/lib/disclosures/readiness"
 import type { WizardAnswers } from "@/lib/intake/answers"
 
 const emptyValues = () => buildApplicationValues({}, {} as WizardAnswers, {})
@@ -115,9 +120,9 @@ describe("portalTrackForCase resolves the walked Special Carry population (non-r
 })
 
 describe("track-aware: the Special Carry flow is a different composition, not a shift", () => {
-  it("portalStepsFor('special_carry') is 17 steps with the county screen at 5 and the fee waiver at 13", () => {
+  it("portalStepsFor('special_carry') is 18 screens (the portal says Step 18 of 17)", () => {
     const steps = portalStepsFor("special_carry")
-    expect(steps.map((s) => s.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+    expect(steps.map((s) => s.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
     expect(steps[4].title).toBe("Out of city license information")
     expect(steps[12].title).toBe("Law Enforcement Application Fee Waiver")
     expect(steps[12].key).toBe("fee_waiver")
@@ -165,16 +170,16 @@ describe("track-aware: the Special Carry flow is a different composition, not a 
     const step16 = SPECIAL_CARRY_STEPS.find((s) => s.no === 16)!
     expect(step16.kind).toBe("fields")
     expect(step16.key).toBe("counsel_preparer")
-    // There is no separate review checkpoint before the end on this track.
-    expect(SPECIAL_CARRY_STEPS.filter((s) => s.key === "review")).toHaveLength(0)
+    // The review is the next screen, at 17.
+    expect(SPECIAL_CARRY_STEPS.find((s) => s.key === "review")?.no).toBe(17)
   })
 
-  it("nothing on the Special Carry track names a step as the irreversible one (Phase 8 — unconfirmed)", () => {
-    for (const step of SPECIAL_CARRY_STEPS) {
-      expect(step.checkpoint ?? "", `step ${step.no}`).not.toMatch(/irreversible/i)
-    }
-    // The NYC-resident affirmations step DOES (correctly) mark itself irreversible.
-    expect(PORTAL_STEPS.find((s) => s.key === "affirmations")!.checkpoint).toMatch(/IRREVERSIBLE/)
+  it("Step 18 is the verified applicant-only irreversible boundary", () => {
+    const irreversible = SPECIAL_CARRY_STEPS.filter((s) => s.irreversible)
+    expect(irreversible.map((s) => s.no)).toEqual([18])
+    expect(irreversible[0].applicantOnly).toBe(true)
+    expect(irreversible[0].checkpoint).toMatch(/Finalize and Pay/)
+    expect(irreversible[0].checkpoint).toMatch(/irreversible/i)
   })
 
   it("Special Carry worksheet shows the county licence at 5 and the fee-waiver + statements screens", () => {
@@ -184,11 +189,42 @@ describe("track-aware: the Special Carry flow is a different composition, not a 
     expect(outOfCity.fields.some((f) => f.label === "Basic License Number")).toBe(true)
     expect(w.find((s) => s.title === "Law Enforcement Application Fee Waiver")).toBeTruthy()
     expect(w.find((s) => s.no === 14)!.fields.length).toBeGreaterThan(0) // sworn statements
-    // Step 17 review-and-copy is a checkpoint that produces the filed-application artifact.
-    const final = SPECIAL_CARRY_STEPS.find((s) => s.no === 17)!
-    expect(final.kind).toBe("checkpoint")
-    expect(final.producesReqCode).toBe("APP-01")
-    expect(final.producesDocumentType).toBe("filed_application_copy")
+    // Step 17 is PRE-submission review; Step 18 is the applicant-only final boundary.
+    const review = SPECIAL_CARRY_STEPS.find((s) => s.no === 17)!
+    expect(review.kind).toBe("checkpoint")
+    expect(review.title).toBe("Verify Your Information")
+    expect(review.checkpoint).toMatch(/NOT proof of filing/)
+    expect(Object.keys(review)).not.toContain("producesReqCode")
+    expect(Object.keys(review)).not.toContain("producesDocumentType")
+    expect(w.find((s) => s.no === 18)?.applicantOnly).toBe(true)
+  })
+
+  it("models the five Step 18 initials + acknowledgements from one canonical list", () => {
+    expect(FINAL_ACKNOWLEDGEMENTS).toHaveLength(5)
+    expect(FINAL_ACKNOWLEDGEMENTS.map((a) => a.initialsLabel)).toEqual([
+      "Acknowledgement – Compliance – Initials",
+      "Acknowledgement – Accuracy – Initials",
+      "Acknowledgement – Notarized Release – Initials",
+      "Acknowledgement – Warning – Initials",
+      "Acknowledgement – State Mandatory Form – Initials",
+    ])
+    expect(FINAL_ACKNOWLEDGEMENTS[1].text).toMatch(/Section 210\.45/)
+    expect(FINAL_ACKNOWLEDGEMENTS[4].text).toMatch(/400\.00\(18\)\(b\)/)
+  })
+
+  it("surfaces and hard-blocks the two guard-only statements on civilian Special Carry", () => {
+    const w = buildPortalWorksheet(emptyValues(), {}, {
+      portalTrack: "special_carry",
+      licenseTrack: "concealed_carry",
+    })
+    const statements = w.find((s) => s.no === 14)!
+    expect(statements.fields.filter((f) => f.attention).map((f) => f.label.slice(0, 2))).toEqual(["1.", "4."])
+    const readiness = computePortalReadiness(emptyValues(), {}, [], {
+      portalTrack: "special_carry",
+      signedRecordSatisfied: false,
+    })
+    expect(readiness.finalizeMissing.some((m) => m.label === SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT.message)).toBe(true)
+    expect(readiness.readyToFinalize).toBe(false)
   })
 
   it("confidentiality: a withdrawal election and a Q14/Ground-1B mismatch surface to staff (greyed, not missing)", () => {

@@ -6,6 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import {
   generateCaseRequirements,
+  requirementApplies,
+  type ActiveRequirementRow,
   type IntakeAnswers,
 } from "./generate"
 
@@ -72,13 +74,16 @@ export async function materializeSponsorPacket(admin: DB, caseId: string): Promi
 
   const { data: existing } = await admin
     .from("case_requirements")
-    .select("id, requirement_id, status")
+    .select("id, requirement_id, req_code, status")
     .eq("case_id", caseId)
-  const byReq = new Map((existing ?? []).map((r) => [r.requirement_id, r]))
+  const byCode = new Map((existing ?? []).map((r) => [r.req_code, r]))
 
   const inserts: Database["public"]["Tables"]["case_requirements"]["Insert"][] = []
   for (const r of rows) {
-    if (byReq.has(r.id)) continue // leave any existing packet row (incl. satisfied) intact
+    // req_code is the stable identity across dated registry versions. An older
+    // case keeps its historical requirement_id, but must never get a second
+    // SPN card when the registry publishes a new version of the same rule.
+    if (byCode.has(r.req_code)) continue
     inserts.push({ case_id: caseId, requirement_id: r.id, req_code: r.req_code, status: "pending" })
   }
   if (inserts.length) {
@@ -95,6 +100,49 @@ export interface MaterializeResult {
   total: number
 }
 
+export interface ExistingMaterializedRequirement {
+  id: string
+  requirementId: string
+  reqCode: string
+  status: Database["public"]["Enums"]["case_req_status"]
+  /** The trigger from the exact historical registry row this case points at. */
+  triggerCond?: string | null
+}
+
+/** Pure materialization planner. `reqCode`—not a versioned requirement UUID—is
+ * the per-case identity. Existing rows continue to use their historical rule's
+ * trigger; only genuinely new codes use the active registry version. */
+export function planCaseRequirementMaterialization(
+  active: ActiveRequirementRow[],
+  existing: ExistingMaterializedRequirement[],
+  answers: IntakeAnswers
+) {
+  const generated = generateCaseRequirements(active, answers)
+  const byCode = new Map<string, ExistingMaterializedRequirement[]>()
+  for (const row of existing) {
+    const rows = byCode.get(row.reqCode) ?? []
+    rows.push(row)
+    byCode.set(row.reqCode, rows)
+  }
+
+  const inserts: typeof generated = []
+  const updates: Array<{ id: string; status: Database["public"]["Enums"]["case_req_status"] }> = []
+  for (const g of generated) {
+    const matches = byCode.get(g.reqCode) ?? []
+    if (!matches.length) {
+      inserts.push(g)
+      continue
+    }
+    for (const row of matches) {
+      if (row.status !== "pending" && row.status !== "na") continue
+      const applies = row.triggerCond ? requirementApplies(row.triggerCond, answers) : g.applies
+      const target: Database["public"]["Enums"]["case_req_status"] = applies ? "pending" : "na"
+      if (row.status !== target) updates.push({ id: row.id, status: target })
+    }
+  }
+  return { generated, inserts, updates }
+}
+
 /**
  * Upsert the per-case requirement instances from the active registry + answers.
  * Trusted system operation — pass a service-role (admin) client; never clobbers
@@ -108,38 +156,33 @@ export async function materializeCaseRequirements(
   answers: IntakeAnswers
 ): Promise<MaterializeResult> {
   const active = await getActiveRequirements(admin, jurisdictionKey)
-  const generated = generateCaseRequirements(active, answers)
-
   const { data: existing } = await admin
     .from("case_requirements")
-    .select("id, requirement_id, status")
+    .select("id, requirement_id, req_code, status, requirement:requirements(trigger_cond)")
     .eq("case_id", caseId)
-  const byReq = new Map((existing ?? []).map((r) => [r.requirement_id, r]))
-
-  const inserts: Database["public"]["Tables"]["case_requirements"]["Insert"][] = []
-  const updates: Array<{ id: string; status: Database["public"]["Enums"]["case_req_status"] }> = []
-
-  for (const g of generated) {
-    const target: Database["public"]["Enums"]["case_req_status"] = g.applies ? "pending" : "na"
-    const ex = byReq.get(g.requirementId)
-    if (!ex) {
-      inserts.push({
-        case_id: caseId,
-        requirement_id: g.requirementId,
-        req_code: g.reqCode,
-        status: target,
-      })
-    } else if (ex.status === "pending" || ex.status === "na") {
-      if (ex.status !== target) updates.push({ id: ex.id, status: target })
+  const historical = (existing ?? []).map((row) => {
+    const requirement = row.requirement as unknown as { trigger_cond?: string } | null
+    return {
+      id: row.id,
+      requirementId: row.requirement_id,
+      reqCode: row.req_code,
+      status: row.status,
+      triggerCond: requirement?.trigger_cond,
     }
-    // satisfied / rejected rows are left intact (evidence already bound)
-  }
+  })
+  const plan = planCaseRequirementMaterialization(active, historical, answers)
+  const inserts: Database["public"]["Tables"]["case_requirements"]["Insert"][] = plan.inserts.map((g) => ({
+    case_id: caseId,
+    requirement_id: g.requirementId,
+    req_code: g.reqCode,
+    status: g.applies ? "pending" : "na",
+  }))
 
   if (inserts.length) {
     const { error } = await admin.from("case_requirements").insert(inserts)
     if (error) throw error
   }
-  for (const u of updates) {
+  for (const u of plan.updates) {
     const { error } = await admin
       .from("case_requirements")
       .update({ status: u.status })
@@ -149,9 +192,9 @@ export async function materializeCaseRequirements(
 
   return {
     inserted: inserts.length,
-    updated: updates.length,
-    applicable: generated.filter((g) => g.applies).length,
-    total: generated.length,
+    updated: plan.updates.length,
+    applicable: plan.generated.filter((g) => g.applies).length,
+    total: plan.generated.length,
   }
 }
 

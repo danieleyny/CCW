@@ -20,7 +20,7 @@ export const metadata = buildMetadata({
 const buildFaqs = (fees: Fees) => [
   {
     q: "How do I get a gun license in NYC?",
-    a: "You apply through the NYPD License Division: confirm you're eligible, complete New York's 18-hour firearms course, assemble your documents (references, cohabitant affidavits, proof of residence, photos, and disclosures), then file, get fingerprinted, and attend an interview. On Self-Guided you file the application yourself; with Full Concierge we file it for you — and the NYPD decides the outcome.",
+    a: "You apply through the NYPD License Division: confirm you're eligible, complete New York's 18-hour firearms course, assemble your documents, then file, get fingerprinted, and attend an interview. You control the portal and submit on every plan; Full Concierge prepares, checks, organizes, and guides you screen by screen.",
   },
   {
     q: "How long does the NYC concealed carry process take?",
@@ -60,7 +60,7 @@ const buildFaqs = (fees: Fees) => [
   },
   {
     q: "Can a company file the application for me?",
-    a: "It depends on your plan: on Self-Guided you file your own application, and with Full Concierge Gun License NYC files it for you. Either way, a document-preparation service cannot represent you before the License Division — only a New York-licensed attorney may represent an applicant.",
+    a: "No. You control the NYPD portal account, enter or confirm the information, complete the final acknowledgements, pay, and submit. Full Concierge prepares, checks, organizes, and guides you screen by screen. Only a New York-licensed attorney may represent an applicant before the License Division.",
   },
   {
     q: "How long is a NYC carry license valid?",

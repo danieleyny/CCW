@@ -38,6 +38,7 @@ export function ReviewAndFile({
   caseId,
   clientId,
   area = "",
+  portalTrack,
 }: {
   items: ReviewItem[]
   /** Packet assembled + QA-passed (stage ≥ application_assembled). */
@@ -46,10 +47,13 @@ export function ReviewAndFile({
   clientId: string
   /** Applicant ZIP/neighborhood, to scope the in-person notary options. */
   area?: string
+  /** Resolved portal flow; Special Carry has a verified hidden Step 18. */
+  portalTrack?: string | null
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [busyCode, setBusyCode] = useState<string | null>(null)
+  const specialCarry = portalTrack === "special_carry"
 
   const unsigned = items.filter((i) => !i.signed)
   const hasWork = unsigned.length > 0
@@ -184,12 +188,24 @@ export function ReviewAndFile({
         <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-5">
           <div className="flex items-center gap-2">
             <FileCheck2 className="size-5 text-brass" />
-            <h3 className="text-lg font-semibold tracking-tight">Your packet is ready — file it yourself</h3>
+            <h3 className="text-lg font-semibold tracking-tight">
+              {specialCarry ? "Your packet is ready — finalization is paused" : "Your packet is ready — file it yourself"}
+            </h3>
           </div>
           <p className="mt-1 text-sm text-text-mid">
             Everything&apos;s prepared and checked. The last step is yours: you submit your own application on
-            the NYPD portal. By law we can&apos;t and don&apos;t file for you — but here&apos;s exactly how.
+            the NYPD portal. Keep control of your login; do not give your password or verification code to
+            anyone. We prepare and guide, but we do not access your account or file for you.
           </p>
+
+          {specialCarry && (
+            <p className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+              <b>Do not click Finalize and Pay yet.</b> The live Special Carry portal marks two statements
+              required even though their labels apply only to Carry Guard/Security applicants. Your case team
+              must obtain documented NYPD or firearms-counsel direction; nobody should invent wording to get
+              past those fields.
+            </p>
+          )}
 
           <ol className="mt-4 space-y-2 text-sm text-text-mid">
             <li className="flex gap-2">
@@ -197,14 +213,42 @@ export function ReviewAndFile({
               below — every answer is laid out in the NYPD form&apos;s own order.
             </li>
             <li className="flex gap-2">
-              <span className="font-mono text-xs text-brass">2</span> Open the NYPD licensing portal, create
-              your login, and enter your answers from the worksheet.
+              <span className="font-mono text-xs text-brass">2</span> Open the NYPD licensing portal yourself
+              and enter or confirm each answer from the worksheet. Stop if something does not match.
             </li>
             <li className="flex gap-2">
-              <span className="font-mono text-xs text-brass">3</span> Upload your prepared documents, pay the
-              NYPD&apos;s fees, and submit. The NYPD schedules your fingerprinting from there.
+              <span className="font-mono text-xs text-brass">3</span> Upload the prepared documents in the
+              labelled slots and check that each upload appears before continuing.
             </li>
+            {specialCarry ? (
+              <>
+                <li className="flex gap-2">
+                  <span className="font-mono text-xs text-brass">4</span> On Step 17, “Verify Your
+                  Information,” review every section and use Print to save a pre-submission review copy. It
+                  is not proof that you filed.
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-mono text-xs text-brass">5</span> Select Next, save the required New
+                  York State warning, then personally complete Step 18: five initials, five checkboxes, and
+                  “Finalize and Pay” only after your case team clears the portal conflict above. That click is
+                  irreversible. Complete payment and save the confirmation or receipt as proof of filing.
+                </li>
+              </>
+            ) : (
+              <li className="flex gap-2">
+                <span className="font-mono text-xs text-brass">4</span> Review every answer, personally complete
+                the portal affirmations, finalize, pay, and save the confirmation or receipt as proof of filing.
+              </li>
+            )}
           </ol>
+
+          {specialCarry && (
+            <p className="mt-4 rounded-md border border-warn/40 bg-warn/10 p-3 text-xs text-warn">
+              Current-system notice: NYPD&apos;s portal said in-progress applications must be submitted by
+              October 16, 2026. If that date has passed or the screens differ, stop and follow the new portal
+              instructions before relying on this walkthrough.
+            </p>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild variant="outline">

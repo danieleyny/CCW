@@ -57,6 +57,14 @@ export default async function IntakePage() {
     else if (quiz.training) prefill.trainingStatus = "planned"
     initialAnswers = prefill
   }
+  // ZIP already exists on the applicant record from onboarding. Carry it into
+  // the exact address the applicant reviews here, while preserving any explicit
+  // intake edit. This avoids asking them twice without making the older client
+  // column the only possible source forever.
+  initialAnswers = {
+    ...initialAnswers,
+    legalZip: initialAnswers.legalZip ?? myCase.client.zip ?? undefined,
+  }
 
   let disclosures: { id: string; type: string; narrative: string; question_no: number | null }[] = []
   let guard = null

@@ -48,7 +48,15 @@ describe.skipIf(!reachable)("sponsored armed-guard intake", () => {
 
   it("Branch A (NYC): carry_guard — seeds armed credentials + packet, drops the carry-only items", async () => {
     const caseId = await sponsoredCase()
-    const answers: WizardAnswers = { residence: "nyc", borough: "Brooklyn", legalState: "NY", licenseType: "carry" }
+    const answers: WizardAnswers = {
+      residence: "nyc",
+      borough: "Brooklyn",
+      legalState: "NY",
+      licenseType: "carry",
+      references: [{ name: "Intake Reference" }],
+      questionnaireVersion: "nypd_portal_v1",
+      questionnaire: [{ no: 2, yes: true, narrative: "Employment ended in 2020; no misconduct." }],
+    }
     await processIntake(admin, caseId, "nyc", answers)
 
     const { data: kase } = await admin.from("cases").select("license_track").eq("id", caseId).single()
@@ -64,6 +72,17 @@ describe.skipIf(!reachable)("sponsored armed-guard intake", () => {
     for (const c of ["TRN-01", "SOC-01", "REF-01"]) {
       expect(byCode.get(c), `${c} should be N/A for armed guard`).toBe("na")
     }
+
+    const { data: refs } = await admin.from("character_references").select("name").eq("case_id", caseId)
+    expect(refs?.map((r) => r.name)).toContain("Intake Reference")
+
+    const { data: disclosure } = await admin
+      .from("requirement_answers")
+      .select("answers")
+      .eq("case_id", caseId)
+      .eq("req_code", "DSC-01")
+      .single()
+    expect(disclosure?.answers).toMatchObject({ q2: "yes", q2_explain: "Employment ended in 2020; no misconduct." })
   })
 
   it("Branch C (out of state): sponsored_unresolved — only the packet, applicant set held", async () => {

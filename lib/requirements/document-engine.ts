@@ -56,6 +56,8 @@ export interface RenderInput {
   /** DSC-01 only: the assembled application values (facts + intake + disclosures +
    *  letter of necessity) for the signed answers + authorization record. */
   record?: ApplicationValues
+  /** DSC-01 only: selects the verified final-acknowledgement set without guessing. */
+  portalTrack?: string | null
 }
 
 export interface RenderedDocument {
@@ -72,7 +74,7 @@ const rows = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v a
 const isYes = (v: unknown): boolean => v === true || v === "yes"
 
 /** The confidentiality election (Public Records Exemption) — our record of the
- *  grounds and election the applicant chose, which staff enter inline on the portal. */
+ *  grounds and election the applicant chose and personally enters/confirms in the portal. */
 async function confidentialityRecord(name: string, a: Record<string, unknown>, sign: SignOpts) {
   const requesting = a.requesting === "yes" || a.requesting === true
   const grounds: [string, string][] = [
@@ -281,8 +283,8 @@ export async function renderRequirementDocument(input: RenderInput): Promise<Ren
     case "DSC-01":
       // THE signed answers + authorization record (Part 5) — every portal disclosure
       // question with the applicant's answer, the application details, and their
-      // authorization for us to enter them into the portal. Replaces the old summary.
-      return { bytes: await renderSignedApplicationRecord(n, a, input.record ?? ({} as ApplicationValues), { signaturePng: sig, signedAt }), fileName: "application-answers.pdf", documentType: "disclosure_summary", label: "Application answers & authorization" }
+      // preparation authorization. The applicant still controls and files in the portal.
+      return { bytes: await renderSignedApplicationRecord(n, a, input.record ?? ({} as ApplicationValues), { signaturePng: sig, signedAt, portalTrack: input.portalTrack }), fileName: "application-answers.pdf", documentType: "disclosure_summary", label: "Application answers & preparation authorization" }
     case "ARR-01":
       return { bytes: await arrestNarratives(n, toArrests(a.arrests), dated, sig, sign), fileName: "arrest-statements.pdf", documentType: "arrest_statement", label: "Arrest statements" }
     case "OOP-01":

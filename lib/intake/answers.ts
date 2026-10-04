@@ -133,6 +133,7 @@ export interface WizardAnswers {
   legalApt?: string
   legalCity?: string
   legalState?: string // default "NY"
+  legalZip?: string
   alienRegistrationNumber?: string // non-citizens only
   placeOfBirth?: string // "City, State, Country"
   heightInches?: number
@@ -175,6 +176,9 @@ export interface WizardAnswers {
   arrests?: ArrestEntry[]
   ordersOfProtection?: OopEntry[]
   domesticIncidents?: DomesticEntry[]
+  /** Distinguishes the live NYPD portal Q1–16 set from legacy paper Q10–22
+   * sessions that used the same `questionnaire` array shape. */
+  questionnaireVersion?: "nypd_portal_v1"
   questionnaire?: QuestionAnswer[]
   // Step 5 — carry-specific & history
   trainingStatus?: "completed" | "planned"
@@ -206,7 +210,8 @@ export function formatLegalAddress(a: WizardAnswers): string {
   const street = [a.legalStreet?.trim(), a.legalApt?.trim() ? `Apt ${a.legalApt.trim().replace(/^apt\.?\s*/i, "")}` : ""]
     .filter(Boolean)
     .join(" ")
-  return [street, a.legalCity?.trim(), a.legalState?.trim()].filter(Boolean).join(", ")
+  const stateZip = [a.legalState?.trim(), a.legalZip?.trim()].filter(Boolean).join(" ")
+  return [street, a.legalCity?.trim(), stateZip].filter(Boolean).join(", ")
 }
 
 /** One readable line per account for the social-media disclosure PDF. */
@@ -226,6 +231,10 @@ export const INTAKE_STEPS = [
 ] as const
 
 /**
+ * LEGACY ONLY: the old paper Section-B questionnaire, retained so historical
+ * intake sessions remain readable. New intake uses PORTAL_DISCLOSURES (NYPD
+ * online portal Q1–16) and stamps `questionnaireVersion`.
+ *
  * The Section-B questionnaire — the yes/no + explain block, quoted from
  * PD 643-041 (Rev. 11-10) verbatim. Every "yes" binds a narrative.
  *
@@ -320,18 +329,21 @@ export function toGeneratorAnswers(
 ): GeneratorAnswers {
   const premises = a.licenseType === "premises"
   const c = opts.conditions
+  const portalQuestionYes = (no: number) =>
+    a.questionnaireVersion === "nypd_portal_v1" &&
+    (a.questionnaire ?? []).some((q) => q.no === no && q.yes)
   return {
     isCarry: !premises,
     isPremises: premises,
     isRenewal: !!opts.isRenewal,
     isRetiredLeo: !!a.isRetiredLeo,
     hasCohabitants: c?.hasCohabitants ?? (a.cohabitants?.length ?? 0) > 0,
-    hasArrestHistory: c?.hasArrestHistory ?? (a.arrests?.length ?? 0) > 0,
-    hasOopHistory: c?.hasOopHistory ?? (a.ordersOfProtection?.length ?? 0) > 0,
-    hasDomesticIncident: c?.hasDomesticIncident ?? (a.domesticIncidents?.length ?? 0) > 0,
+    hasArrestHistory: c?.hasArrestHistory ?? (portalQuestionYes(7) || (a.arrests?.length ?? 0) > 0),
+    hasOopHistory: c?.hasOopHistory ?? (portalQuestionYes(13) || (a.ordersOfProtection?.length ?? 0) > 0),
+    hasDomesticIncident: c?.hasDomesticIncident ?? (portalQuestionYes(15) || (a.domesticIncidents?.length ?? 0) > 0),
     lprUnder7yr: a.citizenship === "lpr" && !!a.lprUnder7yr,
-    isVeteran: c?.isVeteran ?? !!a.isVeteran,
-    hasNameChange: c?.hasNameChange ?? !!a.hasNameChange,
+    isVeteran: c?.isVeteran ?? (portalQuestionYes(5) || !!a.isVeteran),
+    hasNameChange: c?.hasNameChange ?? (portalQuestionYes(1) || !!a.hasNameChange),
     anyQuestionYes: c?.anyQuestionYes ?? (a.questionnaire ?? []).some((q) => q.yes),
     hasFelonyConviction: !!c?.hasFelonyConviction, // portal-only; no wizard equivalent
     wantsConfidentiality: !!c?.wantsConfidentiality,

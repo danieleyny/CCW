@@ -142,8 +142,8 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
           <SectionEyebrow>Ready to hand it off?</SectionEyebrow>
           <h3 className="mt-2 font-display text-xl font-semibold">Have us run it</h3>
           <p className="mt-1 text-sm text-text-mid">
-            We collect every document, keep it on schedule, and assemble your filing packet. You review
-            and file your own application — or, with Full Concierge, we file it for you.
+            We collect every document, keep it on schedule, assemble your filing packet, and guide you
+            through the portal. You keep control of the account and submit your own application.
           </p>
           <div className="mt-4">
             <LeadForm

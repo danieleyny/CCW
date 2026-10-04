@@ -44,7 +44,7 @@ const StickyCta = dynamic(() => import("@/components/marketing/sticky-cta").then
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
   description:
-    "Get a NYC gun license without the guesswork. We track all 24 documents, your 18-hour course, and every deadline as one case — and can file it for you.",
+    "Track every document, your 18-hour course, and each deadline in one case, with clear guidance while you file your own NYC gun license application.",
   path: "/",
   hreflang: "",
   ogTitle: "NYC gun license, handled — Gun License NYC",

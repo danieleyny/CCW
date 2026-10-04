@@ -161,14 +161,14 @@ export default async function RequirementsPage() {
 
       <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
         <h2 className="font-display text-2xl font-semibold tracking-tight">
-          And then it&apos;s filed — by you, or by us
+          And then you file it
         </h2>
         <p className="mt-3 text-text-mid">
-          The application is always yours, and you always sign it. On the Self-Guided plan you file it
-          yourself; with Full Concierge we file it with the NYPD on your behalf. Either way, only a New
-          York-licensed attorney can represent you at the License Division — a document-preparation
-          service prepares and files, it doesn&apos;t represent you. What we do is get the file right
-          before it goes in.
+          The application and NYPD account are always yours, and you enter or confirm the answers,
+          complete the acknowledgements, pay, and submit. Full Concierge prepares, checks, organizes,
+          and guides you screen by screen; it does not take your credentials or submit for you. Only a
+          New York-licensed attorney can represent you at the License Division. What we do is get the
+          file right before you send it.
         </p>
         <FactList facts={[FACTS.youFile]} />
       </section>

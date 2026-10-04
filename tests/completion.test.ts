@@ -26,11 +26,12 @@ describe("completion metrics — the counting rules", () => {
     expect(m.overall.pct).toBe(Math.round((m.overall.done / m.overall.total) * 100))
   })
 
-  it("excludes not-applicable and optional-blank fields from the denominator", () => {
+  it("excludes not-applicable, attention-only, and optional-blank fields from the denominator", () => {
     const m = computeCompletion({
       sections: [section(8, [
         { label: "Q1", value: "No", missing: false },
         { label: "Q6", value: "Not applicable — only if Q5 is Yes", missing: false, notApplicable: true },
+        { label: "Portal conflict", value: "Needs NYPD direction", missing: false, attention: true },
         { label: "Middle initial", value: "", missing: false }, // optional blank
       ])],
       slots: [],

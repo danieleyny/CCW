@@ -24,6 +24,7 @@ import { buildDataAsks } from "@/lib/concierge/data-asks"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Card, CardContent } from "@/components/ui/card"
+import { portalTrackForCase } from "@/config/portal-steps"
 
 export const metadata = { title: "Your concierge" }
 
@@ -198,7 +199,16 @@ export default async function ConciergeHome({
       <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
 
       <div id="review" className="scroll-mt-20">
-        <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} caseId={myCase.id} clientId={myCase.client_id} />
+        <ReviewAndFile
+          items={reviewItems}
+          ready={readyToFile(stage)}
+          caseId={myCase.id}
+          clientId={myCase.client_id}
+          portalTrack={portalTrackForCase({
+            clientTrack: myCase.client.track,
+            licenseTrack: trackRow?.license_track ?? null,
+          })}
+        />
       </div>
 
       <section className="space-y-3">

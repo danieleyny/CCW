@@ -478,7 +478,7 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
       const cl = k.clients as unknown as { full_name: string; assigned_staff: string | null } | null
       const staffId = cl?.assigned_staff
       if (!staffId) continue
-      // "Not already marked entered" — skip if a staffer has begun transcribing this case.
+      // "Not already marked complete" — skip if guided applicant entry has begun.
       const { count: progressRows } = await admin
         .from("portal_entry_progress")
         .select("case_id", { count: "exact", head: true })

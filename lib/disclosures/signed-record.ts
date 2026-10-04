@@ -2,6 +2,7 @@ import "server-only"
 
 import { buildPdf } from "@/lib/pdf/builder"
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
+import { FINAL_ACKNOWLEDGEMENTS } from "@/lib/disclosures/portal-forms"
 import { portalDate, portalHeight, portalWeight, usDate, splitStreet } from "@/lib/forms/format"
 import type { ApplicationValues } from "@/lib/forms/application"
 import type { SignOpts } from "@/lib/forms/documents"
@@ -9,8 +10,9 @@ import type { SignOpts } from "@/lib/forms/documents"
 /**
  * THE signed answers + authorization record (PORTAL_ALIGNMENT_REBUILD Part 5). One
  * document the applicant signs digitally — our record that these answers are theirs
- * and that they authorized us to enter them into the NYPD online portal on their
- * behalf. It is NOT an NYPD form and is NOT notarised. Unsigned it renders as a DRAFT
+ * and that they authorized us to prepare a portal-aligned filing worksheet. The
+ * applicant still controls the NYPD account, enters/confirms the information, and
+ * personally finalizes and pays. It is NOT an NYPD form and is NOT notarised. Unsigned it renders as a DRAFT
  * (the buildPdf banner); a change after signing marks the signed copy stale and
  * requires a re-signature (the generate/sign flow handles that). Replaces the old
  * internal disclosure summary — one document, not two.
@@ -37,7 +39,7 @@ export async function renderSignedApplicationRecord(
   applicantName: string,
   answers: Record<string, unknown>,
   v: ApplicationValues,
-  opts: { signaturePng?: Uint8Array; signedAt?: Date }
+  opts: { signaturePng?: Uint8Array; signedAt?: Date; portalTrack?: string | null }
 ): Promise<Uint8Array> {
   const { signaturePng, signedAt } = opts
   const sign: SignOpts = { signedAt }
@@ -45,8 +47,8 @@ export async function renderSignedApplicationRecord(
   return buildPdf(
     (c) => {
       c.heading(
-        "Application Answers & Authorization",
-        "NOT an NYPD form. Your answers as you gave them, and your authorization for us to enter them into the NYPD online portal."
+        "Application Answers & Preparation Authorization",
+        "NOT an NYPD form. Your answers as you gave them, and your authorization for us to prepare a portal-aligned filing worksheet."
       )
       c.rule()
 
@@ -103,29 +105,26 @@ export async function renderSignedApplicationRecord(
         for (const n of [1, 2, 3, 4, 5, 6]) if (s(v[`lop${n}`])) c.para(`  ${n}. ${s(v[`lop${n}`])}`)
       }
 
-      // 4 — The portal's four affirmations, VERBATIM. Staff will tick these on the
-      // applicant's behalf, so the applicant must have made them to us first.
+      // 4 — The Special Carry portal's five acknowledgements, VERBATIM. Other flows
+      // receive a generic applicant-only reminder until their final screen is re-walked.
       c.pageBreak()
-      c.h2("4 · Affirmations")
-      c.para(
-        "The undersigned affirms and acknowledges that he/she has knowledge of and shall be responsible for compliance with all laws, rules, regulations, standards and procedures, promulgated by federal, state, or local jurisdictions, and by federal, state, or local law enforcement agencies that are applicable to this license.",
-        { size: 10 }
-      )
-      c.spacer()
-      c.para(
-        "The undersigned affirms that the statements made and answers given herein are accurate and complete, and hereby authorizes the New York City Police Department, License Division to make appropriate inquiries in connection with processing this application. False written statements in this document are punishable under Section 210.45 of the New York Penal Law.",
-        { size: 10 }
-      )
-      c.spacer()
-      c.para(
-        "The undersigned affirms that he/she will provide signed and notarized Release(s) authorizing the License Division to obtain any and all information that the License Division deems relevant to its review of his/her application.",
-        { size: 10 }
-      )
-      c.spacer()
-      c.para(
-        "The undersigned acknowledges the state-mandated warnings regarding the risk of a firearm in the home and the responsibility to store firearms safely (Penal Law § 400.00(18)(b)).",
-        { size: 10 }
-      )
+      c.h2("4 · Portal acknowledgements you will complete")
+      if (opts.portalTrack === "special_carry") {
+        c.para(
+          "Preview only: signing this internal record does not initial or check anything in the NYPD portal. You must read, initial, and check each item yourself before personally clicking Finalize and Pay.",
+          { size: 9, color: "muted" }
+        )
+        for (const acknowledgement of FINAL_ACKNOWLEDGEMENTS) {
+          c.spacer()
+          c.h2(`${acknowledgement.no}. ${acknowledgement.initialsLabel}`)
+          c.para(acknowledgement.text, { size: 10 })
+        }
+      } else {
+        c.para(
+          "The NYPD portal presents final acknowledgements immediately before submission. Signing this internal record does not complete them. You must personally read and complete the portal's current acknowledgements, review the application, and submit and pay while controlling your own account.",
+          { size: 10 }
+        )
+      }
 
       // 5 — Post-submission duties (portal step 16) — standing obligations while pending.
       c.spacer()
@@ -145,11 +144,11 @@ export async function renderSignedApplicationRecord(
         c.para(`  • ${duty}`, { size: 9.5 })
       }
 
-      // 6 — Our authorization to enter the answers into the portal on their behalf.
+      // 6 — Authorization to prepare; portal control and filing stay with applicant.
       c.spacer()
       c.h2("6 · Authorization")
       c.para(
-        "I confirm that the answers and information above are my own, that I have reviewed them for accuracy and completeness, and that they are true. I authorize Gun License NYC to enter these answers on my behalf into the New York City Police Department's online licensing portal, and to be identified there as the person who assisted me in preparing my application."
+        "I confirm that the answers and information above are my own, that I have reviewed them for accuracy and completeness, and that they are true. I authorize Gun License NYC to organize these answers into a portal-aligned filing worksheet and to be identified as the organization that assisted me in preparing my application. I understand that I control my NYPD portal account, enter or confirm my information, complete the portal acknowledgements, pay, and submit my own application."
       )
       c.spacer()
       c.signatureImage("Applicant signature")

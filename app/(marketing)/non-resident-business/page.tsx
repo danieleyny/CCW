@@ -45,7 +45,7 @@ const FAQS = [
   },
   {
     q: "Can you file the application for my business?",
-    a: "It depends on your plan: on Self-Guided you file your own application, and with Full Concierge Gun License NYC files it for you. A consulting firm can't represent you before the License Division, though. What we do is prepare the documents, keep the sequence straight, and manage the case so nothing expires while you're waiting on something else.",
+    a: "No. You control the NYPD portal account and submit your own application. Full Concierge prepares the documents, checks the sequence, manages the case, and guides you screen by screen. A consulting firm can't represent you before the License Division.",
   },
   {
     q: "How much does the non-resident track cost?",
@@ -147,9 +147,9 @@ export default function NonResidentBusinessPage() {
             the sequence straight so nothing goes stale while you&apos;re chasing something else.
           </li>
           <li className="rounded-lg border border-hairline bg-card p-4">
-            <strong className="text-text-hi">It gets filed — by you, or by us.</strong> On Self-Guided
-            you file it; with Full Concierge we file it for you. Either way we prepare and manage, and
-            the application is yours to review.
+            <strong className="text-text-hi">You control the filing.</strong> On every plan you keep
+            control of the NYPD account and submit your own application. Full Concierge adds preparation,
+            review, organization, and screen-by-screen guidance.
           </li>
         </ul>
       </section>
