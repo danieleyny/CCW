@@ -47,7 +47,7 @@ export function canonicalDisclosureAnswers(answers: WizardAnswers): Record<strin
 export async function processIntake(
   admin: DB,
   caseId: string,
-  jurisdictionKey: string,
+  jurisdictionKey: "nyc" | "special_carry",
   answers: WizardAnswers
 ): Promise<ProcessIntakeResult> {
   // ── People rosters: sync by name and NEVER delete returned evidence ────────
@@ -194,7 +194,11 @@ export async function processIntake(
       admin,
       caseId,
       jurisdictionKey,
-      toGeneratorAnswers(answers, { isRenewal, armed: armed ?? undefined })
+      toGeneratorAnswers(answers, {
+        isRenewal,
+        jurisdictionKey,
+        armed: armed ?? undefined,
+      })
     )
   }
   if (isSponsored) {
@@ -315,7 +319,7 @@ export async function processIntake(
 type ClientTrack = Database["public"]["Enums"]["client_track"]
 
 /** Map the interview answers to the applicant's client track (display + logic). */
-function trackFromAnswers(a: WizardAnswers, jurisdictionKey: string): ClientTrack {
+function trackFromAnswers(a: WizardAnswers, jurisdictionKey: "nyc" | "special_carry"): ClientTrack {
   if (a.isRetiredLeo) return "retired_leo"
   if (a.licenseType === "premises") return "premises_business"
   if (jurisdictionKey === "special_carry" || a.residence === "non_resident") return "non_resident"

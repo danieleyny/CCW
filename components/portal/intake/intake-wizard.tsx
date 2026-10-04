@@ -118,7 +118,16 @@ export function IntakeWizard({
 
   // V3-P0.6 — inline per-step validation (mirrors the server-side rules).
   function issuesForStep(n: number): string[] {
-    if (n === 1) return eligibilityStepIssues(a)
+    if (n === 1) {
+      return eligibilityStepIssues(a, {
+        licenseTrack: licenseTrack as
+          | "concealed_carry"
+          | "carry_guard"
+          | "special_carry_guard"
+          | "sponsored_unresolved"
+          | undefined,
+      })
+    }
     // Step 3 — the safeguard person cannot be the applicant. Block Next while it conflicts.
     if (n === 3) return safeguardSelfConflicts(a, applicant).map(selfDesignationMessage)
     if (n === 4) return disclosureStepIssues(a)
@@ -720,10 +729,14 @@ function StepEligibility({
   // Red exactly when (and only when) eligibilityStepIssues blocks on it.
   const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
   const residenceBad = attempted && !a.residence
+  const intentBad = attempted && a.residence === "non_resident" && !a.nycCarryIntent
   // A sponsored armed-guard case's track is DERIVED (from the sponsorship + residence),
   // not chosen here. Never label it "Concealed carry", and never show a carry/premises
   // picker that could silently re-track it (P1.2).
-  const isGuardTrack = licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
+  const isGuardTrack =
+    licenseTrack === "carry_guard" ||
+    licenseTrack === "special_carry_guard" ||
+    licenseTrack === "sponsored_unresolved"
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
@@ -735,13 +748,19 @@ function StepEligibility({
           <select
             aria-label="Residence"
             value={a.residence ?? ""}
-            onChange={(e) => patch({ residence: e.target.value as WizardAnswers["residence"] })}
+            onChange={(e) => {
+              const residence = e.target.value as WizardAnswers["residence"]
+              patch({
+                residence,
+                ...(residence === "non_resident" ? { licenseType: "carry" as const } : { nycCarryIntent: undefined }),
+              })
+            }}
             className={cn(SELECT_CLASS, residenceBad && "border-danger ring-2 ring-danger/30")}
             {...invalidAttrs(residenceBad)}
           >
             <option value="">Select…</option>
             <option value="nyc">NYC resident / place of business</option>
-            <option value="non_resident">Non-resident (Special Carry)</option>
+            <option value="non_resident">Outside NYC with a NY county carry licence (Special Carry)</option>
           </select>
         </Field>
       </div>
@@ -751,6 +770,13 @@ function StepEligibility({
           hint="Your company sponsors this licence. The Carry Guard track is set from your sponsorship — you don't choose it here."
         >
           <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Carry Guard</div>
+        </Field>
+      ) : a.residence === "non_resident" ? (
+        <Field
+          label="License type"
+          hint="Special Carry extends a valid New York county carry licence into New York City."
+        >
+          <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Special Carry</div>
         </Field>
       ) : (
         <Field
@@ -772,12 +798,14 @@ function StepEligibility({
         <Field
           label="Where do you intend to carry in New York City?"
           hint="This decides your licence category — it is set by how you'll carry, not by who introduced you to us."
+          required
         >
           <select
             aria-label="Intended use in NYC"
             value={a.nycCarryIntent ?? ""}
             onChange={(e) => patch({ nycCarryIntent: (e.target.value || undefined) as WizardAnswers["nycCarryIntent"] })}
-            className={SELECT_CLASS}
+            className={cn(SELECT_CLASS, intentBad && "border-danger ring-2 ring-danger/30")}
+            {...invalidAttrs(intentBad)}
           >
             <option value="">Select…</option>
             <option value="personal">For my own personal protection — Special Carry</option>

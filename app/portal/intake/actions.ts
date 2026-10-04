@@ -29,7 +29,7 @@ async function ownedCase(caseId: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from("cases")
-    .select("id, client_id, is_renewal")
+    .select("id, client_id, is_renewal, license_track")
     .eq("id", caseId)
     .maybeSingle()
   return data
@@ -132,7 +132,10 @@ export async function completeIntake(
 
   // V3-P0.6 — business rules (track-aware reference count, complete arrest
   // rows, DOB). Save progress so nothing is lost; do NOT generate until they pass.
-  const issues = completionIssues(answers, { isRenewal: !!kase.is_renewal })
+  const issues = completionIssues(answers, {
+    isRenewal: !!kase.is_renewal,
+    licenseTrack: kase.license_track ?? undefined,
+  })
   if (issues.length > 0) {
     const supabase = await createClient()
     await supabase

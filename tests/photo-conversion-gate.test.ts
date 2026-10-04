@@ -68,4 +68,10 @@ describe("no surface still tells the applicant a PDF is rejected (finding 8 foll
   it("the photo example + the uploader no longer imply the applicant must supply a portal-ready image", () => {
     expect(readFileSync("components/portal/document-example.tsx", "utf8")).not.toMatch(NO_PDF_REJECT)
   })
+  it("the active registry migration accepts a PDF here and routes it for conversion", () => {
+    const migration = readFileSync("supabase/migrations/20261004000300_special_carry_nassau_corrections.sql", "utf8")
+    const block = migration.slice(migration.indexOf("'PHO-01'"))
+    expect(block).not.toMatch(NO_PDF_REJECT)
+    expect(block).toMatch(/PDF.*staff conversion/i)
+  })
 })

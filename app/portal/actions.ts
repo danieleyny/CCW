@@ -11,7 +11,7 @@ import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile, UploadRejected } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
 import { convertApplicantPhoto } from "@/lib/files/photo-convert"
-import { raisePhotoConversionTask } from "@/lib/requirements/photo-conversion"
+import { closePhotoConversionTask, raisePhotoConversionTask } from "@/lib/requirements/photo-conversion"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { smartDocument } from "@/lib/requirements/smart-documents"
 import { requiredReferences } from "@/lib/intake/schema"
@@ -186,6 +186,13 @@ export async function recordDocument(input: {
       await bindDb.from("case_requirements").update({ document_id: input.documentId }).eq("id", r.id)
       boundReqCodes.push(r.req_code)
     }
+  }
+
+  // Replacing a PDF photo with a usable image resolves OUR conversion work. The
+  // bound document already controls readiness; close the matching staff task too
+  // so the admin queue cannot keep showing work that no longer exists.
+  if (input.type === "applicant_photo" && !conversionPending) {
+    await closePhotoConversionTask(bindDb, input.caseId)
   }
 
   // FMT-01 is a control we run, not a box the customer ticks: the upload just

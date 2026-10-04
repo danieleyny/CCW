@@ -315,10 +315,18 @@ export interface ConditionFlags {
   wantsConfidentiality: boolean
 }
 
+/** 38 RCNY §5-03(b) applies to people who reside outside New York State. A
+ * Nassau/Suffolk/Westchester address is outside NYC but is not out of state. */
+export function isOutOfStateResident(a: Pick<WizardAnswers, "legalState">): boolean {
+  const state = (a.legalState ?? "NY").trim().toUpperCase().replace(/\./g, "")
+  return state !== "" && state !== "NY" && state !== "NEW YORK"
+}
+
 export function toGeneratorAnswers(
   a: WizardAnswers,
   opts: {
     isRenewal?: boolean
+    jurisdictionKey?: "nyc" | "special_carry"
     /** Derived armed-guard flags from resolveArmedTrack(); absent for non-sponsored cases. */
     armed?: { isArmedGuard: boolean; needsPreLicenseExemption: boolean; needsCountyLicenseDoc: boolean }
     /** Conditional flags resolved from the CANONICAL stores (deriveConditionFlags).
@@ -347,6 +355,8 @@ export function toGeneratorAnswers(
     anyQuestionYes: c?.anyQuestionYes ?? (a.questionnaire ?? []).some((q) => q.yes),
     hasFelonyConviction: !!c?.hasFelonyConviction, // portal-only; no wizard equivalent
     wantsConfidentiality: !!c?.wantsConfidentiality,
+    isOutOfStateResident: isOutOfStateResident(a),
+    isSpecialCarry: opts.jurisdictionKey === "special_carry",
     isArmedGuard: !!opts.armed?.isArmedGuard,
     needsPreLicenseExemption: !!opts.armed?.needsPreLicenseExemption,
     needsCountyLicenseDoc: !!opts.armed?.needsCountyLicenseDoc,

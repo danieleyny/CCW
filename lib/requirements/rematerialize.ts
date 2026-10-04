@@ -53,7 +53,12 @@ export async function rematerializeCase(admin: DB, caseId: string): Promise<Mate
     admin,
     caseId,
     jurisdictionKey,
-    toGeneratorAnswers(answers, { isRenewal: !!kase.is_renewal, armed: armed ?? undefined, conditions: flags })
+    toGeneratorAnswers(answers, {
+      isRenewal: !!kase.is_renewal,
+      jurisdictionKey,
+      armed: armed ?? undefined,
+      conditions: flags,
+    })
   )
   if (isSponsored) await materializeSponsorPacket(admin, caseId)
   return result

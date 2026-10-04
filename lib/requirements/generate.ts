@@ -25,6 +25,8 @@ export type TriggerCond =
   | "if_any_q_yes"
   | "if_felony_conviction" // COR-01: portal Q7 felony/serious-offense conviction
   | "if_confidentiality_request" // PBR-01: portal Q17 confidentiality opt-in
+  | "if_out_of_state_resident" // 38 RCNY §5-03(b): outside New York State, not outside NYC
+  | "unless_special_carry" // ELG-02: county-license Special Carry does not require an NYC nexus
   // ── Sponsored armed-guard (Carry Guard) track ──
   // `sponsor_packet` never fires in the generic generator — sponsor-owned rows
   // are seeded by materializeSponsorPacket(), and party='sponsor' rows are
@@ -61,6 +63,8 @@ export interface IntakeAnswers {
   anyQuestionYes?: boolean
   hasFelonyConviction?: boolean // portal Q7 conviction → Certificate of Relief
   wantsConfidentiality?: boolean // portal Q17 → Public Records Exemption
+  isOutOfStateResident?: boolean // actual home state is not NY; Nassau/Suffolk are false
+  isSpecialCarry?: boolean // county-license Special Carry jurisdiction, not ordinary NYC carry
   // Sponsored armed-guard track — derived by resolveArmedTrack(), never typed in.
   // isArmedGuard is only ever true once the track has RESOLVED to carry_guard or
   // special_carry_guard; an unresolved case seeds only the sponsor packet.
@@ -108,6 +112,10 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
       return !!a.hasFelonyConviction
     case "if_confidentiality_request":
       return !!a.wantsConfidentiality
+    case "if_out_of_state_resident":
+      return !!a.isOutOfStateResident
+    case "unless_special_carry":
+      return !a.isSpecialCarry
     // ── Sponsored armed-guard track ──
     case "sponsor_packet":
       return false // never generic — seeded by materializeSponsorPacket()

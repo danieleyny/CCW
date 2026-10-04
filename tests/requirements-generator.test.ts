@@ -53,6 +53,16 @@ describe("requirementApplies — track × renewal matrix", () => {
     expect(requirementApplies("if_name_change", carry)).toBe(false)
   })
 
+  it("the out-of-state form applies outside New York State, not to a Nassau Special Carry applicant", () => {
+    expect(requirementApplies("if_out_of_state_resident", { ...carry, isOutOfStateResident: true })).toBe(true)
+    expect(requirementApplies("if_out_of_state_resident", { ...carry, isOutOfStateResident: false })).toBe(false)
+  })
+
+  it("the NYC nexus control does not apply to the county-license Special Carry jurisdiction", () => {
+    expect(requirementApplies("unless_special_carry", { ...carry, isSpecialCarry: false })).toBe(true)
+    expect(requirementApplies("unless_special_carry", { ...carry, isSpecialCarry: true })).toBe(false)
+  })
+
   it("unknown triggers are conservative: never apply", () => {
     expect(requirementApplies("if_totally_new_rule", carry)).toBe(false)
   })

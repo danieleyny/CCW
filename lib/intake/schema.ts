@@ -280,11 +280,18 @@ export function disclosureStepIssues(a: WizardAnswers): string[] {
 }
 
 /** Step-1 rules (the hard under-21/prohibitor gate runs separately). */
-export function eligibilityStepIssues(a: WizardAnswers): string[] {
+export function eligibilityStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   const issues: string[] = []
   if (!a.dob) issues.push("Enter your date of birth.")
   else if (ageFromDob(a.dob) < 21) issues.push("You must be at least 21 years old.")
   if (!a.residence) issues.push("Select your residence status.")
+  const sponsoredGuard =
+    opts.licenseTrack === "carry_guard" ||
+    opts.licenseTrack === "special_carry_guard" ||
+    opts.licenseTrack === "sponsored_unresolved"
+  if (a.residence === "non_resident" && !sponsoredGuard && !a.nycCarryIntent) {
+    issues.push("Select whether you intend to carry for personal protection or an armed work assignment in NYC.")
+  }
   return issues
 }
 
@@ -295,7 +302,7 @@ export function eligibilityStepIssues(a: WizardAnswers): string[] {
  */
 export function completionIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   return [
-    ...eligibilityStepIssues(a).map((m) => `${m} (step 1)`),
+    ...eligibilityStepIssues(a, opts).map((m) => `${m} (step 1)`),
     ...disclosureStepIssues(a).map((m) => `${m} (step 4)`),
     ...historyStepIssues(a, opts).map((m) => `${m} (step 5)`),
   ]

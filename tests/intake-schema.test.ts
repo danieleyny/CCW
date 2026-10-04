@@ -4,6 +4,7 @@ import {
   completionIssues,
   requiredReferences,
   historyStepIssues,
+  eligibilityStepIssues,
 } from "@/lib/intake/schema"
 
 const fourRefs = [
@@ -120,5 +121,19 @@ describe("track-aware reference counts (38 RCNY §5-03/§5-05)", () => {
   it("training marked completed requires its date", () => {
     const issues = historyStepIssues({ references: fourRefs, trainingStatus: "completed" })
     expect(issues.some((i) => i.includes("completion date"))).toBe(true)
+  })
+})
+
+describe("Special Carry intent routing", () => {
+  const special = { dob: "1990-01-01", residence: "non_resident" as const }
+
+  it("requires a civilian Special Carry applicant to choose personal or armed-assignment use", () => {
+    expect(eligibilityStepIssues(special).some((i) => i.includes("personal protection"))).toBe(true)
+    expect(eligibilityStepIssues({ ...special, nycCarryIntent: "personal" })).toEqual([])
+  })
+
+  it("does not ask a sponsored guard case to re-select the derived licence category", () => {
+    expect(eligibilityStepIssues(special, { licenseTrack: "sponsored_unresolved" })).toEqual([])
+    expect(eligibilityStepIssues(special, { licenseTrack: "special_carry_guard" })).toEqual([])
   })
 })

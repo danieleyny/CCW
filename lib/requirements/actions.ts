@@ -513,16 +513,16 @@ export const REQUIREMENT_ACTIONS: Record<string, RequirementAction> = {
     mode: "obtain",
     actionLabel: "Upload proof of residence",
     documentType: "proof_residence",
-    customerTitle: "Proof that you live at your NYC address",
+    customerTitle: "Proof of your current home address",
     example: "proof-of-address",
     // The NYPD online portal's own proof-of-residence list (PORTAL_ALIGNMENT_REBUILD
     // Part 4a): a Utility Bill, Real Estate Tax Bill, ownership in a co-op/condo, a
     // Lease, or a Maintenance Bill. No utility-type restriction and no lease+tax-return
     // pairing — match the portal.
-    help: "Proof you live at your NYC address, showing your full name and current NYC address. A cell-phone bill is not on the accepted list.",
+    help: "Proof of your present address, showing your full name and current home address. A cell-phone bill is not on the accepted list.",
     steps: [
       "Use any ONE of: a utility bill, a real-estate tax bill, proof of ownership in a co-op or condo, a residential lease, or a maintenance bill.",
-      "It must show your full name and your NYC address, and be current.",
+      "It must show your full name and your current home address, and be current.",
       "Upload it here.",
     ],
     sourceUrl: NYPD_REQUIRED_DOCS,
