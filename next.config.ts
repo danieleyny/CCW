@@ -49,7 +49,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   // sharp is a native module used server-side to convert applicant photos toward the
-  // portal's format/dimensions — keep it external rather than bundled.
+  // portal's format/dimensions — keep it external rather than bundled. The workspace
+  // config keeps the Linux x64 optional packages in the install graph for Vercel.
   serverExternalPackages: ["sharp"],
   // The form-fill engine (lib/forms/fill.ts) reads the official NYPD PDFs from
   // assets/form-templates/ at runtime; make sure they're traced into the

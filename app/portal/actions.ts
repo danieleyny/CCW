@@ -10,7 +10,7 @@ import { inviteReference, inviteCohabitant } from "@/lib/outreach"
 import type { DocumentType } from "@/lib/doc-types"
 import { enforceUploadedFile, UploadRejected } from "@/lib/files/enforce"
 import { satisfySystemRequirement } from "@/lib/requirements/system-checks"
-import { convertApplicantPhoto } from "@/lib/files/photo-convert"
+import { convertApplicantPhotoSafely } from "@/lib/files/photo-convert-safe"
 import { closePhotoConversionTask, raisePhotoConversionTask } from "@/lib/requirements/photo-conversion"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { smartDocument } from "@/lib/requirements/smart-documents"
@@ -87,12 +87,16 @@ export async function recordDocument(input: {
   let conversionNote: string | null = null
   let conversionPending = false
   if (input.type === "applicant_photo") {
+    // Fail open to a staff task after the original is safely stored. Native image
+    // conversion is a convenience, never a reason to lose or reject an upload.
+    conversionPending = true
+    conversionNote = "Received safely, but automatic formatting could not be completed. Staff must prepare and verify this photo before filing."
     const admin = createAdminClient()
     const { data: blob } = await admin.storage.from("documents").download(input.path)
     if (blob) {
       const contentType = blob.type || `image/${(fileName.split(".").pop() ?? "").toLowerCase()}`
       const buf = Buffer.from(await blob.arrayBuffer())
-      const converted = await convertApplicantPhoto(buf, contentType)
+      const converted = await convertApplicantPhotoSafely(buf, contentType)
       if (converted) {
         const dir = input.path.replace(/\/[^/]+$/, "")
         const convPath = `${dir}/converted-photo.jpg`
@@ -102,13 +106,8 @@ export async function recordDocument(input: {
           originalPath = input.path
           conversionNote = `Auto-converted: ${converted.note}. This fixes format and size only — a person must still confirm the photo itself (no hat/glasses, facing forward, recent).`
           fileName = "converted-photo.jpg"
+          conversionPending = false
         }
-      } else {
-        // Not a raster image we can convert (e.g. a PDF). It counts as UPLOADED but the
-        // requirement must NOT satisfy until a person converts it — otherwise the case
-        // reports ready to file with a photo the portal will reject (SPC-01 shape).
-        conversionPending = true
-        conversionNote = "Received in a format we can't auto-convert (e.g. PDF) — we're preparing this for the portal (converting it to an image before filing)."
       }
     }
   }
@@ -127,7 +126,21 @@ export async function recordDocument(input: {
     req_code: input.reqCode ?? null,
     version,
   })
-  if (error) throw error
+  if (error) {
+    // The browser has already written the object, but the database row is what makes
+    // it visible in the portal/admin. Never strand an unlinked sensitive file when
+    // that second step fails. Service role is required because client Storage DELETE
+    // is intentionally disabled by the retention/privacy policy.
+    await createAdminClient().storage.from("documents").remove([input.path])
+    console.error("Document upload reached storage but could not be recorded.", {
+      code: error.code,
+      caseId: input.caseId,
+      type: input.type,
+    })
+    return {
+      error: "The file reached secure storage, but we couldn't finish adding it to your checklist. Please try once more.",
+    }
+  }
 
   // A file that still needs a human to convert it is OUR work — raise a staff task so it
   // never sits behind a footnote. Idempotent per case (one open photo-conversion task).

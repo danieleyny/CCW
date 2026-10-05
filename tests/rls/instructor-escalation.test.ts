@@ -68,9 +68,10 @@ describe.skipIf(!reachable)("instructor privilege escalation is closed", () => {
     const { data: c } = await admin
       .from("clients")
       .select("id, profile_id, email")
-      .not("profile_id", "is", null)
-      .not("email", "is", null)
-      .limit(1)
+      // Use the stable seeded client whose password is DEMO_PASSWORD. Selecting
+      // an arbitrary client made this security suite depend on whichever manual
+      // QA account happened to sort first (and its unrelated password).
+      .eq("email", "client1@carrypath.test")
       .single()
     clientId = c!.id
     clientProfileId = c!.profile_id!

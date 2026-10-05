@@ -1,3 +1,16 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+# Keep the native image packages needed by Vercel's Linux x64 functions in the
+# install graph even when the lockfile is refreshed on an Apple Silicon laptop.
+supportedArchitectures:
+  os:
+    - current
+    - linux
+  cpu:
+    - current
+    - x64
+  libc:
+    - current
+    - glibc
