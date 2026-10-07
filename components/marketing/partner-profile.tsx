@@ -282,23 +282,37 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
  */
 function HeroPortrait({ partner }: { partner: Partner }) {
   const figure = partner.photo.cutout ?? partner.photo.src
+  const hasLayeredPortrait = Boolean(partner.photo.cutout || partner.photo.panel)
   return (
     <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-md border border-hairline bg-gradient-to-br from-surface-2 to-surface-1 lg:mx-0">
-      {partner.photo.panel && (
-        <Image src={partner.photo.panel} alt="" fill sizes="(min-width: 1024px) 22rem, 90vw" className="object-cover" />
-      )}
-      <div className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-brass/30" aria-hidden />
-      <div className="absolute inset-x-0 bottom-0 flex justify-center">
+      {hasLayeredPortrait ? (
+        <>
+          {partner.photo.panel && (
+            <Image src={partner.photo.panel} alt="" fill sizes="(min-width: 1024px) 22rem, 90vw" className="object-cover" />
+          )}
+          <div className="absolute inset-x-0 bottom-0 flex justify-center">
+            <Image
+              src={figure}
+              alt={partner.photo.alt}
+              width={760}
+              height={905}
+              priority
+              sizes="(min-width: 1024px) 22rem, 90vw"
+              className="h-auto w-[88%] self-end object-contain"
+            />
+          </div>
+        </>
+      ) : (
         <Image
-          src={figure}
+          src={partner.photo.src}
           alt={partner.photo.alt}
-          width={760}
-          height={905}
+          fill
           priority
           sizes="(min-width: 1024px) 22rem, 90vw"
-          className="h-auto w-[88%] self-end object-contain"
+          className="object-cover object-top"
         />
-      </div>
+      )}
+      <div className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-brass/30" aria-hidden />
       <div className="absolute bottom-3 left-3 max-w-[80%] rounded-md border border-hairline bg-card/90 px-3 py-2 backdrop-blur">
         <p className="font-display text-sm font-semibold leading-tight text-text-hi">{partnerFullName(partner)}</p>
         <p className="mt-0.5 text-xs text-text-low">{partner.firm}</p>

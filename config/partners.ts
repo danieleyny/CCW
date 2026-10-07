@@ -131,10 +131,8 @@ export const PARTNERS: Partner[] = [
       "Ethan has practised in New York for 35 years, building a litigation and counselling practice for Wall Street professionals, physicians and individuals in high-stakes disputes — and, alongside it, a dedicated NYC firearms licensing practice representing applicants and licensed dealers before the NYPD License Division.",
     ],
     photo: {
-      src: "/partners/ethan-brecher.jpg",
+      src: "/partners/ethan-brecher-2026.jpg",
       alt: "Ethan A. Brecher",
-      cutout: "/partners/ethan-brecher-cutout.webp",
-      panel: "/partners/ethan-brecher-panel.jpg",
     },
     address: { street: "244 Fifth Avenue, Suite B241", city: "New York", state: "NY", zip: "10001" },
     phone: "860-590-0138",
