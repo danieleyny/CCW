@@ -121,11 +121,25 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
               </div>
               <ul className="mt-4 flex flex-wrap gap-2">
                 <CredentialBadge primary>{partner.yearsInPractice} years in practice</CredentialBadge>
-                {partner.honors.map((h) => (
-                  <CredentialBadge key={h.label} primary={h.tier === "primary"}>
-                    {h.label}
-                  </CredentialBadge>
-                ))}
+                {partner.honors.filter((h) => h.showInSummary !== false).map((h) =>
+                  h.href ? (
+                    <a
+                      key={h.label}
+                      href={h.href}
+                      target="_blank"
+                      rel="noopener"
+                      className={`rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40 ${h.stackInSummary ? "basis-full" : ""}`}
+                    >
+                      <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>
+                        {h.label} ↗
+                      </CredentialBadge>
+                    </a>
+                  ) : (
+                    <CredentialBadge key={h.label} primary={h.tier === "primary"} className={h.stackInSummary ? "basis-full w-fit" : undefined}>
+                      {h.label}
+                    </CredentialBadge>
+                  )
+                )}
               </ul>
               <p className="mt-4 border-t border-hairline pt-4 text-sm text-text-low">
                 <span className="font-medium text-text-hi">{rate}</span> · billed by his office
