@@ -155,6 +155,15 @@ export const PARTNERS: Partner[] = [
         tier: "primary",
         href: "https://profiles.superlawyers.com/new-york/new-york/lawyer/ethan-a-brecher/612ffc80-f71f-4d80-97b7-4a182dde01bc.html",
       },
+      {
+        label: "Google Reviews",
+        detail: "Read client reviews",
+        href: "https://www.lawyers.com/new-york/new-york/ethan-brecher-483358-a/#reviews",
+      },
+      {
+        label: "Avvo 10.0 reviews",
+        href: "https://www.avvo.com/attorneys/10001-ny-ethan-brecher-910482.html",
+      },
       { label: "AV Preeminent", detail: "peer rating" },
       { label: "American Law Institute", detail: "elected 2013" },
       { label: "2d Cir. Pro Bono Panel", detail: "2013–2015", showInSummary: false },
@@ -164,17 +173,6 @@ export const PARTNERS: Partner[] = [
         href: "/partners/ethan-brecher-aaa.pdf",
       },
       { label: "Arbitrator, DecisionLayer", href: "https://www.decisionlayer.ai/" },
-      {
-        label: "Google Reviews",
-        detail: "Read client reviews",
-        href: "https://www.lawyers.com/new-york/new-york/ethan-brecher-483358-a/#reviews",
-        stackInSummary: true,
-      },
-      {
-        label: "Avvo 10.0 reviews",
-        href: "https://www.avvo.com/attorneys/10001-ny-ethan-brecher-910482.html",
-        stackInSummary: true,
-      },
     ],
     highlights: [
       { figure: "35", label: "Years in practice" },
