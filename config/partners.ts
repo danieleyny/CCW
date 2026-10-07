@@ -30,6 +30,10 @@ export interface PartnerHonor {
   label: string
   detail?: string
   tier?: "primary"
+  /** Hide historical credentials from compact, current-facing badge rows only. */
+  showInSummary?: boolean
+  /** Put related credentials on their own successive rows in compact badge lists. */
+  stackInSummary?: boolean
   /** When set, the honor renders as an external link (target=_blank rel=noopener). */
   href?: string
 }
@@ -145,14 +149,32 @@ export const PARTNERS: Partner[] = [
       { term: "B.A.", value: "Cornell University", detail: "History, cum laude, 1988" },
     ],
     honors: [
-      { label: "Super Lawyers", detail: "2009–2011, 2013–2026", tier: "primary" },
-      { label: "Avvo 10.0", href: "https://www.avvo.com/attorneys/10001-ny-ethan-brecher-910482.html" },
+      {
+        label: "Super Lawyers",
+        detail: "2009–2011, 2013–2026",
+        tier: "primary",
+        href: "https://profiles.superlawyers.com/new-york/new-york/lawyer/ethan-a-brecher/612ffc80-f71f-4d80-97b7-4a182dde01bc.html",
+      },
       { label: "AV Preeminent", detail: "peer rating" },
       { label: "American Law Institute", detail: "elected 2013" },
-      { label: "2d Cir. Pro Bono Panel", detail: "2013–2015" },
-      { label: "Arbitrator, American Arbitration Association", detail: "Commercial, Employment, Consumer and Expedited Panels", href: "https://www.adr.org/" },
+      { label: "2d Cir. Pro Bono Panel", detail: "2013–2015", showInSummary: false },
+      {
+        label: "Arbitrator, American Arbitration Association",
+        detail: "Commercial, Employment, Consumer and Expedited Panels",
+        href: "/partners/ethan-brecher-aaa.pdf",
+      },
       { label: "Arbitrator, DecisionLayer", href: "https://www.decisionlayer.ai/" },
-      { label: "18 Google reviews", detail: "Read client reviews", href: "https://www.lawyers.com/new-york/new-york/ethan-brecher-483358-a/#reviews" },
+      {
+        label: "Google Reviews",
+        detail: "Read client reviews",
+        href: "https://www.lawyers.com/new-york/new-york/ethan-brecher-483358-a/#reviews",
+        stackInSummary: true,
+      },
+      {
+        label: "Avvo 10.0 reviews",
+        href: "https://www.avvo.com/attorneys/10001-ny-ethan-brecher-910482.html",
+        stackInSummary: true,
+      },
     ],
     highlights: [
       { figure: "35", label: "Years in practice" },
@@ -165,8 +187,8 @@ export const PARTNERS: Partner[] = [
     serves: ["New York", "New Jersey", "Connecticut"],
     yearsInPractice: 35,
     services: [
-      // Q11 — he REVIEWS applications; he does not prepare or file them.
-      { title: "Review of premises and carry applications", detail: "A lawyer's review of the application you prepare and file yourself. He does not prepare applications." },
+      // He reviews applications; our concierge service can prepare materials, while the applicant submits to NYPD.
+      { title: "Review of premises and carry applications", detail: "A lawyer's review of a premises or carry application. Our concierge service can prepare the application materials; you submit your own NYPD application." },
       { title: "Denials and internal NYPD appeals", detail: "Challenging a denial through the License Division's internal appeal, and in court where that is available." },
       { title: "Delayed applications", detail: "A letter to the License Division asking it to move a stalled application forward." },
       { title: "Rifle and shotgun permits", detail: "The separate long-gun permitting process." },

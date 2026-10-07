@@ -52,19 +52,19 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
 
             <ul className="mt-5 flex flex-wrap gap-2">
               <CredentialBadge primary>{partner.yearsInPractice} years in practice</CredentialBadge>
-              {partner.honors.map((h) =>
+              {partner.honors.filter((h) => h.showInSummary !== false).map((h) =>
                 h.href ? (
                   <a
                     key={h.label}
                     href={h.href}
                     target="_blank"
                     rel="noopener"
-                    className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
+                    className={`rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40 ${h.stackInSummary ? "basis-full" : ""}`}
                   >
-                    <CredentialBadge primary={h.tier === "primary"}>{h.label} ↗</CredentialBadge>
+                    <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>{h.label} ↗</CredentialBadge>
                   </a>
                 ) : (
-                  <CredentialBadge key={h.label} primary={h.tier === "primary"}>
+                  <CredentialBadge key={h.label} primary={h.tier === "primary"} className={h.stackInSummary ? "basis-full w-fit" : undefined}>
                     {h.label}
                   </CredentialBadge>
                 )
@@ -158,7 +158,7 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
         {/* WHAT HE HANDLES — a section that matters: raised surface */}
         <section className="py-8">
           <div className="rounded-xl border border-hairline bg-surface-2 p-6 sm:p-8">
-            <h2 className="font-display text-2xl font-semibold tracking-tight">What he handles for our applicants</h2>
+            <h2 className="font-display text-2xl font-semibold tracking-tight">What you can speak about</h2>
             <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
               {partner.services.map((s) => (
                 <li key={s.title} className="flex gap-3">

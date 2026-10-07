@@ -14,13 +14,13 @@ export const INDEPENDENCE_DISCLAIMER =
   "Independent attorney — not an employee or agent of Gun License NYC. Retaining him creates an attorney–client relationship with his firm alone. We receive no share of his fees. Nothing here is legal advice."
 
 /** Two-tier credential badge — brass-tinted lead vs quiet outline; small radius, not a pill. */
-export function CredentialBadge({ children, primary }: { children: React.ReactNode; primary?: boolean }) {
+export function CredentialBadge({ children, primary, className }: { children: React.ReactNode; primary?: boolean; className?: string }) {
   return (
     <li
       className={
         primary
-          ? "rounded-sm border border-brass/40 bg-brass/10 px-2.5 py-1 text-xs font-medium text-brass"
-          : "rounded-sm border border-hairline bg-surface-2 px-2.5 py-1 text-xs text-text-mid"
+          ? `rounded-sm border border-brass/40 bg-brass/10 px-2.5 py-1 text-xs font-medium text-brass ${className ?? ""}`
+          : `rounded-sm border border-hairline bg-surface-2 px-2.5 py-1 text-xs text-text-mid ${className ?? ""}`
       }
     >
       {children}
@@ -82,16 +82,30 @@ export function PartnerCard({ partner }: { partner: Partner }) {
 
             <ul className="mt-4 flex flex-wrap gap-2">
               <CredentialBadge primary>{partner.yearsInPractice} years in practice</CredentialBadge>
-              {partner.honors.map((h) => (
-                <CredentialBadge key={h.label} primary={h.tier === "primary"}>
-                  {h.label}
-                </CredentialBadge>
-              ))}
+              {partner.honors.filter((h) => h.showInSummary !== false).map((h) =>
+                h.href ? (
+                  <a
+                    key={h.label}
+                    href={h.href}
+                    target="_blank"
+                    rel="noopener"
+                    className={`rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40 ${h.stackInSummary ? "basis-full" : ""}`}
+                  >
+                    <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>
+                      {h.label} ↗
+                    </CredentialBadge>
+                  </a>
+                ) : (
+                  <CredentialBadge key={h.label} primary={h.tier === "primary"} className={h.stackInSummary ? "basis-full w-fit" : undefined}>
+                    {h.label}
+                  </CredentialBadge>
+                )
+              )}
             </ul>
 
             {partner.bio[0] && <p className="mt-4 text-text-mid">{partner.bio[0]}</p>}
 
-            <p className="mt-5 engraved text-brass">What he handles for our applicants</p>
+            <p className="mt-5 engraved text-brass">What you can speak about</p>
             <ul className="mt-2 grid gap-x-6 gap-y-1.5 text-sm text-text-mid sm:grid-cols-2">
               {partner.services.map((s) => (
                 <li key={s.title} className="flex gap-2">
