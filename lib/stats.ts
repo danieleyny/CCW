@@ -23,6 +23,12 @@ const assembledStages = STAGE_KEYS.filter(
 ) as CaseStageKey[]
 
 async function compute(): Promise<TrustStat[]> {
+  // The standalone visual-review deployment deliberately has no service-role
+  // credential. Trust stats are derived from private case records and are not
+  // needed to evaluate the marketing design, so omit the band there instead of
+  // broadening that preview's database access.
+  if (process.env.MARKETING_PREVIEW_MODE) return []
+
   const admin = createAdminClient()
   const asOf = new Date().toISOString().slice(0, 10)
   const out: TrustStat[] = []
