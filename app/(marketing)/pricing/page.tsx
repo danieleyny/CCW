@@ -27,7 +27,7 @@ const FEATURES: Record<string, string[]> = {
     "Interview preparation",
     "Priority concierge support",
   ],
-  non_resident: ["Dedicated Special Carry track", "Out-of-area logistics", "Document prep + filing"],
+  non_resident: ["Dedicated Special Carry track", "Out-of-area logistics", "Document preparation + filing guide"],
   renewal: ["Discounted 3-year renewal", "Document refresh", "Re-filing support"],
 }
 
@@ -45,7 +45,7 @@ export default async function Pricing() {
       <PageHero
         eyebrow="Membership"
         title="Pick how much you want us to handle"
-        subtitle="From guided support to fully done-for-you — every tier keeps your application complete and on schedule. Deposit to start, balance on filing."
+        subtitle="From guided support to hands-on case management — every tier keeps your application complete and on schedule. Deposit to start, balance when your filing packet is ready."
       />
 
       <section style={{ padding: "56px 0 8px" }}>

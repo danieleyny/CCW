@@ -184,16 +184,15 @@ export default async function RequirementsPage() {
         },
         {
           id: "article-filing",
-          heading: "And then it's filed — by you, or by us",
+          heading: "And then you submit your completed application",
           navLabel: "Filing",
           body: (
             <>
               <p>
-                The application is always yours, and you always sign it. On the Self-Guided plan you file
-                it yourself; with Full Concierge we file it with the NYPD on your behalf. Either way, only
-                a New York-licensed attorney can represent you at the License Division — a
-                document-preparation service prepares and files, it doesn&apos;t represent you. What we do
-                is get the file right before it goes in.
+                The application is always yours, and you always sign and submit it. Full Concierge adds
+                hands-on preparation and case management, while Self-Guided gives you the same organized
+                filing path. Only a New York-licensed attorney can represent you at the License Division;
+                our role is to prepare and organize the file before you submit it.
               </p>
               <FactList facts={[FACTS.youFile]} />
             </>
