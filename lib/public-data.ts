@@ -1,7 +1,9 @@
 import "server-only"
 
 import { unstable_cache } from "next/cache"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/admin"
+import type { Database } from "@/lib/supabase/types"
 import { getActivePackages } from "@/lib/packages"
 import { getFees, getFeeTable } from "@/lib/fees"
 import { getPreviewRegistry } from "@/lib/requirements/preview"
@@ -42,26 +44,43 @@ export interface PublicInstructor {
 
 const ONE_HOUR = 3600
 
+/**
+ * The standalone visual-preview project intentionally has no service-role key.
+ * When its explicitly configured preview mode is on, public marketing data is
+ * read through the anonymous client and remains subject to RLS. Production keeps
+ * the service-role-backed, cached path above.
+ */
+function marketingDataClient() {
+  if (process.env.MARKETING_PREVIEW_MODE) {
+    return createSupabaseClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    )
+  }
+  return createAdminClient()
+}
+
 export const getPublicPackages = unstable_cache(
-  async () => getActivePackages(createAdminClient()),
+  async () => getActivePackages(marketingDataClient()),
   ["public-packages"],
   { tags: [CACHE_TAGS.packages], revalidate: ONE_HOUR }
 )
 
 export const getPublicFees = unstable_cache(
-  async () => getFees(createAdminClient()),
+  async () => getFees(marketingDataClient()),
   ["public-fees"],
   { tags: [CACHE_TAGS.fees], revalidate: ONE_HOUR }
 )
 
 export const getPublicFeeTable = unstable_cache(
-  async () => getFeeTable(createAdminClient()),
+  async () => getFeeTable(marketingDataClient()),
   ["public-fee-table"],
   { tags: [CACHE_TAGS.fees], revalidate: ONE_HOUR }
 )
 
 export const getPublicRegistry = unstable_cache(
-  async () => getPreviewRegistry(createAdminClient()),
+  async () => getPreviewRegistry(marketingDataClient()),
   ["public-registry"],
   { tags: [CACHE_TAGS.registry], revalidate: ONE_HOUR }
 )
@@ -74,7 +93,7 @@ export const getPublicRegistry = unstable_cache(
  */
 export const getPublicInstructors = unstable_cache(
   async (): Promise<PublicInstructor[]> => {
-    const { data } = await createAdminClient()
+    const { data } = await marketingDataClient()
       .from("public_instructor_directory")
       .select("slug, name, boroughs, languages, class_format, bio")
       .order("name")
