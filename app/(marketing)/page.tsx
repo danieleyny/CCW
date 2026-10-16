@@ -7,7 +7,7 @@ import { HeroPrecision } from "@/components/marketing/v2/hero-precision"
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
   description:
-    "Get a NYC gun license without the guesswork. We track all 24 documents, your 18-hour course, and every deadline as one case — and can file it for you.",
+    "Get a NYC gun license without the guesswork. We track your documents, 18-hour course, and every deadline as one case so you can submit your own application with confidence.",
   path: "/",
   hreflang: "",
   ogTitle: "NYC gun license, handled — Gun License NYC",
@@ -66,18 +66,19 @@ export default async function Home() {
       {/* ── PROOF RAIL ───────────────────────────────────────────────────────── */}
       <section className="proof-rail" aria-label="Service principles">
         <div className="shell proof-grid">
-          <div className="proof-item">
-            <span className="proof-index">01</span>
-            <p><strong>All five boroughs</strong>One case system built around NYC’s published process.</p>
-          </div>
-          <div className="proof-item">
-            <span className="proof-index">02</span>
-            <p><strong>Every requirement traced</strong>Your file is organized against a source, not a guess.</p>
-          </div>
-          <div className="proof-item">
-            <span className="proof-index">03</span>
-            <p><strong>You remain the applicant</strong>You review and submit your own application.</p>
-          </div>
+          {[
+            ["01", "boroughs", "All five boroughs", "One case system built around NYC’s published process."],
+            ["02", "traced", "Every requirement traced", "Your file is organized against a source, not a guess."],
+            ["03", "applicant", "You remain the applicant", "You review and submit your own application."],
+          ].map(([index, mark, title, detail]) => (
+            <article className={`proof-item proof-item--${mark}`} key={index}>
+              <span className="proof-mark" aria-hidden="true" />
+              <div className="proof-copy">
+                <span className="proof-index">{index}</span>
+                <p><strong>{title}</strong>{detail}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 

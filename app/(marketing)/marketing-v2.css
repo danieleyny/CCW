@@ -263,6 +263,24 @@
         linear-gradient(112deg, transparent 0 64%, rgba(57,120,246,.045) 64% 64.1%, transparent 64.1%);
       background-size: 8px 8px, 100% 100%;
     }
+    /* A quiet, shifting signal behind the opening—not decorative noise. It gives the
+       first screen a sense of a living case system while the copy stays legible. */
+    .mkt2 .hero::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      width: min(54vw, 740px);
+      aspect-ratio: 1;
+      right: max(-14vw, -220px);
+      top: 4%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 36%, rgba(56, 189, 248, .18), transparent 30%),
+        radial-gradient(circle at 58% 54%, rgba(99, 102, 241, .14), transparent 42%),
+        radial-gradient(circle at 70% 34%, rgba(249, 115, 22, .1), transparent 28%);
+      opacity: .72;
+      pointer-events: none;
+    }
     .mkt2 .hero::after {
       content: "";
       position: absolute;
@@ -362,9 +380,18 @@
 
     .mkt2 .proof-rail { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper); }
     .mkt2 .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .mkt2 .proof-item { min-height: 104px; display: flex; align-items: center; gap: 16px; padding: 24px 32px; border-left: 1px solid var(--rule); }
+    .mkt2 .proof-item { min-height: 104px; display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 14px; padding: 24px 32px; border-left: 1px solid var(--rule); }
     .mkt2 .proof-item:first-child { border-left: 0; }
-    .mkt2 .proof-index { color: var(--electric); font-family: var(--mono); font-size: 11px; }
+    .mkt2 .proof-mark { position: relative; width: 34px; height: 34px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--electric) 24%, var(--rule)); border-radius: 50%; background: color-mix(in srgb, var(--electric) 7%, var(--paper)); }
+    .mkt2 .proof-mark::before, .mkt2 .proof-mark::after { content: ""; position: absolute; }
+    .mkt2 .proof-item--boroughs .proof-mark::before { inset: 7px; background: radial-gradient(circle at 18% 32%, var(--cyan) 0 2px, transparent 2.7px), radial-gradient(circle at 67% 17%, var(--electric) 0 2px, transparent 2.7px), radial-gradient(circle at 80% 58%, var(--tangerine) 0 2px, transparent 2.7px), radial-gradient(circle at 42% 76%, var(--violet) 0 2px, transparent 2.7px), radial-gradient(circle at 18% 62%, var(--electric) 0 2px, transparent 2.7px); }
+    .mkt2 .proof-item--boroughs .proof-mark::after { left: 8px; right: 8px; top: 16px; height: 1px; background: linear-gradient(90deg, var(--cyan), var(--electric), var(--tangerine)); transform: rotate(-28deg); transform-origin: center; opacity: .72; }
+    .mkt2 .proof-item--traced .proof-mark::before { inset: 8px; border-top: 1px solid var(--electric); border-bottom: 1px solid var(--cyan); background: linear-gradient(90deg, transparent 0 13%, var(--tangerine) 13% 20%, transparent 20% 44%, var(--electric) 44% 51%, transparent 51% 76%, var(--cyan) 76% 83%, transparent 83%); }
+    .mkt2 .proof-item--traced .proof-mark::after { left: 8px; right: 8px; top: 16px; height: 1px; background: var(--ink); opacity: .28; }
+    .mkt2 .proof-item--applicant .proof-mark::before { width: 10px; height: 10px; left: 11px; top: 7px; border-radius: 50%; background: var(--electric); box-shadow: 0 13px 0 -2px var(--cyan); }
+    .mkt2 .proof-item--applicant .proof-mark::after { width: 18px; height: 8px; left: 7px; bottom: 5px; border: 1px solid var(--ink); border-radius: 10px 10px 6px 6px; border-bottom: 0; opacity: .5; }
+    .mkt2 .proof-copy { min-width: 0; }
+    .mkt2 .proof-index { display: block; margin-bottom: 4px; color: var(--electric); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; }
     .mkt2 .proof-item p { margin: 0; font-size: 14px; line-height: 1.5; }
     .mkt2 .proof-item strong { display: block; color: var(--ink); font-size: 16px; }
 
@@ -916,6 +943,14 @@
     }
 
     @supports (animation-timeline: view()) {
+      .mkt2 .proof-item {
+        animation: proof-card-in 700ms linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 82%;
+      }
+      .mkt2 .proof-item:nth-child(2) { animation-delay: 70ms; }
+      .mkt2 .proof-item:nth-child(3) { animation-delay: 140ms; }
+
       .mkt2 .phase-card-content {
         animation-name: phase-content-rise;
         animation-duration: 1s;
@@ -933,6 +968,19 @@
         animation-timeline: view();
         animation-range: entry 0% cover 28%;
       }
+    }
+
+    @keyframes proof-card-in {
+      from { opacity: .68; transform: translate3d(0, 14px, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .mkt2 .hero::before { animation: hero-signal-drift 11s ease-in-out infinite alternate; }
+    }
+    @keyframes hero-signal-drift {
+      from { transform: translate3d(-1.5%, -1%, 0) scale(.98); opacity: .54; }
+      to { transform: translate3d(2.5%, 2%, 0) scale(1.04); opacity: .86; }
     }
 
     @media (max-width: 1020px) {
@@ -954,12 +1002,13 @@
       .mkt2 .desktop-nav, .mkt2 .nav-actions { display: none; }
       .mkt2 .mobile-menu { display: block; }
       .mkt2 .hero { min-height: auto; }
-      .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; padding-block: 124px 118px; }
+      /* The header is sticky and already occupies layout space on mobile. The previous
+         124px top inset cleared it a second time, creating the empty band in the hero. */
+      .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; padding-block: 48px 88px; }
       .mkt2 .hero-copy { max-width: 660px; }
-      .mkt2 .proof-grid { transform: none; }
-      .mkt2 .proof-grid { grid-template-columns: 1fr; }
-      .mkt2 .proof-item { border-left: 0; border-top: 1px solid var(--rule); }
-      .mkt2 .proof-item:first-child { border-top: 0; }
+      .mkt2 .proof-rail { padding-block: 14px; }
+      .mkt2 .proof-grid { grid-template-columns: 1fr; gap: 10px; transform: none; }
+      .mkt2 .proof-item, .mkt2 .proof-item:first-child { min-height: 0; padding: 18px; border: 1px solid var(--rule); border-radius: 12px; background: linear-gradient(135deg, var(--paper), color-mix(in srgb, var(--electric) 3%, var(--paper))); }
       .mkt2 #process::before, .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
       .mkt2 #process > .shell { display: block; }
       .mkt2 .phases-head { position: static; }
@@ -1011,7 +1060,7 @@
       .mkt2 .eyebrow { margin-bottom: 16px; }
       .mkt2 .display { font-size: 40px; line-height: 1.05; }
       .mkt2 .section-lede { font-size: 18px; }
-      .mkt2 .hero-grid { gap: 20px; padding-block: 116px 116px; }
+      .mkt2 .hero-grid { gap: 28px; padding-block: 40px 68px; }
       .mkt2 .hero h1 { margin-bottom: 22px; font-size: 50px; line-height: 1.02; letter-spacing: -.06em; }
       .mkt2 .hero-highlight { padding: 5px 8px 12px 12px; }
       .mkt2 .hero-lede { font-size: 18px; line-height: 1.55; }
@@ -1019,7 +1068,10 @@
       .mkt2 .hero-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
       .mkt2 .hero-action .button { width: 100%; min-height: 50px; padding-inline: 10px; }
       .mkt2 .hero-micro { display: block; margin-top: 12px; text-align: center; }
-      .mkt2 .proof-item { min-height: 90px; padding: 20px 0; }
+      .mkt2 .proof-item, .mkt2 .proof-item:first-child { grid-template-columns: 38px 1fr; gap: 14px; padding: 17px; }
+      .mkt2 .proof-mark { width: 38px; height: 38px; }
+      .mkt2 .proof-item p { font-size: 13px; line-height: 1.46; }
+      .mkt2 .proof-item strong { font-size: 15px; }
       .mkt2 .phase-note { margin-top: 28px; }
       .mkt2 .requirement-group summary { min-height: 72px; grid-template-columns: 30px 1fr 28px; gap: 10px; }
       .mkt2 .req-title { font-size: 16px; }
@@ -1114,4 +1166,3 @@
   .mkt2 .footer-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mkt2 .footer-intro { grid-column: 1 / -1; }
 }
-
