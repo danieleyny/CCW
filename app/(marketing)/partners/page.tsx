@@ -97,17 +97,6 @@ function Directory({ attorneys, trainers, indexed }: { attorneys: Partner[]; tra
             </div>
           ) : (
             <div className="space-y-10">
-              {attorneys.length > 0 && (
-                <div className="space-y-8">
-                  <h2 className="font-display text-2xl font-semibold tracking-tight text-text-hi">Independent legal counsel</h2>
-                  {attorneys.map((p) => (
-                <div key={p.slug}>
-                  <PartnerCard partner={p} />
-                  <PartnerAdvertisingFooter partner={p} />
-                </div>
-                  ))}
-                </div>
-              )}
               {trainers.length > 0 && (
                 <div className="space-y-8">
                   <div>
@@ -115,6 +104,17 @@ function Directory({ attorneys, trainers, indexed }: { attorneys: Partner[]; tra
                     <p className="mt-2 text-text-mid">Training is arranged directly with the provider. You remain responsible for reviewing and submitting your own application.</p>
                   </div>
                   {trainers.map((partner) => <TrainingPartnerCard key={partner.slug} partner={partner} />)}
+                </div>
+              )}
+              {attorneys.length > 0 && (
+                <div className="space-y-8">
+                  <h2 className="font-display text-2xl font-semibold tracking-tight text-text-hi">Independent legal counsel</h2>
+                  {attorneys.map((partner) => (
+                    <div key={partner.slug}>
+                      <PartnerCard partner={partner} />
+                      <PartnerAdvertisingFooter partner={partner} />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
