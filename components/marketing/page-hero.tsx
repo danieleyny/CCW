@@ -1,6 +1,6 @@
 /**
  * The shared interior PAGE HERO, restyled to marketing v2 — it now renders the
- * dark `.guide-hero` from the interior article template (spectral-ribbon
+ * dark `.guide-hero` from the interior article template (case-path
  * decoration lives in marketing-v2.css). The prop API is unchanged, so every
  * content page that imports it inherits the new look without edits.
  *
@@ -8,6 +8,8 @@
  * single semantic <h1>, so that one declaration is replicated inline here rather
  * than by touching the shared stylesheet.
  */
+import { GuideHeroPath } from "@/components/marketing/guide-hero-path"
+
 const heroTitleStyle: React.CSSProperties = {
   margin: 0,
   maxWidth: 840,
@@ -29,6 +31,7 @@ export function PageHero({
 }) {
   return (
     <header className="guide-hero">
+      <GuideHeroPath />
       <div className="guide-hero-copy">
         <p className="eyebrow">{eyebrow}</p>
         <h1 style={heroTitleStyle}>{title}</h1>

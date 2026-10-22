@@ -38,6 +38,7 @@ function Measure({ children, pad }: { children: ReactNode; pad?: string }) {
 export function DirectAnswer({ children }: { children: React.ReactNode }) {
   return (
     <div className="article-callout">
+      <span className="article-callout-mark" aria-hidden="true" />
       <p style={{ margin: 0, color: "var(--ink)", fontSize: 18, lineHeight: 1.55 }}>{children}</p>
     </div>
   )

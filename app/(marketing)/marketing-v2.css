@@ -581,8 +581,20 @@
     .mkt2 .template-cap { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 18px; border-bottom: 1px solid var(--rule); color: var(--ink-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 
     .mkt2 .guide-page { background: var(--paper); }
-    .mkt2 .guide-hero { position: relative; overflow: hidden; padding: 72px clamp(28px,6vw,84px) 64px; background: var(--midnight); color: var(--light); }
-    .mkt2 .guide-hero::after { content: ""; position: absolute; left: 46%; right: -8%; bottom: 46px; height: 68px; background: var(--spectral); clip-path: polygon(0 32%,14% 12%,31% 24%,49% 4%,68% 20%,84% 3%,100% 19%,98% 76%,80% 90%,61% 73%,43% 96%,23% 78%,2% 91%); opacity: .78; transform: rotate(-6deg); }
+    .mkt2 .guide-hero { position: relative; isolation: isolate; overflow: hidden; padding: 72px clamp(28px,6vw,84px) 64px; background: radial-gradient(ellipse 54% 88% at 88% 15%, rgba(57,120,246,.14), transparent 64%), var(--midnight); color: var(--light); }
+    .mkt2 .guide-hero-art { position: absolute; z-index: -1; right: clamp(-46px,-2vw,0px); bottom: 12px; width: min(57vw,680px); aspect-ratio: 680 / 300; color: var(--cyan); opacity: .68; pointer-events: none; }
+    .mkt2 .guide-hero-art svg { width: 100%; height: 100%; overflow: visible; }
+    .mkt2 .guide-hero-route-shadow { fill: none; stroke: rgba(233,239,245,.14); stroke-width: 12; stroke-linecap: round; }
+    .mkt2 .guide-hero-route { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 8 9; }
+    .mkt2 .guide-hero-node circle:first-child { fill: rgba(7,17,31,.82); stroke: currentColor; stroke-width: 1.5; }
+    .mkt2 .guide-hero-node circle:last-child { fill: currentColor; }
+    .mkt2 .guide-hero-node--one { color: var(--cyan); }
+    .mkt2 .guide-hero-node--two { color: var(--violet); }
+    .mkt2 .guide-hero-node--three { color: var(--tangerine); }
+    .mkt2 .guide-hero-file rect { fill: rgba(14,27,46,.72); stroke: rgba(233,239,245,.36); stroke-width: 1.25; }
+    .mkt2 .guide-hero-file path { fill: none; stroke: rgba(233,239,245,.64); stroke-linecap: round; stroke-width: 2; }
+    .mkt2 .guide-hero-file circle { fill: var(--midnight); stroke: var(--cyan); stroke-width: 1.5; }
+    .mkt2 .guide-hero-art-label { position: absolute; right: 40px; bottom: 1px; color: var(--light-soft); font-family: var(--mono); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; }
     .mkt2 .breadcrumb { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 64px; color: var(--light-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .mkt2 .guide-hero-copy { position: relative; z-index: 1; max-width: 860px; }
     .mkt2 .guide-hero h2 { max-width: 840px; margin: 0; font-family: var(--display); font-size: clamp(46px,6vw,78px); font-weight: 500; line-height: 1.02; letter-spacing: -.06em; }
@@ -598,8 +610,9 @@
     .mkt2 .article-lede { margin: 0 0 54px; font-family: var(--display); font-size: 34px; font-weight: 500; line-height: 1.08; letter-spacing: -.04em; }
     .mkt2 .article-body h3 { margin: 56px 0 16px; font-family: var(--display); font-size: 34px; font-weight: 500; line-height: 1.05; letter-spacing: -.04em; }
     .mkt2 .article-body > p { color: var(--ink-soft); font-size: 17px; }
-    .mkt2 .article-callout { position: relative; margin: 42px 0; padding: 26px 28px 26px 32px; border: 1px solid var(--rule); background: var(--ivory); }
-    .mkt2 .article-callout::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--spectral); }
+    .mkt2 .article-callout { position: relative; margin: 42px 0; padding: 26px 88px 26px 28px; border: 1px solid var(--rule); background: var(--ivory); box-shadow: 8px 9px 0 rgba(215,211,201,.34); }
+    .mkt2 .article-callout-mark { position: absolute; top: 25px; right: 29px; width: 35px; height: 28px; border: 1px solid var(--rule); background: var(--paper); box-shadow: -5px 5px 0 -1px var(--ivory), -5px 5px 0 0 var(--rule), -10px 10px 0 -1px var(--ivory), -10px 10px 0 0 var(--rule); }
+    .mkt2 .article-callout-mark::before { content: ""; position: absolute; left: 8px; right: 7px; top: 8px; height: 1px; background: var(--electric); box-shadow: 0 5px 0 rgba(7,17,31,.22), 0 10px 0 rgba(7,17,31,.16); }
     .mkt2 .article-callout strong { display: block; margin-bottom: 7px; font-size: 17px; }
     .mkt2 .article-callout p { margin: 0; color: var(--ink-soft); font-size: 15px; }
     .mkt2 .source-note { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--rule); color: var(--ink-muted); font-family: var(--mono); font-size: 11px; line-height: 1.55; }
@@ -977,11 +990,19 @@
 
     @media (prefers-reduced-motion: no-preference) {
       .mkt2 .hero::before { animation: hero-signal-drift 11s ease-in-out infinite alternate; }
+      .mkt2 .guide-hero-route { animation: guide-route-trace 12s linear infinite; }
+      .mkt2 .guide-hero-node { animation: guide-node-pulse 4.8s ease-in-out infinite; transform-origin: center; }
+      .mkt2 .guide-hero-node--two { animation-delay: 820ms; }
+      .mkt2 .guide-hero-node--three { animation-delay: 1640ms; }
+      .mkt2 .guide-hero-file { animation: guide-file-float 6.5s ease-in-out infinite alternate; transform-origin: center; }
     }
     @keyframes hero-signal-drift {
       from { transform: translate3d(-1.5%, -1%, 0) scale(.98); opacity: .54; }
       to { transform: translate3d(2.5%, 2%, 0) scale(1.04); opacity: .86; }
     }
+    @keyframes guide-route-trace { to { stroke-dashoffset: -102px; } }
+    @keyframes guide-node-pulse { 0%,100% { opacity: .74; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.08); } }
+    @keyframes guide-file-float { from { transform: translate3d(0,4px,0); } to { transform: translate3d(0,-5px,0); } }
 
     @media (max-width: 1020px) {
       .mkt2 .desktop-nav { gap: 18px; }
@@ -1114,12 +1135,14 @@
       .mkt2 .breadcrumb { margin-bottom: 42px; }
       .mkt2 .guide-hero h2 { font-size: 40px; line-height: 1.04; }
       .mkt2 .guide-hero-lede { font-size: 16px; }
-      .mkt2 .guide-hero::after { left: 34%; bottom: 58px; height: 52px; }
+      .mkt2 .guide-hero-art { right: -74px; bottom: 10px; width: 80vw; opacity: .42; }
+      .mkt2 .guide-hero-art-label { right: 82px; }
       .mkt2 .article-layout { padding: 44px 20px 58px; }
       .mkt2 .toc-card { grid-template-columns: 1fr; padding: 18px; }
       .mkt2 .article-lede, .mkt2 .article-body h3 { font-size: 30px; }
       .mkt2 .article-body > p { font-size: 16px; }
-      .mkt2 .article-callout { padding: 22px 20px 22px 24px; }
+      .mkt2 .article-callout { padding: 22px 70px 22px 22px; }
+      .mkt2 .article-callout-mark { top: 22px; right: 24px; transform: scale(.82); transform-origin: top right; }
       .mkt2 .related-grid { grid-template-columns: 1fr; }
       .mkt2 .eligibility-template { padding: 44px 18px 52px; }
       .mkt2 .eligibility-template-head h3 { font-size: 40px; }

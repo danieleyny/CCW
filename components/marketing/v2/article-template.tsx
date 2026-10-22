@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { Fragment } from "react"
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/components/marketing/json-ld"
+import { GuideHeroPath } from "@/components/marketing/guide-hero-path"
 
 /**
  * The reusable interior ARTICLE TEMPLATE for the marketing redesign (v2).
@@ -103,6 +104,7 @@ export function ArticleTemplate({
   return (
     <article className="guide-page">
       <header className="guide-hero">
+        <GuideHeroPath />
         <JsonLd data={breadcrumbSchema(breadcrumb)} />
         <nav className="breadcrumb" aria-label="Breadcrumb">
           {breadcrumb.map((c, i) => {
