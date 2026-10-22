@@ -823,22 +823,8 @@
       background: rgba(247,245,239,.62);
       transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out;
     }
-    .mkt2 .fact::before {
-      content: "";
-      position: absolute;
-      left: 20px;
-      top: 18px;
-      width: 20px;
-      height: 20px;
-      border: 1px solid var(--rule);
-      border-radius: 50%;
-      background: radial-gradient(circle at 50% 50%, var(--electric) 0 3px, transparent 3.7px), var(--paper);
-      box-shadow: 3px 3px 0 rgba(7,17,31,.08);
-      transition: transform 220ms cubic-bezier(.2,.7,.2,1), box-shadow 220ms ease-out;
-    }
     .mkt2 .fact:last-child { border-right: 1px solid var(--rule); }
     .mkt2 .fact:hover { transform: translateY(-6px) scale(1.008); border-color: var(--electric); }
-    .mkt2 .fact:hover::before, .mkt2 .fact:focus-within::before { transform: translate3d(4px,-2px,0); box-shadow: 6px 6px 0 rgba(7,17,31,.1); }
 
     .mkt2 #legal { position: relative; overflow: hidden; }
     .mkt2 #legal::before {
