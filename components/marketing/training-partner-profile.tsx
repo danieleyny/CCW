@@ -1,3 +1,5 @@
+import Image from "next/image"
+import { ExternalLink } from "lucide-react"
 import { brand } from "@/config/brand"
 import type { TrainingPartner } from "@/config/training-partners"
 import { trainingPartnerPath } from "@/config/training-partners"
@@ -23,18 +25,15 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
             <p className="mt-2 text-brass">{partner.firm} · {partner.role}</p>
             <p className="mt-4 max-w-xl text-lg text-text-mid">{partner.headline}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild size="lg"><a href={partner.website} target="_blank" rel="noreferrer">View 50B classes ↗</a></Button>
+              <Button asChild size="lg"><a href={partner.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">View 50B classes <ExternalLink className="size-4" aria-hidden /></a></Button>
               <Button asChild variant="outline" size="lg"><a href={`mailto:${partner.email}`}>Email Yariv</a></Button>
             </div>
           </div>
 
-          <div className="relative mx-auto flex aspect-[4/5] w-full max-w-sm flex-col justify-between overflow-hidden rounded-md border border-hairline bg-[radial-gradient(circle_at_22%_20%,rgba(208,167,76,0.28),transparent_30%),radial-gradient(circle_at_80%_75%,rgba(76,139,208,0.18),transparent_34%),linear-gradient(135deg,var(--surface-2),var(--surface-1))] p-7 lg:mx-0">
-            <span className="engraved text-text-low">50B / NYC</span>
-            <div>
-              <p className="font-display text-7xl font-semibold tracking-tight text-text-hi">{partner.initials}</p>
-              <p className="mt-3 max-w-52 text-sm leading-relaxed text-text-mid">Training profile · portrait pending partner approval</p>
-            </div>
-            <div className="rounded-md border border-hairline bg-card/90 px-3 py-2 backdrop-blur">
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-md border border-hairline bg-surface-2 lg:mx-0">
+            <Image src={partner.photo.src} alt={partner.photo.alt} fill priority sizes="(min-width: 1024px) 22rem, 90vw" className="object-cover object-top" />
+            <div className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-brass/30" aria-hidden />
+            <div className="absolute bottom-3 left-3 max-w-[80%] rounded-md border border-hairline bg-card/90 px-3 py-2 backdrop-blur">
               <p className="font-display text-sm font-semibold text-text-hi">{partner.name}</p>
               <p className="mt-0.5 text-xs text-text-low">{partner.firm}</p>
             </div>
@@ -68,7 +67,7 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
               <div key={credential.label} className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr]">
                 <dt className="engraved text-text-low">{credential.label}</dt>
                 <dd className="text-text-hi">
-                  {credential.href ? <a className="text-signal hover:underline" href={credential.href} target="_blank" rel="noreferrer">{credential.value} ↗</a> : credential.value}
+                  {credential.href ? <a className="inline-flex items-center gap-1.5 text-signal hover:underline" href={credential.href} target="_blank" rel="noreferrer">{credential.value} <ExternalLink className="size-3.5 shrink-0" aria-hidden /></a> : credential.value}
                 </dd>
               </div>
             ))}
@@ -113,7 +112,7 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
         <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
           <p className="text-text-mid">Training arrangements and course fees are handled directly with 50B.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg"><a href={partner.website} target="_blank" rel="noreferrer">View 50B classes ↗</a></Button>
+            <Button asChild size="lg"><a href={partner.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">View 50B classes <ExternalLink className="size-4" aria-hidden /></a></Button>
             <Button asChild variant="outline" size="lg"><a href={`mailto:${partner.email}`}>Email Yariv</a></Button>
           </div>
         </div>

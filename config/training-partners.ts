@@ -39,8 +39,7 @@ export interface TrainingPartner {
   role: string
   headline: string
   bio: string[]
-  /** No portrait is used until an approved partner image is supplied. */
-  initials: string
+  photo: { src: string; alt: string }
   location: string
   phone: string
   email: string
@@ -64,7 +63,7 @@ export const TRAINING_PARTNERS: TrainingPartner[] = [
       "Yariv Ben-Ari is the Managing Member and a firearms instructor at 50B EDC Training & Consulting LLC. 50B’s public course listing includes New York concealed-carry classes, pistol and rifle courses, private instruction and group training.",
       "For New York concealed carry, the state standard includes at least 16 hours of in-person classroom instruction and 2 hours of live-fire training. Confirm the current course schedule, eligibility, range details and completion documentation directly with 50B before enrolling.",
     ],
-    initials: "YB",
+    photo: { src: "/partners/yariv-ben-ari-profile.png", alt: "Yariv Ben-Ari" },
     location: "New York City",
     phone: "332-323-2571",
     email: "yariv@50b.pro",

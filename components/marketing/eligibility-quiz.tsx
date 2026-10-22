@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { ExternalLink } from "lucide-react"
 import { useEffect, useState } from "react"
 import { trackEvent } from "@/lib/analytics"
 import { FACTS } from "@/content/facts"
@@ -371,7 +372,7 @@ function Result({
               rel="noopener noreferrer"
               style={{ color: "var(--cyan)" }}
             >
-              source ↗
+              <span className="inline-flex items-center gap-1">source <ExternalLink className="size-3" aria-hidden /></span>
             </a>{" "}
             · we last checked {fact.verifiedOn}
           </p>

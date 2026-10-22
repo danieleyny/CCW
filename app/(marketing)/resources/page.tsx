@@ -1,4 +1,5 @@
 import { buildMetadata } from "@/lib/seo"
+import { ExternalLink } from "lucide-react"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { RelatedLinks } from "@/components/marketing/page-blocks"
@@ -56,7 +57,10 @@ export default async function ResourcesPage() {
                         >
                           <span style={{ minWidth: 0 }}>
                             <span style={{ display: "block", fontSize: 14, fontWeight: 600 }}>
-                              {l.label} <span aria-hidden="true" style={{ color: "var(--ink-muted)" }}>↗</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                {l.label}
+                                <ExternalLink aria-hidden className="size-3" style={{ color: "var(--ink-muted)" }} />
+                              </span>
                             </span>
                             {l.note && (
                               <span style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--ink-soft)" }}>

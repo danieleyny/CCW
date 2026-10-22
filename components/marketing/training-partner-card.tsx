@@ -1,4 +1,6 @@
 import Link from "next/link"
+import Image from "next/image"
+import { ExternalLink } from "lucide-react"
 import type { TrainingPartner } from "@/config/training-partners"
 import { trainingPartnerPath } from "@/config/training-partners"
 import { Button } from "@/components/ui/button"
@@ -11,12 +13,14 @@ export function TrainingPartnerCard({ partner }: { partner: TrainingPartner }) {
     <div>
       <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[0_18px_50px_-32px_rgba(0,0,0,0.45)]">
         <div className="grid gap-6 p-6 md:grid-cols-[minmax(0,13rem)_1fr]">
-          <div className="flex min-h-52 flex-col justify-between rounded-md border border-hairline bg-[radial-gradient(circle_at_25%_25%,rgba(208,167,76,0.22),transparent_38%),linear-gradient(135deg,var(--surface-2),var(--surface-1))] p-5">
-            <span className="engraved text-text-low">Independent training provider</span>
-            <div>
-              <p className="font-display text-5xl font-semibold tracking-tight text-text-hi">{partner.initials}</p>
-              <p className="mt-2 text-sm text-text-mid">{partner.location}</p>
-            </div>
+          <div className="relative min-h-52 overflow-hidden rounded-md border border-hairline bg-surface-2">
+            <Image
+              src={partner.photo.src}
+              alt={partner.photo.alt}
+              fill
+              sizes="(min-width: 768px) 13rem, 100vw"
+              className="object-cover object-top"
+            />
           </div>
 
           <div className="min-w-0">
@@ -40,7 +44,9 @@ export function TrainingPartnerCard({ partner }: { partner: TrainingPartner }) {
                   <Link href={trainingPartnerPath(partner)}>View training profile</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <a href={partner.website} target="_blank" rel="noreferrer">View 50B classes ↗</a>
+                  <a href={partner.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5">
+                    View 50B classes <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
                 </Button>
               </div>
             </div>

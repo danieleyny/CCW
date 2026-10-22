@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ExternalLink } from "lucide-react"
 import type { ReactNode } from "react"
 import type { Fact } from "@/content/facts"
 import { JsonLd, faqSchema } from "@/components/marketing/json-ld"
@@ -74,7 +75,7 @@ export function SourcedFact({ fact }: { fact: Fact }) {
           rel="noopener noreferrer"
           style={{ color: "var(--electric-deep)", textDecoration: "none" }}
         >
-          source ↗
+          <span className="inline-flex items-center gap-1">source <ExternalLink className="size-3" aria-hidden /></span>
         </Link>{" "}
         · we last checked {fact.verifiedOn}
       </p>

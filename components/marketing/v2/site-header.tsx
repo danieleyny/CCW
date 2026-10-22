@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import { ExternalLink } from "lucide-react"
 import { NAV_ROUTES } from "@/lib/marketing-routes"
 
 /**
@@ -51,8 +52,8 @@ export function SiteHeader() {
                   {l.label} <span aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
                 </Link>
               ))}
-              <Link href="/auth/login">
-                Client sign in <span aria-hidden="true">↗</span>
+              <Link href="/auth/login" className="inline-flex items-center gap-1.5">
+                Client sign in <ExternalLink className="size-3.5" aria-hidden />
               </Link>
             </nav>
             <Link className="button button-light" href="/eligibility">
