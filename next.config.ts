@@ -126,6 +126,7 @@ const nextConfig: NextConfig = {
       // 1b. partner profile → its canonical vanity URL (exactly one canonical URL;
       // both spellings resolve). Each new partner gets the same explicit pair.
       { source: "/partners/ethanbrecher", destination: "/ethanbrecher", permanent: true },
+      { source: "/partners/yarivbenari", destination: "/yarivbenari", permanent: true },
       // 2. www → apex
       { source: "/:path*", has: [host(`www.${CANONICAL}`)], destination: `https://${CANONICAL}/:path*`, permanent: true },
       // 3a. brand aliases → canonical (path preserved)

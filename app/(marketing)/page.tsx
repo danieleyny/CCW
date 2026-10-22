@@ -7,7 +7,7 @@ import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
   description:
-    "Get a NYC gun license without the guesswork. We track your documents, 18-hour course, and every deadline as one case so you can submit your own application with confidence.",
+    "Guidance for preparing a NYC gun-license application: documents, requirements and clear next steps. You review and submit it yourself.",
   path: "/",
   hreflang: "",
   ogTitle: "NYC gun license, handled — Gun License NYC",

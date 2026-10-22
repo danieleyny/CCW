@@ -18,17 +18,17 @@ export function PartnerComingSoon({ path }: { path: string }) {
         style={{ fontFamily: "var(--display)" }}
         className="mt-4 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl"
       >
-        Our attorney partner page is almost ready.
+        Our partner page is almost ready.
       </h1>
       <p className="mt-4 max-w-xl text-[var(--ink-soft)]">
-        We&apos;re finalising this with the attorney before it goes live.
+        We&apos;re finalising this with the independent provider before it goes live.
       </p>
 
       <PartnerPreviewForm path={path} />
 
       <p className="mt-6 text-sm">
-        <Link href="/do-i-need-a-lawyer" className="text-[var(--electric-deep)] hover:underline">
-          Do I need a lawyer?
+        <Link href="/partners" className="text-[var(--electric-deep)] hover:underline">
+          Return to partners
         </Link>
       </p>
     </section>
