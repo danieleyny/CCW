@@ -867,20 +867,7 @@
       transform: rotate(.65deg);
       transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
     }
-    .mkt2 .price-card::after {
-      content: "";
-      position: absolute;
-      left: 20px;
-      top: 20px;
-      width: 19px;
-      height: 19px;
-      border: 1px solid var(--rule);
-      background: radial-gradient(circle at 50% 50%, var(--tangerine) 0 3px, transparent 3.7px), var(--paper);
-      box-shadow: 3px 3px 0 rgba(7,17,31,.08);
-      transition: transform 240ms cubic-bezier(.2,.7,.2,1), box-shadow 240ms ease-out;
-    }
     .mkt2 .price-card:hover { transform: translateY(-5px) rotate(0) scale(1.004); }
-    .mkt2 .price-card:hover::after, .mkt2 .price-card:focus-within::after { transform: translate3d(4px,-2px,0); box-shadow: 6px 6px 0 rgba(7,17,31,.1); }
 
     .mkt2 .promise { position: relative; overflow: hidden; }
     .mkt2 .promise::before {
