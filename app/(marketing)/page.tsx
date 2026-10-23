@@ -182,6 +182,7 @@ export default async function Home() {
             </p>
           </div>
           <aside className="candor-panel" aria-label="Disclosure approach">
+            <p className="candor-panel-label">Complete record</p>
             <h3>Nothing important gets minimized.</h3>
             <p>
               Sealed and dismissed arrests are still disclosed. Records are gathered and organized.
