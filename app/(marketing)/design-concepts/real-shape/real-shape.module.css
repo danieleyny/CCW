@@ -61,6 +61,55 @@
 .phoneFrame .realityTile p { font-size: 31px; }
 .phoneFrame .realityTile small { display: none; }
 
+/* Mobile-first studies for the planning-horizon concept. These are complete
+   layouts: the deck uses real scroll snap, while the other two use the page's
+   ordinary vertical scroll. */
+.mobileStudies { margin-top: 86px; padding-top: 48px; border-top: 1px solid var(--rule); }
+.mobileStudyIntro { max-width: 660px; }
+.mobileStudyIntro > p, .mobileStudy h4, .studyLabel, .listPhone > p, .compactLead > span { margin: 0; color: var(--electric); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; }
+.mobileStudyIntro h3 { max-width: 620px; margin: 14px 0; font-family: var(--display); font-size: 42px; font-weight: 400; letter-spacing: -.045em; line-height: 1; }
+.mobileStudyIntro > span { color: var(--ink-soft); font-size: 15px; }
+.mobileStudyGrid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 26px; margin-top: 42px; }
+.mobileStudy { min-width: 0; }
+.mobileStudy h4 { color: var(--ink); }
+.mobileStudy > p { min-height: 50px; margin: 9px 0 20px; color: var(--ink-soft); font-size: 13px; line-height: 1.45; }
+.mobileStudy .phoneFrame { width: 100%; min-height: 530px; padding: 46px 14px 14px; border-width: 7px; border-radius: 32px; }
+.mobileStudy .phoneNotch { top: 10px; width: 76px; height: 17px; }
+.deckPhone, .listPhone, .compactPhone { min-height: 462px; overflow: hidden; border-radius: 14px; }
+.deckPhone { padding: 20px 0 18px 18px; background: #07111f; color: var(--light); }
+.studyLabel { display: flex; justify-content: space-between; padding-right: 18px; color: var(--cyan); }
+.studyLabel span { color: var(--light-soft); }
+.deckScroll { display: flex; gap: 10px; overflow-x: auto; margin-top: 20px; padding: 0 18px 12px 0; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.deckScroll::-webkit-scrollbar { display: none; }
+.deckCard { flex: 0 0 calc(100% - 36px); min-height: 312px; padding: 21px; border: 1px solid rgba(159,194,219,.28); border-radius: 13px; background: linear-gradient(145deg, #10273e, #0a1727); scroll-snap-align: start; }
+.deckCard > span { color: var(--cyan); font-family: var(--mono); font-size: 10px; }
+.deckCard strong, .deckCard b, .deckCard small { display: block; }
+.deckCard strong { margin-top: 62px; font-family: var(--display); font-size: 60px; font-weight: 400; letter-spacing: -.065em; line-height: .86; }
+.deckCard b { margin-top: 8px; font-size: 14px; }
+.deckCard small { margin-top: 14px; color: var(--light-soft); font-size: 12px; line-height: 1.45; }
+.deckPhone > p, .compactPhone > p { margin: 0; padding: 0 18px; color: var(--light-soft); font-size: 11px; line-height: 1.4; }
+.listPhone { padding: 22px 18px; background: var(--paper); }
+.listPhone > p { color: var(--electric); }
+.listPhone > strong { display: block; margin-top: 12px; font-family: var(--display); font-size: 31px; font-weight: 400; letter-spacing: -.045em; line-height: .95; }
+.listPhone ol { display: grid; margin: 27px 0 0; padding: 0; border-top: 1px solid var(--rule); list-style: none; }
+.listPhone li { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.listPhone li > span { color: var(--electric); font-family: var(--display); font-size: 28px; letter-spacing: -.05em; line-height: .9; }
+.listPhone b, .listPhone small { display: block; }
+.listPhone b { font-size: 12px; }
+.listPhone small { margin-top: 4px; color: var(--ink-soft); font-size: 10px; line-height: 1.35; }
+.compactPhone { padding: 18px; background: var(--paper); }
+.compactLead { padding: 21px; border-radius: 14px; background: #07111f; color: var(--light); }
+.compactLead > span { color: var(--cyan); }
+.compactLead strong { display: block; margin-top: 44px; font-family: var(--display); font-size: 60px; font-weight: 400; letter-spacing: -.07em; line-height: .82; }
+.compactLead strong small { font-family: var(--sans); font-size: 13px; letter-spacing: 0; }
+.compactLead p { margin: 9px 0 0; color: var(--light-soft); font-size: 11px; }
+.compactGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.compactGrid article { min-height: 84px; padding: 13px; border: 1px solid var(--rule); border-radius: 10px; }
+.compactGrid strong, .compactGrid span { display: block; }
+.compactGrid strong { font-family: var(--display); font-size: 29px; font-weight: 400; letter-spacing: -.055em; line-height: .9; }
+.compactGrid span { margin-top: 6px; color: var(--ink-soft); font-size: 10px; }
+.compactPhone > p { padding: 16px 0 0; color: var(--ink-soft); }
+
 @media (prefers-reduced-motion: no-preference) {
   .horizonGlow { animation: horizonDrift 11s ease-in-out infinite alternate; }
   .boardLight { animation: boardDrift 12s ease-in-out infinite alternate; }
@@ -76,6 +125,7 @@
   .conceptCopy > span { display: block; margin-top: 18px; }
   .mockPair { grid-template-columns: 1fr; gap: 48px; }
   .phoneConcept { justify-self: center; }
+  .mobileStudyGrid { grid-template-columns: 1fr; max-width: 350px; margin-inline: auto; }
 }
 @media (max-width: 540px) {
   .page { width: calc(100% - 40px); padding: 44px 0 88px; }
@@ -97,5 +147,8 @@
   .realityTile p { font-size: 34px; }
   .realityTile small { display: none; }
   .phoneConcept { display: none; }
+  .mobileStudies { margin-top: 64px; padding-top: 38px; }
+  .mobileStudyIntro h3 { font-size: 34px; }
+  .mobileStudyGrid { gap: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { .horizonGlow, .boardLight { animation: none !important; } }

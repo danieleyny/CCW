@@ -61,6 +61,67 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   return <div className={styles.phoneFrame}><div className={styles.phoneNotch} aria-hidden="true" />{children}</div>
 }
 
+function MobileHorizonStudies() {
+  return (
+    <section className={styles.mobileStudies} aria-labelledby="mobile-study-title">
+      <div className={styles.mobileStudyIntro}>
+        <p>Concept 01 · mobile studies</p>
+        <h3 id="mobile-study-title">Three ways to make the phone version intentional.</h3>
+        <span>Each is a working layout, not a flattened desktop screen.</span>
+      </div>
+      <div className={styles.mobileStudyGrid}>
+        <article className={styles.mobileStudy}>
+          <h4>Guided deck</h4>
+          <p>Swipe through one reality at a time, with the next card deliberately in view.</p>
+          <PhoneFrame>
+            <div className={styles.deckPhone}>
+              <div className={styles.studyLabel}>Planning realities <span>Swipe</span></div>
+              <div className={styles.deckScroll}>
+                {realities.map(([value, label, detail], index) => (
+                  <article className={styles.deckCard} key={label}>
+                    <span>0{index + 1}</span><strong>{value}</strong><b>{label}</b><small>{detail}</small>
+                  </article>
+                ))}
+              </div>
+              <p>Five planning realities. One clear view at a time.</p>
+            </div>
+          </PhoneFrame>
+        </article>
+
+        <article className={styles.mobileStudy}>
+          <h4>Editorial read</h4>
+          <p>Everything is visible in the natural page scroll—no secondary horizontal gesture.</p>
+          <PhoneFrame>
+            <div className={styles.listPhone}>
+              <p>What it actually takes</p>
+              <strong>Plan for the whole picture.</strong>
+              <ol>
+                {realities.map(([value, label, detail]) => (
+                  <li key={label}><span>{value}</span><div><b>{label}</b><small>{detail}</small></div></li>
+                ))}
+              </ol>
+            </div>
+          </PhoneFrame>
+        </article>
+
+        <article className={styles.mobileStudy}>
+          <h4>Compact board</h4>
+          <p>A smaller bento board: the planning horizon leads, with supporting facts kept close.</p>
+          <PhoneFrame>
+            <div className={styles.compactPhone}>
+              <div className={styles.compactLead}><span>Typical planning horizon</span><strong>~6 <small>months</small></strong><p>From start to decision.</p></div>
+              <div className={styles.compactGrid}>
+                {realities.slice(1).map(([value, label]) => <article key={label}><strong>{value}</strong><span>{label}</span></article>)}
+              </div>
+              <p>Every fact in one calm overview.</p>
+            </div>
+          </PhoneFrame>
+        </article>
+      </div>
+    </section>
+  )
+}
+
 export default function RealShapeConceptsPage() {
   return (
     <section className={styles.page}>
@@ -89,6 +150,7 @@ export default function RealShapeConceptsPage() {
             <PhoneFrame><HorizonBoard /></PhoneFrame>
           </figure>
         </div>
+        <MobileHorizonStudies />
       </article>
 
       <article className={styles.concept}>
