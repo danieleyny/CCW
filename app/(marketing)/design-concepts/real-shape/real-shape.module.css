@@ -1,0 +1,101 @@
+.page { width: min(1440px, calc(100% - 72px)); margin: 0 auto; padding: 88px 0 140px; color: var(--ink); }
+.intro { max-width: 720px; margin: 0 0 96px; }
+.intro > p, .conceptCopy > p, figure > figcaption, .boardHeader > span, .realityHero > span { margin: 0; color: var(--electric); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
+.intro h1 { max-width: 620px; margin: 16px 0 20px; font-family: var(--display); font-size: clamp(54px, 7vw, 100px); font-weight: 400; letter-spacing: -.06em; line-height: .94; }
+.intro > span { display: block; max-width: 600px; color: var(--ink-soft); font-size: 18px; line-height: 1.55; }
+.concept { padding: 64px 0 82px; border-top: 1px solid var(--rule); }
+.concept + .concept { margin-top: 24px; }
+.conceptCopy { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 32px; max-width: 910px; margin-bottom: 48px; }
+.conceptCopy h2 { margin: 0; font-family: var(--display); font-size: clamp(38px, 4vw, 60px); font-weight: 400; letter-spacing: -.05em; line-height: 1; }
+.conceptCopy > span { grid-column: 2; max-width: 560px; color: var(--ink-soft); font-size: 16px; line-height: 1.6; }
+.mockPair { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: clamp(32px, 6vw, 92px); align-items: start; }
+.mockPair figure { min-width: 0; margin: 0; }
+.mockPair figcaption { display: block; margin-bottom: 14px; color: var(--ink-muted); }
+
+/* Concept 01 — Planning horizon */
+.horizonBoard { position: relative; min-height: 394px; overflow: hidden; padding: 34px; border: 1px solid #1c3c5d; border-radius: 18px; background: #07111f; color: var(--light); box-shadow: 0 28px 58px rgba(7,17,31,.22); isolation: isolate; }
+.horizonGlow { position: absolute; z-index: -1; top: -34%; left: -14%; width: 68%; height: 168%; background: radial-gradient(ellipse, rgba(91,231,246,.2), transparent 68%); filter: blur(26px); opacity: .72; }
+.boardHeader { display: flex; justify-content: space-between; gap: 22px; align-items: end; padding-bottom: 34px; }
+.boardHeader > span { color: var(--cyan); }
+.boardHeader strong { color: var(--light); font-family: var(--display); font-size: 30px; font-weight: 400; letter-spacing: -.035em; }
+.horizonFacts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); border-top: 1px solid rgba(159,194,219,.28); }
+.horizonFact { position: relative; min-height: 244px; padding: 24px 18px 18px; border-right: 1px solid rgba(159,194,219,.2); transition: background 260ms ease, transform 260ms cubic-bezier(.2,.7,.2,1); }
+.horizonFact:last-child { border-right: 0; }
+.horizonFact:hover { background: rgba(91,231,246,.075); transform: translateY(-5px); }
+.factNumber { color: var(--cyan); font-family: var(--mono); font-size: 10px; }
+.horizonFact p { margin: 36px 0 4px; color: var(--light); font-family: var(--display); font-size: 56px; letter-spacing: -.06em; line-height: .88; }
+.horizonFact strong { display: block; font-size: 14px; }
+.horizonFact small { display: block; margin-top: 12px; color: var(--light-soft); font-size: 12px; line-height: 1.45; }
+
+/* Concept 02 — Case reality board */
+.realityBoard { position: relative; display: grid; grid-template-columns: 1.12fr .88fr; min-height: 394px; overflow: hidden; border: 1px solid var(--rule); border-radius: 18px; background: var(--paper); box-shadow: 0 28px 58px rgba(7,17,31,.1); isolation: isolate; }
+.boardLight { position: absolute; z-index: -1; right: -12%; top: -36%; width: 76%; height: 128%; border-radius: 50%; background: radial-gradient(ellipse, rgba(57,120,246,.13), transparent 66%); filter: blur(24px); }
+.realityHero { display: flex; flex-direction: column; justify-content: end; min-height: 394px; padding: 34px; border-right: 1px solid var(--rule); }
+.realityHero strong { max-width: 400px; margin-top: 22px; color: var(--ink); font-family: var(--display); font-size: 48px; font-weight: 400; letter-spacing: -.05em; line-height: .95; }
+.realityHero p { max-width: 310px; margin: 20px 0 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
+.realityTiles { display: grid; grid-template-columns: 1fr 1fr; }
+.realityTile { min-height: 131px; padding: 20px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); transition: background 260ms ease, transform 260ms cubic-bezier(.2,.7,.2,1); }
+.realityTile:nth-child(2n) { border-right: 0; }
+.realityTile:nth-child(5) { grid-column: span 2; border-bottom: 0; }
+.realityTile:hover { z-index: 1; background: rgba(57,120,246,.065); box-shadow: 0 10px 24px rgba(7,17,31,.09); transform: scale(1.025); }
+.realityTile p { margin: 0 0 5px; color: var(--ink); font-family: var(--display); font-size: 38px; letter-spacing: -.055em; line-height: .9; }
+.realityTile strong { display: block; font-size: 13px; }
+.realityTile small { display: block; margin-top: 9px; color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
+
+.phoneFrame { position: relative; width: min(100%, 350px); min-height: 620px; overflow: hidden; padding: 50px 16px 18px; border: 8px solid #0a1019; border-radius: 38px; background: var(--ivory); box-shadow: 0 18px 42px rgba(7,17,31,.16); }
+.phoneNotch { position: absolute; top: 12px; left: 50%; width: 92px; height: 20px; border-radius: 999px; background: #0a1019; transform: translateX(-50%); }
+.phoneConcept { width: 350px; max-width: 100%; }
+.phoneFrame .horizonBoard { min-height: 550px; padding: 22px 18px; border-radius: 18px; }
+.phoneFrame .boardHeader { display: block; padding-bottom: 22px; }
+.phoneFrame .boardHeader strong { display: block; margin-top: 10px; font-size: 26px; }
+.phoneFrame .horizonFacts { display: flex; gap: 12px; overflow-x: auto; padding: 0 2px 12px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.phoneFrame .horizonFacts::-webkit-scrollbar { display: none; }
+.phoneFrame .horizonFact { flex: 0 0 220px; min-height: 350px; padding: 22px; border: 1px solid rgba(159,194,219,.22); border-radius: 12px; background: rgba(255,255,255,.035); scroll-snap-align: start; }
+.phoneFrame .horizonFact p { margin-top: 76px; font-size: 64px; }
+.phoneFrame .realityBoard { display: block; min-height: 550px; border-radius: 18px; }
+.phoneFrame .realityHero { min-height: 220px; padding: 22px; border-right: 0; border-bottom: 1px solid var(--rule); }
+.phoneFrame .realityHero strong { font-size: 34px; }
+.phoneFrame .realityHero p { margin-top: 14px; font-size: 12px; }
+.phoneFrame .realityTiles { grid-template-columns: 1fr 1fr; }
+.phoneFrame .realityTile { min-height: 104px; padding: 15px; }
+.phoneFrame .realityTile p { font-size: 31px; }
+.phoneFrame .realityTile small { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .horizonGlow { animation: horizonDrift 11s ease-in-out infinite alternate; }
+  .boardLight { animation: boardDrift 12s ease-in-out infinite alternate; }
+}
+@keyframes horizonDrift { from { transform: translate3d(-4%,0,0) scale(.96); opacity: .42; } to { transform: translate3d(44%,0,0) scale(1.08); opacity: .82; } }
+@keyframes boardDrift { from { transform: translate3d(-5%,-3%,0) scale(.95); opacity: .5; } to { transform: translate3d(8%,8%,0) scale(1.08); opacity: .95; } }
+
+@media (max-width: 900px) {
+  .page { width: min(100% - 40px, 680px); padding-top: 56px; }
+  .intro { margin-bottom: 72px; }
+  .conceptCopy { display: block; margin-bottom: 36px; }
+  .conceptCopy h2 { margin-top: 14px; }
+  .conceptCopy > span { display: block; margin-top: 18px; }
+  .mockPair { grid-template-columns: 1fr; gap: 48px; }
+  .phoneConcept { justify-self: center; }
+}
+@media (max-width: 540px) {
+  .page { width: calc(100% - 40px); padding: 44px 0 88px; }
+  .intro h1 { font-size: 52px; }
+  .intro > span { font-size: 16px; }
+  .concept { padding: 48px 0 56px; }
+  .horizonBoard { min-height: auto; padding: 22px 18px; }
+  .boardHeader { display: block; padding-bottom: 22px; }
+  .boardHeader strong { display: block; margin-top: 10px; font-size: 26px; }
+  .horizonFacts { display: flex; gap: 10px; overflow-x: auto; padding: 0 2px 12px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .horizonFacts::-webkit-scrollbar { display: none; }
+  .horizonFact { flex: 0 0 236px; min-height: 300px; padding: 22px; border: 1px solid rgba(159,194,219,.22); border-radius: 12px; background: rgba(255,255,255,.035); scroll-snap-align: start; }
+  .horizonFact p { margin-top: 58px; font-size: 64px; }
+  .realityBoard { display: block; min-height: 0; }
+  .realityHero { min-height: 250px; padding: 24px; border-right: 0; border-bottom: 1px solid var(--rule); }
+  .realityHero strong { font-size: 38px; }
+  .realityTiles { grid-template-columns: 1fr 1fr; }
+  .realityTile { min-height: 116px; padding: 16px; }
+  .realityTile p { font-size: 34px; }
+  .realityTile small { display: none; }
+  .phoneConcept { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .horizonGlow, .boardLight { animation: none !important; } }
