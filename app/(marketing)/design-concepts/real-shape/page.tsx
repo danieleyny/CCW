@@ -13,9 +13,9 @@ const realities = [
   ["1", "interview", "Prepare for the investigator’s questions and requests."],
 ] as const
 
-function HorizonBoard({ compact = false }: { compact?: boolean }) {
+function HorizonBoard() {
   return (
-    <div className={`${styles.horizonBoard} ${compact ? styles.compact : ""}`}>
+    <div className={styles.horizonBoard}>
       <div className={styles.horizonGlow} aria-hidden="true" />
       <div className={styles.boardHeader}>
         <span>Planning realities</span>
@@ -35,9 +35,9 @@ function HorizonBoard({ compact = false }: { compact?: boolean }) {
   )
 }
 
-function RealityBoard({ compact = false }: { compact?: boolean }) {
+function RealityBoard() {
   return (
-    <div className={`${styles.realityBoard} ${compact ? styles.compact : ""}`}>
+    <div className={styles.realityBoard}>
       <div className={styles.boardLight} aria-hidden="true" />
       <div className={styles.realityHero}>
         <span>Plan with the whole picture</span>
@@ -86,7 +86,7 @@ export default function RealShapeConceptsPage() {
           </figure>
           <figure className={styles.phoneConcept}>
             <figcaption>Mobile</figcaption>
-            <PhoneFrame><HorizonBoard compact /></PhoneFrame>
+            <PhoneFrame><HorizonBoard /></PhoneFrame>
           </figure>
         </div>
       </article>
@@ -108,7 +108,7 @@ export default function RealShapeConceptsPage() {
           </figure>
           <figure className={styles.phoneConcept}>
             <figcaption>Mobile</figcaption>
-            <PhoneFrame><RealityBoard compact /></PhoneFrame>
+            <PhoneFrame><RealityBoard /></PhoneFrame>
           </figure>
         </div>
       </article>
