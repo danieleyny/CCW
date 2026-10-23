@@ -4,6 +4,7 @@ import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
 import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
+import { PlanningHorizon } from "@/components/marketing/v2/planning-horizon"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -153,20 +154,7 @@ export default async function Home() {
               what the NYPD will decide or when it will act.
             </p>
           </div>
-          <div className="fact-grid">
-            {[
-              ["~6", "months", "Typical planning horizon from start to decision."],
-              ["18", "hours", "Required training for a concealed-carry application."],
-              ["4", "references", "For the standard NYC carry track."],
-              ["1×", "each adult", "A cohabitant statement for every adult at home."],
-              ["1", "interview", "Prepare for the investigator’s questions and requests."],
-            ].map(([v, strong, rest]) => (
-              <article className="fact" key={strong}>
-                <p className="fact-value">{v}</p>
-                <p className="fact-label"><strong>{strong}</strong><br />{rest}</p>
-              </article>
-            ))}
-          </div>
+          <PlanningHorizon />
         </div>
       </section>
 
