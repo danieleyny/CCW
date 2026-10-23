@@ -27,13 +27,11 @@
       --violet: #7659FF;
       --magenta: #E24BAE;
       --vermilion: #F05B58;
-      --tangerine: #C99335;
+      --tangerine: #FF8A43;
       --success: #10836A;
       --warning: #B46A12;
       --error: #BD4450;
-      /* One controlled signal for the whole surface. The earlier rainbow
-         treatment made unrelated sections feel like separate campaigns. */
-      --spectral: linear-gradient(96deg, var(--cyan), var(--electric) 72%, var(--tangerine));
+      --spectral: linear-gradient(96deg, var(--cyan), var(--blue) 22%, var(--violet) 45%, var(--magenta) 66%, var(--vermilion) 84%, var(--tangerine));
       --display: "Bodoni Moda", Didot, "Times New Roman", serif;
       --sans: "Hanken Grotesk", Arial, sans-serif;
       --mono: "Azeret Mono", monospace;
@@ -321,7 +319,7 @@
       margin-top: 5px;
       /* Paint extends beyond the glyphs — most at the bottom for descenders — but
          HUGS the text on the right so it reads as a painted stroke, not a blob. */
-      padding: 6px 12px 13px 15px;
+      padding: 6px 9px 16px 16px;
       color: var(--light);
       font-style: normal;
       letter-spacing: -0.07em;
@@ -339,20 +337,18 @@
        into "by design." above it. The 6px padding-top still backs the caps. */
     .mkt2 .hero-highlight::before {
       z-index: -2;
-      inset: 2% -3% -5% -4%;
-      border: 1px solid rgba(7,17,31,.76);
-      border-radius: 4px;
-      background: var(--midnight);
-      box-shadow: 6px 7px 0 rgba(57,120,246,.16);
-      transform: rotate(-1deg);
+      inset: 0% -5% -12% -5%;
+      background: var(--spectral);
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% 0%, 68% 3%, 86% 0%, 99% 10%, 97% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
+      transform: rotate(-1.2deg);
     }
     .mkt2 .hero-highlight::after {
       z-index: -1;
-      inset: auto -1% -10% 10%;
-      height: 2px;
-      border-radius: 999px;
-      background: var(--cyan);
-      opacity: .86;
+      inset: 0% -4% -10% -3%;
+      background-image: radial-gradient(circle, rgba(255,255,255,.7) 0 0.75px, transparent .9px);
+      background-size: 6px 6px;
+      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% 0%, 68% 3%, 86% 0%, 99% 10%, 97% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
+      opacity: .28;
     }
     .mkt2 .hero-lede {
       max-width: 560px;
