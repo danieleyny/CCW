@@ -1239,6 +1239,20 @@
 @keyframes case-demo-pulse { 0%, 10% { transform: translateY(0); opacity: .3; } 18%, 86% { opacity: 1; } 94%, 100% { transform: translateY(390px); opacity: .2; } }
 @keyframes case-demo-row-breathe { 0%, 14%, 100% { border-color: rgba(159,194,219,.13); background: rgba(255,255,255,.045); } 24%, 34% { border-color: rgba(91,231,246,.5); background: rgba(91,231,246,.08); } }
 
+/* The same quiet signal carries through the real five-phase service path. This
+   replaces the old multicolored stripe with a single light that travels along
+   the process line, then reappears in the checklist demonstration below. */
+.mkt2 .phase-path::before {
+  background: linear-gradient(to bottom, rgba(159,194,219,.26) 0 34%, var(--cyan) 46%, rgba(159,194,219,.26) 59% 100%);
+  background-size: 100% 240px;
+  box-shadow: 0 0 10px rgba(91,231,246,.18);
+  opacity: .8;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mkt2 .phase-path::before { animation: phase-path-signal 6.6s linear infinite; }
+}
+@keyframes phase-path-signal { to { background-position: 0 -480px; } }
+
 @media (max-width: 840px) {
   .mkt2 .case-demo { max-width: 620px; grid-template-columns: 1fr; gap: 14px; }
   .mkt2 .case-demo-workspace { padding: 24px; }
