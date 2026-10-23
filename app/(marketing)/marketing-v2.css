@@ -1158,6 +1158,109 @@
    pages because the pill carries its own background. */
 .mkt2 .site-header { position: sticky; }
 
+/* ── Case checklist demo ─────────────────────────────────────────────────────
+   One product demonstration for the requirements section. Its content is a
+   representative view of the real, intake-generated checklist — not a promise
+   that every visitor has the same requirements or completion state. */
+.mkt2 .case-demo {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, .46fr);
+  gap: 14px;
+  isolation: isolate;
+}
+.mkt2 .case-demo::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  inset: -16% -15%;
+  background:
+    radial-gradient(circle at 16% 55%, rgba(91,231,246,.25), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(57,120,246,.14), transparent 30%);
+  filter: blur(8px);
+  opacity: .72;
+  pointer-events: none;
+}
+.mkt2 .case-demo-light {
+  position: absolute;
+  z-index: -1;
+  left: 3%;
+  top: 5%;
+  width: 38%;
+  height: 74%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, rgba(91,231,246,.2), transparent);
+  filter: blur(24px);
+  opacity: .72;
+  pointer-events: none;
+}
+.mkt2 .case-demo-workspace {
+  min-width: 0;
+  padding: 28px;
+  border: 1px solid #183550;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #0d2035, #07111f 68%);
+  box-shadow: 0 28px 60px rgba(7,17,31,.25);
+  color: var(--light);
+}
+.mkt2 .case-demo-heading { display: flex; justify-content: space-between; gap: 16px; align-items: start; padding-bottom: 22px; }
+.mkt2 .case-demo-kicker { margin: 0; color: var(--cyan); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; }
+.mkt2 .case-demo-subtitle { margin: 8px 0 0; color: var(--light-soft); font-size: 13px; }
+.mkt2 .case-demo-tag { flex: none; padding: 7px 9px; border: 1px solid rgba(91,231,246,.34); border-radius: 999px; color: var(--light-soft); font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.mkt2 .case-demo-list { position: relative; display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.mkt2 .case-demo-rail { position: absolute; top: 25px; bottom: 25px; left: 13px; width: 1px; overflow: hidden; background: rgba(159,194,219,.28); }
+.mkt2 .case-demo-rail::after { content: ""; position: absolute; top: -22px; left: -2px; width: 5px; height: 26px; border-radius: 999px; background: var(--cyan); box-shadow: 0 0 14px 4px rgba(91,231,246,.72); }
+.mkt2 .case-demo-item { position: relative; display: grid; grid-template-columns: 28px 30px minmax(0,1fr); gap: 10px; align-items: center; min-height: 65px; padding: 12px 14px 12px 0; border: 1px solid rgba(159,194,219,.13); border-radius: 10px; background: rgba(255,255,255,.045); }
+.mkt2 .case-demo-marker { position: relative; z-index: 1; width: 10px; height: 10px; margin-left: 9px; border: 2px solid var(--cyan); border-radius: 50%; background: var(--midnight); box-shadow: 0 0 0 4px rgba(91,231,246,.08); }
+.mkt2 .case-demo-number { color: #9fc2db; font-family: var(--mono); font-size: 10px; }
+.mkt2 .case-demo-item-copy { min-width: 0; }
+.mkt2 .case-demo-item strong, .mkt2 .case-demo-item small { display: block; }
+.mkt2 .case-demo-item strong { color: var(--light); font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.mkt2 .case-demo-item small { margin-top: 3px; color: var(--light-soft); font-size: 11px; line-height: 1.35; }
+.mkt2 .case-demo-review { align-self: center; padding: 24px 20px; border: 1px solid var(--rule); border-radius: 18px; background: rgba(255,254,250,.88); box-shadow: 0 18px 42px rgba(7,17,31,.11); }
+.mkt2 .case-demo-review h3 { margin: 10px 0 10px; color: var(--ink); font-family: var(--display); font-size: 34px; font-weight: 400; letter-spacing: -.04em; line-height: .98; }
+.mkt2 .case-demo-review > p:not(.case-demo-kicker) { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.55; }
+.mkt2 .case-demo-link { display: inline-flex; gap: 8px; align-items: center; margin-top: 22px; color: var(--ink); font-size: 12px; font-weight: 600; text-underline-offset: 4px; }
+.mkt2 .case-demo-link span { color: var(--electric); transition: transform 180ms ease-out; }
+.mkt2 .case-demo-link:hover span, .mkt2 .case-demo-link:focus-visible span { transform: translateX(3px); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .mkt2 .case-demo::before { animation: case-demo-glow 10s ease-in-out infinite alternate; }
+  .mkt2 .case-demo-light { animation: case-demo-light-drift 8s ease-in-out infinite alternate; }
+  .mkt2 .case-demo-rail::after { animation: case-demo-pulse 6.8s cubic-bezier(.45,.05,.55,.95) infinite; }
+  .mkt2 .case-demo-item { animation: case-demo-row-breathe 6.8s ease-in-out infinite; }
+  .mkt2 .case-demo-item:nth-of-type(2) { animation-delay: 170ms; }
+  .mkt2 .case-demo-item:nth-of-type(3) { animation-delay: 340ms; }
+  .mkt2 .case-demo-item:nth-of-type(4) { animation-delay: 510ms; }
+  .mkt2 .case-demo-item:nth-of-type(5) { animation-delay: 680ms; }
+}
+@keyframes case-demo-glow { from { transform: translate3d(-2%, -1%, 0) scale(.96); opacity: .48; } to { transform: translate3d(3%, 2%, 0) scale(1.04); opacity: .8; } }
+@keyframes case-demo-light-drift { from { transform: translate3d(0,-6%,0) rotate(3deg); opacity: .42; } to { transform: translate3d(28%,11%,0) rotate(-4deg); opacity: .82; } }
+@keyframes case-demo-pulse { 0%, 10% { transform: translateY(0); opacity: .3; } 18%, 86% { opacity: 1; } 94%, 100% { transform: translateY(390px); opacity: .2; } }
+@keyframes case-demo-row-breathe { 0%, 14%, 100% { border-color: rgba(159,194,219,.13); background: rgba(255,255,255,.045); } 24%, 34% { border-color: rgba(91,231,246,.5); background: rgba(91,231,246,.08); } }
+
+@media (max-width: 840px) {
+  .mkt2 .case-demo { max-width: 620px; grid-template-columns: 1fr; gap: 14px; }
+  .mkt2 .case-demo-workspace { padding: 24px; }
+  .mkt2 .case-demo-review { width: min(100%, 440px); justify-self: start; }
+}
+@media (max-width: 540px) {
+  .mkt2 .case-demo { gap: 12px; }
+  .mkt2 .case-demo-workspace { padding: 22px 18px; border-radius: 14px; }
+  .mkt2 .case-demo-heading { padding-bottom: 18px; }
+  .mkt2 .case-demo-tag { display: none; }
+  .mkt2 .case-demo-item { grid-template-columns: 25px minmax(0,1fr); min-height: 76px; gap: 8px; padding: 13px 12px 13px 0; }
+  .mkt2 .case-demo-item:nth-child(n+5) { display: none; }
+  .mkt2 .case-demo-number { display: none; }
+  .mkt2 .case-demo-rail { top: 29px; bottom: 29px; left: 12px; }
+  .mkt2 .case-demo-marker { margin-left: 8px; }
+  .mkt2 .case-demo-item strong { font-size: 15px; }
+  .mkt2 .case-demo-item small { font-size: 12px; }
+  .mkt2 .case-demo-review { padding: 22px 20px; border-radius: 14px; }
+  .mkt2 .case-demo-review h3 { font-size: 32px; }
+  @keyframes case-demo-pulse { 0%, 10% { transform: translateY(0); opacity: .3; } 18%, 86% { opacity: 1; } 94%, 100% { transform: translateY(228px); opacity: .2; } }
+}
+
 /* ── Footer grid: adaptive to the registry (VERIFY #8) ──────────────────────────
    The route registry yields five link columns (Service, Answers, Situations,
    Boroughs, Learn) — every page must be linked — so the footer grid carries five

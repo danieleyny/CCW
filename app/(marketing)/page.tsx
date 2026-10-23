@@ -3,6 +3,7 @@ import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
+import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -135,49 +136,7 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="requirement-stack">
-            {[
-              ["01", "References and household", "7 items", true, [
-                "Four character references, tracked through notarization where required",
-                "One cohabitant statement for each adult living with you",
-                "Private outreach links that keep sensitive case information out of view",
-              ]],
-              ["02", "Training and timing", "4 items", false, [
-                "18-hour training certificate",
-                "Certificate timing checked against the intended submission date",
-                "Training-related records organized with the rest of the case file",
-              ]],
-              ["03", "Identity and residence", "5 items", false, [
-                "Government-issued identity documents",
-                "Address and residence documentation",
-                "Photo and document-format checks",
-              ]],
-              ["04", "Disclosures and records", "5 items", false, [
-                "Complete disclosure intake, including sealed or dismissed matters",
-                "Supporting records requested and tracked where applicable",
-                "Attorney referral whenever the question becomes legal advice",
-              ]],
-              ["05", "Submission readiness", "3 items", false, [
-                "Blocking items resolved before the packet is marked ready",
-                "Named staff review recorded",
-                "Your final review completed before you submit",
-              ]],
-            ].map(([idx, title, count, open, items]) => (
-              <details className="requirement-group" key={idx as string} open={open as boolean}>
-                <summary>
-                  <span className="req-index">{idx as string}</span>
-                  <span className="req-title">{title as string}</span>
-                  <span className="req-count">{count as string}</span>
-                  <span className="req-plus" aria-hidden="true">+</span>
-                </summary>
-                <div className="requirement-body">
-                  <ul>
-                    {(items as string[]).map((it) => <li key={it}>{it}</li>)}
-                  </ul>
-                </div>
-              </details>
-            ))}
-          </div>
+          <CaseChecklistDemo />
         </div>
       </section>
 
