@@ -79,9 +79,6 @@ function MobileHorizonStudies() {
               <div className={styles.deckScroll}>
                 {realities.map(([value, label, detail], index) => (
                   <article className={styles.deckCard} key={label}>
-                    <div className={`${styles.deckVisual} ${styles[`deckVisual${index + 1}`]}`} aria-hidden="true">
-                      <i /><i /><i /><i />
-                    </div>
                     <span>0{index + 1}</span><strong>{value}</strong><b>{label}</b><small>{detail}</small>
                   </article>
                 ))}

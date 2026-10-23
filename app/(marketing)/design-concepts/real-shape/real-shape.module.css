@@ -81,37 +81,21 @@
 .studyLabel span { color: var(--light-soft); }
 .deckScroll { display: flex; gap: 10px; overflow-x: auto; margin-top: 20px; padding: 0 18px 12px 0; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .deckScroll::-webkit-scrollbar { display: none; }
-.deckCard { position: relative; flex: 0 0 calc(100% - 36px); min-height: 312px; overflow: hidden; padding: 21px; border: 1px solid rgba(159,194,219,.3); border-radius: 13px; background: linear-gradient(145deg, #10273e, #0a1727); box-shadow: inset 0 1px rgba(255,255,255,.06), 0 14px 28px rgba(0,0,0,.16); scroll-snap-align: start; isolation: isolate; }
-.deckCard::before { position: absolute; z-index: -1; top: -26%; right: -24%; width: 68%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(76,224,244,.19), transparent 68%); content: ""; filter: blur(6px); }
+.deckCard { position: relative; flex: 0 0 calc(100% - 36px); min-height: 312px; overflow: hidden; padding: 21px; border: 1px solid rgba(159,194,219,.3); border-radius: 13px; background: radial-gradient(ellipse at 87% 4%, rgba(91,231,246,.16), transparent 44%), linear-gradient(135deg, #10283f 0%, #0a1727 48%, #0d2035 100%); background-size: 155% 155%; box-shadow: inset 0 1px rgba(255,255,255,.06), 0 14px 28px rgba(0,0,0,.16); scroll-snap-align: start; isolation: isolate; }
+.deckCard::before { position: absolute; z-index: 0; top: 54%; left: -32%; width: 170%; height: 28%; border: 1px solid rgba(91,231,246,.2); border-right: 0; border-left: 0; background: linear-gradient(90deg, transparent 0%, rgba(91,231,246,.03) 22%, rgba(91,231,246,.12) 50%, rgba(91,231,246,.03) 78%, transparent 100%); content: ""; filter: blur(.2px); transform: rotate(-9deg); }
+.deckCard::after { position: absolute; z-index: 0; bottom: 20px; left: 21px; width: 58px; height: 1px; background: linear-gradient(90deg, var(--cyan), rgba(91,231,246,.08)); box-shadow: 14px 0 17px rgba(91,231,246,.38); content: ""; }
+.deckCard:nth-child(2) { background-position: 32% 20%; }
+.deckCard:nth-child(2)::before { top: 31%; transform: rotate(11deg); }
+.deckCard:nth-child(3) { background-position: 68% 42%; }
+.deckCard:nth-child(3)::before { top: 63%; transform: rotate(-4deg); }
+.deckCard:nth-child(4) { background-position: 15% 78%; }
+.deckCard:nth-child(4)::before { top: 40%; transform: rotate(7deg); }
+.deckCard:nth-child(5) { background-position: 86% 68%; }
+.deckCard:nth-child(5)::before { top: 68%; transform: rotate(-12deg); }
 .deckCard > span { position: relative; z-index: 1; color: var(--cyan); font-family: var(--mono); font-size: 10px; }
-.deckVisual { position: absolute; top: 18px; right: 18px; width: 84px; height: 84px; border: 1px solid rgba(115,230,244,.23); border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(86,225,243,.16), transparent 58%); }
-.deckVisual::before, .deckVisual::after { position: absolute; border-radius: 50%; content: ""; }
-.deckVisual::before { inset: 14px; border: 1px solid rgba(115,230,244,.35); }
-.deckVisual::after { top: 50%; left: 50%; width: 7px; height: 7px; background: var(--cyan); box-shadow: 0 0 18px rgba(78,229,246,.95); transform: translate(-50%,-50%); }
-.deckVisual i { position: absolute; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(78,229,246,.8); }
-.deckVisual i:nth-child(1) { top: 7px; left: 50%; transform: translateX(-50%); }
-.deckVisual i:nth-child(2) { top: 50%; right: 7px; transform: translateY(-50%); }
-.deckVisual i:nth-child(3) { bottom: 7px; left: 50%; transform: translateX(-50%); }
-.deckVisual i:nth-child(4) { top: 50%; left: 7px; transform: translateY(-50%); }
-.deckVisual2 { border-radius: 13px; transform: rotate(-5deg); }
-.deckVisual2::before { inset: 13px 11px 16px; border-radius: 7px; border: 1px solid rgba(115,230,244,.35); }
-.deckVisual2::after { top: 17px; left: 16px; width: 14px; height: 2px; border-radius: 2px; background: var(--cyan); box-shadow: 18px 0 0 rgba(115,230,244,.4), 36px 0 0 rgba(115,230,244,.4), 0 17px 0 rgba(115,230,244,.4), 18px 17px 0 rgba(115,230,244,.72), 36px 17px 0 rgba(115,230,244,.4), 0 34px 0 rgba(115,230,244,.4), 18px 34px 0 rgba(115,230,244,.4), 36px 34px 0 rgba(115,230,244,.4); transform: none; }
-.deckVisual2 i { display: none; }
-.deckVisual3 { border-style: dashed; }
-.deckVisual3::before { inset: 22px; border: 0; border-radius: 0; border-left: 1px solid rgba(115,230,244,.55); border-right: 1px solid rgba(115,230,244,.55); }
-.deckVisual3::after { width: 35px; height: 1px; border-radius: 0; background: rgba(115,230,244,.65); box-shadow: 0 -16px 0 rgba(115,230,244,.25), 0 16px 0 rgba(115,230,244,.25); transform: translate(-50%,-50%); }
-.deckVisual3 i { width: 6px; height: 6px; }
-.deckVisual4 { transform: rotate(45deg) scale(.78); }
-.deckVisual4::before { inset: 10px; }
-.deckVisual4::after { width: 10px; height: 10px; }
-.deckVisual4 i { transform: rotate(-45deg); }
-.deckVisual5 { border-radius: 16px; }
-.deckVisual5::before { inset: 16px; border-radius: 9px; }
-.deckVisual5::after { width: 38px; height: 1px; border-radius: 0; background: rgba(115,230,244,.72); box-shadow: 0 -12px 0 rgba(115,230,244,.32), 0 12px 0 rgba(115,230,244,.32); transform: translate(-50%,-50%); }
-.deckVisual5 i:nth-child(1), .deckVisual5 i:nth-child(3) { display: none; }
 .deckCard strong, .deckCard b, .deckCard small { position: relative; z-index: 1; }
 .deckCard strong, .deckCard b, .deckCard small { display: block; }
-.deckCard strong { margin-top: 62px; font-family: var(--display); font-size: 60px; font-weight: 400; letter-spacing: -.065em; line-height: .86; }
+.deckCard strong { margin-top: 82px; font-family: var(--display); font-size: 60px; font-weight: 400; letter-spacing: -.065em; line-height: .86; }
 .deckCard b { margin-top: 8px; font-size: 14px; }
 .deckCard small { margin-top: 14px; color: var(--light-soft); font-size: 12px; line-height: 1.45; }
 .deckPhone > p, .compactPhone > p { margin: 0; padding: 0 18px; color: var(--light-soft); font-size: 11px; line-height: 1.4; }
@@ -140,18 +124,13 @@
 @media (prefers-reduced-motion: no-preference) {
   .horizonGlow { animation: horizonDrift 11s ease-in-out infinite alternate; }
   .boardLight { animation: boardDrift 12s ease-in-out infinite alternate; }
-  .deckVisual { animation: deckOrbit 7s linear infinite; }
-  .deckVisual2 { animation: deckTilt 4.8s ease-in-out infinite alternate; }
-  .deckVisual3 { animation: deckPulse 3.6s ease-in-out infinite alternate; }
-  .deckVisual4 { animation: deckDiamond 5.8s ease-in-out infinite alternate; }
-  .deckVisual5 { animation: deckTilt 5.2s ease-in-out infinite alternate-reverse; }
+  .deckCard { animation: deckGradient 14s ease-in-out infinite alternate; }
+  .deckCard::before { animation: deckCurrent 10s ease-in-out infinite alternate; }
 }
 @keyframes horizonDrift { from { transform: translate3d(-4%,0,0) scale(.96); opacity: .42; } to { transform: translate3d(44%,0,0) scale(1.08); opacity: .82; } }
 @keyframes boardDrift { from { transform: translate3d(-5%,-3%,0) scale(.95); opacity: .5; } to { transform: translate3d(8%,8%,0) scale(1.08); opacity: .95; } }
-@keyframes deckOrbit { to { transform: rotate(360deg); } }
-@keyframes deckTilt { from { transform: rotate(-7deg) translateY(-2px); } to { transform: rotate(-2deg) translateY(4px); } }
-@keyframes deckPulse { from { transform: scale(.94); opacity: .58; } to { transform: scale(1.04); opacity: 1; } }
-@keyframes deckDiamond { from { transform: rotate(38deg) scale(.72); } to { transform: rotate(50deg) scale(.86); } }
+@keyframes deckGradient { from { background-position: 0% 22%; } to { background-position: 100% 74%; } }
+@keyframes deckCurrent { from { margin-left: -5%; opacity: .26; } to { margin-left: 13%; opacity: .7; } }
 
 @media (max-width: 900px) {
   .page { width: min(100% - 40px, 680px); padding-top: 56px; }
@@ -187,4 +166,4 @@
   .mobileStudyIntro h3 { font-size: 34px; }
   .mobileStudyGrid { gap: 44px; }
 }
-@media (prefers-reduced-motion: reduce) { .horizonGlow, .boardLight, .deckVisual { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .horizonGlow, .boardLight, .deckCard, .deckCard::before { animation: none !important; } }
