@@ -24,14 +24,11 @@ export function CaseChecklistDemo() {
             <p className="case-demo-kicker">Case-specific checklist</p>
             <p className="case-demo-subtitle">Built from the answers you provide.</p>
           </div>
-          <span className="case-demo-tag">Example view</span>
         </div>
 
         <ol className="case-demo-list">
-          <span className="case-demo-rail" aria-hidden="true" />
           {requirementGroups.map(([number, title, description]) => (
             <li className="case-demo-item" key={number}>
-              <span className="case-demo-marker" aria-hidden="true" />
               <span className="case-demo-number">{number}</span>
               <span className="case-demo-item-copy">
                 <strong>{title}</strong>
