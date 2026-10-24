@@ -68,7 +68,11 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   }
   if (
     discount &&
-    (mode !== "full" || !discount.priceCents || discount.priceCents >= pkg.priceCents)
+    (
+      mode !== "full" ||
+      !discount.priceCents ||
+      discount.priceCents >= pkg.priceCents
+    )
   ) {
     return { error: "That code can't be used with this payment option." }
   }
@@ -85,6 +89,33 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
       : `${pkg.name} — full payment`
 
   const stripe = getStripe()
+  if (discount && (!STRIPE_ENABLED || !stripe)) {
+    return { error: "That one-time code isn't available right now. Please contact us." }
+  }
+
+  // Service-role justified: payment and promotion-claim tables are staff-only.
+  // The claim contains only a SHA-256 fingerprint, never the customer-facing
+  // code, and the primary key lets the database atomically award it to one case.
+  const admin = createAdminClient()
+  if (discount) {
+    const { error: claimError } = await admin.from("promo_code_claims").insert({
+      code_fingerprint: discount.fingerprint,
+      code_label: discount.label,
+      case_id: myCase.id,
+      client_id: myCase.client_id,
+    })
+    if (claimError) {
+      if (claimError.code !== "23505") return { error: "Couldn't apply that code. Try again." }
+      const { data: existingClaim } = await admin
+        .from("promo_code_claims")
+        .select("case_id")
+        .eq("code_fingerprint", discount.fingerprint)
+        .maybeSingle()
+      if (!existingClaim || existingClaim.case_id !== myCase.id) {
+        return { error: "This code has already been used." }
+      }
+    }
+  }
   if (!STRIPE_ENABLED || !stripe) {
     return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, description, amount)
   }
@@ -93,7 +124,6 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   // Service-role justified: payments RLS is staff-write-only by design; the
   // amount comes from the DB package table (never client input) after
   // requireRole + case-ownership checks above.
-  const admin = createAdminClient()
   const { data: payment, error } = await admin
     .from("payments")
     .insert({
@@ -137,6 +167,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
         },
       },
     ],
+    integration_identifier: "ccw_checkout_kqmwztar",
     metadata: {
       payment_id: payment.id,
       package_key: pkg.key,

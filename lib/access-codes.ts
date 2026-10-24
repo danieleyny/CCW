@@ -37,6 +37,7 @@ export interface MatchedAccessCode {
   kind: AccessCodeKind
   flavor: AccessCodeFlavor
   priceCents?: number
+  fingerprint: string // safe to persist; never the plaintext code
 }
 
 /** Trim, uppercase, strip whitespace, cap length before any work. */
@@ -81,7 +82,9 @@ function parseDiscountCodes(): AccessCode[] {
       const [code, packageKey, price] = entry.split(":").map((x) => (x ?? "").trim())
       const norm = normaliseAccessCode(code ?? "")
       const priceCents = Number(price)
-      if (!norm || !packageKey || !Number.isSafeInteger(priceCents) || priceCents <= 0) return []
+      if (!norm || !packageKey || !Number.isSafeInteger(priceCents) || priceCents <= 0) {
+        return []
+      }
       return [
         {
           code: norm,
@@ -134,5 +137,6 @@ export function matchAccessCode(input: string, requestedPackage: string): Matche
     kind: matched.kind,
     flavor: matched.flavor,
     priceCents: matched.priceCents,
+    fingerprint: target.toString("hex"),
   }
 }
