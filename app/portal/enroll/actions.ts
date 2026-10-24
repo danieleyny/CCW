@@ -71,6 +71,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
     (
       mode !== "full" ||
       !discount.priceCents ||
+      !discount.maxUses ||
       discount.priceCents >= pkg.priceCents
     )
   ) {
@@ -95,26 +96,18 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
 
   // Service-role justified: payment and promotion-claim tables are staff-only.
   // The claim contains only a SHA-256 fingerprint, never the customer-facing
-  // code, and the primary key lets the database atomically award it to one case.
+  // code, and the database function atomically enforces its use allowance.
   const admin = createAdminClient()
   if (discount) {
-    const { error: claimError } = await admin.from("promo_code_claims").insert({
-      code_fingerprint: discount.fingerprint,
-      code_label: discount.label,
-      case_id: myCase.id,
-      client_id: myCase.client_id,
+    const { data: claimState, error: claimError } = await admin.rpc("claim_promo_code", {
+      p_code_fingerprint: discount.fingerprint,
+      p_code_label: discount.label,
+      p_case_id: myCase.id,
+      p_client_id: myCase.client_id,
+      p_max_uses: discount.maxUses!,
     })
-    if (claimError) {
-      if (claimError.code !== "23505") return { error: "Couldn't apply that code. Try again." }
-      const { data: existingClaim } = await admin
-        .from("promo_code_claims")
-        .select("case_id")
-        .eq("code_fingerprint", discount.fingerprint)
-        .maybeSingle()
-      if (!existingClaim || existingClaim.case_id !== myCase.id) {
-        return { error: "This code has already been used." }
-      }
-    }
+    if (claimError || !claimState) return { error: "Couldn't apply that code. Try again." }
+    if (claimState === "exhausted") return { error: "This code has already been used." }
   }
   if (!STRIPE_ENABLED || !stripe) {
     return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, description, amount)

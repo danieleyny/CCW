@@ -10,7 +10,7 @@ afterEach(() => {
 
 describe("fixed-price access codes", () => {
   it("matches a concierge-only $500 code without exposing its plaintext", () => {
-    process.env.DISCOUNT_CODES = "GLNYC-CONCIERGE500:full_concierge:50000"
+    process.env.DISCOUNT_CODES = "GLNYC-CONCIERGE500:full_concierge:50000:2"
 
     const match = matchAccessCode("glnyc-concierge500", "full_concierge")
 
@@ -20,13 +20,14 @@ describe("fixed-price access codes", () => {
       label: "CONCIERGE500",
       packageKey: "full_concierge",
       priceCents: 50000,
+      maxUses: 2,
     })
     expect(match?.fingerprint).toMatch(/^[a-f0-9]{64}$/)
     expect(match?.fingerprint).not.toContain("GLNYC")
   })
 
   it("does not allow a concierge code to be used for another package", () => {
-    process.env.DISCOUNT_CODES = "GLNYC-CONCIERGE500:full_concierge:50000"
+    process.env.DISCOUNT_CODES = "GLNYC-CONCIERGE500:full_concierge:50000:2"
 
     expect(matchAccessCode("GLNYC-CONCIERGE500", "self_guided")).toBeNull()
   })

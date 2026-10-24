@@ -12,8 +12,9 @@ import { createHash, timingSafeEqual } from "node:crypto"
  *     kind       — comp                                 (Phase 1)
  *     flavor     — demo (marks the case is_demo) | comp (a real comped customer)
  *
- *   DISCOUNT_CODES="CODE:packageKey:priceCents,CODE2:..."
+ *   DISCOUNT_CODES="CODE:packageKey:priceCents:maxUses,CODE2:..."
  *     priceCents — the final full-payment price in cents (for example 50000)
+ *     maxUses — number of distinct client cases that may claim the code (default 1)
  *
  * Keeping discounts in their own variable means adding a promotion never
  * overwrites existing demo or comp codes.
@@ -29,6 +30,7 @@ interface AccessCode {
   kind: AccessCodeKind
   flavor: AccessCodeFlavor
   priceCents?: number // discount codes only — final price, never a client value
+  maxUses?: number // discount codes only — bounded server-side usage allowance
 }
 
 export interface MatchedAccessCode {
@@ -37,6 +39,7 @@ export interface MatchedAccessCode {
   kind: AccessCodeKind
   flavor: AccessCodeFlavor
   priceCents?: number
+  maxUses?: number
   fingerprint: string // safe to persist; never the plaintext code
 }
 
@@ -79,10 +82,19 @@ function parseDiscountCodes(): AccessCode[] {
     .map((s) => s.trim())
     .filter(Boolean)
     .flatMap((entry) => {
-      const [code, packageKey, price] = entry.split(":").map((x) => (x ?? "").trim())
+      const [code, packageKey, price, maxUsesRaw] = entry.split(":").map((x) => (x ?? "").trim())
       const norm = normaliseAccessCode(code ?? "")
       const priceCents = Number(price)
-      if (!norm || !packageKey || !Number.isSafeInteger(priceCents) || priceCents <= 0) {
+      const maxUses = Number(maxUsesRaw || "1")
+      if (
+        !norm ||
+        !packageKey ||
+        !Number.isSafeInteger(priceCents) ||
+        priceCents <= 0 ||
+        !Number.isSafeInteger(maxUses) ||
+        maxUses < 1 ||
+        maxUses > 10
+      ) {
         return []
       }
       return [
@@ -93,6 +105,7 @@ function parseDiscountCodes(): AccessCode[] {
           kind: "discount" as const,
           flavor: "comp" as const,
           priceCents,
+          maxUses,
         },
       ]
     })
@@ -137,6 +150,7 @@ export function matchAccessCode(input: string, requestedPackage: string): Matche
     kind: matched.kind,
     flavor: matched.flavor,
     priceCents: matched.priceCents,
+    maxUses: matched.maxUses,
     fingerprint: target.toString("hex"),
   }
 }

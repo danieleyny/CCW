@@ -5016,6 +5016,16 @@ export type Database = {
         Args: { p_instructor_id: string; p_offer_id: string }
         Returns: string
       }
+      claim_promo_code: {
+        Args: {
+          p_case_id: string
+          p_client_id: string
+          p_code_fingerprint: string
+          p_code_label: string
+          p_max_uses: number
+        }
+        Returns: string
+      }
       client_visible: { Args: { p_client_id: string }; Returns: boolean }
       current_user_role: {
         Args: never
