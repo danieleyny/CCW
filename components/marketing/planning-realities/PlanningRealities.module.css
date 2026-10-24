@@ -1,0 +1,87 @@
+.section {
+  --pr-ink: var(--ink);
+  --pr-muted: var(--ink-soft);
+  --pr-accent-text: #1D6C77;
+  --pr-panel: var(--midnight);
+  --pr-panel-line: rgba(255,255,255,.07);
+  --pr-panel-text: var(--light);
+  --pr-panel-muted: var(--light-soft);
+  --pr-panel-dim: #8A99A6;
+  --pr-cyan: var(--cyan);
+  --pr-display: var(--display);
+  --pr-sans: var(--sans);
+  --pr-mono: var(--mono);
+  width: min(var(--content), calc(100% - 80px));
+  margin: 0 auto;
+  padding: 96px 0;
+  color: var(--pr-ink);
+  font-family: var(--pr-sans);
+}
+
+.header { display: flex; justify-content: space-between; align-items: flex-end; gap: 64px; }
+.eyebrow { margin: 0 0 20px; color: var(--pr-accent-text); font-family: var(--pr-mono); font-size: 13px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
+.title { margin: 0; font-family: var(--pr-display); font-size: clamp(48px,5vw,72px); font-weight: 500; letter-spacing: -.02em; line-height: 1; }
+.lede { max-width: 380px; margin: 0; color: var(--pr-muted); font-size: 18px; line-height: 1.55; }
+
+.panel { min-height: 620px; display: grid; grid-template-columns: clamp(340px,32%,440px) minmax(0,1fr); margin-top: 56px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); border-radius: 28px; background: var(--pr-panel); color: var(--pr-panel-text); box-shadow: 0 40px 80px -40px rgba(10,21,32,.55); }
+.rail { display: flex; flex-direction: column; padding: 40px 28px 28px 36px; border-right: 1px solid var(--pr-panel-line); }
+.kicker { margin: 0; color: var(--pr-cyan); font-family: var(--pr-mono); font-size: 12px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
+.rail > .kicker { margin-left: 4px; }
+.railTitle { margin: 14px 0 0 4px; color: var(--pr-panel-text); font-family: var(--pr-display); font-size: 32px; font-weight: 400; line-height: 1.12; }
+.list { display: flex; flex-direction: column; gap: 4px; margin: auto 0 0; padding: 32px 0 0; list-style: none; }
+.row { position: relative; width: 100%; min-height: 56px; display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: inherit; cursor: pointer; font: inherit; text-align: left; transition: background-color .3s ease; }
+.row:hover { background: rgba(255,255,255,.04); }
+.row:focus-visible { outline: 2px solid var(--pr-cyan); outline-offset: 2px; }
+.rowActive, .rowActive:hover { background: rgba(95,212,224,.1); }
+.rowIndex { color: var(--pr-panel-dim); font-family: var(--pr-mono); font-size: 12px; }
+.rowTitle { color: var(--pr-panel-muted); font-size: 16px; font-weight: 500; }
+.rowValue { color: var(--pr-panel-dim); font-family: var(--pr-mono); font-size: 13px; }
+.rowActive .rowIndex, .rowActive .rowValue { color: var(--pr-cyan); }
+.rowActive .rowTitle { color: var(--pr-panel-text); }
+.progress { position: absolute; right: 16px; bottom: 6px; left: 16px; height: 2px; overflow: hidden; border-radius: 2px; background: rgba(95,212,224,.16); }
+.progressFill { display: block; width: 100%; height: 100%; background: var(--pr-cyan); transform-origin: left; animation-name: fill; animation-timing-function: linear; animation-fill-mode: forwards; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.stage { position: relative; overflow: hidden; padding: 40px 48px; }
+.canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; pointer-events: none; }
+.stageTop { position: absolute; top: 40px; right: 48px; z-index: 1; }
+.counter { color: var(--pr-panel-dim); font-family: var(--pr-mono); font-size: 13px; letter-spacing: .12em; }
+.feature { position: relative; z-index: 1; max-width: 520px; animation: rise .7s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.featureTag { margin: 0; color: var(--pr-cyan); font-family: var(--pr-mono); font-size: 12px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
+.featureFigure { display: flex; align-items: baseline; gap: 16px; margin: 18px 0 0; }
+.featureNum { color: var(--pr-panel-text); font-family: var(--pr-display); font-size: clamp(112px,11vw,160px); font-weight: 400; letter-spacing: -.04em; line-height: .82; }
+.featureUnit { color: var(--pr-panel-text); font-size: 26px; font-weight: 500; }
+.featureDesc { max-width: 400px; margin: 20px 0 0; color: var(--pr-panel-muted); font-size: 19px; line-height: 1.5; }
+.mobileOnly { display: none; }
+
+@media (max-width: 899px) {
+  .section { width: min(var(--content), calc(100% - 40px)); padding: 56px 0; }
+  .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .eyebrow { margin-bottom: 16px; font-size: 11px; }
+  .title { font-size: 48px; }
+  .lede { max-width: none; font-size: 16px; }
+  .panel { min-height: 0; grid-template-columns: minmax(0,1fr); margin-top: 32px; border-radius: 24px; }
+  .stage { order: 1; display: flex; flex-direction: column; padding: 24px 22px 0; }
+  .rail { order: 2; padding: 6px 8px 12px; border-top: 1px solid var(--pr-panel-line); border-right: 0; }
+  .desktopOnly { display: none; }
+  .mobileOnly { display: block; }
+  .stageTop { position: static; display: flex; align-items: center; justify-content: space-between; }
+  .kicker { font-size: 11px; }
+  .counter { font-size: 12px; }
+  .feature { margin-top: 22px; }
+  .featureTag { color: var(--pr-panel-muted); font-size: 11px; }
+  .featureFigure { gap: 10px; margin-top: 10px; }
+  .featureNum { font-size: 104px; line-height: .85; }
+  .featureUnit { font-size: 19px; }
+  .featureDesc { min-height: 45px; margin-top: 14px; font-size: 15px; }
+  .canvas { position: relative; inset: auto; order: 3; width: calc(100% + 44px); height: 190px; margin: 4px -22px 0; }
+  .list { gap: 2px; padding: 0; }
+  .row { min-height: 52px; grid-template-columns: 30px minmax(0,1fr) auto; padding: 0 14px; }
+  .rowIndex { font-size: 11px; }
+  .rowTitle { font-size: 15px; }
+  .rowValue { font-size: 12px; }
+  .progress { right: 14px; bottom: 5px; left: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .feature { animation: none; } .row { transition: none; } }

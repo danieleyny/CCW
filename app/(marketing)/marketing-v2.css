@@ -453,15 +453,6 @@
     .mkt2 .requirement-body li { position: relative; padding-left: 18px; }
     .mkt2 .requirement-body li::before { content: "✓"; position: absolute; left: 0; color: var(--success); }
 
-    .mkt2 .reality { overflow: hidden; background: var(--paper); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
-    .mkt2 .reality-head { display: flex; justify-content: space-between; gap: 80px; align-items: end; }
-    .mkt2 .reality-head p { max-width: 500px; margin: 0; color: var(--ink-soft); }
-    .mkt2 .fact-grid { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 72px; border-top: 1px solid var(--ink); }
-    .mkt2 .fact { min-height: 190px; padding: 24px 22px; border-right: 1px solid var(--rule); }
-    .mkt2 .fact:last-child { border-right: 0; }
-    .mkt2 .fact-value { margin: 0 0 18px; font-family: var(--display); font-size: 46px; line-height: 1; letter-spacing: -0.04em; }
-    .mkt2 .fact-label { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
-
     .mkt2 .candor-grid { display: grid; grid-template-columns: 1fr .92fr; gap: clamp(60px, 10vw, 140px); align-items: start; }
     .mkt2 .candor-copy .display { max-width: 670px; }
     .mkt2 .candor-panel { padding: 30px; border: 1px solid var(--dark-rule); border-radius: 18px; background: var(--midnight-raised); }
@@ -799,19 +790,6 @@
     .mkt2 .requirement-group:last-child { border-bottom-color: var(--ink); }
     .mkt2 .requirement-group[open] summary { box-shadow: inset 4px 0 0 var(--electric); }
 
-    .mkt2 .fact-grid { gap: 12px; border-top: 0; align-items: stretch; }
-    .mkt2 .fact {
-      position: relative;
-      min-height: 226px;
-      height: 100%;
-      overflow: hidden;
-      border: 1px solid var(--rule);
-      background: rgba(247,245,239,.62);
-      transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease-out;
-    }
-    .mkt2 .fact:last-child { border-right: 1px solid var(--rule); }
-    .mkt2 .fact:hover { transform: translateY(-6px) scale(1.008); border-color: var(--electric); }
-
     .mkt2 #legal { position: relative; overflow: hidden; }
     .mkt2 #legal::before {
       content: "CANDOR";
@@ -941,7 +919,7 @@
         animation-range: entry 8% entry 78%;
       }
 
-      .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .reality-head, .mkt2 .fact > *, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .pricing-grid > div:first-child, .mkt2 .price-card > *, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
+      .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .pricing-grid > div:first-child, .mkt2 .price-card > *, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
         animation-name: view-rise;
         animation-duration: 1s;
         animation-timing-function: linear;
@@ -979,9 +957,6 @@
       .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; }
       .mkt2 .hero-copy { max-width: 720px; }
       .mkt2 .phases-head, .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
-      .mkt2 .fact-grid { grid-template-columns: repeat(3, 1fr); }
-      .mkt2 .fact:nth-child(3) { border-right: 0; }
-      .mkt2 .fact:nth-child(n+4) { border-top: 1px solid var(--rule); }
       .mkt2 .footer-top { grid-template-columns: 1.2fr repeat(2, 1fr); }
       .mkt2 .footer-col:last-child { grid-column: 2; }
     }
@@ -1012,14 +987,6 @@
       .mkt2 .phase h3 { margin-top: 5px; }
       .mkt2 .phase p { margin-top: 3px; }
       .mkt2 .phase-note { grid-column: auto; }
-      .mkt2 .reality-head { display: block; }
-      .mkt2 .reality-head p { margin-top: 24px; }
-      .mkt2 .fact-grid { grid-template-columns: repeat(2, 1fr); }
-      .mkt2 .fact, .mkt2 .fact:nth-child(3) { border-right: 1px solid var(--rule); border-top: 1px solid var(--rule); }
-      .mkt2 .fact:nth-child(odd) { border-left: 0; }
-      .mkt2 .fact:nth-child(even) { border-right: 0; }
-      .mkt2 .fact:nth-child(even) { margin-top: 0; }
-      .mkt2 .fact:first-child, .mkt2 .fact:nth-child(2) { border-top: 0; }
       .mkt2 .requirement-stack { transform: none; box-shadow: 10px 12px 0 var(--paper-deep), 0 24px 54px rgba(7,17,31,.1); }
       .mkt2 .requirement-stack::before, .mkt2 .requirement-stack::after { display: none; }
       .mkt2 .price-card { transform: none; }
@@ -1067,10 +1034,6 @@
       .mkt2 .req-title { font-size: 16px; }
       .mkt2 .req-count { display: none; }
       .mkt2 .requirement-body { padding: 0 12px 22px 40px; }
-      .mkt2 .fact-grid { grid-template-columns: 1fr; margin-top: 48px; }
-      .mkt2 .fact, .mkt2 .fact:nth-child(2), .mkt2 .fact:nth-child(3) { min-height: auto; margin-top: 0; padding: 24px 20px; border: 1px solid var(--rule); }
-      .mkt2 .fact:first-child { border-top: 1px solid var(--rule); }
-      .mkt2 .fact-value { font-size: 40px; }
       .mkt2 .candor-panel, .mkt2 .price-card { padding: 22px; }
       .mkt2 .price-top { display: block; }
       .mkt2 .price-number { font-size: 58px; }

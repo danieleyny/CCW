@@ -4,7 +4,7 @@ import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
 import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
-import { PlanningHorizon } from "@/components/marketing/v2/planning-horizon"
+import PlanningRealities from "@/components/marketing/planning-realities/PlanningRealities"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -141,22 +141,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── REALITY — what it actually takes ─────────────────────────────────── */}
-      <section className="section reality" aria-labelledby="reality-title">
-        <div className="shell">
-          <div className="reality-head">
-            <div>
-              <p className="eyebrow">The real shape of it</p>
-              <h2 className="display" id="reality-title">What it actually takes.</h2>
-            </div>
-            <p>
-              Clear expectations are part of the service. These are planning facts—not promises about
-              what the NYPD will decide or when it will act.
-            </p>
-          </div>
-          <PlanningHorizon />
-        </div>
-      </section>
+      <PlanningRealities />
 
       {/* ── LEGAL — candor built in ──────────────────────────────────────────── */}
       <section className="section dark" id="legal" aria-labelledby="candor-title">
