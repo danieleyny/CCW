@@ -3,6 +3,7 @@ import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import Hero from "@/components/marketing/hero/Hero"
+import PhasesSection from "@/components/marketing/phases/PhasesSection"
 import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
 import PlanningRealities from "@/components/marketing/planning-realities/PlanningRealities"
 import PricingSection from "@/components/marketing/pricing/PricingSection"
@@ -56,41 +57,7 @@ export default async function Home() {
       </section>
 
       {/* ── PROCESS — five phases ────────────────────────────────────────────── */}
-      <section className="section dark" id="process" aria-labelledby="process-title">
-        <div className="shell">
-          <div className="phases-head">
-            <div>
-              <p className="eyebrow">A controlled process</p>
-              <h2 className="display" id="process-title">One clear path.<br />Five phases.</h2>
-            </div>
-            <p className="section-lede">
-              The full journey is long. Your interface is not. At every stage, you see what is yours,
-              what is being prepared, and what comes next.
-            </p>
-          </div>
-
-          <div className="phase-path" aria-label="Five phases of the service">
-            {[
-              ["01", "Qualify", "Understand the license track, basic fit, and what may require an attorney."],
-              ["02", "Train", "Plan the required course and protect the six-month certificate window."],
-              ["03", "Assemble", "Collect references, household statements, records, IDs, and disclosures."],
-              ["04", "Review", "Run a structured completeness check before anything is ready to submit."],
-              ["05", "You submit", "Review your packet, submit it yourself, then prepare for the next NYPD step."],
-            ].map(([n, t, d], i) => (
-              <article className={`phase${i === 2 ? " is-active" : ""}`} key={n}>
-                <div className="phase-card-content">
-                  <span className="phase-dot">{n}</span>
-                  <div className="phase-text"><h3>{t}</h3><p>{d}</p></div>
-                </div>
-              </article>
-            ))}
-          </div>
-          <p className="phase-note">
-            <strong>Thirteen stages behind the scenes.</strong> Five phases in front of you. Complexity
-            stays in the system instead of in your day.
-          </p>
-        </div>
-      </section>
+      <PhasesSection />
 
       {/* ── REQUIREMENTS — everything in order ───────────────────────────────── */}
       <section className="section" id="requirements" aria-labelledby="requirements-title">

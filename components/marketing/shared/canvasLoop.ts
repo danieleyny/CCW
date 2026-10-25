@@ -3,14 +3,15 @@ export type CanvasDraw = (context: CanvasRenderingContext2D, width: number, heig
 export type CanvasLoopOptions = {
   reducedMotion?: boolean
   stillTime?: number
+  enabled?: boolean
   onResize?: (width: number, height: number) => void
 }
 
-export type CanvasLoopHandle = { redraw: () => void; destroy: () => void }
+export type CanvasLoopHandle = { redraw: () => void; destroy: () => void; setEnabled: (enabled: boolean) => void }
 
 export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, options: CanvasLoopOptions = {}): CanvasLoopHandle {
   const context = canvas.getContext("2d")
-  if (!context) return { redraw() {}, destroy() {} }
+  if (!context) return { redraw() {}, destroy() {}, setEnabled() {} }
 
   const reduced = !!options.reducedMotion
   let width = 0
@@ -20,6 +21,7 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
   let last = 0
   let frameId = 0
   let running = false
+  let enabled = options.enabled ?? true
   let onScreen = false
   let pageVisible = !document.hidden
 
@@ -55,7 +57,7 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
   }
 
   function update() {
-    const shouldRun = !reduced && onScreen && pageVisible && width > 0 && height > 0
+    const shouldRun = enabled && !reduced && onScreen && pageVisible && width > 0 && height > 0
     if (shouldRun && !running) {
       running = true
       last = 0
@@ -87,6 +89,10 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
   return {
     redraw() {
       if (!running) paint(0)
+    },
+    setEnabled(next) {
+      enabled = next
+      update()
     },
     destroy() {
       running = false

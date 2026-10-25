@@ -265,31 +265,6 @@
     .mkt2 .proof-item p { margin: 0; font-size: 14px; line-height: 1.5; }
     .mkt2 .proof-item strong { display: block; color: var(--ink); font-size: 16px; }
 
-    .mkt2 .phases-head { display: grid; grid-template-columns: 1fr .82fr; gap: 80px; align-items: end; }
-    .mkt2 .phase-path { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 72px; }
-    .mkt2 .phase-path::before { content: ""; position: absolute; left: 7%; right: 7%; top: 17px; height: 1px; background: var(--dark-rule); }
-    .mkt2 .phase { position: relative; z-index: 1; padding-right: 22px; }
-    .mkt2 .phase-dot {
-      width: 35px;
-      height: 35px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 22px;
-      border: 1px solid var(--dark-rule);
-      border-radius: 50%;
-      background: var(--midnight);
-      color: var(--light-soft);
-      font-family: var(--mono);
-      font-size: 10px;
-      transition: transform 200ms ease-out, opacity 200ms ease-out;
-    }
-    .mkt2 .phase:hover .phase-dot, .mkt2 .phase.is-active .phase-dot { border-color: var(--cyan); background: var(--cyan); color: var(--midnight); transform: scale(1.06); }
-    .mkt2 .phase h3 { margin: 0 0 8px; font-size: 19px; line-height: 1.2; }
-    .mkt2 .phase p { margin: 0; color: var(--light-soft); font-size: 14px; line-height: 1.55; }
-    .mkt2 .phase.is-active h3 { color: var(--cyan); }
-    .mkt2 .phase-note { margin: 52px 0 0; padding-top: 22px; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-size: 14px; }
-    .mkt2 .phase-note strong { color: var(--light); }
-
     .mkt2 .order-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(56px, 9vw, 124px); align-items: start; }
     .mkt2 .order-copy { position: sticky; top: 36px; }
     .mkt2 .order-note { margin-top: 32px; padding-left: 18px; border-left: 2px solid var(--electric); color: var(--ink-soft); font-size: 14px; }
@@ -540,77 +515,6 @@
       transform: rotate(-.45deg);
     }
 
-    .mkt2 #process { position: relative; overflow: clip; }
-    .mkt2 #process::before {
-      content: "05 / PHASES";
-      position: absolute;
-      left: clamp(24px, 5vw, 72px);
-      right: clamp(24px, 5vw, 72px);
-      top: 18px;
-      color: rgba(245,247,251,.035);
-      font-family: var(--display);
-      font-size: clamp(100px, 14vw, 196px);
-      font-weight: 500;
-      line-height: .8;
-      letter-spacing: -.08em;
-      text-align: right;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-    .mkt2 #process > .shell {
-      display: grid;
-      grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
-      gap: clamp(48px, 8vw, 112px);
-      align-items: start;
-    }
-    .mkt2 .phases-head {
-      position: sticky;
-      top: 112px;
-      display: block;
-      align-self: start;
-    }
-    .mkt2 .phase-path { position: relative; display: block; margin-top: 0; }
-    .mkt2 .phase-path::before {
-      left: -22px;
-      right: auto;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      height: auto;
-      background: var(--spectral);
-      transform: none;
-      opacity: .72;
-    }
-    .mkt2 .phase {
-      position: sticky;
-      top: 112px;
-      min-height: 246px;
-      margin: 0 0 22vh;
-      padding: 34px;
-      border: 1px solid var(--dark-rule);
-      border-radius: 12px;
-      /* OPAQUE — these cards sticky-stack over one another, so each must fully
-         occlude the one behind it. No see-through, no ghost descriptions. */
-      background: var(--midnight-raised);
-      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
-      isolation: isolate;
-    }
-    .mkt2 .phase::after {
-      content: "";
-      position: absolute;
-      inset: -1px;
-      z-index: -1;
-      border: 1px solid var(--cyan);
-      border-radius: inherit;
-      opacity: 0;
-      transition: opacity 240ms ease-out;
-      pointer-events: none;
-    }
-    .mkt2 .phase:nth-child(1) { z-index: 1; }
-    .mkt2 .phase:nth-child(2) { z-index: 2; }
-    .mkt2 .phase:nth-child(3) { z-index: 3; }
-    .mkt2 .phase:nth-child(4) { z-index: 4; }
-    .mkt2 .phase:nth-child(5) { z-index: 5; margin-bottom: 48px; }
     .mkt2 .phase:hover { transform: translateY(-7px) scale(1.008); border-color: var(--blue); background: var(--midnight-soft); }
     .mkt2 .phase:hover::after, .mkt2 .phase:focus-within::after { opacity: 1; }
     /* Opaque base under the electric tint so the active card still fully occludes. */
@@ -773,7 +677,7 @@
     @media (max-width: 1020px) {
       .mkt2 .desktop-nav { gap: 18px; }
       .mkt2 .desktop-nav a:nth-last-child(-n+2) { display: none; }
-      .mkt2 .phases-head, .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
+      .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
       .mkt2 .footer-top { grid-template-columns: 1.2fr repeat(2, 1fr); }
       .mkt2 .footer-col:last-child { grid-column: 2; }
     }
@@ -786,19 +690,9 @@
       .mkt2 .proof-rail { padding-block: 14px; }
       .mkt2 .proof-grid { grid-template-columns: 1fr; gap: 10px; transform: none; }
       .mkt2 .proof-item, .mkt2 .proof-item:first-child { min-height: 0; padding: 18px; border: 1px solid var(--rule); border-radius: 12px; background: linear-gradient(135deg, var(--paper), color-mix(in srgb, var(--electric) 3%, var(--paper))); }
-      .mkt2 #process::before, .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
-      .mkt2 #process > .shell { display: block; }
-      .mkt2 .phases-head { position: static; }
-      .mkt2 .phases-head, .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
+      .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
+      .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
       .mkt2 .order-copy { position: static; }
-      .mkt2 .phase-path { grid-template-columns: 1fr; gap: 0; margin-top: 50px; }
-      .mkt2 .phase-path::before { left: 17px; right: auto; top: 17px; bottom: 17px; width: 1px; height: auto; }
-      .mkt2 .phase, .mkt2 .phase:nth-child(n) { position: relative; top: auto; min-height: 148px; display: block; margin: 0 0 14px; padding: 22px; }
-      .mkt2 .phase-card-content { grid-template-columns: 50px 1fr; }
-      .mkt2 .phase-dot { grid-row: auto; margin-bottom: 0; }
-      .mkt2 .phase h3 { margin-top: 5px; }
-      .mkt2 .phase p { margin-top: 3px; }
-      .mkt2 .phase-note { grid-column: auto; }
       .mkt2 .requirement-stack { transform: none; box-shadow: 10px 12px 0 var(--paper-deep), 0 24px 54px rgba(7,17,31,.1); }
       .mkt2 .requirement-stack::before, .mkt2 .requirement-stack::after { display: none; }
       .mkt2 .promise-grid { grid-template-columns: 1fr; gap: 44px; }
@@ -975,20 +869,6 @@
 }
 @keyframes case-demo-glow { from { transform: translate3d(-2%, -1%, 0) scale(.96); opacity: .48; } to { transform: translate3d(3%, 2%, 0) scale(1.04); opacity: .8; } }
 @keyframes case-demo-light-drift { from { transform: translate3d(0,-4%,0) scale(.96); opacity: .42; } to { transform: translate3d(18%,8%,0) scale(1.05); opacity: .78; } }
-
-/* The same quiet signal carries through the real five-phase service path. This
-   replaces the old multicolored stripe with a single light that travels along
-   the process line, then reappears in the checklist demonstration below. */
-.mkt2 .phase-path::before {
-  background: linear-gradient(to bottom, rgba(159,194,219,.26) 0 34%, var(--cyan) 46%, rgba(159,194,219,.26) 59% 100%);
-  background-size: 100% 240px;
-  box-shadow: 0 0 10px rgba(91,231,246,.18);
-  opacity: .8;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .mkt2 .phase-path::before { animation: phase-path-signal 6.6s linear infinite; }
-}
-@keyframes phase-path-signal { to { background-position: 0 -480px; } }
 
 /* ── Complete-record panel ───────────────────────────────────────────────────
    The disclosure section uses the same restrained light language as the process
