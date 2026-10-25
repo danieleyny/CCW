@@ -78,7 +78,9 @@
   font-weight: 600;
   text-decoration: none;
   text-shadow: none;
-  background: linear-gradient(180deg, #101D2B 0%, #08111D 54%, #060C14 100%);
+  background:
+    radial-gradient(ellipse at 58% -72%, rgba(255,255,255,.17), transparent 56%),
+    linear-gradient(180deg, #101D2B 0%, #08111D 54%, #060C14 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.12),
     inset 0 -1px 0 rgba(0,0,0,.48),
@@ -122,6 +124,23 @@
 }
 .hero a.btnChrome:hover::before { animation: chromeOnce .95s cubic-bezier(.45,0,.2,1) forwards; }
 
+/* A few deliberately faint particles give the dark surface depth without
+   competing with the eligibility action or the larger hero illustration. */
+.hero a.btnChrome::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .52;
+  background:
+    radial-gradient(circle at 18% 64%, rgba(255,255,255,.78) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 38% 30%, rgba(95,212,224,.66) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 72% 69%, rgba(255,255,255,.52) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 86% 34%, rgba(112,133,255,.58) 0 1px, transparent 1.8px);
+  animation: buttonParticles 9s ease-in-out infinite alternate;
+}
+
 .arrow { transition: transform .3s cubic-bezier(.2,.7,.2,1); }
 .hero a.btnChrome:hover .arrow,
 .hero a.textLink:hover .arrow { transform: translateX(3px); }
@@ -134,6 +153,10 @@
 @keyframes chromeOnce {
   from { transform: translateX(-130%) skewX(-18deg); }
   to { transform: translateX(230%) skewX(-18deg); }
+}
+@keyframes buttonParticles {
+  from { transform: translate3d(-2px, 1px, 0); opacity: .3; }
+  to { transform: translate3d(3px, -1px, 0); opacity: .72; }
 }
 
 /* ---------- "See the process" text link ---------- */
@@ -234,7 +257,7 @@
   .sparkCanvas { left: -40px; top: -26px; width: calc(100% + 80px); height: calc(100% + 40px); }
   .lede { margin-top: 22px; font-size: 16.5px; }
   .ctas { margin-top: 26px; flex-direction: column; align-items: stretch; gap: 4px; }
-  .hero a.btnChrome { width: 100%; height: 54px; font-size: 16px; }
+  .hero a.btnChrome { width: 100%; height: 48px; border-radius: 12px; font-size: 16px; }
   .hero a.textLink { width: 100%; justify-content: center; height: 48px; font-size: 16px; }
   .trust { justify-content: center; margin-top: 12px; font-size: 13px; gap: 6px 14px; }
   .visual { margin: 26px -20px 0; width: calc(100% + 40px); max-width: none; }
@@ -246,6 +269,6 @@
 @media (max-width: 374px) { .title { font-size: 40px; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .ink, .hero a.btnChrome, .hero a.btnChrome::before, .hero a.btnChrome:hover::before { animation: none; }
+  .ink, .hero a.btnChrome, .hero a.btnChrome::before, .hero a.btnChrome::after, .hero a.btnChrome:hover::before { animation: none; }
   .mapTilt, .chip, .arrow, .textLinkLabel, .hero a.btnChrome { transition: none; }
 }
