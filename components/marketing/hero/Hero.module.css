@@ -1,0 +1,260 @@
+.hero {
+  --hero-ink: #0b1420;
+  --hero-muted: #4f5866;
+  --hero-micro: #6b7480;
+  --hero-focus: #3d5bd9;
+  --hero-display: var(--display);
+  --hero-sans: var(--sans);
+  --hero-mono: var(--mono);
+  --hero-gutter: clamp(20px, 5.5vw, 80px);
+
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 92px var(--hero-gutter) 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  color: var(--hero-ink);
+  font-family: var(--hero-sans);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--hero-display);
+  font-weight: 500;
+  font-size: clamp(44px, 4.4vw, 62px);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+}
+
+.inkWrap { position: relative; display: inline-block; margin-top: 0.06em; }
+
+.ink {
+  background: linear-gradient(90deg, #2fa8ee 0%, #5b6cff 20%, #a24fd9 40%, #ee5e8c 60%, #f59a4a 80%, #2fa8ee 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: heroInk 9s linear infinite;
+}
+
+.inkText { position: relative; }
+.inkGlow { position: absolute; left: 0; top: 0; filter: blur(18px); opacity: 0.3; pointer-events: none; }
+
+.sparkCanvas {
+  position: absolute;
+  left: -56px;
+  top: -34px;
+  width: calc(100% + 112px);
+  height: calc(100% + 56px);
+  display: block;
+  pointer-events: none;
+}
+
+@keyframes heroInk {
+  from { background-position: 0% 50%; }
+  to { background-position: -200% 50%; }
+}
+
+.lede { margin: 30px 0 0; max-width: 520px; font-size: 19px; line-height: 1.6; color: var(--hero-muted); }
+.ctas { margin-top: 38px; display: flex; align-items: center; gap: 22px; }
+
+/* ---------- Pastel Chrome primary button ---------- */
+.hero a.btnChrome {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 58px;
+  padding: 0 28px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  color: #0B1420;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.28) 46%, rgba(255,255,255,0) 54%, rgba(11,20,32,.05) 100%) padding-box,
+    linear-gradient(90deg, #D6ECFA, #DFE3FF, #ECDDFA, #FADDE8, #FCE6D6, #D6ECFA) padding-box,
+    linear-gradient(180deg, #FFFFFF 0%, #C7CDD8 50%, #EEF1F6 100%) border-box;
+  background-size: 100% 100%, 200% 100%, 100% 100%;
+  animation: chromeFlow 12s linear infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(11,20,32,.07),
+    0 2px 6px -2px rgba(11,20,32,.14),
+    0 16px 32px -20px rgba(91,108,255,.6);
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .3s ease, filter .3s ease;
+}
+.hero a.btnChrome:hover {
+  color: #0B1420;
+  transform: translateY(-1px);
+  filter: brightness(1.03) saturate(1.08);
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    inset 0 -1px 0 rgba(11,20,32,.07),
+    0 3px 8px -2px rgba(11,20,32,.16),
+    0 20px 38px -18px rgba(162,79,217,.55);
+}
+.hero a.btnChrome:active {
+  transform: scale(0.98);
+  filter: brightness(0.97);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -1px 0 rgba(11,20,32,.07),
+    0 1px 3px -1px rgba(11,20,32,.18),
+    0 8px 18px -14px rgba(91,108,255,.5);
+}
+.hero a.btnChrome:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
+
+/* the light pass */
+.hero a.btnChrome::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 55%;
+  z-index: -1;
+  background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 30%, rgba(255,255,255,.95) 50%, rgba(255,255,255,.2) 70%, rgba(255,255,255,0) 100%);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: chromeSweep 7.5s cubic-bezier(.45,0,.2,1) 1.2s infinite;
+}
+.hero a.btnChrome:hover::before { animation: chromeOnce .95s cubic-bezier(.45,0,.2,1) forwards; }
+
+.arrow { transition: transform .3s cubic-bezier(.2,.7,.2,1); }
+.hero a.btnChrome:hover .arrow,
+.hero a.textLink:hover .arrow { transform: translateX(3px); }
+
+@keyframes chromeFlow {
+  from { background-position: 0 0, 0% 50%, 0 0; }
+  to { background-position: 0 0, -200% 50%, 0 0; }
+}
+@keyframes chromeSweep {
+  0% { transform: translateX(-130%) skewX(-18deg); }
+  17% { transform: translateX(230%) skewX(-18deg); }
+  100% { transform: translateX(230%) skewX(-18deg); }
+}
+@keyframes chromeOnce {
+  from { transform: translateX(-130%) skewX(-18deg); }
+  to { transform: translateX(230%) skewX(-18deg); }
+}
+
+/* ---------- "See the process" text link ---------- */
+.hero a.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 6px;
+  border-radius: 10px;
+  color: #0B1420;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.hero a.textLink:hover { color: #0B1420; }
+.hero a.textLink:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
+.textLinkLabel {
+  padding-bottom: 2px;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0% 1.5px no-repeat;
+  transition: background-size .35s cubic-bezier(.2,.7,.2,1);
+}
+.hero a.textLink:hover .textLinkLabel { background-size: 100% 1.5px; }
+
+/* ---------- Trust row ---------- */
+.trust {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13.5px;
+  color: var(--hero-muted);
+}
+.trust li { display: inline-flex; align-items: center; gap: 7px; }
+
+.visual { position: relative; min-width: 0; margin-right: -60px; }
+.mapFrame { position: relative; width: 100%; perspective: 1400px; }
+.mapTilt { position: relative; will-change: transform; transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mapPicture { display: block; }
+
+.mapImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* fade bottom AND left edge so the island never looks sliced */
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%), linear-gradient(to right, transparent 0%, #000 9%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 78%, transparent 100%), linear-gradient(to right, transparent 0%, #000 9%, #000 100%);
+  mask-composite: intersect;
+}
+
+/* ---------- Map anchor shadow ---------- */
+.mapShadow {
+  position: absolute;
+  left: 10%;
+  right: 4%;
+  bottom: 3%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(61,91,217,0.16) 0%, rgba(11,20,32,0.08) 45%, rgba(11,20,32,0) 72%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.mapCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+
+.chip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid rgba(11, 20, 32, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 26px -12px rgba(11, 20, 32, 0.4);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(8px);
+  transition: opacity 0.35s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.chip[data-on="true"] { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
+.chipNum { display: flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 50%; color: #fff; font-family: var(--hero-mono); font-size: 10px; font-weight: 600; }
+.chipLabel { color: var(--hero-ink); font-family: var(--hero-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+
+@media (max-width: 1023px) {
+  .hero { grid-template-columns: minmax(0, 1fr); padding-top: 48px; }
+  .copy { max-width: 640px; }
+  .visual { width: 100%; max-width: 720px; margin: 12px auto 0; }
+}
+
+@media (max-width: 767px) {
+  .hero { padding: 40px 20px 40px; gap: 0; }
+  .title { font-size: 44px; }
+  .sparkCanvas { left: -40px; top: -26px; width: calc(100% + 80px); height: calc(100% + 40px); }
+  .lede { margin-top: 22px; font-size: 16.5px; }
+  .ctas { margin-top: 26px; flex-direction: column; align-items: stretch; gap: 4px; }
+  .hero a.btnChrome { width: 100%; height: 54px; font-size: 16px; }
+  .hero a.textLink { width: 100%; justify-content: center; height: 48px; font-size: 16px; }
+  .trust { justify-content: center; margin-top: 12px; font-size: 13px; gap: 6px 14px; }
+  .visual { margin: 26px -20px 0; width: calc(100% + 40px); max-width: none; }
+  .chip { gap: 6px; padding: 4px 10px 4px 4px; }
+  .chipNum { width: 18px; height: 18px; font-size: 9px; }
+  .chipLabel { font-size: 9.5px; }
+}
+
+@media (max-width: 374px) { .title { font-size: 40px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ink, .hero a.btnChrome, .hero a.btnChrome::before, .hero a.btnChrome:hover::before { animation: none; }
+  .mapTilt, .chip, .arrow, .textLinkLabel, .hero a.btnChrome { transition: none; }
+}

@@ -44,6 +44,7 @@
     .mkt2 { scroll-behavior: auto; }
     .mkt2 {
       margin: 0;
+      overflow-x: clip;
       background: var(--ivory);
       color: var(--ink);
       font-family: var(--sans);
@@ -247,137 +248,6 @@
     .mkt2 .mobile-menu-panel .button { width: 100%; margin-top: 20px; }
     .mkt2 .mobile-menu-note { margin: 14px 0 0; color: var(--light-soft); font-size: 12px; }
 
-    .mkt2 .hero {
-      position: relative;
-      /* Fit the real viewport: the eyebrow, headline, both CTAs AND a substantial part
-         of the sculpture must be visible above the fold. Derived from the viewport
-         height minus the floating nav, with a sensible floor and the old 960px as a cap
-         on very tall screens (so the hero never becomes an empty band). */
-      min-height: clamp(640px, calc(100svh - 56px), 960px);
-      display: grid;
-      align-items: center;
-      overflow: hidden;
-      background-color: var(--ivory);
-      background-image:
-        radial-gradient(circle at 1px 1px, rgba(7,17,31,.045) .7px, transparent .8px),
-        linear-gradient(112deg, transparent 0 64%, rgba(57,120,246,.045) 64% 64.1%, transparent 64.1%);
-      background-size: 8px 8px, 100% 100%;
-    }
-    /* A quiet, shifting signal behind the opening—not decorative noise. It gives the
-       first screen a sense of a living case system while the copy stays legible. */
-    .mkt2 .hero::before {
-      content: "";
-      position: absolute;
-      z-index: 0;
-      width: min(54vw, 740px);
-      aspect-ratio: 1;
-      right: max(-14vw, -220px);
-      top: 4%;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 34% 36%, rgba(56, 189, 248, .18), transparent 30%),
-        radial-gradient(circle at 58% 54%, rgba(99, 102, 241, .14), transparent 42%),
-        radial-gradient(circle at 70% 34%, rgba(249, 115, 22, .1), transparent 28%);
-      opacity: .72;
-      pointer-events: none;
-    }
-    .mkt2 .hero::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 82px;
-      background: linear-gradient(176deg, transparent 0 48%, var(--paper) 49% 100%);
-      pointer-events: none;
-    }
-    .mkt2 .hero-grid {
-      position: relative;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: minmax(0, .92fr) minmax(540px, 1.08fr);
-      gap: clamp(34px, 5vw, 76px);
-      align-items: center;
-      /* clears the floating nav at the top; shrinks on short viewports so the whole
-         hero (eyebrow → CTAs → sculpture) stays above the fold */
-      padding-block: clamp(92px, 11.5vh, 120px) clamp(40px, 6vh, 104px);
-    }
-    .mkt2 .hero-copy { max-width: 670px; }
-    .mkt2 .hero h1 {
-      max-width: 720px;
-      margin: 0 0 28px;
-      font-family: var(--display);
-      font-size: clamp(64px, 6.7vw, 90px);
-      font-weight: 500;
-      line-height: 1.02;
-      letter-spacing: -0.065em;
-    }
-    .mkt2 .hero-highlight {
-      position: relative;
-      z-index: 1;
-      display: inline-block;
-      margin-top: 5px;
-      /* Paint extends beyond the glyphs — most at the bottom for descenders — but
-         HUGS the text on the right so it reads as a painted stroke, not a blob. */
-      padding: 6px 9px 16px 16px;
-      color: var(--light);
-      font-style: normal;
-      letter-spacing: -0.07em;
-      isolation: isolate;
-    }
-    .mkt2 .hero-highlight::before, .mkt2 .hero-highlight::after {
-      content: "";
-      position: absolute;
-      pointer-events: none;
-    }
-    /* The ragged polygon's extremes reach past the box on the left and right (so the
-       paint fully backs the first cap and the final "s.") and drop BELOW it for the
-       descenders, but the TOP never rises past the box top (top points clamped to
-       0%, top inset 0) so the paint stays behind its own line and never reaches up
-       into "by design." above it. The 6px padding-top still backs the caps. */
-    .mkt2 .hero-highlight::before {
-      z-index: -2;
-      inset: 0% -5% -12% -5%;
-      background: var(--spectral);
-      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% 0%, 68% 3%, 86% 0%, 99% 10%, 97% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
-      transform: rotate(-1.2deg);
-    }
-    .mkt2 .hero-highlight::after {
-      z-index: -1;
-      inset: 0% -4% -10% -3%;
-      background-image: radial-gradient(circle, rgba(255,255,255,.7) 0 0.75px, transparent .9px);
-      background-size: 6px 6px;
-      clip-path: polygon(0% 9%, 12% 0%, 32% 4%, 50% 0%, 68% 3%, 86% 0%, 99% 10%, 97% 80%, 80% 98%, 62% 91%, 44% 101%, 26% 95%, 6% 101%, 0% 82%);
-      opacity: .28;
-    }
-    .mkt2 .hero-lede {
-      max-width: 560px;
-      margin: 0;
-      color: var(--ink-soft);
-      font-size: 19px;
-      line-height: 1.55;
-      letter-spacing: -0.012em;
-    }
-    .mkt2 .hero-action { margin-top: 32px; }
-    .mkt2 .hero-buttons { display: flex; align-items: center; gap: 12px; }
-    .mkt2 .hero-action .button { min-height: 52px; padding-inline: 24px; }
-    .mkt2 .hero-micro { display: block; margin-top: 11px; color: var(--ink-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; }
-
-    /* Short desktop viewports (e.g. 1440x739): trim the big editorial headline + copy
-       spacing so the eyebrow → headline → both CTAs stay above the fold alongside the
-       sculpture. Placed AFTER the base hero rules so it wins; wide + short screens only,
-       phones/tablets unaffected. */
-    @media (min-width: 1025px) and (max-height: 860px) {
-      /* top-align + tighter padding so neither the copy nor the sculpture is pushed below
-         the fold on a short viewport (the floating nav already provides top spacing) */
-      .mkt2 .hero { align-items: start; }
-      .mkt2 .hero-grid { align-items: start; padding-block: 58px 30px; }
-      .mkt2 .hero h1 { font-size: clamp(50px, 5.2vw, 72px); margin-bottom: 14px; }
-      .mkt2 .hero-lede { font-size: 17px; line-height: 1.48; }
-      .mkt2 .hero-action { margin-top: 18px; }
-      .mkt2 .hero .eyebrow { margin-bottom: 12px; }
-    }
-
     .mkt2 .proof-rail { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper); }
     .mkt2 .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
     .mkt2 .proof-item { min-height: 104px; display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 14px; padding: 24px 32px; border-left: 1px solid var(--rule); }
@@ -464,21 +334,6 @@
     .mkt2 .attorney-seam { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--dark-rule); }
     .mkt2 .attorney-seam strong { display: block; margin-bottom: 5px; color: var(--light); font-size: 14px; }
     .mkt2 .attorney-seam p { font-size: 13px; }
-
-    .mkt2 .pricing-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(64px, 10vw, 144px); align-items: start; }
-    .mkt2 .price-card { padding: 34px; border: 1px solid var(--ink); border-radius: 18px; background: var(--paper); box-shadow: var(--shadow-soft); }
-    .mkt2 .price-top { display: flex; justify-content: space-between; gap: 20px; align-items: start; padding-bottom: 26px; border-bottom: 1px solid var(--rule); }
-    .mkt2 .price-name { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; }
-    .mkt2 .price-number { margin: 8px 0 0; font-family: var(--display); font-size: 66px; line-height: .95; letter-spacing: -.045em; }
-    .mkt2 .only-fee { max-width: 130px; margin: 2px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; text-align: right; }
-    .mkt2 .ledger { margin: 0; }
-    .mkt2 .ledger div { min-height: 56px; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; border-bottom: 1px solid var(--rule); }
-    .mkt2 .ledger dt { color: var(--ink-soft); font-size: 14px; }
-    .mkt2 .ledger dd { margin: 0; font-family: var(--mono); font-size: 12px; }
-    .mkt2 .ledger-total { margin-top: 26px; padding: 22px; border-radius: 12px; background: var(--midnight); color: var(--light); }
-    .mkt2 .ledger-total span { display: block; color: var(--light-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
-    .mkt2 .ledger-total strong { display: block; margin-top: 8px; font-family: var(--display); font-size: 38px; font-weight: 400; line-height: 1; }
-    .mkt2 .price-card .button { width: 100%; margin-top: 18px; }
 
     .mkt2 .promise { padding-block: 80px; border-top: 1px solid var(--rule); background: var(--paper-deep); }
     .mkt2 .promise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
@@ -810,29 +665,6 @@
     .mkt2 .candor-panel { position: relative; overflow: hidden; box-shadow: 18px 18px 0 rgba(18,37,61,.5); }
     .mkt2 .candor-panel::before { content: ""; position: absolute; left: 22px; top: 22px; width: 24px; height: 24px; border: 1px solid rgba(233,239,245,.38); background: radial-gradient(circle at 50% 50%, var(--cyan) 0 3px, transparent 3.8px); box-shadow: 4px 4px 0 rgba(233,239,245,.12); }
 
-    .mkt2 #pricing { position: relative; overflow: hidden; }
-    .mkt2 #pricing::before {
-      content: "";
-      position: absolute;
-      left: -64px;
-      bottom: -118px;
-      width: 330px;
-      height: 330px;
-      border: 1px solid rgba(57,120,246,.16);
-      border-radius: 50%;
-      background: radial-gradient(circle at 38% 32%, rgba(91,231,246,.16) 0 4px, transparent 4.8px), radial-gradient(circle at 59% 58%, rgba(112,89,255,.15) 0 4px, transparent 4.8px), radial-gradient(circle at 70% 26%, rgba(255,142,66,.12) 0 4px, transparent 4.8px);
-      box-shadow: inset 0 0 0 42px rgba(57,120,246,.025), inset 0 0 0 92px rgba(57,120,246,.025);
-    }
-    .mkt2 .pricing-grid { position: relative; z-index: 1; }
-    .mkt2 .price-card {
-      position: relative;
-      border-radius: 4px;
-      box-shadow: 16px 18px 0 var(--paper-deep), var(--shadow-soft);
-      transform: rotate(.65deg);
-      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
-    }
-    .mkt2 .price-card:hover { transform: translateY(-5px) rotate(0) scale(1.004); }
-
     .mkt2 .promise { position: relative; overflow: hidden; }
     .mkt2 .promise::before {
       content: "OWN THE WORK";
@@ -879,17 +711,9 @@
 
     .mkt2 /* Finite motion system: transform and opacity only */
     .site-header .nav-row { animation: hero-nav-in 620ms cubic-bezier(.2,.75,.2,1) 80ms both; }
-    .mkt2 .hero .eyebrow { animation: hero-rise-in 600ms cubic-bezier(.2,.75,.2,1) 80ms both; }
-    .mkt2 .hero h1 { animation: hero-rise-in 760ms cubic-bezier(.2,.75,.2,1) 140ms both; }
-    .mkt2 .hero-lede { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 260ms both; }
-    .mkt2 .hero-action { animation: hero-rise-in 620ms cubic-bezier(.2,.75,.2,1) 340ms both; }
 
     @keyframes hero-nav-in {
       from { opacity: .9; transform: translate3d(0,-10px,0); }
-      to { opacity: 1; transform: translate3d(0,0,0); }
-    }
-    @keyframes hero-rise-in {
-      from { opacity: .82; transform: translate3d(0,16px,0); }
       to { opacity: 1; transform: translate3d(0,0,0); }
     }
     @keyframes view-rise {
@@ -919,7 +743,7 @@
         animation-range: entry 8% entry 78%;
       }
 
-      .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .pricing-grid > div:first-child, .mkt2 .price-card > *, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
+      .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
         animation-name: view-rise;
         animation-duration: 1s;
         animation-timing-function: linear;
@@ -935,17 +759,12 @@
     }
 
     @media (prefers-reduced-motion: no-preference) {
-      .mkt2 .hero::before { animation: hero-signal-drift 11s ease-in-out infinite alternate; }
       .mkt2 .guide-hero-route { animation: guide-route-trace 12s linear infinite; }
       .mkt2 .guide-hero-stop { animation: guide-node-pulse 4.8s ease-in-out infinite; transform-origin: center; }
       .mkt2 .guide-hero-stop--two { animation-delay: 820ms; }
       .mkt2 .guide-hero-stop--three { animation-delay: 1640ms; }
       .mkt2 .guide-hero-stop--four { animation-delay: 2460ms; }
       .mkt2 .guide-hero-file { animation: guide-file-float 6.5s ease-in-out infinite alternate; transform-origin: center; }
-    }
-    @keyframes hero-signal-drift {
-      from { transform: translate3d(-1.5%, -1%, 0) scale(.98); opacity: .54; }
-      to { transform: translate3d(2.5%, 2%, 0) scale(1.04); opacity: .86; }
     }
     @keyframes guide-route-trace { to { stroke-dashoffset: -102px; } }
     @keyframes guide-node-pulse { 0%,100% { opacity: .74; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.08); } }
@@ -954,8 +773,6 @@
     @media (max-width: 1020px) {
       .mkt2 .desktop-nav { gap: 18px; }
       .mkt2 .desktop-nav a:nth-last-child(-n+2) { display: none; }
-      .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; }
-      .mkt2 .hero-copy { max-width: 720px; }
       .mkt2 .phases-head, .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
       .mkt2 .footer-top { grid-template-columns: 1.2fr repeat(2, 1fr); }
       .mkt2 .footer-col:last-child { grid-column: 2; }
@@ -966,18 +783,13 @@
       .mkt2 .section { padding-block: 80px; }
       .mkt2 .desktop-nav, .mkt2 .nav-actions { display: none; }
       .mkt2 .mobile-menu { display: block; }
-      .mkt2 .hero { min-height: auto; }
-      /* The header is sticky and already occupies layout space on mobile. The previous
-         124px top inset cleared it a second time, creating the empty band in the hero. */
-      .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; padding-block: 48px 88px; }
-      .mkt2 .hero-copy { max-width: 660px; }
       .mkt2 .proof-rail { padding-block: 14px; }
       .mkt2 .proof-grid { grid-template-columns: 1fr; gap: 10px; transform: none; }
       .mkt2 .proof-item, .mkt2 .proof-item:first-child { min-height: 0; padding: 18px; border: 1px solid var(--rule); border-radius: 12px; background: linear-gradient(135deg, var(--paper), color-mix(in srgb, var(--electric) 3%, var(--paper))); }
       .mkt2 #process::before, .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
       .mkt2 #process > .shell { display: block; }
       .mkt2 .phases-head { position: static; }
-      .mkt2 .phases-head, .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .pricing-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
+      .mkt2 .phases-head, .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
       .mkt2 .order-copy { position: static; }
       .mkt2 .phase-path { grid-template-columns: 1fr; gap: 0; margin-top: 50px; }
       .mkt2 .phase-path::before { left: 17px; right: auto; top: 17px; bottom: 17px; width: 1px; height: auto; }
@@ -989,7 +801,6 @@
       .mkt2 .phase-note { grid-column: auto; }
       .mkt2 .requirement-stack { transform: none; box-shadow: 10px 12px 0 var(--paper-deep), 0 24px 54px rgba(7,17,31,.1); }
       .mkt2 .requirement-stack::before, .mkt2 .requirement-stack::after { display: none; }
-      .mkt2 .price-card { transform: none; }
       .mkt2 .promise-grid { grid-template-columns: 1fr; gap: 44px; }
       .mkt2 .closing-inner { min-height: 620px; grid-template-columns: 1fr; align-content: center; gap: 28px; }
       .mkt2 .closing-copy { padding: 70px 0 0; }
@@ -1017,14 +828,6 @@
       .mkt2 .eyebrow { margin-bottom: 16px; }
       .mkt2 .display { font-size: 40px; line-height: 1.05; }
       .mkt2 .section-lede { font-size: 18px; }
-      .mkt2 .hero-grid { gap: 28px; padding-block: 40px 68px; }
-      .mkt2 .hero h1 { margin-bottom: 22px; font-size: 50px; line-height: 1.02; letter-spacing: -.06em; }
-      .mkt2 .hero-highlight { padding: 5px 8px 12px 12px; }
-      .mkt2 .hero-lede { font-size: 18px; line-height: 1.55; }
-      .mkt2 .hero-action { display: block; margin-top: 28px; }
-      .mkt2 .hero-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-      .mkt2 .hero-action .button { width: 100%; min-height: 50px; padding-inline: 10px; }
-      .mkt2 .hero-micro { display: block; margin-top: 12px; text-align: center; }
       .mkt2 .proof-item, .mkt2 .proof-item:first-child { grid-template-columns: 38px 1fr; gap: 14px; padding: 17px; }
       .mkt2 .proof-mark { width: 38px; height: 38px; }
       .mkt2 .proof-item p { font-size: 13px; line-height: 1.46; }
@@ -1034,10 +837,7 @@
       .mkt2 .req-title { font-size: 16px; }
       .mkt2 .req-count { display: none; }
       .mkt2 .requirement-body { padding: 0 12px 22px 40px; }
-      .mkt2 .candor-panel, .mkt2 .price-card { padding: 22px; }
-      .mkt2 .price-top { display: block; }
-      .mkt2 .price-number { font-size: 58px; }
-      .mkt2 .only-fee { max-width: none; margin-top: 10px; text-align: left; }
+      .mkt2 .candor-panel { padding: 22px; }
       .mkt2 .promise { padding-block: 64px; }
       .mkt2 .promise h2 { font-size: 36px; }
       .mkt2 .promise-block { padding-left: 18px; }
@@ -1087,7 +887,7 @@
     @media (prefers-reduced-motion: reduce) {
       .mkt2 { scroll-behavior: auto; }
       .mkt2 *, .mkt2 *::before, .mkt2 *::after { animation: none !important; transition: none !important; transform-duration: 0s !important; }
-      .mkt2 .button:hover, .mkt2 .button:focus-visible, .mkt2 .button.is-hover, .mkt2 .phase:hover, .mkt2 .phase:focus-within, .mkt2 .fact:hover, .mkt2 .fact:focus-within, .mkt2 .price-card:hover, .mkt2 .price-card:focus-within, .mkt2 .guide-link:hover, .mkt2 .guide-link:focus-visible, .mkt2 .guide-link.is-hover, .mkt2 .toc-card a:hover, .mkt2 .toc-card a:focus-visible, .mkt2 .related-card:hover, .mkt2 .related-card:focus-visible, .mkt2 .flow-screen:hover, .mkt2 .flow-screen:focus-within, .mkt2 .choice:hover, .mkt2 .choice:focus-within, .mkt2 .flow-back:hover, .mkt2 .flow-back:focus-visible, .mkt2 .hover-surface.is-hover, .mkt2 .button:hover .button-arrow, .mkt2 .button:focus-visible .button-arrow, .mkt2 .button.is-hover .button-arrow, .mkt2 .guide-link:hover .guide-arrow, .mkt2 .guide-link:focus-visible .guide-arrow, .mkt2 .guide-link.is-hover .guide-arrow, .mkt2 .footer-col a:hover, .mkt2 .footer-col a:focus-visible { transform: none; }
+      .mkt2 .button:hover, .mkt2 .button:focus-visible, .mkt2 .button.is-hover, .mkt2 .phase:hover, .mkt2 .phase:focus-within, .mkt2 .fact:hover, .mkt2 .fact:focus-within, .mkt2 .guide-link:hover, .mkt2 .guide-link:focus-visible, .mkt2 .guide-link.is-hover, .mkt2 .toc-card a:hover, .mkt2 .toc-card a:focus-visible, .mkt2 .related-card:hover, .mkt2 .related-card:focus-visible, .mkt2 .flow-screen:hover, .mkt2 .flow-screen:focus-within, .mkt2 .choice:hover, .mkt2 .choice:focus-within, .mkt2 .flow-back:hover, .mkt2 .flow-back:focus-visible, .mkt2 .hover-surface.is-hover, .mkt2 .button:hover .button-arrow, .mkt2 .button:focus-visible .button-arrow, .mkt2 .button.is-hover .button-arrow, .mkt2 .guide-link:hover .guide-arrow, .mkt2 .guide-link.is-hover .guide-arrow, .mkt2 .footer-col a:hover, .mkt2 .footer-col a:focus-visible { transform: none; }
     }
 
 /* next/font wiring + full-height ground (the spec assumed <link> Google Fonts;

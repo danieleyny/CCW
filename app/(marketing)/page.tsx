@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { buildMetadata } from "@/lib/seo"
-import { getPublicPackages, getPublicFees } from "@/lib/public-data"
+import { getPublicPackages } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
-import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
+import Hero from "@/components/marketing/hero/Hero"
 import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
 import PlanningRealities from "@/components/marketing/planning-realities/PlanningRealities"
+import PricingSection from "@/components/marketing/pricing/PricingSection"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -18,14 +19,13 @@ export const metadata = buildMetadata({
 /**
  * Homepage — marketing redesign v2 (redesign/homepage-visual-spec.html), scoped
  * under `.mkt2`. Copy and structure are ported from the spec; links point at real
- * routes; the Service JSON-LD and the live government fees stay wired to our data.
+ * routes; the Service JSON-LD stays wired to the live package data.
  * Entrances are CSS scroll-driven and start from a visible opacity (see
- * marketing-v2.css). The hero's <HeroGuidedPath> illustration is a server-rendered
- * document-path composition with finite CSS motion.
+ * marketing-v2.css). The hero's live-map composition is isolated in its own module.
  */
 export default async function Home() {
   // Cookieless + cached → this page stays statically rendered (see lib/public-data).
-  const [packages, fees] = await Promise.all([getPublicPackages(), getPublicFees()])
+  const packages = await getPublicPackages()
 
   return (
     <>
@@ -34,36 +34,7 @@ export default async function Home() {
       <JsonLd data={serviceSchemaWithOffers(packages)} />
 
       {/* ── HERO ─────────────────────────────────────────────────────────────── */}
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="shell hero-grid">
-          <div className="hero-copy">
-            <p className="eyebrow">NYC · Private case management</p>
-            <h1 id="hero-title">
-              Complicated by design.
-              <br />
-              <span className="hero-highlight">Clear by ours.</span>
-            </h1>
-            <p className="hero-lede">
-              We turn New York City’s concealed-carry process into one clear next step at a
-              time—preparing your documents, tracking every requirement, and keeping your case
-              organized while you remain in control of your own application.
-            </p>
-            <div className="hero-action">
-              <div className="hero-buttons">
-                <Link className="button" href="/eligibility">
-                  Check eligibility <span className="button-arrow" aria-hidden="true">→</span>
-                </Link>
-                <Link className="button button-outline" href="/how-it-works">
-                  See the process
-                </Link>
-              </div>
-              <span className="hero-micro">2 minutes · no card required</span>
-            </div>
-          </div>
-
-          <HeroGuidedPath />
-        </div>
-      </section>
+      <Hero />
 
       {/* ── PROOF RAIL ───────────────────────────────────────────────────────── */}
       <section className="proof-rail" aria-label="Service principles">
@@ -178,40 +149,7 @@ export default async function Home() {
       </section>
 
       {/* ── PRICING ──────────────────────────────────────────────────────────── */}
-      <section className="section" id="pricing" aria-labelledby="pricing-title">
-        <div className="shell pricing-grid">
-          <div>
-            <p className="eyebrow">Transparent from day one</p>
-            <h2 className="display" id="pricing-title">One fee to us. Everything else, at cost.</h2>
-            <p className="section-lede">
-              You should know the complete financial picture before starting—not discover it one
-              invoice at a time.
-            </p>
-          </div>
-          <article className="price-card">
-            <div className="price-top">
-              <div>
-                <p className="price-name">Full concierge</p>
-                <p className="price-number">$1,000</p>
-              </div>
-              <p className="only-fee">The only service fee collected by Gun License NYC.</p>
-            </div>
-            <dl className="ledger">
-              <div><dt>NYPD application</dt><dd>{fees.applicationFee}</dd></div>
-              <div><dt>Fingerprint fee</dt><dd>{fees.fingerprintFee}</dd></div>
-              <div><dt>Required training</dt><dd>$500–650</dd></div>
-              <div><dt>Expected notarization</dt><dd>$25–100</dd></div>
-            </dl>
-            <div className="ledger-total">
-              <span>Estimated all-in range</span>
-              <strong>$1,950–2,200</strong>
-            </div>
-            <Link className="button" href="/pricing">
-              See what the service includes <span className="button-arrow" aria-hidden="true">→</span>
-            </Link>
-          </article>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* ── PROMISE — the refile promise ─────────────────────────────────────── */}
       <section className="promise" id="promise" aria-labelledby="promise-title">
