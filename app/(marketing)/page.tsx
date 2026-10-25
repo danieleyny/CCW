@@ -23,8 +23,8 @@ import { DesktopOnly } from "@/components/marketing/desktop-only"
 // emitted markup is identical, so crawlers and what a visitor sees don't change);
 // only the client JS is deferred. HeroFilm/HeroAura/HeroSkyline stay eager —
 // they're above the fold.
-const ProcessStepper = dynamic(
-  () => import("@/components/marketing/process-stepper").then((m) => m.ProcessStepper),
+const PhasesSection = dynamic(
+  () => import("@/components/marketing/phases/PhasesSection"),
   { ssr: true }
 )
 const CostCard = dynamic(() => import("@/components/marketing/cost-card").then((m) => m.CostCard), {
@@ -173,8 +173,8 @@ export default async function Home() {
       {/* ── PLACEMAKING (cinematic full-bleed beat) ──────────────────────── */}
       <PlacemakingBand />
 
-      {/* ── THE PROCESS (click-driven stepper) ───────────────────────────── */}
-      <ProcessStepper />
+      {/* ── THE PROCESS (living columns / mobile accordion) ──────────────── */}
+      <PhasesSection />
 
       {/* ── THE REALITY (narrow list, no cards) ──────────────────────────── */}
       <section className="section-void py-20 sm:py-28">
