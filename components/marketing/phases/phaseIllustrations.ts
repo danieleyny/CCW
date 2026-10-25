@@ -58,7 +58,9 @@ function kit(f: IlloFrame) {
 function qualify(f: IlloFrame) {
   const { w, h, u, col, compact } = f
   const { dot, txt, tick, ring, fs } = kit(f)
-  const y0 = h * .5, x0 = 22, xf = w * .34, xe = w - (compact ? 96 : 130)
+  // The compact canvas needs a deliberately wider right inset: its labels are
+  // full words, not abbreviated UI copy, so the attorney route remains legible.
+  const y0 = h * .5, x0 = 22, xf = w * .34, xe = w - (compact ? 142 : 130)
   const ends = [[xe, h * .2], [xe, h * .5], [xe, h * .8]]
   const labels = ["CARRY TRACK", "PREMISES TRACK", "ATTORNEY REVIEW"]
   for (let x = x0; x <= xf; x += 6) dot(x, y0, 1.1, MID, .4)
