@@ -4,6 +4,7 @@ import { getPublicPackages, getPublicFees } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import { HeroGuidedPath } from "@/components/marketing/v2/hero-guided-path"
 import { NycServiceMap } from "@/components/marketing/v2/nyc-service-map"
+import PhasesSection from "@/components/marketing/phases/PhasesSection"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -83,76 +84,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── PROCESS — five phases ────────────────────────────────────────────── */}
-      <section className="section dark" id="process" aria-labelledby="process-title">
-        <div className="shell">
-          <div className="phases-head">
-            <div>
-              <p className="eyebrow">A controlled process</p>
-              <h2 className="display" id="process-title">One clear path.<br />Five phases.</h2>
-            </div>
-            <p className="section-lede">
-              The full journey is long. Your interface is not. At every stage, you see what is yours,
-              what is being prepared, and what comes next.
-            </p>
-          </div>
-
-          <div className="journey-console" aria-label="Five phases of the service">
-            <div className="journey-toolbar">
-              <span>PRIVATE CASE DESK / NYC</span>
-              <span className="journey-live"><i aria-hidden="true" /> CONTROLLED + TRACEABLE</span>
-            </div>
-            <div className="journey-workspace">
-              <div className="journey-dossier">
-                <div className="dossier-sight" aria-hidden="true"><i /><i /></div>
-                <div className="dossier-topline">
-                  <span>NYC / CCW</span><span>CASE 001</span>
-                </div>
-                <p className="dossier-kicker">One organized case file</p>
-                <h3>Precision around every requirement.</h3>
-                <div className="dossier-count">
-                  <strong>24</strong>
-                  <span>requirements<br />tracked together</span>
-                </div>
-                <div className="dossier-status">
-                  <span><i aria-hidden="true" /> Identity</span>
-                  <span><i aria-hidden="true" /> Training</span>
-                  <span><i aria-hidden="true" /> References</span>
-                  <span><i aria-hidden="true" /> Disclosures</span>
-                </div>
-                <p className="dossier-note">Document preparation · timing control · source traceability</p>
-              </div>
-
-              <div className="journey-sequence-wrap">
-                <p className="journey-sequence-label">Your guided sequence</p>
-                <ol className="journey-sequence">
-                  {[
-                    ["01", "Qualify", "Confirm the track and identify legal-review boundaries."],
-                    ["02", "Train", "Plan the required course inside the usable certificate window."],
-                    ["03", "Assemble", "Bring documents, people, records, and disclosures into one file."],
-                    ["04", "Review", "Pass a structured completeness gate before submission."],
-                    ["05", "You submit", "Review the finished packet and submit your own application."],
-                  ].map(([n, t, d], i) => (
-                    <li className={i === 4 ? "is-final" : undefined} key={n}>
-                      <span className="journey-step-number">{n}</span>
-                      <span className="journey-step-copy"><strong>{t}</strong><small>{d}</small></span>
-                      <span className="journey-step-state">{i === 4 ? "YOUR CONTROL" : "GUIDED"}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-            <div className="journey-boundary">
-              <span>WE PREPARE + ORGANIZE</span><i aria-hidden="true" />
-              <strong>YOU REVIEW + SUBMIT</strong>
-            </div>
-          </div>
-          <p className="phase-note">
-            <strong>Thirteen stages behind the scenes.</strong> Five phases in front of you. The
-            system handles the complexity; you always keep the final decision.
-          </p>
-        </div>
-      </section>
+      {/* ── PROCESS — five living columns / mobile accordion ────────────────── */}
+      <PhasesSection />
 
       {/* ── REQUIREMENTS — everything in order ───────────────────────────────── */}
       <section className="section" id="requirements" aria-labelledby="requirements-title">

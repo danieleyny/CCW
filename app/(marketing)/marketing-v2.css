@@ -372,31 +372,6 @@
     .mkt2 .proof-item p { margin: 0; font-size: 14px; line-height: 1.5; }
     .mkt2 .proof-item strong { display: block; color: var(--ink); font-size: 16px; }
 
-    .mkt2 .phases-head { display: grid; grid-template-columns: 1fr .82fr; gap: 80px; align-items: end; }
-    .mkt2 .phase-path { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 72px; }
-    .mkt2 .phase-path::before { content: ""; position: absolute; left: 7%; right: 7%; top: 17px; height: 1px; background: var(--dark-rule); }
-    .mkt2 .phase { position: relative; z-index: 1; padding-right: 22px; }
-    .mkt2 .phase-dot {
-      width: 35px;
-      height: 35px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 22px;
-      border: 1px solid var(--dark-rule);
-      border-radius: 50%;
-      background: var(--midnight);
-      color: var(--light-soft);
-      font-family: var(--mono);
-      font-size: 10px;
-      transition: transform 200ms ease-out, opacity 200ms ease-out;
-    }
-    .mkt2 .phase:hover .phase-dot, .mkt2 .phase.is-active .phase-dot { border-color: var(--cyan); background: var(--cyan); color: var(--midnight); transform: scale(1.06); }
-    .mkt2 .phase h3 { margin: 0 0 8px; font-size: 19px; line-height: 1.2; }
-    .mkt2 .phase p { margin: 0; color: var(--light-soft); font-size: 14px; line-height: 1.55; }
-    .mkt2 .phase.is-active h3 { color: var(--cyan); }
-    .mkt2 .phase-note { margin: 52px 0 0; padding-top: 22px; border-top: 1px solid var(--dark-rule); color: var(--light-soft); font-size: 14px; }
-    .mkt2 .phase-note strong { color: var(--light); }
-
     .mkt2 .order-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(56px, 9vw, 124px); align-items: start; }
     .mkt2 .order-copy { position: sticky; top: 36px; }
     .mkt2 .order-note { margin-top: 32px; padding-left: 18px; border-left: 2px solid var(--electric); color: var(--ink-soft); font-size: 14px; }
@@ -649,86 +624,6 @@
       transform: rotate(-.45deg);
     }
 
-    .mkt2 #process { position: relative; overflow: clip; }
-    .mkt2 #process::before {
-      content: "05 / PHASES";
-      position: absolute;
-      left: clamp(24px, 5vw, 72px);
-      right: clamp(24px, 5vw, 72px);
-      top: 18px;
-      color: rgba(245,247,251,.035);
-      font-family: var(--display);
-      font-size: clamp(100px, 14vw, 196px);
-      font-weight: 500;
-      line-height: .8;
-      letter-spacing: -.08em;
-      text-align: right;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-    .mkt2 #process > .shell {
-      display: block;
-    }
-    .mkt2 .phases-head {
-      position: relative;
-      top: auto;
-      display: grid;
-      grid-template-columns: 1fr .82fr;
-      gap: clamp(52px, 8vw, 100px);
-      align-items: end;
-    }
-    .mkt2 .phase-path { position: relative; display: block; margin-top: 0; }
-    .mkt2 .phase-path::before {
-      left: -22px;
-      right: auto;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      height: auto;
-      background: var(--spectral);
-      transform: none;
-      opacity: .72;
-    }
-    .mkt2 .phase {
-      position: sticky;
-      top: 112px;
-      min-height: 246px;
-      margin: 0 0 22vh;
-      padding: 34px;
-      border: 1px solid var(--dark-rule);
-      border-radius: 12px;
-      /* OPAQUE — these cards sticky-stack over one another, so each must fully
-         occlude the one behind it. No see-through, no ghost descriptions. */
-      background: var(--midnight-raised);
-      transition: transform 240ms cubic-bezier(.2,.7,.2,1), opacity 240ms ease-out;
-      isolation: isolate;
-    }
-    .mkt2 .phase::after {
-      content: "";
-      position: absolute;
-      inset: -1px;
-      z-index: -1;
-      border: 1px solid var(--cyan);
-      border-radius: inherit;
-      opacity: 0;
-      transition: opacity 240ms ease-out;
-      pointer-events: none;
-    }
-    .mkt2 .phase:nth-child(1) { z-index: 1; }
-    .mkt2 .phase:nth-child(2) { z-index: 2; }
-    .mkt2 .phase:nth-child(3) { z-index: 3; }
-    .mkt2 .phase:nth-child(4) { z-index: 4; }
-    .mkt2 .phase:nth-child(5) { z-index: 5; margin-bottom: 48px; }
-    .mkt2 .phase:hover { transform: translateY(-7px) scale(1.008); border-color: var(--blue); background: var(--midnight-soft); }
-    .mkt2 .phase:hover::after, .mkt2 .phase:focus-within::after { opacity: 1; }
-    /* Opaque base under the electric tint so the active card still fully occludes. */
-    .mkt2 .phase.is-active { border-color: var(--cyan); background: linear-gradient(145deg, rgba(57,120,246,.28), rgba(57,120,246,0)), var(--midnight-raised); }
-    .mkt2 .phase.is-active::after { opacity: .45; }
-    .mkt2 .phase-card-content { display: grid; grid-template-columns: 58px 1fr; align-items: start; }
-    .mkt2 .phase-card-content .phase-dot { grid-row: 1; margin: 0; }
-    .mkt2 .phase-text h3 { margin-top: 4px; }
-    .mkt2 .phase-note { max-width: 760px; margin: 34px 0 0 auto; }
-
     .mkt2 .requirement-stack {
       position: relative;
       z-index: 2;
@@ -913,21 +808,7 @@
       from { opacity: .78; transform: translate3d(0,18px,0); }
       to { opacity: 1; transform: translate3d(0,0,0); }
     }
-    @keyframes phase-content-rise {
-      from { opacity: .76; transform: translate3d(0,22px,0); }
-      to { opacity: 1; transform: translate3d(0,0,0); }
-    }
-
     @supports (animation-timeline: view()) {
-      .mkt2 .phase-card-content {
-        animation-name: phase-content-rise;
-        animation-duration: 1s;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: view();
-        animation-range: entry 8% entry 78%;
-      }
-
       .mkt2 .order-copy, .mkt2 .requirement-group, .mkt2 .nyc-coverage-head > *, .mkt2 .reality-head, .mkt2 .fact > *, .mkt2 .candor-copy, .mkt2 .candor-panel, .mkt2 .pricing-grid > div:first-child, .mkt2 .price-card > *, .mkt2 .promise-grid > div, .mkt2 .guides-head > *, .mkt2 .guide-link > *, .mkt2 .closing-copy > *, .mkt2 .closing-action, .mkt2 .state-intro, .mkt2 .state-panel, .mkt2 .template-intro, .mkt2 .template-stage {
         animation-name: view-rise;
         animation-duration: 1s;
@@ -943,7 +824,7 @@
       .mkt2 .desktop-nav a:nth-last-child(-n+2) { display: none; }
       .mkt2 .hero-grid { grid-template-columns: 1fr; gap: 42px; }
       .mkt2 .hero-copy { max-width: 720px; }
-      .mkt2 .phases-head, .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
+      .mkt2 .guides-head { grid-template-columns: 1fr 1fr; gap: 50px; }
       .mkt2 .fact-grid { grid-template-columns: repeat(3, 1fr); }
       .mkt2 .fact:nth-child(3) { border-right: 0; }
       .mkt2 .fact:nth-child(n+4) { border-top: 1px solid var(--rule); }
@@ -963,19 +844,9 @@
       .mkt2 .proof-grid { grid-template-columns: 1fr; }
       .mkt2 .proof-item { border-left: 0; border-top: 1px solid var(--rule); }
       .mkt2 .proof-item:first-child { border-top: 0; }
-      .mkt2 #process::before, .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
-      .mkt2 #process > .shell { display: block; }
-      .mkt2 .phases-head { position: static; }
-      .mkt2 .phases-head, .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .pricing-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
+      .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
+      .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .pricing-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
       .mkt2 .order-copy { position: static; }
-      .mkt2 .phase-path { grid-template-columns: 1fr; gap: 0; margin-top: 50px; }
-      .mkt2 .phase-path::before { left: 17px; right: auto; top: 17px; bottom: 17px; width: 1px; height: auto; }
-      .mkt2 .phase, .mkt2 .phase:nth-child(n) { position: relative; top: auto; min-height: 148px; display: block; margin: 0 0 14px; padding: 22px; }
-      .mkt2 .phase-card-content { grid-template-columns: 50px 1fr; }
-      .mkt2 .phase-dot { grid-row: auto; margin-bottom: 0; }
-      .mkt2 .phase h3 { margin-top: 5px; }
-      .mkt2 .phase p { margin-top: 3px; }
-      .mkt2 .phase-note { grid-column: auto; }
       .mkt2 .reality-head { display: block; }
       .mkt2 .reality-head p { margin-top: 24px; }
       .mkt2 .fact-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1023,7 +894,6 @@
       .mkt2 .hero-action .button { width: 100%; min-height: 50px; padding-inline: 10px; }
       .mkt2 .hero-micro { display: block; margin-top: 12px; text-align: center; }
       .mkt2 .proof-item { min-height: 90px; padding: 20px 0; }
-      .mkt2 .phase-note { margin-top: 28px; }
       .mkt2 .requirement-group summary { min-height: 72px; grid-template-columns: 30px 1fr 28px; gap: 10px; }
       .mkt2 .req-title { font-size: 16px; }
       .mkt2 .req-count { display: none; }
@@ -1117,118 +987,6 @@
   .mkt2 .footer-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mkt2 .footer-intro { grid-column: 1 / -1; }
 }
-
-/* ── Concierge case desk ─────────────────────────────────────────────────────
-   The visual is intentionally built from normal grid flow. No label relies on
-   an absolute position, so the story remains legible at every breakpoint. */
-.mkt2 .journey-console {
-  margin-top: 58px;
-  overflow: hidden;
-  border: 1px solid var(--dark-rule);
-  border-radius: 28px;
-  background: var(--midnight-raised);
-  box-shadow: 0 34px 90px rgba(0,0,0,.24);
-}
-.mkt2 .journey-toolbar,
-.mkt2 .journey-boundary {
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--dark-rule);
-  color: var(--light-soft);
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-}
-.mkt2 .journey-live { display: inline-flex; align-items: center; gap: 9px; color: var(--cyan); }
-.mkt2 .journey-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 5px rgba(91,231,246,.1); }
-.mkt2 .journey-workspace {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(320px,.86fr) minmax(440px,1.14fr);
-  gap: clamp(38px,5vw,76px);
-  padding: clamp(34px,5vw,68px);
-  overflow: hidden;
-}
-.mkt2 .journey-workspace::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: .15;
-  pointer-events: none;
-  background-image: radial-gradient(circle, rgba(183,193,207,.72) 1px, transparent 1px);
-  background-size: 18px 18px;
-  mask-image: linear-gradient(90deg,#000,transparent 42%,transparent 58%,#000);
-}
-.mkt2 .journey-dossier,
-.mkt2 .journey-sequence-wrap { position: relative; z-index: 1; min-width: 0; }
-.mkt2 .journey-dossier {
-  min-height: 470px;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(28px,3.4vw,44px);
-  overflow: hidden;
-  border: 1px solid rgba(201,168,106,.44);
-  border-radius: 4px 28px 28px 4px;
-  background:
-    linear-gradient(145deg,rgba(255,255,255,.035),transparent 34%),
-    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 7px),
-    var(--gunmetal);
-  box-shadow: 18px 22px 0 rgba(0,0,0,.1);
-}
-.mkt2 .journey-dossier::before,
-.mkt2 .journey-dossier::after { content: ""; position: absolute; width: 34px; height: 34px; border-color: rgba(201,168,106,.65); }
-.mkt2 .journey-dossier::before { left: 14px; top: 14px; border-left: 1px solid; border-top: 1px solid; }
-.mkt2 .journey-dossier::after { right: 14px; bottom: 14px; border-right: 1px solid; border-bottom: 1px solid; }
-.mkt2 .dossier-sight { position: absolute; right: 34px; top: 72px; width: 96px; height: 96px; border: 1px solid rgba(168,180,195,.22); border-radius: 50%; }
-.mkt2 .dossier-sight::before,
-.mkt2 .dossier-sight::after { content: ""; position: absolute; background: rgba(168,180,195,.24); }
-.mkt2 .dossier-sight::before { left: 50%; top: -12px; bottom: -12px; width: 1px; }
-.mkt2 .dossier-sight::after { left: -12px; right: -12px; top: 50%; height: 1px; }
-.mkt2 .dossier-sight i { position: absolute; inset: 31px; border: 1px solid rgba(91,231,246,.28); border-radius: 50%; }
-.mkt2 .dossier-sight i:last-child { inset: 44px; background: var(--cyan); border: 0; }
-.mkt2 .dossier-topline { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid rgba(168,180,195,.2); color: var(--steel); font-family: var(--mono); font-size: 8px; letter-spacing: .14em; }
-.mkt2 .dossier-kicker { margin: 54px 0 10px; color: var(--champagne); font-family: var(--mono); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; }
-.mkt2 .journey-dossier h3 { max-width: 360px; margin: 0; color: var(--light); font-family: var(--display); font-size: clamp(36px,3.7vw,54px); font-weight: 500; line-height: .98; letter-spacing: -.045em; }
-.mkt2 .dossier-count { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: end; margin-top: auto; padding-top: 38px; }
-.mkt2 .dossier-count strong { color: var(--light); font-family: var(--display); font-size: 82px; font-weight: 500; line-height: .72; letter-spacing: -.07em; }
-.mkt2 .dossier-count span { padding-bottom: 2px; color: var(--steel); font-size: 11px; line-height: 1.35; }
-.mkt2 .dossier-status { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-top: 30px; padding-top: 18px; border-top: 1px solid rgba(168,180,195,.2); }
-.mkt2 .dossier-status span { display: flex; align-items: center; gap: 8px; color: var(--light-soft); font-size: 11px; }
-.mkt2 .dossier-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--champagne); }
-.mkt2 .dossier-note { margin: 22px 0 0; color: var(--steel); font-family: var(--mono); font-size: 7px; letter-spacing: .06em; text-transform: uppercase; }
-.mkt2 .journey-sequence-label { margin: 0 0 14px; color: var(--champagne); font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
-.mkt2 .journey-sequence { position: relative; display: grid; margin: 0; padding: 0; list-style: none; }
-.mkt2 .journey-sequence::before { content: ""; position: absolute; left: 22px; top: 38px; bottom: 38px; width: 1px; background: linear-gradient(var(--cyan),var(--blue),var(--violet),var(--magenta),var(--champagne)); }
-.mkt2 .journey-sequence li {
-  position: relative;
-  min-height: 88px;
-  display: grid;
-  grid-template-columns: 46px minmax(0,1fr) auto;
-  gap: 14px;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--dark-rule);
-  transition: transform 180ms ease-out, opacity 180ms ease-out;
-}
-.mkt2 .journey-sequence li:last-child { border-bottom: 0; }
-.mkt2 .journey-sequence li:hover { transform: translateX(4px); }
-.mkt2 .journey-step-number { position: relative; z-index: 1; width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid var(--dark-rule); border-radius: 50%; background: var(--midnight-raised); color: var(--cyan); font-family: var(--mono); font-size: 9px; }
-.mkt2 .journey-step-copy { min-width: 0; }
-.mkt2 .journey-step-copy strong,
-.mkt2 .journey-step-copy small { display: block; }
-.mkt2 .journey-step-copy strong { color: var(--light); font-size: 16px; line-height: 1.2; }
-.mkt2 .journey-step-copy small { max-width: 390px; margin-top: 5px; color: var(--light-soft); font-size: 11px; line-height: 1.45; }
-.mkt2 .journey-step-state { padding: 5px 7px; border: 1px solid var(--dark-rule); border-radius: 999px; color: var(--steel); font-family: var(--mono); font-size: 7px; letter-spacing: .08em; white-space: nowrap; }
-.mkt2 .journey-sequence .is-final .journey-step-number { border-color: var(--champagne); background: var(--champagne); color: var(--midnight); }
-.mkt2 .journey-sequence .is-final .journey-step-state { border-color: rgba(201,168,106,.42); color: var(--champagne); }
-.mkt2 .journey-boundary { min-height: 60px; justify-content: flex-start; border-top: 1px solid var(--dark-rule); border-bottom: 0; }
-.mkt2 .journey-boundary i { flex: 1; height: 1px; background: linear-gradient(90deg,var(--cyan),var(--violet),var(--champagne)); }
-.mkt2 .journey-boundary strong { color: var(--champagne); font-size: 9px; font-weight: 500; letter-spacing: .12em; white-space: nowrap; }
 
 /* ── NYC concierge coverage map ───────────────────────────────────────────── */
 .mkt2 .nyc-coverage { position: relative; overflow: hidden; isolation: isolate; }
@@ -1611,7 +1369,6 @@
 }
 .mkt2 .ih-visual { animation: visual-settle 760ms cubic-bezier(.2,.75,.2,1) 120ms both; }
 @supports (animation-timeline: view()) {
-  .mkt2 .journey-console,
   .mkt2 .planning-board,
   .mkt2 .nyc-map-console {
     animation: console-reveal 1s linear both;
@@ -1622,23 +1379,10 @@
 
 @media (max-width: 1020px) {
   .mkt2 .guide-hero-layout { grid-template-columns: 1fr minmax(330px,.8fr); gap: 40px; }
-  .mkt2 .journey-workspace { grid-template-columns: minmax(280px,.82fr) minmax(370px,1.18fr); gap: 32px; padding: 34px; }
-  .mkt2 .journey-dossier { padding: 30px; }
-  .mkt2 .journey-dossier h3 { font-size: 40px; }
-  .mkt2 .dossier-sight { right: 24px; top: 68px; width: 78px; height: 78px; }
-  .mkt2 .dossier-sight i { inset: 25px; }
-  .mkt2 .dossier-sight i:last-child { inset: 36px; }
-  .mkt2 .journey-step-state { display: none; }
   .mkt2 .planning-board { grid-template-columns: minmax(280px,.82fr) minmax(420px,1.18fr); }
 }
 
 @media (max-width: 840px) {
-  .mkt2 .journey-console { margin-top: 42px; }
-  .mkt2 .journey-workspace { grid-template-columns: 1fr; gap: 44px; padding: 28px 20px 36px; }
-  .mkt2 .journey-dossier { min-height: 430px; }
-  .mkt2 .journey-step-state { display: inline-flex; }
-  .mkt2 .journey-boundary { flex-wrap: wrap; padding-block: 12px; }
-  .mkt2 .journey-boundary strong { flex-basis: 100%; }
   .mkt2 .planning-board { grid-template-columns: 1fr; }
   .mkt2 .planning-window { min-height: 360px; }
   .mkt2 .planning-window-value strong { font-size: clamp(108px,22vw,148px); }
@@ -1650,26 +1394,6 @@
 }
 
 @media (max-width: 540px) {
-  .mkt2 .journey-toolbar { min-height: 56px; padding: 0 14px; font-size: 7px; }
-  .mkt2 .journey-toolbar > span:first-child { max-width: 120px; }
-  .mkt2 .journey-live { max-width: 140px; justify-content: flex-end; text-align: right; }
-  .mkt2 .journey-workspace { gap: 38px; padding: 16px 14px 28px; }
-  .mkt2 .journey-dossier { min-height: 420px; padding: 28px 22px; border-radius: 4px 22px 22px 4px; }
-  .mkt2 .dossier-sight { right: 24px; top: 68px; width: 68px; height: 68px; }
-  .mkt2 .dossier-sight i { inset: 21px; }
-  .mkt2 .dossier-sight i:last-child { inset: 31px; }
-  .mkt2 .dossier-kicker { max-width: 145px; margin-top: 48px; }
-  .mkt2 .journey-dossier h3 { max-width: 260px; font-size: 34px; }
-  .mkt2 .dossier-count strong { font-size: 68px; }
-  .mkt2 .dossier-status { gap-inline: 12px; }
-  .mkt2 .dossier-note { max-width: 250px; line-height: 1.5; }
-  .mkt2 .journey-sequence li { min-height: 94px; grid-template-columns: 42px minmax(0,1fr); gap: 12px; }
-  .mkt2 .journey-sequence::before { left: 20px; }
-  .mkt2 .journey-step-number { width: 42px; height: 42px; }
-  .mkt2 .journey-step-state { display: none; }
-  .mkt2 .journey-step-copy strong { font-size: 15px; }
-  .mkt2 .journey-boundary { gap: 10px; padding-inline: 14px; }
-  .mkt2 .journey-boundary i { min-width: 32px; }
   .mkt2 .planning-board { margin-top: 44px; border-radius: 20px; }
   .mkt2 .planning-window { min-height: 330px; padding: 30px 24px; }
   .mkt2 .planning-window-value { gap: 10px; }
@@ -1692,11 +1416,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mkt2 .ih-visual,
-  .mkt2 .journey-console,
   .mkt2 .planning-board,
   .mkt2 .nyc-map-console,
   .mkt2 .nyc-map-detail { animation: none !important; }
-  .mkt2 .journey-sequence li,
   .mkt2 .nyc-borough-shape,
   .mkt2 .nyc-borough-label,
   .mkt2 .nyc-borough-tabs button { transition: none !important; transform: none !important; }
