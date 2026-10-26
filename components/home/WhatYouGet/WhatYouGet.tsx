@@ -29,9 +29,7 @@ const PILLARS: Pillar[] = [
     kicker: "PROTECTS YOUR FEES",
     title: "Mistakes caught before you file",
     body: "NYPD fees are non-refundable. We check every page first, so a small mismatch doesn’t cost you the application.",
-    // #E2674F (and the suggested #C9533D) falls below 4.5:1 at this text
-    // size on white, so this is darkened one more step for AA contrast.
-    accent: "#C04B36",
+    accent: "#C9533D",
     stage: "linear-gradient(160deg,#FFF6F1 0%,#F7F4F2 100%)",
   },
   {

@@ -12,7 +12,7 @@
 .chipBad { background: rgba(232,90,79,.12); }
 .chipGood { background: rgba(35,162,109,.12); }
 .rowFlag { background: rgba(35,162,109,.07); }
-.lens { position: absolute; top: 48px; left: 18px; width: 44px; height: 44px; transform: translate(118px, 40px); }
+.lens { position: absolute; top: 22px; left: 18px; width: 44px; height: 44px; transform: translate(118px, 40px); }
 .lensGlass { position: absolute; inset: 0; border: 2px solid #0B1420; border-radius: 50%; background: rgba(255,255,255,.25); box-shadow: 0 6px 14px rgba(11,20,32,.18); }
 .lensHandle { position: absolute; top: 38px; left: 36px; width: 16px; height: 4px; border-radius: 2px; background: #0B1420; transform: rotate(45deg); transform-origin: left center; }
 
