@@ -3,6 +3,7 @@ import { buildMetadata } from "@/lib/seo"
 import { getPublicPackages } from "@/lib/public-data"
 import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
 import Hero from "@/components/marketing/hero/Hero"
+import WhatYouGet from "@/components/home/WhatYouGet/WhatYouGet"
 import PhasesSection from "@/components/marketing/phases/PhasesSection"
 import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
 import PlanningRealities from "@/components/marketing/planning-realities/PlanningRealities"
@@ -37,24 +38,8 @@ export default async function Home() {
       {/* ── HERO ─────────────────────────────────────────────────────────────── */}
       <Hero />
 
-      {/* ── PROOF RAIL ───────────────────────────────────────────────────────── */}
-      <section className="proof-rail" aria-label="Service principles">
-        <div className="shell proof-grid">
-          {[
-            ["01", "boroughs", "All five boroughs", "One case system built around NYC’s published process."],
-            ["02", "traced", "Every requirement traced", "Your file is organized against a source, not a guess."],
-            ["03", "applicant", "You remain the applicant", "You review and submit your own application."],
-          ].map(([index, mark, title, detail]) => (
-            <article className={`proof-item proof-item--${mark}`} key={index}>
-              <span className="proof-mark" aria-hidden="true" />
-              <div className="proof-copy">
-                <span className="proof-index">{index}</span>
-                <p><strong>{title}</strong>{detail}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      {/* ── WHAT YOU GET — one worry, one fix ───────────────────────────────── */}
+      <WhatYouGet />
 
       {/* ── PROCESS — five phases ────────────────────────────────────────────── */}
       <PhasesSection />

@@ -10,7 +10,7 @@
 
   max-width: 1440px;
   margin: 0 auto;
-  padding: 92px var(--hero-gutter) 64px;
+  padding: 92px var(--hero-gutter) 0;
   display: grid;
   grid-template-columns: minmax(0, 660px) minmax(0, 1fr);
   align-items: center;
@@ -268,7 +268,7 @@
 }
 
 @media (max-width: 767px) {
-  .hero { padding: 40px 20px 40px; gap: 0; }
+  .hero { padding: 40px 20px 0; gap: 0; }
   .title { font-size: 44px; }
   .sparkCanvas { left: -40px; top: -26px; width: calc(100% + 80px); height: calc(100% + 40px); }
   .hero .lede { margin-top: 30px; font-size: 16.5px; }

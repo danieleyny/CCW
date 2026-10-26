@@ -1,0 +1,27 @@
+.stage { position: relative; height: var(--wyg-vignette-height, 172px); overflow: hidden; border-radius: 16px; background: var(--stage); }
+.formWrap { position: absolute; top: 50%; left: 50%; width: min(272px, calc(100% - 28px)); height: 144px; transform: translate(-50%, -50%); }
+.form { position: absolute; top: 0; right: 0; left: 0; overflow: hidden; padding: 6px 0; border-radius: 10px; background: #FFF; box-shadow: 0 6px 16px -8px rgba(11,20,32,.2); font-family: var(--sans); font-size: 11px; }
+.row { display: flex; align-items: center; justify-content: space-between; min-height: 15px; padding: 7px 10px; transition: background-color .2s ease; }
+.row span { color: #7D8693; }
+.row b { color: #0B1420; font-weight: 600; }
+.swap { position: relative; display: inline-block; width: 128px; height: 15px; }
+.bad, .good { position: absolute; top: 0; right: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 600; }
+.bad { color: #E85A4F; opacity: 0; }
+.good { color: #1F9A66; opacity: 1; }
+.chipBad, .chipGood { padding: 1px 6px; border-radius: 99px; font-size: 9.5px; font-style: normal; font-weight: 600; }
+.chipBad { background: rgba(232,90,79,.12); }
+.chipGood { background: rgba(35,162,109,.12); }
+.rowFlag { background: rgba(35,162,109,.07); }
+.lens { position: absolute; top: 48px; left: 18px; width: 44px; height: 44px; transform: translate(118px, 40px); }
+.lensGlass { position: absolute; inset: 0; border: 2px solid #0B1420; border-radius: 50%; background: rgba(255,255,255,.25); box-shadow: 0 6px 14px rgba(11,20,32,.18); }
+.lensHandle { position: absolute; top: 38px; left: 36px; width: 16px; height: 4px; border-radius: 2px; background: #0B1420; transform: rotate(45deg); transform-origin: left center; }
+
+@keyframes lensMove { 0%,8% { transform: translate(0,0); } 22%,58% { transform: translate(118px,40px); } 74%,86% { transform: translate(150px,80px); } 100% { transform: translate(0,0); } }
+@keyframes badState { 0%,20% { opacity: 0; } 24%,52% { opacity: 1; } 56%,100% { opacity: 0; } }
+@keyframes goodState { 0%,54% { opacity: 0; } 58%,94% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes rowFlagState { 0%,20% { background: transparent; } 24%,52% { background: rgba(232,90,79,.08); } 58%,94% { background: rgba(35,162,109,.07); } 100% { background: transparent; } }
+
+.running .lens { animation: lensMove 7s cubic-bezier(.6,0,.3,1) infinite; }
+.running .bad { animation: badState 7s ease infinite; }
+.running .good { animation: goodState 7s ease infinite; }
+.running .rowFlag { animation: rowFlagState 7s ease infinite; }

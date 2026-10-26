@@ -1,0 +1,23 @@
+.stage { box-sizing: border-box; display: flex; height: var(--wyg-vignette-height, 172px); flex-direction: column; justify-content: center; padding: 12px 14px; overflow: hidden; border-radius: 16px; background: var(--stage); font-family: var(--sans); }
+.head { display: flex; justify-content: space-between; color: #5B6470; font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; }
+.bar { height: 4px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: rgba(11,20,32,.08); }
+.barFill { width: 60%; height: 100%; border-radius: 2px; background: linear-gradient(90deg,#2FA8EE,#5B6CFF); }
+.list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: 11.5px; }
+.item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid rgba(11,20,32,.06); border-radius: 9px; background: #FFF; }
+.item span { flex: 1; color: #0B1420; }
+.item em { color: #9AA3AF; font-size: 10px; font-style: normal; }
+.check { width: 16px; height: 16px; flex: none; }
+.next { border-color: rgba(47,168,238,.55); }
+.ping { display: block; width: 10px; height: 10px; margin: 0 3px; flex: none; border-radius: 50%; background: #2FA8EE; }
+.cta { padding: 2px 8px; border-radius: 99px; background: #0B1420; color: #FFF; font-size: 10px; font-weight: 600; }
+
+@keyframes trackerIn1 { 0%,4% { opacity: 0; transform: translateY(8px); } 10%,92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes trackerIn2 { 0%,14% { opacity: 0; transform: translateY(8px); } 20%,92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes trackerIn3 { 0%,26% { opacity: 0; transform: translateY(8px); } 32%,92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes trackerGlow { 0%,34% { border-color: rgba(11,20,32,.08); } 42%,90% { border-color: rgba(47,168,238,.55); } 100% { border-color: rgba(11,20,32,.08); } }
+@keyframes trackerPing { 0% { box-shadow: 0 0 0 0 rgba(47,168,238,.55); } 70% { box-shadow: 0 0 0 9px rgba(47,168,238,0); } 100% { box-shadow: 0 0 0 0 rgba(47,168,238,0); } }
+
+.running .in1 { animation: trackerIn1 7s ease infinite; }
+.running .in2 { animation: trackerIn2 7s ease infinite; }
+.running .in3 { animation: trackerIn3 7s ease infinite, trackerGlow 7s ease infinite; }
+.running .ping { animation: trackerPing 1.6s ease-out infinite; }

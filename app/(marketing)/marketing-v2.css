@@ -311,23 +311,6 @@
     .mkt2 .mobile-menu-panel .button { width: 100%; margin-top: 20px; }
     .mkt2 .mobile-menu-note { margin: 14px 0 0; color: var(--light-soft); font-size: 12px; }
 
-    .mkt2 .proof-rail { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper); }
-    .mkt2 .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .mkt2 .proof-item { min-height: 104px; display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 14px; padding: 24px 32px; border-left: 1px solid var(--rule); }
-    .mkt2 .proof-item:first-child { border-left: 0; }
-    .mkt2 .proof-mark { position: relative; width: 34px; height: 34px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--electric) 24%, var(--rule)); border-radius: 50%; background: color-mix(in srgb, var(--electric) 7%, var(--paper)); }
-    .mkt2 .proof-mark::before, .mkt2 .proof-mark::after { content: ""; position: absolute; }
-    .mkt2 .proof-item--boroughs .proof-mark::before { inset: 7px; background: radial-gradient(circle at 18% 32%, var(--cyan) 0 2px, transparent 2.7px), radial-gradient(circle at 67% 17%, var(--electric) 0 2px, transparent 2.7px), radial-gradient(circle at 80% 58%, var(--tangerine) 0 2px, transparent 2.7px), radial-gradient(circle at 42% 76%, var(--violet) 0 2px, transparent 2.7px), radial-gradient(circle at 18% 62%, var(--electric) 0 2px, transparent 2.7px); }
-    .mkt2 .proof-item--boroughs .proof-mark::after { left: 8px; right: 8px; top: 16px; height: 1px; background: linear-gradient(90deg, var(--cyan), var(--electric), var(--tangerine)); transform: rotate(-28deg); transform-origin: center; opacity: .72; }
-    .mkt2 .proof-item--traced .proof-mark::before { inset: 8px; border-top: 1px solid var(--electric); border-bottom: 1px solid var(--cyan); background: linear-gradient(90deg, transparent 0 13%, var(--tangerine) 13% 20%, transparent 20% 44%, var(--electric) 44% 51%, transparent 51% 76%, var(--cyan) 76% 83%, transparent 83%); }
-    .mkt2 .proof-item--traced .proof-mark::after { left: 8px; right: 8px; top: 16px; height: 1px; background: var(--ink); opacity: .28; }
-    .mkt2 .proof-item--applicant .proof-mark::before { width: 10px; height: 10px; left: 11px; top: 7px; border-radius: 50%; background: var(--electric); box-shadow: 0 13px 0 -2px var(--cyan); }
-    .mkt2 .proof-item--applicant .proof-mark::after { width: 18px; height: 8px; left: 7px; bottom: 5px; border: 1px solid var(--ink); border-radius: 10px 10px 6px 6px; border-bottom: 0; opacity: .5; }
-    .mkt2 .proof-copy { min-width: 0; }
-    .mkt2 .proof-index { display: block; margin-bottom: 4px; color: var(--electric); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; }
-    .mkt2 .proof-item p { margin: 0; font-size: 14px; line-height: 1.5; }
-    .mkt2 .proof-item strong { display: block; color: var(--ink); font-size: 16px; }
-
     .mkt2 .order-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(56px, 9vw, 124px); align-items: start; }
     .mkt2 .order-copy { position: sticky; top: 36px; }
     .mkt2 .order-note { margin-top: 32px; padding-left: 18px; border-left: 2px solid var(--electric); color: var(--ink-soft); font-size: 14px; }
@@ -569,15 +552,6 @@
 
     .mkt2 /* Signature composition carried through the full homepage */
     .display { font-weight: 500; letter-spacing: -.055em; }
-    .mkt2 .proof-rail { position: relative; z-index: 6; margin-top: -24px; border: 0; background: transparent; }
-    .mkt2 .proof-grid {
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      background: var(--paper);
-      box-shadow: 0 18px 48px rgba(7,17,31,.09);
-      transform: rotate(-.45deg);
-    }
-
     .mkt2 .phase:hover { transform: translateY(-7px) scale(1.008); border-color: var(--blue); background: var(--midnight-soft); }
     .mkt2 .phase:hover::after, .mkt2 .phase:focus-within::after { opacity: 1; }
     /* Opaque base under the electric tint so the active card still fully occludes. */
@@ -693,14 +667,6 @@
     }
 
     @supports (animation-timeline: view()) {
-      .mkt2 .proof-item {
-        animation: proof-card-in 700ms linear both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 82%;
-      }
-      .mkt2 .proof-item:nth-child(2) { animation-delay: 70ms; }
-      .mkt2 .proof-item:nth-child(3) { animation-delay: 140ms; }
-
       .mkt2 .phase-card-content {
         animation-name: phase-content-rise;
         animation-duration: 1s;
@@ -718,11 +684,6 @@
         animation-timeline: view();
         animation-range: entry 0% cover 28%;
       }
-    }
-
-    @keyframes proof-card-in {
-      from { opacity: .68; transform: translate3d(0, 14px, 0); }
-      to { opacity: 1; transform: translate3d(0, 0, 0); }
     }
 
     @media (prefers-reduced-motion: no-preference) {
@@ -750,9 +711,6 @@
       .mkt2 .section { padding-block: 80px; }
       .mkt2 .desktop-nav, .mkt2 .nav-actions { display: none; }
       .mkt2 .mobile-menu { display: block; }
-      .mkt2 .proof-rail { padding-block: 14px; }
-      .mkt2 .proof-grid { grid-template-columns: 1fr; gap: 10px; transform: none; }
-      .mkt2 .proof-item, .mkt2 .proof-item:first-child { min-height: 0; padding: 18px; border: 1px solid var(--rule); border-radius: 12px; background: linear-gradient(135deg, var(--paper), color-mix(in srgb, var(--electric) 3%, var(--paper))); }
       .mkt2 #legal::before, .mkt2 .promise::before { display: none; }
       .mkt2 .order-grid, .mkt2 .candor-grid, .mkt2 .guides-head { grid-template-columns: 1fr; gap: 48px; }
       .mkt2 .order-copy { position: static; }
@@ -785,10 +743,6 @@
       .mkt2 .eyebrow { margin-bottom: 16px; }
       .mkt2 .display { font-size: 40px; line-height: 1.05; }
       .mkt2 .section-lede { font-size: 18px; }
-      .mkt2 .proof-item, .mkt2 .proof-item:first-child { grid-template-columns: 38px 1fr; gap: 14px; padding: 17px; }
-      .mkt2 .proof-mark { width: 38px; height: 38px; }
-      .mkt2 .proof-item p { font-size: 13px; line-height: 1.46; }
-      .mkt2 .proof-item strong { font-size: 15px; }
       .mkt2 .phase-note { margin-top: 28px; }
       .mkt2 .requirement-group summary { min-height: 72px; grid-template-columns: 30px 1fr 28px; gap: 10px; }
       .mkt2 .req-title { font-size: 16px; }
