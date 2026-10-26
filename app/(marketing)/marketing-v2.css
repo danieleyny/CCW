@@ -228,8 +228,12 @@
       inset: 1px;
       border-radius: 8px;
       pointer-events: none;
-      opacity: .75;
-      background: radial-gradient(82% 110% at 50% -78%, rgba(255,255,255,.12), transparent 70%);
+      opacity: .66;
+      background:
+        radial-gradient(70% 145% at 8% -58%, rgba(255,255,255,.16), transparent 67%),
+        radial-gradient(76% 150% at 96% 134%, rgba(91,132,168,.18), transparent 68%);
+      background-size: 142% 168%, 136% 162%;
+      background-position: 0% 0%, 100% 100%;
       transition: opacity 240ms ease;
     }
     .mkt2 .site-header .nav-actions .button:hover,
@@ -250,6 +254,17 @@
     .mkt2 .site-header .nav-actions .button:focus-visible::after,
     .mkt2 .site-header .nav-actions .button.is-hover::after { opacity: 1; }
     .mkt2 .site-header .nav-actions .button > * { position: relative; z-index: 1; }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .mkt2 .site-header .nav-actions .button::after {
+        animation: nav-cta-atmosphere 12s cubic-bezier(.42, 0, .18, 1) infinite alternate;
+      }
+    }
+    @keyframes nav-cta-atmosphere {
+      0% { background-position: 0% 0%, 100% 100%; }
+      52% { background-position: 48% 28%, 54% 70%; }
+      100% { background-position: 100% 60%, 0% 42%; }
+    }
 
     .mkt2 .mobile-menu { display: none; position: static; }
     .mkt2 .mobile-menu > summary {
