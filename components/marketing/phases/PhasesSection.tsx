@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useRef, useState, type FocusEvent } from "react"
+import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from "react"
 import styles from "./PhasesSection.module.css"
-import { HOLD_AFTER_PICK_MS, LOOP_MS, PHASES } from "./phasesData"
+import { COL_GAP, COL_GROW, HOLD_AFTER_PICK_MS, LOOP_MS, PHASES } from "./phasesData"
 import { startPhaseIllustration, type IllustrationHandle } from "./illustrationEngine"
 import { usePrefersReducedMotion } from "../shared/usePrefersReducedMotion"
 
@@ -16,6 +16,8 @@ export default function PhasesSection() {
   const dCanvas = useRef<(HTMLCanvasElement | null)[]>([])
   const mCanvas = useRef<(HTMLCanvasElement | null)[]>([])
   const handles = useRef<IllustrationHandle[][]>([])
+  const colsRef = useRef<HTMLOListElement>(null)
+  const hoverTimer = useRef<number | null>(null)
 
   useEffect(() => {
     const list = PHASES.map((p, i) => {
@@ -28,6 +30,23 @@ export default function PhasesSection() {
     handles.current = list
     return () => list.flat().forEach((handle) => handle.destroy())
   }, [reduced])
+
+  useEffect(() => {
+    const element = colsRef.current
+    if (!element) return
+
+    const update = () => {
+      const width = element.clientWidth
+      if (!width) return
+      const openWidth = Math.round(((width - COL_GAP * (PHASES.length - 1)) * COL_GROW) / (COL_GROW + (PHASES.length - 1)))
+      element.style.setProperty("--open-w", `${openWidth}px`)
+    }
+
+    update()
+    const resizeObserver = new ResizeObserver(update)
+    resizeObserver.observe(element)
+    return () => resizeObserver.disconnect()
+  }, [])
 
   useEffect(() => {
     handles.current.forEach((hs, i) => hs.forEach((handle) => handle.setActive(i === active)))
@@ -60,6 +79,18 @@ export default function PhasesSection() {
     setActive(index)
   }
 
+  const cancelHover = () => {
+    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current)
+    hoverTimer.current = null
+  }
+
+  const hoverSelect = (index: number) => {
+    cancelHover()
+    hoverTimer.current = window.setTimeout(() => select(index), 120)
+  }
+
+  useEffect(() => () => cancelHover(), [])
+
   const groupHandlers = {
     onMouseEnter: () => { pointerInside.current = true },
     onMouseLeave: () => { pointerInside.current = false },
@@ -79,15 +110,26 @@ export default function PhasesSection() {
         <p className={styles.lede}>The full journey is long. Your interface is not. At every stage, you see what is yours, what is being prepared, and what comes next.</p>
       </header>
 
-      <ol className={styles.columns} {...groupHandlers}>
+      <ol
+        ref={colsRef}
+        className={styles.columns}
+        style={{ "--gap": `${COL_GAP}px`, "--grow": COL_GROW } as CSSProperties}
+        {...groupHandlers}
+      >
         {PHASES.map((phase, index) => {
           const on = index === active
           return (
             <li key={phase.num} className={styles.colItem} data-on={on} style={{ ["--c" as string]: phase.color }}>
-              <button type="button" className={styles.col} data-on={on} data-past={index < active} aria-pressed={on} aria-label={`Phase ${phase.num}, ${phase.title}`} onMouseEnter={() => select(index)} onFocus={() => select(index)} onClick={() => select(index, true)}>
+              <button type="button" className={styles.col} data-on={on} data-past={index < active} aria-pressed={on} aria-label={`Phase ${phase.num}, ${phase.title}`} onMouseEnter={() => hoverSelect(index)} onMouseLeave={cancelHover} onFocus={() => select(index)} onClick={() => { cancelHover(); select(index, true) }}>
+                <span className={styles.colBg} aria-hidden="true" />
+                <span className={styles.colAuroraIdle} aria-hidden="true" />
+                <span className={styles.colAurora} aria-hidden="true" />
+                <span className={styles.colGhost} aria-hidden="true">{phase.num}</span>
+                <span className={styles.colEdge} aria-hidden="true" />
                 <span className={styles.colNum}>{phase.num}</span>
                 <span className={styles.colRule} aria-hidden="true" />
                 <canvas ref={(element) => { dCanvas.current[index] = element }} className={styles.colCanvas} aria-hidden="true" />
+                <span className={styles.colLine} aria-hidden="true" />
                 <span className={styles.colTitle} aria-hidden="true">{phase.title}</span>
                 <span className={styles.colOpen}><span className={styles.colOpenTitle}>{phase.title}</span><span className={styles.colOpenDesc}>{phase.desc}</span></span>
               </button>
@@ -102,6 +144,7 @@ export default function PhasesSection() {
           return (
             <li key={phase.num} style={{ ["--c" as string]: phase.color }}>
               <button type="button" className={styles.row} data-on={on} data-past={index < active} aria-expanded={on} aria-controls={`phase-panel-${index}`} aria-label={`Phase ${phase.num}, ${phase.title}`} onClick={() => select(index, true)}>
+                <span className={styles.rowGhost} aria-hidden="true">{phase.num}</span>
                 <span className={styles.rowHead}><span className={styles.rowNum}>{phase.num}</span><span className={styles.rowTitle}>{phase.title}</span></span>
                 <span className={styles.rowBody} id={`phase-panel-${index}`}>
                   <span className={styles.rowInner}>

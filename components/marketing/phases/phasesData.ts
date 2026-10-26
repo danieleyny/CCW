@@ -1,5 +1,9 @@
 export type Phase = { num: string; title: string; desc: string; color: string }
 
+// Keep these in sync with the desktop column layout and its open-width formula.
+export const COL_GAP = 12
+export const COL_GROW = 3.4
+
 export const PHASES: Phase[] = [
   { num: "01", title: "Qualify", desc: "Understand the license track, basic fit, and what may require an attorney.", color: "#2FA8EE" },
   { num: "02", title: "Train", desc: "Plan the required course and protect the six-month certificate window.", color: "#5B6CFF" },
