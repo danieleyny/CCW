@@ -108,37 +108,44 @@
 .hero a.btnChrome:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
 .btnLabel, .hero a.btnChrome .arrow { position: relative; z-index: 1; }
 
-/* the light pass */
+/* The eligibility control should feel like a finished object, not an alert.
+   One slow, low-contrast pass gives it life without competing with the headline
+   or the map. Its long resting phase is intentional. */
 .hero a.btnChrome::before {
   content: "";
   position: absolute;
-  top: -20%;
-  bottom: -20%;
-  left: 0;
-  width: 55%;
+  top: -36%;
+  bottom: -36%;
+  left: -12%;
+  width: 72%;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(100deg, rgba(95,212,224,0) 0%, rgba(95,212,224,.1) 28%, rgba(255,255,255,.78) 50%, rgba(95,212,224,.14) 72%, rgba(95,212,224,0) 100%);
-  transform: translateX(-130%) skewX(-18deg);
-  animation: chromeSweep 7.5s cubic-bezier(.45,0,.2,1) 1.2s infinite;
+  opacity: 0;
+  filter: blur(1.5px);
+  background: linear-gradient(104deg,
+    rgba(161, 194, 222, 0) 0%,
+    rgba(161, 194, 222, .035) 30%,
+    rgba(255, 255, 255, .34) 50%,
+    rgba(174, 205, 234, .07) 70%,
+    rgba(161, 194, 222, 0) 100%);
+  transform: translateX(-170%) skewX(-14deg);
+  animation: chromeSweep 15s cubic-bezier(.42, 0, .18, 1) 1.8s infinite;
 }
-.hero a.btnChrome:hover::before { animation: chromeOnce .95s cubic-bezier(.45,0,.2,1) forwards; }
+.hero a.btnChrome:hover::before { animation: chromeOnce 1.25s cubic-bezier(.42, 0, .18, 1) forwards; }
 
-/* A few deliberately faint particles give the dark surface depth without
-   competing with the eligibility action or the larger hero illustration. */
+/* A stationary, extremely subtle surface reflection replaces the old moving
+   dots. It keeps the button dimensional while leaving the words perfectly calm. */
 .hero a.btnChrome::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: .52;
+  opacity: .7;
   background:
-    radial-gradient(circle at 18% 64%, rgba(255,255,255,.78) 0 1px, transparent 1.7px),
-    radial-gradient(circle at 38% 30%, rgba(95,212,224,.66) 0 1px, transparent 1.8px),
-    radial-gradient(circle at 72% 69%, rgba(255,255,255,.52) 0 1px, transparent 1.6px),
-    radial-gradient(circle at 86% 34%, rgba(112,133,255,.58) 0 1px, transparent 1.8px);
-  animation: buttonParticles 9s ease-in-out infinite alternate;
+    radial-gradient(75% 150% at 54% -90%, rgba(255,255,255,.15), transparent 65%),
+    linear-gradient(180deg, rgba(255,255,255,.045), transparent 43%);
+  animation: chromeAmbient 15s ease-in-out 1.8s infinite;
 }
 
 .arrow { transition: transform .3s cubic-bezier(.2,.7,.2,1); }
@@ -146,17 +153,20 @@
 .hero a.textLink:hover .arrow { transform: translateX(3px); }
 
 @keyframes chromeSweep {
-  0% { transform: translateX(-130%) skewX(-18deg); }
-  17% { transform: translateX(230%) skewX(-18deg); }
-  100% { transform: translateX(230%) skewX(-18deg); }
+  0%, 65% { opacity: 0; transform: translateX(-170%) skewX(-14deg); }
+  68% { opacity: .28; }
+  77% { opacity: .72; transform: translateX(165%) skewX(-14deg); }
+  81%, 100% { opacity: 0; transform: translateX(165%) skewX(-14deg); }
 }
 @keyframes chromeOnce {
-  from { transform: translateX(-130%) skewX(-18deg); }
-  to { transform: translateX(230%) skewX(-18deg); }
+  from { opacity: 0; transform: translateX(-170%) skewX(-14deg); }
+  18% { opacity: .3; }
+  78% { opacity: .72; transform: translateX(165%) skewX(-14deg); }
+  to { opacity: 0; transform: translateX(165%) skewX(-14deg); }
 }
-@keyframes buttonParticles {
-  from { transform: translate3d(-2px, 1px, 0); opacity: .3; }
-  to { transform: translate3d(3px, -1px, 0); opacity: .72; }
+@keyframes chromeAmbient {
+  0%, 64%, 100% { opacity: .58; }
+  73% { opacity: .86; }
 }
 
 /* ---------- "See the process" text link ---------- */
