@@ -1,52 +1,48 @@
-import Link from "next/link"
+"use client"
+
 import Image from "next/image"
-import { brand } from "@/config/brand"
-import { footerColumns } from "@/lib/marketing-routes"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import styles from "./site-footer.module.css"
 
-/**
- * Marketing v2 footer — the hub of the hub-and-spoke. Columns are derived from the
- * route registry (footerColumns), so every marketing page is linked here and nothing
- * is orphaned (VERIFY #8). The legal disclaimer is brand.disclaimer verbatim — load-
- * bearing compliance copy, never edited.
- */
-const COLS = footerColumns()
+export const FOOTER_DISCLAIMER = "Document preparation and case management. Not a law firm, and not affiliated with the NYPD."
 
-export function SiteFooter() {
+const COLUMNS = [
+  { title: "Get started", links: [["Check eligibility", "/eligibility"], ["How it works", "/how-it-works"], ["Pricing", "/pricing"]] },
+  { title: "Resources", links: [["Free checklist", "/checklist"], ["Official sources", "/resources"], ["FAQ", "/faq"]] },
+  { title: "Account", links: [["Sign in", "/auth/login"], ["Contact", "/contact"]] },
+] as const
+
+export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
+  const pathname = usePathname()
+  if (!embedded && pathname === "/") return null
+
   return (
-    <footer className="site-footer" id="portal">
-      <div className="shell">
-        <div className="footer-top">
-          <div className="footer-intro">
-            <Link className="brand" href="/" aria-label="Gun License NYC home">
-              {/* Footer is midnight → the light shield mark. */}
-              <Image src="/logo-dark.png" alt="" width={27} height={32} className="brand-logo" />
-              <span>Gun License NYC</span>
-            </Link>
-            <p>{brand.tagline}</p>
-          </div>
-
-          {COLS.map((col) => (
-            <nav key={col.title} className="footer-col" aria-label={`${col.title} links`}>
-              <h3>{col.title}</h3>
-              {col.links.map((l) => (
-                <Link key={l.href} href={l.href}>
-                  {l.label}
-                </Link>
-              ))}
-            </nav>
+    <footer className={styles.footer} data-embedded={embedded} id="portal">
+      <div className={styles.grid}>
+        <div className={styles.brandCol}>
+          <Link href="/" className={styles.brand} aria-label="Gun License NYC home">
+            <Image src="/logo-dark.png" alt="" width={22} height={26} className={styles.logo} />
+            <span>Gun License NYC</span>
+          </Link>
+          <p className={styles.disclaimer}>{FOOTER_DISCLAIMER}</p>
+        </div>
+        <nav aria-label="Footer" className={styles.columns}>
+          {COLUMNS.map((column) => (
+            <div key={column.title} className={styles.column} data-column={column.title}>
+              <p className={styles.columnTitle}>{column.title}</p>
+              {column.links.map(([label, href]) => <Link key={label} href={href} className={styles.link}>{label}</Link>)}
+            </div>
           ))}
-        </div>
-
-        <div className="footer-legal">
-          <p>{brand.disclaimer}</p>
-        </div>
-        <div className="footer-bottom">
-          <span>© {brand.legalName}</span>
-          <span>
-            {brand.contact.email} · {brand.contact.phone}
-          </span>
-          <span>{brand.contact.address}</span>
-        </div>
+        </nav>
+      </div>
+      <div className={styles.bottom}>
+        <span>© {new Date().getFullYear()} Gun License NYC</span>
+        <span className={styles.legal}>
+          <Link href="/auth/login" className={`${styles.link} ${styles.mobileOnly}`}>Sign in</Link>
+          <Link href="/privacy" className={styles.link}>Privacy</Link>
+          <Link href="/privacy#terms" className={styles.link}>Terms</Link>
+        </span>
       </div>
     </footer>
   )

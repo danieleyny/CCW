@@ -8,6 +8,7 @@ import PhasesSection from "@/components/marketing/phases/PhasesSection"
 import { CaseChecklistDemo } from "@/components/marketing/v2/case-checklist-demo"
 import PlanningRealities from "@/components/marketing/planning-realities/PlanningRealities"
 import PricingSection from "@/components/marketing/pricing/PricingSection"
+import ClosingCta from "@/components/marketing/closing/ClosingCta"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Help — Concealed Carry",
@@ -158,25 +159,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── CLOSING ──────────────────────────────────────────────────────────── */}
-      <section className="closing dark" aria-labelledby="closing-title">
-        <div className="shell closing-inner">
-          <div className="closing-copy">
-            <p className="eyebrow">Start with clarity</p>
-            <h2 id="closing-title">See where<br />you stand.</h2>
-            <p>
-              Answer a short set of questions and see whether our document-preparation and
-              case-management service fits your situation.
-            </p>
-          </div>
-          <div className="closing-action">
-            <Link className="button button-light" href="/eligibility">
-              Check eligibility <span className="button-arrow" aria-hidden="true">→</span>
-            </Link>
-            <p>2 minutes · no card required</p>
-          </div>
-        </div>
-      </section>
+      <ClosingCta />
     </>
   )
 }
