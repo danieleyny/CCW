@@ -204,6 +204,53 @@
     .mkt2 .button-arrow { font-size: 17px; line-height: 1; transition: transform 220ms cubic-bezier(.2,.7,.2,1); }
     .mkt2 .button:hover .button-arrow, .mkt2 .button:focus-visible .button-arrow, .mkt2 .button.is-hover .button-arrow { transform: translateX(3px); }
 
+    /* Header CTA: a restrained graphite control. The navigation needs a clear
+       destination, not the saturated blue/rainbow state used by broader page
+       buttons. Keep the depth in the surface and reserve motion for the arrow. */
+    .mkt2 .site-header .nav-actions .button {
+      min-height: 48px;
+      padding-inline: 20px;
+      border-color: rgba(9, 18, 29, .94);
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.075), transparent 42%),
+        #09121d;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.11),
+        inset 0 -1px 0 rgba(0,0,0,.38),
+        0 8px 18px rgba(7,17,31,.12);
+      transition: transform 240ms cubic-bezier(.2,.7,.2,1), border-color 240ms ease, box-shadow 240ms ease, background-color 240ms ease;
+    }
+    .mkt2 .site-header .nav-actions .button::before { display: none; }
+    .mkt2 .site-header .nav-actions .button::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 8px;
+      pointer-events: none;
+      opacity: .75;
+      background: radial-gradient(82% 110% at 50% -78%, rgba(255,255,255,.12), transparent 70%);
+      transition: opacity 240ms ease;
+    }
+    .mkt2 .site-header .nav-actions .button:hover,
+    .mkt2 .site-header .nav-actions .button:focus-visible,
+    .mkt2 .site-header .nav-actions .button.is-hover {
+      border-color: rgba(59, 79, 99, .95);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.1), transparent 44%),
+        #0b1622;
+      color: var(--light);
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.16),
+        inset 0 -1px 0 rgba(0,0,0,.42),
+        0 12px 24px rgba(7,17,31,.17);
+    }
+    .mkt2 .site-header .nav-actions .button:hover::after,
+    .mkt2 .site-header .nav-actions .button:focus-visible::after,
+    .mkt2 .site-header .nav-actions .button.is-hover::after { opacity: 1; }
+    .mkt2 .site-header .nav-actions .button > * { position: relative; z-index: 1; }
+
     .mkt2 .mobile-menu { display: none; position: static; }
     .mkt2 .mobile-menu > summary {
       width: 46px;
