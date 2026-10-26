@@ -57,7 +57,7 @@
   to { background-position: -200% 50%; }
 }
 
-.lede { margin: 42px 0 0; max-width: 520px; font-size: 19px; line-height: 1.6; color: var(--hero-muted); }
+.hero .lede { margin: 42px 0 0; max-width: 520px; font-size: 19px; line-height: 1.6; color: var(--hero-muted); }
 .ctas { margin-top: 38px; display: flex; align-items: center; gap: 22px; }
 
 /* ---------- Obsidian primary button ---------- */
@@ -271,7 +271,7 @@
   .hero { padding: 40px 20px 40px; gap: 0; }
   .title { font-size: 44px; }
   .sparkCanvas { left: -40px; top: -26px; width: calc(100% + 80px); height: calc(100% + 40px); }
-  .lede { margin-top: 30px; font-size: 16.5px; }
+  .hero .lede { margin-top: 30px; font-size: 16.5px; }
   .ctas { margin-top: 30px; flex-direction: column; align-items: stretch; gap: 4px; }
   .hero a.btnChrome { width: 100%; height: 48px; border-radius: 12px; font-size: 16px; }
   .hero a.textLink { width: 100%; justify-content: center; height: 48px; font-size: 16px; }
