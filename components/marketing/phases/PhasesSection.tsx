@@ -124,7 +124,7 @@ export default function PhasesSection() {
                 <span className={styles.colBg} aria-hidden="true" />
                 <span className={styles.colAuroraIdle} aria-hidden="true" />
                 <span className={styles.colAurora} aria-hidden="true" />
-                <span className={styles.colGhost} aria-hidden="true">{phase.num}</span>
+                <span className={styles.colGhost} aria-hidden="true">{String(index + 1)}</span>
                 <span className={styles.colEdge} aria-hidden="true" />
                 <span className={styles.colNum}>{phase.num}</span>
                 <span className={styles.colRule} aria-hidden="true" />
@@ -144,7 +144,7 @@ export default function PhasesSection() {
           return (
             <li key={phase.num} style={{ ["--c" as string]: phase.color }}>
               <button type="button" className={styles.row} data-on={on} data-past={index < active} aria-expanded={on} aria-controls={`phase-panel-${index}`} aria-label={`Phase ${phase.num}, ${phase.title}`} onClick={() => select(index, true)}>
-                <span className={styles.rowGhost} aria-hidden="true">{phase.num}</span>
+                <span className={styles.rowGhost} aria-hidden="true">{String(index + 1)}</span>
                 <span className={styles.rowHead}><span className={styles.rowNum}>{phase.num}</span><span className={styles.rowTitle}>{phase.title}</span></span>
                 <span className={styles.rowBody} id={`phase-panel-${index}`}>
                   <span className={styles.rowInner}>

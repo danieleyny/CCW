@@ -70,19 +70,20 @@
 .col[data-on='true'] .colAurora { opacity: 1; transform: none; }
 
 .colGhost {
-  position: absolute; left: 14px; top: 92px; z-index: -1;
-  font-family: var(--ph-display); font-size: 230px; line-height: 1; white-space: nowrap;
+  position: absolute; left: 50%; top: 78px; z-index: -1;
+  font-family: var(--ph-display); font-size: 270px; line-height: 1; white-space: nowrap;
   color: rgba(255, 255, 255, .035);
   -webkit-text-stroke: 1px rgba(255, 255, 255, .10);
   pointer-events: none; user-select: none;
-  transform-origin: 20% 60%;
+  transform: translateX(-50%);
+  transform-origin: 50% 60%;
   transition: opacity .5s ease .32s, transform .5s var(--ease-in) .32s;
 }
 
 @supports (-webkit-text-stroke: 1px black) { .colGhost { color: transparent; } }
-.col[data-past='true'] .colGhost { -webkit-text-stroke-color: color-mix(in srgb, var(--c) 35%, transparent); }
+.col[data-past='true'] .colGhost { -webkit-text-stroke-color: color-mix(in srgb, var(--c) 50%, transparent); }
 .col[data-on='true'] .colGhost {
-  opacity: 0; transform: scale(1.04);
+  opacity: 0; transform: translateX(-50%) scale(1.04);
   transition: opacity .26s ease, transform .26s ease;
 }
 
@@ -225,7 +226,7 @@
     pointer-events: none; transition: opacity .3s ease .2s;
   }
 
-  .row[data-past='true'] .rowGhost { -webkit-text-stroke-color: color-mix(in srgb, var(--c) 35%, transparent); }
+  .row[data-past='true'] .rowGhost { -webkit-text-stroke-color: color-mix(in srgb, var(--c) 50%, transparent); }
   .row[data-on='true'] .rowGhost { opacity: 0; transition: opacity .2s ease; }
   .rowHead, .rowBody { position: relative; z-index: 1; }
   .rowHead { display: flex; align-items: baseline; gap: 12px; padding: 18px 18px 16px; }
