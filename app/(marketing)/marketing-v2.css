@@ -228,12 +228,13 @@
       inset: 1px;
       border-radius: 8px;
       pointer-events: none;
-      opacity: .66;
+      opacity: .9;
       background:
-        radial-gradient(70% 145% at 8% -58%, rgba(255,255,255,.16), transparent 67%),
-        radial-gradient(76% 150% at 96% 134%, rgba(91,132,168,.18), transparent 68%);
-      background-size: 142% 168%, 136% 162%;
-      background-position: 0% 0%, 100% 100%;
+        linear-gradient(112deg, transparent 18%, rgba(255,255,255,.14) 47%, transparent 76%),
+        radial-gradient(70% 145% at 8% -58%, rgba(255,255,255,.28), transparent 67%),
+        radial-gradient(76% 150% at 96% 134%, rgba(91,132,168,.25), transparent 68%);
+      background-size: 210% 160%, 142% 168%, 136% 162%;
+      background-position: 0% 50%, 0% 0%, 100% 100%;
       transition: opacity 240ms ease;
     }
     .mkt2 .site-header .nav-actions .button:hover,
@@ -257,13 +258,13 @@
 
     @media (prefers-reduced-motion: no-preference) {
       .mkt2 .site-header .nav-actions .button::after {
-        animation: nav-cta-atmosphere 12s cubic-bezier(.42, 0, .18, 1) infinite alternate;
+        animation: nav-cta-atmosphere 10.5s cubic-bezier(.42, 0, .18, 1) infinite alternate;
       }
     }
     @keyframes nav-cta-atmosphere {
-      0% { background-position: 0% 0%, 100% 100%; }
-      52% { background-position: 48% 28%, 54% 70%; }
-      100% { background-position: 100% 60%, 0% 42%; }
+      0% { background-position: 0% 50%, 0% 0%, 100% 100%; }
+      52% { background-position: 52% 46%, 48% 28%, 54% 70%; }
+      100% { background-position: 100% 42%, 100% 60%, 0% 42%; }
     }
 
     .mkt2 .mobile-menu { display: none; position: static; }
