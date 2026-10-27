@@ -2,8 +2,7 @@
 .footer[data-embedded='true'] { background: transparent; }
 .grid { max-width: 1248px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 3fr; gap: 48px; }
 .columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
-.brand { display: inline-flex; align-items: center; gap: 12px; color: #F4F7F9; font-size: 17px; font-weight: 600; text-decoration: none; }
-.logo { width: 22px; height: 26px; object-fit: contain; }
+.brand { color: #F4F7F9; }
 .disclaimer { max-width: 300px; margin: 16px 0 0; color: #8A99A6; font-size: 14px; line-height: 1.6; }
 .columnTitle { margin: 0 0 14px; color: #5E6B78; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
 .link { display: block; margin-top: 10px; color: #8A99A6; font-size: 15px; text-decoration: none; transition: color .2s ease; }

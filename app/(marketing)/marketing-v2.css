@@ -139,8 +139,7 @@
       text-decoration: none;
       white-space: nowrap;
     }
-    /* The real shield logo (next/image), sized by width/height on the element. */
-    .mkt2 .brand-logo { flex: 0 0 auto; height: auto; }
+    .mkt2 .brand > .logo { flex: 0 0 auto; }
     .mkt2 .desktop-nav { display: flex; align-items: center; gap: 28px; margin-left: auto; }
     .mkt2 .desktop-nav a, .mkt2 .sign-in {
       color: var(--ink-soft);
@@ -298,6 +297,7 @@
       box-shadow: var(--shadow-dark);
     }
     .mkt2 .mobile-menu-panel nav { display: grid; }
+    .mkt2 .mobile-menu-brand { display: flex; align-items: center; min-height: 42px; margin-bottom: 10px; }
     .mkt2 .mobile-menu-panel nav a {
       min-height: 52px;
       display: flex;

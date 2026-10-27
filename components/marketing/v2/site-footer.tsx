@@ -1,8 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import BrandLogo from "@/components/brand/BrandLogo"
+import brandStyles from "@/components/brand/BrandLogo.module.css"
 import styles from "./site-footer.module.css"
 
 export const FOOTER_DISCLAIMER = "Document preparation and case management. Not a law firm, and not affiliated with the NYPD."
@@ -21,10 +22,7 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
     <footer className={styles.footer} data-embedded={embedded} id="portal">
       <div className={styles.grid}>
         <div className={styles.brandCol}>
-          <Link href="/" className={styles.brand} aria-label="Gun License NYC home">
-            <Image src="/logo-dark.png" alt="" width={22} height={26} className={styles.logo} />
-            <span>Gun License NYC</span>
-          </Link>
+          <BrandLogo tone="light" size="sm" className={`${styles.brand} ${brandStyles.footerMark}`} />
           <p className={styles.disclaimer}>{FOOTER_DISCLAIMER}</p>
         </div>
         <nav aria-label="Footer" className={styles.columns}>

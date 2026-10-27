@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { LogoLockup } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { InstructorSignupForm } from "@/components/instructor/signup-form"
 
 export const metadata = { title: "Become a Gun License NYC instructor" }
@@ -7,9 +7,7 @@ export const metadata = { title: "Become a Gun License NYC instructor" }
 export default function InstructorSignupPage() {
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-10">
-      <Link href="/">
-        <LogoLockup className="text-lg" />
-      </Link>
+      <BrandLogo tone="ink" size="sm" />
       <div className="mt-6">
         <h1 className="text-2xl font-semibold tracking-tight">Teach with Gun License NYC</h1>
         <p className="mt-1 text-sm text-muted-foreground">

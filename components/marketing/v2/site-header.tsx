@@ -1,7 +1,8 @@
 import Link from "next/link"
-import Image from "next/image"
 import { ExternalLink } from "lucide-react"
 import { NAV_ROUTES } from "@/lib/marketing-routes"
+import BrandLogo from "@/components/brand/BrandLogo"
+import { HeaderBrand } from "./header-brand"
 
 /**
  * Marketing v2 header — a floating pill nav (see marketing-v2.css). Server
@@ -14,11 +15,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="shell nav-row">
-        <Link className="brand" href="/" aria-label="Gun License NYC home">
-          {/* Nav pill is ivory → the dark shield mark. Fixed w/h so it can't shift layout. */}
-          <Image src="/logo.png" alt="" width={27} height={32} priority className="brand-logo" />
-          <span>Gun License NYC</span>
-        </Link>
+        <HeaderBrand className="brand" />
 
         <nav className="desktop-nav" aria-label="Primary navigation">
           {links.map((l) => (
@@ -46,6 +43,7 @@ export function SiteHeader() {
             </span>
           </summary>
           <div className="mobile-menu-panel">
+            <div className="mobile-menu-brand"><BrandLogo tone="light" size="sm" /></div>
             <nav aria-label="Mobile navigation">
               {links.map((l, i) => (
                 <Link key={l.href} href={l.href}>

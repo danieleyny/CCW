@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { LogoLockup } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { tokenActive } from "@/lib/references/process"
 import { ReferenceFlow } from "@/components/public/reference-flow"
 
@@ -67,7 +67,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           here on purpose — an anonymous page asking a stranger for personal details
           and a notarised signature reads as phishing. The PDF they sign is
           unbranded (lib/pdf/builder); the page + invitation email are not. */}
-      <LogoLockup className="mb-6 text-lg" />
+      <BrandLogo tone="ink" size="sm" className="mb-6" />
       {children}
     </div>
   )

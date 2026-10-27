@@ -5,8 +5,7 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { resolveOnboardingRedirect } from "@/lib/portal/intake-gate"
-import { brand } from "@/config/brand"
-import { LogoMark } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
 import { AccountActions } from "@/components/auth/account-actions"
 import { NotificationBell } from "@/components/shared/notification-bell"
@@ -58,10 +57,7 @@ export default async function PortalLayout({
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 md:h-16">
           {/* The wordmark never wraps: at 390px the language selector squeezed
               it onto three lines, so the lockup shrinks a step instead. */}
-          <Link href="/portal" className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold tracking-tight text-foreground sm:text-lg">
-            <LogoMark className="size-7 shrink-0 text-brass sm:size-8" />
-            {brand.logo.wordmark}
-          </Link>
+          <BrandLogo href="/portal" tone="light" size="sm" />
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LocaleSwitcher current={locale} label={t.common.language} />
             <NotificationBell />

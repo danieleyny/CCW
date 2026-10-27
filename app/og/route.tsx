@@ -36,9 +36,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const title = (searchParams.get("title") ?? brand.tagline).slice(0, 110)
   const eyebrow = (searchParams.get("eyebrow") ?? "NYC · gun license, handled").slice(0, 60)
-  // The brand mark, fetched from this origin (the dark-surface logo reads on the
-  // obsidian card).
-  const logoUrl = new URL("/logo.png", request.url).href
+  // The new light medallion scope reads crisply on the obsidian card.
+  const logoUrl = new URL("/brand/logo-mark-light-512.png", request.url).href
 
   return new ImageResponse(
     (
@@ -84,11 +83,11 @@ export async function GET(request: Request) {
           </div>
         </div>
 
-        {/* wordmark + seal */}
+        {/* R1 medallion + wordmark */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoUrl} width={50} height={59} alt="" style={{ objectFit: "contain" }} />
+            <img src={logoUrl} width={52} height={52} alt="" style={{ objectFit: "contain" }} />
             <div
               style={{
                 display: "flex",
@@ -98,8 +97,9 @@ export async function GET(request: Request) {
                 color: TEXT_HI,
               }}
             >
-              {brand.name}
+              Gun License
             </div>
+            <div style={{ display: "flex", marginLeft: 12, fontSize: 20, fontWeight: 600, letterSpacing: 4, color: "#8A5BEA" }}>NYC</div>
           </div>
           <div style={{ display: "flex", fontSize: 22, color: TEXT_MID }}>{brand.domain}</div>
         </div>

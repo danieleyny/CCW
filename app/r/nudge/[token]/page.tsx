@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { LogoLockup } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { ReferenceNudge } from "@/components/public/reference-nudge"
 
 export const metadata = {
@@ -68,7 +68,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
       {/* UNBRAND DECISION: third-party reference-chase page from an emailed link —
           kept branded so it doesn't read as phishing; the signed PDF is unbranded. */}
-      <LogoLockup className="mb-6 text-lg" />
+      <BrandLogo tone="ink" size="sm" className="mb-6" />
       {children}
     </div>
   )

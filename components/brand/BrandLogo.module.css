@@ -1,0 +1,25 @@
+.logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; line-height: 1; -webkit-tap-highlight-color: transparent; }
+.logo:focus-visible { outline: 2px solid #5FD4E0; outline-offset: 4px; border-radius: 10px; }
+.ink { color: #0B1420; }
+.light { color: #F4F7F9; }
+.word { display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.wordMain { font-family: var(--font-sans), sans-serif; font-weight: 600; letter-spacing: -0.01em; color: currentColor; }
+.wordNyc { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 600; letter-spacing: 0.12em; color: #5B6CFF; background: linear-gradient(90deg, #2FA8EE, #8A5BEA 55%, #EE5E8C); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.md .wordMain { font-size: 19px; } .md .wordNyc { font-size: 13.5px; }
+.sm .wordMain { font-size: 17px; } .sm .wordNyc { font-size: 12px; }
+.sm { gap: 10px; }
+.mark { display: block; flex: none; overflow: visible; }
+.sight { transform-box: fill-box; transform-origin: center; }
+.ticks { transform-box: view-box; transform-origin: 24px 24px; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.dot { transform-box: fill-box; transform-origin: center; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+@media (hover: hover) { .logo:hover .ticks { transform: scale(.82); } .logo:hover .dot { transform: scale(1.45); } }
+.intro .arc { stroke-dasharray: 1; stroke-dashoffset: 1; animation: arcIn .5s cubic-bezier(.3,.7,.2,1) forwards; animation-delay: calc(.1s + var(--i) * .09s); }
+.intro .sight { opacity: 0; transform: scale(1.35); animation: sightIn .5s cubic-bezier(.2,.9,.3,1.2) .55s forwards; }
+.intro .edge { opacity: 0; animation: fadeIn .4s ease .05s forwards; }
+@keyframes arcIn { to { stroke-dashoffset: 0; } }
+@keyframes sightIn { to { opacity: 1; transform: scale(1); } }
+@keyframes fadeIn { to { opacity: 1; } }
+.footerMark .mark { width: 30px; height: 30px; }
+@media (max-width: 840px) { .responsiveHeader .mark { width: 28px; height: 28px; } .responsiveHeader .wordMain { font-size: 17px; } .responsiveHeader .wordNyc { font-size: 12px; } }
+@media (max-width: 359px) { .sm .word { display: none; } }
+@media (prefers-reduced-motion: reduce) { .intro .arc, .intro .sight, .intro .edge { animation: none; opacity: 1; stroke-dashoffset: 0; transform: none; } .ticks, .dot { transition: none; } .logo:hover .ticks, .logo:hover .dot { transform: none; } }

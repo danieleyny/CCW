@@ -24,7 +24,7 @@ export const brand = {
     address: "New York, NY",
   },
   logo: {
-    // SVG mark lives in components/brand/logo.tsx; wordmark in the display typeface.
+    // The reusable R1 Medallion Scope and wordmark live in components/brand/.
     wordmark: "Gun License NYC",
     mark: "◎",
   },

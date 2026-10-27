@@ -1,7 +1,5 @@
-import Link from "next/link"
 import { requireRole } from "@/lib/auth"
-import { brand } from "@/config/brand"
-import { LogoMark } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { AccountActions } from "@/components/auth/account-actions"
 import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 
@@ -18,10 +16,7 @@ export default async function SponsorLayout({ children }: { children: React.Reac
       <DarkBackdrop />
       <header className="glass-bar sticky top-0 z-20 border-b border-hairline" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 md:h-16">
-          <Link href="/sponsor" className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold tracking-tight text-foreground sm:text-lg">
-            <LogoMark className="size-7 shrink-0 text-brass sm:size-8" />
-            {brand.logo.wordmark}
-          </Link>
+          <BrandLogo href="/sponsor" tone="light" size="sm" />
           <AccountActions signOutLabel="Sign out" />
         </div>
       </header>
