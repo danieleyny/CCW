@@ -1,6 +1,10 @@
+"use client"
+
+import type { CSSProperties } from "react"
 import styles from "./Hero.module.css"
 import HeroHeadline from "./HeroHeadline"
 import HeroMap from "./HeroMap"
+import { usePlayOncePerLoad } from "../shared/usePlayOncePerLoad"
 
 function Arrow() {
   return (
@@ -22,34 +26,37 @@ function Check() {
 const TRUST = ["2-minute check", "No card required", "You submit your own application"]
 
 export default function Hero() {
+  const playIntro = usePlayOncePerLoad("hero")
+
   return (
-    <section className={styles.hero}>
+    <section className={styles.hero} data-intro={playIntro ? "play" : undefined}>
       <div className={styles.copy}>
-        <HeroHeadline />
-        <p className={styles.lede}>
+        <HeroHeadline intro={playIntro} />
+        <p className={`${styles.lede} ${styles.introSub}`}>
           We turn NYC’s concealed-carry process into one clear next step at a time, while you stay in control of your own application.
         </p>
         <div className={styles.ctas}>
-          <a href="/eligibility" className={styles.btnChrome}>
+          <a href="/eligibility" className={`${styles.btnChrome} ${styles.introCta}`}>
             <span className={styles.btnLabel}>Check eligibility</span>
             <Arrow />
           </a>
-          <a href="/how-it-works" className={styles.textLink}>
+          <a href="/how-it-works" className={`${styles.textLink} ${styles.introLink}`}>
             <span className={styles.textLinkLabel}>See the process</span>
             <Arrow />
           </a>
         </div>
-        <ul className={styles.trust}>
-          {TRUST.map((text) => (
-            <li key={text}>
+        <ul className={`${styles.trust} ${styles.introTrust}`}>
+          {TRUST.map((text, index) => (
+            <li key={text} style={{ "--i": index } as CSSProperties}>
               <Check />
               {text}
             </li>
           ))}
         </ul>
       </div>
-      <div className={styles.visual}>
-        <HeroMap />
+      <div className={`${styles.visual} ${styles.introMap}`} style={{ "--map-src": "url(/images/marketing/hero-nyc-guided-path-v2.png)" } as CSSProperties}>
+        <HeroMap intro={playIntro} />
+        <span className={styles.introSheen} aria-hidden="true" />
       </div>
     </section>
   )

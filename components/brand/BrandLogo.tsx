@@ -1,17 +1,22 @@
+"use client"
+
 import Link from "next/link"
 import BrandMark from "./BrandMark"
 import s from "./BrandLogo.module.css"
+import { usePlayOncePerLoad } from "@/components/marketing/shared/usePlayOncePerLoad"
 
 type Props = {
   tone?: "ink" | "light"
   size?: "md" | "sm"
   href?: string | null
-  intro?: boolean
+  motion?: "live" | "none"
   responsiveHeader?: boolean
   className?: string
 }
 
-export default function BrandLogo({ tone = "ink", size = "md", href = "/", intro = false, responsiveHeader = false, className }: Props) {
+export default function BrandLogo({ tone = "ink", size = "md", href = "/", motion = "none", responsiveHeader = false, className }: Props) {
+  const withIntro = usePlayOncePerLoad("logo", motion === "live")
+  const motionClass = motion === "live" ? `${s.live} ${withIntro ? s.withIntro : s.noIntro}` : ""
   const inner = (
     <>
       <BrandMark size={size === "md" ? 34 : 28} />
@@ -21,7 +26,7 @@ export default function BrandLogo({ tone = "ink", size = "md", href = "/", intro
       </span>
     </>
   )
-  const cls = `${s.logo} ${s[tone]} ${s[size]} ${intro ? s.intro : ""} ${responsiveHeader ? s.responsiveHeader : ""} ${className ?? ""}`
+  const cls = `${s.logo} ${s[tone]} ${s[size]} ${motionClass} ${responsiveHeader ? s.responsiveHeader : ""} ${className ?? ""}`
   return href === null
     ? <span className={cls}>{inner}</span>
     : <Link href={href} className={cls} aria-label="Gun License NYC home">{inner}</Link>

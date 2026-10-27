@@ -12,7 +12,7 @@ const MAP_WEBP_SRC = "/images/marketing/hero-nyc-guided-path-v2.webp"
 const MAP_WIDTH = 1448
 const MAP_HEIGHT = 1086
 
-export default function HeroMap() {
+export default function HeroMap({ intro = false }: { intro?: boolean }) {
   const reduced = usePrefersReducedMotion()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [chip, setChip] = useState(-1)
@@ -23,10 +23,19 @@ export default function HeroMap() {
     canTilt.current = window.matchMedia("(hover: hover) and (pointer: fine)").matches && !reduced
     const canvas = canvasRef.current
     if (!canvas) return
-    const debug = new URLSearchParams(window.location.search).has("heroDebug")
-    const map = startHeroMap(canvas, { reducedMotion: reduced, debug, onStep: (activeChip) => setChip(activeChip) })
-    return () => map.destroy()
-  }, [reduced])
+    let destroy: (() => void) | undefined
+    const start = () => {
+      const debug = new URLSearchParams(window.location.search).has("heroDebug")
+      const map = startHeroMap(canvas, { reducedMotion: reduced, debug, onStep: (activeChip) => setChip(activeChip) })
+      destroy = () => map.destroy()
+    }
+    const timeout = intro && !reduced ? window.setTimeout(start, 1700) : undefined
+    if (timeout === undefined) start()
+    return () => {
+      if (timeout !== undefined) window.clearTimeout(timeout)
+      destroy?.()
+    }
+  }, [intro, reduced])
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!canTilt.current || event.pointerType !== "mouse") return

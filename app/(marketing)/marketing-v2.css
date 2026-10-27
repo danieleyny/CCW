@@ -650,13 +650,11 @@
     }
     .mkt2 .closing h2 { position: relative; z-index: 1; font-weight: 500; }
 
-    .mkt2 /* Finite motion system: transform and opacity only */
-    .site-header .nav-row { animation: hero-nav-in 620ms cubic-bezier(.2,.75,.2,1) 80ms both; }
-
-    @keyframes hero-nav-in {
-      from { opacity: .9; transform: translate3d(0,-10px,0); }
-      to { opacity: 1; transform: translate3d(0,0,0); }
-    }
+    /* First-load header arrival. The sticky parent stays in place; only the pill moves. */
+    .mkt2 .headerBar[data-intro='play'] { animation: hdrIn .7s cubic-bezier(.2,.8,.2,1) both; }
+    .mkt2 .headerBar[data-intro='play'] .navItem { animation: hdrUp .5s ease both; animation-delay: calc(.25s + var(--i) * .05s); }
+    @keyframes hdrIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: none; } }
+    @keyframes hdrUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @keyframes view-rise {
       from { opacity: .78; transform: translate3d(0,18px,0); }
       to { opacity: 1; transform: translate3d(0,0,0); }
@@ -799,6 +797,7 @@
       .mkt2 { scroll-behavior: auto; }
       .mkt2 *, .mkt2 *::before, .mkt2 *::after { animation: none !important; transition: none !important; transform-duration: 0s !important; }
       .mkt2 .button:hover, .mkt2 .button:focus-visible, .mkt2 .button.is-hover, .mkt2 .phase:hover, .mkt2 .phase:focus-within, .mkt2 .fact:hover, .mkt2 .fact:focus-within, .mkt2 .guide-link:hover, .mkt2 .guide-link:focus-visible, .mkt2 .guide-link.is-hover, .mkt2 .toc-card a:hover, .mkt2 .toc-card a:focus-visible, .mkt2 .related-card:hover, .mkt2 .related-card:focus-visible, .mkt2 .flow-screen:hover, .mkt2 .flow-screen:focus-within, .mkt2 .choice:hover, .mkt2 .choice:focus-within, .mkt2 .flow-back:hover, .mkt2 .flow-back:focus-visible, .mkt2 .hover-surface.is-hover, .mkt2 .button:hover .button-arrow, .mkt2 .button:focus-visible .button-arrow, .mkt2 .button.is-hover .button-arrow, .mkt2 .guide-link:hover .guide-arrow, .mkt2 .guide-link.is-hover .guide-arrow, .mkt2 .footer-col a:hover, .mkt2 .footer-col a:focus-visible { transform: none; }
+      .mkt2 .headerBar[data-intro='play'], .mkt2 .headerBar[data-intro='play'] .navItem { animation: none; }
     }
 
 /* next/font wiring + full-height ground (the spec assumed <link> Google Fonts;

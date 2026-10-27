@@ -9,17 +9,38 @@
 .sm .wordMain { font-size: 17px; } .sm .wordNyc { font-size: 12px; }
 .sm { gap: 10px; }
 .mark { display: block; flex: none; overflow: visible; }
-.sight { transform-box: fill-box; transform-origin: center; }
-.ticks { transform-box: view-box; transform-origin: 24px 24px; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
-.dot { transform-box: fill-box; transform-origin: center; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
-@media (hover: hover) { .logo:hover .ticks { transform: scale(.82); } .logo:hover .dot { transform: scale(1.45); } }
-.intro .arc { stroke-dasharray: 1; stroke-dashoffset: 1; animation: arcIn .5s cubic-bezier(.3,.7,.2,1) forwards; animation-delay: calc(.1s + var(--i) * .09s); }
-.intro .sight { opacity: 0; transform: scale(1.35); animation: sightIn .5s cubic-bezier(.2,.9,.3,1.2) .55s forwards; }
-.intro .edge { opacity: 0; animation: fadeIn .4s ease .05s forwards; }
-@keyframes arcIn { to { stroke-dashoffset: 0; } }
-@keyframes sightIn { to { opacity: 1; transform: scale(1); } }
-@keyframes fadeIn { to { opacity: 1; } }
+.edge, .arcs, .ticks, .ticksHover, .dot, .dotHover, .ring, .sight, .ping { transform-box: view-box; transform-origin: 24px 24px; }
+.ping { opacity: 0; }
+.ticksHover, .dotHover { transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+@media (hover: hover) { .logo:hover .ticksHover { transform: scale(.82); } .logo:hover .dotHover { transform: scale(1.45); } }
+
+/* Header-only Lock-on motion: an arrival sequence followed by one quiet event every 8 seconds. */
+.live.noIntro .arcs  { animation: lgStep 40s cubic-bezier(.7,0,.2,1) .4s infinite; }
+.live.noIntro .ticks { animation: lgLock 8s ease .4s infinite; }
+.live.noIntro .dot   { animation: lgBlink 8s ease .4s infinite; }
+.live.noIntro .ping  { animation: lgPingLoop 8s ease-out .4s infinite; }
+.live.withIntro .edge  { animation: lgEdgeIn .7s cubic-bezier(.2,.8,.2,1) both; }
+.live.withIntro .arcs  { animation: lgArcsIn 1s cubic-bezier(.16,.84,.24,1) .1s both, lgStep 40s cubic-bezier(.7,0,.2,1) 1.6s infinite; }
+.live.withIntro .ticks { animation: lgTicksIn .5s cubic-bezier(.2,.9,.3,1.25) .75s both, lgLock 8s ease 1.6s infinite; }
+.live.withIntro .ring  { animation: lgFade .3s ease .8s both; }
+.live.withIntro .dot   { animation: lgFade .2s ease 1.05s both, lgBlink 8s ease 1.6s infinite; }
+.live.withIntro .ping  { animation: lgPing .8s ease-out 1.05s both, lgPingLoop 8s ease-out 1.6s infinite; }
+@keyframes lgEdgeIn { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
+@keyframes lgArcsIn { from { opacity: 0; transform: rotate(-200deg) scale(.7); } to { opacity: 1; transform: none; } }
+@keyframes lgTicksIn { from { opacity: 0; transform: scale(2.1); } to { opacity: 1; transform: none; } }
+@keyframes lgFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lgPing { 0% { opacity: 0; transform: scale(.4); } 2% { opacity: .9; transform: scale(.45); } 100% { opacity: 0; transform: scale(3.2); } }
+@keyframes lgStep { 0%, 17% { transform: rotate(0deg); } 20%, 37% { transform: rotate(72deg); } 40%, 57% { transform: rotate(144deg); } 60%, 77% { transform: rotate(216deg); } 80%, 97% { transform: rotate(288deg); } 100% { transform: rotate(360deg); } }
+@keyframes lgLock { 0%, 84%, 100% { transform: none; } 90% { transform: scale(.78); } 95% { transform: scale(1.06); } }
+@keyframes lgBlink { 0%, 86%, 100% { transform: scale(1); } 91% { transform: scale(1.9); } 96% { transform: scale(.9); } }
+@keyframes lgPingLoop { 0%, 88% { opacity: 0; transform: scale(.4); } 90% { opacity: .9; transform: scale(.5); } 100% { opacity: 0; transform: scale(3.3); } }
 .footerMark .mark { width: 30px; height: 30px; }
 @media (max-width: 840px) { .responsiveHeader .mark { width: 28px; height: 28px; } .responsiveHeader .wordMain { font-size: 17px; } .responsiveHeader .wordNyc { font-size: 12px; } }
 @media (max-width: 359px) { .sm .word { display: none; } }
-@media (prefers-reduced-motion: reduce) { .intro .arc, .intro .sight, .intro .edge { animation: none; opacity: 1; stroke-dashoffset: 0; transform: none; } .ticks, .dot { transition: none; } .logo:hover .ticks, .logo:hover .dot { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .live .edge, .live .arcs, .live .ticks, .live .ring, .live .dot, .live .ping { animation: none !important; }
+  .live .edge, .live .arcs, .live .ticks, .live .ring, .live .dot { opacity: 1; transform: none; }
+  .live .ping { opacity: 0; }
+  .ticksHover, .dotHover { transition: none; }
+  .logo:hover .ticksHover, .logo:hover .dotHover { transform: none; }
+}
