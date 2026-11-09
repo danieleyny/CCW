@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { CheckCircle2, ArrowRight } from "lucide-react"
 import { captureLead, type LeadState } from "@/app/(marketing)/actions"
@@ -25,6 +25,8 @@ export function LeadForm({
   successBody = "We'll reach out within one business day.",
   accountCta = false,
   hidden,
+  variant = "default",
+  onSuccess,
 }: {
   source: string
   showMessage?: boolean
@@ -36,10 +38,15 @@ export function LeadForm({
   /** When true, the success state pushes the visitor straight into account creation. */
   accountCta?: boolean
   hidden?: Record<string, string>
+  /** Light presentation used inside pale marketing panels. */
+  variant?: "default" | "light"
+  /** Optional visual callback after the server confirms a successful lead. */
+  onSuccess?: () => void
 }) {
   const [state, action, pending] = useActionState<LeadState, FormData>(captureLead, {})
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const announcedSuccess = useRef(false)
 
   // On success, stash name + email so /auth/sign-up comes pre-filled and the new
   // account adopts the lead just captured (no PII in the URL).
@@ -59,10 +66,20 @@ export function LeadForm({
     if (state.ok) trackEvent("contact_submitted", { source })
   }, [state.ok, source])
 
+  useEffect(() => {
+    if (!state.ok || announcedSuccess.current) return
+    announcedSuccess.current = true
+    onSuccess?.()
+  }, [state.ok, onSuccess])
+
   if (state.ok) {
     if (accountCta) {
       return (
-        <div className="rounded-lg border border-ok/30 bg-ok/8 p-8 text-center">
+        <div
+          data-lead-form="success"
+          data-variant={variant}
+          className="rounded-lg border border-ok/30 bg-ok/8 p-8 text-center"
+        >
           <CheckCircle2 className="mx-auto size-8 text-ok" />
           <h3 className="mt-3 font-display text-lg font-semibold">{successTitle}</h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-text-mid">
@@ -83,7 +100,11 @@ export function LeadForm({
       )
     }
     return (
-      <div className="rounded-lg border border-ok/30 bg-ok/8 p-8 text-center">
+      <div
+        data-lead-form="success"
+        data-variant={variant}
+        className="rounded-lg border border-ok/30 bg-ok/8 p-8 text-center"
+      >
         <CheckCircle2 className="mx-auto size-8 text-ok" />
         <h3 className="mt-3 font-display text-lg font-semibold">{successTitle}</h3>
         <p className="mt-1 text-sm text-text-mid">{successBody}</p>
@@ -92,7 +113,7 @@ export function LeadForm({
   }
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-4" data-lead-form="form" data-variant={variant}>
       <input type="hidden" name="source" value={source} />
       {hidden &&
         Object.entries(hidden).map(([k, v]) => (
@@ -110,8 +131,10 @@ export function LeadForm({
           <Input id="lead-email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="lead-phone">Phone</Label>
-          <Input id="lead-phone" name="phone" placeholder="optional" />
+          <Label htmlFor="lead-phone">
+            Phone {variant === "light" ? <span className="font-normal">(optional)</span> : null}
+          </Label>
+          <Input id="lead-phone" name="phone" placeholder={variant === "light" ? undefined : "optional"} />
         </div>
         {showBorough && (
           <div className="space-y-1.5">
@@ -141,8 +164,15 @@ export function LeadForm({
       )}
       {showMessage && (
         <div className="space-y-1.5">
-          <Label htmlFor="lead-message">Anything we should know?</Label>
-          <Textarea id="lead-message" name="message" rows={3} placeholder="optional" />
+          <Label htmlFor="lead-message">
+            Anything we should know? {variant === "light" ? <span className="font-normal">(optional)</span> : null}
+          </Label>
+          <Textarea
+            id="lead-message"
+            name="message"
+            rows={3}
+            placeholder={variant === "light" ? undefined : "optional"}
+          />
         </div>
       )}
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}

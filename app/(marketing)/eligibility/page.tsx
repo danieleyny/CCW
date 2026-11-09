@@ -1,6 +1,5 @@
 import { buildMetadata } from "@/lib/seo"
-import { PageHero } from "@/components/marketing/page-hero"
-import { EligibilityQuiz } from "@/components/marketing/eligibility-quiz"
+import { EligibilityExperience } from "@/components/marketing/eligibility-quiz"
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Eligibility Check",
@@ -10,20 +9,5 @@ export const metadata = buildMetadata({
 })
 
 export default function Eligibility() {
-  return (
-    <>
-      <PageHero
-        eyebrow="Eligibility"
-        title="Do you qualify?"
-        subtitle="Six quick questions. No payment, no commitment — just a clear read on where you stand."
-      />
-      <section className="section">
-        <div className="shell">
-          <div style={{ maxWidth: 560, marginInline: "auto" }}>
-            <EligibilityQuiz />
-          </div>
-        </div>
-      </section>
-    </>
-  )
+  return <EligibilityExperience />
 }

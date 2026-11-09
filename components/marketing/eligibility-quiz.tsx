@@ -1,37 +1,64 @@
 "use client"
 
 import Link from "next/link"
-import { ExternalLink } from "lucide-react"
-import { useEffect, useState } from "react"
-import { trackEvent } from "@/lib/analytics"
-import { FACTS } from "@/content/facts"
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpenCheck,
+  Check,
+  ExternalLink,
+  Info,
+  ShieldCheck,
+} from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { LeadForm } from "@/components/marketing/lead-form"
+import { FACTS } from "@/content/facts"
+import { trackEvent } from "@/lib/analytics"
+import { ELIGIBILITY_ART, type EligibilityArt } from "./eligibility/art"
+import {
+  EligibilityStage,
+  useEligibilityParticles,
+} from "./eligibility/stage"
+import styles from "./eligibility/eligibility.module.css"
 
-/**
- * A per-answer explanation shown the instant a disqualifying / needs-a-lawyer
- * answer is chosen. `factKey` renders the underlying RULE from content/facts.ts
- * (agency + primary source + date) — we explain the published rule, never a
- * verdict on someone's specific record.
- */
 type Explain = { headline: string; body: string; factKey: keyof typeof FACTS }
 type Answer = {
   value: string
   label: string
+  desc: string
   flag?: "ineligible" | "review"
   track?: string
   explain?: Explain
 }
-type Question = { key: string; prompt: string; options: Answer[] }
+type Question = {
+  key: string
+  rail: string
+  prompt: string
+  help: string
+  hue: string
+  whyTitle: string
+  why: string
+  art: EligibilityArt
+  options: Answer[]
+}
+type QuizStatus = "likely" | "review" | "ineligible"
 
 const QUESTIONS: Question[] = [
   {
     key: "age",
+    rail: "Age",
     prompt: "Are you 21 years of age or older?",
+    help: "Choose the closest answer. You can clarify anything during intake.",
+    hue: "#CFDAF2",
+    whyTitle: "Why we ask",
+    why: "New York requires every handgun-license applicant to be at least 21.",
+    art: "age",
     options: [
-      { value: "yes", label: "Yes, I'm 21+" },
+      { value: "yes", label: "Yes, I'm 21 or older", desc: "You meet the age requirement." },
       {
         value: "no",
-        label: "No",
+        label: "No, I'm under 21",
+        desc: "There isn’t a version of the application for under-21s.",
         flag: "ineligible",
         explain: {
           headline: "You must be 21 to apply",
@@ -43,30 +70,72 @@ const QUESTIONS: Question[] = [
   },
   {
     key: "location",
+    rail: "Location",
     prompt: "Where are you based?",
+    help: "This tells us which license track fits you.",
+    hue: "#D6DCF3",
+    whyTitle: "Why we ask",
+    why: "Residents, NYC business owners and Special Carry applicants follow different tracks.",
+    art: "location",
     options: [
-      { value: "resident", label: "I live in a NYC borough", track: "resident" },
-      { value: "business", label: "I own/run a business in NYC", track: "business" },
-      { value: "non_resident", label: "Outside NYC (Special Carry)", track: "non_resident" },
+      {
+        value: "resident",
+        label: "I live in one of the five boroughs",
+        desc: "Manhattan, Brooklyn, Queens, the Bronx or Staten Island.",
+        track: "resident",
+      },
+      {
+        value: "business",
+        label: "I own or run a business in NYC",
+        desc: "Your business is based in the city, even if you live elsewhere.",
+        track: "business",
+      },
+      {
+        value: "non_resident",
+        label: "I live outside NYC (Special Carry)",
+        desc: "You live elsewhere in New York and hold a county license.",
+        track: "non_resident",
+      },
     ],
   },
   {
     key: "training",
-    prompt: "Have you completed the 16+2 hour CCIA training?",
+    rail: "Training",
+    prompt: "Have you completed the 16 + 2 hour CCIA training?",
+    help: "16 hours in the classroom plus 2 hours of live-fire.",
+    hue: "#DDD8F1",
+    whyTitle: "Good to know",
+    why: "Your training certificate must be dated within 6 months of when you file.",
+    art: "training",
     options: [
-      { value: "done", label: "Completed" },
-      { value: "planning", label: "Planning to" },
-      { value: "not_yet", label: "Not yet — I'll need it" },
+      { value: "done", label: "Yes, I’ve completed it", desc: "Keep your certificate handy for the file." },
+      { value: "planning", label: "I’m planning to", desc: "You already know where you’ll take it." },
+      {
+        value: "not_yet",
+        label: "Not yet, I’ll need a class",
+        desc: "We run a monthly class you can book here.",
+      },
     ],
   },
   {
     key: "convictions",
+    rail: "Record",
     prompt: "Do you have any felony or disqualifying convictions?",
+    help: "Choose the closest answer. You can clarify anything during intake.",
+    hue: "#E4D9EE",
+    whyTitle: "Why we ask",
+    why: "Some convictions can affect an application. Whether yours does is a legal question.",
+    art: "record",
     options: [
-      { value: "none", label: "No disqualifiers" },
+      {
+        value: "none",
+        label: "No, nothing that disqualifies me",
+        desc: "No felony or “serious offense” convictions.",
+      },
       {
         value: "yes",
-        label: "I have a conviction",
+        label: "Yes, I have a conviction",
+        desc: "We’ll connect you with a confidential attorney review.",
         flag: "review",
         explain: {
           headline: "This is a question for a lawyer",
@@ -78,12 +147,19 @@ const QUESTIONS: Question[] = [
   },
   {
     key: "history",
+    rail: "History",
     prompt: "Any disqualifying mental-health or restraining-order history?",
+    help: "Choose the closest answer. You can clarify anything during intake.",
+    hue: "#EBDCE6",
+    whyTitle: "Why we ask",
+    why: "Certain history can affect eligibility. A licensed attorney can tell you if yours does.",
+    art: "history",
     options: [
-      { value: "none", label: "None" },
+      { value: "none", label: "No, none that applies", desc: "No history of this kind." },
       {
         value: "yes",
-        label: "I have history to discuss",
+        label: "Yes, I have history to discuss",
+        desc: "We’ll connect you with a confidential attorney review.",
         flag: "review",
         explain: {
           headline: "Let's talk this through first",
@@ -95,368 +171,681 @@ const QUESTIONS: Question[] = [
   },
   {
     key: "storage",
+    rail: "Storage",
     prompt: "Do you have a gun safe for secure storage?",
+    help: "Photos of your safe, door open and closed, are part of the application.",
+    hue: "#F1E2CB",
+    whyTitle: "Good to know",
+    why: "New York sets safe-storage rules you must follow once licensed.",
+    art: "storage",
     options: [
-      { value: "yes", label: "Yes, I have a safe" },
-      { value: "will", label: "I'll get one" },
+      { value: "yes", label: "Yes, I have a safe", desc: "You’re ready for the storage photos." },
+      { value: "will", label: "Not yet, I’ll get one", desc: "You’ll need it before you file." },
     ],
   },
 ]
 
 const STORAGE_KEY = "carry_eligibility_quiz"
 
-export function EligibilityQuiz() {
+function normalizeAnswers(saved: Record<string, { value?: string }>): Record<string, Answer> {
+  const normalized: Record<string, Answer> = {}
+  for (const question of QUESTIONS) {
+    const value = saved[question.key]?.value
+    const answer = question.options.find((option) => option.value === value)
+    if (answer) normalized[question.key] = answer
+  }
+  return normalized
+}
+
+function getStatus(answers: Record<string, Answer>): QuizStatus {
+  return Object.values(answers).find((answer) => answer.flag)?.flag ?? "likely"
+}
+
+export function EligibilityExperience() {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [done, setDone] = useState(false)
-  // The choice highlighted on the current screen, committed on "Continue".
-  const [selected, setSelected] = useState<Answer | null>(null)
+  const [selectedValue, setSelectedValue] = useState<string | null>(null)
+  const [exiting, setExiting] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const busyRef = useRef(false)
+  const timersRef = useRef<number[]>([])
 
-  // V4-B5 — restore in-progress answers after a refresh so nobody loses their
-  // place mid-quiz. Read once on mount (after hydration → no SSR mismatch).
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const update = () => setReducedMotion(media.matches)
+    update()
+    media.addEventListener("change", update)
+    return () => media.removeEventListener("change", update)
+  }, [])
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return
-      const saved = JSON.parse(raw) as { step?: number; answers?: Record<string, Answer>; done?: boolean }
-      /* eslint-disable react-hooks/set-state-in-effect */
-      const restoredStep =
-        typeof saved.step === "number" ? Math.min(saved.step, QUESTIONS.length - 1) : 0
-      if (saved.answers) {
-        setAnswers(saved.answers)
-        setSelected(saved.answers[QUESTIONS[restoredStep].key] ?? null)
+      const saved = JSON.parse(raw) as {
+        step?: number
+        answers?: Record<string, { value?: string }>
+        done?: boolean
       }
-      if (typeof saved.step === "number") setStep(restoredStep)
-      if (saved.done) setDone(true)
+      const restoredStep =
+        typeof saved.step === "number" ? Math.min(Math.max(saved.step, 0), QUESTIONS.length - 1) : 0
+      const restoredAnswers = saved.answers ? normalizeAnswers(saved.answers) : {}
+      /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from localStorage */
+      setStep(restoredStep)
+      setAnswers(restoredAnswers)
+      setDone(Boolean(saved.done))
+      setSelectedValue(restoredAnswers[QUESTIONS[restoredStep].key]?.value ?? null)
       /* eslint-enable react-hooks/set-state-in-effect */
     } catch {
-      // ignore malformed/blocked storage
+      // Persistence is best-effort; malformed or blocked storage starts fresh.
     }
   }, [])
+
+  useEffect(
+    () => () => {
+      for (const timer of timersRef.current) window.clearTimeout(timer)
+    },
+    []
+  )
+
+  function schedule(callback: () => void, delay: number) {
+    const timer = window.setTimeout(callback, delay)
+    timersRef.current.push(timer)
+  }
 
   function persist(next: { step: number; answers: Record<string, Answer>; done: boolean }) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
     } catch {
-      // storage may be unavailable (private mode) — persistence is best-effort
+      // localStorage may be unavailable in a private browsing session.
     }
   }
 
-  const q = QUESTIONS[step]
+  const question = QUESTIONS[step]
+  const status = done ? getStatus(answers) : null
+  const hue = status
+    ? status === "likely"
+      ? "#D9E8DF"
+      : status === "review"
+        ? "#F3E3C2"
+        : "#E1E5EC"
+    : question.hue
 
-  // Commit the highlighted choice: same scoring, early-exit, and analytics as
-  // before — only the trigger moved from the option click to "Continue".
-  function choose(opt: Answer) {
-    // Conversion funnel: the very first answer starts the quiz.
+  function finishTransition(callback: () => void, selectionDelay = 0) {
+    const leave = () => {
+      if (reducedMotion) {
+        callback()
+        setExiting(false)
+        busyRef.current = false
+        return
+      }
+      setExiting(true)
+      schedule(() => {
+        callback()
+        setExiting(false)
+        busyRef.current = false
+      }, 220)
+    }
+    if (selectionDelay > 0 && !reducedMotion) schedule(leave, selectionDelay)
+    else leave()
+  }
+
+  function commitChoice(option: Answer) {
     if (Object.keys(answers).length === 0) trackEvent("eligibility_start")
-    const next = { ...answers, [q.key]: opt }
+    const nextAnswers = { ...answers, [question.key]: option }
 
-    // EARLY EXIT: the moment a disqualifying / needs-a-lawyer answer is chosen,
-    // end the quiz and explain why — there's no point making someone finish a
-    // form whose outcome their answer already settled. (With short-circuit, at
-    // most ONE answer can ever carry a flag, so the Result can just find it.)
-    if (opt.flag) {
-      setAnswers(next)
+    if (option.flag) {
+      setAnswers(nextAnswers)
       setDone(true)
       trackEvent("eligibility_complete")
-      persist({ step, answers: next, done: true })
+      persist({ step, answers: nextAnswers, done: true })
       return
     }
 
     const last = step >= QUESTIONS.length - 1
     const nextStep = last ? step : step + 1
-    setAnswers(next)
-    if (last) {
-      setDone(true)
-      trackEvent("eligibility_complete")
-    } else {
+    setAnswers(nextAnswers)
+    setDone(last)
+    if (last) trackEvent("eligibility_complete")
+    else {
       setStep(nextStep)
-      setSelected(next[QUESTIONS[nextStep].key] ?? null)
+      setSelectedValue(nextAnswers[QUESTIONS[nextStep].key]?.value ?? null)
     }
-    persist({ step: nextStep, answers: next, done: last })
+    persist({ step: nextStep, answers: nextAnswers, done: last })
+  }
+
+  function selectOption(index: number, element?: Element | null, burst?: (el: Element | null, n?: number) => void) {
+    if (busyRef.current) return
+    const option = question.options[index]
+    if (!option) return
+    busyRef.current = true
+    setSelectedValue(option.value)
+    burst?.(element ?? null, 22)
+    finishTransition(() => commitChoice(option), 420)
+  }
+
+  function goToStep(nextStep: number) {
+    if (busyRef.current || (nextStep === step && !done)) return
+    busyRef.current = true
+    finishTransition(() => {
+      setStep(nextStep)
+      setDone(false)
+      setSelectedValue(answers[QUESTIONS[nextStep].key]?.value ?? null)
+      persist({ step: nextStep, answers, done: false })
+    })
   }
 
   function goBack() {
-    const prev = step - 1
-    setStep(prev)
-    setSelected(answers[QUESTIONS[prev].key] ?? null)
-    persist({ step: prev, answers, done: false })
+    if (step > 0) goToStep(step - 1)
   }
 
-  // Let a mis-tap be recoverable — clears saved progress and restarts the quiz.
   function reset() {
     try {
       localStorage.removeItem(STORAGE_KEY)
     } catch {
-      // ignore blocked storage
+      // Ignore blocked storage.
     }
     setAnswers({})
     setStep(0)
     setDone(false)
-    setSelected(null)
+    setSelectedValue(null)
+    busyRef.current = false
+    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" })
   }
 
-  if (done) {
-    // With early-exit, at most one answer carries a flag — that's the trigger.
-    const flagged = Object.values(answers).find((a) => a.flag)
-    const track = answers.location?.track ?? "resident"
-    const eligibilityJson = JSON.stringify(
-      Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, v.value]))
-    )
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target
+      if (
+        done ||
+        (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true']")) ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      ) {
+        return
+      }
 
-    return (
-      <Result
-        flagged={flagged}
-        track={track}
-        eligibilityJson={eligibilityJson}
-        onReset={reset}
-      />
-    )
-  }
+      const key = event.key.toLowerCase()
+      const letterIndex = "abc".indexOf(key)
+      const numberIndex = "123".indexOf(key)
+      const index = letterIndex >= 0 ? letterIndex : numberIndex
+      if (index >= 0 && index < question.options.length) {
+        event.preventDefault()
+        const option = document.querySelectorAll<HTMLButtonElement>("[data-eligibility-option]")[index]
+        option?.click()
+      } else if (event.key === "Backspace" && step > 0) {
+        event.preventDefault()
+        goBack()
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  })
 
   return (
-    <article className="flow-screen" aria-label={`Eligibility question ${step + 1}`}>
-      <div className="flow-top">
-        <span>Question {String(step + 1).padStart(2, "0")}</span>
-        <span>
-          {step + 1} of {QUESTIONS.length}
-        </span>
+    <EligibilityStage hue={hue}>
+      <div className={styles.wrap}>
+        <Intro result={done} />
+        <ProgressPath step={step} answers={answers} done={done} onChange={goToStep} />
+        <section className={styles.card} aria-live="polite">
+          {done ? (
+            <Result
+              key={`result-${status}`}
+              answers={answers}
+              exiting={exiting}
+              onChange={goToStep}
+              onReset={reset}
+            />
+          ) : (
+            <QuestionView
+              key={question.key}
+              question={question}
+              step={step}
+              selectedValue={selectedValue}
+              exiting={exiting}
+              onBack={goBack}
+              onSelect={selectOption}
+            />
+          )}
+        </section>
+        <TrustRow />
       </div>
+    </EligibilityStage>
+  )
+}
 
-      <div className="flow-progress" aria-hidden="true">
-        {QUESTIONS.map((_, i) => (
-          <i key={i} className={i <= step ? "is-done" : undefined} />
+/** Kept as an alias for existing imports while the route adopts the new name. */
+export const EligibilityQuiz = EligibilityExperience
+
+function Intro({ result }: { result: boolean }) {
+  return (
+    <header className={styles.intro}>
+      <span className={styles.eyebrow}>Eligibility check</span>
+      <h1>{result ? "Here’s where you stand." : "Do you qualify?"}</h1>
+      <p>
+        {result
+          ? "Your result, based on the answers you gave."
+          : "Six quick questions. A clear read on where you stand."}
+      </p>
+      <div className={styles.chips} aria-label="Quiz details">
+        {[
+          "About 2 minutes",
+          "No card, no account",
+          "Your answers stay on this device",
+        ].map((label) => (
+          <span key={label}>
+            <Check aria-hidden="true" />
+            {label}
+          </span>
         ))}
       </div>
+    </header>
+  )
+}
 
-      <h4>{q.prompt}</h4>
-      <p>Choose the closest answer. You can clarify it during intake.</p>
+function ProgressPath({
+  step,
+  answers,
+  done,
+  onChange,
+}: {
+  step: number
+  answers: Record<string, Answer>
+  done: boolean
+  onChange: (step: number) => void
+}) {
+  const lastAnswered = QUESTIONS.reduce(
+    (last, question, index) => (answers[question.key] ? index : last),
+    0
+  )
 
-      <div className="choice-list" role="radiogroup" aria-label={q.prompt}>
-        {q.options.map((opt) => {
-          const isSel = selected?.value === opt.value
-          return (
-            <div
-              key={opt.value}
-              role="radio"
-              aria-checked={isSel}
-              tabIndex={0}
-              className={`choice${isSel ? " is-selected" : ""}`}
-              onClick={() => setSelected(opt)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault()
-                  setSelected(opt)
-                }
-              }}
-            >
-              <span className="choice-dot" aria-hidden="true" />
-              <span>{opt.label}</span>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="flow-actions">
-        {step > 0 ? (
-          <button
-            type="button"
-            className="flow-back"
-            onClick={goBack}
-            style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+  return (
+    <ol className={styles.path} aria-label="Eligibility progress">
+      <span className={styles.pathTrack} aria-hidden="true">
+        <i style={{ width: `${(lastAnswered / (QUESTIONS.length - 1)) * 100}%` }} />
+      </span>
+      {QUESTIONS.map((question, index) => {
+        const answered = Boolean(answers[question.key]) && (done || index !== step)
+        const current = !done && index === step
+        return (
+          <li
+            key={question.key}
+            className={`${styles.pathItem} ${answered ? styles.pathDone : ""} ${current ? styles.pathCurrent : ""}`}
           >
-            ← Back
-          </button>
-        ) : (
-          <span aria-hidden="true" />
-        )}
-        <button
-          type="button"
-          className="button"
-          onClick={() => selected && choose(selected)}
-          disabled={!selected}
-          style={!selected ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
-        >
-          Continue <span className="button-arrow" aria-hidden="true">→</span>
-        </button>
+            {answered ? (
+              <button
+                type="button"
+                className={styles.pathCircle}
+                onClick={() => onChange(index)}
+                aria-label={`Change your ${question.rail.toLowerCase()} answer`}
+              >
+                <Check aria-hidden="true" />
+              </button>
+            ) : (
+              <span className={styles.pathCircle} aria-current={current ? "step" : undefined}>
+                {String(index + 1).padStart(2, "0")}
+              </span>
+            )}
+            <span className={styles.pathLabel}>{question.rail}</span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+function QuestionView({
+  question,
+  step,
+  selectedValue,
+  exiting,
+  onBack,
+  onSelect,
+}: {
+  question: Question
+  step: number
+  selectedValue: string | null
+  exiting: boolean
+  onBack: () => void
+  onSelect: (
+    index: number,
+    element?: Element | null,
+    burst?: (element: Element | null, count?: number) => void
+  ) => void
+}) {
+  const { burst } = useEligibilityParticles()
+  const percent = Math.round((step / QUESTIONS.length) * 100)
+
+  return (
+    <div className={`${styles.view} ${exiting ? styles.exiting : ""}`}>
+      <div className={styles.questionGrid}>
+        <div className={styles.questionMain}>
+          <div className={styles.meta}>
+            <span>
+              Question <b>{step + 1}</b> of {QUESTIONS.length}
+            </span>
+            <span className={styles.percent}>
+              {percent}%
+              <i>
+                <span style={{ width: `${percent}%` }} />
+              </i>
+            </span>
+          </div>
+          <h2 id="eligibility-question" className={styles.questionTitle}>
+            {question.prompt}
+          </h2>
+          <p className={styles.help}>{question.help}</p>
+          <div className={styles.options} role="group" aria-labelledby="eligibility-question">
+            {question.options.map((option, index) => {
+              const selected = selectedValue === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`${styles.option} ${selected ? styles.optionSelected : ""}`}
+                  data-eligibility-option
+                  aria-pressed={selected}
+                  onClick={(event) => onSelect(index, event.currentTarget, burst)}
+                >
+                  <span className={styles.optionKey} aria-hidden="true">
+                    {"ABC"[index]}
+                  </span>
+                  <span className={styles.optionCopy}>
+                    <strong>{option.label}</strong>
+                    <small>{option.desc}</small>
+                  </span>
+                  <span className={styles.optionTick} aria-hidden="true">
+                    <Check />
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <div className={styles.questionFooter}>
+            {step > 0 ? (
+              <button type="button" className={styles.back} onClick={onBack}>
+                <ArrowLeft aria-hidden="true" /> Back
+              </button>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <span className={styles.hint}>
+              Tip: press{" "}
+              {question.options.map((option, index) => (
+                <kbd key={option.value}>{"ABC"[index]}</kbd>
+              ))}{" "}
+              to answer
+            </span>
+          </div>
+        </div>
+        <aside className={styles.artPanel}>
+          <div className={styles.artLabel}>
+            <span>{question.rail}</span>
+            <span>
+              {String(step + 1).padStart(2, "0")} / {String(QUESTIONS.length).padStart(2, "0")}
+            </span>
+          </div>
+          <div
+            className={styles.illustration}
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: ELIGIBILITY_ART[question.art] }}
+          />
+          <p className={styles.whyMobile}>
+            <b>{question.whyTitle}</b>
+            {question.why}
+          </p>
+          <p className={styles.why}>
+            <b>{question.whyTitle}</b>
+            {question.why}
+          </p>
+        </aside>
       </div>
-    </article>
+    </div>
   )
 }
 
 function Result({
-  flagged,
-  track,
-  eligibilityJson,
+  answers,
+  exiting,
+  onChange,
   onReset,
 }: {
-  flagged: Answer | undefined
-  track: string
-  eligibilityJson: string
+  answers: Record<string, Answer>
+  exiting: boolean
+  onChange: (step: number) => void
   onReset: () => void
 }) {
-  const status = flagged?.flag ?? "likely" // "ineligible" | "review" | "likely"
-  const isIneligible = status === "ineligible"
-  const isReview = status === "review"
+  const { burst } = useEligibilityParticles()
+  const sealRef = useRef<HTMLDivElement>(null)
+  const status = getStatus(answers)
+  const flagged = Object.values(answers).find((answer) => answer.flag)
   const explain = flagged?.explain
+  const fact = explain ? FACTS[explain.factKey] : null
+  const track = answers.location?.track ?? "resident"
+  const eligibilityJson = JSON.stringify(
+    Object.fromEntries(Object.entries(answers).map(([key, answer]) => [key, answer.value]))
+  )
+
+  useEffect(() => {
+    if (status === "likely") burst(sealRef.current, 70)
+  }, [burst, status])
+
+  const handleLeadSuccess = useCallback(() => {
+    burst(sealRef.current, 60)
+  }, [burst])
 
   const headline = explain?.headline ?? "You likely qualify"
   const body =
     explain?.body ??
     "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline."
 
-  const badge = isIneligible
-    ? "Not eligible yet"
-    : isReview
-      ? "Speak with an attorney"
-      : "Within service scope"
-
-  const fact = explain ? FACTS[explain.factKey] : null
-
   return (
-    <article className="flow-screen result-screen" aria-label="Eligibility service-fit result">
-      <div className="flow-top">
-        <span>Your result</span>
-        <span>Complete</span>
-      </div>
-
-      <span className="result-badge">{badge}</span>
-      <h4>{headline}</h4>
-      <p>{body}</p>
-
-      {/* Clean pass: describe the service fit (mirrors the homepage's principles). */}
-      {status === "likely" && (
-        <ul className="result-list">
-          <li>
-            <strong>We map the requirements.</strong>Your checklist is generated around your license
-            track and answers.
-          </li>
-          <li>
-            <strong>We organize the file.</strong>Documents, references, training, and disclosures
-            stay in one case system.
-          </li>
-          <li>
-            <strong>You stay in control.</strong>You review and submit your own application.
-          </li>
-        </ul>
-      )}
-
-      {/* The published RULE behind this result — agency, primary source, date.
-          We explain the rule; we never adjudicate a specific record. */}
-      {fact && explain && (
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            marginTop: 26,
-            paddingTop: 14,
-            borderTop: "1px solid var(--dark-rule)",
-          }}
-        >
-          <p style={{ margin: 0, color: "var(--light)", fontSize: 14, lineHeight: 1.5 }}>
-            {fact.claim}
-          </p>
-          <p
-            style={{
-              margin: "8px 0 0",
-              color: "var(--light-soft)",
-              fontFamily: "var(--mono)",
-              fontSize: 11,
-              letterSpacing: ".04em",
-            }}
-          >
-            Set by {fact.authority} ·{" "}
-            <a
-              href={fact.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--cyan)" }}
+    <div className={`${styles.view} ${exiting ? styles.exiting : ""}`}>
+      <div className={styles.resultGrid}>
+        <div className={styles.resultMain}>
+          <div ref={sealRef} className={styles.seal}>
+            <ResultSeal status={status} />
+          </div>
+          <div>
+            <span
+              className={`${styles.status} ${
+                status === "likely"
+                  ? styles.statusLikely
+                  : status === "review"
+                    ? styles.statusReview
+                    : styles.statusIneligible
+              }`}
             >
-              <span className="inline-flex items-center gap-1">source <ExternalLink className="size-3" aria-hidden /></span>
-            </a>{" "}
-            · we last checked {fact.verifiedOn}
-          </p>
-        </div>
-      )}
+              <i />
+              {status === "likely"
+                ? "Within service scope"
+                : status === "review"
+                  ? "Speak with an attorney first"
+                  : "Not eligible yet"}
+            </span>
+          </div>
+          <h2 className={styles.resultTitle}>{headline}</h2>
+          <p className={styles.resultLede}>{body}</p>
 
-      {/* Hard statutory bar (age): an honest dead-end, no lead form. */}
-      {isIneligible && (
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            marginTop: 30,
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 20,
-          }}
-        >
-          <Link className="button button-light" href="/">
-            Back to home
-          </Link>
-          <button
-            type="button"
-            onClick={onReset}
-            className="flow-back"
-            style={{
-              background: "transparent",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-              color: "var(--light-soft)",
-            }}
-          >
-            Start over
-          </button>
-        </div>
-      )}
+          {fact ? (
+            <div className={styles.fact}>
+              <p>{fact.claim}</p>
+              <small>
+                Set by {fact.authority} ·{" "}
+                <a href={fact.href} target="_blank" rel="noopener noreferrer">
+                  Read the source <ExternalLink aria-hidden="true" />
+                </a>{" "}
+                · We last checked {fact.verifiedOn}
+              </small>
+            </div>
+          ) : null}
 
-      {/* Needs-a-lawyer OR clean pass: both route to us. Review goes to the
-          attorney seam (never a denial); a clean pass starts the application. */}
-      {!isIneligible && (
-        <div style={{ position: "relative", zIndex: 1, marginTop: 28 }}>
-          {isReview && (
-            <p style={{ margin: "0 0 24px", color: "var(--light-soft)", fontSize: 14, lineHeight: 1.55 }}>
-              Want to understand how this is treated in general? See{" "}
-              <Link href="/do-i-need-a-lawyer" style={{ color: "var(--cyan)" }}>
-                do I need a lawyer
-              </Link>
-              . When you&apos;re ready, request a confidential review below.
+          {status === "review" ? (
+            <p className={styles.lawyerNote}>
+              Want to understand how this is treated in general? Read{" "}
+              <Link href="/do-i-need-a-lawyer">Do I need a lawyer?</Link> When you’re ready,
+              request a confidential review.
             </p>
-          )}
-          <LeadForm
-            source="eligibility_quiz"
-            showBorough={false}
-            submitLabel={isReview ? "Request a confidential review" : "Start my application"}
-            successTitle={isReview ? "Let's get started." : "You're all set."}
-            successBody="we can reach out within one business day."
-            accountCta
-            hidden={{ track, eligibility: eligibilityJson }}
-          />
-          {isReview && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="flow-back"
-              style={{
-                marginTop: 18,
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-                color: "var(--light-soft)",
-              }}
-            >
-              Start over
-            </button>
-          )}
-        </div>
-      )}
+          ) : null}
 
-      <p className="result-disclaimer">
+          {status === "likely" ? <NextSteps /> : null}
+          <AnswersTable answers={answers} onChange={onChange} />
+        </div>
+
+        <aside className={styles.resultSide}>
+          {status === "ineligible" ? (
+            <>
+              <h3>We’ll be here when you’re 21.</h3>
+              <p>
+                Nothing to fill in today. Bookmark the free checklist so you know what to gather
+                when the time comes.
+              </p>
+              <Link className={styles.primaryAction} href="/">
+                Back to home <ArrowRight aria-hidden="true" />
+              </Link>
+              <button type="button" className={styles.reset} onClick={onReset}>
+                Start over
+              </button>
+            </>
+          ) : (
+            <>
+              <h3>{status === "review" ? "Request a confidential review" : "Start your application"}</h3>
+              <p>
+                {status === "review"
+                  ? "We'll connect you with a New York-licensed attorney. It's confidential."
+                  : "Free to start. We reach out within one business day."}
+              </p>
+              <div className={styles.leadForm}>
+                <LeadForm
+                  source="eligibility_quiz"
+                  showBorough={false}
+                  submitLabel={
+                    status === "review" ? "Request a confidential review" : "Start my application"
+                  }
+                  successTitle={status === "review" ? "Let's get started." : "You're all set."}
+                  successBody="we can reach out within one business day."
+                  accountCta
+                  hidden={{ track, eligibility: eligibilityJson }}
+                  variant="light"
+                  onSuccess={handleLeadSuccess}
+                />
+                <p className={styles.finePrint}>No card needed. You can create your account next.</p>
+              </div>
+              <button type="button" className={styles.reset} onClick={onReset}>
+                Start over
+              </button>
+            </>
+          )}
+        </aside>
+      </div>
+      <p className={styles.disclaimer}>
         This is a service-fit result, not legal advice or a prediction of any NYPD decision.
       </p>
-    </article>
+    </div>
+  )
+}
+
+function NextSteps() {
+  const steps = [
+    ["We map the requirements.", "Your checklist is generated around your license track and answers."],
+    ["We organize the file.", "Documents, references, training and disclosures stay in one case system."],
+    ["You stay in control.", "You review and submit your own application."],
+  ]
+  return (
+    <ol className={styles.nextSteps}>
+      {steps.map(([title, copy], index) => (
+        <li key={title}>
+          <b>{String(index + 1).padStart(2, "0")}</b>
+          <div>
+            <strong>{title}</strong>
+            <span>{copy}</span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function AnswersTable({
+  answers,
+  onChange,
+}: {
+  answers: Record<string, Answer>
+  onChange: (step: number) => void
+}) {
+  const answered = QUESTIONS.filter((question) => answers[question.key])
+  return (
+    <div className={styles.answers}>
+      <header>
+        <span>Your answers</span>
+        <span>
+          {answered.length} of {QUESTIONS.length}
+        </span>
+      </header>
+      <dl>
+        {answered.map((question) => (
+          <div key={question.key}>
+            <dt>{question.rail}</dt>
+            <dd>{answers[question.key].label}</dd>
+            <dd>
+              <button type="button" onClick={() => onChange(QUESTIONS.indexOf(question))}>
+                Change
+              </button>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+function ResultSeal({ status }: { status: QuizStatus }) {
+  if (status === "review") {
+    return (
+      <svg viewBox="0 0 84 84" aria-hidden="true">
+        <circle cx="42" cy="42" r="40" fill="#FBF0DC" />
+        <circle className={styles.sealRing} cx="42" cy="42" r="40" />
+        <circle cx="42" cy="42" r="31" fill="#14254A" />
+        <path d="M42 27c-8 0-14 6-14 13v1h6v-1c0-4 3-7 8-7s8 3 8 6c0 5-9 6-9 13v2h6v-1c0-6 9-7 9-14 0-7-6-12-14-12zM39 59h6v6h-6z" fill="#D9B25A" />
+      </svg>
+    )
+  }
+  if (status === "ineligible") {
+    return (
+      <svg viewBox="0 0 84 84" aria-hidden="true">
+        <circle cx="42" cy="42" r="40" fill="#EEF1F6" />
+        <circle cx="42" cy="42" r="40" fill="none" stroke="#CFD5DF" strokeWidth="2" />
+        <circle cx="42" cy="42" r="31" fill="#14254A" />
+        <circle cx="42" cy="42" r="13" fill="none" stroke="#D9B25A" strokeWidth="3" />
+        <path d="M42 35v8l5 3" fill="none" stroke="#D9B25A" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 84 84" aria-hidden="true">
+      <circle cx="42" cy="42" r="40" fill="#F5ECD8" />
+      <circle className={styles.sealRing} cx="42" cy="42" r="40" />
+      <circle cx="42" cy="42" r="31" fill="#14254A" />
+      <path className={styles.sealCheck} d="M29 43l9 9 18-20" />
+    </svg>
+  )
+}
+
+function TrustRow() {
+  return (
+    <div className={styles.trust}>
+      <span>
+        <ShieldCheck aria-hidden="true" /> Not affiliated with the NYPD
+      </span>
+      <span>
+        <BookOpenCheck aria-hidden="true" /> Based on published NY rules
+      </span>
+      <span>
+        <Info aria-hidden="true" /> Not legal advice
+      </span>
+    </div>
   )
 }
