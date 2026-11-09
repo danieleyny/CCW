@@ -13,6 +13,8 @@ import ReviewVignette from "./vignettes/ReviewVignette"
 import TrackerVignette from "./vignettes/TrackerVignette"
 import ApproveVignette from "./vignettes/ApproveVignette"
 import styles from "./WhatYouGet.module.css"
+import { usePalette } from "@/components/theme/usePalette"
+import { useThemeKey } from "@/components/theme/ThemeScope"
 
 type Pillar = {
   id: "review" | "tracker" | "approve"
@@ -72,6 +74,15 @@ function useDesktopLayout() {
 
 export default function WhatYouGet() {
   const reducedMotion = usePrefersReducedMotion()
+  const palette = usePalette()
+  const theme = useThemeKey()
+  const pillars = PILLARS.map((pillar, index) => theme === "v0" ? pillar : {
+    ...pillar,
+    accent: theme === "v2" ? "#8A6420" : palette.phase[index + 1] ?? palette.phase[index],
+    stage: theme === "v2"
+      ? "linear-gradient(160deg, #FFFDF8 0%, #F7F4EC 100%)"
+      : `linear-gradient(160deg, color-mix(in srgb, ${palette.phase[index]} 13%, var(--surface, #FFF)) 0%, color-mix(in srgb, ${palette.phase[index + 1] ?? palette.phase[index]} 7%, var(--surface, #FFF)) 100%)`,
+  })
   const isDesktop = useDesktopLayout()
   const trackRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<Array<HTMLElement | null>>([])
@@ -189,7 +200,7 @@ export default function WhatYouGet() {
         } : {})}
         onKeyDown={onTrackKeyDown}
       >
-        {PILLARS.map((pillar, index) => {
+        {pillars.map((pillar, index) => {
           const Vignette = VIGNETTES[pillar.id]
           return (
             <article
@@ -204,7 +215,7 @@ export default function WhatYouGet() {
                 "aria-label": `${index + 1} of ${PILLARS.length}`,
               } : {})}
             >
-              <Vignette running={!reducedMotion && running[index]} stage={pillar.stage} />
+              <Vignette running={!reducedMotion && running[index]} stage={pillar.stage} accent={pillar.accent} />
               <div className={styles.copy}>
                 <p className={styles.kicker}>{pillar.kicker}</p>
                 <h3>{pillar.title}</h3>
@@ -215,8 +226,8 @@ export default function WhatYouGet() {
         })}
       </div>
 
-      <div className={styles.pagination} style={{ "--pagination-accent": PILLARS[activeIndex].accent } as CSSProperties} aria-label="Choose a card">
-        {PILLARS.map((pillar, index) => (
+      <div className={styles.pagination} style={{ "--pagination-accent": pillars[activeIndex].accent } as CSSProperties} aria-label="Choose a card">
+        {pillars.map((pillar, index) => (
           <button
             key={pillar.id}
             type="button"

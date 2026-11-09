@@ -1,4 +1,5 @@
 // Five story animations, one per phase. Each draws one frame for loop position u ∈ [0,1).
+import { V0_PALETTE, type Palette } from "@/components/theme/themes"
 
 export type IlloFrame = {
   c: CanvasRenderingContext2D
@@ -8,16 +9,17 @@ export type IlloFrame = {
   vis: number
   col: string
   compact: boolean
+  palette: Palette
 }
 
-const MONO = '"Azeret Mono", ui-monospace, monospace'
-const AMB = "#E8B07A"
-const DIM = "#3A4A5A"
-const MID = "#5E6B78"
-const BRIGHT = "#F4F7F9"
-const LABEL = "#8A99A6"
-const CARD = "#132435"
+const MONO = '"IBM Plex Mono", monospace'
 const TAU = Math.PI * 2
+
+function tones(f: IlloFrame) {
+  if (f.palette === V0_PALETTE) return { amber: "#E8B07A", dim: "#3A4A5A", mid: "#5E6B78", bright: "#F4F7F9", label: "#8A99A6", card: "#132435", dark: "#0A1520", surface: "#0F1D2B", surfaceStrong: "#16283A", soft: "#DCE6EC", muted: "#B4C0CA" }
+  if (f.palette.gold) return { amber: f.palette.goldText ?? f.palette.gold, dim: "rgba(230,200,134,.25)", mid: "rgba(230,200,134,.4)", bright: f.palette.darkInk, label: f.palette.goldText ?? f.palette.gold, card: f.palette.dark, dark: f.palette.dark, surface: f.palette.dark, surfaceStrong: f.palette.dark, soft: f.palette.darkInk, muted: f.palette.phaseDark[3] }
+  return { amber: f.palette.phaseDark[4], dim: f.palette.phaseDark[3], mid: f.palette.phaseDark[2], bright: f.palette.darkInk, label: f.palette.phaseDark[3], card: f.palette.dark, dark: f.palette.dark, surface: f.palette.dark, surfaceStrong: f.palette.dark, soft: f.palette.darkInk, muted: f.palette.phaseDark[3] }
+}
 
 const ez = (u: number) => { const x = Math.max(0, Math.min(1, u)); return x * x * (3 - 2 * x) }
 const seg = (u: number, a: number, b: number) => Math.max(0, Math.min(1, (u - a) / (b - a)))
@@ -48,7 +50,7 @@ function kit(f: IlloFrame) {
   const tick = (x: number, y: number, s: number, color: string, alpha = 1) => {
     c.globalAlpha = alpha * vis; c.strokeStyle = color; c.lineWidth = 1.8; c.lineCap = "round"; c.lineJoin = "round"; c.beginPath(); c.moveTo(x - s * .5, y); c.lineTo(x - s * .12, y + s * .38); c.lineTo(x + s * .55, y - s * .4); c.stroke()
   }
-  const ring = (x: number, y: number, r: number, stroke: string, fill = "#0F1D2B") => {
+  const ring = (x: number, y: number, r: number, stroke: string, fill = f.palette === V0_PALETTE ? "#0F1D2B" : f.palette.dark) => {
     c.globalAlpha = vis; c.fillStyle = fill; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); c.strokeStyle = stroke; c.lineWidth = 1.4; c.beginPath(); c.arc(x, y, r, 0, TAU); c.stroke()
   }
   return { dot, rr, txt, tick, ring, fs }
@@ -58,6 +60,7 @@ function kit(f: IlloFrame) {
 function qualify(f: IlloFrame) {
   const { w, h, u, col, compact } = f
   const { dot, txt, tick, ring, fs } = kit(f)
+  const { amber: AMB, mid: MID, bright: BRIGHT, label: LABEL } = tones(f)
   // The compact canvas needs a deliberately wider right inset: its labels are
   // full words, not abbreviated UI copy, so the attorney route remains legible.
   const y0 = h * .5, x0 = 22, xf = w * .34, xe = w - (compact ? 142 : 130)
@@ -86,6 +89,7 @@ function qualify(f: IlloFrame) {
 function train(f: IlloFrame) {
   const { c, w, h, u, col, compact, vis } = f
   const { dot, rr, txt, tick, fs } = kit(f)
+  const { mid: MID, bright: BRIGHT, label: LABEL, dark: DARK } = tones(f)
   const x0 = 22, x1 = w - 22, ty = h * .7, lit = Math.floor(seg(u, .02, .32) * 18 + .0001), gy0 = compact ? 22 : 26, gs = compact ? 9 : 11
   for (let k = 0; k < 18; k++) { const on = k < lit; dot(x0 + (k % 9) * gs, gy0 + Math.floor(k / 9) * gs, on ? 3 : 2.4, on ? col : MID, on ? 1 : .5) }
   txt(lit >= 18 ? "18-HOUR COURSE  ✓" : `18-HOUR COURSE · ${lit}H`, x0 + 9 * gs + 10, gy0 + gs * .5, lit >= 18 ? BRIGHT : LABEL, 1, fs, "left", 600)
@@ -96,7 +100,7 @@ function train(f: IlloFrame) {
   if (win > 0) { const bw = (x1 - xc) * win, by = ty - (compact ? 26 : 30), bh = compact ? 14 : 16; c.globalAlpha = vis * .18; c.fillStyle = col; rr(xc, by, bw, bh, 6); c.fill(); c.globalAlpha = vis * .7; c.strokeStyle = col; c.lineWidth = 1; rr(xc, by, bw, bh, 6); c.stroke(); if (win >= 1) txt("CERTIFICATE WINDOW · 6 MONTHS", xc + 10, by + bh / 2, BRIGHT, 1, fs - .5, "left", 600) }
   const go = ez(seg(u, .44, .74)), fx = xc + (x1 - xc) * .55
   if (go > 0) { const xt = xc + (fx - xc) * go; dot(xt, ty, 4, "#FFFFFF", 1); c.globalAlpha = vis * .25; c.fillStyle = col; c.beginPath(); c.arc(xt, ty, 10, 0, TAU); c.fill() }
-  if (u > .76) { c.globalAlpha = vis; c.fillStyle = col; c.beginPath(); c.arc(fx, ty, 9, 0, TAU); c.fill(); tick(fx, ty, 9, "#0A1520"); txt("FILED INSIDE THE WINDOW", fx, ty - (compact ? 40 : 48), BRIGHT, seg(u, .76, .84), fs, "center", 600) }
+  if (u > .76) { c.globalAlpha = vis; c.fillStyle = col; c.beginPath(); c.arc(fx, ty, 9, 0, TAU); c.fill(); tick(fx, ty, 9, DARK); txt("FILED INSIDE THE WINDOW", fx, ty - (compact ? 40 : 48), BRIGHT, seg(u, .76, .84), fs, "center", 600) }
   dot(xc, ty, 3.4, col, 1)
 }
 
@@ -104,6 +108,7 @@ function train(f: IlloFrame) {
 function assemble(f: IlloFrame) {
   const { c, w, h, u, col, compact, vis } = f
   const { dot, rr, txt, fs } = kit(f)
+  const { mid: MID, bright: BRIGHT, label: LABEL, card: CARD } = tones(f)
   const items: [string, number][] = [["REFERENCES", 4], ["HOUSEHOLD STATEMENTS", 3], ["RECORDS", 3], ["IDS", 2], ["DISCLOSURES", 3]]
   const lx = 22, fxx = w - (compact ? 44 : 64), fyy = h * .5, rowH = (h - 30) / 5, step = compact ? 9 : 11
   let done = 0
@@ -123,6 +128,7 @@ function assemble(f: IlloFrame) {
 function review(f: IlloFrame) {
   const { c, w, h, u, col, compact, vis } = f
   const { dot, rr, txt, tick, fs } = kit(f)
+  const { amber: AMB, dim: DIM, mid: MID, bright: BRIGHT, label: LABEL, dark: DARK } = tones(f)
   const rows = ["FORMS COMPLETE", "SIGNATURES", "DATES MATCH", "REFERENCES", "STATEMENTS", "DISCLOSURES"]
   const lx = 22, top = 12, rowH = (h - (compact ? 44 : 50)) / 6, scan = seg(u, .04, .6), sy = top + scan * rowH * 6, fixed = u > .7
   rows.forEach((label, k) => {
@@ -133,28 +139,29 @@ function review(f: IlloFrame) {
   })
   if (scan > 0 && scan < 1) { const gradient = c.createLinearGradient(0, sy - 10, 0, sy + 10); gradient.addColorStop(0, "rgba(255,255,255,0)"); gradient.addColorStop(.5, "rgba(255,255,255,.28)"); gradient.addColorStop(1, "rgba(255,255,255,0)"); c.globalAlpha = vis; c.fillStyle = gradient; c.fillRect(12, sy - 10, w - 24, 20) }
   const ready = seg(u, .74, .82)
-  if (ready > 0) { const bw = compact ? 150 : 176, bx = w / 2 - bw / 2, by = h - (compact ? 26 : 30); c.globalAlpha = vis * ready; c.fillStyle = col; rr(bx, by - 11, bw, 22, 11); c.fill(); txt("READY TO SUBMIT  ✓", w / 2, by, "#0A1520", ready, fs, "center", 700) }
+  if (ready > 0) { const bw = compact ? 150 : 176, bx = w / 2 - bw / 2, by = h - (compact ? 26 : 30); c.globalAlpha = vis * ready; c.fillStyle = col; rr(bx, by - 11, bw, 22, 11); c.fill(); txt("READY TO SUBMIT  ✓", w / 2, by, DARK, ready, fs, "center", 700) }
 }
 
 // 05 YOU SUBMIT: you press submit yourself; the packet goes to the NYPD; next steps queue up.
 function submit(f: IlloFrame) {
   const { c, w, h, u, col, compact, vis } = f
   const { dot, rr, txt, fs } = kit(f)
+  const { mid: MID, bright: BRIGHT, label: LABEL, card: CARD, dark: DARK, surface: SURFACE, surfaceStrong: SURFACE_STRONG, soft: SOFT, muted: MUTED } = tones(f)
   const px = compact ? 34 : 46, py = h * .42, bx = w * (compact ? .36 : .33), by = py, ex = w - (compact ? 56 : 80), ey = py
   for (let s = 2; s >= 0; s--) { c.globalAlpha = vis * (s === 0 ? 1 : .6); c.fillStyle = CARD; c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1; rr(px - 14 + s * 4, py - 18 - s * 4, 28, 36, 4); c.fill(); c.stroke() }
-  for (let line = 0; line < 4; line++) for (let dx = 0; dx < 16; dx += 4) dot(px - 8 + dx, py - 10 + line * 6, .9, "#DCE6EC", .7)
+  for (let line = 0; line < 4; line++) for (let dx = 0; dx < 16; dx += 4) dot(px - 8 + dx, py - 10 + line * 6, .9, SOFT, .7)
   txt("YOUR PACKET", px, py + 32, LABEL, 1, fs - 1, "center")
   const press = seg(u, .22, .3), pressed = u > .26, bw = compact ? 74 : 92, bh = compact ? 26 : 30, scale = pressed && u < .32 ? .94 : 1
-  c.globalAlpha = vis; c.fillStyle = pressed ? col : CARD; c.strokeStyle = col; c.lineWidth = 1.4; rr(bx - (bw / 2) * scale, by - (bh / 2) * scale, bw * scale, bh * scale, 8); c.fill(); c.stroke(); txt("SUBMIT", bx, by + .5, pressed ? "#0A1520" : BRIGHT, 1, fs, "center", 700); txt("YOU PRESS IT", bx, by + bh / 2 + 14, LABEL, 1, fs - 1, "center")
+  c.globalAlpha = vis; c.fillStyle = pressed ? col : CARD; c.strokeStyle = col; c.lineWidth = 1.4; rr(bx - (bw / 2) * scale, by - (bh / 2) * scale, bw * scale, bh * scale, 8); c.fill(); c.stroke(); txt("SUBMIT", bx, by + .5, pressed ? DARK : BRIGHT, 1, fs, "center", 700); txt("YOU PRESS IT", bx, by + bh / 2 + 14, LABEL, 1, fs - 1, "center")
   const cur = ez(seg(u, .04, .24)), cx = bx + 60 - 52 * cur, cy = by + 40 - 30 * cur
-  if (u < .4) { c.globalAlpha = vis; c.fillStyle = "#FFFFFF"; c.strokeStyle = "#0A1520"; c.lineWidth = 1; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx, cy + 15); c.lineTo(cx + 4, cy + 11); c.lineTo(cx + 7, cy + 17); c.lineTo(cx + 9.5, cy + 16); c.lineTo(cx + 6.5, cy + 10); c.lineTo(cx + 11, cy + 10); c.closePath(); c.fill(); c.stroke() }
+  if (u < .4) { c.globalAlpha = vis; c.fillStyle = "#FFFFFF"; c.strokeStyle = DARK; c.lineWidth = 1; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx, cy + 15); c.lineTo(cx + 4, cy + 11); c.lineTo(cx + 7, cy + 17); c.lineTo(cx + 9.5, cy + 16); c.lineTo(cx + 6.5, cy + 10); c.lineTo(cx + 11, cy + 10); c.closePath(); c.fill(); c.stroke() }
   if (press > 0 && press < 1) { c.globalAlpha = (1 - press) * .6 * vis; c.strokeStyle = col; c.lineWidth = 1.4; c.beginPath(); c.arc(bx, by, 16 + press * 26, 0, TAU); c.stroke() }
   const flight = ez(seg(u, .32, .55))
   for (let x = bx + bw / 2 + 6; x < ex - 26; x += 6) dot(x, by, 1, flight > 0 ? col : MID, flight > 0 ? .5 : .3)
   if (flight > 0 && flight < 1) { const fx = bx + bw / 2 + (ex - 26 - bx - bw / 2) * flight; dot(fx, by - Math.sin(flight * Math.PI) * 18, 3.6, "#FFFFFF", 1) }
   const arrived = u > .55, nbw = compact ? 56 : 70, nbh = compact ? 34 : 40
-  c.globalAlpha = vis; c.fillStyle = arrived ? "#16283A" : "#0F1D2B"; c.strokeStyle = arrived ? col : MID; c.lineWidth = 1.4; rr(ex - nbw / 2, ey - nbh / 2, nbw, nbh, 8); c.fill(); c.stroke(); txt("NYPD", ex, ey - 5, arrived ? BRIGHT : LABEL, 1, fs, "center", 700); txt("LICENSE DIV.", ex, ey + 8, LABEL, 1, fs - 2, "center", 500)
-  ;["FINGERPRINTING", "INTERVIEW"].forEach((step, k) => { const sp = seg(u, .62 + k * .1, .7 + k * .1); if (sp <= 0) return; const sy = ey + nbh / 2 + 18 + k * 18, label = `NEXT · ${step}`, tx = ex + nbw / 2; c.font = `600 ${fs - 1}px ${MONO}`; const tw = c.measureText(label).width; dot(tx - tw - 8, sy, 2.4, col, sp); txt(label, tx, sy, "#B4C0CA", sp, fs - 1, "right", 600) })
+  c.globalAlpha = vis; c.fillStyle = arrived ? SURFACE_STRONG : SURFACE; c.strokeStyle = arrived ? col : MID; c.lineWidth = 1.4; rr(ex - nbw / 2, ey - nbh / 2, nbw, nbh, 8); c.fill(); c.stroke(); txt("NYPD", ex, ey - 5, arrived ? BRIGHT : LABEL, 1, fs, "center", 700); txt("LICENSE DIV.", ex, ey + 8, LABEL, 1, fs - 2, "center", 500)
+  ;["FINGERPRINTING", "INTERVIEW"].forEach((step, k) => { const sp = seg(u, .62 + k * .1, .7 + k * .1); if (sp <= 0) return; const sy = ey + nbh / 2 + 18 + k * 18, label = `NEXT · ${step}`, tx = ex + nbw / 2; c.font = `600 ${fs - 1}px ${MONO}`; const tw = c.measureText(label).width; dot(tx - tw - 8, sy, 2.4, col, sp); txt(label, tx, sy, MUTED, sp, fs - 1, "right", 600) })
 }
 
 export const ILLUSTRATIONS = [qualify, train, assemble, review, submit]

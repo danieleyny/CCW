@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/lib/supabase/types"
-import { getActivePackages } from "@/lib/packages"
+import { getActivePackages, PUBLIC_PACKAGE_FALLBACK } from "@/lib/packages"
 import { getFees, getFeeTable } from "@/lib/fees"
 import { getPreviewRegistry } from "@/lib/requirements/preview"
 
@@ -62,7 +62,14 @@ function marketingDataClient() {
 }
 
 export const getPublicPackages = unstable_cache(
-  async () => getActivePackages(marketingDataClient()),
+  async () => {
+    try {
+      const packages = await getActivePackages(marketingDataClient())
+      return packages.length >= 2 ? packages : PUBLIC_PACKAGE_FALLBACK
+    } catch {
+      return PUBLIC_PACKAGE_FALLBACK
+    }
+  },
   ["public-packages"],
   { tags: [CACHE_TAGS.packages], revalidate: ONE_HOUR }
 )
@@ -80,10 +87,27 @@ export const getPublicFeeTable = unstable_cache(
 )
 
 export const getPublicRegistry = unstable_cache(
-  async () => getPreviewRegistry(marketingDataClient()),
+  async () => {
+    try {
+      const registry = await getPreviewRegistry(marketingDataClient())
+      return registry.length ? registry : PREVIEW_REGISTRY_FALLBACK
+    } catch {
+      return PREVIEW_REGISTRY_FALLBACK
+    }
+  },
   ["public-registry"],
   { tags: [CACHE_TAGS.registry], revalidate: ONE_HOUR }
 )
+
+/** Base items only, used only if the public registry cannot be read. */
+const PREVIEW_REGISTRY_FALLBACK = [
+  { reqCode: "ID-01", title: "Government-issued identification", authority: null, sourceUrl: null, severity: "critical", blocking: true, triggerCond: "always", jurisdiction: "nyc" },
+  { reqCode: "RES-01", title: "Proof of residence", authority: null, sourceUrl: null, severity: "high", blocking: true, triggerCond: "always", jurisdiction: "nyc" },
+  { reqCode: "TRAIN-01", title: "Required training certificate", authority: null, sourceUrl: null, severity: "long_lead", blocking: true, triggerCond: "carry_not_renewal", jurisdiction: "nyc" },
+  { reqCode: "SC-ID-01", title: "Government-issued identification", authority: null, sourceUrl: null, severity: "critical", blocking: true, triggerCond: "always", jurisdiction: "special_carry" },
+  { reqCode: "SC-BIZ-01", title: "Business or residency documentation", authority: null, sourceUrl: null, severity: "high", blocking: true, triggerCond: "always", jurisdiction: "special_carry" },
+  { reqCode: "SC-TRAIN-01", title: "Required training certificate", authority: null, sourceUrl: null, severity: "long_lead", blocking: true, triggerCond: "carry_not_renewal", jurisdiction: "special_carry" },
+]
 
 /**
  * The opt-in public instructor directory. Reads the `public_instructor_directory`

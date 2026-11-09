@@ -16,6 +16,15 @@ import { NextResponse, type NextRequest } from "next/server"
  * from the public feed at /api/public/pricing, which is the only coupling left.
  */
 export async function proxy(request: NextRequest) {
+  // Route matching is case-insensitive in Next redirects. Keep the comparison
+  // URLs canonical without making `/V1` redirect to itself.
+  const colorway = request.nextUrl.pathname.match(/^\/v([1-4])$/)
+  if (colorway) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/V${colorway[1]}`
+    return NextResponse.redirect(url)
+  }
+
   // Forward the pathname to server components (layouts can't read it otherwise).
   // The portal intake soft-gate reads this to exempt /portal/intake itself.
   const requestHeaders = new Headers(request.headers)

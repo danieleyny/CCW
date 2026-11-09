@@ -1,33 +1,38 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Bodoni_Moda, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import "../styles/themes.css";
 import { brand } from "@/config/brand";
 import { BrandStyle } from "@/config/brand-style";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { WebVitals } from "@/components/analytics/web-vitals";
 
-// Body + hero display fonts are on the critical path → preload. Mono is only
-// small eyebrows/labels → keep it off the preload list so it doesn't compete
-// with the LCP fonts. All swap so text paints immediately in the fallback.
-const fontSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const fontDisplay = Space_Grotesk({
-  variable: "--font-display",
+// The marketing and app surfaces share one deliberately small type system.
+// next/font self-hosts these files in the deployment, avoiding browser requests
+// to Google while preserving a stable first render.
+const fontSans = Hanken_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
   display: "swap",
 });
-
-const fontMono = JetBrains_Mono({
-  variable: "--font-mono",
+const fontDisplay = Bodoni_Moda({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  // The current Bodoni Moda API exposes normal on the variable face. Asking
+  // next/font to download a separate italic face can fail during prerender;
+  // normal keeps the self-hosted variable font available for all headings.
+  style: "normal",
+  variable: "--font-serif",
   display: "swap",
-  preload: false,
+  adjustFontFallback: true,
+});
+const fontMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 // Search Console / Bing verification tokens are wired to env so the owner can

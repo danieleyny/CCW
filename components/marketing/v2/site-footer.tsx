@@ -16,13 +16,13 @@ const COLUMNS = [
 
 export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
   const pathname = usePathname()
-  if (!embedded && pathname === "/") return null
+  if (!embedded && (pathname === "/" || /^\/V[1-4]$/.test(pathname))) return null
 
   return (
     <footer className={styles.footer} data-embedded={embedded} id="portal">
       <div className={styles.grid}>
         <div className={styles.brandCol}>
-          <BrandLogo tone="light" size="sm" className={`${styles.brand} ${brandStyles.footerMark}`} />
+          <BrandLogo tone="light" size="sm" className={`${styles.brand} ${brandStyles.footerMark} onDark`} />
           <p className={styles.disclaimer}>{FOOTER_DISCLAIMER}</p>
         </div>
         <nav aria-label="Footer" className={styles.columns}>

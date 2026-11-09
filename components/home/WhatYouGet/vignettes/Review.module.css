@@ -6,22 +6,25 @@
 .row b { color: #0B1420; font-weight: 600; }
 .swap { position: relative; display: inline-block; width: 128px; height: 15px; }
 .bad, .good { position: absolute; top: 0; right: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 600; }
-.bad { color: #E85A4F; opacity: 0; }
-.good { color: #1F9A66; opacity: 1; }
+.bad { color: var(--wyg-accent, #E85A4F); opacity: 0; }
+.good { color: var(--wyg-accent, #1F9A66); opacity: 1; }
 .chipBad, .chipGood { padding: 1px 6px; border-radius: 99px; font-size: 9.5px; font-style: normal; font-weight: 600; }
 .chipBad { background: rgba(232,90,79,.12); }
 .chipGood { background: rgba(35,162,109,.12); }
-.rowFlag { background: rgba(35,162,109,.07); }
+.rowFlag { background: color-mix(in srgb, var(--wyg-accent, #23A26D) 7%, transparent); }
 .lens { position: absolute; top: 22px; left: 18px; width: 44px; height: 44px; transform: translate(118px, 40px); }
-.lensGlass { position: absolute; inset: 0; border: 2px solid #0B1420; border-radius: 50%; background: rgba(255,255,255,.25); box-shadow: 0 6px 14px rgba(11,20,32,.18); }
-.lensHandle { position: absolute; top: 38px; left: 36px; width: 16px; height: 4px; border-radius: 2px; background: #0B1420; transform: rotate(45deg); transform-origin: left center; }
+.lensGlass { position: absolute; inset: 0; border: 2px solid var(--ink, #0B1420); border-radius: 50%; background: rgba(255,255,255,.25); box-shadow: 0 6px 14px rgba(11,20,32,.18); }
+.lensHandle { position: absolute; top: 38px; left: 36px; width: 16px; height: 4px; border-radius: 2px; background: var(--ink, #0B1420); transform: rotate(45deg); transform-origin: left center; }
 
 @keyframes lensMove { 0%,8% { transform: translate(0,0); } 22%,58% { transform: translate(118px,40px); } 74%,86% { transform: translate(150px,80px); } 100% { transform: translate(0,0); } }
 @keyframes badState { 0%,20% { opacity: 0; } 24%,52% { opacity: 1; } 56%,100% { opacity: 0; } }
 @keyframes goodState { 0%,54% { opacity: 0; } 58%,94% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes rowFlagState { 0%,20% { background: transparent; } 24%,52% { background: rgba(232,90,79,.08); } 58%,94% { background: rgba(35,162,109,.07); } 100% { background: transparent; } }
+@keyframes rowFlagState { 0%,20% { background: transparent; } 24%,52% { background: color-mix(in srgb, var(--wyg-accent, #E85A4F) 8%, transparent); } 58%,94% { background: color-mix(in srgb, var(--wyg-accent, #23A26D) 7%, transparent); } 100% { background: transparent; } }
 
 .running .lens { animation: lensMove 7s cubic-bezier(.6,0,.3,1) infinite; }
 .running .bad { animation: badState 7s ease infinite; }
 .running .good { animation: goodState 7s ease infinite; }
 .running .rowFlag { animation: rowFlagState 7s ease infinite; }
+
+:global([data-theme="v2"]) .chipBad { background:var(--gold-tint); color:var(--gold-deep); white-space:nowrap; }
+:global([data-theme="v2"]) .rowFlag { background:rgba(217,178,95,.07); }

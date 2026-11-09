@@ -1,0 +1,122 @@
+/* V0 has no data-theme attribute: every var() retains its live fallback. */
+[data-theme="v1"] {
+  --bg: #F6F5F2; --surface: #FFFFFF; --line: rgba(17,24,39,.09);
+  --ink: #111827; --ink-2: #4B5563; --muted: #6B7280;
+  --accent: #1C2B3F; --accent-ink: #FFFFFF;
+  --phase-1: #4A6D8C; --phase-2: #56708F; --phase-3: #6A6F8F; --phase-4: #7C6D88; --phase-5: #8C6F78;
+  --phase-dark-1: #6F93B3; --phase-dark-2: #7C96B6; --phase-dark-3: #8F93B3; --phase-dark-4: #A291AE; --phase-dark-5: #B3939D;
+  --ink-grad: linear-gradient(90deg,#3D5A78,#5B6E8A 50%,#7E6F86,#3D5A78);
+  --dark: #121A24; --dark-surface: #1A2531; --dark-ink: #EEF1F4; --dark-muted: #93A1B0;
+  --eyebrow: #3D6A8A; --eyebrow-dark: #8FB3C9;
+  --map-tint: #4A6D8C; --map-gray: .55;
+  --aurora-1: rgba(74,109,140,.42); --aurora-2: rgba(106,111,143,.38); --aurora-3: rgba(140,111,120,.32);
+  --finale-shadow: rgba(140,111,120,.35);
+  --cta-dark-bg: #EEF1F4; --cta-dark-ink: #111827; --btn-style: solid;
+}
+[data-theme="v2"] {
+  --bg: #FFFFFF; --surface: #F6F7F9; --line: rgba(10,15,26,.10);
+  --ink: #0A0F1A; --ink-2: #4A5160; --muted: #6B7280;
+  --accent: #14254A; --accent-ink: #FFFFFF;
+  --phase-1: #0F1E3A; --phase-2: #1F3561; --phase-3: #355089; --phase-4: #5A74A6; --phase-5: #8EA0C2;
+  --phase-dark-1: #5A74A6; --phase-dark-2: #6F88B8; --phase-dark-3: #8EA0C2; --phase-dark-4: #AEBBD4; --phase-dark-5: #CDD6E6;
+  --ink-grad: linear-gradient(90deg,#14254A,#3A5487 50%,#14254A);
+  --dark: #0A1222; --dark-surface: #111B2E; --dark-ink: #F2F4F8; --dark-muted: #8E98AA;
+  --eyebrow: #1F3561; --eyebrow-dark: #9DB0D3;
+  --map-tint: #1F3561; --map-gray: 1;
+  --aurora-1: rgba(53,80,137,.48); --aurora-2: rgba(90,116,166,.32); --aurora-3: rgba(31,53,97,.5);
+  --finale-shadow: rgba(90,116,166,.35);
+  --cta-dark-bg: #FFFFFF; --cta-dark-ink: #0A0F1A; --btn-style: solid;
+  /* Navy & Champagne: these are deliberately V2-local.  The V0 fallback and
+     the other comparison colorways remain byte-for-byte independent. */
+  --gold: #D9B25F; --gold-light: #F0D58C; --gold-deep: #8A6420; --gold-on-dark: #E6C886;
+  --gold-rule: linear-gradient(90deg, #D9B25F, #F0D58C);
+  --gold-hair: linear-gradient(90deg, transparent, #D9B25F, #F0D58C, #D9B25F, transparent);
+  --gold-btn: linear-gradient(180deg, #F3DC9C 0%, #D9B25F 60%, #C49A47 100%);
+  --gold-tint: rgba(217,178,95,.14);
+  --logo-arc-1: #2FA8EE; --logo-arc-2: #5B6CFF; --logo-arc-3: #8A5BEA; --logo-arc-4: #C24FC9; --logo-arc-5: #EE5E8C;
+  --logo-dot: #EE5E8C;
+  --nyc-grad: linear-gradient(90deg,#2FA8EE,#8A5BEA 55%,#EE5E8C);
+}
+[data-theme="v3"] {
+  --bg: #F7F4EE; --surface: #FFFDF8; --line: rgba(20,33,28,.10);
+  --ink: #14211C; --ink-2: #4C5752; --muted: #6A756F;
+  --accent: #1F3B33; --accent-ink: #F7F4EE;
+  --phase-1: #2F5D50; --phase-2: #3F6E5A; --phase-3: #667B57; --phase-4: #957F52; --phase-5: #B08D57;
+  --phase-dark-1: #5E9583; --phase-dark-2: #6FA08A; --phase-dark-3: #93A57F; --phase-dark-4: #BFA678; --phase-dark-5: #D2B07A;
+  --ink-grad: linear-gradient(90deg,#2F5D50,#6E7D55 50%,#B08D57,#2F5D50);
+  --dark: #13221D; --dark-surface: #1B2E27; --dark-ink: #F3EFE6; --dark-muted: #A3ADA6;
+  --eyebrow: #8A6B3A; --eyebrow-dark: #C9A86A;
+  --map-tint: #2F5D50; --map-gray: .7;
+  --aurora-1: rgba(47,93,80,.55); --aurora-2: rgba(102,123,87,.4); --aurora-3: rgba(176,141,87,.45);
+  --finale-shadow: rgba(176,141,87,.35);
+  --cta-dark-bg: #F3EFE6; --cta-dark-ink: #14221D; --btn-style: solid;
+}
+[data-theme="v4"] {
+  --bg: #FFFFFF; --surface: #FAFAF8; --line: rgba(10,10,10,.10);
+  --ink: #0A0A0A; --ink-2: #474747; --muted: #6B6B6B;
+  --accent: #0A0A0A; --accent-ink: #FFFFFF;
+  --phase-1: #8C6A2E; --phase-2: #A27B35; --phase-3: #B88D3E; --phase-4: #C9A050; --phase-5: #D9B566;
+  --phase-dark-1: #B8912F; --phase-dark-2: #C9A043; --phase-dark-3: #D6B05A; --phase-dark-4: #E2C277; --phase-dark-5: #EED59A;
+  --ink-grad: linear-gradient(90deg, #8C6A2E, #C9A050 30%, #F1D98A 50%, #B88D3E 70%, #8C6A2E);
+  --dark: #0A0A0A; --dark-surface: #161616; --dark-ink: #F6F3EC; --dark-muted: #A39E94;
+  --eyebrow: #8C6A2E; --eyebrow-dark: #D6B05A;
+  --map-tint: #B88D3E; --map-gray: 1; --map-tint-opacity: .45;
+  --aurora-1: rgba(184,145,47,.42); --aurora-2: rgba(214,176,90,.28); --aurora-3: rgba(140,106,46,.45);
+  --finale-shadow: rgba(214,176,90,.35);
+  --cta-dark-bg: #D6B05A; --cta-dark-ink: #0A0A0A; --btn-style: solid;
+}
+
+[data-theme] {
+  --theme-bg: var(--bg); --theme-surface: var(--surface); --theme-line: var(--line);
+  --theme-ink: var(--ink); --theme-ink-2: var(--ink-2); --theme-muted: var(--muted);
+  --theme-dark: var(--dark); --theme-dark-surface: var(--dark-surface); --theme-dark-ink: var(--dark-ink); --theme-dark-muted: var(--dark-muted);
+  --logo-arc-1: var(--phase-1); --logo-arc-2: var(--phase-2); --logo-arc-3: var(--phase-3); --logo-arc-4: var(--phase-4); --logo-arc-5: var(--phase-5);
+}
+[data-theme] .onDark { --logo-arc-1: var(--phase-dark-1); --logo-arc-2: var(--phase-dark-2); --logo-arc-3: var(--phase-dark-3); --logo-arc-4: var(--phase-dark-4); --logo-arc-5: var(--phase-dark-5); }
+[data-theme="v2"] { --logo-arc-1: #2FA8EE; --logo-arc-2: #5B6CFF; --logo-arc-3: #8A5BEA; --logo-arc-4: #C24FC9; --logo-arc-5: #EE5E8C; }
+[data-theme="v2"] .onDark { --logo-arc-1: #2FA8EE; --logo-arc-2: #5B6CFF; --logo-arc-3: #8A5BEA; --logo-arc-4: #C24FC9; --logo-arc-5: #EE5E8C; }
+
+/* One restrained champagne moment per viewport. These selectors are all V2
+   only so nested marketing modules need not leak presentation into the live
+   home route or the other comparison pages. */
+[data-theme="v2"] .mkt2 .eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); }
+[data-theme="v2"] .mkt2 .eyebrow::before { content: ""; width: 18px; height: 1px; flex: none; background: var(--gold-rule); }
+[data-theme="v2"] .mkt2 .dark .eyebrow { color: var(--gold-on-dark); }
+[data-theme="v2"] .mkt2 .button .button-arrow { color: var(--gold-light); }
+[data-theme="v2"] .mkt2 .button:hover { box-shadow: inset 0 0 0 1px rgba(217,178,95,.55), 0 14px 30px -18px var(--accent); }
+[data-theme="v2"] .mkt2 .order-note { border-left-color: var(--gold); }
+[data-theme="v2"] .mkt2 .candor-panel,
+[data-theme="v2"] .mkt2 .promise,
+[data-theme="v2"] .mkt2 .guide-list { position: relative; }
+[data-theme="v2"] .mkt2 .candor-panel::after,
+[data-theme="v2"] .mkt2 .promise::after { content: ""; position: absolute; top: 0; left: 28px; right: 28px; height: 1px; background: var(--gold-hair); pointer-events: none; }
+[data-theme="v2"] .mkt2 .candor-panel::before { display: none; }
+[data-theme="v2"] .mkt2 #legal::before,
+[data-theme="v2"] .mkt2 .promise::before { content: none; }
+[data-theme="v2"] .mkt2 .candor-panel { background: radial-gradient(620px circle at 100% 0%, rgba(217,178,95,.10), transparent 65%), var(--midnight-raised); }
+[data-theme="v2"] .mkt2 .candor-panel-label,
+[data-theme="v2"] .mkt2 .candor-rules span { color: var(--gold-on-dark) !important; }
+[data-theme="v2"] .mkt2 .attorney-seam { border-left: 2px solid var(--gold); padding-left: 16px; }
+[data-theme="v2"] .mkt2 .promise-block { border-left: 2px solid var(--gold); }
+[data-theme="v2"] .mkt2 .guide-list { border-image: linear-gradient(90deg, var(--ink), var(--ink) 70%, var(--gold)) 1; }
+[data-theme="v2"] .mkt2 .guide-no { color: var(--gold-deep); }
+[data-theme="v2"] .mkt2 .guide-arrow { color: var(--gold-deep); }
+[data-theme="v2"] .mkt2 .order-copy > .section-lede,
+[data-theme="v2"] .mkt2 .order-note { color: #384153; }
+
+/* The marketing stylesheet predates the comparison pages. Keep its V0 values
+   untouched, while feeding the existing semantic aliases from each theme. */
+[data-theme] .mkt2 {
+  --ivory: var(--theme-bg); --paper: var(--theme-surface); --paper-deep: var(--theme-surface);
+  --ink: var(--theme-ink); --ink-soft: var(--theme-ink-2); --ink-muted: var(--theme-muted); --rule: var(--theme-line);
+  --midnight: var(--theme-dark); --midnight-raised: var(--theme-dark-surface); --midnight-soft: var(--theme-dark-surface);
+  --light: var(--theme-dark-ink); --light-soft: var(--theme-dark-muted); --dark-rule: color-mix(in srgb, var(--theme-dark-muted) 32%, transparent);
+  --electric: var(--phase-1); --electric-deep: var(--accent); --cyan: var(--phase-dark-1);
+  --blue: var(--phase-2); --violet: var(--phase-3); --magenta: var(--phase-4); --vermilion: var(--phase-5); --tangerine: var(--phase-5);
+  --spectral: var(--ink-grad); --shadow-soft: 0 24px 70px color-mix(in srgb, var(--ink) 12%, transparent);
+  --shadow-dark: 0 32px 90px color-mix(in srgb, var(--dark) 45%, transparent);
+}
+[data-theme] .mkt2 .button:not(.button-light) { background: var(--accent); color: var(--accent-ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+[data-theme] .mkt2 .button:not(.button-light):hover { filter: brightness(1.12); }
+
+@media print { .colorway-switcher { display: none !important; } }

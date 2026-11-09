@@ -12,4 +12,10 @@
 .legal { display: flex; gap: 16px; }
 .legal .link { display: inline; margin: 0; font-size: 13px; }
 .mobileOnly { display: none !important; }
+:global([data-theme="v2"]) .footer { border-top-color: color-mix(in srgb, var(--gold) 55%, transparent); background: #0A1222; }
+:global([data-theme="v2"]) .columnTitle { color: var(--gold-on-dark); }
+:global([data-theme="v2"]) .bottom { border-top-color: color-mix(in srgb, var(--gold) 32%, transparent); }
+:global([data-theme="v2"]) .bottom,
+:global([data-theme="v2"]) .bottom .link { color: #AEBBD4; }
+:global([data-theme="v2"]) .link:hover { color: var(--gold-on-dark); }
 @media (max-width: 899px) { .footer { padding: 36px 20px 28px; } .grid { display: flex; flex-direction: column; gap: 26px; } .brandCol { display: contents; } .brand { order: 1; font-size: 16px; } .columns { order: 2; grid-template-columns: 1fr 1fr; gap: 24px; } .column[data-column='Account'] { display: none; } .disclaimer { order: 3; max-width: none; margin-top: 0; font-size: 13px; } .link { margin-top: 9px; font-size: 14.5px; } .columnTitle { margin-bottom: 8px; font-size: 10.5px; } .bottom { margin-top: 20px; padding-top: 16px; font-size: 12.5px; } .legal .link { font-size: 12.5px; } .mobileOnly { display: inline !important; } }

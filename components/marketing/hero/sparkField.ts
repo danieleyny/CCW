@@ -3,10 +3,12 @@
 
 import { runCanvasLoop, type CanvasLoopHandle } from "../shared/canvasLoop"
 import { hash, loopColor } from "./heroPalette"
+import { V0_PALETTE, type Palette } from "@/components/theme/themes"
 
-type Opts = { reducedMotion?: boolean; padX: number; padTop: number; padBottom: number }
+type Opts = { reducedMotion?: boolean; padX: number; padTop: number; padBottom: number; palette?: Palette }
 
 export function startSparkField(canvas: HTMLCanvasElement, opts: Opts): CanvasLoopHandle {
+  const palette = opts.palette ?? V0_PALETTE
   const dot = (context: CanvasRenderingContext2D, x: number, y: number, radius: number, color: string, alpha: number) => {
     if (alpha <= 0.01) return
     context.globalAlpha = Math.min(1, alpha)
@@ -26,7 +28,7 @@ export function startSparkField(canvas: HTMLCanvasElement, opts: Opts): CanvasLo
       const ix1 = width - opts.padX
       const iy0 = opts.padTop
       const iy1 = height - opts.padBottom
-      const colorAt = (x: number) => loopColor((x / width) * 0.5 - time / 9)
+      const colorAt = (x: number) => loopColor((x / width) * 0.5 - time / 9, palette)
 
       for (let i = 0; i < count; i++) {
         const r1 = hash(i * 3 + 1)
@@ -66,7 +68,7 @@ export function startSparkField(canvas: HTMLCanvasElement, opts: Opts): CanvasLo
         context.moveTo(x, y - length)
         context.lineTo(x, y + length)
         context.stroke()
-        dot(context, x, y, 1.4 + bloom, "#FFFFFF", bloom)
+        dot(context, x, y, 1.4 + bloom, palette === V0_PALETTE ? "#FFFFFF" : palette.darkInk, bloom)
       }
     },
     { reducedMotion: opts.reducedMotion, stillTime: 2 }

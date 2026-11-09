@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react"
 import styles from "./PlanningRealities.module.css"
 import { startSignalField, type SignalFieldHandle } from "./signalField"
+import { usePrefersReducedMotion } from "../shared/usePrefersReducedMotion"
+import { usePalette } from "@/components/theme/usePalette"
+import { HOURS_COPY } from "@/content/training/config"
 
 type Fact = { num: string; unit: string; title: string; value: string; desc: string }
 
 const FACTS: Fact[] = [
   { num: "~6", unit: "months", title: "Planning horizon", value: "~6 mo", desc: "Typical planning horizon from start to decision." },
-  { num: "18", unit: "hours", title: "Required training", value: "18 h", desc: "Required training for a concealed-carry application." },
+  { num: "18", unit: "hours", title: "Required training", value: HOURS_COPY.planning, desc: "Required training for a concealed-carry application." },
   { num: "4", unit: "references", title: "Character references", value: "4", desc: "For the standard NYC carry track." },
   { num: "1×", unit: "each adult", title: "Cohabitant statements", value: "1×", desc: "A cohabitant statement for every adult at home." },
   { num: "1", unit: "interview", title: "Investigator interview", value: "1", desc: "Prepare for the investigator’s questions and requests." },
@@ -17,18 +20,6 @@ const FACTS: Fact[] = [
 const AUTOPLAY_MS = 5000
 const pad = (number: number) => String(number).padStart(2, "0")
 
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false)
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const sync = () => setReduced(mediaQuery.matches)
-    sync()
-    mediaQuery.addEventListener("change", sync)
-    return () => mediaQuery.removeEventListener("change", sync)
-  }, [])
-  return reduced
-}
-
 export default function PlanningRealities() {
   const [active, setActive] = useState(0)
   const [cycle, setCycle] = useState(0)
@@ -36,6 +27,7 @@ export default function PlanningRealities() {
   const [inView, setInView] = useState(false)
   const [userDriven, setUserDriven] = useState(false)
   const reduced = usePrefersReducedMotion()
+  const palette = usePalette()
   const sectionRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fieldRef = useRef<SignalFieldHandle | null>(null)
@@ -49,13 +41,20 @@ export default function PlanningRealities() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const field = startSignalField(canvas, { count: FACTS.length, reducedMotion: reduced, initialIndex: activeRef.current })
+    const field = startSignalField(canvas, {
+      count: FACTS.length,
+      reducedMotion: reduced,
+      initialIndex: activeRef.current,
+      dotColor: palette.ice?.[0] ?? palette.phaseDark[2],
+      hotColor: palette.goldText ?? palette.phaseDark[0],
+      waveRamp: palette.waveRamp,
+    })
     fieldRef.current = field
     return () => {
       field.destroy()
       fieldRef.current = null
     }
-  }, [reduced])
+  }, [palette, reduced])
 
   useEffect(() => {
     fieldRef.current?.setActive(active)

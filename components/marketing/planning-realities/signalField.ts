@@ -6,8 +6,25 @@ export type SignalFieldOptions = {
   count?: number
   dotColor?: string
   hotColor?: string
+  /** V2's ice-to-champagne wave. Kept optional so the live palette is untouched. */
+  waveRamp?: readonly string[]
   reducedMotion?: boolean
   initialIndex?: number
+}
+
+const toRgb = (hex: string) => {
+  const value = hex.replace("#", "")
+  if (!/^[0-9a-f]{6}$/i.test(value)) return [126, 155, 173] as const
+  return [parseInt(value.slice(0, 2), 16), parseInt(value.slice(2, 4), 16), parseInt(value.slice(4, 6), 16)] as const
+}
+
+const rampColor = (ramp: readonly string[], value: number) => {
+  if (ramp.length < 2) return ramp[0] ?? "#7E9BAD"
+  const t = Math.max(0, Math.min(1, value)) * (ramp.length - 1)
+  const index = Math.min(ramp.length - 2, Math.floor(t))
+  const local = t - index
+  const a = toRgb(ramp[index]), b = toRgb(ramp[index + 1])
+  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * local)},${Math.round(a[1] + (b[1] - a[1]) * local)},${Math.round(a[2] + (b[2] - a[2]) * local)})`
 }
 
 export type SignalFieldHandle = {
@@ -26,6 +43,7 @@ export function startSignalField(
   const count = Math.max(1, opts.count ?? 5)
   const dotColor = opts.dotColor ?? "#7E9BAD"
   const hotColor = opts.hotColor ?? "#5FD4E0"
+  const waveRamp = opts.waveRamp
   const reduced = !!opts.reducedMotion
   const bandFor = (index: number) => (count <= 1 ? 0 : -0.8 + (1.6 * index) / (count - 1))
 
@@ -85,11 +103,21 @@ export function startSignalField(
 
         const hot = band > 0.35
         const radius = (baseRadius / Math.sqrt(depth)) * (1 + band * 0.5)
+        const a = Math.max(0, Math.min(1, band))
         ctx.globalAlpha = Math.min(1, alphaDepth * (hot ? 1 : 0.5))
-        ctx.fillStyle = hot ? hotColor : dotColor
+        // V2 gets a continuous ice-blue → champagne field; all other themes
+        // retain their existing calm two-tone treatment.
+        ctx.fillStyle = waveRamp ? rampColor(waveRamp, ((xi / Math.max(1, nx - 1)) * .85) + a * .15) : hot ? hotColor : dotColor
         ctx.beginPath()
         ctx.arc(sx, sy, radius, 0, Math.PI * 2)
         ctx.fill()
+        if (waveRamp && a > .93) {
+          ctx.globalAlpha = Math.min(1, alphaDepth * .55)
+          ctx.fillStyle = "#FFF6DE"
+          ctx.beginPath()
+          ctx.arc(sx, sy, radius * .55, 0, Math.PI * 2)
+          ctx.fill()
+        }
       }
     }
     ctx.globalAlpha = 1

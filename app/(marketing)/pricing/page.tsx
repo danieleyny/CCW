@@ -62,6 +62,7 @@ export default async function Pricing() {
               return (
                 <div
                   key={p.key}
+                  data-testid="pricing-plan"
                   style={{
                     display: "flex",
                     flexDirection: "column",

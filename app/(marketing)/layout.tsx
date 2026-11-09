@@ -1,7 +1,5 @@
-import { Bodoni_Moda, Hanken_Grotesk, Azeret_Mono } from "next/font/google"
 import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketing/json-ld"
-import { SiteHeader } from "@/components/marketing/v2/site-header"
-import { SiteFooter } from "@/components/marketing/v2/site-footer"
+import { MarketingFrame } from "@/components/marketing/v2/MarketingFrame"
 import "./marketing-v2.css"
 import "./hero-guided-path.css"
 
@@ -15,26 +13,6 @@ import "./hero-guided-path.css"
  * Fonts are the spec's three families, loaded via next/font (no render-blocking
  * external stylesheet) and mapped onto --display/--sans/--mono inside the scope.
  */
-const display = Bodoni_Moda({
-  variable: "--font-bodoni",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-})
-const sans = Hanken_Grotesk({
-  variable: "--font-hanken",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-})
-const mono = Azeret_Mono({
-  variable: "--font-azeret",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-  preload: false,
-})
-
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -45,11 +23,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           "@graph": [organizationSchema, websiteSchema],
         }}
       />
-      <div className={`mkt2 ${display.variable} ${sans.variable} ${mono.variable}`}>
-        <SiteHeader />
-        <main id="top">{children}</main>
-        <SiteFooter />
-      </div>
+      <MarketingFrame>{children}</MarketingFrame>
     </>
   )
 }

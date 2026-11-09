@@ -4,14 +4,15 @@ export type CanvasLoopOptions = {
   reducedMotion?: boolean
   stillTime?: number
   enabled?: boolean
+  rootMargin?: string
   onResize?: (width: number, height: number) => void
 }
 
-export type CanvasLoopHandle = { redraw: () => void; destroy: () => void; setEnabled: (enabled: boolean) => void }
+export type CanvasLoopHandle = { redraw: () => void; rebuild: () => void; destroy: () => void; setEnabled: (enabled: boolean) => void }
 
 export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, options: CanvasLoopOptions = {}): CanvasLoopHandle {
   const context = canvas.getContext("2d")
-  if (!context) return { redraw() {}, destroy() {}, setEnabled() {} }
+  if (!context) return { redraw() {}, rebuild() {}, destroy() {}, setEnabled() {} }
 
   const reduced = !!options.reducedMotion
   let width = 0
@@ -44,6 +45,12 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
       canvas.height = bitmapHeight
     }
     options.onResize?.(width, height)
+    // ResizeObserver fires before IntersectionObserver on some WebKit and
+    // headless viewport changes. Seed the same near-viewport state here so a
+    // visible canvas never waits indefinitely for the next IO notification.
+    const margin = Number.parseFloat(options.rootMargin ?? "100") || 0
+    const viewport = canvas.getBoundingClientRect()
+    onScreen = viewport.bottom >= -margin && viewport.top <= window.innerHeight + margin && viewport.right >= -margin && viewport.left <= window.innerWidth + margin
     if (!running) paint(0)
     update()
   }
@@ -75,7 +82,7 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
       onScreen = entry.isIntersecting
       update()
     },
-    { rootMargin: "100px" }
+    { rootMargin: options.rootMargin ?? "100px" }
   )
   intersectionObserver.observe(canvas)
 
@@ -83,12 +90,24 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
     pageVisible = !document.hidden
     update()
   }
+  const refreshViewportVisibility = () => {
+    const margin = Number.parseFloat(options.rootMargin ?? "100") || 0
+    const viewport = canvas.getBoundingClientRect()
+    onScreen = viewport.bottom >= -margin && viewport.top <= window.innerHeight + margin && viewport.right >= -margin && viewport.left <= window.innerWidth + margin
+    update()
+  }
   document.addEventListener("visibilitychange", onVisibilityChange)
+  window.addEventListener("scroll", refreshViewportVisibility, { passive: true })
+  window.addEventListener("resize", refreshViewportVisibility, { passive: true })
   resize()
+  refreshViewportVisibility()
 
   return {
     redraw() {
       if (!running) paint(0)
+    },
+    rebuild() {
+      resize()
     },
     setEnabled(next) {
       enabled = next
@@ -100,6 +119,8 @@ export function runCanvasLoop(canvas: HTMLCanvasElement, draw: CanvasDraw, optio
       resizeObserver.disconnect()
       intersectionObserver.disconnect()
       document.removeEventListener("visibilitychange", onVisibilityChange)
+      window.removeEventListener("scroll", refreshViewportVisibility)
+      window.removeEventListener("resize", refreshViewportVisibility)
     },
   }
 }

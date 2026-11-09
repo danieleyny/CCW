@@ -43,12 +43,16 @@ export interface TrainingPartner {
   location: string
   phone: string
   email: string
-  website: string
+  /** In-site class registration destination. Never send prospects to the vendor listing. */
+  signupHref: string
   highlights: { figure: string; label: string }[]
   credentials: TrainingPartnerCredential[]
   services: TrainingPartnerService[]
   faqs: TrainingPartnerFaq[]
 }
+
+/** The presentation-ready class registration section on the redesigned site. */
+export const TRAINING_SIGNUP_PATH = "/V2#training"
 
 export const TRAINING_PARTNERS: TrainingPartner[] = [
   {
@@ -67,7 +71,7 @@ export const TRAINING_PARTNERS: TrainingPartner[] = [
     location: "New York City",
     phone: "332-323-2571",
     email: "yariv@50b.pro",
-    website: "https://www.shootingclasses.com/50b/",
+    signupHref: TRAINING_SIGNUP_PATH,
     highlights: [
       { figure: "16+2", label: "NY classroom + live-fire standard" },
       { figure: "NYS", label: "CCW course listing" },
@@ -76,8 +80,8 @@ export const TRAINING_PARTNERS: TrainingPartner[] = [
     ],
     credentials: [
       { label: "Role", value: "Managing Member · Firearms Instructor" },
-      { label: "Organization", value: "50B EDC Training & Consulting LLC", href: "https://www.shootingclasses.com/50b/" },
-      { label: "Course listings", value: "NYS CCW, pistol, rifle, private and group training", href: "https://www.shootingclasses.com/50b/" },
+      { label: "Organization", value: "50B EDC Training & Consulting LLC", href: TRAINING_SIGNUP_PATH },
+      { label: "Course registration", value: "NYS CCW licensing class", href: TRAINING_SIGNUP_PATH },
       { label: "Training standard", value: "16 hours in-person classroom + 2 hours live-fire", href: "https://gunsafety.ny.gov/firearm-safety-training-standards" },
       { label: "Service area", value: "New York City" },
     ],
@@ -98,7 +102,7 @@ export const TRAINING_PARTNERS: TrainingPartner[] = [
       },
       {
         q: "Is 50B part of Gun License NYC?",
-        a: "No. 50B EDC Training & Consulting LLC is an independent training provider. Training arrangements, instruction and any course fees are handled directly with 50B.",
+        a: "No. 50B EDC Training & Consulting LLC is an independent training provider. Gun License NYC handles registration and payment for the class shown on our site; 50B provides the instruction.",
       },
     ],
   },

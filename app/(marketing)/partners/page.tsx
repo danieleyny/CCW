@@ -82,8 +82,9 @@ function Directory({ attorneys, trainers, indexed }: { attorneys: Partner[]; tra
         <section className="pb-4 pt-8">
           <DirectAnswer>
             We prepare application materials. We are <strong>not a law firm</strong> and do not
-            represent anyone before the NYPD License Division. Our independent partners handle their
-            own professional services, communications and fees directly with you.
+            represent anyone before the NYPD License Division. Every listed professional remains
+            independent. Attorneys handle their own services and fees; for the class listed here,
+            Gun License NYC handles registration and payment while 50B provides the instruction.
           </DirectAnswer>
         </section>
 
@@ -101,7 +102,7 @@ function Directory({ attorneys, trainers, indexed }: { attorneys: Partner[]; tra
                 <div className="space-y-8">
                   <div>
                     <h2 className="font-display text-2xl font-semibold tracking-tight text-text-hi">Independent training providers</h2>
-                    <p className="mt-2 text-text-mid">Training is arranged directly with the provider. You remain responsible for reviewing and submitting your own application.</p>
+                    <p className="mt-2 text-text-mid">Training is provided independently by the listed instructor. Register through our redesigned class section; you remain responsible for reviewing and submitting your own application.</p>
                   </div>
                   {trainers.map((partner) => <TrainingPartnerCard key={partner.slug} partner={partner} />)}
                 </div>

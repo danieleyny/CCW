@@ -1,3 +1,4 @@
+import Link from "next/link"
 import Image from "next/image"
 import { ExternalLink } from "lucide-react"
 import { brand } from "@/config/brand"
@@ -12,6 +13,11 @@ import { TRAINING_INDEPENDENCE_DISCLAIMER } from "@/components/marketing/trainin
 import { canonical } from "@/lib/seo"
 
 export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }) {
+  const phoneDigits = partner.phone.replace(/\D/g, "")
+  const displayPhone = phoneDigits.length === 10
+    ? `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`
+    : partner.phone
+
   return (
     <>
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Partners", path: "/partners" }, { name: partner.name, path: trainingPartnerPath(partner) }]} />
@@ -25,7 +31,7 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
             <p className="mt-2 text-brass">{partner.firm} · {partner.role}</p>
             <p className="mt-4 max-w-xl text-lg text-text-mid">{partner.headline}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild size="lg"><a href={partner.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">View 50B classes <ExternalLink className="size-4" aria-hidden /></a></Button>
+              <Button asChild size="lg"><Link href={partner.signupHref}>Register for the class</Link></Button>
               <Button asChild variant="outline" size="lg"><a href={`mailto:${partner.email}`}>Email Yariv</a></Button>
             </div>
           </div>
@@ -67,7 +73,13 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
               <div key={credential.label} className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr]">
                 <dt className="engraved text-text-low">{credential.label}</dt>
                 <dd className="text-text-hi">
-                  {credential.href ? <a className="inline-flex items-center gap-1.5 text-signal hover:underline" href={credential.href} target="_blank" rel="noreferrer">{credential.value} <ExternalLink className="size-3.5 shrink-0" aria-hidden /></a> : credential.value}
+                  {credential.href ? (
+                    credential.href.startsWith("/") ? (
+                      <Link className="inline-flex items-center gap-1.5 text-signal hover:underline" href={credential.href}>{credential.value}</Link>
+                    ) : (
+                      <a className="inline-flex items-center gap-1.5 text-signal hover:underline" href={credential.href} target="_blank" rel="noreferrer">{credential.value} <ExternalLink className="size-3.5 shrink-0" aria-hidden /></a>
+                    )
+                  ) : credential.value}
                 </dd>
               </div>
             ))}
@@ -94,9 +106,9 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
           <h2 className="font-display text-2xl font-semibold tracking-tight">How it works</h2>
           <ol className="mt-6 grid gap-4 sm:grid-cols-3">
             {[
-              { number: "1", title: "Review 50B’s offerings", detail: "Start with the current course listing and select the training you want to discuss." },
-              { number: "2", title: "Confirm details directly", detail: "Ask 50B about dates, availability, course format, eligibility and fees before enrolling." },
-              { number: "3", title: "Complete your training", detail: "50B confirms its course requirements and completion documentation directly with you." },
+              { number: "1", title: "Review the class", detail: "See the current dates, location area and all-in price on our redesigned registration section." },
+              { number: "2", title: "Reserve your seat", detail: "Complete the class registration and payment securely on Gun License NYC." },
+              { number: "3", title: "Complete your training", detail: "50B provides the instruction and confirms the completion documentation directly with you." },
             ].map((step) => (
               <li key={step.number} className="rounded-xl border border-hairline bg-card p-5">
                 <p className="font-mono text-signal">{step.number}</p><p className="mt-2 font-display font-semibold text-text-hi">{step.title}</p><p className="mt-1 text-sm text-text-mid">{step.detail}</p>
@@ -110,9 +122,9 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
 
       <section className="border-y border-hairline">
         <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
-          <p className="text-text-mid">Training arrangements and course fees are handled directly with 50B.</p>
+          <p className="text-text-mid">Register and pay through Gun License NYC; 50B provides the independent instruction.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg"><a href={partner.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">View 50B classes <ExternalLink className="size-4" aria-hidden /></a></Button>
+            <Button asChild size="lg"><Link href={partner.signupHref}>Register for the class</Link></Button>
             <Button asChild variant="outline" size="lg"><a href={`mailto:${partner.email}`}>Email Yariv</a></Button>
           </div>
         </div>
@@ -124,7 +136,7 @@ export function TrainingPartnerProfile({ partner }: { partner: TrainingPartner }
           <p className="text-xs leading-relaxed text-text-low">{brand.disclaimer}</p>
           <div className="border-t border-hairline pt-5 text-xs text-text-low">
             <p className="font-medium text-text-mid">{partner.firm}</p>
-            <p className="mt-1"><a className="hover:text-text-mid hover:underline" href={`tel:+1${partner.phone.replace(/\D/g, "")}`}>({partner.phone.slice(0, 3)}) {partner.phone.slice(3, 6)}-{partner.phone.slice(6)}</a> · <a className="hover:text-text-mid hover:underline" href={`mailto:${partner.email}`}>{partner.email}</a></p>
+            <p className="mt-1"><a className="hover:text-text-mid hover:underline" href={`tel:+1${phoneDigits}`}>{displayPhone}</a> · <a className="hover:text-text-mid hover:underline" href={`mailto:${partner.email}`}>{partner.email}</a></p>
           </div>
         </div>
       </section>
@@ -140,7 +152,7 @@ function trainingPartnerSchema(partner: TrainingPartner) {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", "@id": companyId, name: partner.firm, url: partner.website, email: partner.email, telephone: partner.phone, areaServed: partner.location },
+      { "@type": "Organization", "@id": companyId, name: partner.firm, url, email: partner.email, telephone: partner.phone, areaServed: partner.location },
       { "@type": "Person", "@id": `${url}#person`, name: partner.name, jobTitle: partner.role, url, worksFor: { "@id": companyId }, description: partner.headline },
     ],
   }

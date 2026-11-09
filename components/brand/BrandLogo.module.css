@@ -1,10 +1,10 @@
 .logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; line-height: 1; -webkit-tap-highlight-color: transparent; }
 .logo:focus-visible { outline: 2px solid #5FD4E0; outline-offset: 4px; border-radius: 10px; }
-.ink { color: #0B1420; }
-.light { color: #F4F7F9; }
+.ink { color: var(--ink, #0B1420); }
+.light { color: var(--dark-ink, #F4F7F9); }
 .word { display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap; }
 .wordMain { font-family: var(--font-sans), sans-serif; font-weight: 600; letter-spacing: -0.01em; color: currentColor; }
-.wordNyc { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 600; letter-spacing: 0.12em; color: #5B6CFF; background: linear-gradient(90deg, #2FA8EE, #8A5BEA 55%, #EE5E8C); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.wordNyc { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 600; letter-spacing: 0.12em; color: var(--logo-arc-2, #5B6CFF); background: var(--nyc-grad, linear-gradient(90deg, var(--logo-arc-1, #2FA8EE), var(--logo-arc-3, #8A5BEA) 55%, var(--logo-arc-5, #EE5E8C))); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .md .wordMain { font-size: 19px; } .md .wordNyc { font-size: 13.5px; }
 .sm .wordMain { font-size: 17px; } .sm .wordNyc { font-size: 12px; }
 .sm { gap: 10px; }

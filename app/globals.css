@@ -71,8 +71,8 @@
   /* fonts */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-display: var(--font-display);
-  --font-heading: var(--font-display);
+  --font-display: var(--font-serif);
+  --font-heading: var(--font-serif);
 
   /* radii: machined, crisp (not friendly-rounded) */
   --radius-sm: calc(var(--radius) * 0.6);
@@ -116,6 +116,9 @@
      aren't clipped by this, so they clip themselves. */
   html {
     overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   /* App routes wrap their tree in `.dark`, but <html>/<body> sit OUTSIDE it and
      keep the light marketing paper. Overscroll (rubber-band) and pages shorter
@@ -127,10 +130,10 @@
   html:has(.dark) body {
     background-color: var(--app-bg-dark);
   }
-  h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.01em;
+  h1, h2, h3 {
+    text-wrap: balance;
   }
+  p { text-wrap: pretty; }
   ::selection {
     background: var(--brass);
     color: var(--brand-foreground);
@@ -140,6 +143,16 @@
   ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
   ::-webkit-scrollbar-track { background: transparent; }
 }
+
+.mkt2 main p strong { display: inline; }
+.mkt2 section[id] { scroll-margin-top: 96px; }
+
+:root {
+  --shadow-card: 0 1px 2px rgba(10,21,32,.06), 0 12px 32px -12px rgba(10,21,32,.18);
+  --shadow-float: 0 2px 4px rgba(10,21,32,.08), 0 20px 48px -16px rgba(10,21,32,.24);
+}
+
+.num, [data-num], .price, .date { font-variant-numeric: tabular-nums lining-nums; }
 
 /* ── Signature utilities ─────────────────────────────────────────────────── */
 

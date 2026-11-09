@@ -1,8 +1,8 @@
 .hero {
-  --hero-ink: #0b1420;
-  --hero-muted: #4f5866;
+  --hero-ink: var(--ink, #0b1420);
+  --hero-muted: var(--ink-2, #4f5866);
   --hero-micro: #6b7480;
-  --hero-focus: #3d5bd9;
+  --hero-focus: var(--phase-2, #3d5bd9);
   --hero-display: var(--display);
   --hero-sans: var(--sans);
   --hero-mono: var(--mono);
@@ -24,9 +24,9 @@
   margin: 0;
   font-family: var(--hero-display);
   font-weight: 500;
-  font-size: clamp(44px, 4.4vw, 62px);
-  line-height: 1.06;
-  letter-spacing: -0.02em;
+  font-size: clamp(44px, 5.4vw, 80px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
 }
 
 .line1 { display: inline; }
@@ -37,13 +37,24 @@
 .line2 { white-space: nowrap; }
 
 .ink {
-  background: linear-gradient(90deg, #2fa8ee 0%, #5b6cff 20%, #a24fd9 40%, #ee5e8c 60%, #f59a4a 80%, #2fa8ee 100%);
+  background: var(--ink-grad, linear-gradient(90deg, #2fa8ee 0%, #5b6cff 20%, #a24fd9 40%, #ee5e8c 60%, #f59a4a 80%, #2fa8ee 100%));
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: heroInk 9s linear infinite;
 }
+
+:global([data-theme="v2"]) .ink {
+  /* Use a text-shadow glint rather than a background layer: Safari paints an
+     inline clipped background as a rectangular fill during the first pass. */
+  background: none;
+  color: #14254A;
+  -webkit-text-fill-color: #14254A;
+  animation: glint 7s ease-in-out infinite;
+}
+:global([data-theme="v2"]) .inkGlow { display: none; }
+@keyframes glint { 0%,35%,75%,100% { text-shadow: none; } 47%,53% { text-shadow: 0 0 1px #B8923F, 0 0 13px rgba(240,213,140,.84); } 50% { text-shadow: 0 0 2px #F0D58C, 0 0 16px rgba(240,213,140,.95); } }
 
 .inkText { position: relative; }
 .inkGlow { position: absolute; left: 0; top: 0; filter: blur(18px); opacity: 0.3; pointer-events: none; }
@@ -75,7 +86,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  height: 58px;
+  height: 56px;
   padding: 0 28px;
   border-radius: 14px;
   border: 1px solid rgba(13, 32, 52, .95);
@@ -83,6 +94,7 @@
   font-size: 17px;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
   text-shadow: none;
   background:
     radial-gradient(ellipse at 58% -72%, rgba(255,255,255,.17), transparent 56%),
@@ -113,6 +125,20 @@
 }
 .hero a.btnChrome:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
 .btnLabel, .hero a.btnChrome .arrow { position: relative; z-index: 1; }
+
+:global([data-theme]) .hero a.btnChrome {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 14px 30px -18px var(--accent);
+}
+:global([data-theme]) .hero a.btnChrome:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 18px 30px -18px var(--accent);
+}
+:global([data-theme="v2"]) .hero a.btnChrome .arrow { color: var(--gold-light); }
+:global([data-theme="v2"]) .hero a.btnChrome:hover { box-shadow: inset 0 0 0 1px rgba(217,178,95,.55), inset 0 1px 0 rgba(255,255,255,.16), 0 18px 30px -18px var(--accent); }
 
 /* The eligibility control should feel like a finished object, not an alert.
    One slow, low-contrast pass gives it life without competing with the headline
@@ -184,6 +210,7 @@
   font-size: 17px;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
 }
 .hero a.textLink:hover { color: #0B1420; }
 .hero a.textLink:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
@@ -193,6 +220,7 @@
   transition: background-size .35s cubic-bezier(.2,.7,.2,1);
 }
 .hero a.textLink:hover .textLinkLabel { background-size: 100% 1.5px; }
+:global([data-theme="v2"]) .hero a.textLink .arrow { color: var(--gold-deep); }
 
 /* ---------- Trust row ---------- */
 .trust {
@@ -226,8 +254,8 @@
   mask-position: center;
 }
 .mapFrame { position: relative; width: 100%; perspective: 1400px; }
-.mapTilt { position: relative; will-change: transform; transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
-.mapPicture { display: block; }
+.mapTilt { position: relative; isolation: isolate; will-change: transform; transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mapPicture { position: relative; z-index: 0; display: block; }
 
 .mapImg {
   display: block;
@@ -240,8 +268,16 @@
   mask-composite: intersect;
 }
 
+:global([data-theme]) .mapImg { filter: grayscale(var(--map-gray)) contrast(1.02); }
+:global([data-theme]) .mapPicture::after { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: var(--map-tint); mix-blend-mode: color; opacity: var(--map-tint-opacity, .75); -webkit-mask: var(--map-src) center / contain no-repeat; mask: var(--map-src) center / contain no-repeat; }
+/* V2 uses a pre-tinted base bitmap plus a pixel-matched gold bitmap. It must
+   not receive the generic grayscale/tint treatment a second time. */
+:global([data-theme="v2"]) .mapImg { filter: none; -webkit-mask-image: none; mask-image: none; }
+:global([data-theme="v2"]) .mapPicture::after { display: none; }
+
 /* ---------- Map anchor shadow ---------- */
 .mapShadow {
+  z-index: 0;
   position: absolute;
   left: 10%;
   right: 4%;
@@ -252,11 +288,32 @@
   filter: blur(14px);
   pointer-events: none;
 }
+:global([data-theme]) .mapShadow { background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--phase-2) 20%, transparent) 0%, color-mix(in srgb, var(--ink) 8%, transparent) 45%, transparent 72%); }
 
-.mapCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.mapCanvas { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+
+.folderLift {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, #000 70%, transparent);
+  transition: transform 1s cubic-bezier(.3,.7,.2,1), opacity .3s ease, filter .6s ease;
+}
+.mapTilt[data-finale="true"] .folderLift {
+  opacity: 1;
+  transform: translateY(-5px);
+  filter: drop-shadow(0 10px 14px var(--finale-shadow, rgba(245,154,74,.35))) brightness(1.03);
+}
+/* V2's sixth stage belongs to its final map ring, not the generic folder-lift
+   finale. The closing CTA retains the separate packet animation. */
+.mapTilt[data-v2] .folderLift { display: none; }
 
 .chip {
   position: absolute;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -272,8 +329,82 @@
   transition: opacity 0.35s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .chip[data-on="true"] { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
-.chipNum { display: flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 50%; color: #fff; font-family: var(--hero-mono); font-size: 10px; font-weight: 600; }
+.chipNum {
+  display: inline-flex;
+  width: auto;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 7px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  font-family: var(--hero-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
 .chipLabel { color: var(--hero-ink); font-family: var(--hero-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+
+.finaleChip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px 0 6px;
+  border-radius: 999px;
+  background: var(--surface, rgba(255,255,255,.95));
+  box-shadow: 0 12px 28px -12px rgba(11,20,32,.35);
+  color: var(--ink, #0B1420);
+  font: 600 12.5px var(--hero-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(0, -50%) translateY(6px);
+  transition: opacity .6s ease, transform .8s cubic-bezier(.3,.7,.2,1);
+}
+.finaleChip[data-on="true"] { opacity: 1; transform: translate(0, -50%); transition-delay: .35s; }
+.finaleChip[data-side="left"] { transform: translate(-100%, -50%) translateY(6px); }
+.finaleChip[data-side="left"][data-on="true"] { transform: translate(-100%, -50%); }
+/* V2's sixth-stage chip belongs to the final ring. It deliberately differs
+   from the legacy R2 folder chip, which must remain untouched on other pages. */
+.finaleChip[data-v2] { transform: translate(-50%, -140%) translateY(6px); }
+.finaleChip[data-v2][data-on="true"] { transform: translate(-50%, -140%); }
+.finaleChip .chipNum {
+  display: inline-flex;
+  width: auto;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.finaleCheck path { stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset .5s ease .85s; }
+.finaleChip[data-on="true"] .finaleCheck path { stroke-dashoffset: 0; }
+
+:global([data-theme]) .hero { --trust-bg: color-mix(in srgb, var(--phase-1) 14%, var(--surface)); --trust-ink: var(--phase-2); }
+:global([data-theme="v2"]) .hero { --trust-bg: var(--gold-tint); --trust-ink: var(--gold-deep); }
+:global([data-theme]) .hero a.btnChrome { border-color: var(--accent); color: var(--accent-ink); background: var(--accent); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+:global([data-theme]) .hero a.btnChrome::before { background: linear-gradient(104deg, transparent 0%, rgba(255,255,255,.04) 30%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.05) 70%, transparent 100%); animation: none; }
+:global([data-theme]) .hero a.btnChrome:hover { border-color: var(--accent); color: var(--accent-ink); filter: brightness(1.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+:global([data-theme]) .hero a.textLink { color: var(--ink, #0B1420); }
+:global([data-theme="v4"]) .hero a.btnChrome .arrow { color: var(--phase-dark-3); }
+:global([data-theme="v4"]) .hero a.btnChrome:hover { box-shadow: inset 0 0 0 1px rgba(214,176,90,.55), inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+:global([data-theme="v4"]) .chipNum { color: #0A0A0A; }
+:global([data-theme="v2"]) .chipNum { color: var(--gold-light); }
 
 /* The map holds the lower half of the fold; lift the copy into the first visual
    beat so the landing view feels intentional rather than vacant below the nav. */
@@ -298,8 +429,10 @@
   .trust { justify-content: flex-start; margin-top: 18px; font-size: 13px; gap: 6px 14px; }
   .visual { margin: 26px -20px 0; width: calc(100% + 40px); max-width: none; }
   .chip { gap: 6px; padding: 4px 10px 4px 4px; }
-  .chipNum { width: 18px; height: 18px; font-size: 9px; }
+  .chipNum { width: auto; min-width: 24px; height: 22px; padding: 0 5px; font-size: 10px; }
   .chipLabel { font-size: 9.5px; }
+  .finaleChip { height: 30px; gap: 6px; padding: 0 10px 0 4px; font-size: 10px; }
+  .finaleChip .chipNum { width: auto; min-width: 24px; height: 22px; padding: 0 5px; font-size: 10px; }
 }
 
 @media (max-width: 359px) {
@@ -308,6 +441,12 @@
 }
 
 @media (max-width: 374px) { .title { font-size: 40px; } }
+
+@media (max-width: 479px) {
+  .ctas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .hero a.btnChrome { width: 100%; height: 52px; }
+  .hero a.textLink { justify-self: center; height: auto; }
+}
 
 /* First-load home sequence. Elements remain in their final layout position. */
 .hero[data-intro="play"] .word > span { animation: wordUp .95s cubic-bezier(.16,.84,.24,1) both; animation-delay: calc(.35s + var(--i) * .075s); }
@@ -332,6 +471,8 @@
 @media (prefers-reduced-motion: reduce) {
   .ink, .hero a.btnChrome, .hero a.btnChrome::before, .hero a.btnChrome::after, .hero a.btnChrome:hover::before { animation: none; }
   .mapTilt, .chip, .arrow, .textLinkLabel, .hero a.btnChrome { transition: none; }
+  .folderLift, .finaleChip, .finaleCheck path { transition: none; }
   .hero[data-intro="play"] *, .hero[data-intro="play"] *::after { animation: none !important; }
   .introSheen { display: none; }
+  :global([data-theme="v2"]) .ink { animation: none; background: #14254A; }
 }

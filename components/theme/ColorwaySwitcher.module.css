@@ -1,0 +1,11 @@
+.switcher { position: fixed; z-index: 20; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 16px; display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px; border: 1px solid var(--line, rgba(11,20,32,.10)); border-radius: 999px; background: color-mix(in srgb, var(--surface, #FFFEFA) 82%, transparent); box-shadow: var(--shadow-card); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); color: var(--ink-2, #4D5562); font-family: var(--sans, system-ui, sans-serif); font-size: 13px; font-weight: 600; }
+.links { display:flex; align-items:center; gap:4px; }.toggle { display:none; }
+.link { padding: 5px 8px; border-radius: 999px; color: inherit; line-height: 1; text-decoration: none; }
+.link:hover, .link:focus-visible { color: var(--ink, #0A1019); background: color-mix(in srgb, var(--accent, #0B1420) 10%, transparent); outline: none; }
+.active { background: var(--accent, #0B1420); color: var(--accent-ink, #FFF); }
+.active:hover, .active:focus-visible { background: var(--accent, #0B1420); color: var(--accent-ink, #FFF); }
+@media (max-width:639px) { .switcher { min-height:40px; padding:0; }.toggle { display:grid; width:40px; height:40px; place-items:center; border:0; border-radius:999px; background:transparent; color:inherit; font:600 11px/1 var(--mono,monospace); cursor:pointer; }.links { display:none; gap:1px; padding:4px; }.switcher[data-expanded="true"] { padding:4px; }.switcher[data-expanded="true"] .toggle { display:none; }.switcher[data-expanded="true"] .links { display:flex; }.link { padding:6px 7px; font-size:12px; } }
+@media (max-width: 420px) { .switcher[data-expanded="true"] { gap:1px; } }
+@media print { .switcher { display: none; } }
+/* The booking flow owns the viewport until it is closed. */
+:global(body[data-booking-open="true"]) .switcher { display:none; }

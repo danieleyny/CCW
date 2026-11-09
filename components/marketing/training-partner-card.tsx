@@ -1,12 +1,11 @@
 import Link from "next/link"
 import Image from "next/image"
-import { ExternalLink } from "lucide-react"
 import type { TrainingPartner } from "@/config/training-partners"
 import { trainingPartnerPath } from "@/config/training-partners"
 import { Button } from "@/components/ui/button"
 
 export const TRAINING_INDEPENDENCE_DISCLAIMER =
-  "Independent training provider — not an employee or agent of Gun License NYC. Training is arranged and paid for directly with 50B. Completion of training does not determine a license outcome."
+  "Independent training provider — not an employee or agent of Gun License NYC. Gun License NYC handles registration and payment for this class; 50B provides the instruction. Completion of training does not determine a license outcome."
 
 export function TrainingPartnerCard({ partner }: { partner: TrainingPartner }) {
   return (
@@ -38,15 +37,13 @@ export function TrainingPartnerCard({ partner }: { partner: TrainingPartner }) {
             </ul>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
-              <p className="text-sm text-text-low">Independent instruction · direct enrollment with 50B</p>
+              <p className="text-sm text-text-low">Independent instruction · register through Gun License NYC</p>
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="outline" size="sm">
                   <Link href={trainingPartnerPath(partner)}>View training profile</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <a href={partner.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5">
-                    View 50B classes <ExternalLink className="size-3.5" aria-hidden />
-                  </a>
+                  <Link href={partner.signupHref}>Register for the class</Link>
                 </Button>
               </div>
             </div>

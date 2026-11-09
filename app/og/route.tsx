@@ -16,8 +16,6 @@ import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
  * Usage: lib/seo.ts `ogImage(title)` builds the URL; buildMetadata() wires it
  * into openGraph.images + twitter.images.
  */
-export const contentType = "image/png"
-
 const OBSIDIAN = "#07080B"
 const SURFACE = "#14171D"
 const BRASS = "#C9A24B"

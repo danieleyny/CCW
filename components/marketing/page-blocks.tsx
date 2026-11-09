@@ -134,7 +134,7 @@ export function RelatedLinks({ links }: { links: { label: string; href: string }
           <div className="related-grid">
             {links.map((l, i) => (
               <Link className="related-card" href={l.href} key={l.href}>
-                <span>Related · {String(i + 1).padStart(2, "0")}</span>
+                <span className="related-chip"><i aria-hidden="true" />Related · {String(i + 1).padStart(2, "0")}</span>
                 <strong>{l.label}</strong>
               </Link>
             ))}

@@ -85,7 +85,7 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
         </div>
 
         <div className="mt-6 flex items-baseline gap-3">
-          <span className="font-display text-4xl font-bold tabular-nums text-brass-bright">{items.length}</span>
+              <span data-testid="checklist-count" className="font-display text-4xl font-bold tabular-nums text-brass-bright">{items.length}</span>
           <span className="text-text-mid">documents apply to you</span>
         </div>
       </section>
@@ -98,7 +98,7 @@ export function ChecklistView({ registry }: { registry: RegistryItem[] }) {
             </h2>
             <ul className="mt-2 space-y-2">
               {g.items.map((r) => (
-                <li key={r.reqCode} className="flex items-start gap-3 rounded-lg border border-hairline bg-card p-4">
+                <li data-testid="checklist-item" key={r.reqCode} className="flex items-start gap-3 rounded-lg border border-hairline bg-card p-4">
                   <FileText className="mt-0.5 size-4 shrink-0 text-brass" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

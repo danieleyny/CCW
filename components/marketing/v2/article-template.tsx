@@ -63,10 +63,10 @@ const heroTitleStyle: React.CSSProperties = {
   margin: 0,
   maxWidth: 840,
   fontFamily: "var(--display)",
-  fontSize: "clamp(46px, 6vw, 78px)",
+  fontSize: "clamp(44px, 5.4vw, 80px)",
   fontWeight: 500,
-  lineHeight: 0.94,
-  letterSpacing: "-0.06em",
+  lineHeight: 1.02,
+  letterSpacing: "-0.035em",
 }
 
 export function ArticleTemplate({

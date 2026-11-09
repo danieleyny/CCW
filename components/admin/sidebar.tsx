@@ -32,6 +32,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
   { href: "/admin/legal", label: "Legal review", icon: Scale },
   { href: "/admin/privacy", label: "Privacy", icon: ShieldCheck },
   { href: "/admin/instructors", label: "Instructors", icon: GraduationCap },
+  { href: "/admin/training", label: "Training", icon: GraduationCap },
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },

@@ -1,8 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse, type NextRequest } from "next/server"
+import type Stripe from "stripe"
 import { getStripe, STRIPE_ENABLED } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
+import { getTrainingStripe, trainingStripeEnabled } from "@/lib/training/server"
+import { sendTrainingPaidEmails } from "@/lib/training/email"
 
 /**
  * Stripe webhook handler — scaffolded behind the STRIPE_ENABLED flag. When
@@ -10,27 +14,40 @@ import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
  * Phase 4 expands the event handling (checkout.session.completed, refunds, …).
  */
 export async function POST(request: NextRequest) {
-  const stripe = getStripe()
-  if (!STRIPE_ENABLED || !stripe) {
+  const primaryStripe = getStripe()
+  const trainingStripe = await getTrainingStripe()
+  const stripe = primaryStripe ?? trainingStripe
+  if ((!STRIPE_ENABLED && !trainingStripeEnabled()) || !stripe) {
     return NextResponse.json({ error: "Stripe is not enabled" }, { status: 503 })
   }
 
   const signature = request.headers.get("stripe-signature")
-  const secret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!signature || !secret) {
+  const body = await request.text()
+  if (!signature) {
     return NextResponse.json({ error: "Missing webhook signature" }, { status: 400 })
   }
-
-  const body = await request.text()
-  let event
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, secret)
-  } catch (err) {
-    console.error("[stripe] signature verification failed:", err)
+  let event: Stripe.Event | undefined
+  for (const candidate of [
+    { client: primaryStripe, secret: process.env.STRIPE_WEBHOOK_SECRET },
+    { client: trainingStripe, secret: process.env.TRAINING_STRIPE_WEBHOOK_SECRET },
+  ]) {
+    if (!candidate.client || !candidate.secret) continue
+    try {
+      event = candidate.client.webhooks.constructEvent(body, signature, candidate.secret)
+      break
+    } catch {
+      // Try the other configured endpoint secret before rejecting the request.
+    }
+  }
+  if (!event) {
+    console.error("[stripe] signature verification failed")
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
   const supabase = createAdminClient()
+  // The generated database types intentionally lag the just-added training
+  // migration during rollout; keep the privileged training branch isolated.
+  const trainingDb = supabase as any
 
   // SEC-23 — idempotency ledger. Stripe delivers each event at-least-once (and
   // an attacker who replays a captured body can't pass signature verification,
@@ -117,6 +134,31 @@ export async function POST(request: NextRequest) {
     }
     case "payment_intent.succeeded": {
       const pi = event.data.object
+      const registrationId = pi.metadata?.registrationId
+      if (registrationId) {
+        const { data: registration } = await trainingDb
+          .from("training_registrations")
+          .update({ status: "paid", paid_at: new Date().toISOString(), amount_cents: pi.amount_received })
+          .eq("id", registrationId)
+          .eq("stripe_payment_intent_id", pi.id)
+          .eq("status", "pending_payment")
+          .select("*")
+          .maybeSingle()
+        if (registration) {
+          const { data: course } = await trainingDb
+            .from("training_classes")
+            .select("title,sessions,location_public,vendor_class_urls,vendor_access_code")
+            .eq("id", (registration as { class_id: string }).class_id)
+            .maybeSingle()
+          if (course) {
+            await sendTrainingPaidEmails({
+              registration,
+              course,
+            })
+          }
+        }
+        break
+      }
       await supabase
         .from("payments")
         .update({ status: "paid", paid_at: new Date(pi.created * 1000).toISOString() })

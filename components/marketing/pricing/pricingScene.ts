@@ -1,4 +1,5 @@
 import { runCanvasLoop } from "../shared/canvasLoop"
+import { V0_PALETTE, type Palette } from "@/components/theme/themes"
 
 export type V = { x: number; y: number }
 export type SceneMode = "breakdown" | "timeline"
@@ -7,14 +8,14 @@ export type BreakdownLayout = { kind: "flow"; ports: FlowPort[]; end: V } | { ki
 export type TimelineLayout = { axis: "x" | "y"; nodes: V[]; riverEnd: number; stems?: number[]; leadIn?: number; meter: { x0: number; x1: number; y: number } }
 export type SceneLayout = { breakdown: BreakdownLayout; timeline: TimelineLayout }
 export type StopGeo = { lanes: number; ours: boolean; varies: boolean; runMin: number; runMax: number }
-export type SceneOptions = { variant: "desktop" | "mobile"; stops: StopGeo[]; initialMode: SceneMode; meterMax: number; oursValue: number; reducedMotion?: boolean }
+export type SceneOptions = { variant: "desktop" | "mobile"; stops: StopGeo[]; initialMode: SceneMode; meterMax: number; oursValue: number; reducedMotion?: boolean; palette?: Palette }
 export type SceneHandle = { setMode: (mode: SceneMode) => void; setHover: (index: number | null) => void; setActive: (index: number) => void; relayout: () => void; destroy: () => void }
 
 type Dot = V & { cyan: boolean }
 type Lane = { group: number; ours: boolean; hollow: boolean; points: (V & { s: number })[]; length: number; phase: number }
 type Geometry = { flow?: { lanes: Lane[]; ports: FlowPort[]; end: V }; guard?: (V & { fraction: number })[]; breakdown: Dot[]; river: Lane[]; timeline: TimelineLayout; meter: { x: number; y: number; value: number }[]; timelineDots: Dot[]; random: number[] }
 
-const COLORS = { cyan: "#5FD4E0", slate: "#9FB3C1", bright: "#DCE6EC", white: "#F4F7F9", dim: "#7E9BAD", panel: "#0A1520" }
+let COLORS = { cyan: "#5FD4E0", slate: "#9FB3C1", bright: "#DCE6EC", white: "#F4F7F9", dim: "#7E9BAD", panel: "#0A1520" }
 const STEP = 7
 const SPEED = 70
 const PERIOD = 230
@@ -112,6 +113,14 @@ function build(layout: SceneLayout, options: SceneOptions): Geometry {
 }
 
 export function createPricingScene(canvas: HTMLCanvasElement, getLayout: () => SceneLayout | null, options: SceneOptions): SceneHandle {
+  const palette: Palette = options.palette ?? V0_PALETTE
+  COLORS = palette.gold && palette.ice
+    ? { cyan: palette.goldText ?? palette.gold, slate: palette.ice[1] ?? palette.phaseDark[2], bright: palette.darkInk, white: palette.darkInk, dim: palette.ice[2] ?? palette.phaseDark[3], panel: palette.dark }
+    : { cyan: palette.phaseDark[0], slate: palette.phaseDark[2], bright: palette.darkInk, white: palette.darkInk, dim: palette.phaseDark[3], panel: palette.dark }
+  const toAlpha = (color: string, opacity: number) => {
+    const hex = color.replace("#", "")
+    return `rgba(${parseInt(hex.slice(0, 2), 16)},${parseInt(hex.slice(2, 4), 16)},${parseInt(hex.slice(4, 6), 16)},${opacity})`
+  }
   const reduced = !!options.reducedMotion
   let geometry: Geometry | null = null, mode = options.initialMode, morph: { to: SceneMode; at: number } | null = null, now = 0, hover: number | null = null, active = 0, head: number | null = null, runMin = options.stops[0].runMin, runMax = options.stops[0].runMax, burstAt: number | null = null, burstFor = -1, dim: number[] = []
   const axisValue = (point: V, axis: "x" | "y") => axis === "x" ? point.x : point.y
@@ -160,7 +169,7 @@ export function createPricingScene(canvas: HTMLCanvasElement, getLayout: () => S
 
   function drawMorph(context: CanvasRenderingContext2D, geo: Geometry, progress: number, target: SceneMode, width: number, height: number) {
     const axis = options.variant === "desktop" ? "x" : "y", span = axis === "x" ? width : height, toTimeline = target === "timeline", sweep = progress * 1.3 - .15, alpha = Math.sin(Math.PI * clamp(progress)) * .08
-    if (alpha > .005) { const position = sweep * span, gradient = axis === "x" ? context.createLinearGradient(position - span * .12, 0, position + span * .12, 0) : context.createLinearGradient(0, position - span * .12, 0, position + span * .12); gradient.addColorStop(0, "rgba(95,212,224,0)"); gradient.addColorStop(.5, `rgba(95,212,224,${alpha})`); gradient.addColorStop(1, "rgba(95,212,224,0)"); context.globalAlpha = 1; context.fillStyle = gradient; context.fillRect(0, 0, width, height) }
+    if (alpha > .005) { const position = sweep * span, gradient = axis === "x" ? context.createLinearGradient(position - span * .12, 0, position + span * .12, 0) : context.createLinearGradient(0, position - span * .12, 0, position + span * .12); gradient.addColorStop(0, toAlpha(COLORS.cyan, 0)); gradient.addColorStop(.5, toAlpha(COLORS.cyan, alpha)); gradient.addColorStop(1, toAlpha(COLORS.cyan, 0)); context.globalAlpha = 1; context.fillStyle = gradient; context.fillRect(0, 0, width, height) }
     const count = Math.max(geo.breakdown.length, geo.timelineDots.length)
     for (let index = 0; index < count; index++) { const a = geo.breakdown[index % geo.breakdown.length], b = geo.timelineDots[index % geo.timelineDots.length], random = geo.random[index], source = toTimeline ? a : b, lead = axisValue(source, axis) / span, local = clamp((progress - lead * .3 - random * .08) / .62), eased = ease(local), position = toTimeline ? eased : 1 - eased, lift = Math.sin(Math.PI * eased); let x = a.x + (b.x - a.x) * position, y = a.y + (b.y - a.y) * position; if (axis === "x") y -= lift * (24 + random * 46); else x += lift * (random - .5) * 60; const cyan = toTimeline ? eased > .5 ? b.cyan : a.cyan : eased > .5 ? a.cyan : b.cyan, brightness = Math.exp(-(((axisValue({ x, y }, axis) / span - sweep) / .06) ** 2)); dot(context, x, y, (options.variant === "desktop" ? 1.2 : 1.1) + lift * .9 + brightness * .6, cyan ? COLORS.cyan : lift > .5 || brightness > .5 ? COLORS.bright : COLORS.slate, .35 + lift * .55 + brightness * .3) }
   }

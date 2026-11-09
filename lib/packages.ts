@@ -19,6 +19,16 @@ export interface ServicePackage {
   refilePromise: boolean
 }
 
+/**
+ * Read-only rendering fallback for the public marketing page. The live package
+ * rows remain the source of truth; this prevents an unavailable public-data
+ * connection from rendering an empty pricing page during a preview.
+ */
+export const PUBLIC_PACKAGE_FALLBACK: ServicePackage[] = [
+  { key: "self_guided", name: "Self-Guided", blurb: "The complete playbook, in your hands.", priceCents: 49900, depositCents: 19900, priceLabel: "$499", featured: false, refilePromise: false },
+  { key: "full_concierge", name: "Full Concierge", blurb: "Hands-on preparation and case management.", priceCents: 100000, depositCents: 50000, priceLabel: "$1,000", featured: true, refilePromise: true },
+]
+
 export async function getActivePackages(db: DB): Promise<ServicePackage[]> {
   const { data } = await db
     .from("service_packages")

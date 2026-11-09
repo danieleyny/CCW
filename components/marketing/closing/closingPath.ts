@@ -1,6 +1,9 @@
 import { runCanvasLoop, type CanvasLoopHandle } from "../shared/canvasLoop"
+import { V0_PALETTE, type Palette } from "@/components/theme/themes"
 
-const PALETTE = [[47, 168, 238], [91, 108, 255], [138, 91, 234], [194, 79, 201], [238, 94, 140], [245, 154, 74]]
+let PALETTE = [[47, 168, 238], [91, 108, 255], [138, 91, 234], [194, 79, 201], [238, 94, 140], [245, 154, 74]]
+const V0_BURST_RINGS = ["#8FA8FF", "#E58CC8", "#F5B27A"]
+const V0_LABEL_DIM = "#8A99A6"
 const STATIONS = [0.14, 0.32, 0.5, 0.68, 0.86]
 const LABELS = ["QUALIFY", "TRAIN", "ASSEMBLE", "REVIEW", "YOU SUBMIT"]
 export const TRAVEL = 3.7
@@ -12,6 +15,145 @@ export const BURST: "first" | "every" = "first"
 type Point = [number, number]
 type Spark = { x: number; y: number; vx: number; vy: number; radius: number; life: number; color: number; streak: boolean }
 type Star = { x: number; y: number; delay: number; radius: number; color: number }
+type ClosingOptions = { reducedMotion: boolean; mobile: () => boolean; monoFont: string; palette?: Palette; section?: HTMLElement }
+
+const v2Gold = "#D9B25F"
+const v2Light = "#F0D58C"
+
+function cubic(a: Point, b: Point, c: Point, d: Point, t: number): Point {
+  const u = 1 - t
+  return [u ** 3 * a[0] + 3 * u ** 2 * t * b[0] + 3 * u * t ** 2 * c[0] + t ** 3 * d[0], u ** 3 * a[1] + 3 * u ** 2 * t * b[1] + 3 * u * t ** 2 * c[1] + t ** 3 * d[1]]
+}
+
+function rectContains(rect: DOMRect, point: Point, padding = 12) {
+  return point[0] >= rect.left - padding && point[0] <= rect.right + padding && point[1] >= rect.top - padding && point[1] <= rect.bottom + padding
+}
+
+/** V2 is intentionally independent: its road is derived from the current
+ * layout, not from decorative hard-coded coordinates. */
+function startV2ClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, options: ClosingOptions): CanvasLoopHandle {
+  anchor.dataset.pathMode = "v2"
+  let points: Point[] = []
+  let lengths: number[] = []
+  let total = 1
+  let button = { x: 0, y: 0, width: 0, height: 0 }
+  let lastPulse = -1
+
+  const at = (fraction: number): Point => {
+    const target = Math.max(0, Math.min(1, fraction)) * total
+    let index = lengths.findIndex((value) => value >= target)
+    if (index < 0) index = points.length - 1
+    return points[index] ?? [0, 0]
+  }
+
+  const build = (width: number, height: number) => {
+    const canvasRect = canvas.getBoundingClientRect()
+    const buttonRect = anchor.getBoundingClientRect()
+    const section = options.section
+    button = { x: buttonRect.left - canvasRect.left, y: buttonRect.top - canvasRect.top, width: buttonRect.width, height: buttonRect.height }
+    const mobile = options.mobile()
+    const start: Point = mobile ? [-10, height * 0.92] : [-20, height * 0.86]
+    const end: Point = mobile ? [button.x + button.width / 2, button.y + button.height + 18] : [button.x - 14, button.y + button.height / 2]
+    const lede = section?.querySelector<HTMLElement>("[data-closing-lede]")?.getBoundingClientRect()
+    const title = section?.querySelector<HTMLElement>("h2")?.getBoundingClientRect()
+    const blockers = [lede, title].filter((rect): rect is DOMRect => Boolean(rect)).map((rect) => new DOMRect(rect.left - canvasRect.left, rect.top - canvasRect.top, rect.width, rect.height))
+    const textBottom = Math.max(0, ...blockers.map((rect) => rect.bottom + 40))
+    let c1: Point = mobile ? [width * 0.35, height * 0.98] : [width * 0.4, Math.max(height * 0.92, textBottom + 120)]
+    let c2: Point = mobile ? [width * 0.62, end[1] + 120] : [end[0] - width * 0.14, end[1] + height * 0.22]
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const sample = Array.from({ length: 61 }, (_, index) => cubic(start, c1, c2, end, index / 60))
+      if (!sample.some((point) => blockers.some((rect) => rectContains(rect, point)))) break
+      c1 = [c1[0], c1[1] + 24]
+      c2 = [c2[0], c2[1] + 24]
+    }
+    points = Array.from({ length: 601 }, (_, index) => cubic(start, c1, c2, end, index / 600))
+    lengths = points.map((point, index) => index ? (lengths[index - 1] ?? 0) + Math.hypot(point[0] - points[index - 1][0], point[1] - points[index - 1][1]) : 0)
+    total = lengths.at(-1) || 1
+  }
+
+  const dot = (context: CanvasRenderingContext2D, point: Point, radius: number, alpha: number) => {
+    context.globalAlpha = alpha
+    context.fillStyle = v2Gold
+    context.beginPath(); context.arc(point[0], point[1], radius, 0, Math.PI * 2); context.fill()
+  }
+
+  const setPulse = (pulseWindow: number) => {
+    if (pulseWindow === lastPulse) return
+    lastPulse = pulseWindow
+    anchor.dataset.pulsed = "true"
+    anchor.dataset.celebrate = `v2-${pulseWindow}`
+    window.setTimeout(() => { if (anchor.dataset.celebrate === `v2-${pulseWindow}`) delete anchor.dataset.celebrate }, 760)
+  }
+
+  let built = false
+  return runCanvasLoop(canvas, (context, width, height, time) => {
+    if (!built) { build(width, height); built = true }
+    const mobile = options.mobile()
+    const drawTime = options.reducedMotion ? 1.6 : time
+    const head = Math.min(1, 1 - Math.pow(1 - Math.min(1, drawTime / 1.6), 3))
+    const spacing = mobile ? 7 : 9
+    const count = Math.ceil(total / spacing)
+    context.save()
+    context.globalAlpha = .9
+    context.strokeStyle = v2Gold
+    context.lineWidth = mobile ? 2.6 : 3
+    context.lineCap = "round"
+    context.setLineDash([.1, spacing])
+    context.beginPath()
+    const visible = Math.max(1, Math.floor(points.length * head))
+    context.moveTo(points[0][0], points[0][1])
+    for (let index = 1; index < visible; index++) context.lineTo(points[index][0], points[index][1])
+    context.stroke()
+    context.restore()
+    for (let index = 0; index <= count; index++) {
+      const fraction = index / count
+      if (fraction > head) break
+      dot(context, at(fraction), mobile ? 1.8 : 2.1, 0.48 + fraction * 0.5)
+    }
+    const markers = mobile ? [0.24, 0.52, 0.78] : STATIONS
+    for (const [index, fraction] of markers.entries()) {
+      if (fraction > head) continue
+      const point = at(fraction)
+      context.globalAlpha = 0.9; context.strokeStyle = v2Light; context.lineWidth = 1
+      context.beginPath(); context.arc(point[0], point[1], mobile ? 3 : 4, 0, Math.PI * 2); context.stroke()
+      dot(context, point, mobile ? 1.1 : 1.4, 1)
+      if (!mobile) {
+        context.globalAlpha = 0.88; context.fillStyle = "#8E98AA"; context.font = `500 11px ${options.monoFont}`; context.textAlign = "center"
+        context.fillText(`0${index + 1} ${LABELS[index]}`, point[0], point[1] + 24)
+      }
+    }
+    if (head >= 1 && !options.reducedMotion) {
+      const elapsed = Math.max(0, time - 1.6)
+      const pulseWindow = Math.floor(elapsed / 5)
+      const local = elapsed % 5
+      if (local < 1.4) {
+        const fraction = 1 - Math.pow(1 - local / 1.4, 3)
+        const point = at(fraction)
+        for (let index = 0; index < 6; index++) {
+          const tail = fraction - index * 0.014
+          if (tail < 0) break
+          const tailPoint = at(tail)
+          context.globalAlpha = (1 - index / 6) * 0.8; context.fillStyle = "#FFFFFF"
+          context.beginPath(); context.arc(tailPoint[0], tailPoint[1], 2.4 - index * 0.22, 0, Math.PI * 2); context.fill()
+        }
+        const glow = context.createRadialGradient(point[0], point[1], 0, point[0], point[1], 10)
+        glow.addColorStop(0, "rgba(255,255,255,.95)"); glow.addColorStop(1, "rgba(240,213,140,0)")
+        context.globalAlpha = 1; context.fillStyle = glow; context.beginPath(); context.arc(point[0], point[1], 10, 0, Math.PI * 2); context.fill()
+      }
+      if (local >= 1.4 && local < 2.2) {
+        setPulse(pulseWindow)
+        const origin: Point = mobile ? [button.x + button.width / 2, button.y] : [button.x, button.y + button.height / 2]
+        for (let index = 0; index < 6; index++) {
+          const angle = (Math.PI * 2 * index) / 6 + (mobile ? -Math.PI / 2 : Math.PI)
+          const distance = 10 + index * 2 + (local - 1.4) * 18
+          const alpha = 1 - (local - 1.4) / 0.8
+          context.globalAlpha = alpha; context.fillStyle = v2Light; context.beginPath(); context.arc(origin[0] + Math.cos(angle) * distance, origin[1] + Math.sin(angle) * distance, 2, 0, Math.PI * 2); context.fill()
+        }
+      }
+    }
+    context.globalAlpha = 1
+  }, { reducedMotion: options.reducedMotion, stillTime: 1.6, rootMargin: "200px 0px", onResize: (width, height) => { if (width && height) { build(width, height); built = true } } })
+}
 
 export function mix(fraction: number) {
   const f = Math.max(0, Math.min(1, fraction))
@@ -30,7 +172,17 @@ function seeded(seed: number) {
   }
 }
 
-export function startClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, options: { reducedMotion: boolean; mobile: () => boolean; monoFont: string }): CanvasLoopHandle {
+export function startClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, options: ClosingOptions): CanvasLoopHandle {
+  const palette: Palette = options.palette ?? V0_PALETTE
+  if (palette.gold === v2Gold) return startV2ClosingPath(canvas, anchor, options)
+  PALETTE = (palette === V0_PALETTE
+    ? ["#2FA8EE", "#5B6CFF", "#8A5BEA", "#C24FC9", "#EE5E8C", "#F59A4A"]
+    : palette.gold && palette.ice
+      ? [palette.gold, palette.gold, palette.gold, palette.gold, palette.gold, palette.gold]
+      : [...palette.phaseDark, palette.phaseDark[4]]).map((hex) => {
+    const value = hex.replace("#", "")
+    return [parseInt(value.slice(0, 2), 16), parseInt(value.slice(2, 4), 16), parseInt(value.slice(4, 6), 16)]
+  })
   let points: Point[] = []
   let lengths: number[] = []
   let total = 1
@@ -119,12 +271,14 @@ export function startClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement,
     const bloom = Math.max(0, 1 - elapsed / 1.1)
     if (bloom) {
       const gradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.9)
-      gradient.addColorStop(0, `rgba(162,79,217,${0.35 * bloom})`)
-      gradient.addColorStop(0.5, `rgba(91,108,255,${0.18 * bloom})`)
+      const burstPrimary = palette === V0_PALETTE ? "162,79,217" : palette.phaseDark[2].match(/[\da-f]{2}/gi)?.map((part) => parseInt(part, 16)).join(",")
+      const burstSecondary = palette === V0_PALETTE ? "91,108,255" : palette.phaseDark[1].match(/[\da-f]{2}/gi)?.map((part) => parseInt(part, 16)).join(",")
+      gradient.addColorStop(0, `rgba(${burstPrimary},${0.35 * bloom})`)
+      gradient.addColorStop(0.5, `rgba(${burstSecondary},${0.18 * bloom})`)
       gradient.addColorStop(1, "rgba(0,0,0,0)")
       context.globalAlpha = 1; context.fillStyle = gradient; context.beginPath(); context.arc(centerX, centerY, width * 0.9, 0, Math.PI * 2); context.fill()
     }
-    for (const [index, color] of ["#8FA8FF", "#E58CC8", "#F5B27A"].entries()) {
+    for (const [index, color] of (palette === V0_PALETTE ? V0_BURST_RINGS : [palette.phaseDark[0], palette.phaseDark[3], palette.phaseDark[4]]).entries()) {
       const amount = (elapsed - index * 0.16) / 0.9
       if (amount < 0 || amount > 1) continue
       const offset = 4 + (1 - Math.pow(1 - amount, 3)) * 34
@@ -151,7 +305,7 @@ export function startClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement,
       const amount = (elapsed - star.delay) / 0.75
       if (amount < 0 || amount > 1) continue
       const radius = star.radius * Math.sin(amount * Math.PI)
-      context.save(); context.globalAlpha = Math.sin(amount * Math.PI); context.shadowColor = mix(star.color); context.shadowBlur = 10; context.fillStyle = "#FFFFFF"
+      context.save(); context.globalAlpha = Math.sin(amount * Math.PI); context.shadowColor = mix(star.color); context.shadowBlur = 10; context.fillStyle = palette === V0_PALETTE ? "#FFFFFF" : palette.darkInk
       context.beginPath(); context.moveTo(star.x, star.y - radius); context.quadraticCurveTo(star.x, star.y, star.x + radius, star.y); context.quadraticCurveTo(star.x, star.y, star.x, star.y + radius); context.quadraticCurveTo(star.x, star.y, star.x - radius, star.y); context.quadraticCurveTo(star.x, star.y, star.x, star.y - radius); context.fill(); context.restore()
     }
   }
@@ -177,15 +331,15 @@ export function startClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement,
     if (!options.reducedMotion && head < 1) for (let index = 0; index < 10; index++) {
       const point = at(head - index * 0.006)
       if (head - index * 0.006 < 0) break
-      dot(context, point[0], point[1], 4 - index * 0.32, "#FFFFFF", (1 - index / 10) * 0.9)
+      dot(context, point[0], point[1], 4 - index * 0.32, palette === V0_PALETTE ? "#FFFFFF" : palette.darkInk, (1 - index / 10) * 0.9)
     }
     if (!mobile) STATIONS.forEach((station, index) => {
       const point = at(station)
       const lit = head >= station
-      context.globalAlpha = 1; context.fillStyle = "#0A1520"; context.beginPath(); context.arc(point[0], point[1], 6, 0, Math.PI * 2); context.fill()
+      context.globalAlpha = 1; context.fillStyle = palette.dark; context.beginPath(); context.arc(point[0], point[1], 6, 0, Math.PI * 2); context.fill()
       context.globalAlpha = lit ? 1 : 0.35; context.strokeStyle = mix(station); context.lineWidth = 1.5; context.beginPath(); context.arc(point[0], point[1], 6, 0, Math.PI * 2); context.stroke()
       if (lit) dot(context, point[0], point[1], 2.4, mix(station), 1)
-      context.globalAlpha = lit ? 0.9 : 0.4; context.fillStyle = lit ? "#F4F7F9" : "#8A99A6"; context.font = `600 10px ${options.monoFont}`; context.textAlign = "center"; context.fillText(`0${index + 1} ${LABELS[index]}`, point[0], point[1] + 24)
+      context.globalAlpha = lit ? 0.9 : 0.4; context.fillStyle = lit ? palette.darkInk : palette === V0_PALETTE ? V0_LABEL_DIM : palette.phaseDark[3]; context.font = `600 10px ${options.monoFont}`; context.textAlign = "center"; context.fillText(`0${index + 1} ${LABELS[index]}`, point[0], point[1] + 24)
     })
     const full = BURST === "every" || loop === 0
     setCelebration(celebrating && elapsed < 1.1 ? (full ? "full" : "light") : "")

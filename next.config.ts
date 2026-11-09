@@ -13,25 +13,31 @@ import type { NextConfig } from "next";
  * Supabase origin so HMR and `pnpm dev` keep working.
  */
 const isDev = process.env.NODE_ENV !== "production"
+const isPreview = process.env.VERCEL_ENV !== "production"
+// WebKit obeys upgrade-insecure-requests for localhost, which turns every
+// local CSS/font request into https://localhost. Keep the production header;
+// omit it only for local production-build verification.
+const useHttpsUpgrade = process.env.VERCEL === "1" || process.env.FORCE_HTTPS_UPGRADE === "1"
+const previewFeedbackSource = isPreview ? " https://vercel.live" : ""
 
 const csp = [
   `default-src 'self'`,
   // Next injects an inline bootstrap; GA injects an inline gtag snippet. Dev needs eval for HMR.
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://www.googletagmanager.com`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://www.googletagmanager.com https://js.stripe.com${previewFeedbackSource}`,
   `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: https:`,
+  `img-src 'self' data: blob: https: https://*.stripe.com`,
   `font-src 'self' data:`,
   `media-src 'self'`,
   `object-src 'none'`,
   `base-uri 'self'`,
   `frame-ancestors 'none'`,
   `form-action 'self' https://checkout.stripe.com`,
-  `frame-src 'self' https://checkout.stripe.com https://calendly.com https://*.calendly.com`,
+  `frame-src 'self' https://checkout.stripe.com https://js.stripe.com https://hooks.stripe.com https://calendly.com https://*.calendly.com`,
   // Supabase (REST + realtime), Google Analytics, and — in dev — local Supabase + HMR sockets.
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com https://analytics.google.com${
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com https://analytics.google.com https://api.stripe.com${
     isDev ? " http://127.0.0.1:54321 http://localhost:* ws://127.0.0.1:* ws://localhost:*" : ""
   }`,
-  `upgrade-insecure-requests`,
+  useHttpsUpgrade ? `upgrade-insecure-requests` : "",
 ]
   .filter(Boolean)
   .join("; ")

@@ -5,10 +5,25 @@ import styles from "./PhasesSection.module.css"
 import { COL_GAP, COL_GROW, HOLD_AFTER_PICK_MS, LOOP_MS, PHASES } from "./phasesData"
 import { startPhaseIllustration, type IllustrationHandle } from "./illustrationEngine"
 import { usePrefersReducedMotion } from "../shared/usePrefersReducedMotion"
+import { usePalette } from "@/components/theme/usePalette"
+import type { PublicTrainingClass } from "@/lib/training/types"
+
+function nextClassLabel(course: PublicTrainingClass | null) {
+  const date = course?.sessions[0]?.date
+  if (!date) return "Next class: announced soon →"
+  const formatted = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${date}T12:00:00Z`))
+  return `Next class: ${formatted} →`
+}
 
 export default function PhasesSection() {
   const reduced = usePrefersReducedMotion()
+  const palette = usePalette()
   const [active, setActive] = useState(0)
+  const [trainingClass, setTrainingClass] = useState<PublicTrainingClass | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const inView = useRef(false)
   const pointerInside = useRef(false)
@@ -20,16 +35,28 @@ export default function PhasesSection() {
   const hoverTimer = useRef<number | null>(null)
 
   useEffect(() => {
-    const list = PHASES.map((p, i) => {
+    const controller = new AbortController()
+    fetch("/api/training/next", { signal: controller.signal })
+      .then((response) => response.ok ? response.json() as Promise<{ class: PublicTrainingClass | null }> : null)
+      .then((data) => setTrainingClass(data?.class ?? null))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return
+        setTrainingClass(null)
+      })
+    return () => controller.abort()
+  }, [])
+
+  useEffect(() => {
+    const list = PHASES.map((_p, i) => {
       const hs: IllustrationHandle[] = []
       for (const el of [dCanvas.current[i], mCanvas.current[i]]) {
-        if (el) hs.push(startPhaseIllustration(el, i, p.color, { reducedMotion: reduced, initiallyActive: i === 0 }))
+        if (el) hs.push(startPhaseIllustration(el, i, palette.phaseDark[i], { reducedMotion: reduced, initiallyActive: i === 0, palette }))
       }
       return hs
     })
     handles.current = list
     return () => list.flat().forEach((handle) => handle.destroy())
-  }, [reduced])
+  }, [palette, reduced])
 
   useEffect(() => {
     const element = colsRef.current
@@ -101,7 +128,7 @@ export default function PhasesSection() {
   }
 
   return (
-    <section ref={sectionRef} className={styles.section} data-reduced={reduced} id="process" aria-labelledby="phases-title">
+    <section ref={sectionRef} className={styles.section} data-header="dark" data-reduced={reduced} id="process" aria-labelledby="phases-title">
       <header className={styles.header}>
         <div>
           <p className={styles.eyebrow}>A controlled process</p>
@@ -119,7 +146,7 @@ export default function PhasesSection() {
         {PHASES.map((phase, index) => {
           const on = index === active
           return (
-            <li key={phase.num} className={styles.colItem} data-on={on} style={{ ["--c" as string]: phase.color }}>
+            <li key={phase.num} className={styles.colItem} data-on={on} style={{ ["--c" as string]: palette.phaseDark[index] }}>
               <button type="button" className={styles.col} data-on={on} data-past={index < active} aria-pressed={on} aria-label={`Phase ${phase.num}, ${phase.title}`} onMouseEnter={() => hoverSelect(index)} onMouseLeave={cancelHover} onFocus={() => select(index)} onClick={() => { cancelHover(); select(index, true) }}>
                 <span className={styles.colBg} aria-hidden="true" />
                 <span className={styles.colAuroraIdle} aria-hidden="true" />
@@ -131,7 +158,7 @@ export default function PhasesSection() {
                 <canvas ref={(element) => { dCanvas.current[index] = element }} className={styles.colCanvas} aria-hidden="true" />
                 <span className={styles.colLine} aria-hidden="true" />
                 <span className={styles.colTitle} aria-hidden="true">{phase.title}</span>
-                <span className={styles.colOpen}><span className={styles.colOpenTitle}>{phase.title}</span><span className={styles.colOpenDesc}>{phase.desc}</span></span>
+                <span className={styles.colOpen}><span className={styles.colOpenTitle}>{phase.title}</span><span className={styles.colOpenDesc}>{phase.desc}</span>{index === 1 && <a className={styles.trainingLink} href="#training" onClick={(event) => event.stopPropagation()}>{nextClassLabel(trainingClass)}</a>}</span>
               </button>
             </li>
           )
@@ -142,14 +169,14 @@ export default function PhasesSection() {
         {PHASES.map((phase, index) => {
           const on = index === active
           return (
-            <li key={phase.num} style={{ ["--c" as string]: phase.color }}>
+            <li key={phase.num} style={{ ["--c" as string]: palette.phaseDark[index] }}>
               <button type="button" className={styles.row} data-on={on} data-past={index < active} aria-expanded={on} aria-controls={`phase-panel-${index}`} aria-label={`Phase ${phase.num}, ${phase.title}`} onClick={() => select(index, true)}>
                 <span className={styles.rowGhost} aria-hidden="true">{String(index + 1)}</span>
                 <span className={styles.rowHead}><span className={styles.rowNum}>{phase.num}</span><span className={styles.rowTitle}>{phase.title}</span></span>
                 <span className={styles.rowBody} id={`phase-panel-${index}`}>
                   <span className={styles.rowInner}>
                     <span className={styles.rowCanvasWrap}><canvas ref={(element) => { mCanvas.current[index] = element }} className={styles.rowCanvas} aria-hidden="true" /></span>
-                    <span className={styles.rowDesc}>{phase.desc}</span>
+                    <span className={styles.rowDesc}>{phase.desc}{index === 1 && <a className={styles.trainingLink} href="#training" onClick={(event) => event.stopPropagation()}>{nextClassLabel(trainingClass)}</a>}</span>
                   </span>
                 </span>
               </button>

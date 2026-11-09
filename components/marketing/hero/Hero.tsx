@@ -17,8 +17,8 @@ function Arrow() {
 function Check() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <circle cx="7" cy="7" r="7" fill="#E4E8FF" />
-      <path d="M4 7.2l2 2 4-4.4" stroke="#3D5BD9" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="7" cy="7" r="7" fill="var(--trust-bg, #E4E8FF)" />
+      <path d="M4 7.2l2 2 4-4.4" stroke="var(--trust-ink, #3D5BD9)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -55,7 +55,7 @@ export default function Hero() {
         </ul>
       </div>
       <div className={`${styles.visual} ${styles.introMap}`} style={{ "--map-src": "url(/images/marketing/hero-nyc-guided-path-v2.png)" } as CSSProperties}>
-        <HeroMap intro={playIntro} />
+        <HeroMap intro={playIntro} mapSrc="/images/marketing/hero-nyc-guided-path-v2.png" />
         <span className={styles.introSheen} aria-hidden="true" />
       </div>
     </section>

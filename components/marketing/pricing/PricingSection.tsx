@@ -8,6 +8,7 @@ import { startStageTrack } from "./stageTrack"
 import { useInView } from "./useInView"
 import { usePrefersReducedMotion } from "../shared/usePrefersReducedMotion"
 import { ALL_IN, AT_COST_FEES, CHECKS, FEES, METER_MAX, OUR_FEE, STOPS, type Tone } from "./pricingData"
+import { usePalette } from "@/components/theme/usePalette"
 
 const AUTOPLAY_MS = 2600
 const HOLD_AFTER_PICK_MS = 5000
@@ -23,6 +24,7 @@ function useInert(ref: RefObject<HTMLElement | null>, hidden: boolean) {
 
 export default function PricingSection() {
   const reduced = usePrefersReducedMotion()
+  const palette = usePalette()
   const [sectionRef, inView] = useInView<HTMLElement>(0.25)
   const [mode, setMode] = useState<SceneMode>("breakdown")
   const [hover, setHover] = useState<number | null>(null)
@@ -54,16 +56,16 @@ export default function PricingSection() {
   }, [])
 
   useEffect(() => {
-    const created: SceneHandle[] = [], base = { stops: stopGeometry, initialMode: mode, meterMax: METER_MAX, oursValue: OUR_FEE, reducedMotion: reduced }
+    const created: SceneHandle[] = [], base = { stops: stopGeometry, initialMode: mode, meterMax: METER_MAX, oursValue: OUR_FEE, reducedMotion: reduced, palette }
     if (desktopCanvasRef.current) created.push(createPricingScene(desktopCanvasRef.current, getDesktopLayout, { ...base, variant: "desktop" }))
     if (mobileCanvasRef.current) created.push(createPricingScene(mobileCanvasRef.current, getMobileLayout, { ...base, variant: "mobile" }))
-    const stage = stageRef.current ? startStageTrack(stageRef.current, { reducedMotion: reduced }) : null
+    const stage = stageRef.current ? startStageTrack(stageRef.current, { reducedMotion: reduced, palette }) : null
     scenes.current = created
     document.fonts?.ready.then(() => scenes.current.forEach((scene) => scene.relayout()))
     return () => { created.forEach((scene) => scene.destroy()); stage?.destroy(); scenes.current = [] }
   // The refs are stable; measuring must happen only after the client component mounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduced, getDesktopLayout, getMobileLayout])
+  }, [reduced, palette, getDesktopLayout, getMobileLayout])
   useEffect(() => { scenes.current.forEach((scene) => scene.setMode(mode)) }, [mode])
   useEffect(() => { scenes.current.forEach((scene) => scene.setHover(hover)) }, [hover])
   useEffect(() => { scenes.current.forEach((scene) => scene.setActive(active)) }, [active])
