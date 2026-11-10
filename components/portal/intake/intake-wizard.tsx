@@ -8,7 +8,6 @@ import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkle
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   INTAKE_STEPS,
-  QUESTIONNAIRE,
   SOCIAL_PLATFORMS,
   eligibilityGate,
   ageFromDob,
@@ -19,32 +18,67 @@ import {
   type SocialAccount,
 } from "@/lib/intake/answers"
 import type { SubmissionGuard } from "@/lib/intake/process"
+import { checkHistory, applyPresentRadio } from "@/lib/intake/history-check"
 import { DisclosureAssistant } from "@/components/portal/intake/disclosure-assistant"
 import { HeightField } from "@/components/portal/intake/height-field"
 import { DateOfBirthField } from "@/components/portal/intake/dob-field"
+import { CountyInput } from "@/components/portal/county-input"
 import { SectionHeader } from "@/components/portal/section-header"
 import {
   eligibilityStepIssues,
   disclosureStepIssues,
   historyStepIssues,
   requiredReferences,
+  applicablePortalDisclosures,
 } from "@/lib/intake/schema"
+import {
+  PORTAL_DISCLOSURE_RANGE,
+} from "@/lib/disclosures/portal-questions"
 import {
   saveIntakeStep,
   completeIntake,
   updateDisclosureNarrative,
 } from "@/app/portal/intake/actions"
+import {
+  detectSelfDesignation,
+  selfDesignationMessage,
+  SAFEGUARD_NOT_YOU_NOTE,
+  type SelfDesignationField,
+} from "@/lib/safeguard/self-designation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import {
+  APPLICATION_TYPE_LABELS,
+  applicationTypeFromLegacy,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 interface Disclosure {
   id: string
   type: string
   narrative: string
   question_no: number | null
+}
+
+/** The applicant's own identity, used only to flag naming yourself as the safeguard person. */
+export type ApplicantIdentity = { firstName: string; lastName: string; email: string; phone: string }
+
+/** Which safeguard fields collide with the applicant. Intake collects the safeguard NAME
+ *  as one field and no email, so only name + phone apply here. */
+function safeguardSelfConflicts(a: WizardAnswers, applicant: ApplicantIdentity): SelfDesignationField[] {
+  const toks = (a.safeguardName ?? "").trim().split(/\s+/).filter(Boolean)
+  return detectSelfDesignation({
+    applicant,
+    safeguard: {
+      firstName: toks[0],
+      lastName: toks.length > 1 ? toks[toks.length - 1] : undefined,
+      phone: a.safeguardPhone,
+    },
+  })
 }
 
 export function IntakeWizard({
@@ -56,6 +90,9 @@ export function IntakeWizard({
   disclosures,
   guard,
   aiEnabled = false,
+  applicant,
+  licenseTrack = null,
+  applicationType = null,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -65,6 +102,12 @@ export function IntakeWizard({
   disclosures: Disclosure[]
   guard: SubmissionGuard | null
   aiEnabled?: boolean
+  applicant: ApplicantIdentity
+  /** The case's derived license_track — so a sponsored Carry Guard case is never
+   *  labelled "Concealed carry" and its track can't be re-picked here (P1.2). */
+  licenseTrack?: string | null
+  /** Canonical NYPD application category selected before this interview. */
+  applicationType?: ApplicationType | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
@@ -73,6 +116,11 @@ export function IntakeWizard({
   const [generating, setGenerating] = useState(false)
   const [eligReasons, setEligReasons] = useState<string[] | null>(null)
   const [attorneyReview, setAttorneyReview] = useState(false)
+  const intakeSteps = isPremisesApplication(applicationType ?? applicationTypeFromLegacy(a))
+    ? INTAKE_STEPS.map((item) =>
+        item.n === 5 ? { ...item, label: "History & references" } : item
+      )
+    : INTAKE_STEPS
   // F5 — a completed applicant re-opening their answers to review/edit. Saving a
   // step is non-destructive; only finishing (generate → completeIntake) rebuilds.
   const [editing, setEditing] = useState(false)
@@ -84,9 +132,20 @@ export function IntakeWizard({
 
   // V3-P0.6 — inline per-step validation (mirrors the server-side rules).
   function issuesForStep(n: number): string[] {
-    if (n === 1) return eligibilityStepIssues(a)
+    if (n === 1) {
+      return eligibilityStepIssues(a, {
+        licenseTrack: licenseTrack as
+          | "concealed_carry"
+          | "carry_guard"
+          | "special_carry_guard"
+          | "sponsored_unresolved"
+          | undefined,
+      })
+    }
+    // Step 3 — the safeguard person cannot be the applicant. Block Next while it conflicts.
+    if (n === 3) return safeguardSelfConflicts(a, applicant).map(selfDesignationMessage)
     if (n === 4) return disclosureStepIssues(a)
-    if (n === 5) return historyStepIssues(a, { isRenewal })
+    if (n === 5) return historyStepIssues(a, { isRenewal, applicationType })
     return []
   }
 
@@ -201,7 +260,7 @@ export function IntakeWizard({
             <h2 className="text-lg font-semibold">Requirements generated</h2>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your personalized checklist is ready. Before we can assemble and file,
+            Your personalized checklist is ready. Before we can assemble your filing pack,
             finish the items below.
           </p>
         </div>
@@ -316,7 +375,7 @@ export function IntakeWizard({
   // ── Wizard steps ───────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-      <StepHeader step={step} onJump={goToStep} />
+      <StepHeader step={step} steps={intakeSteps} onJump={goToStep} />
 
       <div className="space-y-5 pt-4">
         {editing && (
@@ -325,8 +384,8 @@ export function IntakeWizard({
               <ShieldAlert className="size-4" /> You&apos;re editing answers you already submitted.
             </div>
             <p className="mt-1 text-xs">
-              When you finish, we rebuild your checklist from these answers — that can reset
-              household-affidavit progress and clear disclosure explanations. Change only what you need to.
+              When you finish, we update your checklist from these answers. Completed reference
+              letters and household affidavits are preserved.
             </p>
             <Button variant="ghost" size="sm" className="mt-2" onClick={() => setEditing(false)}>
               Cancel — keep my current answers
@@ -336,15 +395,15 @@ export function IntakeWizard({
 
         <div className="rounded-lg border bg-card p-5">
           {step === 1 && (
-            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} />
+            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} applicationType={applicationType} />
           )}
           {step === 2 && <StepIdentity a={a} patch={patch} />}
-          {step === 3 && <StepHousehold a={a} patch={patch} />}
+          {step === 3 && <StepHousehold a={a} patch={patch} applicant={applicant} />}
           {step === 4 && (
             <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
           )}
           {step === 5 && (
-            <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} />
+            <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} applicationType={applicationType} />
           )}
           {step === 6 && <StepReview a={a} />}
         </div>
@@ -396,7 +455,7 @@ export function IntakeWizard({
             <Button onClick={next} disabled={saving} className="h-[52px] flex-1">
               {saving ? "Saving…" : (
                 <>
-                  Next: {INTAKE_STEPS[step]?.label} <ArrowRight className="size-4" />
+                  Next: {intakeSteps[step]?.label} <ArrowRight className="size-4" />
                 </>
               )}
             </Button>
@@ -452,9 +511,19 @@ function ChoosePathCta() {
  * the original labeled chip rail, unchanged. The <ol> carries the meaning for a
  * screen reader; the segments are aria-hidden decoration.
  */
-function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => void }) {
+type IntakeStep = { n: number; key: string; label: string }
+
+function StepHeader({
+  step,
+  steps,
+  onJump,
+}: {
+  step: number
+  steps: readonly IntakeStep[]
+  onJump: (n: number) => void
+}) {
   const [open, setOpen] = useState(false)
-  const current = INTAKE_STEPS[step - 1]
+  const current = steps[step - 1]
 
   return (
     <>
@@ -482,7 +551,7 @@ function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => voi
         </div>
         <div className="mt-0.5 font-display text-[17px] font-semibold tracking-tight">{current?.label}</div>
         <div aria-hidden className="mt-2 flex gap-1">
-          {INTAKE_STEPS.map((s) => (
+          {steps.map((s) => (
             <span
               key={s.n}
               className={cn(
@@ -500,7 +569,7 @@ function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => voi
 
       {/* DESKTOP — the labeled chip rail, unchanged. */}
       <ol className="hidden flex-wrap gap-1.5 text-xs sm:flex" aria-label="Intake progress">
-        {INTAKE_STEPS.map((s) => (
+        {steps.map((s) => (
           <li
             key={s.n}
             aria-current={s.n === step ? "step" : undefined}
@@ -526,7 +595,7 @@ function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => voi
             <SheetTitle className="engraved-sm text-left text-text-mid">All steps</SheetTitle>
           </SheetHeader>
           <ol className="px-3 pb-6" aria-label="Intake steps">
-            {INTAKE_STEPS.map((s) => {
+            {steps.map((s) => {
               const done = s.n < step
               const cur = s.n === step
               const future = s.n > step
@@ -679,10 +748,26 @@ function StepEligibility({
   patch,
   reasons,
   attempted,
-}: StepProps & { reasons: string[] | null; attempted: boolean }) {
+  licenseTrack,
+  applicationType,
+}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null; applicationType: ApplicationType | null }) {
   // Red exactly when (and only when) eligibilityStepIssues blocks on it.
   const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
   const residenceBad = attempted && !a.residence
+  const intentBad = attempted && a.residence === "non_resident" && !a.nycCarryIntent
+  // A sponsored armed-guard case's track is DERIVED (from the sponsorship + residence),
+  // not chosen here. Never label it "Concealed carry", and never show a carry/premises
+  // picker that could silently re-track it (P1.2).
+  const isGuardTrack =
+    licenseTrack === "carry_guard" ||
+    licenseTrack === "special_carry_guard" ||
+    licenseTrack === "sponsored_unresolved"
+  const selectedType = applicationType ?? applicationTypeFromLegacy(a)
+  const fixedResidence = selectedType
+    ? selectedType === "special_carry" || selectedType === "special_carry_guard"
+      ? "non_resident"
+      : "nyc"
+    : null
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
@@ -691,33 +776,99 @@ function StepEligibility({
           <DateOfBirthField value={a.dob ?? ""} onChange={(dob) => patch({ dob })} invalid={dobBad} />
         </Field>
         <Field label="Residence" required>
+          {fixedResidence ? (
+            <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>
+              {fixedResidence === "non_resident"
+                ? "Outside NYC with a NY county carry licence"
+                : "New York City resident"}
+            </div>
+          ) : (
           <select
             aria-label="Residence"
             value={a.residence ?? ""}
-            onChange={(e) => patch({ residence: e.target.value as WizardAnswers["residence"] })}
+            onChange={(e) => {
+              const residence = e.target.value as WizardAnswers["residence"]
+              patch({
+                residence,
+                ...(residence === "non_resident" ? { licenseType: "carry" as const } : { nycCarryIntent: undefined }),
+              })
+            }}
             className={cn(SELECT_CLASS, residenceBad && "border-danger ring-2 ring-danger/30")}
             {...invalidAttrs(residenceBad)}
           >
             <option value="">Select…</option>
             <option value="nyc">NYC resident / place of business</option>
-            <option value="non_resident">Non-resident (Special Carry)</option>
+            <option value="non_resident">Outside NYC with a NY county carry licence (Special Carry)</option>
           </select>
+          )}
         </Field>
       </div>
-      <Field
-        label="License type"
-        hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
-      >
-        <select
-          aria-label="License type"
-          value={a.licenseType ?? "carry"}
-          onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
-          className={SELECT_CLASS}
+      {isGuardTrack ? (
+        <Field
+          label="License type"
+          hint="Your company sponsors this licence. The Carry Guard track is set from your sponsorship — you don't choose it here."
         >
-          <option value="carry">Concealed carry</option>
-          <option value="premises">Premises — business</option>
-        </select>
-      </Field>
+          <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Carry Guard</div>
+        </Field>
+      ) : selectedType ? (
+        <Field
+          label="License type"
+          hint="You selected this before intake so the checklist and questions stay on one legal path."
+        >
+          <div className={cn(SELECT_CLASS, "flex items-center justify-between bg-surface-2/40 text-text-mid")}>
+            <span>{APPLICATION_TYPE_LABELS[selectedType]}</span>
+            <Link href="/portal/license-path" className="text-xs text-brass underline underline-offset-4">Change</Link>
+          </div>
+        </Field>
+      ) : (
+        <Field
+          label="License type"
+          hint="Carry lets you carry concealed; a premises-business license keeps the firearm at your business. This changes your document set — premises needs 2 references and no range training; carry needs 4 references and the 16+2-hour course."
+        >
+          <select
+            aria-label="License type"
+            value={a.licenseType ?? "carry"}
+            onChange={(e) => patch({ licenseType: e.target.value as WizardAnswers["licenseType"] })}
+            className={SELECT_CLASS}
+          >
+            <option value="carry">Concealed carry</option>
+            <option value="premises">Premises — business</option>
+          </select>
+        </Field>
+      )}
+      {a.residence === "non_resident" && !isGuardTrack && (
+        <Field
+          label="Where do you intend to carry in New York City?"
+          hint="This decides your licence category — it is set by how you'll carry, not by who introduced you to us."
+          required
+        >
+          <select
+            aria-label="Intended use in NYC"
+            value={a.nycCarryIntent ?? ""}
+            onChange={(e) => patch({ nycCarryIntent: (e.target.value || undefined) as WizardAnswers["nycCarryIntent"] })}
+            className={cn(SELECT_CLASS, intentBad && "border-danger ring-2 ring-danger/30")}
+            {...invalidAttrs(intentBad)}
+          >
+            <option value="">Select…</option>
+            <option value="personal">For my own personal protection — Special Carry</option>
+            <option value="armed_assignment">While working an armed security assignment — Special Carry Guard</option>
+          </select>
+          {a.nycCarryIntent === "personal" && (
+            <div className="mt-2 flex gap-2 rounded-md border-2 border-warn/50 bg-warn/10 p-3 text-sm text-text-hi">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn" />
+              <p>
+                <span className="font-semibold">A personal Special Carry licence does not authorise carrying while working an armed security assignment.</span>{" "}
+                That requires a separate <span className="font-medium">Special Carry Guard</span> licence, plus NY armed-guard registration and training. If you&apos;ll be armed on the job, choose the armed-assignment option above.
+              </p>
+            </div>
+          )}
+          {a.nycCarryIntent === "armed_assignment" && (
+            <p className="mt-2 text-xs text-text-mid">
+              An armed-assignment licence needs your employer&apos;s sponsorship and your qualifying employment. We&apos;ll connect you with the sponsored Special Carry Guard flow.
+            </p>
+          )}
+        </Field>
+      )}
       <div className="space-y-2 rounded-md border border-hairline p-3">
         <p className="text-xs text-text-low">Check any that apply (these route to attorney review):</p>
         <Check label="Felony or serious-offense conviction" checked={!!a.prohibitorFelony} onChange={(v) => patch({ prohibitorFelony: v })} />
@@ -778,14 +929,19 @@ function StepIdentity({ a, patch }: StepProps) {
             <Input value={a.legalApt ?? ""} onChange={(e) => patch({ legalApt: e.target.value })} />
           </Field>
         </div>
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-2">
           <Field label="City / town">
             <Input value={a.legalCity ?? ""} onChange={(e) => patch({ legalCity: e.target.value })} />
           </Field>
         </div>
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-2">
           <Field label="State">
             <Input value={a.legalState ?? "NY"} onChange={(e) => patch({ legalState: e.target.value })} />
+          </Field>
+        </div>
+        <div className="sm:col-span-2">
+          <Field label="ZIP code">
+            <Input inputMode="numeric" value={a.legalZip ?? ""} onChange={(e) => patch({ legalZip: e.target.value })} />
           </Field>
         </div>
       </div>
@@ -886,7 +1042,7 @@ function StepIdentity({ a, patch }: StepProps) {
               <Input value={a.outOfCityIssuedBy ?? ""} onChange={(e) => patch({ outOfCityIssuedBy: e.target.value })} />
             </Field>
             <Field label="County">
-              <Input value={a.outOfCityCounty ?? ""} onChange={(e) => patch({ outOfCityCounty: e.target.value })} />
+              <CountyInput value={a.outOfCityCounty ?? ""} onChange={(v) => patch({ outOfCityCounty: v })} />
             </Field>
             <Field label="Date issued">
               <Input type="date" value={a.outOfCityIssuedOn ?? ""} onChange={(e) => patch({ outOfCityIssuedOn: e.target.value })} />
@@ -901,8 +1057,11 @@ function StepIdentity({ a, patch }: StepProps) {
   )
 }
 
-function StepHousehold({ a, patch }: StepProps) {
+function StepHousehold({ a, patch, applicant }: StepProps & { applicant: ApplicantIdentity }) {
   const cohabs = a.cohabitants ?? []
+  const conflicts = safeguardSelfConflicts(a, applicant)
+  const nameConflict = conflicts.includes("name")
+  const phoneConflict = conflicts.includes("phone")
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Household &amp; safeguard</h2>
@@ -914,6 +1073,7 @@ function StepHousehold({ a, patch }: StepProps) {
         {cohabs.map((c, i) => (
           <div key={i} className="flex gap-2">
             <Input
+              aria-label={`Household member ${i + 1} full name`}
               placeholder="Full name"
               value={c.name}
               onChange={(e) => {
@@ -923,6 +1083,7 @@ function StepHousehold({ a, patch }: StepProps) {
               }}
             />
             <Input
+              aria-label={`Household member ${i + 1} relationship`}
               placeholder="Relationship"
               value={c.relationship ?? ""}
               onChange={(e) => {
@@ -953,13 +1114,25 @@ function StepHousehold({ a, patch }: StepProps) {
       </Field>
 
       <div className="space-y-3 rounded-md border border-hairline p-3">
-        <p className="text-xs text-text-low">
-          Person who will safeguard the handgun if you die or become disabled (form Q31 — must be a
-          N.Y. State resident). This person also signs the NYPD Acknowledgement form.
+        <p className="text-xs font-medium text-foreground">Who will safeguard your handgun (form Q31)</p>
+        <p className="rounded-md border border-hairline bg-surface-2/40 p-2.5 text-[12px] leading-relaxed text-text-mid">
+          {SAFEGUARD_NOT_YOU_NOTE}
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name">
-            <Input placeholder="Full name" value={a.safeguardName ?? ""} onChange={(e) => patch({ safeguardName: e.target.value })} />
+            <Input
+              placeholder="Full name"
+              value={a.safeguardName ?? ""}
+              onChange={(e) => patch({ safeguardName: e.target.value })}
+              aria-invalid={nameConflict || undefined}
+              data-intake-invalid={nameConflict || undefined}
+              className={nameConflict ? "border-danger/60 focus-visible:ring-danger/30" : undefined}
+            />
+            {nameConflict && (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+                <ShieldAlert className="mt-0.5 size-3 shrink-0" /> <span>{selfDesignationMessage("name")}</span>
+              </p>
+            )}
           </Field>
           <Field label="Relationship to you">
             <Input value={a.safeguardRelation ?? ""} placeholder="Spouse, sibling…" onChange={(e) => patch({ safeguardRelation: e.target.value })} />
@@ -976,7 +1149,18 @@ function StepHousehold({ a, patch }: StepProps) {
             <UseHomeAddress a={a} current={a.safeguardAddress} onUse={(v) => patch({ safeguardAddress: v })} />
           </Field>
           <Field label="Telephone">
-            <Input value={a.safeguardPhone ?? ""} onChange={(e) => patch({ safeguardPhone: e.target.value })} />
+            <Input
+              value={a.safeguardPhone ?? ""}
+              onChange={(e) => patch({ safeguardPhone: e.target.value })}
+              aria-invalid={phoneConflict || undefined}
+              data-intake-invalid={phoneConflict || undefined}
+              className={phoneConflict ? "border-danger/60 focus-visible:ring-danger/30" : undefined}
+            />
+            {phoneConflict && (
+              <p className="mt-1 flex items-start gap-1 text-[11px] text-danger">
+                <ShieldAlert className="mt-0.5 size-3 shrink-0" /> <span>{selfDesignationMessage("phone")}</span>
+              </p>
+            )}
           </Field>
         </div>
       </div>
@@ -995,9 +1179,10 @@ function StepDisclosures({
   // Don't pre-seed every question as "No" — an unanswered question shows neither
   // button selected, so the applicant makes a conscious Yes/No choice instead of
   // inheriting an answer (and there's no checkbox to mistake for "I agree").
-  const q: QuestionAnswer[] = a.questionnaire ?? []
+  const q: QuestionAnswer[] = a.questionnaireVersion === "nypd_portal_v1" ? a.questionnaire ?? [] : []
+  const visibleQuestions = applicablePortalDisclosures(a)
   const answeredNos = new Set(q.filter((x) => typeof x.yes === "boolean").map((x) => x.no))
-  const answeredCount = QUESTIONNAIRE.filter((i) => answeredNos.has(i.no)).length
+  const answeredCount = visibleQuestions.filter((i) => answeredNos.has(i.no)).length
   return (
     <div className="space-y-5">
       {/* Candor callout — the intro is doing legal work, so give it the weight. */}
@@ -1074,22 +1259,20 @@ function StepDisclosures({
         </div>
       </section>
 
-      {/* Section B — a card per question, a full-width segmented Yes/No, and the
-          explanation revealed inline on "Yes". Separation comes from surface, not
-          a 1px line, so thirteen questions read as discrete objects. */}
+      {/* The live NYPD online-portal questions — not the retired paper Q10–28 set. */}
       <section>
-        <SectionHeader label="Section B · Q10–22" count={`${answeredCount} / ${QUESTIONNAIRE.length}`} />
+        <SectionHeader label={`NYPD disclosures · Q${PORTAL_DISCLOSURE_RANGE}`} count={`${answeredCount} / ${visibleQuestions.length}`} />
         <div className="mb-3 rounded-md border border-hairline bg-surface-2 p-2.5">
-          <div className="text-[12px] text-text-mid">{answeredCount} of {QUESTIONNAIRE.length} answered</div>
+          <div className="text-[12px] text-text-mid">{answeredCount} of {visibleQuestions.length} applicable questions answered</div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
             <div
               className="h-full rounded-full bg-brass transition-[width] duration-300 motion-reduce:transition-none"
-              style={{ width: `${(answeredCount / QUESTIONNAIRE.length) * 100}%` }}
+              style={{ width: `${visibleQuestions.length ? (answeredCount / visibleQuestions.length) * 100 : 100}%` }}
             />
           </div>
         </div>
         <div className="space-y-3">
-          {QUESTIONNAIRE.map((item) => {
+          {visibleQuestions.map((item) => {
             const cur = q.find((x) => x.no === item.no)
             const isYes = cur?.yes === true
             const isNo = cur?.yes === false
@@ -1104,10 +1287,16 @@ function StepDisclosures({
                 key={item.no}
                 role="radiogroup"
                 aria-label={`Q${item.no}: ${item.text}`}
+                data-intake-invalid={attempted && !answered ? "" : undefined}
+                tabIndex={attempted && !answered ? -1 : undefined}
                 className={cn(
-                  "card-soft p-3.5 transition-opacity",
+                  "card-soft p-3.5 transition-colors",
+                  // Both answers read as ANSWERED — Yes in brass (the accent), No in a
+                  // neutral filled state. Never dim "No": a factual "No" is a complete
+                  // answer, and dimming it reads as "not done yet" (finding 4). Disclosing
+                  // is correct, so neither answer is styled as a bad outcome.
                   isYes && "border-l-[3px] border-l-brass bg-brass/[0.04] glow-neutral",
-                  isNo && "opacity-[0.72]",
+                  isNo && "border-l-[3px] border-l-hairline-strong bg-surface-2/40",
                   !answered && "ring-1 ring-signal/25"
                 )}
               >
@@ -1116,7 +1305,7 @@ function StepDisclosures({
                     aria-hidden
                     className={cn(
                       "mt-0.5 flex h-[22px] min-w-[30px] items-center justify-center rounded-md border font-mono text-[10.5px]",
-                      isNo ? "border-hairline text-text-low" : "border-brass/25 bg-brass/10 text-brass"
+                      isYes ? "border-brass/25 bg-brass/10 text-brass" : isNo ? "border-hairline-strong bg-surface-3 text-text-mid" : "border-hairline text-text-low"
                     )}
                   >
                     Q{item.no}
@@ -1125,6 +1314,11 @@ function StepDisclosures({
                     {main} {paren && <span className="text-[13px] text-text-low">{paren}</span>}
                   </p>
                 </div>
+                {item.note && (
+                  <p className="mt-2 rounded-md border border-warn/25 bg-warn/[0.06] p-2 text-[11px] leading-relaxed text-text-mid">
+                    {item.note}
+                  </p>
+                )}
 
                 {/* Full-width segmented control — a 50/50 grid, each half IS the
                     target. No leftover track to the right of "No". */}
@@ -1139,7 +1333,8 @@ function StepDisclosures({
                       aria-hidden
                       className={cn(
                         "absolute inset-y-[3px] w-[calc(50%-6px)] rounded-lg transition-[left] duration-200 ease-out motion-reduce:transition-none",
-                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1"
+                        // No gets a solid neutral chip (bordered) — equally clearly "selected", never faint.
+                        isYes ? "left-[3px] bg-brass" : "left-[calc(50%+3px)] bg-surface-1 ring-1 ring-hairline-strong"
                       )}
                     />
                   )}
@@ -1170,7 +1365,7 @@ function StepDisclosures({
                 </div>
 
                 {/* The answer has a visible consequence in the moment. */}
-                {isYes && (
+                {isYes && !item.conditionalOnYesOf && (
                   <div aria-live="polite" className="mt-3 border-t border-dashed border-hairline pt-3">
                     <label htmlFor={`q-narr-${item.no}`} className="engraved-sm text-warn">
                       Your explanation · required before filing
@@ -1179,9 +1374,10 @@ function StepDisclosures({
                       id={`q-narr-${item.no}`}
                       rows={2}
                       className="mt-1.5"
-                      placeholder="What happened, when, and how it resolved."
+                      placeholder={item.explainHelp ?? "What happened, when, and how it resolved."}
                       value={cur?.narrative ?? ""}
                       onChange={(e) => setQNarrative(item.no, e.target.value)}
+                      {...invalidAttrs(attempted && !cur?.narrative?.trim())}
                     />
                   </div>
                 )}
@@ -1201,15 +1397,15 @@ function StepDisclosures({
 
   function setQ(no: number, yes: boolean) {
     const cur = q.find((x) => x.no === no)
-    const others = q.filter((x) => x.no !== no)
-    patch({ questionnaire: [...others, { no, yes, narrative: cur?.narrative }] })
+    const others = q.filter((x) => x.no !== no && !(no === 5 && !yes && x.no === 6))
+    patch({ questionnaireVersion: "nypd_portal_v1", questionnaire: [...others, { no, yes, narrative: yes ? cur?.narrative : undefined }] })
   }
 
   /** Persist the explanation to the SAME place the review step reads. */
   function setQNarrative(no: number, narrative: string) {
     const cur = q.find((x) => x.no === no)
     const others = q.filter((x) => x.no !== no)
-    patch({ questionnaire: [...others, { no, yes: cur?.yes ?? true, narrative }] })
+    patch({ questionnaireVersion: "nypd_portal_v1", questionnaire: [...others, { no, yes: cur?.yes ?? true, narrative }] })
   }
 }
 
@@ -1265,10 +1461,13 @@ function StepHistory({
   patch,
   attempted,
   isRenewal,
-}: StepProps & { attempted: boolean; isRenewal: boolean }) {
+  applicationType,
+}: StepProps & { attempted: boolean; isRenewal: boolean; applicationType: ApplicationType | null }) {
   const refs = a.references ?? []
   // Track-aware, same source as historyStepIssues: 4 carry / 2 premises / 0 renewal.
-  const refsNeeded = requiredReferences(a, { isRenewal })
+  const selectedType = applicationType ?? applicationTypeFromLegacy(a)
+  const premisesApplication = isPremisesApplication(selectedType)
+  const refsNeeded = requiredReferences(a, { isRenewal, applicationType: selectedType })
   const social: SocialAccount[] = a.socialAccounts ?? []
   const resHist = a.residenceHistory ?? []
   const empHist = a.employmentHistory ?? []
@@ -1278,13 +1477,17 @@ function StepHistory({
 
   function updSocial(i: number, p: Partial<SocialAccount>) {
     const copy = [...social]
-    copy[i] = { ...copy[i], ...p }
+    // The first row is rendered synthetically when the stored array is empty.
+    // Seed both controlled fields before applying the edit so an initial platform
+    // selection never creates `{ platform }` with an undefined handle.
+    const current = copy[i]
+    copy[i] = { ...(current ?? { platform: "", handle: "" }), ...p }
     patch({ socialAccounts: copy })
   }
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold">Carry-specific &amp; history</h2>
+      <h2 className="text-lg font-semibold">{premisesApplication ? "History & references" : "Carry-specific & history"}</h2>
 
       {/* Five-year residence + employment history (form Q29) */}
       <div className="space-y-2">
@@ -1300,15 +1503,31 @@ function StepHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => { const c = [...resHist]; c[i] = { ...c[i], fromMonth: v }; patch({ residenceHistory: c }) }}
-                onTo={(v) => { const c = [...resHist]; c[i] = { ...c[i], toMonth: v }; patch({ residenceHistory: c }) }}
+                onTo={(v) => patch({ residenceHistory: applyPresentRadio(resHist, i, v) })}
               />
               <Button variant="ghost" size="icon" onClick={() => patch({ residenceHistory: resHist.filter((_, j) => j !== i) })}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            <Input list="known-addresses" placeholder="Address (street, city, state, county, zip, apt)" value={h.address ?? ""} onChange={(e) => {
-              const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
-            }} />
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,3fr)_minmax(5rem,1fr)]">
+              <Input aria-label={`Residence ${i + 1} street address`} list="known-addresses" placeholder="Street address" value={h.address ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], address: e.target.value }; patch({ residenceHistory: c })
+              }} />
+              <Input aria-label={`Residence ${i + 1} apartment`} placeholder="Apt / unit" value={h.apt ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], apt: e.target.value }; patch({ residenceHistory: c })
+              }} />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input aria-label={`Residence ${i + 1} city`} placeholder="City" value={h.city ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], city: e.target.value }; patch({ residenceHistory: c })
+              }} />
+              <Input aria-label={`Residence ${i + 1} state`} placeholder="State" value={h.state ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], state: e.target.value }; patch({ residenceHistory: c })
+              }} />
+              <Input aria-label={`Residence ${i + 1} ZIP code`} placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
+                const c = [...resHist]; c[i] = { ...c[i], zip: e.target.value }; patch({ residenceHistory: c })
+              }} />
+            </div>
             {/* The newest row is usually where they live now — offer it, never force it. */}
             {i === 0 && (
               <UseHomeAddress
@@ -1316,16 +1535,41 @@ function StepHistory({
                 current={h.address}
                 onUse={(v) => {
                   const c = [...resHist]
-                  c[0] = { ...c[0], address: v }
+                  c[0] = {
+                    ...c[0],
+                    address: a.legalStreet || v,
+                    apt: a.legalApt,
+                    city: a.legalCity,
+                    state: a.legalState || "NY",
+                    zip: a.legalZip,
+                  }
                   patch({ residenceHistory: c })
                 }}
               />
+            )}
+            {/* Country is required on the portal but defaults to the US — only ask abroad. */}
+            <label className="flex items-center gap-1.5 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={h.country !== undefined}
+                onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.checked ? "" : undefined }; patch({ residenceHistory: c }) }}
+                className="size-4 rounded border-input"
+              />
+              This address is outside the United States
+            </label>
+            {h.country !== undefined && (
+              <Input aria-label={`Residence ${i + 1} country`} placeholder="Country" value={h.country ?? ""} onChange={(e) => { const c = [...resHist]; c[i] = { ...c[i], country: e.target.value }; patch({ residenceHistory: c }) }} />
             )}
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ residenceHistory: [...resHist, {}] })}>
           <Plus className="size-4" /> Add residence
         </Button>
+        {checkHistory(resHist, "lived").map((n, i) => (
+          <p key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-signal" /> <span>{n.message}</span>
+          </p>
+        ))}
       </div>
 
       <div className="space-y-2">
@@ -1338,22 +1582,34 @@ function StepHistory({
                 fromMonth={h.fromMonth}
                 toMonth={h.toMonth}
                 onFrom={(v) => { const c = [...empHist]; c[i] = { ...c[i], fromMonth: v }; patch({ employmentHistory: c }) }}
-                onTo={(v) => { const c = [...empHist]; c[i] = { ...c[i], toMonth: v }; patch({ employmentHistory: c }) }}
+                onTo={(v) => patch({ employmentHistory: applyPresentRadio(empHist, i, v) })}
               />
               <Button variant="ghost" size="icon" onClick={() => patch({ employmentHistory: empHist.filter((_, j) => j !== i) })}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Input placeholder="Business name" value={h.employerName ?? h.employer ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} business name`} placeholder="Business name" value={h.employerName ?? h.employer ?? ""} onChange={(e) => {
                 // Writing the split field retires the legacy combined `employer`.
                 const c = [...empHist]; c[i] = { ...c[i], employerName: e.target.value, employer: undefined }; patch({ employmentHistory: c })
               }} />
-              <Input placeholder="Business address" value={h.employerAddress ?? ""} onChange={(e) => {
+              <Input aria-label={`Employment ${i + 1} street address`} placeholder="Business street address" value={h.employerAddress ?? ""} onChange={(e) => {
                 const c = [...empHist]; c[i] = { ...c[i], employerAddress: e.target.value }; patch({ employmentHistory: c })
               }} />
             </div>
-            <Input placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
+            {/* The portal requires City / State / Zip for every past employer. */}
+            <div className="grid gap-2 sm:grid-cols-[2fr_5rem_6rem]">
+              <Input aria-label={`Employment ${i + 1} city`} placeholder="City" value={h.city ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], city: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input aria-label={`Employment ${i + 1} state`} placeholder="State" value={h.state ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], state: e.target.value }; patch({ employmentHistory: c })
+              }} />
+              <Input aria-label={`Employment ${i + 1} ZIP code`} placeholder="ZIP" value={h.zip ?? ""} onChange={(e) => {
+                const c = [...empHist]; c[i] = { ...c[i], zip: e.target.value }; patch({ employmentHistory: c })
+              }} />
+            </div>
+            <Input aria-label={`Employment ${i + 1} occupation`} placeholder="Occupation" value={h.occupation ?? ""} onChange={(e) => {
               const c = [...empHist]; c[i] = { ...c[i], occupation: e.target.value }; patch({ employmentHistory: c })
             }} />
           </div>
@@ -1361,9 +1617,16 @@ function StepHistory({
         <Button variant="outline" size="sm" onClick={() => patch({ employmentHistory: [...empHist, {}] })}>
           <Plus className="size-4" /> Add employment
         </Button>
+        {checkHistory(empHist, "worked").map((n, i) => (
+          <p key={i} className="flex items-start gap-2 rounded-md border-l-2 border-signal bg-signal/[0.06] p-2.5 text-xs text-text-mid">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-signal" /> <span>{n.message}</span>
+          </p>
+        ))}
       </div>
 
-      {/* Training */}
+      {/* Training is carry-only. Premise Residence applicants should never be
+          asked for a course that is not part of their selected path. */}
+      {!premisesApplication && (
       <div className="space-y-3">
         <Field
           label="Firearms-safety training (16hr classroom + 2hr live-fire)"
@@ -1411,6 +1674,7 @@ function StepHistory({
           </p>
         )}
       </div>
+      )}
 
       {/* References — optional at intake */}
       <div className="space-y-2">
@@ -1430,13 +1694,14 @@ function StepHistory({
         </Hint>
         {refs.map((r, i) => (
           <div key={i} className="flex gap-2">
-            <Input placeholder="Full name" value={r.name} onChange={(e) => {
+            <Input aria-label={`Reference ${i + 1} full name`} placeholder="Full name" value={r.name} onChange={(e) => {
               const copy = [...refs]; copy[i] = { ...copy[i], name: e.target.value }; patch({ references: copy })
             }} />
             {/* Only a TYPED but malformed email is flagged — a blank one is fine
                 (they can add it later); intake never blocks on references. */}
             <Input
               placeholder="name@email.com"
+              aria-label={`Reference ${i + 1} email`}
               type="email"
               value={r.email ?? ""}
               onChange={(e) => {
@@ -1456,7 +1721,9 @@ function StepHistory({
         </Button>
       </div>
 
-      {/* Social media */}
+      {/* Preserve historical carry intake behavior while keeping the new
+          Premise Residence path limited to its own relevant information. */}
+      {!premisesApplication && (
       <div className="space-y-2">
         <Label className="text-xs">Social-media accounts (last 3 years)</Label>
         <Hint>
@@ -1466,7 +1733,7 @@ function StepHistory({
         {(social.length ? social : [{ platform: "", handle: "" }]).map((s, i) => (
           <div key={i} className="flex gap-2">
             <select
-              aria-label="Social platform"
+              aria-label={`Social account ${i + 1} platform`}
               value={s.platform}
               onChange={(e) => updSocial(i, { platform: e.target.value })}
               className={cn(SELECT_CLASS, "max-w-[44%]")}
@@ -1478,7 +1745,8 @@ function StepHistory({
             </select>
             <Input
               placeholder="@username"
-              value={s.handle}
+              aria-label={`Social account ${i + 1} username`}
+              value={s.handle ?? ""}
               onChange={(e) => updSocial(i, { handle: e.target.value })}
             />
             {social.length > 0 && (
@@ -1489,12 +1757,22 @@ function StepHistory({
           </div>
         ))}
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => patch({ socialAccounts: [...social, { platform: "", handle: "" }] })}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={social.some((s) => !s.platform.trim() && !s.handle.trim())}
+            onClick={() =>
+              patch({
+                socialAccounts: social.length ? [...social, { platform: "", handle: "" }] : [{ platform: "", handle: "" }],
+              })
+            }
+          >
             <Plus className="size-4" /> Add account
           </Button>
           <span className="text-[11px] text-text-low">No public accounts? Leave this empty.</span>
         </div>
       </div>
+      )}
 
       {/* Conditional extras */}
       <div className="space-y-2 rounded-md border border-hairline p-3">
@@ -1531,6 +1809,7 @@ function StepReview({ a }: { a: WizardAnswers }) {
         narratives) are added automatically.
       </p>
       <ul className="grid gap-1 text-sm sm:grid-cols-2">
+        <li>Application: <b>{APPLICATION_TYPE_LABELS[applicationTypeFromLegacy(a) ?? "concealed_carry"]}</b></li>
         <li>Residence: <b>{a.residence === "non_resident" ? "Special Carry" : "NYC"}</b></li>
         <li>Cohabitants: <b>{counts.cohabitants}</b></li>
         <li>Arrests / summonses: <b>{counts.arrests}</b></li>

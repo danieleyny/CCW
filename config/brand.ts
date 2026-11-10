@@ -13,9 +13,9 @@ export const brand = {
   name: "Gun License NYC",
   // NOTE: default entity name — replace with the real registered LLC if different.
   legalName: "Gun License NYC",
-  tagline: "Concealed carry, handled with precision.",
+  tagline: "NYC gun licensing, handled with precision.",
   description:
-    "Gun License NYC is a private licensing concierge that guides New Yorkers through the full NYC concealed-carry-weapon process — training, documents, and filing — from first inquiry to licensed.",
+    "Gun License NYC is a private licensing concierge that helps applicants organize the NYC handgun-license process — from the right application path through documents, review, and applicant-controlled submission.",
   domain: "gunlicensenyc.com",
   url: "https://gunlicensenyc.com",
   contact: {

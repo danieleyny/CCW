@@ -14,6 +14,7 @@ import { referenceComposition } from "@/lib/references/composition"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { readImageDimensions } from "@/lib/files/image-dimensions"
 import { PHOTO_MIN_PX, PHOTO_MAX_PX, PHOTO_ASPECT_TOLERANCE } from "@/lib/files/photo-spec"
+import type { ApplicationType } from "@/lib/application-types"
 
 type DB = SupabaseClient<Database>
 
@@ -48,7 +49,7 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
     await Promise.all([
       db
         .from("cases")
-        .select("is_renewal, training_expires_on, qa_signed_off_by, license_track")
+        .select("is_renewal, training_expires_on, qa_signed_off_by, license_track, application_type")
         .eq("id", caseId)
         .single(),
       db
@@ -128,6 +129,7 @@ export async function evaluatePreFilingGate(db: DB, caseId: string): Promise<Gat
   const needed = requiredReferences(answers, {
     isRenewal: !!kase.is_renewal,
     licenseTrack: kase.license_track ?? undefined,
+    applicationType: kase.application_type as ApplicationType | null,
   })
   const notarized = (refs ?? []).filter((r) => r.notarized).length
   if (notarized < needed) {

@@ -5,6 +5,10 @@ import { materializeCaseRequirements, materializeSponsorPacket, type Materialize
 import { toGeneratorAnswers, eligibilityGate, type WizardAnswers } from "@/lib/intake/answers"
 import { loadConditionSources, deriveConditionFlags } from "@/lib/requirements/conditions"
 import { resolveArmedTrack } from "@/lib/requirements/track"
+import {
+  applicationTypeToLegacyLicenseType,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 type DB = SupabaseClient<Database>
 
@@ -21,7 +25,11 @@ type DB = SupabaseClient<Database>
  */
 export async function rematerializeCase(admin: DB, caseId: string): Promise<MaterializeResult | null> {
   const [{ data: kase }, { data: intakeRow }, { data: sp }, sources] = await Promise.all([
-    admin.from("cases").select("is_renewal, license_track, service_mode").eq("id", caseId).maybeSingle(),
+    admin
+      .from("cases")
+      .select("is_renewal, license_track, service_mode, application_type")
+      .eq("id", caseId)
+      .maybeSingle(),
     admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
     admin.from("case_sponsorships").select("id").eq("case_id", caseId).limit(1).maybeSingle(),
     loadConditionSources(admin, caseId),
@@ -33,12 +41,32 @@ export async function rematerializeCase(admin: DB, caseId: string): Promise<Mate
   // the track is carry unless the case is explicitly premises. Conditional rules no
   // longer depend on the wizard; they come from the canonical stores below.
   const hasIntake = !!rawAnswers && Object.keys(rawAnswers).length > 0
-  const answers: WizardAnswers = hasIntake ? rawAnswers! : ({ licenseType: "carry" } as WizardAnswers)
+  const applicationType = kase.application_type as ApplicationType | null
+  const answers: WizardAnswers = hasIntake
+    ? {
+        ...rawAnswers!,
+        ...(applicationType
+          ? {
+              applicationType,
+              licenseType: applicationTypeToLegacyLicenseType(applicationType),
+            }
+          : {}),
+      }
+    : applicationType
+      ? {
+          applicationType,
+          licenseType: applicationTypeToLegacyLicenseType(applicationType),
+          residence: applicationType === "special_carry" ? "non_resident" : "nyc",
+        }
+      : ({ licenseType: "carry" } as WizardAnswers)
 
   const { flags, source } = deriveConditionFlags(rawAnswers, sources)
   console.log(`[rematerialize] case ${caseId} conditions:`, { ...flags, _sources: source, hasIntake })
 
-  const jurisdictionKey = eligibilityGate(answers).jurisdiction
+  const jurisdictionKey =
+    applicationType === "special_carry" || applicationType === "special_carry_guard"
+      ? "special_carry"
+      : eligibilityGate(answers).jurisdiction
   const isSponsored = !!sp
   const armed = isSponsored && hasIntake ? resolveArmedTrack(answers) : null
 

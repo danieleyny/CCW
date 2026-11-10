@@ -13,36 +13,97 @@ import { runIntakeSystemChecks } from "@/lib/requirements/system-checks"
 import { materializeCaseRequirements, materializeSponsorPacket } from "@/lib/requirements/materialize"
 import { resolveArmedTrack, type ArmedTrackResult } from "@/lib/requirements/track"
 import { backfillCaseFacts } from "@/lib/facts/resolve"
+import { syncCohabitants, syncReferences } from "@/lib/requirements/roster"
+import { applicablePortalDisclosures } from "./schema"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
+import {
+  applicationTypeFromLegacy,
+  applicationTypeNeedsCarryTraining,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 type DB = SupabaseClient<Database>
 
 export interface ProcessIntakeResult {
   cohabitants: number
+  references: number
   disclosures: number
   applicable: number
+}
+
+/** Translate the intake representation into the canonical DSC-01 answer store.
+ * Legacy paper-form sessions are deliberately rejected: Q10 meant something
+ * different there, so guessing would create a false sworn answer. */
+export function canonicalDisclosureAnswers(answers: WizardAnswers): Record<string, unknown> | null {
+  if (answers.questionnaireVersion !== "nypd_portal_v1") return null
+  const source = new Map((answers.questionnaire ?? []).map((q) => [q.no, q]))
+  const out: Record<string, unknown> = {}
+  for (const question of applicablePortalDisclosures(answers)) {
+    const answer = source.get(question.no)
+    if (!answer) continue // completion validation rejects this; never infer No
+    out[`q${question.no}`] = answer.yes ? "yes" : "no"
+    if (answer.yes && !question.conditionalOnYesOf && answer.narrative?.trim()) {
+      out[`q${question.no}_explain`] = answer.narrative.trim()
+    }
+  }
+  return out
 }
 
 export async function processIntake(
   admin: DB,
   caseId: string,
-  jurisdictionKey: string,
+  jurisdictionKey: "nyc" | "special_carry",
   answers: WizardAnswers
 ): Promise<ProcessIntakeResult> {
-  // ── Household: intake owns the cohabitant set; rebuild it idempotently ─────
-  await admin.from("cohabitants").delete().eq("case_id", caseId)
-  const cohabRows = (answers.cohabitants ?? [])
+  // ── People rosters: sync by name and NEVER delete returned evidence ────────
+  // Editing intake used to delete/recreate both rosters, which lost accepted
+  // affidavits and left the admin portal showing stale references. The shared
+  // roster synchronizer preserves received/notarized rows and updates the real
+  // operational tables used by both applicant and admin.
+  const cohabPeople = (answers.cohabitants ?? [])
     .filter((c) => c.name?.trim())
     .map((c) => ({
-      case_id: caseId,
       name: c.name.trim(),
-      relationship: c.relationship ?? null,
-      affidavit_status: "not_started" as const,
+      relationship: c.relationship?.trim() || undefined,
     }))
-  if (cohabRows.length) await admin.from("cohabitants").insert(cohabRows)
+  await syncCohabitants(admin, caseId, cohabPeople)
+
+  const referencePeople = (answers.references ?? [])
+    .filter((r) => r.name?.trim())
+    .map((r) => ({ name: r.name.trim(), email: r.email?.trim() || undefined }))
+  await syncReferences(admin, caseId, referencePeople)
+
+  // ── Canonical portal disclosures (DSC-01) ─────────────────────────────────
+  const canonical = canonicalDisclosureAnswers(answers)
+  if (canonical) {
+    const { data: prior, error: priorError } = await admin
+      .from("requirement_answers")
+      .select("answers")
+      .eq("case_id", caseId)
+      .eq("req_code", "DSC-01")
+      .maybeSingle()
+    if (priorError) throw priorError
+    const old = (prior?.answers ?? {}) as Record<string, unknown>
+    // Preserve portal-only subanswers the compact intake does not collect (for
+    // example q7_felony). Replace only Q1–16 and their explanation keys.
+    const preserved = Object.fromEntries(
+      Object.entries(old).filter(([key]) => !/^q(?:[1-9]|1[0-6])(?:_explain)?$/.test(key))
+    )
+    const { error } = await admin.from("requirement_answers").upsert(
+      {
+        case_id: caseId,
+        req_code: "DSC-01",
+        answers: { ...preserved, ...canonical } as never,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "case_id,req_code" }
+    )
+    if (error) throw error
+  }
 
   // ── Disclosures: rebuild idempotently from the interview ───────────────────
-  await admin.from("disclosures").delete().eq("case_id", caseId)
+  const { error: deleteDisclosureError } = await admin.from("disclosures").delete().eq("case_id", caseId)
+  if (deleteDisclosureError) throw deleteDisclosureError
   type DiscIns = Database["public"]["Tables"]["disclosures"]["Insert"]
   const discRows: DiscIns[] = []
   for (const a of answers.arrests ?? []) {
@@ -75,33 +136,47 @@ export async function processIntake(
       spawned_req_code: "DIR-01",
     })
   }
-  for (const q of answers.questionnaire ?? []) {
-    if (q.yes) {
+  for (const q of answers.questionnaireVersion === "nypd_portal_v1" ? answers.questionnaire ?? [] : []) {
+    if (q.yes && q.no !== 6) {
+      // Where a structured row exists it carries better dates/court detail; do
+      // not duplicate the same matter as a generic Yes row.
+      if (q.no === 7 && (answers.arrests?.length ?? 0) > 0) continue
+      if (q.no === 13 && (answers.ordersOfProtection?.length ?? 0) > 0) continue
+      if (q.no === 15 && (answers.domesticIncidents?.length ?? 0) > 0) continue
+      const spawned = q.no === 7 ? "ARR-01" : q.no === 13 ? "OOP-01" : q.no === 15 ? "DIR-01" : null
       discRows.push({
         case_id: caseId,
         type: "question_yes",
         question_no: q.no,
         narrative: q.narrative ?? "",
-        spawned_req_code: "QUE-01",
+        spawned_req_code: spawned,
       })
     }
   }
   let insertedDisc: { id: string; spawned_req_code: string | null }[] = []
   if (discRows.length) {
-    const { data } = await admin.from("disclosures").insert(discRows).select("id, spawned_req_code")
+    const { data, error } = await admin.from("disclosures").insert(discRows).select("id, spawned_req_code")
+    if (error) throw error
     insertedDisc = data ?? []
   }
 
   // ── Generate case_requirements (conditional rules fire here) ───────────────
   // V3-P1 — renewal comes from the case, not the wizard.
-  const { data: kase } = await admin.from("cases").select("is_renewal, client_id").eq("id", caseId).maybeSingle()
+  const { data: kase } = await admin
+    .from("cases")
+    .select("is_renewal, client_id, application_type")
+    .eq("id", caseId)
+    .maybeSingle()
   const isRenewal = !!kase?.is_renewal
 
   // A4a — record the applicant's track on the client so every admin display and
   // the license-type logic reflects the path they actually chose in intake
   // (previously stuck at the signup default even for premises / retired-LEO).
   if (kase?.client_id) {
-    await admin.from("clients").update({ track: trackFromAnswers(answers, jurisdictionKey) }).eq("id", kase.client_id)
+    await admin
+      .from("clients")
+      .update({ track: trackFromAnswers(answers, jurisdictionKey, kase.application_type) })
+      .eq("id", kase.client_id)
   }
 
   // ── Sponsored armed-guard (Carry Guard) track — DERIVED, never typed ───────
@@ -119,7 +194,12 @@ export async function processIntake(
   let armed: ArmedTrackResult | null = null
   if (isSponsored) {
     armed = resolveArmedTrack(answers)
-    await admin.from("cases").update({ license_track: armed.track }).eq("id", caseId)
+    const sponsoredApplicationType =
+      armed.track === "carry_guard" || armed.track === "special_carry_guard" ? armed.track : null
+    await admin
+      .from("cases")
+      .update({ license_track: armed.track, application_type: sponsoredApplicationType })
+      .eq("id", caseId)
   }
 
   let result: { applicable: number }
@@ -131,15 +211,53 @@ export async function processIntake(
       admin,
       caseId,
       jurisdictionKey,
-      toGeneratorAnswers(answers, { isRenewal, armed: armed ?? undefined })
+      toGeneratorAnswers(answers, {
+        isRenewal,
+        jurisdictionKey,
+        armed: armed ?? undefined,
+      })
     )
   }
   if (isSponsored) {
     await materializeSponsorPacket(admin, caseId)
   }
 
+  // ── Intended-use routing (Special Carry vs Special Carry Guard) ────────────
+  // Recorded APPEND-ONLY: intake re-runs on every save, so we log only on an actual
+  // CHANGE — and a change between personal and duty carry is a legal-category change, so
+  // it raises a staff task and keeps both values (the history). Referral source never
+  // enters this; the resolver doesn't take it (lib/requirements/carry-intent).
+  if (answers.nycCarryIntent === "personal" || answers.nycCarryIntent === "armed_assignment") {
+    const { data: last } = await admin
+      .from("case_intent_log")
+      .select("intent")
+      .eq("case_id", caseId)
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (last?.intent !== answers.nycCarryIntent) {
+      await admin.from("case_intent_log").insert({ case_id: caseId, intent: answers.nycCarryIntent })
+      if (last?.intent) {
+        // A switch between personal and duty carry — never silent.
+        await admin.from("tasks").insert({
+          case_id: caseId,
+          title: "Carry intent changed — review licence category",
+          description: `Intended NYC carry use changed from "${last.intent}" to "${answers.nycCarryIntent}". Personal Special Carry and Special Carry Guard are different legal categories; confirm the case is on the right track.`,
+          priority: 1,
+          status: "open",
+        })
+      }
+    }
+  }
+
   // ── V3-P1: training is a decaying asset (≤6 months before submission) ──────
-  if (answers.trainingStatus === "completed" && answers.trainingDate) {
+  const applicationType =
+    (kase?.application_type as ApplicationType | null | undefined) ?? applicationTypeFromLegacy(answers)
+  if (
+    applicationTypeNeedsCarryTraining(applicationType) &&
+    answers.trainingStatus === "completed" &&
+    answers.trainingDate
+  ) {
     const completed = new Date(`${answers.trainingDate}T00:00:00Z`)
     const expires = new Date(completed)
     expires.setUTCMonth(expires.getUTCMonth() + 6)
@@ -214,7 +332,8 @@ export async function processIntake(
   await runIntakeSystemChecks(admin, caseId, answers)
 
   return {
-    cohabitants: cohabRows.length,
+    cohabitants: cohabPeople.length,
+    references: referencePeople.length,
     disclosures: discRows.length,
     applicable: result.applicable,
   }
@@ -223,9 +342,17 @@ export async function processIntake(
 type ClientTrack = Database["public"]["Enums"]["client_track"]
 
 /** Map the interview answers to the applicant's client track (display + logic). */
-function trackFromAnswers(a: WizardAnswers, jurisdictionKey: string): ClientTrack {
+function trackFromAnswers(
+  a: WizardAnswers,
+  jurisdictionKey: "nyc" | "special_carry",
+  applicationType?: ApplicationType | null
+): ClientTrack {
   if (a.isRetiredLeo) return "retired_leo"
-  if (a.licenseType === "premises") return "premises_business"
+  const category = applicationType ?? applicationTypeFromLegacy(a)
+  if (category === "premise_business") return "premises_business"
+  // Premise Residence is an NYC resident audience. Its legal category lives on
+  // cases.application_type, not in the legacy client_track enum.
+  if (category === "premise_residence") return "resident"
   if (jurisdictionKey === "special_carry" || a.residence === "non_resident") return "non_resident"
   return "resident"
 }

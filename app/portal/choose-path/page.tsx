@@ -7,6 +7,7 @@ import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
+import type { ApplicationType } from "@/lib/application-types"
 
 export const metadata = { title: "Choose how we'll work together" }
 
@@ -28,6 +29,7 @@ export default async function ChoosePathPage() {
       </div>
     )
   }
+  if (!myCase.application_type) redirect("/portal/license-path")
 
   const supabase = await createClient()
 
@@ -69,6 +71,7 @@ export default async function ChoosePathPage() {
         alreadyMode={alreadyMode}
         staffProvisioned={staffProvisioned}
         codesEnabled={codesEnabled}
+        applicationType={myCase.application_type as ApplicationType}
       />
 
       <p className="text-xs text-text-low">
