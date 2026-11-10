@@ -13,6 +13,8 @@ import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { cancelOffer } from "./actions"
 import { sendEngagementMessage, markEngagementMessagesRead } from "@/app/portal/actions"
+import { redirect } from "next/navigation"
+import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
 
 export const metadata = { title: "Find an instructor" }
 
@@ -25,6 +27,7 @@ export default async function MarketplacePage() {
       </p>
     )
   }
+  if (isPremiseResidence(myCase.application_type as ApplicationType | null)) redirect("/portal")
 
   const supabase = await createClient()
   const [{ data: offers }, { data: engagements }] = await Promise.all([

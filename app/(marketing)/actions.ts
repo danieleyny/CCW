@@ -9,7 +9,6 @@ import { brand } from "@/config/brand"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { honeypotTripped } from "@/lib/honeypot"
 import { notifyFormspree } from "@/lib/formspree"
-import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 
 export type LeadState = { ok?: boolean; error?: string }
 
@@ -138,12 +137,9 @@ export async function captureLead(
       : (await admin.from("cases").insert({ client_id: client.id, stage: "lead", status: "active" }).select("id").single())
           .data)
 
-  // V3-P2.1 — baseline checklist from the versioned registry, day one.
-  if (!existingCase && kase) {
-    await materializeCaseRequirements(admin, kase.id, v.track === "non_resident" ? "special_carry" : "nyc", {
-      isCarry: true,
-    })
-  }
+  // Do not guess the licence category from a marketing inquiry. If this lead
+  // creates an account, the applicant chooses the legal path before a checklist
+  // is materialized.
 
   await admin.from("tasks").insert({
     case_id: kase?.id ?? null,

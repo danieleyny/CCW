@@ -5,6 +5,11 @@
  * conditional requirement/disclosure generation.
  */
 import type { IntakeAnswers as GeneratorAnswers } from "@/lib/requirements/generate"
+import {
+  applicationTypeFromLegacy,
+  applicationTypeToGeneratorAnswers,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 export interface CohabitantEntry {
   name: string
@@ -112,7 +117,10 @@ export interface WizardAnswers {
   // Step 1 — eligibility pre-screen (hard gate)
   dob?: string
   residence?: "nyc" | "non_resident"
-  licenseType?: "carry" | "premises" // default carry
+  /** Canonical case category, copied into the resumable session for a readable audit trail. */
+  applicationType?: ApplicationType
+  /** Legacy intake compatibility. `premises` means Premise Business. */
+  licenseType?: "carry" | "premises" | "premise_residence"
   /** Intended use in NYC — routes Special Carry vs Special Carry Guard by INTENT, never
    *  by who referred the applicant (see lib/requirements/carry-intent). */
   nycCarryIntent?: "personal" | "armed_assignment"
@@ -335,16 +343,16 @@ export function toGeneratorAnswers(
     conditions?: Partial<ConditionFlags>
   } = {}
 ): GeneratorAnswers {
-  const premises = a.licenseType === "premises"
+  const applicationType = applicationTypeFromLegacy(a) ?? "concealed_carry"
+  const category = applicationTypeToGeneratorAnswers(applicationType)
   const c = opts.conditions
   const portalQuestionYes = (no: number) =>
     a.questionnaireVersion === "nypd_portal_v1" &&
     (a.questionnaire ?? []).some((q) => q.no === no && q.yes)
   return {
-    isCarry: !premises,
-    isPremises: premises,
+    ...category,
     isRenewal: !!opts.isRenewal,
-    isRetiredLeo: !!a.isRetiredLeo,
+    isRetiredLeo: applicationType === "retired_leo" || !!a.isRetiredLeo,
     hasCohabitants: c?.hasCohabitants ?? (a.cohabitants?.length ?? 0) > 0,
     hasArrestHistory: c?.hasArrestHistory ?? (portalQuestionYes(7) || (a.arrests?.length ?? 0) > 0),
     hasOopHistory: c?.hasOopHistory ?? (portalQuestionYes(13) || (a.ordersOfProtection?.length ?? 0) > 0),
@@ -356,8 +364,8 @@ export function toGeneratorAnswers(
     hasFelonyConviction: !!c?.hasFelonyConviction, // portal-only; no wizard equivalent
     wantsConfidentiality: !!c?.wantsConfidentiality,
     isOutOfStateResident: isOutOfStateResident(a),
-    isSpecialCarry: opts.jurisdictionKey === "special_carry",
-    isArmedGuard: !!opts.armed?.isArmedGuard,
+    isSpecialCarry: category.isSpecialCarry || opts.jurisdictionKey === "special_carry",
+    isArmedGuard: category.isArmedGuard || !!opts.armed?.isArmedGuard,
     needsPreLicenseExemption: !!opts.armed?.needsPreLicenseExemption,
     needsCountyLicenseDoc: !!opts.armed?.needsCountyLicenseDoc,
   }

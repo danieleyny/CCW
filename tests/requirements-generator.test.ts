@@ -9,6 +9,8 @@ const carry: IntakeAnswers = { isCarry: true }
 const renewal: IntakeAnswers = { isCarry: true, isRenewal: true }
 const premises: IntakeAnswers = { isCarry: false, isPremises: true }
 const premisesRenewal: IntakeAnswers = { isCarry: false, isPremises: true, isRenewal: true }
+const premiseResidence: IntakeAnswers = { isCarry: false, isPremiseResidence: true }
+const premiseBusiness: IntakeAnswers = { isCarry: false, isPremisesBusiness: true }
 const leo: IntakeAnswers = { isCarry: true, isRetiredLeo: true }
 
 describe("requirementApplies — track × renewal matrix", () => {
@@ -35,11 +37,31 @@ describe("requirementApplies — track × renewal matrix", () => {
     expect(requirementApplies("premises_not_renewal", premisesRenewal)).toBe(false)
   })
 
+  it("separates Premise Residence from Premise Business while both receive two references", () => {
+    expect(requirementApplies("premises_only", premiseResidence)).toBe(false)
+    expect(requirementApplies("premises_only", premiseBusiness)).toBe(true)
+    expect(requirementApplies("premise_residence_only", premiseResidence)).toBe(true)
+    expect(requirementApplies("premise_business_only", premiseBusiness)).toBe(true)
+    expect(requirementApplies("two_refs_not_renewal", premiseResidence)).toBe(true)
+    expect(requirementApplies("two_refs_not_renewal", premiseBusiness)).toBe(true)
+    expect(requirementApplies("carry_not_renewal", premiseResidence)).toBe(false)
+  })
+
   it("if_renewal (RNW-01) and if_retired_leo (LEO-*) fire only for their flag", () => {
     expect(requirementApplies("if_renewal", renewal)).toBe(true)
     expect(requirementApplies("if_renewal", carry)).toBe(false)
     expect(requirementApplies("if_retired_leo", leo)).toBe(true)
     expect(requirementApplies("if_retired_leo", carry)).toBe(false)
+  })
+
+  it("carry renewal training does not apply to a Premise Residence renewal", () => {
+    expect(requirementApplies("carry_renewal_only", renewal)).toBe(true)
+    expect(
+      requirementApplies("carry_renewal_only", {
+        ...premiseResidence,
+        isRenewal: true,
+      })
+    ).toBe(false)
   })
 
   it("disclosure triggers fire only on explicit yes", () => {

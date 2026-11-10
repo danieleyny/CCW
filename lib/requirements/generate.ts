@@ -12,7 +12,12 @@ export type TriggerCond =
   | "carry_not_renewal"
   | "premises_only"
   | "premises_not_renewal"
+  | "premise_residence_only"
+  | "premise_business_only"
+  | "premises_any"
+  | "premises_any_not_renewal"
   | "if_renewal"
+  | "carry_renewal_only"
   | "if_retired_leo"
   | "if_cohabitants"
   | "unless_cohabitants"
@@ -50,7 +55,10 @@ export type TriggerCond =
  */
 export interface IntakeAnswers {
   isCarry?: boolean
+  /** Legacy aggregate premises flag. Prefer the two explicit flags below. */
   isPremises?: boolean
+  isPremiseResidence?: boolean
+  isPremisesBusiness?: boolean
   isRenewal?: boolean
   isRetiredLeo?: boolean
   hasCohabitants?: boolean
@@ -75,19 +83,34 @@ export interface IntakeAnswers {
 
 /** Does a requirement's trigger condition fire for these answers? */
 export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
+  const premiseResidence = !!a.isPremiseResidence
+  // A historical isPremises=true row meant Premise Business. Preserve that
+  // interpretation unless the new residence flag explicitly says otherwise.
+  const premiseBusiness = !!a.isPremisesBusiness || (!!a.isPremises && !premiseResidence)
+  const premisesAny = premiseResidence || premiseBusiness
   switch (trigger) {
     case "always":
       return true
     case "carry_only":
-      return a.isCarry !== false && !a.isPremises // default: carry
+      return a.isCarry !== false && !premisesAny // default: carry
     case "carry_not_renewal":
-      return a.isCarry !== false && !a.isPremises && !a.isRenewal
+      return a.isCarry !== false && !premisesAny && !a.isRenewal
     case "premises_only":
-      return !!a.isPremises
+      return premiseBusiness
     case "premises_not_renewal":
-      return !!a.isPremises && !a.isRenewal
+      return premiseBusiness && !a.isRenewal
+    case "premise_residence_only":
+      return premiseResidence
+    case "premise_business_only":
+      return premiseBusiness
+    case "premises_any":
+      return premisesAny
+    case "premises_any_not_renewal":
+      return premisesAny && !a.isRenewal
     case "if_renewal":
       return !!a.isRenewal
+    case "carry_renewal_only":
+      return !!a.isRenewal && a.isCarry !== false && !premisesAny
     case "if_retired_leo":
       return !!a.isRetiredLeo
     case "if_cohabitants":
@@ -122,9 +145,9 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
     case "carry_guard_only":
       return !!a.isArmedGuard
     case "carry_not_renewal_not_armed":
-      return a.isCarry !== false && !a.isPremises && !a.isRenewal && !a.isArmedGuard
+      return a.isCarry !== false && !premisesAny && !a.isRenewal && !a.isArmedGuard
     case "two_refs_not_renewal":
-      return (!!a.isPremises || !!a.isArmedGuard) && !a.isRenewal
+      return (premisesAny || !!a.isArmedGuard) && !a.isRenewal
     case "unless_armed":
       return !a.isArmedGuard
     case "if_pre_license_exemption":

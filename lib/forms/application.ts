@@ -41,7 +41,11 @@ export function buildApplicationValues(
   const lon = opts.letterOfNecessity ?? {}
   const f = (k: string) => facts[k] ?? ""
   const citizenship = f("applicant.citizenship")
-  const premises = intake.licenseType === "premises"
+  const premiseResidence =
+    intake.applicationType === "premise_residence" || intake.licenseType === "premise_residence"
+  const premiseBusiness =
+    intake.applicationType === "premise_business" || intake.licenseType === "premises"
+  const premises = premiseResidence || premiseBusiness
 
   const residenceHistory = intake.residenceHistory ?? []
   const employmentHistory = intake.employmentHistory ?? []
@@ -102,7 +106,7 @@ export function buildApplicationValues(
     priorLicenseNumber: f("applicant.priorLicenseNumber"),
     // Licence type — best effort, applicant confirms.
     licenseType: premises ? "Premises" : LICENSE_TYPE_BY_TRACK[opts.licenseTrack ?? ""] ?? "",
-    premisesType: premises ? "Residence" : "",
+    premisesType: premiseResidence ? "Residence" : premiseBusiness ? "Business" : "",
     // Out-of-city (Special Handgun only)
     outOfCityLicenseNumber: intake.outOfCityLicenseNumber ?? "",
     outOfCityIssuedBy: intake.outOfCityIssuedBy ?? "",

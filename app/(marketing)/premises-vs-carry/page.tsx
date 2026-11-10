@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     q: "Is the process different for a premises versus a carry license?",
-    a: "Both go through the same NYPD License Division and share the core requirements — training, references, the investigation, and the interview. What differs is the license type you apply for and what it authorizes once issued.",
+    a: "Yes. Both go through the NYPD License Division, but you should not assume they use the same training, reference, or document checklist. The category you select changes what applies. Our onboarding keeps the home, business, carry, and Special Carry paths separate; NYPD sets the final requirements and makes the decision.",
   },
 ]
 

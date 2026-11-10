@@ -37,9 +37,29 @@ export async function openRenewalForClient(
     .maybeSingle()
   if (existing) return { renewalCaseId: existing.id, alreadyOpen: true }
 
+  // A renewal keeps the legal category of the licence being renewed. If a
+  // legacy licensed case is still unclassified, leave it null for deliberate
+  // staff review rather than guessing from a default track.
+  const { data: source } = await admin
+    .from("cases")
+    .select("application_type, license_track")
+    .eq("client_id", input.clientId)
+    .eq("stage", "licensed")
+    .order("license_issued_on", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   const { data: renewal } = await admin
     .from("cases")
-    .insert({ client_id: input.clientId, stage: "lead", status: "active", is_renewal: true })
+    .insert({
+      client_id: input.clientId,
+      stage: "lead",
+      status: "active",
+      is_renewal: true,
+      application_type: source?.application_type ?? null,
+      license_track: source?.license_track ?? "concealed_carry",
+    })
     .select("id")
     .single()
 

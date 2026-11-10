@@ -37,6 +37,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
 
   const myCase = await getMyCase()
   if (!myCase) return { error: "Your case isn't set up yet." }
+  if (!myCase.application_type) redirect("/portal/license-path")
 
   const supabase = await createClient()
 

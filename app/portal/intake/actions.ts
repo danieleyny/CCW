@@ -10,6 +10,11 @@ import { eligibilityGate, type WizardAnswers } from "@/lib/intake/answers"
 import { wizardAnswersSchema, completionIssues } from "@/lib/intake/schema"
 import { processIntake, evaluateSubmissionGuard, type SubmissionGuard } from "@/lib/intake/process"
 import type { Json } from "@/lib/supabase/types"
+import {
+  applicationTypeToLegacyLicenseType,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 /** V3-P0.6 — shape-validate at the boundary; nothing unparsed reaches jsonb. */
 function parseAnswers(raw: unknown): { answers?: WizardAnswers; error?: string } {
@@ -29,10 +34,31 @@ async function ownedCase(caseId: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from("cases")
-    .select("id, client_id, is_renewal, license_track")
+    .select("id, client_id, is_renewal, license_track, application_type")
     .eq("id", caseId)
     .maybeSingle()
   return data
+}
+
+/** The case, not a browser field, owns the legal category. This blocks a stale
+ * tab or crafted request from generating the wrong checklist. */
+function withCanonicalApplicationType(
+  answers: WizardAnswers,
+  applicationType: ApplicationType | null
+): WizardAnswers {
+  if (!applicationType) return answers
+  const next: WizardAnswers = {
+    ...answers,
+    applicationType,
+    licenseType: applicationTypeToLegacyLicenseType(applicationType),
+  }
+  if (isPremisesApplication(applicationType)) {
+    next.residence = "nyc"
+    next.trainingStatus = undefined
+    next.trainingInstructor = undefined
+    next.trainingDate = undefined
+  }
+  return next
 }
 
 /** Get-or-create the resumable intake session for a case. */
@@ -70,13 +96,19 @@ export async function saveIntakeStep(
   }
   if (!Number.isInteger(step) || step < 1 || step > 6) return { error: "Invalid step" }
 
+  const kase = await ownedCase(caseId)
+  if (!kase) return { error: "Case not found" }
+  const canonical = withCanonicalApplicationType(
+    parsed.answers,
+    kase.application_type as ApplicationType | null
+  )
   const supabase = await createClient()
   // Upsert (not update): case_id is UNIQUE, so this self-heals if the session
   // row is somehow missing instead of silently no-opping against zero rows.
   const { error } = await supabase
     .from("intake_sessions")
     .upsert(
-      { case_id: caseId, current_step: step, answers: parsed.answers as unknown as Json },
+      { case_id: caseId, current_step: step, answers: canonical as unknown as Json },
       { onConflict: "case_id" }
     )
   if (error) {
@@ -105,7 +137,10 @@ export async function completeIntake(
     console.error("[intake] completeIntake validation failed:", parsed.error)
     return { error: parsed.error ?? "Invalid intake data", blockedEligibility: false, guard: EMPTY_GUARD }
   }
-  const answers = parsed.answers
+  const answers = withCanonicalApplicationType(
+    parsed.answers,
+    kase.application_type as ApplicationType | null
+  )
 
   const gate = eligibilityGate(answers)
   if (gate.blocked) {
@@ -135,6 +170,7 @@ export async function completeIntake(
   const issues = completionIssues(answers, {
     isRenewal: !!kase.is_renewal,
     licenseTrack: kase.license_track ?? undefined,
+    applicationType: kase.application_type as ApplicationType | null,
   })
   if (issues.length > 0) {
     const supabase = await createClient()

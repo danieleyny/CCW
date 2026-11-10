@@ -50,6 +50,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import {
+  APPLICATION_TYPE_LABELS,
+  applicationTypeFromLegacy,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 interface Disclosure {
   id: string
@@ -86,6 +92,7 @@ export function IntakeWizard({
   aiEnabled = false,
   applicant,
   licenseTrack = null,
+  applicationType = null,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -99,6 +106,8 @@ export function IntakeWizard({
   /** The case's derived license_track — so a sponsored Carry Guard case is never
    *  labelled "Concealed carry" and its track can't be re-picked here (P1.2). */
   licenseTrack?: string | null
+  /** Canonical NYPD application category selected before this interview. */
+  applicationType?: ApplicationType | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
@@ -107,6 +116,11 @@ export function IntakeWizard({
   const [generating, setGenerating] = useState(false)
   const [eligReasons, setEligReasons] = useState<string[] | null>(null)
   const [attorneyReview, setAttorneyReview] = useState(false)
+  const intakeSteps = isPremisesApplication(applicationType ?? applicationTypeFromLegacy(a))
+    ? INTAKE_STEPS.map((item) =>
+        item.n === 5 ? { ...item, label: "History & references" } : item
+      )
+    : INTAKE_STEPS
   // F5 — a completed applicant re-opening their answers to review/edit. Saving a
   // step is non-destructive; only finishing (generate → completeIntake) rebuilds.
   const [editing, setEditing] = useState(false)
@@ -131,7 +145,7 @@ export function IntakeWizard({
     // Step 3 — the safeguard person cannot be the applicant. Block Next while it conflicts.
     if (n === 3) return safeguardSelfConflicts(a, applicant).map(selfDesignationMessage)
     if (n === 4) return disclosureStepIssues(a)
-    if (n === 5) return historyStepIssues(a, { isRenewal })
+    if (n === 5) return historyStepIssues(a, { isRenewal, applicationType })
     return []
   }
 
@@ -361,7 +375,7 @@ export function IntakeWizard({
   // ── Wizard steps ───────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-      <StepHeader step={step} onJump={goToStep} />
+      <StepHeader step={step} steps={intakeSteps} onJump={goToStep} />
 
       <div className="space-y-5 pt-4">
         {editing && (
@@ -381,7 +395,7 @@ export function IntakeWizard({
 
         <div className="rounded-lg border bg-card p-5">
           {step === 1 && (
-            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} />
+            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} applicationType={applicationType} />
           )}
           {step === 2 && <StepIdentity a={a} patch={patch} />}
           {step === 3 && <StepHousehold a={a} patch={patch} applicant={applicant} />}
@@ -389,7 +403,7 @@ export function IntakeWizard({
             <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
           )}
           {step === 5 && (
-            <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} />
+            <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} applicationType={applicationType} />
           )}
           {step === 6 && <StepReview a={a} />}
         </div>
@@ -441,7 +455,7 @@ export function IntakeWizard({
             <Button onClick={next} disabled={saving} className="h-[52px] flex-1">
               {saving ? "Saving…" : (
                 <>
-                  Next: {INTAKE_STEPS[step]?.label} <ArrowRight className="size-4" />
+                  Next: {intakeSteps[step]?.label} <ArrowRight className="size-4" />
                 </>
               )}
             </Button>
@@ -497,9 +511,19 @@ function ChoosePathCta() {
  * the original labeled chip rail, unchanged. The <ol> carries the meaning for a
  * screen reader; the segments are aria-hidden decoration.
  */
-function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => void }) {
+type IntakeStep = { n: number; key: string; label: string }
+
+function StepHeader({
+  step,
+  steps,
+  onJump,
+}: {
+  step: number
+  steps: readonly IntakeStep[]
+  onJump: (n: number) => void
+}) {
   const [open, setOpen] = useState(false)
-  const current = INTAKE_STEPS[step - 1]
+  const current = steps[step - 1]
 
   return (
     <>
@@ -527,7 +551,7 @@ function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => voi
         </div>
         <div className="mt-0.5 font-display text-[17px] font-semibold tracking-tight">{current?.label}</div>
         <div aria-hidden className="mt-2 flex gap-1">
-          {INTAKE_STEPS.map((s) => (
+          {steps.map((s) => (
             <span
               key={s.n}
               className={cn(
@@ -545,7 +569,7 @@ function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => voi
 
       {/* DESKTOP — the labeled chip rail, unchanged. */}
       <ol className="hidden flex-wrap gap-1.5 text-xs sm:flex" aria-label="Intake progress">
-        {INTAKE_STEPS.map((s) => (
+        {steps.map((s) => (
           <li
             key={s.n}
             aria-current={s.n === step ? "step" : undefined}
@@ -571,7 +595,7 @@ function StepHeader({ step, onJump }: { step: number; onJump: (n: number) => voi
             <SheetTitle className="engraved-sm text-left text-text-mid">All steps</SheetTitle>
           </SheetHeader>
           <ol className="px-3 pb-6" aria-label="Intake steps">
-            {INTAKE_STEPS.map((s) => {
+            {steps.map((s) => {
               const done = s.n < step
               const cur = s.n === step
               const future = s.n > step
@@ -725,7 +749,8 @@ function StepEligibility({
   reasons,
   attempted,
   licenseTrack,
-}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null }) {
+  applicationType,
+}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null; applicationType: ApplicationType | null }) {
   // Red exactly when (and only when) eligibilityStepIssues blocks on it.
   const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
   const residenceBad = attempted && !a.residence
@@ -737,6 +762,12 @@ function StepEligibility({
     licenseTrack === "carry_guard" ||
     licenseTrack === "special_carry_guard" ||
     licenseTrack === "sponsored_unresolved"
+  const selectedType = applicationType ?? applicationTypeFromLegacy(a)
+  const fixedResidence = selectedType
+    ? selectedType === "special_carry" || selectedType === "special_carry_guard"
+      ? "non_resident"
+      : "nyc"
+    : null
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Eligibility pre-screen</h2>
@@ -745,6 +776,13 @@ function StepEligibility({
           <DateOfBirthField value={a.dob ?? ""} onChange={(dob) => patch({ dob })} invalid={dobBad} />
         </Field>
         <Field label="Residence" required>
+          {fixedResidence ? (
+            <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>
+              {fixedResidence === "non_resident"
+                ? "Outside NYC with a NY county carry licence"
+                : "New York City resident"}
+            </div>
+          ) : (
           <select
             aria-label="Residence"
             value={a.residence ?? ""}
@@ -762,6 +800,7 @@ function StepEligibility({
             <option value="nyc">NYC resident / place of business</option>
             <option value="non_resident">Outside NYC with a NY county carry licence (Special Carry)</option>
           </select>
+          )}
         </Field>
       </div>
       {isGuardTrack ? (
@@ -771,12 +810,15 @@ function StepEligibility({
         >
           <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Carry Guard</div>
         </Field>
-      ) : a.residence === "non_resident" ? (
+      ) : selectedType ? (
         <Field
           label="License type"
-          hint="Special Carry extends a valid New York county carry licence into New York City."
+          hint="You selected this before intake so the checklist and questions stay on one legal path."
         >
-          <div className={cn(SELECT_CLASS, "flex items-center bg-surface-2/40 text-text-mid")}>Special Carry</div>
+          <div className={cn(SELECT_CLASS, "flex items-center justify-between bg-surface-2/40 text-text-mid")}>
+            <span>{APPLICATION_TYPE_LABELS[selectedType]}</span>
+            <Link href="/portal/license-path" className="text-xs text-brass underline underline-offset-4">Change</Link>
+          </div>
         </Field>
       ) : (
         <Field
@@ -1419,10 +1461,13 @@ function StepHistory({
   patch,
   attempted,
   isRenewal,
-}: StepProps & { attempted: boolean; isRenewal: boolean }) {
+  applicationType,
+}: StepProps & { attempted: boolean; isRenewal: boolean; applicationType: ApplicationType | null }) {
   const refs = a.references ?? []
   // Track-aware, same source as historyStepIssues: 4 carry / 2 premises / 0 renewal.
-  const refsNeeded = requiredReferences(a, { isRenewal })
+  const selectedType = applicationType ?? applicationTypeFromLegacy(a)
+  const premisesApplication = isPremisesApplication(selectedType)
+  const refsNeeded = requiredReferences(a, { isRenewal, applicationType: selectedType })
   const social: SocialAccount[] = a.socialAccounts ?? []
   const resHist = a.residenceHistory ?? []
   const empHist = a.employmentHistory ?? []
@@ -1442,7 +1487,7 @@ function StepHistory({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold">Carry-specific &amp; history</h2>
+      <h2 className="text-lg font-semibold">{premisesApplication ? "History & references" : "Carry-specific & history"}</h2>
 
       {/* Five-year residence + employment history (form Q29) */}
       <div className="space-y-2">
@@ -1579,7 +1624,9 @@ function StepHistory({
         ))}
       </div>
 
-      {/* Training */}
+      {/* Training is carry-only. Premise Residence applicants should never be
+          asked for a course that is not part of their selected path. */}
+      {!premisesApplication && (
       <div className="space-y-3">
         <Field
           label="Firearms-safety training (16hr classroom + 2hr live-fire)"
@@ -1627,6 +1674,7 @@ function StepHistory({
           </p>
         )}
       </div>
+      )}
 
       {/* References — optional at intake */}
       <div className="space-y-2">
@@ -1673,7 +1721,9 @@ function StepHistory({
         </Button>
       </div>
 
-      {/* Social media */}
+      {/* Preserve historical carry intake behavior while keeping the new
+          Premise Residence path limited to its own relevant information. */}
+      {!premisesApplication && (
       <div className="space-y-2">
         <Label className="text-xs">Social-media accounts (last 3 years)</Label>
         <Hint>
@@ -1722,6 +1772,7 @@ function StepHistory({
           <span className="text-[11px] text-text-low">No public accounts? Leave this empty.</span>
         </div>
       </div>
+      )}
 
       {/* Conditional extras */}
       <div className="space-y-2 rounded-md border border-hairline p-3">
@@ -1758,6 +1809,7 @@ function StepReview({ a }: { a: WizardAnswers }) {
         narratives) are added automatically.
       </p>
       <ul className="grid gap-1 text-sm sm:grid-cols-2">
+        <li>Application: <b>{APPLICATION_TYPE_LABELS[applicationTypeFromLegacy(a) ?? "concealed_carry"]}</b></li>
         <li>Residence: <b>{a.residence === "non_resident" ? "Special Carry" : "NYC"}</b></li>
         <li>Cohabitants: <b>{counts.cohabitants}</b></li>
         <li>Arrests / summonses: <b>{counts.arrests}</b></li>

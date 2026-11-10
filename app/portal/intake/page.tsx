@@ -6,6 +6,12 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 import { ensureIntakeSession } from "./actions"
 import { IntakeWizard } from "@/components/portal/intake/intake-wizard"
 import { AI_ENABLED } from "@/lib/ai"
+import { redirect } from "next/navigation"
+import {
+  applicationTypeToLegacyLicenseType,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 export const metadata = { title: "Application intake" }
 
@@ -19,21 +25,24 @@ export default async function IntakePage() {
     )
   }
 
-  const session = await ensureIntakeSession(myCase.id)
-  const completed = !!session.completed_at
-
   // A sponsored (company-referred) applicant completes their OWN intake — the sponsor
   // never supplies the applicant's identity or disclosures. Show a clear first-run
   // prompt explaining why the interview comes first.
-  let sponsorName: string | null = null
-  if (!completed) {
-    const { data: sp } = await createAdminClient()
+  const admin = createAdminClient()
+  const { data: sp } = await admin
       .from("case_sponsorships")
       .select("sponsor:sponsors(legal_name)")
       .eq("case_id", myCase.id)
       .is("revoked_at", null)
       .limit(1)
       .maybeSingle()
+  if (!myCase.application_type && !sp) redirect("/portal/license-path")
+
+  const session = await ensureIntakeSession(myCase.id)
+  const completed = !!session.completed_at
+
+  let sponsorName: string | null = null
+  if (!completed) {
     sponsorName = (sp?.sponsor as unknown as { legal_name?: string } | null)?.legal_name ?? null
     if (sp && !sponsorName) sponsorName = "your sponsoring company"
   }
@@ -53,8 +62,10 @@ export default async function IntakePage() {
     const prefill: WizardAnswers = {}
     if (quiz.location === "non_resident") prefill.residence = "non_resident"
     else if (quiz.location) prefill.residence = "nyc"
-    if (quiz.training === "done") prefill.trainingStatus = "completed"
-    else if (quiz.training) prefill.trainingStatus = "planned"
+    if (!isPremisesApplication(myCase.application_type as ApplicationType | null)) {
+      if (quiz.training === "done") prefill.trainingStatus = "completed"
+      else if (quiz.training) prefill.trainingStatus = "planned"
+    }
     initialAnswers = prefill
   }
   // ZIP already exists on the applicant record from onboarding. Carry it into
@@ -63,7 +74,26 @@ export default async function IntakePage() {
   // column the only possible source forever.
   initialAnswers = {
     ...initialAnswers,
+    ...(myCase.application_type
+      ? {
+          applicationType: myCase.application_type as ApplicationType,
+          licenseType: applicationTypeToLegacyLicenseType(myCase.application_type as ApplicationType),
+        }
+      : {}),
     legalZip: initialAnswers.legalZip ?? myCase.client.zip ?? undefined,
+  }
+  if (isPremisesApplication(myCase.application_type as ApplicationType | null)) {
+    initialAnswers = {
+      ...initialAnswers,
+      residence: "nyc",
+      trainingStatus: undefined,
+      trainingInstructor: undefined,
+      trainingDate: undefined,
+    }
+  } else if (myCase.application_type === "special_carry") {
+    initialAnswers = { ...initialAnswers, residence: "non_resident", licenseType: "carry" }
+  } else if (myCase.application_type === "concealed_carry") {
+    initialAnswers = { ...initialAnswers, residence: "nyc", licenseType: "carry" }
   }
 
   let disclosures: { id: string; type: string; narrative: string; question_no: number | null }[] = []
@@ -121,6 +151,7 @@ export default async function IntakePage() {
         aiEnabled={AI_ENABLED}
         applicant={applicant}
         licenseTrack={(myCase.license_track as string | null) ?? null}
+        applicationType={(myCase.application_type as ApplicationType | null) ?? null}
       />
     </div>
   )
