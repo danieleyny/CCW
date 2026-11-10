@@ -7,6 +7,7 @@ import type { EnrollResult } from "@/app/portal/enroll/actions"
 import type { ServicePackage } from "@/lib/packages"
 import { AccessCodeField } from "@/components/portal/access-code-field"
 import { Button } from "@/components/ui/button"
+import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
 
 /**
  * CONCIERGE Phase 1 — the fork. Two premium cards, one CTA each. Copy is honest
@@ -57,6 +58,7 @@ export function ChoosePathCards({
   alreadyMode,
   staffProvisioned = false,
   codesEnabled = false,
+  applicationType,
 }: {
   packages: ServicePackage[]
   /** If the applicant already chose but hasn't paid, highlight that card. */
@@ -65,6 +67,7 @@ export function ChoosePathCards({
   staffProvisioned?: boolean
   /** ACCESS CODES — whether to show the "Have an access code?" field. */
   codesEnabled?: boolean
+  applicationType: ApplicationType
 }) {
   // Only render the two real fork options, in a deliberate order.
   const order: PathId[] = ["self_guided", "full_concierge"]
@@ -84,6 +87,7 @@ export function ChoosePathCards({
           }
           staffProvisioned={staffProvisioned}
           codesEnabled={codesEnabled}
+          applicationType={applicationType}
         />
       ))}
     </div>
@@ -95,15 +99,22 @@ function PathCard({
   selected,
   staffProvisioned,
   codesEnabled,
+  applicationType,
 }: {
   pkg: ServicePackage
   selected: boolean
   staffProvisioned: boolean
   codesEnabled: boolean
+  applicationType: ApplicationType
 }) {
   const [state, action, pending] = useActionState<EnrollResult, FormData>(choosePath, {})
   const n = NARRATIVE[pkg.key as PathId]
   const concierge = pkg.key === "full_concierge"
+  const premiseResidence = isPremiseResidence(applicationType)
+  const applicantTasks =
+    premiseResidence && pkg.key === "self_guided"
+      ? ["Gather your own documents", "Coordinate your two references", "File your own application"]
+      : n.you
 
   return (
     <div
@@ -131,7 +142,7 @@ function PathCard({
         <div>
           <dt className="engraved mb-2 text-text-low">What you do</dt>
           <ul className="space-y-1.5">
-            {n.you.map((li) => (
+            {applicantTasks.map((li) => (
               <li key={li} className="flex gap-2 text-text-mid">
                 <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-text-low" />
                 {li}

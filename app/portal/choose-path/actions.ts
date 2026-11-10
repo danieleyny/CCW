@@ -38,6 +38,7 @@ export async function choosePath(_prev: EnrollResult, formData: FormData): Promi
 
   const myCase = await getMyCase()
   if (!myCase) return { error: "Your case isn't set up yet." }
+  if (!myCase.application_type) redirect("/portal/license-path")
 
   const serviceMode = packageKey === "full_concierge" ? "concierge" : "self_guided"
 
@@ -92,6 +93,7 @@ export async function redeemAccessCode(_prev: RedeemResult, formData: FormData):
 
   const myCase = await getMyCase()
   if (!myCase) return { error: "Your case isn't set up yet." }
+  if (!myCase.application_type) redirect("/portal/license-path")
 
   // Rate limit FIRST, on both IP and case — IP alone rotates, case alone multiplies.
   const ip = clientIpFrom(await headers())

@@ -26,6 +26,7 @@ import { deriveLadder, hasCompletingEvidence } from "@/lib/requirements/ladder"
 import { requiredReferences } from "@/lib/intake/schema"
 import { cohabitantState } from "@/lib/cohabitants/process"
 import { resolveFacts } from "@/lib/facts/resolve"
+import type { ApplicationType } from "@/lib/application-types"
 
 type DB = SupabaseClient<Database>
 
@@ -285,6 +286,7 @@ export async function loadRequirementView(db: DB, myCase: MyCase): Promise<Requi
       required: requiredReferences(intakeAnswers, {
         isRenewal: kase?.is_renewal ?? false,
         licenseTrack: (kase?.license_track as "carry_guard" | "special_carry_guard" | undefined) ?? undefined,
+        applicationType: myCase.application_type as ApplicationType | null,
       }),
       people,
       invitedCount: people.filter((p) => p.state !== "not_invited").length,

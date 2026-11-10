@@ -16,6 +16,11 @@ import { backfillCaseFacts } from "@/lib/facts/resolve"
 import { syncCohabitants, syncReferences } from "@/lib/requirements/roster"
 import { applicablePortalDisclosures } from "./schema"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
+import {
+  applicationTypeFromLegacy,
+  applicationTypeNeedsCarryTraining,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 type DB = SupabaseClient<Database>
 
@@ -157,14 +162,21 @@ export async function processIntake(
 
   // ── Generate case_requirements (conditional rules fire here) ───────────────
   // V3-P1 — renewal comes from the case, not the wizard.
-  const { data: kase } = await admin.from("cases").select("is_renewal, client_id").eq("id", caseId).maybeSingle()
+  const { data: kase } = await admin
+    .from("cases")
+    .select("is_renewal, client_id, application_type")
+    .eq("id", caseId)
+    .maybeSingle()
   const isRenewal = !!kase?.is_renewal
 
   // A4a — record the applicant's track on the client so every admin display and
   // the license-type logic reflects the path they actually chose in intake
   // (previously stuck at the signup default even for premises / retired-LEO).
   if (kase?.client_id) {
-    await admin.from("clients").update({ track: trackFromAnswers(answers, jurisdictionKey) }).eq("id", kase.client_id)
+    await admin
+      .from("clients")
+      .update({ track: trackFromAnswers(answers, jurisdictionKey, kase.application_type) })
+      .eq("id", kase.client_id)
   }
 
   // ── Sponsored armed-guard (Carry Guard) track — DERIVED, never typed ───────
@@ -182,7 +194,12 @@ export async function processIntake(
   let armed: ArmedTrackResult | null = null
   if (isSponsored) {
     armed = resolveArmedTrack(answers)
-    await admin.from("cases").update({ license_track: armed.track }).eq("id", caseId)
+    const sponsoredApplicationType =
+      armed.track === "carry_guard" || armed.track === "special_carry_guard" ? armed.track : null
+    await admin
+      .from("cases")
+      .update({ license_track: armed.track, application_type: sponsoredApplicationType })
+      .eq("id", caseId)
   }
 
   let result: { applicable: number }
@@ -234,7 +251,13 @@ export async function processIntake(
   }
 
   // ── V3-P1: training is a decaying asset (≤6 months before submission) ──────
-  if (answers.trainingStatus === "completed" && answers.trainingDate) {
+  const applicationType =
+    (kase?.application_type as ApplicationType | null | undefined) ?? applicationTypeFromLegacy(answers)
+  if (
+    applicationTypeNeedsCarryTraining(applicationType) &&
+    answers.trainingStatus === "completed" &&
+    answers.trainingDate
+  ) {
     const completed = new Date(`${answers.trainingDate}T00:00:00Z`)
     const expires = new Date(completed)
     expires.setUTCMonth(expires.getUTCMonth() + 6)
@@ -319,9 +342,17 @@ export async function processIntake(
 type ClientTrack = Database["public"]["Enums"]["client_track"]
 
 /** Map the interview answers to the applicant's client track (display + logic). */
-function trackFromAnswers(a: WizardAnswers, jurisdictionKey: "nyc" | "special_carry"): ClientTrack {
+function trackFromAnswers(
+  a: WizardAnswers,
+  jurisdictionKey: "nyc" | "special_carry",
+  applicationType?: ApplicationType | null
+): ClientTrack {
   if (a.isRetiredLeo) return "retired_leo"
-  if (a.licenseType === "premises") return "premises_business"
+  const category = applicationType ?? applicationTypeFromLegacy(a)
+  if (category === "premise_business") return "premises_business"
+  // Premise Residence is an NYC resident audience. Its legal category lives on
+  // cases.application_type, not in the legacy client_track enum.
+  if (category === "premise_residence") return "resident"
   if (jurisdictionKey === "special_carry" || a.residence === "non_resident") return "non_resident"
   return "resident"
 }

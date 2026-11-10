@@ -91,11 +91,11 @@ describe("sponsor three-state (R3) + armed track", () => {
 })
 
 describe("nav bug — /portal/details is reachable during onboarding (3E)", () => {
-  const brandNew = { serviceMode: null, stage: "lead" as const, intakeCompleted: false, hasAttorneyReview: false }
+  const brandNew = { serviceMode: null, applicationType: null, stage: "lead" as const, intakeCompleted: false, hasAttorneyReview: false }
   it("does NOT bounce /portal/details to intake for a brand-new applicant", () => {
     expect(decideOnboardingRedirect({ pathname: "/portal/details", ...brandNew })).toBeNull()
   })
   it("still bounces a non-exempt page (regression guard)", () => {
-    expect(decideOnboardingRedirect({ pathname: "/portal/checklist", ...brandNew })).toBe("/portal/choose-path")
+    expect(decideOnboardingRedirect({ pathname: "/portal/checklist", ...brandNew })).toBe("/portal/license-path")
   })
 })

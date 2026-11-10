@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { X, GraduationCap, ClipboardList, Users, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { applicationTypeNeedsCarryTraining, type ApplicationType } from "@/lib/application-types"
 
 const KEY = "carry_welcome_dismissed"
 const noopSubscribe = () => () => {}
@@ -24,11 +25,13 @@ export function WelcomeCard({
   firstName,
   trainingHandled = false,
   intakeDone = false,
+  applicationType = null,
 }: {
   firstName: string
   /** true once an instructor is chosen or a session is booked */
   trainingHandled?: boolean
   intakeDone?: boolean
+  applicationType?: ApplicationType | null
 }) {
   // localStorage read via useSyncExternalStore (server snapshot: hidden) — the
   // sanctioned pattern; no setState inside an effect.
@@ -45,6 +48,8 @@ export function WelcomeCard({
     setHidden(true)
   }
 
+  const trainingRequired = applicationTypeNeedsCarryTraining(applicationType)
+
   return (
     <div className="relative rounded-lg border border-brass/40 bg-brass/8 p-5">
       <button
@@ -57,10 +62,12 @@ export function WelcomeCard({
       </button>
       <h2 className="font-display text-lg font-semibold">Welcome, {firstName} — here&apos;s the whole game.</h2>
       <p className="mt-1 text-sm text-text-mid">
-        A NYC carry application typically runs <b>~6 months</b>. It isn&apos;t a form — it&apos;s an
-        investigation you assemble evidence for. Three things, started in parallel, keep you on schedule:
+        {!trainingRequired
+          ? "Your premises-licence path is separated from concealed carry. We’ll organize the identity, location, household, disclosure and reference work that applies to this application."
+          : "A NYC carry application isn’t just a form — it’s an investigation you assemble evidence for. Three things, started in parallel, keep you organized:"}
       </p>
       <ol className="mt-3 space-y-2 text-sm">
+        {trainingRequired && (
         <li className="flex gap-2">
           {trainingHandled ? (
             <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />
@@ -89,6 +96,7 @@ export function WelcomeCard({
             )}
           </span>
         </li>
+        )}
         <li className="flex gap-2">
           {intakeDone ? (
             <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />

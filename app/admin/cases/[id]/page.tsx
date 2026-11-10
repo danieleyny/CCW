@@ -56,6 +56,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
 
 export default async function CaseFilePage({
   params,
@@ -411,6 +412,11 @@ export default async function CaseFilePage({
                 {kase.is_renewal && (
                   <span className="rounded bg-brass/15 px-2 py-0.5 text-xs font-medium text-brass-bright">Renewal</span>
                 )}
+                <span className="rounded border border-hairline bg-surface-2 px-2 py-0.5 text-xs font-medium text-text-mid">
+                  {kase.application_type
+                    ? APPLICATION_TYPE_LABELS[kase.application_type as ApplicationType]
+                    : "Application type unclassified"}
+                </span>
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
                 {client.email ?? "no email"} · {client.phone ?? "no phone"} · {client.borough ?? "—"} ·{" "}

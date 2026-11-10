@@ -24,7 +24,11 @@ const RESIDENCE: Record<string, string> = {
   nyc: "NYC resident / place of business",
   non_resident: "Non-resident (Special Carry)",
 }
-const LICENSE: Record<string, string> = { carry: "Concealed carry", premises: "Premises — business" }
+const LICENSE: Record<string, string> = {
+  carry: "Concealed carry",
+  premises: "Premises — business",
+  premise_residence: "Premise Residence",
+}
 const CITIZENSHIP: Record<string, string> = { citizen: "U.S. citizen", lpr: "Lawful permanent resident" }
 const TRAINING: Record<string, string> = { completed: "Completed", planned: "Not yet — planned" }
 

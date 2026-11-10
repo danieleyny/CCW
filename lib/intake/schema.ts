@@ -17,6 +17,13 @@
 import { z } from "zod"
 import { ageFromDob, type WizardAnswers } from "./answers"
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
+import {
+  APPLICATION_TYPES,
+  applicationTypeFromLegacy,
+  applicationTypeNeedsCarryTraining,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 const short = z.string().max(200)
 const narrative = z.string().max(8000)
@@ -105,7 +112,8 @@ export const wizardAnswersSchema = z
     // Step 1 — eligibility pre-screen
     dob: isoDay.optional(),
     residence: z.enum(["nyc", "non_resident"]).optional(),
-    licenseType: z.enum(["carry", "premises"]).optional(),
+    applicationType: z.enum(APPLICATION_TYPES).optional(),
+    licenseType: z.enum(["carry", "premises", "premise_residence"]).optional(),
     nycCarryIntent: z.enum(["personal", "armed_assignment"]).optional(),
     borough: z.string().max(40).optional(),
     prohibitorFelony: z.boolean().optional(),
@@ -198,6 +206,8 @@ export interface CompletionOpts {
   isRenewal?: boolean
   /** From cases.license_track — armed-guard (Carry Guard) needs the base two only. */
   licenseTrack?: "concealed_carry" | "carry_guard" | "special_carry_guard" | "sponsored_unresolved"
+  /** Canonical case category; wins over historical wizard fields. */
+  applicationType?: ApplicationType | null
 }
 
 /**
@@ -208,7 +218,8 @@ export interface CompletionOpts {
 export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}): number {
   if (opts.isRenewal) return 0
   if (opts.licenseTrack === "carry_guard" || opts.licenseTrack === "special_carry_guard") return 2
-  if (a.licenseType === "premises") return 2
+  const applicationType = opts.applicationType ?? applicationTypeFromLegacy(a) ?? "concealed_carry"
+  if (isPremisesApplication(applicationType)) return 2
   return REQUIRED_REFERENCES
 }
 
@@ -223,7 +234,6 @@ export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}):
  */
 export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   const issues: string[] = []
-  void opts // reference count is no longer enforced at intake; kept for signature parity
 
   for (const r of a.references ?? []) {
     if (r.email?.trim() && !EMAIL_RE.test(r.email.trim())) {
@@ -232,8 +242,10 @@ export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): 
     }
   }
 
-  // Training details only make sense when marked completed.
-  if (a.trainingStatus === "completed" && !a.trainingDate) {
+  const applicationType = opts.applicationType ?? applicationTypeFromLegacy(a) ?? "concealed_carry"
+  // Training details only make sense for a category that requires carry
+  // training. Premise Residence never fails intake on a carry-course date.
+  if (applicationTypeNeedsCarryTraining(applicationType) && a.trainingStatus === "completed" && !a.trainingDate) {
     issues.push("Add your training completion date, or set training to “not yet”.")
   }
 

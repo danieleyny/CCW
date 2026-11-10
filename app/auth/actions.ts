@@ -135,9 +135,9 @@ export async function signUp(
   // keeps a brand-new applicant from wandering a half-empty portal before it's
   // done. If confirmation is ever turned back on, there's no session yet, so
   // send them to sign in (they'll confirm via the email link first).
-  // The first thing a new applicant sees is the path fork — Self-Guided (→ intake)
-  // or Full Concierge (→ we handle intake for them). See resolveOnboardingRedirect.
-  if (data.session) redirect("/portal/choose-path")
+  // The first thing a new applicant sees is the licence-category decision.
+  // Service level comes next, after the system knows which checklist is truthful.
+  if (data.session) redirect("/portal/license-path")
   redirect("/auth/login")
 }
 

@@ -11,6 +11,7 @@ import { getMyCase } from "@/lib/portal"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { createBookingDepositCheckout, platformFeeCents } from "@/lib/stripe/connect"
 import type { Database } from "@/lib/supabase/types"
+import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
 
 type OfferType = Database["public"]["Enums"]["offer_type"]
 type Jurisdiction = Database["public"]["Enums"]["jurisdiction_key"]
@@ -20,11 +21,14 @@ export async function createOffer(type: OfferType): Promise<{ matched: number }>
   const supabase = await createClient()
   const { data: kase } = await supabase
     .from("cases")
-    .select("id, clients(borough, zip, track)")
+    .select("id, application_type, clients(borough, zip, track)")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
   if (!kase) throw new Error("No case found")
+  if (type === "training" && isPremiseResidence(kase.application_type as ApplicationType | null)) {
+    throw new Error("Training offers are not part of a Premise Residence application.")
+  }
 
   const client = kase.clients as unknown as {
     borough: string | null
@@ -94,6 +98,11 @@ export async function chooseInstructor(
   const offerId = String(formData.get("offerId") ?? "")
   const instructorId = String(formData.get("instructorId") ?? "")
   if (!offerId || !instructorId) return { error: "Missing selection" }
+
+  const myCase = await getMyCase()
+  if (isPremiseResidence(myCase?.application_type as ApplicationType | null)) {
+    return { error: "Training is not part of your Premise Residence application path." }
+  }
 
   const supabase = await createClient()
   const { error } = await supabase.rpc("choose_instructor", {
@@ -176,11 +185,14 @@ export async function createBooking(slotId: string): Promise<{ error?: string; o
 
   const { data: kase } = await supabase
     .from("cases")
-    .select("id, client_id")
+    .select("id, client_id, application_type")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
   if (!kase) return { error: "No case found" }
+  if (slot.type !== "consult" && isPremiseResidence(kase.application_type as ApplicationType | null)) {
+    return { error: "Training is not part of your Premise Residence application path." }
+  }
 
   const { data: eng } = await supabase
     .from("engagements")
@@ -236,6 +248,14 @@ export async function payBookingDeposit(
   if (!b) return { error: "Booking not found" }
 
   const admin = createAdminClient()
+  const { data: bookingCase } = await admin
+    .from("cases")
+    .select("application_type")
+    .eq("id", b.case_id)
+    .maybeSingle()
+  if (isPremiseResidence(bookingCase?.application_type as ApplicationType | null)) {
+    return { error: "Training is not part of your Premise Residence application path." }
+  }
   const { data: instr } = await admin
     .from("instructors")
     .select("stripe_connect_account_id, payouts_enabled, price_18h_cents")

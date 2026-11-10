@@ -29,6 +29,7 @@ const EARLY_STAGES: CaseStageKey[] = ["lead"]
 // are account-data pages that must always be reachable (a new applicant may open
 // "Your details" to enter their facts before, or instead of stepping through, intake).
 const EXEMPT_PREFIXES = [
+  "/portal/license-path",
   "/portal/choose-path",
   "/portal/intake",
   "/portal/details",
@@ -40,6 +41,7 @@ const EXEMPT_PREFIXES = [
 export function decideOnboardingRedirect(input: {
   pathname: string
   serviceMode: string | null
+  applicationType: string | null
   stage: CaseStageKey
   intakeCompleted: boolean
   hasAttorneyReview: boolean
@@ -48,7 +50,7 @@ export function decideOnboardingRedirect(input: {
    *  (the firewall), so "we fill it for you" does not apply. */
   isSponsored?: boolean
 }): string | null {
-  const { pathname, serviceMode, stage, intakeCompleted, hasAttorneyReview, isSponsored } = input
+  const { pathname, serviceMode, applicationType, stage, intakeCompleted, hasAttorneyReview, isSponsored } = input
   if (EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
   // Never trap an attorney-review case.
   if (hasAttorneyReview) return null
@@ -56,11 +58,14 @@ export function decideOnboardingRedirect(input: {
   // stage — the sponsor cannot supply the applicant's identity or disclosures. Nudge
   // until intake is complete, then let them through.
   if (isSponsored) return intakeCompleted ? null : "/portal/intake"
+  // Do not yank legacy cases already in motion into a new classification screen.
+  // Staff can classify those deliberately; this gate is only for brand-new work.
+  if (!EARLY_STAGES.includes(stage)) return null
+  // A self-serve applicant must identify the NYPD application category before
+  // choosing how much service they want. Never default this legal decision.
+  if (!applicationType) return "/portal/license-path"
   // Non-sponsored Concierge never does intake — we fill it out for them.
   if (serviceMode === "concierge") return null
-  // Only nudge brand-new cases; anything that's moved on is left alone (this also
-  // keeps legacy pre-fork cases mid-flight from being yanked to the fork).
-  if (!EARLY_STAGES.includes(stage)) return null
   if (intakeCompleted) return null
   // Not yet forked → the fork is the first thing. Self-Guided → intake.
   return serviceMode ? "/portal/intake" : "/portal/choose-path"
@@ -88,7 +93,7 @@ export async function resolveOnboardingRedirect(
   // When NOT sponsored we can still short-circuit cheaply for concierge / advanced
   // cases before touching intake_sessions.
   if (!isSponsored) {
-    if (myCase.service_mode === "concierge") return null
+    if (myCase.service_mode === "concierge" && myCase.application_type) return null
     if (!EARLY_STAGES.includes(myCase.stage as CaseStageKey)) return null
   }
 
@@ -112,6 +117,7 @@ export async function resolveOnboardingRedirect(
   return decideOnboardingRedirect({
     pathname,
     serviceMode: myCase.service_mode ?? null,
+    applicationType: myCase.application_type ?? null,
     stage: myCase.stage as CaseStageKey,
     intakeCompleted: !!session?.completed_at,
     hasAttorneyReview: !!review,
