@@ -1070,6 +1070,9 @@ export type Database = {
       }
       cases: {
         Row: {
+          application_type: Database["public"]["Enums"]["application_type"] | null
+          application_type_selected_at: string | null
+          application_type_selected_by: string | null
           calendly_token: string
           client_id: string
           closed_at: string | null
@@ -1096,6 +1099,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          application_type?: Database["public"]["Enums"]["application_type"] | null
+          application_type_selected_at?: string | null
+          application_type_selected_by?: string | null
           calendly_token?: string
           client_id: string
           closed_at?: string | null
@@ -1122,6 +1128,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          application_type?: Database["public"]["Enums"]["application_type"] | null
+          application_type_selected_at?: string | null
+          application_type_selected_by?: string | null
           calendly_token?: string
           client_id?: string
           closed_at?: string | null
@@ -1148,6 +1157,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cases_application_type_selected_by_fkey"
+            columns: ["application_type_selected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cases_client_id_fkey"
             columns: ["client_id"]
@@ -6033,6 +6049,14 @@ export type Database = {
       }
     }
     Enums: {
+      application_type:
+        | "concealed_carry"
+        | "premise_residence"
+        | "premise_business"
+        | "special_carry"
+        | "carry_guard"
+        | "special_carry_guard"
+        | "retired_leo"
       appointment_type:
         | "consult"
         | "training"
@@ -6330,6 +6354,15 @@ export const Constants = {
   },
   public: {
     Enums: {
+      application_type: [
+        "concealed_carry",
+        "premise_residence",
+        "premise_business",
+        "special_carry",
+        "carry_guard",
+        "special_carry_guard",
+        "retired_leo",
+      ],
       appointment_type: [
         "consult",
         "training",

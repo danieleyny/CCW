@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2, Compass } from "lucide-react"
+import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2, Compass, Users } from "lucide-react"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { ReferralConsentCard } from "@/components/portal/referral-consent-card"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getMyCase, getTrainingState } from "@/lib/portal"
 import {
   stageMeta,
+  stageIndex,
   nextStage,
   type CaseStageKey,
 } from "@/config/stages"
@@ -24,6 +25,12 @@ import { hasPaidPackage } from "@/lib/packages"
 import { computeNextStep } from "@/lib/portal/next-step"
 import { decideConciergeRouting } from "@/lib/portal/concierge-routing"
 import { getMessages } from "@/lib/i18n"
+import {
+  APPLICATION_TYPE_LABELS,
+  applicationTypeNeedsCarryTraining,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 export const metadata = { title: "Your application" }
 
@@ -47,6 +54,9 @@ export default async function PortalHome() {
   const supabase = await createClient()
   const stage = myCase.stage as CaseStageKey
   const next = nextStage(stage)
+  const applicationType = myCase.application_type as ApplicationType | null
+  const premisesApplication = isPremisesApplication(applicationType)
+  const trainingRequired = applicationTypeNeedsCarryTraining(applicationType)
 
   const [{ data: reqs }, { data: training }, { data: payments }, { data: intake }] =
     await Promise.all([
@@ -60,7 +70,9 @@ export default async function PortalHome() {
       supabase.from("intake_sessions").select("completed_at").eq("case_id", myCase.id).maybeSingle(),
     ])
   const intakeDone = !!intake?.completed_at
-  const trainingState = await getTrainingState(myCase.id)
+  const trainingState = !trainingRequired
+    ? { status: "none" as const, interestedCount: 0, instructorName: null, bookingAt: null }
+    : await getTrainingState(myCase.id)
 
   // Phase 10 — the single most important outstanding action, computed from the
   // same requirement view the checklist and documents pages read.
@@ -70,7 +82,9 @@ export default async function PortalHome() {
   // Track-aware subtitle: never call a Carry Guard case "concealed carry".
   const licenseTrack = (myCase.license_track as string | null) ?? null
   const licenseWord =
-    licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
+    premisesApplication
+      ? t.portal.licenseWord.premises
+      : licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
       ? t.portal.licenseWord.armedGuard
       : licenseTrack?.includes("premises")
         ? t.portal.licenseWord.premises
@@ -143,6 +157,16 @@ export default async function PortalHome() {
   const paidCents = (payments ?? [])
     .filter((p) => p.status === "paid")
     .reduce((s, p) => s + p.amount_cents, 0)
+  const premiseMilestones = [
+    { label: "Intake", complete: intakeDone },
+    { label: "Documents", complete: stageIndex(stage) >= stageIndex("application_assembled") },
+    { label: "Submit", complete: stageIndex(stage) >= stageIndex("filed") },
+    { label: "Decision", complete: stageIndex(stage) >= stageIndex("decision") },
+  ]
+  const premiseReferences = view.referenceProgress
+  const premiseReferenceValue = premiseReferences
+    ? `${premiseReferences.notarizedCount} / ${premiseReferences.required}`
+    : "0 / 2"
 
   return (
     <div className="space-y-6">
@@ -153,6 +177,9 @@ export default async function PortalHome() {
           {myCase.client.full_name.split(" ")[0]}
         </h1>
         <p className="mt-1 text-sm text-text-mid">{portalTagline}</p>
+        {applicationType && (
+          <p className="engraved mt-2 text-brass">{APPLICATION_TYPE_LABELS[applicationType]}</p>
+        )}
       </div>
 
       <SponsorBanner caseId={myCase.id} />
@@ -227,6 +254,7 @@ export default async function PortalHome() {
           firstName={myCase.client.full_name.split(" ")[0]}
           trainingHandled={trainingState.status === "engaged" || trainingState.status === "booked"}
           intakeDone={intakeDone}
+          applicationType={applicationType}
         />
       )}
 
@@ -310,7 +338,7 @@ export default async function PortalHome() {
 
       {/* Marketplace entry — reflects where the applicant is in getting trained,
           so "find an instructor" disappears once they're engaged/booked. */}
-      <Link
+      {trainingRequired && <Link
         href="/portal/marketplace"
         className={
           trainingState.status === "engaged" || trainingState.status === "booked"
@@ -330,7 +358,7 @@ export default async function PortalHome() {
                 : "Find a verified local instructor"}
         </span>
         <ArrowRight className="size-4" />
-      </Link>
+      </Link>}
 
       {/* Prepared documents entry */}
       <Link
@@ -346,28 +374,49 @@ export default async function PortalHome() {
         <CardContent className="p-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <div className="engraved">Current Stage</div>
-              <div className="mt-1 font-display text-xl font-semibold">{stageMeta(stage).label}</div>
+              <div className="engraved">{premisesApplication ? "Application readiness" : "Current Stage"}</div>
+              <div className="mt-1 font-display text-xl font-semibold">
+                {premisesApplication ? `${nextStep.done} of ${nextStep.total} requirements complete` : stageMeta(stage).label}
+              </div>
             </div>
             <StatusBadge status={myCase.status} />
           </div>
-          <ReticleProgress currentStage={stage} />
+          {premisesApplication ? (
+            <div className="mt-5">
+              <div className="h-2 overflow-hidden rounded-full bg-surface-3">
+                <div
+                  className="h-full rounded-full bg-brass transition-[width]"
+                  style={{ width: `${nextStep.total ? (nextStep.done / nextStep.total) * 100 : 0}%` }}
+                />
+              </div>
+              <div className="mt-4 grid grid-cols-4 gap-2 text-center text-[10px] uppercase tracking-wider text-text-low">
+                {premiseMilestones.map((milestone) => (
+                  <div key={milestone.label} className="space-y-1.5">
+                    <span className={`mx-auto block size-2 rounded-full ${milestone.complete ? 'bg-brass' : 'bg-hairline'}`} />
+                    {milestone.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <ReticleProgress currentStage={stage} />
+          )}
           <p className="mt-5 rounded-md border border-brass/25 bg-brass/8 p-3 text-sm text-brass-bright">
             <span className="font-mono text-[10px] uppercase tracking-wider text-brass">Next //</span>{" "}
-            {next ? stageMeta(next).clientHint : stageMeta(stage).clientHint}
+            {premisesApplication ? nextStep.detail || nextStep.title : next ? stageMeta(next).clientHint : stageMeta(stage).clientHint}
           </p>
         </CardContent>
       </Card>
 
       {/* Full application timeline — plain language + honest ETAs */}
-      <details className="rounded-lg border bg-card">
+      {!premisesApplication && <details className="rounded-lg border bg-card">
         <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">
           Your full application timeline
         </summary>
         <div className="border-t border-hairline p-5">
           <CaseTimeline currentStage={stage} />
         </div>
-      </details>
+      </details>}
 
       {/* HUD quick cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -377,12 +426,16 @@ export default async function PortalHome() {
           value={String(outstanding)}
           label="To-dos"
         />
-        <HudCard
-          icon={CalendarDays}
-          value={nextTraining?.class_date ? formatDate(nextTraining.class_date) : "—"}
-          label="Training"
-          small
-        />
+        {premisesApplication ? (
+          <HudCard href="/portal/people" icon={Users} value={premiseReferenceValue} label="References" />
+        ) : (
+          <HudCard
+            icon={CalendarDays}
+            value={nextTraining?.class_date ? formatDate(nextTraining.class_date) : "—"}
+            label="Training"
+            small
+          />
+        )}
         <HudCard href="/portal/payments" icon={CreditCard} value={money(paidCents)} label="Paid" small />
       </div>
 

@@ -39,7 +39,7 @@ export function buildResourceGroups(fees: Fees): ResourceGroup[] {
       {
         label: "Carry & premises license applications",
         href: "https://www.nyc.gov/site/nypd/services/law-enforcement/handgun-license.page",
-        note: "On Self-Guided you file your own application; with Full Concierge we file it for you.",
+        note: "On every plan you control the NYPD portal account and submit your own application; Full Concierge adds preparation, review, organization, and screen-by-screen guidance.",
         lastVerified: V,
         external: true,
       },

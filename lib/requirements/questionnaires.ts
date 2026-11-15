@@ -121,42 +121,18 @@ const CANDOR_NOTICE =
   "Disclose everything, including anything sealed, dismissed, or nullified — New York's sealing statute (CPL Article 160) does not excuse you from disclosing to the License Division. Leaving something out is treated far more harshly than the underlying event."
 
 /**
- * THE complete PD 643-041 Section B — every question 10 through 28, verbatim. This
- * is the single source the disclosure questionnaire, the PD 643-041A addendum
- * generator, and our internal disclosure summary all read, so they can never drift
- * out of sync or quietly collapse a question.
- *
- * Q10–22 reuse the intake questionnaire's verbatim text (already collected at
- * intake as `answers.questionnaire`). Q23–28 have dedicated intake flows whose
- * answers prefill them: 23←arrests, 24←ordersOfProtection, 27←domesticIncidents,
- * 28←aliasName. **24, 25 and 26 are THREE separate questions** (against you / by you
- * against household or family / by you against another) — never collapsed. **21 and
- * 22 are separate** (mental illness/treatment vs any disability affecting safe
- * possession). **20 and 20a are separate** — 20 asks about the corporation/partnership
- * (the ENTITY), 20a about any officer, director or partner (the PEOPLE).
- */
-/**
  * The disclosure questionnaire fields, built from the verbatim NYPD ONLINE PORTAL
  * question set (lib/disclosures/portal-questions), whose length is the source of truth
  * for the count. A "Yes" reveals a free-text explanation. Q6 nests under Q5 (only asked if Q5 is yes); Q7
  * carries the verbatim arrest note and a felony/serious-offense sub-question that
  * drives the Certificate of Relief; Q16 is law-enforcement only (leoOnly, hidden
- * unless the case is a LEO applicant); Q17 is a confidentiality REQUEST (no
- * explanation) whose "Yes" spawns the Public Records Exemption form.
+ * unless the case is a LEO applicant). Confidentiality is collected separately in
+ * the Public Records Exemption step.
  */
 function disclosureFields(): Field[] {
   const fields: Field[] = []
   for (const q of PORTAL_DISCLOSURES) {
     if (q.conditionalOnYesOf) continue // nested under its parent (Q6 under Q5)
-    if (q.isConfidentialityRequest) {
-      fields.push({
-        name: `q${q.no}`,
-        label: `${q.no}. ${q.text}`,
-        type: "yesno",
-        help: "A request, not a disclosure. Answering yes means we prepare the New York State Request for Public Records Exemption for you to complete and upload.",
-      })
-      continue
-    }
     const reveal: Field[] = [
       { name: `q${q.no}_explain`, label: "In your own words, what happened?", type: "textarea", required: true, help: q.explainHelp, maxLength: 4000 },
     ]

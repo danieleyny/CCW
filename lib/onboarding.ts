@@ -1,6 +1,5 @@
 import "server-only"
 import type { createAdminClient } from "@/lib/supabase/admin"
-import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -101,8 +100,7 @@ export async function ensureClientCaseForProfile(
     .single()
   if (caseErr || !kase) throw new Error(caseErr?.message ?? "Could not open case")
 
-  // V3-P2.1 — baseline checklist from the versioned registry, day one
-  // (conditional rules refine after intake).
-  await materializeCaseRequirements(admin, kase.id, "nyc", { isCarry: true })
+  // Do not guess a legal category. The applicant chooses an application type
+  // next; only then can the requirements engine materialize a truthful baseline.
   return { caseId: kase.id, clientId }
 }

@@ -128,10 +128,24 @@ async function addDocument(
   upload: boolean,
   reviewNotes?: string
 ) {
-  const doc = await must(
+  const docId = crypto.randomUUID()
+  // Approved demo evidence must be real evidence. Earlier fixtures created
+  // green/approved rows with no storage object, which hid missing uploads in the
+  // same admin surfaces QA is meant to exercise.
+  const shouldUpload = upload || status === "approved"
+  const filename = `${type}.png`
+  const path = `clients/${clientId}/${docId}/${filename}`
+  if (shouldUpload) {
+    const { error } = await db.storage
+      .from("documents")
+      .upload(path, PNG_1x1, { contentType: "image/png", upsert: true })
+    if (error) throw error
+  }
+  await must(
     db
       .from("documents")
       .insert({
+        id: docId,
         case_id: caseId,
         client_id: clientId,
         type,
@@ -139,21 +153,14 @@ async function addDocument(
         reviewer,
         review_notes: reviewNotes ?? null,
         notarized: type === "reference_letter" || type === "cohabitant_affidavit",
+        file_path: shouldUpload ? path : null,
+        file_name: shouldUpload ? filename : null,
       })
       .select("id")
       .single()
       .then((r) => ({ data: r.data, error: r.error })),
     `document ${type}`
   )
-  if (upload) {
-    const filename = `${type}.png`
-    const path = `clients/${clientId}/${doc.id}/${filename}`
-    const { error } = await db.storage
-      .from("documents")
-      .upload(path, PNG_1x1, { contentType: "image/png", upsert: true })
-    if (error) console.error("  upload failed:", error)
-    else await db.from("documents").update({ file_path: path, file_name: filename }).eq("id", doc.id)
-  }
 }
 
 // ── requirements engine (V2) ─────────────────────────────────────────────────

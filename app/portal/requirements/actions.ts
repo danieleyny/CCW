@@ -37,6 +37,7 @@ import {
   SIGNING_CONSENT,
 } from "@/lib/requirements/document-engine"
 import { headers } from "next/headers"
+import { portalTrackForCase } from "@/config/portal-steps"
 
 type Result = { error?: string; ok?: boolean; documentId?: string; needsSignature?: boolean; incomplete?: string[] }
 
@@ -367,12 +368,20 @@ export async function generateRequirementDocument(
       // full assembled application data (facts + intake + disclosures + letter of
       // necessity), not just the requirement's own answers.
       const record = reqCode === "DSC-01" ? (await assembleApplicationValues(admin, actor.caseId))?.values : undefined
+      const { data: trackCase } = reqCode === "DSC-01"
+        ? await admin.from("cases").select("license_track, clients:client_id(track)").eq("id", actor.caseId).maybeSingle()
+        : { data: null }
+      const trackClient = trackCase?.clients as unknown as { track?: string | null } | null
+      const portalTrack = trackCase
+        ? portalTrackForCase({ clientTrack: trackClient?.track, licenseTrack: trackCase.license_track })
+        : undefined
       const doc = await renderRequirementDocument({
         reqCode,
         applicantName: actor.clientName,
         answers,
         caseRef: actor.caseId.slice(0, 8),
         record,
+        portalTrack,
       })
       documentId = await storeGeneratedDocument(admin, {
         caseId: actor.caseId,
@@ -653,6 +662,10 @@ export async function signRequirementDocument(
         signedAt,
         caseRef: myCase.id.slice(0, 8),
         record,
+        portalTrack: portalTrackForCase({
+          clientTrack: myCase.client.track,
+          licenseTrack: myCase.license_track,
+        }),
       })
       signedBytes = doc.bytes
     }

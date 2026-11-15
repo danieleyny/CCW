@@ -45,7 +45,7 @@ const FAQS = [
   },
   {
     q: "Can you file the application for my business?",
-    a: "It depends on your plan: on Self-Guided you file your own application, and with Full Concierge Gun License NYC files it for you. A consulting firm can't represent you before the License Division, though. What we do is prepare the documents, keep the sequence straight, and manage the case so nothing expires while you're waiting on something else.",
+    a: "No. You control the NYPD portal account and submit your own application. Full Concierge prepares the documents, checks the sequence, manages the case, and guides you screen by screen. A consulting firm can't represent you before the License Division.",
   },
   {
     q: "How much does the non-resident track cost?",

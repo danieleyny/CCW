@@ -18,7 +18,7 @@ type DB = SupabaseClient<Database>
  * source won, the same way buildApplicationValues does for Section B.
  */
 export interface ConditionSources {
-  /** Section B answers (q10…q28), DSC-01 preferred, QUE-01 fallback. Null if neither exists. */
+  /** Portal disclosure answers (q1…q16), DSC-01 preferred, QUE-01 fallback. Null if neither exists. */
   disclosures: Record<string, unknown> | null
   /** Rows in the cohabitant roster — the canonical household list. */
   cohabitantCount: number
@@ -73,7 +73,7 @@ export function deriveConditionFlags(
     source.sectionB = "disclosure-store"
     // NYPD ONLINE PORTAL question numbers (lib/disclosures/portal-questions):
     //   q1 alias · q5 armed forces · q7 arrest · q13 OOP against you · q15 domestic
-    //   q7_felony felony/serious-offense conviction · q17 confidentiality request.
+    //   q7_felony felony/serious-offense conviction.
     anyQuestionYes = Object.entries(d!).some(([k, v]) => isSectionBKey(k) && yes(v))
     hasArrestHistory = yes(d!.q7)
     hasOopHistory = yes(d!.q13)

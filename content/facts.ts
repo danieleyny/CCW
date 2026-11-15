@@ -132,7 +132,7 @@ export const FACTS = {
     "https://firearms.troopers.ny.gov/"
   ),
   youFile: f(
-    "How the application is filed depends on your plan: on Self-Guided you file it yourself, and with Full Concierge Gun License NYC files it for you. Either way, a document-preparation service cannot represent you before the License Division — only a New York-licensed attorney may represent an applicant.",
+    "On every plan, you control the NYPD portal account, enter or confirm the information, complete the final acknowledgements, pay, and submit your own application. Full Concierge adds preparation, review, organization, and screen-by-screen guidance. Only a New York-licensed attorney may represent an applicant before the License Division.",
     "NYPD License Division",
     "https://www.nyc.gov/site/nypd/services/law-enforcement/pistol-license.page"
   ),

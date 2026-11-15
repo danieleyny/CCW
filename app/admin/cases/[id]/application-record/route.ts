@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { assembleApplicationRecord } from "@/lib/packet/application-record"
 
-/** Staff/admin: the internal 17-step portal application record (PDF). No SSN in it. */
+/** Staff/admin: the internal, track-aware portal support record (PDF). No SSN in it. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await requireStaff()
   const { id } = await params

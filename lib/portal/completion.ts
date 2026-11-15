@@ -81,7 +81,7 @@ export function computeCompletion(input: {
   for (const section of input.sections) {
     if (section.kind !== "fields" && section.kind !== "questions") continue
     section.fields.forEach((f, idx) => {
-      if (f.notApplicable || f.atFiling) return // excluded from the denominator
+      if (f.notApplicable || f.atFiling || f.attention) return // excluded from the denominator; readiness separately hard-blocks unresolved conflicts
       if (f.value) portalItems.push({ key: `f:${section.no}:${idx}`, label: f.label, state: "done" })
       else if (f.missing) portalItems.push({ key: `f:${section.no}:${idx}`, label: f.label, state: "missing", anchor: `step-${section.no}` })
       // else: an optional blank — excluded, same as the red-glow rule.

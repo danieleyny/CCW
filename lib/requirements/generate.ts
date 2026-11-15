@@ -12,7 +12,12 @@ export type TriggerCond =
   | "carry_not_renewal"
   | "premises_only"
   | "premises_not_renewal"
+  | "premise_residence_only"
+  | "premise_business_only"
+  | "premises_any"
+  | "premises_any_not_renewal"
   | "if_renewal"
+  | "carry_renewal_only"
   | "if_retired_leo"
   | "if_cohabitants"
   | "unless_cohabitants"
@@ -25,6 +30,8 @@ export type TriggerCond =
   | "if_any_q_yes"
   | "if_felony_conviction" // COR-01: portal Q7 felony/serious-offense conviction
   | "if_confidentiality_request" // PBR-01: portal Q17 confidentiality opt-in
+  | "if_out_of_state_resident" // 38 RCNY §5-03(b): outside New York State, not outside NYC
+  | "unless_special_carry" // ELG-02: county-license Special Carry does not require an NYC nexus
   // ── Sponsored armed-guard (Carry Guard) track ──
   // `sponsor_packet` never fires in the generic generator — sponsor-owned rows
   // are seeded by materializeSponsorPacket(), and party='sponsor' rows are
@@ -48,7 +55,10 @@ export type TriggerCond =
  */
 export interface IntakeAnswers {
   isCarry?: boolean
+  /** Legacy aggregate premises flag. Prefer the two explicit flags below. */
   isPremises?: boolean
+  isPremiseResidence?: boolean
+  isPremisesBusiness?: boolean
   isRenewal?: boolean
   isRetiredLeo?: boolean
   hasCohabitants?: boolean
@@ -61,6 +71,8 @@ export interface IntakeAnswers {
   anyQuestionYes?: boolean
   hasFelonyConviction?: boolean // portal Q7 conviction → Certificate of Relief
   wantsConfidentiality?: boolean // portal Q17 → Public Records Exemption
+  isOutOfStateResident?: boolean // actual home state is not NY; Nassau/Suffolk are false
+  isSpecialCarry?: boolean // county-license Special Carry jurisdiction, not ordinary NYC carry
   // Sponsored armed-guard track — derived by resolveArmedTrack(), never typed in.
   // isArmedGuard is only ever true once the track has RESOLVED to carry_guard or
   // special_carry_guard; an unresolved case seeds only the sponsor packet.
@@ -71,19 +83,34 @@ export interface IntakeAnswers {
 
 /** Does a requirement's trigger condition fire for these answers? */
 export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
+  const premiseResidence = !!a.isPremiseResidence
+  // A historical isPremises=true row meant Premise Business. Preserve that
+  // interpretation unless the new residence flag explicitly says otherwise.
+  const premiseBusiness = !!a.isPremisesBusiness || (!!a.isPremises && !premiseResidence)
+  const premisesAny = premiseResidence || premiseBusiness
   switch (trigger) {
     case "always":
       return true
     case "carry_only":
-      return a.isCarry !== false && !a.isPremises // default: carry
+      return a.isCarry !== false && !premisesAny // default: carry
     case "carry_not_renewal":
-      return a.isCarry !== false && !a.isPremises && !a.isRenewal
+      return a.isCarry !== false && !premisesAny && !a.isRenewal
     case "premises_only":
-      return !!a.isPremises
+      return premiseBusiness
     case "premises_not_renewal":
-      return !!a.isPremises && !a.isRenewal
+      return premiseBusiness && !a.isRenewal
+    case "premise_residence_only":
+      return premiseResidence
+    case "premise_business_only":
+      return premiseBusiness
+    case "premises_any":
+      return premisesAny
+    case "premises_any_not_renewal":
+      return premisesAny && !a.isRenewal
     case "if_renewal":
       return !!a.isRenewal
+    case "carry_renewal_only":
+      return !!a.isRenewal && a.isCarry !== false && !premisesAny
     case "if_retired_leo":
       return !!a.isRetiredLeo
     case "if_cohabitants":
@@ -108,15 +135,19 @@ export function requirementApplies(trigger: string, a: IntakeAnswers): boolean {
       return !!a.hasFelonyConviction
     case "if_confidentiality_request":
       return !!a.wantsConfidentiality
+    case "if_out_of_state_resident":
+      return !!a.isOutOfStateResident
+    case "unless_special_carry":
+      return !a.isSpecialCarry
     // ── Sponsored armed-guard track ──
     case "sponsor_packet":
       return false // never generic — seeded by materializeSponsorPacket()
     case "carry_guard_only":
       return !!a.isArmedGuard
     case "carry_not_renewal_not_armed":
-      return a.isCarry !== false && !a.isPremises && !a.isRenewal && !a.isArmedGuard
+      return a.isCarry !== false && !premisesAny && !a.isRenewal && !a.isArmedGuard
     case "two_refs_not_renewal":
-      return (!!a.isPremises || !!a.isArmedGuard) && !a.isRenewal
+      return (premisesAny || !!a.isArmedGuard) && !a.isRenewal
     case "unless_armed":
       return !a.isArmedGuard
     case "if_pre_license_exemption":

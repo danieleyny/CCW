@@ -13,9 +13,9 @@ export const brand = {
   name: "Gun License NYC",
   // NOTE: default entity name — replace with the real registered LLC if different.
   legalName: "Gun License NYC",
-  tagline: "Concealed carry, handled with precision.",
+  tagline: "NYC gun licensing, handled with precision.",
   description:
-    "Gun License NYC is a private licensing concierge that guides New Yorkers through the full NYC concealed-carry-weapon process — training, documents, and filing — from first inquiry to licensed.",
+    "Gun License NYC is a private licensing concierge that helps applicants organize the NYC handgun-license process — from the right application path through documents, review, and applicant-controlled submission.",
   domain: "gunlicensenyc.com",
   url: "https://gunlicensenyc.com",
   contact: {
@@ -32,7 +32,7 @@ export const brand = {
   // firms cannot represent applicants, cannot expedite, and are not endorsed; only
   // a NY-licensed attorney may represent an applicant before the License Division.
   disclaimer:
-    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division; only a New York-licensed attorney may. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. On every plan, you remain the applicant: we prepare, organize, and review your materials, and you review and submit your own application. The NYPD retains full investigative discretion.",
+    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division; only a New York-licensed attorney may. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. On every service plan, you control your NYPD portal account and submit your own application; Full Concierge adds preparation, review, organization, and screen-by-screen guidance. The NYPD retains full investigative discretion.",
   fonts: {
     display: "var(--font-display)",
     sans: "var(--font-sans)",

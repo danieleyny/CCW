@@ -35,13 +35,8 @@ const BANNED: [string, RegExp][] = [
   ["fast-track", /fast[- ]track/i],
   ["insider", /\binsider\b/i],
   ["approval rate", /approval rate/i],
-  // NOTE: "we file" and "on your behalf" were BANNED under the old "the applicant
-  // always files their own application" position. As of 2026-08-03 that reversed
-  // for the Full Concierge tier (Gun License NYC files on the applicant's behalf,
-  // counsel-cleared), so those phrases are now legitimate and no longer banned.
-  // The load-bearing guard is now REPRESENTATION — we still never represent an
-  // applicant — but that's enforced by copy + review, not a regex (every mention
-  // is a negation like "we don't represent you", which a naive ban would misfire on).
+  // Applicant-controlled filing is checked separately below with targeted positive-
+  // claim patterns, so negations such as "we do not file" remain legal copy.
   ["endorsed by", /endorsed by/i],
 
   // ── Implied-outcome claims (added during the retail-voice copy pass) ──
@@ -82,5 +77,27 @@ describe("copy guard — AGENTS.md rule 4 (banned marketing words)", () => {
       }
     }
     expect(hits, `Banned copy found — see AGENTS.md rule 4:\n${hits.join("\n")}`).toEqual([])
+  })
+
+  it("never promises that the consultant enters, files, or submits an NYPD application", () => {
+    const root = process.cwd()
+    const files = [...ROOTS, "lib"].flatMap((dir) => walk(join(root, dir)))
+    const positiveFilingClaims = [
+      /\bwe file it for you\b/i,
+      /\bGun License NYC files it for you\b/i,
+      /\bwe file it with the NYPD\b/i,
+      /\bfiles? (?:it|your application) on (?:your|the applicant's) behalf\b/i,
+      /\bfile and submit my NYPD\b/i,
+      /\bwe may enter and file\b/i,
+      /\bwe file your application\b/i,
+      /\bcan file it for you\b/i,
+      /\bwe\) still file the paperwork\b/i,
+    ]
+    const hits: string[] = []
+    for (const path of files) {
+      const text = readFileSync(path, "utf8")
+      for (const pattern of positiveFilingClaims) if (pattern.test(text)) hits.push(`${relative(root, path)}: ${pattern}`)
+    }
+    expect(hits, `Consultant-filing promise found:\n${hits.join("\n")}`).toEqual([])
   })
 })

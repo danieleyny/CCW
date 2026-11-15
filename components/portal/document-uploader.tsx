@@ -77,6 +77,7 @@ export function DocumentUploader({
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const hasSmart = !!smartKinds && smartKinds.length > 0
   const [kind, setKind] = useState<string>(hasSmart ? smartKinds![0].kind : "")
   const selectedKind = hasSmart ? smartKinds!.find((k) => k.kind === kind) : undefined
@@ -85,6 +86,7 @@ export function DocumentUploader({
     let file = e.target.files?.[0]
     e.target.value = "" // allow re-selecting the same file
     if (!file) return
+    setUploadError(null)
 
     if (photoSpec) {
       // Finding 8 — getting a portal-shaped photo is OUR job, not the applicant's. Accept
@@ -106,7 +108,9 @@ export function DocumentUploader({
     // LONGER image-only on our side — we accept a PDF and convert/flag it (finding 8).
     const check = validateFile({ name: file.name, size: file.size, imageOnly: false })
     if (!check.ok) {
-      toast.error(check.errors[0] ?? "That file can't be uploaded.")
+      const message = check.errors[0] ?? "That file can't be uploaded."
+      setUploadError(message)
+      toast.error(message)
       return
     }
 
@@ -137,6 +141,7 @@ export function DocumentUploader({
       // A rejection returns a safe, specific reason (wrong type, too large) — show it,
       // not the generic fallback. The server already removed the stored object.
       if (res?.error) {
+        setUploadError(res.error)
         toast.error(res.error, { duration: 9000 })
         return
       }
@@ -144,7 +149,9 @@ export function DocumentUploader({
       router.refresh()
     } catch (err) {
       console.error(err)
-      toast.error("Upload failed. Please try again.")
+      const message = "Upload didn't finish, so this item is still marked Not uploaded. Please try again. If it keeps happening, contact us for help."
+      setUploadError(message)
+      toast.error(message, { duration: 9000 })
     } finally {
       setBusy(false)
     }
@@ -279,6 +286,12 @@ export function DocumentUploader({
         {current && !sharedProvided && <span className="text-xs text-muted-foreground">v{current.version}</span>}
       </div>
 
+      {uploadError && (
+        <p role="alert" className="mt-2 rounded-md border border-destructive/25 bg-destructive/10 p-2 text-xs text-destructive">
+          {uploadError}
+        </p>
+      )}
+
       {/* UX 2.1 — the registry's how-to, collapsed by default so the vault stays short */}
       {guide && guide.steps.length > 0 && (
         <details className="group mt-3 border-t border-hairline pt-3">
@@ -312,4 +325,3 @@ export function DocumentUploader({
     </div>
   )
 }
-

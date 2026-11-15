@@ -13,7 +13,7 @@ import { computeCompletion, type CompletionMetrics } from "@/lib/portal/completi
 
 type DB = SupabaseClient<Database>
 
-/** The transcribe-ready state of one portal upload slot / interview document (step 13). */
+/** The filing-support state of one portal upload slot / interview document. */
 export type SlotState = "accepted" | "submitted" | "rejected" | "missing"
 
 export interface PortalSlotView {
@@ -68,7 +68,7 @@ export interface ApplicationTabData {
   readiness: PortalReadiness
   /** An SSN is on file (encrypted). The value is revealed on click, never at render. */
   ssnConfigured: boolean
-  /** Portal step numbers a staffer has marked as entered (progress bookkeeping). */
+  /** Portal step numbers staff have marked complete while guiding the applicant. */
   enteredSteps: number[]
   /** Portal / interview / overall completion — one pass, so the numbers agree. */
   metrics: CompletionMetrics
@@ -121,10 +121,13 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
   // Step-13 slots + latest uploaded document per requirement (newest first).
   const { data: docs } = await admin
     .from("documents")
-    .select("id, req_code, type, file_name, status, version, review_notes, generated, created_at, notarized, conversion_note, conversion_pending")
+    .select("id, req_code, type, file_name, file_path, status, version, review_notes, generated, created_at, notarized, conversion_note, conversion_pending")
     .eq("case_id", caseId)
     .order("created_at", { ascending: false })
-  const docById = new Map((docs ?? []).map((d) => [d.id, d]))
+  // A metadata row without storage bytes is not an upload. Legacy/demo placeholders
+  // used to make the application screen say "Uploaded" and expose a dead View action.
+  const uploadedDocs = (docs ?? []).filter((d) => !!d.file_path?.trim())
+  const docById = new Map(uploadedDocs.map((d) => [d.id, d]))
   const crByCode = new Map(reqRows.map((r) => [r.req_code, r]))
   type DocRow = NonNullable<typeof docs>[number]
 
@@ -133,7 +136,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
    * smart-document sharing (a passport uploaded for IDN-01 answering IDN-02/03).
    */
   const resolveDoc = (cr: CaseRequirementRow, matchType?: string): { doc: DocRow | null; sharedFromLabel: string | null; state: SlotState } => {
-    let doc = (docs ?? []).find((d) => !d.generated && (d.req_code === cr.req_code || (matchType && d.type === matchType))) ?? null
+    let doc = uploadedDocs.find((d) => !d.generated && (d.req_code === cr.req_code || (matchType && d.type === matchType))) ?? null
     let sharedFromLabel: string | null = null
     if (!doc && cr.document_id) {
       const shared = docById.get(cr.document_id)
@@ -155,7 +158,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
     if (slot.reqCodes.length === 0) {
       // Additional Documents — the catch-all. Any leftover portal_upload upload not
       // claimed by a named slot is parked here so it's never silently dropped.
-      const leftoverDocs = (docs ?? []).filter(
+      const leftoverDocs = uploadedDocs.filter(
         (d) => !d.generated && d.req_code != null && !claimedUploadCodesFor(portalTrack).includes(d.req_code) &&
           reqRows.find((r) => r.req_code === d.req_code)?.requirement?.destination === "portal_upload"
       )
@@ -219,7 +222,7 @@ export async function assembleApplicationTab(admin: DB, caseId: string): Promise
       }
     })
 
-  // Transcription progress (which steps a staffer has ticked off). Defensive: if the
+  // Guided-filing progress (which steps staff have ticked off). Defensive: if the
   // table isn't migrated yet on this database, treat it as no progress rather than fail.
   let enteredSteps: number[] = []
   try {

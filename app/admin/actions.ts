@@ -312,9 +312,16 @@ export async function reviewDocument(input: {
   // would file a photo the portal rejects (SPC-01 shape). Convert it first (upload the
   // converted image), which clears the pending flag; then approval satisfies normally.
   if (input.status === "approved") {
-    const { data: pending } = await supabase.from("documents").select("conversion_pending").eq("id", input.documentId).maybeSingle()
+    const { data: pending } = await supabase
+      .from("documents")
+      .select("conversion_pending, file_path")
+      .eq("id", input.documentId)
+      .maybeSingle()
     if (pending?.conversion_pending) {
       return { error: "This photo is still a PDF awaiting conversion. Convert it and upload the image first — then approve." }
+    }
+    if (!pending?.file_path?.trim()) {
+      return { error: "This record has no uploaded file. Upload the actual document before approving it." }
     }
   }
 

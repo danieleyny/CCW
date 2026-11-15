@@ -1,6 +1,10 @@
 import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
 import { portalStepsFor, type StepKind, type PortalStepKey } from "@/config/portal-steps"
-import { FEE_WAIVER_CATEGORIES, SWORN_STATEMENTS } from "@/lib/disclosures/portal-forms"
+import {
+  FEE_WAIVER_CATEGORIES,
+  SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT,
+  SWORN_STATEMENTS,
+} from "@/lib/disclosures/portal-forms"
 import { portalDate, portalHeight, portalWeight, splitStreet, isDayAssumed } from "@/lib/forms/format"
 import { portalStep12StatementsFor } from "@/lib/requirements/lon"
 import { precinctForZip, PRECINCT_FINDER_URL } from "@/lib/portal/precinct"
@@ -9,10 +13,10 @@ import { brand } from "@/config/brand"
 import type { ApplicationValues } from "@/lib/forms/application"
 
 /**
- * The STAFF portal-entry worksheet — every value in the NYPD ONLINE portal's own
- * ORDER and FORMAT, so staff transcribe without hunting or reformatting. Pure +
- * serializable; the page renders copy buttons and red-flags anything missing. The
- * applicant never gets a copy formatted for entry.
+ * The STAFF filing-support worksheet — every value in the NYPD ONLINE portal's own
+ * ORDER and FORMAT, so staff can QA and guide without hunting or reformatting. Pure +
+ * serializable; the page renders preparation copy buttons and red-flags anything
+ * missing. The applicant controls the portal and receives their own filing pack.
  *
  * ORDER AND HEADINGS COME FROM `config/portal-steps.ts` — the single source of truth.
  * This builder fills each step's fields; it never invents step order or titles.
@@ -30,6 +34,8 @@ export interface WorksheetField {
    * string "N/A" typed into an answer box.
    */
   notApplicable?: boolean
+  /** A real process/legal conflict: show prominently, never copy as an answer. */
+  attention?: boolean
 }
 export interface WorksheetSection {
   /** Portal step number on the RESOLVED track (differs per track), from portalStepsFor. */
@@ -38,6 +44,10 @@ export interface WorksheetSection {
   title: string
   kind: StepKind
   fields: WorksheetField[]
+  /** Continuing from this checkpoint cannot be undone in the NYPD portal. */
+  irreversible?: boolean
+  /** The applicant must personally complete this checkpoint. */
+  applicantOnly?: boolean
   /** `uploads`/`checkpoint` steps: what the screen is, since there's nothing to copy. */
   note?: string
 }
@@ -56,6 +66,11 @@ function f(label: string, value: string, opts: { atFiling?: boolean; optional?: 
 /** A real not-applicable field — greyed, never counted as missing, never a typed "N/A". */
 function na(label: string, reason: string): WorksheetField {
   return { label, value: `Not applicable — ${reason}`, missing: false, notApplicable: true }
+}
+
+/** An unresolved issue that must be visible but must never become portal answer text. */
+function attention(label: string, message: string): WorksheetField {
+  return { label, value: message, missing: false, attention: true }
 }
 
 /** Precinct is DERIVED from the ZIP, never asked (task 7). When the ZIP is in the table
@@ -372,17 +387,17 @@ export function buildPortalWorksheet(
       : []),
   ])
 
-  // Required Statements (Special Carry step 14) — five sworn boxes. Box 2 duplicates the
-  // step-8 safekeeping free-text, so it is populated from the same value, collected once.
-  // Boxes 1 and 4 are Carry Guard/Security-only; they carry the portal's required marker
-  // regardless of track — greyed here (whether the portal blocks on them is unverified).
+  // Required Statements (Special Carry step 14) — five portal-required textareas.
+  // The civilian Special Carry walk proved the two Carry Guard-only labels still block
+  // progress. Do not grey them as N/A and do not invent wording: surface the conflict.
   put(
     "sworn_statements",
     SWORN_STATEMENTS.map((st) => {
       const label = `${st.no}. (${st.appliesTo}) ${st.text}`
-      if (st.notForSpecialCarry) return na(label, "addressed to Carry Guard/Security applicants — the portal shows it but it does not apply to Special Carry")
-      const value = st.prefillFrom ? s(v[st.prefillFrom]) : ""
-      return f(label, value, { optional: !st.prefillFrom })
+      if (ctx.portalTrack === "special_carry" && st.guardOnly && !isGuardTrack(ctx.licenseTrack)) {
+        return attention(label, SPECIAL_CARRY_GUARD_STATEMENT_CONFLICT.message)
+      }
+      return f(label, st.prefillFrom ? s(v[st.prefillFrom]) : "")
     })
   )
 
@@ -412,6 +427,8 @@ export function buildPortalWorksheet(
     title: step.title,
     kind: step.kind,
     fields: byKey.get(step.key) ?? [],
+    irreversible: step.irreversible,
+    applicantOnly: step.applicantOnly,
     note:
       step.kind === "uploads"
         ? "The portal's file uploads — transcribed below as documents, not fields."

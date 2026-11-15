@@ -188,7 +188,7 @@ export const FACTS: FactDef[] = [
   { key: "applicant.address.apt", label: "Apt #", type: "text", group: "address", optional: true, placeholder: "if you have one", from: (s) => s.intake.legalApt },
   { key: "applicant.address.city", label: "City", type: "text", group: "address", from: (s) => s.intake.legalCity },
   { key: "applicant.address.state", label: "State", type: "select", group: "address", options: US_STATES, from: (s) => s.intake.legalState ?? "NY" },
-  { key: "applicant.address.zip", label: "ZIP", type: "zip", group: "address", from: (s) => s.client.zip },
+  { key: "applicant.address.zip", label: "ZIP", type: "zip", group: "address", from: (s) => s.intake.legalZip ?? s.client.zip },
   // Mailing address — a separate block behind a "different from home?" flag (portal
   // step 1). Optional; left blank when the mailing address is the home address.
   { key: "applicant.mailingDifferent", label: "Mailing address different from home?", type: "select", group: "address", options: ["No", "Yes"], optional: true },

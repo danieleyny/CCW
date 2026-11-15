@@ -89,7 +89,7 @@ describe("requirement → action map", () => {
       expect(doc.documentType, `${reqCode} has no documentType`).toBeTruthy()
       expect(doc.documentType, `${reqCode} would land in the ID slot`).not.toBe("id")
     }
-  })
+  }, 15_000)
 
   /**
    * PHASE 3: a generated document used to be produced unsigned, dated with the

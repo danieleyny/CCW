@@ -5,6 +5,11 @@
  * conditional requirement/disclosure generation.
  */
 import type { IntakeAnswers as GeneratorAnswers } from "@/lib/requirements/generate"
+import {
+  applicationTypeFromLegacy,
+  applicationTypeToGeneratorAnswers,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 export interface CohabitantEntry {
   name: string
@@ -112,7 +117,10 @@ export interface WizardAnswers {
   // Step 1 — eligibility pre-screen (hard gate)
   dob?: string
   residence?: "nyc" | "non_resident"
-  licenseType?: "carry" | "premises" // default carry
+  /** Canonical case category, copied into the resumable session for a readable audit trail. */
+  applicationType?: ApplicationType
+  /** Legacy intake compatibility. `premises` means Premise Business. */
+  licenseType?: "carry" | "premises" | "premise_residence"
   /** Intended use in NYC — routes Special Carry vs Special Carry Guard by INTENT, never
    *  by who referred the applicant (see lib/requirements/carry-intent). */
   nycCarryIntent?: "personal" | "armed_assignment"
@@ -133,6 +141,7 @@ export interface WizardAnswers {
   legalApt?: string
   legalCity?: string
   legalState?: string // default "NY"
+  legalZip?: string
   alienRegistrationNumber?: string // non-citizens only
   placeOfBirth?: string // "City, State, Country"
   heightInches?: number
@@ -175,6 +184,9 @@ export interface WizardAnswers {
   arrests?: ArrestEntry[]
   ordersOfProtection?: OopEntry[]
   domesticIncidents?: DomesticEntry[]
+  /** Distinguishes the live NYPD portal Q1–16 set from legacy paper Q10–22
+   * sessions that used the same `questionnaire` array shape. */
+  questionnaireVersion?: "nypd_portal_v1"
   questionnaire?: QuestionAnswer[]
   // Step 5 — carry-specific & history
   trainingStatus?: "completed" | "planned"
@@ -206,7 +218,8 @@ export function formatLegalAddress(a: WizardAnswers): string {
   const street = [a.legalStreet?.trim(), a.legalApt?.trim() ? `Apt ${a.legalApt.trim().replace(/^apt\.?\s*/i, "")}` : ""]
     .filter(Boolean)
     .join(" ")
-  return [street, a.legalCity?.trim(), a.legalState?.trim()].filter(Boolean).join(", ")
+  const stateZip = [a.legalState?.trim(), a.legalZip?.trim()].filter(Boolean).join(" ")
+  return [street, a.legalCity?.trim(), stateZip].filter(Boolean).join(", ")
 }
 
 /** One readable line per account for the social-media disclosure PDF. */
@@ -226,6 +239,10 @@ export const INTAKE_STEPS = [
 ] as const
 
 /**
+ * LEGACY ONLY: the old paper Section-B questionnaire, retained so historical
+ * intake sessions remain readable. New intake uses PORTAL_DISCLOSURES (NYPD
+ * online portal Q1–16) and stamps `questionnaireVersion`.
+ *
  * The Section-B questionnaire — the yes/no + explain block, quoted from
  * PD 643-041 (Rev. 11-10) verbatim. Every "yes" binds a narrative.
  *
@@ -306,10 +323,18 @@ export interface ConditionFlags {
   wantsConfidentiality: boolean
 }
 
+/** 38 RCNY §5-03(b) applies to people who reside outside New York State. A
+ * Nassau/Suffolk/Westchester address is outside NYC but is not out of state. */
+export function isOutOfStateResident(a: Pick<WizardAnswers, "legalState">): boolean {
+  const state = (a.legalState ?? "NY").trim().toUpperCase().replace(/\./g, "")
+  return state !== "" && state !== "NY" && state !== "NEW YORK"
+}
+
 export function toGeneratorAnswers(
   a: WizardAnswers,
   opts: {
     isRenewal?: boolean
+    jurisdictionKey?: "nyc" | "special_carry"
     /** Derived armed-guard flags from resolveArmedTrack(); absent for non-sponsored cases. */
     armed?: { isArmedGuard: boolean; needsPreLicenseExemption: boolean; needsCountyLicenseDoc: boolean }
     /** Conditional flags resolved from the CANONICAL stores (deriveConditionFlags).
@@ -318,24 +343,29 @@ export function toGeneratorAnswers(
     conditions?: Partial<ConditionFlags>
   } = {}
 ): GeneratorAnswers {
-  const premises = a.licenseType === "premises"
+  const applicationType = applicationTypeFromLegacy(a) ?? "concealed_carry"
+  const category = applicationTypeToGeneratorAnswers(applicationType)
   const c = opts.conditions
+  const portalQuestionYes = (no: number) =>
+    a.questionnaireVersion === "nypd_portal_v1" &&
+    (a.questionnaire ?? []).some((q) => q.no === no && q.yes)
   return {
-    isCarry: !premises,
-    isPremises: premises,
+    ...category,
     isRenewal: !!opts.isRenewal,
-    isRetiredLeo: !!a.isRetiredLeo,
+    isRetiredLeo: applicationType === "retired_leo" || !!a.isRetiredLeo,
     hasCohabitants: c?.hasCohabitants ?? (a.cohabitants?.length ?? 0) > 0,
-    hasArrestHistory: c?.hasArrestHistory ?? (a.arrests?.length ?? 0) > 0,
-    hasOopHistory: c?.hasOopHistory ?? (a.ordersOfProtection?.length ?? 0) > 0,
-    hasDomesticIncident: c?.hasDomesticIncident ?? (a.domesticIncidents?.length ?? 0) > 0,
+    hasArrestHistory: c?.hasArrestHistory ?? (portalQuestionYes(7) || (a.arrests?.length ?? 0) > 0),
+    hasOopHistory: c?.hasOopHistory ?? (portalQuestionYes(13) || (a.ordersOfProtection?.length ?? 0) > 0),
+    hasDomesticIncident: c?.hasDomesticIncident ?? (portalQuestionYes(15) || (a.domesticIncidents?.length ?? 0) > 0),
     lprUnder7yr: a.citizenship === "lpr" && !!a.lprUnder7yr,
-    isVeteran: c?.isVeteran ?? !!a.isVeteran,
-    hasNameChange: c?.hasNameChange ?? !!a.hasNameChange,
+    isVeteran: c?.isVeteran ?? (portalQuestionYes(5) || !!a.isVeteran),
+    hasNameChange: c?.hasNameChange ?? (portalQuestionYes(1) || !!a.hasNameChange),
     anyQuestionYes: c?.anyQuestionYes ?? (a.questionnaire ?? []).some((q) => q.yes),
     hasFelonyConviction: !!c?.hasFelonyConviction, // portal-only; no wizard equivalent
     wantsConfidentiality: !!c?.wantsConfidentiality,
-    isArmedGuard: !!opts.armed?.isArmedGuard,
+    isOutOfStateResident: isOutOfStateResident(a),
+    isSpecialCarry: category.isSpecialCarry || opts.jurisdictionKey === "special_carry",
+    isArmedGuard: category.isArmedGuard || !!opts.armed?.isArmedGuard,
     needsPreLicenseExemption: !!opts.armed?.needsPreLicenseExemption,
     needsCountyLicenseDoc: !!opts.armed?.needsCountyLicenseDoc,
   }

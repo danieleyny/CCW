@@ -12,7 +12,7 @@
  * second copy of any list. Adding a step is one edit here.
  *
  * TRACK-AWARE. The portal serves a materially different SEQUENCE per licence track — a
- * live walk of a Special Carry application (26 Sep 2026, 16 of 17 screens) found not a
+ * live walk of a Special Carry application (4 Oct 2026, through finalisation) found not a
  * shift but a different composition: an out-of-city-licence screen inserted at 5, a
  * fee-waiver screen (13) absent from the NYC-resident flow entirely, and the trailing
  * review/affirm/pay screens collapsed. Content attaches to a step by its STABLE `key`,
@@ -53,7 +53,6 @@ export type PortalStepKey =
   | "review"
   | "affirmations"
   | "payment"
-  | "review_and_copy"
 
 /** One upload slot as the PORTAL labels it, mapped to our requirement(s). */
 export interface PortalUploadSlot {
@@ -94,13 +93,10 @@ export interface PortalStep {
   slots?: readonly PortalUploadSlot[]
   /** `checkpoint` steps: what the screen asks and what it means (no data to copy). */
   checkpoint?: string
-  /**
-   * A `checkpoint` that YIELDS a stored artifact (Special Carry step 17 produces a
-   * complete copy of the filed application). Staff save it to the case under this code /
-   * document_type — the only complete record of the answers as filed.
-   */
-  producesReqCode?: string
-  producesDocumentType?: string
+  /** The portal says continuing from this screen cannot be undone. */
+  irreversible?: boolean
+  /** This screen must be completed by the applicant, never by staff. */
+  applicantOnly?: boolean
   /**
    * A `fields` step that is actually a statutory inline form modelled in detail elsewhere
    * (confidentiality → CON-01 questionnaire; fee_waiver → FEE_WAIVER_CATEGORIES;
@@ -191,6 +187,8 @@ export const PORTAL_STEPS: readonly PortalStep[] = [
     kind: "checkpoint",
     checkpoint:
       "The applicant checks the affirmation boxes. “Finalize and Submit” here is IRREVERSIBLE — nothing can be edited after this screen.",
+    irreversible: true,
+    applicantOnly: true,
   },
   {
     no: 17,
@@ -199,17 +197,21 @@ export const PORTAL_STEPS: readonly PortalStep[] = [
     kind: "checkpoint",
     checkpoint:
       "The portal hands off to NYC CityPay for the application fee. The applicant pays it themselves; we never hold card details or submit payment.",
+    applicantOnly: true,
   },
 ] as const
 
 /**
- * The SPECIAL CARRY flow — confirmed by a live walk on 26 Sep 2026 (16 of 17 screens).
+ * The SPECIAL CARRY flow — confirmed by a read-only authenticated live walk on 4 Oct
+ * 2026, through the screen immediately before the irreversible action. No answers were
+ * changed and Finalize and Pay was not clicked.
  * Diverges from NYC-resident from step 5: an out-of-city-licence screen (5) and an
  * Additional-licenses screen (6) where NYC-resident has a single "Other Licenses"; a
- * fee-waiver screen (13) that does not exist on NYC-resident; and the trailing screens
- * collapse — there is NO separate review checkpoint, step 16 is Counsel and Preparer,
- * and step 17 is a review-and-copy screen. Portal headings are verbatim; step 14 had no
- * recorded heading (marked below).
+ * fee-waiver screen (13) that does not exist on NYC-resident; step 16 is Counsel and
+ * Preparer; step 17 is a PRE-SUBMISSION review; and the portal then exposes a hidden
+ * “Step 18 of 17” for five initials + five acknowledgements and Finalize and Pay. Portal
+ * headings are verbatim where observed; steps 14 and 18 had no recorded page heading
+ * (marked below).
  */
 export const SPECIAL_CARRY_STEPS: readonly PortalStep[] = [
   { no: 1, key: "verify_info", title: "Verify Your Information", kind: "fields" },
@@ -231,19 +233,34 @@ export const SPECIAL_CARRY_STEPS: readonly PortalStep[] = [
   { no: 16, key: "counsel_preparer", title: "Counsel and Preparer", kind: "fields" },
   {
     no: 17,
-    key: "review_and_copy",
-    title: "Final review",
+    key: "review",
+    title: "Verify Your Information",
     kind: "checkpoint",
-    producesReqCode: "APP-01",
-    producesDocumentType: "filed_application_copy",
-    // NB: no "irreversible" claim here. Where the Affirmations and Payment steps sit on
-    // this track was NOT observed — they may live inside this screen or follow the
-    // numbered wizard. Do not let any surface tell staff which click is the point of no
-    // return on Special Carry until it is confirmed.
     checkpoint:
-      "The portal's final review screen produces a complete copy of the submitted application — the authoritative record of exactly what was filed. Save that copy to the case at filing (it is the only complete record of the answers as filed). Where affirmation and payment happen on this track is unconfirmed; do not tell the applicant which click is the point of no return.",
+      "Pre-submission review only. Use Print to save a review copy and confirm every section. This is NOT proof of filing. Next prompts the applicant to download the required New York State warning, then opens Step 18.",
+  },
+  {
+    no: 18,
+    key: "affirmations",
+    // No page heading was recorded; every visible field is an Acknowledgement label.
+    title: "Acknowledgements",
+    kind: "checkpoint",
+    checkpoint:
+      "Applicant-only boundary: enter five sets of initials, check all five acknowledgements, save the state-mandated warning, and personally click “Finalize and Pay.” Do not share portal credentials and do not let staff perform this step. Finalize and Pay is irreversible.",
+    irreversible: true,
+    applicantOnly: true,
   },
 ] as const
+
+/** Evidence/version marker for the Special Carry flow. Re-walk after the announced
+ * portal migration instead of silently treating this snapshot as timeless. */
+export const SPECIAL_CARRY_FLOW_EVIDENCE = {
+  verifiedOn: "2026-10-04",
+  method: "Authenticated read-only live draft walkthrough",
+  observedThrough: "Step 18 of 17, before Finalize and Pay",
+  notObserved: ["Finalize and Pay result", "payment handoff", "post-submission receipt"],
+  currentPortalDraftDeadline: "2026-10-16",
+} as const
 
 /** Every modelled track's step list. NYC-resident is the default fallback. */
 export const PORTAL_STEPS_BY_TRACK: Record<PortalTrack, readonly PortalStep[]> = {

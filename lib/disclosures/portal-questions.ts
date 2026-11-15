@@ -1,9 +1,8 @@
 /**
- * THE NYPD ONLINE PORTAL disclosure questions — the real filing surface. Seventeen
+ * THE NYPD ONLINE PORTAL disclosure questions — the real filing surface. Sixteen
  * questions, in the portal's order, in the portal's exact words. These are SWORN
  * answers: never paraphrase the text or the notes. Each carries a Yes/No; a "Yes"
- * asks for a free-text explanation (except Q17, which is an opt-in request, not a
- * disclosure).
+ * asks for a free-text explanation.
  *
  * This REPLACES the old paper-form Section B (PD 643-041 questions 10–28). The portal
  * set is materially different — see the traps in PORTAL_ALIGNMENT_REBUILD:
@@ -11,14 +10,14 @@
  *  · Q14 asks if the applicant was the PROTECTED person (not orders issued BY them);
  *  · the subpoena/testimony, other-agency-licence, and BOTH corporate-licence
  *    questions are GONE;
- *  · Q6 is conditional on Q5; Q16 is law-enforcement only; Q17 is a confidentiality
- *    opt-in that, when Yes, requires the Public Records Exemption form.
+ *  · Q6 is conditional on Q5; Q16 is law-enforcement only. Confidentiality is a
+ *    separate portal step and is not part of the sworn disclosure questionnaire.
  *
- * Stored under keys q1…q17 in the canonical disclosure store (requirement_answers,
+ * Stored under keys q1…q16 in the canonical disclosure store (requirement_answers,
  * DSC-01). An UNANSWERED question is never recorded or rendered as "No".
  */
 export interface PortalDisclosure {
-  /** Portal question number, 1–17. The answer key is `q${no}`. */
+  /** Portal question number, 1–16. The answer key is `q${no}`. */
   no: number
   /** Verbatim question text. Never paraphrase. */
   text: string
@@ -30,8 +29,8 @@ export interface PortalDisclosure {
   conditionalOnYesOf?: number
   /** Shown only to law-enforcement applicants (Q16). */
   leoOnly?: boolean
-  /** An opt-in REQUEST, not a disclosure: no explanation; a "Yes" creates a
-   *  requirement (Q17 → the Public Records Exemption form). */
+  /** Legacy compatibility only. Confidentiality now has its own portal step;
+   * no live Q1–16 disclosure sets this flag. */
   isConfidentialityRequest?: boolean
 }
 

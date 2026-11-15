@@ -7,15 +7,23 @@
  *     reach the jsonb column.
  *
  *  2. `completionIssues()` — BUSINESS rules enforced when the applicant hits
- *     "Generate my requirements": DOB present, the 4-reference rule with valid
- *     emails, and complete arrest rows. (Disclosure narratives may still be
- *     finished at the review step — the submission guard, and later the CP-5
- *     QA gate, block filing until they exist.)
+ *     "Generate my requirements": DOB present, every applicable live-portal
+ *     disclosure explicitly answered (with a narrative for each Yes), complete
+ *     arrest rows, coherent training dates, and valid emails on any references
+ *     they chose to enter. Reference count remains a checklist/CP-5 concern.
  *
  * No `server-only` so the wizard runs the same rules client-side for inline errors.
  */
 import { z } from "zod"
 import { ageFromDob, type WizardAnswers } from "./answers"
+import { PORTAL_DISCLOSURES } from "@/lib/disclosures/portal-questions"
+import {
+  APPLICATION_TYPES,
+  applicationTypeFromLegacy,
+  applicationTypeNeedsCarryTraining,
+  isPremisesApplication,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 const short = z.string().max(200)
 const narrative = z.string().max(8000)
@@ -56,6 +64,21 @@ const socialSchema = z.object({
   platform: z.string().max(40),
   handle: z.string().max(200),
 })
+const firearmSchema = z.object({
+  make: short.optional(),
+  model: short.optional(),
+  caliber: z.string().max(100).optional(),
+  serial: z.string().max(120).optional(),
+  licensed: z.enum(["Yes", "No"]).optional(),
+  licenseNumber: z.string().max(120).optional(),
+})
+const otherLicenseSchema = z.object({
+  number: z.string().max(120).optional(),
+  agency: short.optional(),
+  stateCounty: short.optional(),
+  issuedOn: isoDay.optional(),
+  expiresOn: isoDay.optional(),
+})
 const yearMonth = z
   .string()
   .regex(/^\d{4}-\d{2}$/, "Use YYYY-MM")
@@ -64,6 +87,11 @@ const addressHistorySchema = z.object({
   fromMonth: yearMonth.optional(),
   toMonth: yearMonth.optional(),
   address: z.string().max(400).optional(),
+  apt: z.string().max(40).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(40).optional(),
+  zip: z.string().max(20).optional(),
+  country: z.string().max(100).optional(),
 })
 const employmentHistorySchema = z.object({
   fromMonth: yearMonth.optional(),
@@ -73,6 +101,9 @@ const employmentHistorySchema = z.object({
   // Legacy combined field — kept optional so in-progress sessions that still
   // hold `employer` survive the .strip() and can be coalesced on read.
   employer: z.string().max(400).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(40).optional(),
+  zip: z.string().max(20).optional(),
   occupation: short.optional(),
 })
 
@@ -81,7 +112,8 @@ export const wizardAnswersSchema = z
     // Step 1 — eligibility pre-screen
     dob: isoDay.optional(),
     residence: z.enum(["nyc", "non_resident"]).optional(),
-    licenseType: z.enum(["carry", "premises"]).optional(),
+    applicationType: z.enum(APPLICATION_TYPES).optional(),
+    licenseType: z.enum(["carry", "premises", "premise_residence"]).optional(),
     nycCarryIntent: z.enum(["personal", "armed_assignment"]).optional(),
     borough: z.string().max(40).optional(),
     prohibitorFelony: z.boolean().optional(),
@@ -100,6 +132,7 @@ export const wizardAnswersSchema = z
     legalApt: z.string().max(40).optional(),
     legalCity: z.string().max(100).optional(),
     legalState: z.string().max(40).optional(),
+    legalZip: z.string().max(20).optional(),
     alienRegistrationNumber: z.string().max(40).optional(),
     placeOfBirth: short.optional(),
     heightInches: z.number().int().min(24).max(96).optional(),
@@ -122,6 +155,10 @@ export const wizardAnswersSchema = z
     outOfCityCounty: z.string().max(100).optional(),
     outOfCityIssuedOn: isoDay.optional(),
     outOfCityExpiresOn: isoDay.optional(),
+    outOfCityHeld: z.enum(["no", "yes"]).optional(),
+    homeCountyPistolLicense: z.enum(["yes", "no", "unsure"]).optional(),
+    nycAssignment: z.boolean().optional(),
+    otherPistolLicense: z.boolean().optional(),
     // Step 3 — household & safeguard
     cohabitants: z.array(cohabitantSchema).max(20).optional(),
     safeguardName: short.optional(),
@@ -134,13 +171,18 @@ export const wizardAnswersSchema = z
     arrests: z.array(arrestSchema).max(50).optional(),
     ordersOfProtection: z.array(oopSchema).max(50).optional(),
     domesticIncidents: z.array(domesticSchema).max(50).optional(),
+    questionnaireVersion: z.literal("nypd_portal_v1").optional(),
     questionnaire: z.array(questionSchema).max(40).optional(),
     // Step 5 — carry-specific & history
     trainingStatus: z.enum(["completed", "planned"]).optional(),
     trainingInstructor: short.optional(),
     trainingDate: isoDay.optional(),
     references: z.array(referenceSchema).max(10).optional(),
-    socialAccounts: z.array(socialSchema).max(30).optional(),
+    socialAccounts: z
+      .array(socialSchema)
+      .max(30)
+      .transform((rows) => rows.filter((r) => r.platform.trim() || r.handle.trim()))
+      .optional(),
     socialHandles: z.string().max(2000).optional(), // legacy free-text
     isVeteran: z.boolean().optional(),
     isRetiredLeo: z.boolean().optional(),
@@ -149,6 +191,8 @@ export const wizardAnswersSchema = z
     // Q29 — five-year histories
     residenceHistory: z.array(addressHistorySchema).max(20).optional(),
     employmentHistory: z.array(employmentHistorySchema).max(20).optional(),
+    firearms: z.array(firearmSchema).max(50).optional(),
+    otherLicenses: z.array(otherLicenseSchema).max(50).optional(),
   })
   .strip()
 
@@ -162,6 +206,8 @@ export interface CompletionOpts {
   isRenewal?: boolean
   /** From cases.license_track — armed-guard (Carry Guard) needs the base two only. */
   licenseTrack?: "concealed_carry" | "carry_guard" | "special_carry_guard" | "sponsored_unresolved"
+  /** Canonical case category; wins over historical wizard fields. */
+  applicationType?: ApplicationType | null
 }
 
 /**
@@ -172,7 +218,8 @@ export interface CompletionOpts {
 export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}): number {
   if (opts.isRenewal) return 0
   if (opts.licenseTrack === "carry_guard" || opts.licenseTrack === "special_carry_guard") return 2
-  if (a.licenseType === "premises") return 2
+  const applicationType = opts.applicationType ?? applicationTypeFromLegacy(a) ?? "concealed_carry"
+  if (isPremisesApplication(applicationType)) return 2
   return REQUIRED_REFERENCES
 }
 
@@ -187,7 +234,6 @@ export function requiredReferences(a: WizardAnswers, opts: CompletionOpts = {}):
  */
 export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   const issues: string[] = []
-  void opts // reference count is no longer enforced at intake; kept for signature parity
 
   for (const r of a.references ?? []) {
     if (r.email?.trim() && !EMAIL_RE.test(r.email.trim())) {
@@ -196,17 +242,47 @@ export function historyStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): 
     }
   }
 
-  // Training details only make sense when marked completed.
-  if (a.trainingStatus === "completed" && !a.trainingDate) {
+  const applicationType = opts.applicationType ?? applicationTypeFromLegacy(a) ?? "concealed_carry"
+  // Training details only make sense for a category that requires carry
+  // training. Premise Residence never fails intake on a carry-course date.
+  if (applicationTypeNeedsCarryTraining(applicationType) && a.trainingStatus === "completed" && !a.trainingDate) {
     issues.push("Add your training completion date, or set training to “not yet”.")
   }
 
   return issues
 }
 
-/** Step-4 rules: every disclosed arrest must be a complete row — candor-maximizing. */
+/** The exact portal questions applicable to this applicant. Q6 follows Q5; Q16
+ * is law-enforcement-only. An old unversioned paper questionnaire never counts
+ * as an answer to the live portal set. */
+export function applicablePortalDisclosures(a: WizardAnswers) {
+  const answers = a.questionnaireVersion === "nypd_portal_v1" ? a.questionnaire ?? [] : []
+  const byNo = new Map(answers.map((q) => [q.no, q]))
+  return PORTAL_DISCLOSURES.filter((q) => {
+    if (q.leoOnly && !a.isRetiredLeo) return false
+    if (q.conditionalOnYesOf && byNo.get(q.conditionalOnYesOf)?.yes !== true) return false
+    return true
+  })
+}
+
+/** Step-4 rules: all applicable live portal questions must have an explicit
+ * answer, every Yes needs its explanation, and each structured arrest row must
+ * be complete. This is candor-maximizing: unanswered is never treated as No. */
 export function disclosureStepIssues(a: WizardAnswers): string[] {
   const issues: string[] = []
+  const answers = a.questionnaireVersion === "nypd_portal_v1" ? a.questionnaire ?? [] : []
+  const byNo = new Map(answers.map((q) => [q.no, q]))
+  const applicable = applicablePortalDisclosures(a)
+  const missing = applicable.filter((q) => !byNo.has(q.no)).map((q) => `Q${q.no}`)
+  if (missing.length) {
+    issues.push(`Answer every applicable NYPD disclosure question (missing ${missing.join(", ")}).`)
+  }
+  for (const q of applicable) {
+    const answer = byNo.get(q.no)
+    if (answer?.yes && !q.conditionalOnYesOf && !answer.narrative?.trim()) {
+      issues.push(`Q${q.no} is Yes — add the explanation NYPD asks for.`)
+    }
+  }
   ;(a.arrests ?? []).forEach((ar, i) => {
     if (!ar.jurisdiction?.trim() || !ar.disposition?.trim()) {
       issues.push(`Arrest / summons #${i + 1} needs its court/jurisdiction and disposition.`)
@@ -216,11 +292,18 @@ export function disclosureStepIssues(a: WizardAnswers): string[] {
 }
 
 /** Step-1 rules (the hard under-21/prohibitor gate runs separately). */
-export function eligibilityStepIssues(a: WizardAnswers): string[] {
+export function eligibilityStepIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   const issues: string[] = []
   if (!a.dob) issues.push("Enter your date of birth.")
   else if (ageFromDob(a.dob) < 21) issues.push("You must be at least 21 years old.")
   if (!a.residence) issues.push("Select your residence status.")
+  const sponsoredGuard =
+    opts.licenseTrack === "carry_guard" ||
+    opts.licenseTrack === "special_carry_guard" ||
+    opts.licenseTrack === "sponsored_unresolved"
+  if (a.residence === "non_resident" && !sponsoredGuard && !a.nycCarryIntent) {
+    issues.push("Select whether you intend to carry for personal protection or an armed work assignment in NYC.")
+  }
   return issues
 }
 
@@ -231,7 +314,7 @@ export function eligibilityStepIssues(a: WizardAnswers): string[] {
  */
 export function completionIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   return [
-    ...eligibilityStepIssues(a).map((m) => `${m} (step 1)`),
+    ...eligibilityStepIssues(a, opts).map((m) => `${m} (step 1)`),
     ...disclosureStepIssues(a).map((m) => `${m} (step 4)`),
     ...historyStepIssues(a, opts).map((m) => `${m} (step 5)`),
   ]

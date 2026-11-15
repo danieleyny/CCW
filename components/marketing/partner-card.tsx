@@ -13,13 +13,21 @@ export const INDEPENDENCE_DISCLAIMER =
   "Independent attorney — not an employee or agent of Gun License NYC. Retaining him creates an attorney–client relationship with his firm alone. We receive no share of his fees. Nothing here is legal advice."
 
 /** Two-tier credential badge — electric-tinted lead vs quiet outline; small radius, not a pill. */
-export function CredentialBadge({ children, primary }: { children: React.ReactNode; primary?: boolean }) {
+export function CredentialBadge({
+  children,
+  primary,
+  className,
+}: {
+  children: React.ReactNode
+  primary?: boolean
+  className?: string
+}) {
   return (
     <li
       className={
         primary
-          ? "rounded-sm border border-[var(--electric)]/40 bg-[var(--electric)]/10 px-2.5 py-1 text-xs font-medium text-[var(--electric-deep)]"
-          : "rounded-sm border border-[var(--rule)] bg-[var(--ivory)] px-2.5 py-1 text-xs text-[var(--ink-soft)]"
+          ? `rounded-sm border border-[var(--electric)]/40 bg-[var(--electric)]/10 px-2.5 py-1 text-xs font-medium text-[var(--electric-deep)] ${className ?? ""}`
+          : `rounded-sm border border-[var(--rule)] bg-[var(--ivory)] px-2.5 py-1 text-xs text-[var(--ink-soft)] ${className ?? ""}`
       }
     >
       {children}

@@ -5,10 +5,10 @@ import { Copy, Check, AlertTriangle, ClipboardList } from "lucide-react"
 import type { WorksheetSection, WorksheetField } from "@/lib/disclosures/worksheet-portal"
 
 /**
- * The staff portal-entry worksheet — every value in the NYPD online portal's order and
- * format, with a copy button per field (typing 100+ fields by hand is where
- * transcription errors come from) and a red flag on anything missing (a blank line
- * gets typed as a blank answer). Internal work product; the applicant never sees it.
+ * The staff filing-support worksheet — every value in the NYPD online portal's order and
+ * format, with a copy button for preparation/QA and a red flag on anything missing.
+ * Staff use it to guide the applicant; the applicant controls the portal and enters or
+ * confirms every answer. Internal work product; the applicant receives their own packet.
  *
  * Section order and headings come from the sections themselves (built from
  * config/portal-steps.ts). Uploads/checkpoint steps carry a note instead of fields.
@@ -16,6 +16,17 @@ import type { WorksheetSection, WorksheetField } from "@/lib/disclosures/workshe
 
 /** One field row — copy button, missing red-glow, or a greyed not-applicable. */
 export function FieldRow({ field, copyKey, copied, onCopy }: { field: WorksheetField; copyKey: string; copied: string | null; onCopy: (key: string, value: string) => void }) {
+  if (field.attention) {
+    return (
+      <div className="flex items-start gap-2 bg-warn/5 px-4 py-3 ring-1 ring-inset ring-warn/40">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" />
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-medium text-warn">{field.label}</div>
+          <div className="mt-1 text-sm text-text-mid">{field.value}</div>
+        </div>
+      </div>
+    )
+  }
   if (field.notApplicable) {
     return (
       <div className="flex items-start justify-between gap-3 px-4 py-2 opacity-60">
@@ -74,7 +85,7 @@ export function useCopy() {
 /** "Copy this step" — every present, non-N/A field as `Label: value` lines. */
 export function stepPlainText(section: WorksheetSection): string {
   return section.fields
-    .filter((fld) => fld.value && !fld.notApplicable)
+    .filter((fld) => fld.value && !fld.notApplicable && !fld.attention)
     .map((fld) => `${fld.label}: ${fld.value}`)
     .join("\n")
 }
@@ -124,8 +135,9 @@ export function PortalWorksheet({ sections, applicant }: { sections: WorksheetSe
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
-        <strong>Internal work product — staff only.</strong> Transcribe these into the NYPD online portal
-        in this order. {missingCount > 0 ? `${missingCount} field(s) are missing (flagged red) — chase them before filing.` : "Every expected field is present."}
+        <strong>Internal preparation and filing-support record — staff only.</strong> Use this order to
+        guide the applicant while the applicant controls the NYPD portal and enters or confirms every
+        answer. Never request or use the applicant&apos;s portal credentials. {missingCount > 0 ? `${missingCount} field(s) are missing (flagged red) — resolve them before filing.` : "Every expected field is present."}
       </div>
 
       {sections.map((section) => (

@@ -60,7 +60,7 @@ const buildFaqs = (fees: Fees) => [
   },
   {
     q: "Can a company file the application for me?",
-    a: "It depends on your plan: on Self-Guided you file your own application, and with Full Concierge Gun License NYC files it for you. Either way, a document-preparation service cannot represent you before the License Division — only a New York-licensed attorney may represent an applicant.",
+    a: "No. You control the NYPD portal account, enter or confirm the information, complete the final acknowledgements, pay, and submit. Full Concierge prepares, checks, organizes, and guides you screen by screen. Only a New York-licensed attorney may represent an applicant before the License Division.",
   },
   {
     q: "How long is a NYC carry license valid?",

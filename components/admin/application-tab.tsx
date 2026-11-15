@@ -28,9 +28,10 @@ import { recordConvertedPhoto } from "@/app/admin/actions"
 const PORTAL_URL = "https://licensing.nypdonline.org"
 
 /**
- * The admin "Application" tab — the NYPD online portal transcribed onto one screen, in
- * the portal's own step order and headings, so a staffer files without leaving the case.
- * Internal work product; never shown to the applicant. Sensitive reads (SSN, document
+ * The admin "Application" tab — a portal-aligned preparation and filing-support view in
+ * the NYPD portal's own step order and headings. Staff guide and QA; the applicant keeps
+ * control of the portal, enters/confirms every answer, and files. Internal work product;
+ * never shown to the applicant. Sensitive reads (SSN, document
  * files) happen ON CLICK through server actions, never at render.
  */
 export function ApplicationTab({
@@ -83,7 +84,7 @@ export function ApplicationTab({
       <StepRail sections={sections} slots={slots} entered={entered} />
       <div className="space-y-6">
         {sections.map((section) => {
-          const toggleEl = <StepToggle entered={entered.has(section.no)} onToggle={() => toggle(section.no)} />
+          const toggleEl = <StepToggle entered={entered.has(section.no)} applicantOnly={section.applicantOnly} onToggle={() => toggle(section.no)} />
           if (section.kind === "uploads") {
             return <DocumentsStep key={section.no} section={section} slots={slots} heldForInterview={heldForInterview} openDocument={openDocument} headerRight={toggleEl} caseId={caseId} />
           }
@@ -100,8 +101,8 @@ export function ApplicationTab({
   )
 }
 
-/** "Mark entered" — staff tick a step off as they transcribe it. */
-function StepToggle({ entered, onToggle }: { entered: boolean; onToggle: () => void }) {
+/** Progress bookkeeping. Applicant-only steps mean staff records completion, not action. */
+function StepToggle({ entered, applicantOnly, onToggle }: { entered: boolean; applicantOnly?: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
@@ -111,7 +112,7 @@ function StepToggle({ entered, onToggle }: { entered: boolean; onToggle: () => v
       }`}
     >
       {entered ? <CheckSquare className="size-3.5" /> : <Square className="size-3.5" />}
-      {entered ? "Entered" : "Mark entered"}
+      {entered ? (applicantOnly ? "Applicant completed" : "Completed") : "Mark complete"}
     </button>
   )
 }
@@ -141,10 +142,10 @@ function Header({
 }) {
   const tone = readiness.readyToFinalize ? "ok" : readiness.readyToEnter ? "brass" : "warn"
   const label = readiness.readyToFinalize
-    ? "Ready to finalize — every field is in and every required upload is accepted."
+    ? "Ready for applicant finalization — every field is in and every required upload is accepted."
     : readiness.readyToEnter
-      ? "Ready to enter — start transcribing. A few uploads are still outstanding before you can finalize."
-      : "Not ready to enter — chase the items below before starting the portal."
+      ? "Ready for applicant entry — guide the applicant through the portal. The items below still block finalization."
+      : "Not ready for applicant entry — resolve the items below before starting the portal."
 
   return (
     <div className="space-y-3 rounded-lg border border-hairline bg-card p-4">
@@ -152,7 +153,9 @@ function Header({
         <div>
           <h2 className="text-base font-semibold tracking-tight">NYPD portal — {applicant}</h2>
           <p className="mt-0.5 text-sm text-text-mid">
-            Transcribe these into the portal in order. Same screens, same headings. · <span className="text-text-low">{enteredCount}/{totalSteps} steps entered</span>
+            Guide the applicant through these screens in order. The applicant controls the portal,
+            enters or confirms every answer, and submits. Never request their credentials. ·{" "}
+            <span className="text-text-low">{enteredCount}/{totalSteps} steps completed</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -204,7 +207,7 @@ function Header({
         {readiness.readyToEnter && !readiness.readyToFinalize && readiness.finalizeMissing.length > 0 && (
           <ul className="mt-1.5 list-disc space-y-0.5 pl-5">
             {readiness.finalizeMissing.map((m, i) => (
-              <li key={i}>{m.label} — not yet accepted</li>
+              <li key={i}>{m.label}</li>
             ))}
           </ul>
         )}
@@ -287,7 +290,7 @@ function StepRail({ sections, slots, entered }: { sections: WorksheetSection[]; 
             className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs hover:bg-surface-3 hover:text-foreground ${
               isEntered ? "border-ok/40 bg-ok/10 text-ok" : "border-hairline text-text-mid"
             }`}
-            title={`Step ${section.no} — ${section.title}${isEntered ? " (entered)" : ""}`}
+            title={`Step ${section.no} — ${section.title}${isEntered ? " (completed)" : ""}`}
           >
             {isEntered ? <CheckSquare className="size-3" /> : <span className={`size-1.5 rounded-full ${dot}`} />}
             <span className="font-medium">{section.no}</span>
@@ -522,7 +525,7 @@ function SlotRow({ slot, openDocument, caseId }: { slot: PortalSlotView; openDoc
 /* ─────────────────────────── checkpoints (15/16/17) ─────────────────────────── */
 
 function CheckpointCard({ section, headerRight }: { section: WorksheetSection; headerRight?: ReactNode }) {
-  const irreversible = section.no === 16
+  const irreversible = !!section.irreversible
   return (
     <section id={`step-${section.no}`} className="scroll-mt-4 rounded-lg border border-hairline bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-hairline px-4 py-2.5">
@@ -532,6 +535,11 @@ function CheckpointCard({ section, headerRight }: { section: WorksheetSection; h
           {irreversible && (
             <span className="inline-flex items-center gap-1 rounded bg-danger/10 px-1.5 py-0.5 text-xs font-medium text-danger">
               <ShieldAlert className="size-3.5" /> irreversible
+            </span>
+          )}
+          {section.applicantOnly && (
+            <span className="inline-flex items-center gap-1 rounded bg-brass/10 px-1.5 py-0.5 text-xs font-medium text-brass">
+              applicant only
             </span>
           )}
         </h3>

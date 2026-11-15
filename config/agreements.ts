@@ -7,41 +7,29 @@
  * ⚠️ ATTORNEY REVIEW REQUIRED. The mechanism (versioned + e-signed + audited) is
  * fixed; the EXACT LEGAL WORDING below is a placeholder pending a firearms-attorney
  * pass. Every word here is deliberately honest and NON-representation — it must
- * stay that way. The legal line, post-reversal: we prepare AND may FILE the
- * application as the applicant's preparer, but we NEVER represent them before the
- * License Division, and we NEVER complete or sign the applicant's certification —
- * the applicant alone attests that the facts are true and is solely responsible
- * for their truth. Do not add guarantee/expedite/approval-rate language.
+ * stay that way. We prepare, organize, check, and guide. The applicant controls the
+ * NYPD portal, enters or confirms the information, completes every attestation, pays,
+ * and submits. We never request or use portal credentials. Do not add
+ * guarantee/expedite/approval-rate language.
  *
- * OPEN (P0.3) — the engagement CONTRADICTS ITSELF on who files. These agreements say
- * "we may enter and file … on your behalf" / "file and submit … on my behalf as my
- * preparer" (engagement_limited_scope v2, applicant_files_ack v2), while the concierge
- * signature block at app/portal/concierge/actions.ts:23 says "I file my own NYPD
- * application … does not file for me." Both are e-signed together. The underlying
- * question — whether a non-attorney preparer may enter/submit at the applicant's
- * direction — is UNSETTLED (NYPD step 14 collects a preparer org name; its notice
- * restricts representation, not data entry). DO NOT rewrite either side on our own
- * judgment. Owner: a New York firearms attorney. Full string inventory for the ruling:
- * docs/FILING_AUTHORITY_INVENTORY.md. Once counsel rules, make every surface consistent,
- * bump the affected version(s) here (forcing re-accept), preserve history, and only then
- * add a copy-guard test asserting the APPROVED position.
+ * Versions 3 below replace the contradictory v2 filing language. The version bump
+ * requires a fresh signature while preserving the old signed rows for the audit trail.
  */
 
 export const AGREEMENTS = [
   {
     kind: "engagement_limited_scope",
-    version: 2,
+    version: 3,
     title: "Limited-scope preparation engagement",
     summary: "What we do — and the clear line we don't cross.",
     body:
       "Gun License NYC is a licensing consultant, not a law firm and not a government agency. " +
       "Under this engagement we prepare and organize your NYPD handgun-license application: we " +
-      "collect your documents, extract and check the data, assemble your packet, and — as your " +
-      "preparer, at your direction — we may enter and file your application through the NYPD's " +
-      "online licensing portal on your behalf. Two things always stay yours alone: you review and " +
-      "sign the application's certification attesting that your information is true, and you attend " +
-      "your fingerprinting and any interview. We do NOT represent you before the NYPD License " +
-      "Division and we do NOT act as your attorney. This is a limited-scope preparation-and-filing " +
+      "collect your documents, extract and check the data, assemble your packet, and guide you " +
+      "through the NYPD portal screen by screen. You keep control of your portal account and login, " +
+      "enter or confirm every answer, complete the final acknowledgements, pay, and submit your own " +
+      "application. We do NOT request or use your portal credentials, represent you before the NYPD " +
+      "License Division, or act as your attorney. This is a limited-scope preparation-and-guidance " +
       "service, not legal representation. If your situation calls for a lawyer, we will tell you " +
       "and can refer you to one.",
   },
@@ -66,18 +54,19 @@ export const AGREEMENTS = [
   },
   {
     kind: "applicant_files_ack",
-    version: 2,
-    title: "We can file — the facts and the signature stay yours",
-    summary: "We may file for you; you certify the information is true and sign it yourself.",
+    version: 3,
+    title: "You control the portal and file your application",
+    summary: "We prepare and guide; you enter, review, acknowledge, pay, and submit.",
     body:
-      "I authorize Gun License NYC to prepare and, at my direction, file and submit my NYPD " +
-      "handgun-license application on my behalf as my preparer. I understand this is NOT legal " +
-      "representation and that Gun License NYC will not and cannot represent me before the License " +
-      "Division. I understand that I — not Gun License NYC — complete and sign the application's " +
-      "certification, and that by signing it I personally attest that the information is true. I am " +
+      "I authorize Gun License NYC to prepare and organize my NYPD handgun-license application and " +
+      "guide me through the published filing process. I understand that I keep control of my NYPD " +
+      "portal account and credentials and that I — not Gun License NYC — enter or confirm every " +
+      "answer, review the application, complete the final acknowledgements, pay, and submit it. I " +
+      "understand this is NOT legal representation and that Gun License NYC will not and cannot " +
+      "represent me before the License Division. I personally attest that the information is true. I am " +
       "solely responsible for the truth, accuracy, and completeness of every fact, document, and " +
       "disclosure I give Gun License NYC and everything I approve in my application; Gun License " +
-      "NYC prepares and files based on what I provide and approve, and is not responsible for " +
+      "NYC prepares based on what I provide and approve, and is not responsible for " +
       "information that is false, inaccurate, incomplete, or unlawful that I supply or approve. I " +
       "acknowledge that no consultant can expedite the NYPD's review.",
   },

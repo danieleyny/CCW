@@ -42,7 +42,7 @@ export async function openCaseDocument(documentId: string): Promise<{ url?: stri
   return { url: data.signedUrl }
 }
 
-/** Mark (or unmark) a portal step as transcribed — staff progress bookkeeping only. */
+/** Mark (or unmark) a guided portal step complete — staff progress bookkeeping only. */
 export async function setStepEntered(caseId: string, stepNo: number, entered: boolean): Promise<{ ok: true }> {
   const { profile } = await requireStaff()
   const admin = createAdminClient()

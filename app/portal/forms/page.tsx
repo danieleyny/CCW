@@ -74,8 +74,9 @@ export default async function FormsPage() {
             <h3 className="text-sm font-semibold">Your filing pack</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               One guided PDF: the answers to type into the NYPD portal in the form&apos;s own order, a
-              guide to which document goes where, and all your assembled documents. On Self-Guided you
-              file it yourself; with Full Concierge we file it for you — we prepare and organize either way.
+              guide to which document goes where, and all your assembled documents. You control the
+              NYPD account and submit your own application on every plan; Full Concierge adds preparation,
+              review, organization, and screen-by-screen guidance.
             </p>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
