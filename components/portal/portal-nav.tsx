@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -22,7 +21,15 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean }
 
@@ -79,9 +86,13 @@ const CASE_TOOLS_CONCIERGE: Item[] = [
   { href: "/portal/payments", label: "Payments", icon: CreditCard },
 ]
 
+function isPathActive(pathname: string, href: string, exact?: boolean) {
+  return exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
+}
+
 function useActive() {
   const pathname = usePathname()
-  return (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href))
+  return (href: string, exact?: boolean) => isPathActive(pathname, href, exact)
 }
 
 /**
@@ -141,10 +152,9 @@ export function PortalDesktopNav({ concierge = false }: { concierge?: boolean })
 export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: number; concierge?: boolean }) {
   const pathname = usePathname()
   const isActive = useActive()
-  const [moreOpen, setMoreOpen] = useState(false)
   const primary = concierge ? PRIMARY_CONCIERGE : PRIMARY
   const more = concierge ? MORE_CONCIERGE : MORE
-  const moreActive = more.some((m) => pathname.startsWith(m.href))
+  const moreActive = more.some((m) => isPathActive(pathname, m.href, m.exact))
 
   return (
     <nav
@@ -181,86 +191,89 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
           )
         })}
 
-        {/* More — opens the sheet */}
-        <button
-          type="button"
-          aria-label="More"
-          aria-expanded={moreOpen}
-          aria-haspopup="dialog"
-          onClick={() => setMoreOpen(true)}
-          className={cn(
-            "relative flex min-w-16 flex-1 flex-col items-center justify-center gap-1 pt-1 text-[11px] font-medium transition-colors",
-            moreActive ? "text-brass-bright" : "text-text-mid"
-          )}
-        >
-          {moreActive && (
-            <span aria-hidden className="absolute top-0 h-[3px] w-[22px] rounded-full bg-brass" />
-          )}
-          <span
-            className={cn(
-              "relative flex h-[26px] w-[34px] items-center justify-center rounded-lg transition-colors",
-              moreActive && "bg-[color-mix(in_oklab,var(--brass)_14%,transparent)]"
-            )}
-          >
-            <MoreHorizontal className="size-5" />
-            {unread > 0 && (
+        {/* Radix owns the trigger state and accessibility wiring. Keeping the
+            trigger inside the Sheet root also makes the control resilient to
+            client transitions and restores focus after the panel closes. */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="More"
+              className={cn(
+                "relative flex min-w-16 flex-1 flex-col items-center justify-center gap-1 pt-1 text-[11px] font-medium transition-colors",
+                moreActive ? "text-brass-bright" : "text-text-mid"
+              )}
+            >
+              {moreActive && (
+                <span aria-hidden className="absolute top-0 h-[3px] w-[22px] rounded-full bg-brass" />
+              )}
               <span
-                aria-label={`${unread} unread`}
-                className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-[9px] font-bold tabular-nums text-brand-foreground"
+                className={cn(
+                  "relative flex h-[26px] w-[34px] items-center justify-center rounded-lg transition-colors",
+                  moreActive && "bg-[color-mix(in_oklab,var(--brass)_14%,transparent)]"
+                )}
               >
-                {unread > 9 ? "9+" : unread}
+                <MoreHorizontal className="size-5" />
+                {unread > 0 && (
+                  <span
+                    aria-label={`${unread} unread`}
+                    className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-[9px] font-bold tabular-nums text-brand-foreground"
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
               </span>
-            )}
-          </span>
-          More
-        </button>
-      </div>
-
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent
-          side="bottom"
-          className="gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]"
-        >
-          <SheetHeader>
-            <SheetTitle className="engraved-sm text-left text-text-mid">More</SheetTitle>
-          </SheetHeader>
-          <ul className="px-3 pb-4">
-            {more.map((item) => {
-              const Icon = item.icon
-              const active = pathname.startsWith(item.href)
-              const status =
-                item.href === "/portal/messages" && unread > 0
-                  ? `${unread} unread from your case team`
-                  : item.status
-              return (
-                <li key={item.href}>
-                  <SheetClose asChild>
-                    <Link
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex min-h-[56px] items-center gap-3 rounded-lg px-2 transition-colors hover:bg-surface-2",
-                        item.conditional && "opacity-70"
-                      )}
-                    >
-                      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface-2">
-                        <Icon className={cn("size-[18px]", active ? "text-brass-bright" : "text-text-mid")} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className={cn("block text-sm font-medium", active ? "text-brass-bright" : "text-foreground")}>
-                          {item.label}
+              More
+            </button>
+          </SheetTrigger>
+          <SheetContent
+            side="bottom"
+            className="dark gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]"
+          >
+            <SheetHeader>
+              <SheetTitle className="engraved-sm text-left text-text-mid">More</SheetTitle>
+              <SheetDescription className="sr-only">
+                Additional case tools and account destinations.
+              </SheetDescription>
+            </SheetHeader>
+            <ul className="px-3 pb-4">
+              {more.map((item) => {
+                const Icon = item.icon
+                const active = isPathActive(pathname, item.href, item.exact)
+                const status =
+                  item.href === "/portal/messages" && unread > 0
+                    ? `${unread} unread from your case team`
+                    : item.status
+                return (
+                  <li key={item.href}>
+                    <SheetClose asChild>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex min-h-[56px] items-center gap-3 rounded-lg px-2 transition-colors hover:bg-surface-2",
+                          item.conditional && "opacity-70"
+                        )}
+                      >
+                        <span className="flex size-[38px] shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface-2">
+                          <Icon className={cn("size-[18px]", active ? "text-brass-bright" : "text-text-mid")} />
                         </span>
-                        <span className="block truncate text-[12px] text-text-low">{status}</span>
-                      </span>
-                      <ChevronRight className="size-4 shrink-0 text-text-low" />
-                    </Link>
-                  </SheetClose>
-                </li>
-              )
-            })}
-          </ul>
-        </SheetContent>
-      </Sheet>
+                        <span className="min-w-0 flex-1">
+                          <span className={cn("block text-sm font-medium", active ? "text-brass-bright" : "text-foreground")}>
+                            {item.label}
+                          </span>
+                          <span className="block truncate text-[12px] text-text-low">{status}</span>
+                        </span>
+                        <ChevronRight className="size-4 shrink-0 text-text-low" />
+                      </Link>
+                    </SheetClose>
+                  </li>
+                )
+              })}
+            </ul>
+          </SheetContent>
+        </Sheet>
+      </div>
     </nav>
   )
 }

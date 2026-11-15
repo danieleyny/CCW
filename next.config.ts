@@ -13,6 +13,10 @@ import type { NextConfig } from "next";
  * Supabase origin so HMR and `pnpm dev` keep working.
  */
 const isDev = process.env.NODE_ENV !== "production"
+const allowedDevOrigins = (process.env.DEV_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean)
 
 const csp = [
   `default-src 'self'`,
@@ -31,7 +35,10 @@ const csp = [
   `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com https://analytics.google.com${
     isDev ? " http://127.0.0.1:54321 http://localhost:* ws://127.0.0.1:* ws://localhost:*" : ""
   }`,
-  `upgrade-insecure-requests`,
+  // Keep LAN/device QA usable in development. On an HTTP dev origin this
+  // directive upgrades Next's own CSS/font requests to HTTPS and leaves the
+  // page completely unstyled; production remains HTTPS-only.
+  isDev ? "" : `upgrade-insecure-requests`,
 ]
   .filter(Boolean)
   .join("; ")
@@ -48,6 +55,10 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Opt-in only: responsive QA from a phone or browser sandbox may reach the
+  // dev server through its LAN hostname. Next 16 otherwise blocks its JS/font
+  // assets, leaving a misleading non-interactive page. Production ignores it.
+  ...(isDev && allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   // sharp is a native module used server-side to convert applicant photos toward the
   // portal's format/dimensions — keep it external rather than bundled. The workspace
   // config keeps the Linux x64 optional packages in the install graph for Vercel.

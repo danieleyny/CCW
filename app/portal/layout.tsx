@@ -104,7 +104,7 @@ export default async function PortalLayout({
               <strong>{applicationLabel}</strong>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <LocaleSwitcher current={locale} label={t.common.language} />
+              <LocaleSwitcher current={locale} label={t.common.language} compactBelowSm />
               <NotificationBell />
               <Link
                 href="/portal/profile"
@@ -112,7 +112,7 @@ export default async function PortalLayout({
               >
                 {profile.full_name}
               </Link>
-              <AccountActions signOutLabel={t.common.signOut} />
+              <AccountActions signOutLabel={t.common.signOut} compactBelowSm />
             </div>
           </div>
         </header>

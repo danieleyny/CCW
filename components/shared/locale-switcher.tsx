@@ -10,7 +10,15 @@ import { LOCALES, type Locale } from "@/config/i18n"
  * PART C / Phase 11 — language switcher. Sets the locale cookie and refreshes;
  * the server resolves messages on the next render.
  */
-export function LocaleSwitcher({ current, label }: { current: Locale; label: string }) {
+export function LocaleSwitcher({
+  current,
+  label,
+  compactBelowSm = false,
+}: {
+  current: Locale
+  label: string
+  compactBelowSm?: boolean
+}) {
   const router = useRouter()
   const [pending, start] = useTransition()
 
@@ -30,11 +38,13 @@ export function LocaleSwitcher({ current, label }: { current: Locale; label: str
             router.refresh()
           })
         }
-        className="rounded border border-hairline bg-transparent px-1.5 py-0.5 text-xs"
+        className={compactBelowSm
+          ? "w-11 rounded border border-hairline bg-transparent px-1 py-1 text-[10px] uppercase sm:w-auto sm:px-1.5 sm:py-0.5 sm:text-xs sm:normal-case"
+          : "rounded border border-hairline bg-transparent px-1.5 py-0.5 text-xs"}
       >
         {LOCALES.map((l) => (
           <option key={l.key} value={l.key}>
-            {l.nativeLabel}
+            {compactBelowSm ? l.key.toUpperCase() : l.nativeLabel}
           </option>
         ))}
       </select>
