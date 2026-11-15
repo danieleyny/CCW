@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Mono-caps section label. Restyled to the marketing v2 vocabulary — it now
- * renders the `.eyebrow` token (electric mono-caps on light, cyan on `.dark`).
- * The prop API is unchanged so every caller inherits the new look for free.
+ * Shared mono-caps section label. Marketing owns `.mkt2 .eyebrow`; authenticated
+ * surfaces layer their quieter case-workspace treatment through
+ * `.portal-v2 .section-eyebrow` without changing the component contract.
  */
 export function SectionEyebrow({
   children,
@@ -12,5 +12,5 @@ export function SectionEyebrow({
   children: React.ReactNode
   className?: string
 }) {
-  return <div className={cn("eyebrow", className)}>{children}</div>
+  return <div className={cn("section-eyebrow eyebrow", className)}>{children}</div>
 }

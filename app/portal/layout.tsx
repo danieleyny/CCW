@@ -7,12 +7,14 @@ import { getMyCase } from "@/lib/portal"
 import { resolveOnboardingRedirect } from "@/lib/portal/intake-gate"
 import { brand } from "@/config/brand"
 import { LogoMark } from "@/components/brand/logo"
-import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
+import { PortalBottomNav, PortalDesktopNav } from "@/components/portal/portal-nav"
 import { AccountActions } from "@/components/auth/account-actions"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
 import { getLocale, getMessages } from "@/lib/i18n"
+import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
+import "./portal-v2.css"
 
 export default async function PortalLayout({
   children,
@@ -24,8 +26,13 @@ export default async function PortalLayout({
   // Soft intake gate — carry a brand-new applicant into intake before they can
   // wander a half-empty portal. Gentle: only early-stage + intake-incomplete
   // cases, and intake/profile/privacy + attorney-review cases are exempt.
-  const pathname = (await headers()).get("x-pathname") ?? ""
-  const myCase = await getMyCase()
+  const [headerList, myCase, locale, t] = await Promise.all([
+    headers(),
+    getMyCase(),
+    getLocale(),
+    getMessages(),
+  ])
+  const pathname = headerList.get("x-pathname") ?? ""
   if (myCase) {
     const onboardingRedirect = await resolveOnboardingRedirect(pathname, myCase)
     if (onboardingRedirect) redirect(onboardingRedirect)
@@ -39,65 +46,96 @@ export default async function PortalLayout({
     .select("id", { count: "exact", head: true })
     .eq("read", false)
 
-  const [locale, t] = await Promise.all([getLocale(), getMessages()])
   // CONCIERGE QA Phase 4 — the done-for-you path gets its own nav (no checklist).
   const isConcierge = myCase?.service_mode === "concierge"
+  const applicationType = myCase?.application_type as ApplicationType | null | undefined
+  const applicationLabel = applicationType
+    ? APPLICATION_TYPE_LABELS[applicationType]
+    : "Application setup"
 
   return (
     <div
-      className="dark flex min-h-svh flex-col bg-background text-foreground"
+      className="portal-v2 dark min-h-svh bg-background text-foreground"
       // The tab bar's height, exposed so pages with their own sticky action bar
       // (intake) can extend their bottom padding past it.
       style={{ "--shell-bottom": "calc(60px + env(safe-area-inset-bottom))" } as React.CSSProperties}
     >
       <DarkBackdrop />
-      <header
-        className="glass-bar sticky top-0 z-20 border-b border-hairline"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 md:h-16">
-          {/* The wordmark never wraps: at 390px the language selector squeezed
-              it onto three lines, so the lockup shrinks a step instead. */}
-          <Link href="/portal" className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold tracking-tight text-foreground sm:text-lg">
-            <LogoMark className="size-7 shrink-0 text-brass sm:size-8" />
-            {brand.logo.wordmark}
-          </Link>
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <LocaleSwitcher current={locale} label={t.common.language} />
-            <NotificationBell />
-            <Link
-              href="/portal/profile"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
-            >
-              {profile.full_name}
-            </Link>
-            <AccountActions signOutLabel={t.common.signOut} />
+      <aside className="portal-v2__rail" aria-label="Case navigation">
+        <Link href="/portal" className="portal-v2__brand">
+          <LogoMark className="size-9 shrink-0" />
+          <span>
+            <strong>{brand.logo.wordmark}</strong>
+            <small>Private case management</small>
+          </span>
+        </Link>
+
+        <div className="portal-v2__caseplate">
+          <p>Case / NYC</p>
+          <h2>{applicationLabel}</h2>
+          <div>
+            <span className="portal-v2__case-dot" aria-hidden="true" />
+            {isConcierge ? "Full Concierge" : "Applicant workspace"}
           </div>
         </div>
-        <PortalTopNav concierge={isConcierge} />
-      </header>
 
-      {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
-          room. The old layout applied pb-24 on BOTH main and footer, doubling it.
-          On intake the tab bar is hidden and the wizard's own sticky action bar
-          carries the safe area, so we don't reserve tab-bar space there. */}
-      <main
-        className={`mx-auto w-full max-w-3xl flex-1 px-4 py-6 md:pb-8 ${
-          pathname.startsWith("/portal/intake") ? "pb-0" : "pb-[calc(var(--shell-bottom)+24px)]"
-        }`}
-      >
-        {children}
-      </main>
+        <PortalDesktopNav concierge={isConcierge} />
 
-      {/* Desktop only — on mobile these live in the More sheet (Profile & your data). */}
-      <footer className="mx-auto hidden w-full max-w-3xl gap-4 px-4 pb-6 text-xs text-text-low md:flex">
-        <Link href="/portal/profile" className="underline hover:text-text-mid">
-          Profile
-        </Link>
-        <Link href="/portal/privacy" className="underline hover:text-text-mid">
-          {t.portal.yourData}
-        </Link>
-      </footer>
+        <div className="portal-v2__rail-note">
+          <p>Applicant controlled</p>
+          <span>You review and submit your own application. We keep the case organized.</span>
+        </div>
+      </aside>
+
+      <div className="portal-v2__workspace">
+        <header
+          className="portal-v2__header"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
+          <div className="portal-v2__header-inner">
+            {/* Mobile keeps the compact brand lockup; desktop uses the rail and
+                spends this space on the current case context. */}
+            <Link href="/portal" className="portal-v2__mobile-brand">
+              <LogoMark className="size-7 shrink-0" />
+              {brand.logo.wordmark}
+            </Link>
+            <div className="portal-v2__header-context">
+              <span>Your private workspace</span>
+              <strong>{applicationLabel}</strong>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <LocaleSwitcher current={locale} label={t.common.language} />
+              <NotificationBell />
+              <Link
+                href="/portal/profile"
+                className="hidden text-sm text-text-mid transition-opacity hover:opacity-70 sm:inline"
+              >
+                {profile.full_name}
+              </Link>
+              <AccountActions signOutLabel={t.common.signOut} />
+            </div>
+          </div>
+        </header>
+
+        {/* Single bottom pad: clear the phone/tablet tab bar plus breathing room.
+            Intake owns its own focused action bar and therefore reserves no tab
+            space. At desktop the fixed case rail replaces the bottom tabs. */}
+        <main
+          className={`portal-v2__content portal-enter ${
+            pathname.startsWith("/portal/intake")
+              ? "pb-0"
+              : "pb-[calc(var(--shell-bottom)+24px)] lg:pb-10"
+          }`}
+        >
+          {children}
+        </main>
+
+        <footer className="portal-v2__footer">
+          <Link href="/portal/profile">Profile</Link>
+          <Link href="/portal/privacy">{t.portal.yourData}</Link>
+          <span>Private document preparation · Applicant-controlled submission</span>
+        </footer>
+      </div>
 
       {/* Intake is a focused task flow with its own sticky action bar — two
           stacked bottom bars is one too many. The soft intake gate already keeps

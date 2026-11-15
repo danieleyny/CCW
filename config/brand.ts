@@ -64,7 +64,9 @@ export const paletteDark = {
   "hairline-strong": "rgba(255,255,255,0.14)",
   "text-hi": "#F2F3F5",
   "text-mid": "#A8AEB8",
-  "text-low": "#6B7280",
+  // Accessible on every dark app surface at normal text sizes (minimum 4.83:1
+  // on surface-3). The previous #6B7280 failed on all four common surfaces.
+  "text-low": "#858C99",
   brass: "#C9A24B",
   "brass-bright": "#E7C77A",
   "brass-deep": "#8E6F2E",
@@ -97,7 +99,8 @@ export const paletteLight = {
   "hairline-strong": "rgba(20,18,14,0.14)",
   "text-hi": "#14120E",
   "text-mid": "#57534E",
-  "text-low": "#8A8580",
+  // Accessible on every warm-paper surface at normal text sizes (minimum 4.74:1).
+  "text-low": "#69645F",
   // Fill brass matches dark; "bright"/"deep" go DARKER (readable ink-brass on paper).
   brass: "#C9A24B",
   "brass-bright": "#8E6F2E",

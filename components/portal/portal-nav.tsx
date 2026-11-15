@@ -47,14 +47,13 @@ const MORE: MoreItem[] = [
   { href: "/portal/profile", label: "Profile & your data", icon: ShieldCheck, status: "Account, password & privacy" },
 ]
 
-/** Desktop keeps EVERY destination in the top row — the More grouping is a phone
- *  affordance, not an information-architecture cut. */
-const DESKTOP: Item[] = [
-  ...PRIMARY,
+const CASE_TOOLS: Item[] = [
   { href: "/portal/details", label: "Your details", icon: IdCard },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle },
   { href: "/portal/forms", label: "Forms", icon: FileText },
   { href: "/portal/payments", label: "Payments", icon: CreditCard },
+]
+const LATER: Item[] = [
   { href: "/portal/license", label: "License", icon: BadgeCheck },
   { href: "/portal/appeal", label: "Appeal", icon: Scale },
 ]
@@ -75,12 +74,9 @@ const MORE_CONCIERGE: MoreItem[] = [
   { href: "/portal/appeal", label: "Appeal", icon: Scale, status: "Only if your application is denied", conditional: true },
   { href: "/portal/profile", label: "Profile & your data", icon: ShieldCheck, status: "Account, password & privacy" },
 ]
-const DESKTOP_CONCIERGE: Item[] = [
-  ...PRIMARY_CONCIERGE,
+const CASE_TOOLS_CONCIERGE: Item[] = [
   { href: "/portal/details", label: "Your details", icon: IdCard },
   { href: "/portal/payments", label: "Payments", icon: CreditCard },
-  { href: "/portal/license", label: "License", icon: BadgeCheck },
-  { href: "/portal/appeal", label: "Appeal", icon: Scale },
 ]
 
 function useActive() {
@@ -88,30 +84,51 @@ function useActive() {
   return (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href))
 }
 
-/** Desktop: a horizontal tab row under the header. */
-export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
+/**
+ * Desktop: a persistent case rail. Grouping keeps the four daily destinations
+ * visually separate from supporting tools and later-lifecycle routes; the old
+ * ten-item horizontal row forced wrapping and gave every route equal weight.
+ */
+export function PortalDesktopNav({ concierge = false }: { concierge?: boolean }) {
   const isActive = useActive()
+  const groups = concierge
+    ? [
+        { label: "Case workspace", items: PRIMARY_CONCIERGE },
+        { label: "Case tools", items: CASE_TOOLS_CONCIERGE },
+        { label: "Later", items: LATER },
+      ]
+    : [
+        { label: "Case workspace", items: PRIMARY },
+        { label: "Case tools", items: CASE_TOOLS },
+        { label: "Later", items: LATER },
+      ]
+
   return (
-    <nav aria-label="Primary" className="hidden border-b border-hairline md:block">
-      <div className="mx-auto flex max-w-3xl flex-wrap gap-1 px-4">
-        {(concierge ? DESKTOP_CONCIERGE : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
-          const active = isActive(href, exact)
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
-                active ? "border-brass text-brass" : "border-transparent text-text-mid hover:text-foreground"
-              )}
-            >
-              <Icon className="size-4" />
-              {label}
-            </Link>
-          )
-        })}
-      </div>
+    <nav aria-label="Primary" className="portal-rail-nav">
+      {groups.map((group) => (
+        <div className="portal-rail-group" key={group.label}>
+          <p className="portal-rail-label">{group.label}</p>
+          <div className="portal-rail-links">
+            {group.items.map(({ href, label, icon: Icon, exact }) => {
+              const active = isActive(href, exact)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn("portal-rail-link", active && "is-active")}
+                >
+                  <span className="portal-rail-icon" aria-hidden="true">
+                    <Icon className="size-[17px]" strokeWidth={1.7} />
+                  </span>
+                  <span>{label}</span>
+                  <ChevronRight className="portal-rail-arrow size-3.5" aria-hidden="true" />
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   )
 }
@@ -132,7 +149,7 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
   return (
     <nav
       aria-label="Primary"
-      className="glass-bar fixed inset-x-0 bottom-0 z-20 border-t border-hairline md:hidden"
+      className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-hairline lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex min-h-[60px] max-w-3xl items-stretch justify-around">

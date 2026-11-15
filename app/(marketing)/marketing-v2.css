@@ -958,9 +958,9 @@
 /* next/font wiring + full-height ground (the spec assumed <link> Google Fonts;
    we load them via next/font in the marketing layout and map the family vars). */
 .mkt2 {
-  --display: var(--font-bodoni), "Bodoni Moda", Didot, "Times New Roman", serif;
-  --sans: var(--font-hanken), "Hanken Grotesk", Arial, sans-serif;
-  --mono: var(--font-azeret), "Azeret Mono", ui-monospace, monospace;
+  --display: var(--font-display), "Bodoni Moda", Didot, "Times New Roman", serif;
+  --sans: var(--font-sans), "Hanken Grotesk", Arial, sans-serif;
+  --mono: var(--font-mono), "Azeret Mono", ui-monospace, monospace;
   min-height: 100svh;
 }
 

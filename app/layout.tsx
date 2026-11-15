@@ -1,34 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { brand } from "@/config/brand";
+import { brandDisplayFont, brandMonoFont, brandSansFont } from "@/config/fonts";
 import { BrandStyle } from "@/config/brand-style";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { WebVitals } from "@/components/analytics/web-vitals";
-
-// Body + hero display fonts are on the critical path → preload. Mono is only
-// small eyebrows/labels → keep it off the preload list so it doesn't compete
-// with the LCP fonts. All swap so text paints immediately in the fallback.
-const fontSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const fontDisplay = Space_Grotesk({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const fontMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  display: "swap",
-  preload: false,
-});
 
 // Search Console / Bing verification tokens are wired to env so the owner can
 // verify ownership WITHOUT a code change: set the var in Vercel and redeploy.
@@ -63,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} h-full antialiased`}
+      className={`${brandSansFont.variable} ${brandDisplayFont.variable} ${brandMonoFont.variable} h-full antialiased`}
     >
       <head>
         <BrandStyle />
