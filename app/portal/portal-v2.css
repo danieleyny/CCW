@@ -2687,6 +2687,1423 @@ html:has(.portal-v2) body {
   }
 }
 
+/* Page 8 — License lifecycle */
+.license-v2-page {
+  width: 100%;
+  padding-bottom: 36px;
+  --license-gold-tint: color-mix(in srgb, var(--portal-gold) 14%, var(--portal-paper));
+  --license-green-tint: color-mix(in srgb, var(--ok) 10%, var(--portal-paper));
+  --license-red-tint: color-mix(in srgb, var(--danger) 9%, var(--portal-paper));
+  --license-amber-tint: color-mix(in srgb, var(--warn) 9%, var(--portal-paper));
+  --license-blue-tint: color-mix(in srgb, var(--portal-navy) 6%, var(--portal-paper));
+}
+
+.license-v2-page-header {
+  margin-bottom: 26px;
+}
+
+.license-v2-page-header > p:first-child {
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-page-header h1 {
+  margin-top: 8px;
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 2.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.license-v2-page-header > p:last-child {
+  max-width: 690px;
+  margin-top: 11px;
+  color: var(--portal-ink-2);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.license-v2-before,
+.license-v2-status-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 36px;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 30px 34px;
+  box-shadow: var(--shadow-card);
+}
+
+.license-v2-before {
+  border: 1.5px solid color-mix(in srgb, var(--portal-gold) 74%, var(--hairline));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--portal-gold) 3%, var(--portal-paper)), color-mix(in srgb, var(--portal-gold) 15%, var(--portal-paper)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--portal-gold) 16%, transparent), var(--shadow-card);
+}
+
+.license-v2-status-hero {
+  border: 1px solid var(--hairline);
+  background: linear-gradient(135deg, var(--portal-paper), var(--license-blue-tint));
+}
+
+.license-v2-before-copy,
+.license-v2-status-copy {
+  min-width: 0;
+}
+
+.license-v2-icon-tile,
+.license-v2-section-icon,
+.license-v2-support-icon,
+.license-v2-auth-icon,
+.license-v2-report-row-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.license-v2-icon-tile {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--portal-navy);
+  color: var(--portal-gold-light);
+  box-shadow: 0 14px 28px -18px var(--portal-navy);
+}
+
+.license-v2-icon-tile svg {
+  width: 23px;
+  height: 23px;
+}
+
+.license-v2-card-eyebrow {
+  margin-top: 20px;
+  color: var(--portal-gold-deep);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.65625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.license-v2-before h2,
+.license-v2-status-hero h2 {
+  margin-top: 6px;
+  font-family: var(--font-title), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.license-v2-before h2 {
+  max-width: 24ch;
+  font-size: 1.875rem;
+  line-height: 1.08;
+}
+
+.license-v2-before-intro {
+  margin-top: 13px;
+  color: var(--portal-ink-2);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.license-v2-before ul {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.license-v2-before li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--portal-ink-2);
+  font-size: 0.875rem;
+}
+
+.license-v2-before li svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-before li strong {
+  color: var(--portal-ink);
+}
+
+.license-v2-before-copy > a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--portal-navy);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.license-v2-before-copy > a:hover {
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-illustration-wrap {
+  position: relative;
+  width: 360px;
+  padding: 24px 10px 20px;
+}
+
+.license-v2-illustration-wrap.is-locked {
+  opacity: 0.75;
+  filter: grayscale(0.6);
+}
+
+.license-v2-license-card {
+  position: relative;
+  width: 340px;
+  min-height: 212px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--portal-navy) 15%, var(--portal-paper));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--portal-gold) 28%, transparent), transparent 20%),
+    linear-gradient(145deg, var(--portal-paper), color-mix(in srgb, var(--portal-navy) 8%, var(--portal-paper)));
+  padding: 18px;
+  color: var(--portal-ink);
+  box-shadow: 0 28px 48px -22px rgba(10, 18, 34, 0.5);
+  transform: rotate(-3deg);
+}
+
+.license-v2-license-card::after {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--portal-navy) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--portal-navy) 4%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
+  content: "";
+  pointer-events: none;
+}
+
+.license-v2-license-top,
+.license-v2-license-middle,
+.license-v2-license-dates {
+  position: relative;
+  z-index: 1;
+}
+
+.license-v2-license-top {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+}
+
+.license-v2-nypd-seal {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--portal-navy);
+  color: var(--portal-gold-light);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+}
+
+.license-v2-license-top strong {
+  display: block;
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.license-v2-license-top small,
+.license-v2-license-middle small,
+.license-v2-license-dates small {
+  display: block;
+  color: var(--portal-gold-deep);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.license-v2-hologram {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 1px solid color-mix(in srgb, var(--portal-paper) 80%, transparent);
+  border-radius: 999px;
+  background: conic-gradient(var(--portal-gold), color-mix(in srgb, var(--signal) 70%, var(--portal-paper)), color-mix(in srgb, var(--danger) 45%, var(--portal-paper)), var(--portal-gold));
+  opacity: 0.7;
+  animation: license-v2-hologram-spin 12s linear infinite;
+}
+
+@keyframes license-v2-hologram-spin {
+  to { transform: rotate(1turn); }
+}
+
+.license-v2-license-middle {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.license-v2-photo-placeholder {
+  display: grid;
+  width: 60px;
+  height: 68px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--portal-navy) 9%, var(--portal-paper));
+  color: var(--portal-navy);
+}
+
+.license-v2-photo-placeholder svg {
+  width: 30px;
+  height: 30px;
+}
+
+.license-v2-license-middle strong {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.license-v2-license-middle em {
+  display: block;
+  margin-top: 9px;
+  color: var(--portal-muted);
+  font-size: 0.5625rem;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.license-v2-license-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 10px;
+}
+
+.license-v2-license-dates b {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.license-v2-lock {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 5px solid color-mix(in srgb, var(--portal-paper) 84%, transparent);
+  border-radius: 999px;
+  background: var(--portal-gold);
+  color: var(--portal-navy);
+  box-shadow: 0 16px 30px -16px var(--portal-navy);
+  transform: translate(-50%, -50%);
+}
+
+.license-v2-lock svg {
+  width: 26px;
+  height: 26px;
+}
+
+.license-v2-status-pill,
+.license-v2-state-pill,
+.license-v2-eligibility,
+.license-v2-open-pill {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.license-v2-status-pill svg,
+.license-v2-state-pill svg,
+.license-v2-eligibility svg {
+  width: 13px;
+  height: 13px;
+}
+
+.license-v2-status-pill.is-active,
+.license-v2-state-pill.is-green,
+.license-v2-eligibility.is-eligible {
+  background: var(--license-green-tint);
+  color: color-mix(in srgb, var(--ok) 86%, var(--portal-ink));
+}
+
+.license-v2-status-pill.is-renewal,
+.license-v2-state-pill.is-gold,
+.license-v2-open-pill {
+  background: var(--license-gold-tint);
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-status-pill.is-expired,
+.license-v2-state-pill.is-red {
+  background: var(--license-red-tint);
+  color: var(--danger);
+}
+
+.license-v2-state-pill.is-grey {
+  background: var(--surface-3);
+  color: var(--portal-ink-2);
+}
+
+.license-v2-eligibility.is-waiting {
+  background: var(--license-amber-tint);
+  color: color-mix(in srgb, var(--warn) 88%, var(--portal-ink));
+}
+
+.license-v2-status-hero h2 {
+  margin-top: 12px;
+  font-size: 2.125rem;
+  line-height: 1.05;
+}
+
+.license-v2-valid-line {
+  margin-top: 9px;
+  color: var(--portal-ink-2);
+  font-size: 0.9375rem;
+}
+
+.license-v2-valid-line strong {
+  color: var(--portal-ink);
+}
+
+.license-v2-runway {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+  border: 1px solid color-mix(in srgb, var(--portal-gold) 60%, var(--hairline));
+  border-radius: 16px;
+  background: var(--license-gold-tint);
+  padding: 13px 14px;
+}
+
+.license-v2-runway strong {
+  color: var(--portal-gold-deep);
+  font-size: 0.8125rem;
+}
+
+.license-v2-runway p {
+  margin-top: 3px;
+  color: var(--portal-ink-2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.license-v2-renewal-action button,
+.license-v2-support-action button {
+  min-height: 44px;
+}
+
+.license-v2-term {
+  margin-top: 30px;
+}
+
+.license-v2-term-track {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.license-v2-term-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--portal-featured-start), var(--portal-navy));
+}
+
+.license-v2-renewal-tick {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 20px;
+  background: var(--portal-gold-deep);
+  transform: translateX(-1px);
+}
+
+.license-v2-renewal-tick small {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  color: var(--portal-gold-deep);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-style: normal;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.license-v2-term-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: var(--portal-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  line-height: 1.4;
+}
+
+.license-v2-county-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 18px;
+  border-radius: 14px;
+  background: var(--license-blue-tint);
+  padding: 12px 14px;
+  color: var(--portal-ink-2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.license-v2-county-strip.is-urgent {
+  background: var(--license-amber-tint);
+  color: color-mix(in srgb, var(--warn) 74%, var(--portal-ink));
+}
+
+.license-v2-county-strip svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--portal-navy);
+}
+
+.license-v2-county-strip.is-urgent svg {
+  color: var(--warn);
+}
+
+.license-v2-hub,
+.license-v2-dos,
+.license-v2-review,
+.license-v2-support-grid {
+  margin-top: 22px;
+}
+
+.license-v2-section-card,
+.license-v2-dos {
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  background: var(--portal-paper);
+  padding: 20px;
+  box-shadow: 0 14px 36px -30px rgba(10, 18, 34, 0.5);
+}
+
+.license-v2-hub {
+  display: grid;
+  gap: 22px;
+}
+
+.license-v2-section-header,
+.license-v2-dos-header {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+}
+
+.license-v2-dos-header {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.license-v2-section-icon,
+.license-v2-support-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--portal-navy);
+  color: var(--portal-paper);
+}
+
+.license-v2-section-icon.is-amber,
+.license-v2-support-icon.is-gold {
+  background: var(--license-gold-tint);
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-section-icon svg,
+.license-v2-support-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.license-v2-section-header h2,
+.license-v2-dos-header h2,
+.license-v2-support-card h2,
+.license-v2-review h2 {
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1.3125rem;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.license-v2-section-header p,
+.license-v2-dos-header p,
+.license-v2-support-card p,
+.license-v2-review p {
+  margin-top: 4px;
+  color: var(--portal-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.license-v2-authorization-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.license-v2-authorization {
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: var(--surface-2);
+  padding: 16px;
+}
+
+.license-v2-authorization-top {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.license-v2-auth-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--portal-paper);
+  color: var(--portal-navy);
+}
+
+.license-v2-auth-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.license-v2-authorization-top h3 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.license-v2-authorization-top p {
+  margin-top: 2px;
+  color: var(--portal-muted);
+  font-size: 0.6875rem;
+}
+
+.license-v2-clocks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.license-v2-clock-card {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--portal-paper);
+  padding: 12px;
+}
+
+.license-v2-clock-card.is-running {
+  border-color: color-mix(in srgb, var(--portal-gold) 62%, var(--hairline));
+  background: linear-gradient(135deg, var(--portal-paper), var(--license-gold-tint));
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--portal-gold) 28%, transparent);
+}
+
+.license-v2-clock-card.is-overdue {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--hairline));
+  background: var(--license-red-tint);
+}
+
+.license-v2-clock-card.is-idle {
+  color: var(--portal-muted);
+}
+
+.license-v2-clock-ring {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, var(--portal-paper) 61%, transparent 63%),
+    conic-gradient(var(--portal-navy) var(--license-ring-progress), var(--surface-3) 0);
+  color: var(--portal-navy);
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1.25rem;
+}
+
+.license-v2-clock-card.is-running .license-v2-clock-ring {
+  background:
+    radial-gradient(circle, var(--portal-paper) 61%, transparent 63%),
+    conic-gradient(var(--portal-gold-deep) var(--license-ring-progress), color-mix(in srgb, var(--portal-gold) 16%, var(--portal-paper)) 0);
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-clock-card.is-done .license-v2-clock-ring {
+  background: var(--license-green-tint);
+  color: var(--ok);
+}
+
+.license-v2-clock-card.is-overdue .license-v2-clock-ring {
+  background: var(--license-red-tint);
+  color: var(--danger);
+}
+
+.license-v2-clock-card.is-idle .license-v2-clock-ring {
+  background: var(--surface-3);
+  color: var(--portal-muted);
+}
+
+.license-v2-clock-ring svg {
+  width: 22px;
+  height: 22px;
+}
+
+.license-v2-clock-copy {
+  min-width: 0;
+}
+
+.license-v2-clock-copy strong,
+.license-v2-clock-copy small {
+  display: block;
+}
+
+.license-v2-clock-copy strong {
+  font-size: 0.8125rem;
+}
+
+.license-v2-clock-copy small {
+  margin-top: 3px;
+  color: var(--portal-muted);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.license-v2-clock-card.is-overdue .license-v2-clock-copy small {
+  color: var(--danger);
+}
+
+.license-v2-auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 13px;
+}
+
+.license-v2-date-input {
+  width: 180px;
+  min-height: 44px;
+  background: var(--portal-paper);
+}
+
+.license-v2-edit-form,
+.license-v2-new-auth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin-top: 13px;
+  border-top: 1px dashed var(--hairline-strong);
+  padding-top: 13px;
+}
+
+.license-v2-edit-form label,
+.license-v2-new-auth label {
+  display: grid;
+  gap: 5px;
+}
+
+.license-v2-edit-form label > span,
+.license-v2-new-auth label > span {
+  color: var(--portal-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.license-v2-edit-form input,
+.license-v2-new-auth input {
+  min-height: 44px;
+  background: var(--portal-paper);
+}
+
+.license-v2-auth-empty {
+  display: flex;
+  min-height: 108px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 16px;
+  padding: 22px;
+  color: var(--portal-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.license-v2-auth-empty svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-auth-empty strong {
+  color: var(--portal-ink);
+}
+
+.license-v2-log-auth {
+  min-height: 44px;
+  margin-top: 14px;
+}
+
+.license-v2-report .license-v2-section-header {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.license-v2-report-form {
+  margin-top: 18px;
+}
+
+.license-v2-report-form fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.license-v2-report-form legend {
+  width: 100%;
+  margin-bottom: 9px;
+  color: var(--portal-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.license-v2-report-primary {
+  display: contents;
+}
+
+.license-v2-report-more {
+  display: none;
+}
+
+.license-v2-report-form label {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  background: var(--portal-paper);
+  padding: 9px 13px;
+  color: var(--portal-ink-2);
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.license-v2-report-form label:hover {
+  border-color: var(--portal-navy);
+  color: var(--portal-ink);
+}
+
+.license-v2-report-form label.is-selected {
+  border-color: var(--portal-navy);
+  background: var(--portal-navy);
+  color: var(--portal-paper);
+}
+
+.license-v2-report-form label:focus-within {
+  outline: 2px solid var(--portal-gold);
+  outline-offset: 2px;
+}
+
+.license-v2-report-form input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.license-v2-report-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: var(--surface-2);
+  padding: 16px;
+}
+
+.license-v2-report-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--portal-ink-2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.license-v2-report-hint svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-report-panel textarea {
+  min-height: 108px;
+  resize: vertical;
+  background: var(--portal-paper);
+}
+
+.license-v2-report-panel button {
+  min-height: 44px;
+  justify-self: start;
+  background: var(--portal-navy);
+  color: var(--portal-paper);
+}
+
+.license-v2-report-panel button:hover {
+  background: var(--portal-dark);
+}
+
+.license-v2-report-done {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 16px;
+  border: 1px solid color-mix(in srgb, var(--ok) 24%, var(--hairline));
+  border-radius: 16px;
+  background: var(--license-green-tint);
+  padding: 14px;
+  color: var(--ok);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.license-v2-report-done svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.license-v2-recent-reports {
+  margin-top: 20px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 16px;
+}
+
+.license-v2-recent-reports h3 {
+  color: var(--portal-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.license-v2-recent-reports ul {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.license-v2-recent-reports li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.license-v2-report-row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--portal-navy);
+}
+
+.license-v2-report-row-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.license-v2-recent-reports li > span:nth-child(2) {
+  min-width: 0;
+}
+
+.license-v2-recent-reports strong,
+.license-v2-recent-reports small {
+  display: block;
+}
+
+.license-v2-recent-reports strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.license-v2-recent-reports small {
+  margin-top: 2px;
+  color: var(--portal-muted);
+  font-size: 0.6875rem;
+}
+
+.license-v2-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.license-v2-support-grid.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.license-v2-support-card,
+.license-v2-review {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: start;
+  gap: 13px;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  background: var(--portal-paper);
+  padding: 18px;
+}
+
+.license-v2-support-action {
+  grid-column: 2;
+  align-self: end;
+  margin-top: 2px;
+}
+
+.license-v2-support-action > a,
+.license-v2-review > a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--portal-navy);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.license-v2-support-action > a:hover,
+.license-v2-review > a:hover {
+  border-color: var(--portal-navy);
+  background: var(--surface-2);
+}
+
+.license-v2-support-action svg,
+.license-v2-review > a svg {
+  width: 15px;
+  height: 15px;
+}
+
+.license-v2-review {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  border-color: color-mix(in srgb, var(--portal-gold) 62%, var(--hairline));
+  background: linear-gradient(135deg, var(--portal-paper), var(--license-gold-tint));
+}
+
+.license-v2-dos-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.license-v2-dos-item {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 9px 12px;
+  font-size: 0.8125rem;
+}
+
+.license-v2-dos-item > span:first-child {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.license-v2-dos-item > span:first-child > svg {
+  flex: 0 0 auto;
+}
+
+.license-v2-dos-item small {
+  display: block;
+  margin-top: 2px;
+  color: var(--portal-muted);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.license-v2-dos-status {
+  flex: 0 0 auto;
+  color: var(--portal-ink-2);
+  font-size: 0.6875rem;
+}
+
+.license-v2-dos-status.is-done {
+  color: var(--ok);
+}
+
+.license-v2-dos-clocks {
+  margin-top: 14px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  padding: 14px;
+}
+
+.license-v2-dos-clocks > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--portal-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.license-v2-dos-clocks svg {
+  width: 16px;
+  height: 16px;
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-dos-clocks ul {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  color: var(--portal-ink-2);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 1023px) {
+  .license-v2-before,
+  .license-v2-status-hero {
+    gap: 24px;
+  }
+
+  .license-v2-illustration-wrap {
+    width: 302px;
+  }
+
+  .license-v2-license-card {
+    width: 286px;
+  }
+
+  .license-v2-clocks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .license-v2-page {
+    padding-bottom: calc(22px + var(--shell-bottom));
+  }
+
+  .license-v2-page-header {
+    margin-bottom: 20px;
+  }
+
+  .license-v2-page-header h1 {
+    font-size: 2rem;
+  }
+
+  .license-v2-page-header > p:last-child {
+    font-size: 0.875rem;
+  }
+
+  .license-v2-before,
+  .license-v2-status-hero {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 24px;
+    padding: 20px;
+  }
+
+  .license-v2-before .license-v2-illustration-wrap,
+  .license-v2-status-hero .license-v2-illustration-wrap {
+    display: none;
+  }
+
+  .license-v2-before h2 {
+    font-size: 1.5rem;
+  }
+
+  .license-v2-status-hero h2 {
+    font-size: 1.625rem;
+  }
+
+  .license-v2-runway {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .license-v2-renewal-action button,
+  .license-v2-renewal-action p {
+    width: 100%;
+  }
+
+  .license-v2-term {
+    margin-top: 26px;
+  }
+
+  .license-v2-renewal-tick small,
+  .license-v2-term-renewal {
+    display: none;
+  }
+
+  .license-v2-term-legend {
+    font-size: 0.5625rem;
+  }
+
+  .license-v2-section-card,
+  .license-v2-dos {
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  .license-v2-section-header,
+  .license-v2-dos-header {
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .license-v2-section-header .license-v2-eligibility {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .license-v2-authorization {
+    padding: 14px;
+  }
+
+  .license-v2-authorization-top {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .license-v2-authorization-top .license-v2-state-pill {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .license-v2-clocks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .license-v2-auth-actions,
+  .license-v2-edit-form,
+  .license-v2-new-auth {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .license-v2-auth-actions > *,
+  .license-v2-auth-actions form,
+  .license-v2-auth-actions button,
+  .license-v2-edit-form > *,
+  .license-v2-edit-form button,
+  .license-v2-new-auth > *,
+  .license-v2-new-auth button,
+  .license-v2-date-input {
+    width: 100%;
+  }
+
+  .license-v2-report-form fieldset,
+  .license-v2-report-primary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .license-v2-report-form fieldset {
+    gap: 8px;
+  }
+
+  .license-v2-report-primary {
+    gap: 8px;
+  }
+
+  .license-v2-report-primary .is-extra {
+    display: none;
+  }
+
+  .license-v2-report-primary .is-extra.is-mobile-visible {
+    display: inline-flex;
+  }
+
+  .license-v2-report-form label {
+    width: 100%;
+    border-radius: 14px;
+  }
+
+  .license-v2-report-more {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 14px;
+    padding: 10px 13px;
+    color: var(--portal-ink-2);
+    cursor: pointer;
+    font-size: 0.75rem;
+    list-style: none;
+  }
+
+  .license-v2-report-more svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 160ms ease;
+  }
+
+  .license-v2-report-more[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
+
+  .license-v2-report-panel button {
+    width: 100%;
+  }
+
+  .license-v2-recent-reports li {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .license-v2-recent-reports .license-v2-state-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .license-v2-support-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .license-v2-support-action {
+    grid-column: 1 / -1;
+  }
+
+  .license-v2-support-action > a,
+  .license-v2-support-action button {
+    width: 100%;
+  }
+
+  .license-v2-review {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .license-v2-review > a {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .license-v2-dos-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .license-v2-dos-item button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 359px) {
+  .license-v2-before,
+  .license-v2-status-hero,
+  .license-v2-section-card,
+  .license-v2-dos {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .license-v2-clock-card {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .license-v2-clock-ring {
+    width: 56px;
+    height: 56px;
+  }
+
+  .license-v2-term-legend {
+    gap: 6px;
+    font-size: 0.525rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .license-v2-hologram {
+    animation: none;
+  }
+
+  .license-v2-report-more svg {
+    transition: none;
+  }
+}
+
 /* Page 3 — Full Concierge dashboard */
 .concierge-agreements {
   max-width: 860px;

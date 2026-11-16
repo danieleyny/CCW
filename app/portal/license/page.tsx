@@ -1,15 +1,24 @@
-import { BadgeCheck, MapPin, ExternalLink } from "lucide-react"
+import Link from "next/link"
+import { ExternalLink, MapPinned, MessageSquareHeart, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { LicenseHub, type AuthRow, type ReportRow } from "@/components/portal/license-hub"
+import { LicenseStatusHero } from "@/components/portal/license-status-hero"
 import { StartRenewalButton } from "@/components/portal/start-renewal-button"
 import { DosUpgradePanel, type DosUpgrade } from "@/components/portal/dos-upgrade-panel"
-import { formatDate, daysUntil } from "@/lib/format"
+import { daysUntil } from "@/lib/format"
 import { RENEWAL_RUNWAY_DAYS } from "@/lib/license"
+import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
 import { reviewUrl } from "@/lib/review"
-import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata = { title: "Your license" }
+
+const DAY_MS = 86_400_000
+
+function renewalMonth(expires: string) {
+  const opens = new Date(new Date(`${expires}T00:00:00Z`).getTime() - RENEWAL_RUNWAY_DAYS * DAY_MS)
+  return opens.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
+}
 
 /**
  * V3-P3.2 — the 3-year relationship. Purchase authorizations (30-day validity,
@@ -86,102 +95,89 @@ export default async function LicensePage() {
     reportedAt: r.reported_at,
     acknowledged: !!r.acknowledged_at,
   }))
+  const applicationType = myCase.application_type as ApplicationType | null
+  const licenseType = applicationType
+    ? APPLICATION_TYPE_LABELS[applicationType]
+    : track === "non_resident"
+      ? "Special Carry"
+      : "Concealed Carry"
+  const configuredReviewUrl = reviewUrl()
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Your license</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          The clocks that matter after you&apos;re licensed — purchase windows, inspections, reporting
-          duties, and your renewal runway.
-        </p>
-      </div>
+    <div className="license-v2-page">
+      <header className="license-v2-page-header">
+        <p className="portal-t-eyebrow">After you&apos;re licensed</p>
+        <h1>Your license</h1>
+        <p>The clocks that matter: purchase windows, inspections, reporting duties and your renewal.</p>
+      </header>
 
-      <Card className={inRunway ? "brass-edge" : ""}>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
-          <div>
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold">
-              <BadgeCheck className="size-4 text-ok" /> License status
-            </h2>
-            <p className="mt-1 text-sm text-text-mid">
-              {expires ? (
-                <>
-                  Valid until <b>{formatDate(expires)}</b>
-                  {expiresIn != null && expiresIn >= 0 && <> · {expiresIn} days left</>}
-                </>
-              ) : (
-                "Expiration will appear here once your license is issued."
-              )}
-            </p>
-            {track === "non_resident" && countyExpires && (
-              <p className={`mt-1 text-xs ${countyDays != null && countyDays <= 60 ? "text-warn" : "text-text-low"}`}>
-                Special Carry depends on your county license — county license valid until {formatDate(countyExpires)}
-                {countyDays != null && ` (${countyDays}d)`}. If it lapses, the Special Carry voids automatically.
-              </p>
-            )}
-          </div>
-          {inRunway && (
-            <div className="max-w-xs space-y-2">
-              <p className="text-xs text-brass">
-                <b>Renewal runway is open.</b> NYPD mails renewal instructions — you can&apos;t submit before
-                they arrive, but your refreshed live-fire certificate must be dated within 6 months of the
-                renewal, so plan it now. Renewals need no character references.
-              </p>
-              <StartRenewalButton alreadyOpen={!!renewalCase} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <LicenseStatusHero
+        expires={expires}
+        expiresIn={expiresIn}
+        inRunway={inRunway}
+        track={track}
+        countyExpires={countyExpires}
+        countyDays={countyDays}
+        clientName={myCase.client.full_name || "Licensee"}
+        licenseType={licenseType}
+        concierge={myCase.service_mode === "concierge"}
+        renewalAlreadyOpen={!!renewalCase}
+      />
 
-      {dos && <DosUpgradePanel dos={dos as DosUpgrade} />}
+      {expires && dos ? <DosUpgradePanel dos={dos as DosUpgrade} /> : null}
 
       {/* The review ASK — only once licensed AND a real review URL is configured
           (NEXT_PUBLIC_REVIEW_URL). Never a rating display, never fabricated. */}
-      {expires && reviewUrl() && (
-        <Card className="brass-edge">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+      {expires && configuredReviewUrl ? (
+        <section className="license-v2-review" aria-labelledby="license-review-title">
+          <span className="license-v2-support-icon"><MessageSquareHeart /></span>
+          <div>
+            <h2 id="license-review-title">Licensed — congratulations.</h2>
+            <p>If the process went well for you, a short review helps other New Yorkers find us.</p>
+          </div>
+          <a href={configuredReviewUrl} target="_blank" rel="noopener noreferrer">
+            Leave a review <ExternalLink />
+          </a>
+        </section>
+      ) : null}
+
+      <LicenseHub auths={auths} reports={reports} showAuthorizations={!!expires} />
+
+      <div className={`license-v2-support-grid${expires ? "" : " is-single"}`}>
+        {expires ? (
+          <section className="license-v2-support-card" aria-labelledby="license-renewal-title">
+            <span className="license-v2-support-icon is-gold"><RefreshCw /></span>
             <div>
-              <h2 className="text-sm font-semibold">Licensed — congratulations.</h2>
-              <p className="mt-1 text-sm text-text-mid">
-                If the process went well for you, a short review helps other New Yorkers find us.
+              <h2 id="license-renewal-title">Renewal</h2>
+              <p>
+                Your renewal runway opens 9 months before expiry. We&apos;ll remind you, and you&apos;ll need a refreshed live-fire certificate within 6 months of renewing. No references needed.
               </p>
             </div>
-            <a
-              href={reviewUrl()!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-brass px-4 text-sm font-semibold text-[#0B0A07] transition-opacity hover:opacity-90"
-            >
-              Leave a review
-            </a>
-          </CardContent>
-        </Card>
-      )}
+            <div className="license-v2-support-action">
+              {inRunway ? (
+                <StartRenewalButton alreadyOpen={!!renewalCase} />
+              ) : (
+                <span className="license-v2-open-pill">Opens ~{renewalMonth(expires)}</span>
+              )}
+            </div>
+          </section>
+        ) : null}
 
-      <LicenseHub auths={auths} reports={reports} />
-
-      {/* V5b — reciprocity link-out. Concealed Knowledge owns the dataset; we
-          deep-link to it rather than duplicate a legal map across two repos. */}
-      <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+        {/* V5b — reciprocity link-out. Concealed Knowledge owns the dataset; we
+            deep-link to it rather than duplicate a legal map across two repos. */}
+        <section className="license-v2-support-card" aria-labelledby="license-reciprocity-title">
+          <span className="license-v2-support-icon"><MapPinned /></span>
           <div>
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold">
-              <MapPin className="size-4 text-brass" /> Where your license is honored
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Check reciprocity for your NY license, maintained by Concealed Knowledge.
-            </p>
+            <h2 id="license-reciprocity-title">Where your license is honored</h2>
+            <p>Check reciprocity for your NY license, maintained by Concealed Knowledge.</p>
           </div>
-          <a
-            href="https://concealedknowledge.com/reciprocity?home=ny"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-hairline px-4 text-sm font-medium text-text-mid transition-colors hover:text-foreground"
-          >
-            View reciprocity <ExternalLink className="size-3.5" />
-          </a>
-        </CardContent>
-      </Card>
+          <div className="license-v2-support-action">
+            <Link href="https://concealedknowledge.com/reciprocity?home=ny" target="_blank" rel="noopener noreferrer">
+              View reciprocity <ExternalLink />
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
