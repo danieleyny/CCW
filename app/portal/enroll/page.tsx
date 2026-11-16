@@ -74,7 +74,6 @@ export default async function EnrollPage({
               <EnrollButtons
                 packageKey={p.key}
                 priceCents={p.priceCents}
-                depositCents={p.depositCents}
                 stripeOn={STRIPE_ENABLED}
                 featured={p.featured}
               />

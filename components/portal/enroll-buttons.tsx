@@ -9,13 +9,11 @@ import { Button } from "@/components/ui/button"
 export function EnrollButtons({
   packageKey,
   priceCents,
-  depositCents,
   stripeOn,
   featured,
 }: {
   packageKey: string
   priceCents: number
-  depositCents: number
   stripeOn: boolean
   featured: boolean
 }) {
@@ -52,15 +50,6 @@ export function EnrollButtons({
           {pending ? "Starting…" : primaryLabel}
         </Button>
       </form>
-      {!custom && depositCents > 0 && stripeOn && (
-        <form action={action}>
-          <input type="hidden" name="packageKey" value={packageKey} />
-          <input type="hidden" name="mode" value="deposit" />
-          <Button type="submit" disabled={pending} variant="ghost" size="sm" className="w-full text-text-mid">
-            or pay a ${(depositCents / 100).toLocaleString("en-US")} deposit — balance on filing
-          </Button>
-        </form>
-      )}
       {state.error && (
         <p className="text-xs text-danger" role="alert">
           {state.error} — please try again.

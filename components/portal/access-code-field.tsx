@@ -24,7 +24,7 @@ export function AccessCodeField({ packageKey }: { packageKey: string }) {
         onClick={() => setOpen(true)}
         className="mt-2 text-xs text-text-low underline underline-offset-2 hover:text-text-mid"
       >
-        Have an access code?
+        Have a discount or access code?
       </button>
     )
   }
@@ -35,7 +35,7 @@ export function AccessCodeField({ packageKey }: { packageKey: string }) {
       <div className="flex gap-2">
         <Input
           name="code"
-          placeholder="Access code"
+          placeholder="Discount or access code"
           autoFocus
           maxLength={64}
           autoComplete="off"

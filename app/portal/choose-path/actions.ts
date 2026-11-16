@@ -15,7 +15,7 @@ import { startCheckout, type EnrollResult } from "@/app/portal/enroll/actions"
 
 const schema = z.object({
   packageKey: z.enum(["self_guided", "full_concierge"]),
-  mode: z.enum(["full", "deposit"]),
+  mode: z.literal("full"),
 })
 
 /**

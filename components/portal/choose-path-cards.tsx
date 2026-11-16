@@ -120,11 +120,6 @@ function PathCard({
       <p className="mt-1 text-sm text-text-mid">{n.tagline}</p>
       <div className="mt-3 font-display text-2xl font-bold tabular-nums">
         {pkg.priceLabel}
-        {pkg.depositCents > 0 && (
-          <span className="ml-2 align-middle text-xs font-normal text-text-low">
-            or ${(pkg.depositCents / 100).toLocaleString("en-US")} to start
-          </span>
-        )}
       </div>
 
       <dl className="mt-4 space-y-4 text-sm">
@@ -198,7 +193,7 @@ function PathCard({
         </p>
       )}
 
-      {codesEnabled && <AccessCodeField packageKey={pkg.key} />}
+      {(codesEnabled || concierge) && <AccessCodeField packageKey={pkg.key} />}
     </div>
   )
 }

@@ -15,7 +15,7 @@ import { matchAccessCode } from "@/lib/access-codes"
 
 const startSchema = z.object({
   packageKey: z.string().min(1).max(60),
-  mode: z.enum(["full", "deposit"]),
+  mode: z.literal("full"),
   code: z.string().min(1).max(64).optional(),
 })
 
@@ -23,10 +23,10 @@ export type EnrollResult = { error?: string; requested?: boolean }
 
 /**
  * V3-P3.1 — self-serve purchase. With Stripe on: creates the pending payment
- * and redirects into Checkout (the webhook reconciles by payment_id metadata,
- * deposit → balance-on-filing stays as a second pending payment). With Stripe
- * dark: gracefully falls back to a recorded invoice request so no buyer is
- * ever dead-ended.
+ * and redirects into Checkout (the webhook reconciles by payment_id metadata).
+ * Public enrollment is full-payment only; a bounded server-side discount code
+ * may authorize a lower fixed full-payment price. With Stripe dark, the action
+ * gracefully falls back to a recorded invoice request so no buyer is dead-ended.
  */
 export async function startCheckout(_prev: EnrollResult, formData: FormData): Promise<EnrollResult> {
   await requireRole(["client"])
@@ -81,12 +81,10 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   // Custom-priced packages always go through a human.
   if (pkg.priceCents <= 0) return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, pkg.name, 0)
 
-  const amount = discount?.priceCents ?? (mode === "deposit" && pkg.depositCents > 0 ? pkg.depositCents : pkg.priceCents)
+  const amount = discount?.priceCents ?? pkg.priceCents
   const description =
     discount
       ? `${pkg.name} — discounted full payment (${discount.label})`
-      : mode === "deposit" && pkg.depositCents > 0
-      ? `${pkg.name} — deposit (balance due on filing)`
       : `${pkg.name} — full payment`
 
   const stripe = getStripe()
@@ -123,7 +121,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
       case_id: myCase.id,
       client_id: myCase.client_id,
       amount_cents: amount,
-      type: mode === "deposit" ? "deposit" : "full",
+      type: "full",
       status: "pending",
       description,
       package_key: pkg.key,
