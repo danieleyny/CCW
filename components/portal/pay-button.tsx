@@ -6,7 +6,19 @@ import { toast } from "sonner"
 import { payPending } from "@/app/portal/payments/actions"
 import { Button } from "@/components/ui/button"
 
-export function PayButton({ paymentId }: { paymentId: string }) {
+export function PayButton({
+  paymentId,
+  label = "Pay now",
+  size = "sm",
+  variant = "default",
+  className,
+}: {
+  paymentId: string
+  label?: string
+  size?: "sm" | "lg"
+  variant?: "default" | "gold"
+  className?: string
+}) {
   const [pending, start] = useTransition()
 
   function pay() {
@@ -23,13 +35,20 @@ export function PayButton({ paymentId }: { paymentId: string }) {
   }
 
   return (
-    <Button size="sm" onClick={pay} disabled={pending} aria-busy={pending}>
+    <Button
+      size={size}
+      variant={variant}
+      className={className}
+      onClick={pay}
+      disabled={pending}
+      aria-busy={pending}
+    >
       {pending ? (
         <Loader2 className="mr-1.5 size-3.5 animate-spin" />
       ) : (
         <CreditCard className="mr-1.5 size-3.5" />
       )}
-      {pending ? "Starting…" : "Pay now"}
+      {pending ? "Starting…" : label}
     </Button>
   )
 }
