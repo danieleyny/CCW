@@ -11,5 +11,5 @@ export async function NotificationBell() {
     .limit(15)
   const items = (data ?? []) as NotificationItem[]
   const unread = items.filter((i) => !i.read).length
-  return <NotificationBellMenu items={items} unread={unread} />
+  return <NotificationBellMenu items={items} unread={unread} asOf={new Date().toISOString()} />
 }

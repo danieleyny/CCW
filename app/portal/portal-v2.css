@@ -64,6 +64,10 @@ html:has(.portal-v2) body {
   --ok: #15803d;
   --warn: #b45309;
   --danger: #b91c1c;
+  --tone-todo: #c08a2e;
+  --tone-wait: #14254a;
+  --tone-prog: #3b6fd8;
+  --tone-ok: #1f8a4c;
 
   --sidebar: #ffffff;
   --sidebar-foreground: #4a5160;
@@ -1223,6 +1227,596 @@ html:has(.portal-v2) body {
   .portal-sticky-button {
     padding-inline: 12px;
   }
+}
+
+/* Application review — one read-only case board, organized by who has the next move. */
+.application-review {
+  width: 100%;
+}
+
+.application-review-heading > p {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--portal-gold-deep);
+}
+
+.application-review-heading h1 {
+  margin-top: 8px;
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 2.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.application-review-heading > span {
+  display: block;
+  max-width: 67ch;
+  margin-top: 12px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--portal-ink-2);
+}
+
+.application-review-summary {
+  display: grid;
+  grid-template-columns: auto minmax(240px, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  margin-top: 26px;
+  border: 1px solid var(--hairline);
+  border-radius: 22px;
+  background: #fff;
+  padding: 18px 22px;
+  box-shadow: 0 18px 48px -38px rgba(10, 18, 34, 0.55);
+}
+
+.application-review-total,
+.application-review-updated {
+  display: grid;
+}
+
+.application-review-total b {
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 2.25rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.application-review-total span,
+.application-review-updated span {
+  margin-top: 5px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+}
+
+.application-review-updated {
+  min-width: 105px;
+  text-align: right;
+}
+
+.application-review-updated b {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--portal-ink);
+}
+
+.application-review-status-bar {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.application-review-status-bar span + span {
+  border-left: 2px solid #fff;
+}
+
+.application-review-status-bar [data-tone="todo"],
+.application-review-legend [data-tone="todo"] i { background: var(--tone-todo); }
+.application-review-status-bar [data-tone="waiting"],
+.application-review-legend [data-tone="waiting"] i { background: var(--tone-wait); }
+.application-review-status-bar [data-tone="progress"],
+.application-review-legend [data-tone="progress"] i { background: var(--tone-prog); }
+.application-review-status-bar [data-tone="ok"],
+.application-review-legend [data-tone="ok"] i { background: var(--tone-ok); }
+
+.application-review-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 16px;
+  margin-top: 9px;
+}
+
+.application-review-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  color: var(--portal-ink-2);
+}
+
+.application-review-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.application-review-legend b { font-weight: 750; color: var(--portal-ink); }
+.application-review-switcher { display: none; }
+
+.application-review-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.application-review-column {
+  min-width: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  background: #f8f9fb;
+  padding: 12px;
+}
+
+.application-review-column-header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 54px;
+  padding: 2px 2px 10px;
+}
+
+.application-review-column-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--column-tone) 11%, white);
+  color: var(--column-tone);
+}
+
+.application-review-column-icon svg { width: 17px; height: 17px; }
+.application-review-column[data-tone="todo"] { --column-tone: var(--tone-todo); }
+.application-review-column[data-tone="waiting"] { --column-tone: var(--tone-wait); }
+.application-review-column[data-tone="progress"] { --column-tone: var(--tone-prog); }
+.application-review-column[data-tone="ok"] { --column-tone: var(--tone-ok); }
+
+.application-review-column-title-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.application-review-column-title-line h2 {
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.application-review-column-title-line b {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--column-tone) 25%, transparent);
+  border-radius: 999px;
+  background: #fff;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  color: var(--column-tone);
+}
+
+.application-review-column-header small {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.675rem;
+  color: var(--portal-muted);
+}
+
+.application-review-row-list { display: grid; gap: 9px; }
+
+.application-review-row {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-left: 4px solid var(--column-tone);
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px;
+  box-shadow: 0 12px 30px -25px rgba(10, 18, 34, 0.62);
+}
+
+.application-review-row-group {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+}
+
+.application-review-row h3 {
+  margin-top: 7px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.application-review-row-status {
+  margin-top: 5px;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  line-height: 1.4;
+  color: var(--column-tone);
+}
+
+.application-review-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.625rem;
+  color: var(--portal-muted);
+}
+
+.application-review-row-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.application-review-row-meta svg { width: 12px; height: 12px; }
+
+.application-review-row-action {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  border-radius: 10px;
+  background: var(--portal-navy);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  color: #fff;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.application-review-row-action:hover { transform: translateY(-1px); opacity: 0.9; }
+.application-review-row-action svg { width: 13px; height: 13px; }
+
+.application-review-more {
+  width: 100%;
+  border: 1px dashed color-mix(in srgb, var(--column-tone) 38%, transparent);
+  border-radius: 12px;
+  padding: 9px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--column-tone);
+}
+
+.application-review-empty {
+  min-height: 112px;
+  border: 1px dashed color-mix(in srgb, var(--column-tone) 38%, transparent);
+  border-radius: 14px;
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--portal-muted);
+}
+
+/* Concierge intro call — the real scheduler/action is slotted into this visual shell. */
+.intro-call-next-step {
+  display: grid;
+  min-height: 330px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  overflow: hidden;
+  margin-top: 18px;
+  border: 1.5px solid rgba(180, 132, 42, 0.48);
+  border-radius: 28px;
+  background: linear-gradient(135deg, #fffdf6 0%, #fbf3df 56%, #f7e9c3 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.85), 0 28px 70px -48px rgba(138, 100, 32, 0.95);
+}
+
+.intro-call-copy {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  padding: 36px 40px;
+}
+
+.intro-call-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--portal-gold-deep);
+}
+
+.intro-call-eyebrow svg { width: 15px; height: 15px; }
+.intro-call-booking h2 { margin-top: 12px; font-size: clamp(2rem, 3vw, 2.5rem) !important; line-height: 1.03; }
+.intro-call-booking > p { margin-top: 12px !important; font-size: 0.9375rem !important; line-height: 1.55; }
+.intro-call-booking .concierge-book-call-control { margin-top: 20px !important; }
+.intro-call-booking .concierge-book-call-control button {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 16px;
+  background: var(--portal-gold-button);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #0a0f1a;
+  box-shadow: 0 16px 28px -20px rgba(138, 100, 32, .85);
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.intro-call-booking .concierge-book-call-control button::after { content: "→"; margin-left: 7px; font-size: 1.15em; }
+.intro-call-booking .concierge-book-call-control button:hover { transform: translateY(-2px); }
+
+.intro-call-then {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 12px;
+  margin-top: 20px;
+  border-top: 1px solid rgba(138, 100, 32, .18);
+  padding-top: 14px;
+}
+.intro-call-then > span { font-family: var(--font-mono), monospace; font-size: .6rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; color: var(--portal-gold-deep); }
+.intro-call-then > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; color: var(--portal-ink-2); }
+.intro-call-then > b { font-family: var(--font-mono), monospace; font-size: .65rem; color: var(--portal-muted); }
+.intro-call-then > i { grid-column: 2 / 4; height: 4px; overflow: hidden; border-radius: 99px; background: rgba(20,37,74,.1); }
+.intro-call-then > i span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--portal-gold), #f0d58c); }
+
+.intro-call-art { position: relative; min-width: 0; min-height: 330px; isolation: isolate; }
+.intro-call-glow { position: absolute; border-radius: 50%; opacity: .38; }
+.intro-call-glow-one { width: 240px; height: 240px; top: 24px; right: 32px; background: radial-gradient(circle, rgba(70,111,216,.32), transparent 69%); }
+.intro-call-glow-two { width: 200px; height: 200px; bottom: -30px; left: 24px; background: radial-gradient(circle, rgba(217,178,95,.36), transparent 70%); }
+.intro-call-path { position: absolute; inset: 25px 8px auto auto; width: 97%; height: 84%; overflow: visible; }
+.intro-call-path path { stroke: rgba(192,138,46,.65); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 8 9; animation: intro-path 6s linear infinite; }
+
+.intro-call-calendar {
+  position: absolute;
+  z-index: 2;
+  top: 64px;
+  left: 42px;
+  width: 218px;
+  border: 1px solid rgba(20,37,74,.12);
+  border-radius: 18px;
+  background: rgba(255,255,255,.95);
+  padding: 15px;
+  box-shadow: 0 26px 45px -28px rgba(10,18,34,.65);
+  transform: rotate(-4deg);
+  animation: intro-calendar 6s ease-in-out infinite;
+}
+.intro-call-calendar-pins { position: absolute; inset: -8px 27px auto; display: flex; justify-content: space-between; }
+.intro-call-calendar-pins i { width: 8px; height: 17px; border-radius: 5px; background: var(--portal-gold); box-shadow: 0 2px 0 #8a6420; }
+.intro-call-calendar header { display: flex; align-items: center; gap: 7px; color: var(--portal-navy); }
+.intro-call-calendar header svg { width: 16px; height: 16px; color: var(--portal-gold-deep); }
+.intro-call-calendar header b { font-size: .75rem; }
+.intro-call-calendar header span { margin-left: auto; font-family: var(--font-mono), monospace; font-size: .52rem; color: var(--portal-muted); }
+.intro-call-calendar-days { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-top: 12px; text-align: center; font: 600 .5rem var(--font-mono), monospace; color: var(--portal-muted); }
+.intro-call-calendar-slots { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-top: 5px; }
+.intro-call-calendar-slots i { height: 24px; border: 1px solid rgba(20,37,74,.1); border-radius: 6px; background: #f7f8fa; }
+.intro-call-calendar-slots i:nth-child(8) { animation: intro-slot 6s steps(1,end) infinite; }
+.intro-call-sent { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; border-radius: 8px; background: rgba(31,138,76,.1); padding: 7px; font-size: .6rem; font-weight: 750; color: #1f8a4c; opacity: 0; transform: translateY(5px); animation: intro-sent 6s ease infinite; }
+.intro-call-sent svg { width: 12px; height: 12px; }
+
+.intro-call-phone { position: absolute; z-index: 3; top: 95px; right: 46px; display: grid; width: 84px; height: 154px; place-items: center; border: 5px solid #21345d; border-radius: 24px; background: linear-gradient(160deg,#132445,#091223); color: #f0d58c; box-shadow: 0 30px 50px -28px rgba(10,18,34,.85); animation: intro-phone 6s ease-in-out infinite; }
+.intro-call-phone > svg { width: 29px; height: 29px; }
+.intro-call-phone-speaker { position: absolute; top: 8px; width: 23px; height: 3px; border-radius: 99px; background: #667796; }
+.intro-call-wave { position: absolute; inset: 50% auto auto 50%; width: 56px; height: 56px; border: 1px solid rgba(217,178,95,.65); border-radius: 50%; opacity: 0; transform: translate(-50%,-50%) scale(.55); animation: intro-wave 6s ease-out infinite; }
+.intro-call-wave-two { animation-delay: .45s; }
+
+.intro-call-agent-pill { position: absolute; z-index: 5; right: 32px; bottom: 28px; display: flex; min-width: 245px; align-items: center; gap: 10px; border: 1px solid rgba(20,37,74,.1); border-radius: 999px; background: rgba(255,255,255,.94); padding: 8px 12px 8px 8px; box-shadow: 0 15px 30px -24px rgba(10,18,34,.7); }
+.intro-call-agent-pill > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--portal-navy); font: 750 .62rem var(--font-mono), monospace; color: #fff; }
+.intro-call-agent-pill p { display: grid; line-height: 1.25; }
+.intro-call-agent-pill small { font-size: .55rem; color: var(--portal-muted); }
+.intro-call-agent-pill b { font-size: .68rem; }
+.intro-call-agent-pill > i { width: 8px; height: 8px; margin-left: auto; border-radius: 50%; background: #1f8a4c; box-shadow: 0 0 0 4px rgba(31,138,76,.12); animation: intro-live 6s ease infinite; }
+
+.intro-call-chip { position: absolute; z-index: 4; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(20,37,74,.1); border-radius: 999px; background: rgba(255,255,255,.92); padding: 6px 9px; font: 700 .52rem var(--font-mono), monospace; color: var(--portal-navy); box-shadow: 0 9px 20px -16px rgba(10,18,34,.7); animation: intro-chip 6s ease-in-out infinite; }
+.intro-call-chip svg { width: 11px; height: 11px; color: var(--portal-gold-deep); }
+.intro-call-chip-one { top: 26px; left: 98px; }
+.intro-call-chip-two { top: 40px; right: 18px; animation-delay: -.8s; }
+.intro-call-chip-three { bottom: 48px; left: 22px; animation-delay: -1.4s; }
+.intro-call-spark { position: absolute; z-index: 4; width: 18px; height: 18px; color: var(--portal-gold); animation: intro-spark 6s ease infinite; }
+.intro-call-spark-one { top: 88px; right: 16px; }
+.intro-call-spark-two { bottom: 24px; left: 48%; animation-delay: -1.2s; }
+.intro-call-next-step[data-active="false"] * { animation-play-state: paused !important; }
+
+@keyframes intro-path { to { stroke-dashoffset: -102; } }
+@keyframes intro-calendar { 0%,100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(-3deg) translateY(-5px); } }
+@keyframes intro-slot { 0%,29%,100% { background: #f7f8fa; } 30%,100% { background: #f0d58c; } }
+@keyframes intro-sent { 0%,45%,100% { opacity: 0; transform: translateY(5px); } 52%,92% { opacity: 1; transform: translateY(0); } }
+@keyframes intro-phone { 0%,58%,74%,100% { transform: rotate(0); } 62% { transform: rotate(-3deg); } 66% { transform: rotate(3deg); } 70% { transform: rotate(-2deg); } }
+@keyframes intro-wave { 0%,58%,100% { opacity: 0; transform: translate(-50%,-50%) scale(.55); } 64% { opacity: .7; } 78% { opacity: 0; transform: translate(-50%,-50%) scale(1.45); } }
+@keyframes intro-live { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.75); } }
+@keyframes intro-chip { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes intro-spark { 0%,100% { opacity: .25; transform: scale(.75) rotate(0); } 50% { opacity: 1; transform: scale(1.1) rotate(12deg); } }
+
+/* Notifications — a persistent drawer on desktop and reachable bottom sheet on mobile. */
+.portal-notification-trigger { transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+.portal-notification-trigger[data-open="true"] { background: rgba(20,37,74,.1); color: var(--portal-navy); box-shadow: 0 0 0 3px rgba(20,37,74,.08); }
+.portal-notification-badge { position: absolute; top: -4px; right: -5px; display: grid; min-width: 18px; height: 18px; place-items: center; border: 2px solid #fff; border-radius: 999px; background: var(--portal-gold); padding: 0 3px; font: 800 .55rem var(--font-mono), monospace; color: #0a0f1a; }
+.notification-overlay { background: rgba(10,18,34,.16) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.notification-panel {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: auto !important;
+  display: grid !important;
+  width: min(440px, 100vw) !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  grid-template-rows: auto auto minmax(0,1fr) auto !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  padding: 0 !important;
+  color: var(--portal-ink) !important;
+  box-shadow: -24px 0 70px -38px rgba(10,18,34,.65) !important;
+  transform: none !important;
+  translate: none !important;
+  --tw-translate-x: 0px !important;
+  --tw-translate-y: 0px !important;
+}
+.notification-panel[data-state="open"] { animation: notification-drawer-in 240ms cubic-bezier(.2,.8,.2,1); }
+.notification-panel[data-state="closed"] { animation: notification-drawer-out 180ms ease-in; }
+.notification-sheet-handle { display: none; }
+.notification-panel-header { display: flex; min-height: 74px; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--hairline); padding: max(18px, env(safe-area-inset-top)) 22px 16px; }
+.notification-panel-header > span { display: flex; align-items: center; gap: 10px; }
+.notification-panel-header [data-slot="dialog-title"] { font-family: var(--font-body), sans-serif; font-size: 1.25rem; font-weight: 750; }
+.notification-panel-header b { border-radius: 99px; background: rgba(217,178,95,.18); padding: 5px 8px; font: 750 .6rem var(--font-mono), monospace; color: var(--portal-gold-deep); }
+.notification-panel-header > button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--hairline); border-radius: 50%; color: var(--portal-ink-2); }
+.notification-panel-header > button svg { width: 17px; height: 17px; }
+.notification-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--hairline); padding: 10px 18px 0; }
+.notification-tabs button { display: flex; align-items: center; gap: 6px; border-bottom: 2px solid transparent; padding: 9px 10px 11px; font-size: .75rem; font-weight: 700; color: var(--portal-muted); }
+.notification-tabs button[aria-pressed="true"] { border-color: var(--portal-gold); color: var(--portal-navy); }
+.notification-tabs span { display: grid; min-width: 19px; height: 19px; place-items: center; border-radius: 99px; background: var(--surface-2); font: 700 .55rem var(--font-mono), monospace; }
+.notification-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.notification-group > h3 { padding: 16px 20px 8px; font: 750 .6rem var(--font-mono), monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--portal-muted); }
+.notification-group li { position: relative; border-top: 1px solid rgba(10,15,26,.06); }
+.notification-group li[data-unread="true"] { background: linear-gradient(90deg, rgba(217,178,95,.12), rgba(217,178,95,.025)); }
+.notification-group li > a { display: block; }
+.notification-row-inner { display: grid; grid-template-columns: 38px minmax(0,1fr) 8px; align-items: start; gap: 11px; padding: 13px 20px; }
+.notification-kind-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; background: var(--surface-2); color: var(--portal-muted); }
+.notification-kind-icon svg { width: 17px; height: 17px; }
+.notification-kind-icon[data-kind="message"], .notification-kind-icon[data-kind="stage"] { background: rgba(20,37,74,.1); color: var(--portal-navy); }
+.notification-kind-icon[data-kind="document"] { background: rgba(31,138,76,.1); color: var(--tone-ok); }
+.notification-kind-icon[data-kind="fix"] { background: rgba(192,138,46,.13); color: #9a6612; }
+.notification-kind-icon[data-kind="people"] { background: rgba(59,111,216,.1); color: var(--tone-prog); }
+.notification-kind-icon[data-kind="schedule"] { background: rgba(217,178,95,.17); color: var(--portal-gold-deep); }
+.notification-row-copy { display: grid; min-width: 0; }
+.notification-row-copy strong { font-size: .8125rem; font-weight: 750; line-height: 1.4; overflow-wrap: anywhere; }
+.notification-row-copy > span { margin-top: 3px; font-size: .7rem; line-height: 1.45; color: var(--portal-ink-2); overflow-wrap: anywhere; }
+.notification-row-copy time { margin-top: 6px; font: 600 .57rem var(--font-mono), monospace; color: var(--portal-muted); }
+.notification-unread-dot { align-self: center; width: 7px; height: 7px; border-radius: 50%; background: var(--portal-gold); box-shadow: 0 0 0 4px rgba(217,178,95,.13); }
+.notification-empty { display: grid; min-height: 260px; place-items: center; align-content: center; padding: 30px; text-align: center; }
+.notification-empty > span { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 18px; background: var(--surface-2); color: var(--portal-muted); }
+.notification-empty svg { width: 23px; height: 23px; }
+.notification-empty h3 { margin-top: 14px; font-size: .9rem; font-weight: 750; }
+.notification-empty p { margin-top: 4px; font-size: .72rem; color: var(--portal-muted); }
+.notification-panel-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--hairline); padding: 15px 20px calc(15px + env(safe-area-inset-bottom)); font-size: .65rem; color: var(--portal-muted); }
+.notification-panel-footer a { font-weight: 750; color: var(--portal-navy); text-decoration: underline; text-underline-offset: 3px; }
+@keyframes notification-drawer-in { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes notification-drawer-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .intro-call-copy { padding: 30px; }
+  .intro-call-calendar { left: 20px; transform: scale(.92) rotate(-4deg); transform-origin: center; }
+  .intro-call-phone { right: 25px; }
+  .intro-call-agent-pill { right: 18px; min-width: 220px; }
+}
+
+@media (max-width: 1023px) {
+  .application-review-heading h1 { font-size: clamp(2.1rem, 9vw, 2.65rem); }
+  .application-review-summary { grid-template-columns: auto 1fr; gap: 16px; padding: 16px; }
+  .application-review-status-wrap { min-width: 0; }
+  .application-review-updated { grid-column: 1 / -1; grid-template-columns: auto 1fr; gap: 10px; min-width: 0; border-top: 1px solid var(--hairline); padding-top: 12px; text-align: left; }
+  .application-review-updated span, .application-review-updated b { margin-top: 0; }
+  .application-review-switcher { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 18px; }
+  .application-review-switcher button { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 6px; border: 1px solid var(--hairline); border-radius: 13px; background: #fff; padding: 10px 11px; font-size: .69rem; font-weight: 700; color: var(--portal-ink-2); }
+  .application-review-switcher button[aria-pressed="true"] { border-color: transparent; background: var(--portal-gold-button); color: #0a0f1a; box-shadow: 0 10px 22px -17px rgba(138,100,32,.8); }
+  .application-review-switcher b { display: grid; min-width: 21px; height: 21px; place-items: center; border-radius: 99px; background: rgba(255,255,255,.55); font: 700 .57rem var(--font-mono), monospace; }
+  .application-review-board { display: block; margin-top: 10px; }
+  .application-review-column { display: none; }
+  .application-review-column[data-active="true"] { display: block; }
+  .application-review-column-header small { white-space: normal; }
+  .application-review-row h3 { font-size: .875rem; }
+
+  .intro-call-next-step { grid-template-columns: minmax(0,1fr); border-radius: 22px; }
+  .intro-call-art { order: -1; min-height: 168px; }
+  .intro-call-copy { padding: 20px; }
+  .intro-call-booking h2 { font-size: 1.7rem !important; }
+  .intro-call-booking > p { font-size: .8125rem !important; }
+  .intro-call-booking .concierge-book-call-control { width: 100% !important; margin-left: 0 !important; }
+  .intro-call-calendar { top: 25px; left: 12%; width: 148px; border-radius: 13px; padding: 10px; transform: rotate(-4deg); }
+  .intro-call-calendar header svg { width: 12px; height: 12px; }
+  .intro-call-calendar header b { font-size: .58rem; }
+  .intro-call-calendar header span, .intro-call-calendar-days { font-size: .42rem; }
+  .intro-call-calendar-days { gap: 3px; margin-top: 8px; }
+  .intro-call-calendar-slots { gap: 3px; }
+  .intro-call-calendar-slots i { height: 15px; border-radius: 4px; }
+  .intro-call-sent { margin-top: 6px; padding: 4px; font-size: .46rem; }
+  .intro-call-phone { top: 37px; right: 14%; width: 54px; height: 101px; border-width: 3px; border-radius: 16px; }
+  .intro-call-phone > svg { width: 19px; height: 19px; }
+  .intro-call-agent-pill { right: 7%; bottom: 7px; min-width: 184px; padding: 5px 8px 5px 5px; }
+  .intro-call-agent-pill > span { width: 28px; height: 28px; font-size: .5rem; }
+  .intro-call-agent-pill small { font-size: .45rem; }
+  .intro-call-agent-pill b { font-size: .54rem; }
+  .intro-call-chip { padding: 4px 6px; font-size: .42rem; }
+  .intro-call-chip-one { top: 8px; left: 30%; }
+  .intro-call-chip-two { top: 13px; right: 3%; }
+  .intro-call-chip-three { bottom: 18px; left: 2%; }
+  .intro-call-path { inset: 2px 0 auto; width: 100%; height: 100%; }
+  .intro-call-glow-one { width: 160px; height: 160px; top: 0; right: 0; }
+  .intro-call-glow-two { width: 140px; height: 140px; }
+
+  .notification-panel {
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: min(82dvh, 720px) !important;
+    border-radius: 24px 24px 0 0 !important;
+    padding-bottom: max(68px, env(safe-area-inset-bottom)) !important;
+  }
+  .notification-panel[data-state="open"] { animation-name: notification-sheet-in; }
+  .notification-panel[data-state="closed"] { animation-name: notification-sheet-out; }
+  .notification-sheet-handle { display: block; width: 42px; height: 4px; margin: 9px auto 0; border-radius: 99px; background: rgba(20,37,74,.18); }
+  .notification-panel-header { min-height: 58px; padding: 10px 18px 12px; }
+  .notification-tabs { display: none; }
+  .notification-row-inner { padding-inline: 17px; }
+  .notification-panel-footer { padding: 12px 17px; }
+}
+
+@keyframes notification-sheet-in { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+@keyframes notification-sheet-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(100%); } }
+
+@media (max-width: 359px) {
+  .application-review-summary { grid-template-columns: 1fr; }
+  .application-review-status-wrap, .application-review-updated { grid-column: 1; }
+  .application-review-updated { grid-template-columns: 1fr; gap: 3px; }
+  .application-review-legend { gap-inline: 9px; }
+  .intro-call-copy { padding: 17px 14px; }
+  .intro-call-phone { right: 8%; }
+  .intro-call-calendar { left: 7%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .application-review-row-action,
+  .intro-call-booking .concierge-book-call-control button,
+  .portal-notification-trigger { transition: none !important; }
+  .intro-call-next-step *,
+  .notification-panel { animation: none !important; }
+  .intro-call-calendar-slots i:nth-child(8) { background: #f0d58c; }
+  .intro-call-sent { opacity: 1; transform: none; }
 }
 
 /* Page 3 — Full Concierge dashboard */

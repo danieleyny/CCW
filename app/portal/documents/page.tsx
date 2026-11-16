@@ -48,7 +48,10 @@ export default async function DocumentsPage() {
     return (
       <div>
         <ScrollToTop />
-        <ApplicationReview groups={buildApplicationReview(view, lastActivity, sponsorName)} />
+        <ApplicationReview
+          groups={buildApplicationReview(view, lastActivity, sponsorName)}
+          asOf={new Date().toISOString()}
+        />
       </div>
     )
   }

@@ -21,6 +21,7 @@ import { DisclosuresSection } from "@/components/portal/concierge/disclosures-se
 import { DataAsksSection } from "@/components/portal/concierge/data-asks-section"
 import { ControlTower } from "@/components/portal/concierge/control-tower"
 import { NextStepCard, MobileNextStepBar } from "@/components/portal/concierge/next-step-card"
+import { IntroCallNextStep } from "@/components/portal/concierge/intro-call-next-step"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { buildDataAsks } from "@/lib/concierge/data-asks"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
@@ -192,7 +193,18 @@ export default async function ConciergeHome() {
       <SponsorBanner caseId={myCase.id} />
 
       {!callBooked ? (
-        <NextStepCard title={nextStep.title} description={t.concierge.bookIntroDescription} eyebrow={t.concierge.nextStep}>
+        <IntroCallNextStep
+          agentFirst={agentFirst}
+          thenLabel={
+            firstDataAsk
+              ? `Finish ${firstDataAsk.label}`
+              : firstRequirement
+                ? requirementAction?.customerTitle ?? firstRequirement.title
+                : "We continue preparing your packet"
+          }
+          thenCaptured={firstDataAsk?.captured}
+          thenTotal={firstDataAsk?.total}
+        >
           <BookCall
             calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
             introToken={myCase.calendly_token}
@@ -200,7 +212,7 @@ export default async function ConciergeHome() {
             embedded
             copy={bookCallCopy}
           />
-        </NextStepCard>
+        </IntroCallNextStep>
       ) : firstDataAsk ? (
         <NextStepCard
           title={`Finish ${firstDataAsk.label}`}
