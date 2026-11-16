@@ -118,14 +118,7 @@ function PathCard({
 
       <h2 className="mt-3 font-display text-xl font-semibold tracking-tight">{pkg.name}</h2>
       <p className="mt-1 text-sm text-text-mid">{n.tagline}</p>
-      <div className="mt-3 font-display text-2xl font-bold tabular-nums">
-        {pkg.priceLabel}
-        {pkg.depositCents > 0 && (
-          <span className="ml-2 align-middle text-xs font-normal text-text-low">
-            or ${(pkg.depositCents / 100).toLocaleString("en-US")} to start
-          </span>
-        )}
-      </div>
+      <div className="mt-3 font-display text-2xl font-bold tabular-nums">{pkg.priceLabel}</div>
 
       <dl className="mt-4 space-y-4 text-sm">
         <div>
