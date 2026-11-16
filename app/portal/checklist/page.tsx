@@ -8,6 +8,7 @@ import { assembleApplicationValues } from "@/lib/forms/prepare"
 import { computePortalReadiness } from "@/lib/disclosures/readiness"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
 import { ReadinessCard } from "@/components/portal/readiness-card"
+import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
 
 export const metadata = { title: "Your checklist" }
 
@@ -54,6 +55,7 @@ export default async function ChecklistPage() {
 
   return (
     <div>
+      <DeepLinkHighlight />
       <Header intakeDone={view.intakeDone} />
       {readiness && <ReadinessCard readiness={readiness} />}
       <RequirementsChecklist

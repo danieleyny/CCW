@@ -1,15 +1,22 @@
 import Link from "next/link"
-import { Download, ArrowRight } from "lucide-react"
+import { ArrowRight, Check, ClipboardList, UsersRound } from "lucide-react"
 import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import type { WizardAnswers } from "@/lib/intake/answers"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FormsSigning, type FormDoc } from "@/components/portal/forms-signing"
+import { FormsSigning } from "@/components/portal/forms-signing"
+import { FilingPackDownload } from "@/components/portal/filing-pack-download"
+import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
+import { buildPortalForms } from "@/lib/forms/portal-forms"
+import { getFilingPackOutstanding } from "@/lib/filing-pack/readiness-server"
 
-export const metadata = { title: "Your documents" }
+export const metadata = { title: "Your forms" }
 
-export default async function FormsPage() {
+export default async function FormsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ gate?: string }>
+}) {
   const myCase = await getMyCase()
   if (!myCase) {
     return (
@@ -19,90 +26,65 @@ export default async function FormsPage() {
     )
   }
 
-  const supabase = await createClient()
-  const { data: session } = await supabase
-    .from("intake_sessions")
-    .select("answers, completed_at")
-    .eq("case_id", myCase.id)
-    .maybeSingle()
-  const answers = (session?.answers ?? {}) as WizardAnswers
-  const hasArrests = (answers.arrests?.length ?? 0) > 0
-  const hasCohabitants = (answers.cohabitants?.length ?? 0) > 0
-  const hasSafeguard = !!answers.safeguardName?.trim()
-
-  // Signature on file? Which signature-only forms are already filed?
-  const [{ data: sig }, { data: reqs }] = await Promise.all([
-    supabase.from("signatures").select("id").eq("case_id", myCase.id).eq("signer_key", "applicant").maybeSingle(),
-    supabase.from("case_requirements").select("req_code, status").eq("case_id", myCase.id).in("req_code", ["AFF-01", "SOC-01"]),
+  const db = await createClient()
+  const [{ data: session }, { data: sig }, { data: requirements }, readiness, query] = await Promise.all([
+    db.from("intake_sessions").select("answers, completed_at").eq("case_id", myCase.id).maybeSingle(),
+    db.from("signatures").select("png_base64").eq("case_id", myCase.id).eq("signer_key", "applicant").maybeSingle(),
+    db.from("case_requirements").select("req_code, status").eq("case_id", myCase.id),
+    getFilingPackOutstanding(db, myCase),
+    searchParams,
   ])
-  const filedSet = new Set((reqs ?? []).filter((r) => r.status === "satisfied").map((r) => r.req_code))
-
-  const docs: FormDoc[] = [
-    { key: "affirmation", title: "Affirmation of Understanding", desc: "Acknowledges NYC carry rules and prohibited locations.", notarize: false, fileable: true, filed: filedSet.has("AFF-01") },
-    { key: "safe-storage", title: "Safe-Storage Attestation", desc: "Confirms your approved safe and storage practice.", notarize: false, fileable: false, filed: false },
-    { key: "social-media", title: "3-Year Social-Media Disclosure", desc: "Your accounts from the last three years (from intake).", notarize: false, fileable: true, filed: filedSet.has("SOC-01") },
-    { key: "arrest-narratives", title: "Written Explanations", desc: "Formatted explanations for your disclosed matters.", notarize: false, fileable: false, filed: false, show: hasArrests },
-    { key: "court-letters", title: "Certificate-of-Disposition Requests", desc: "Ready-to-mail letters to the court clerk, one per matter.", notarize: false, fileable: false, filed: false, show: hasArrests },
-    { key: "sole-occupancy", title: "Sole-Occupancy Statement", desc: "If you live alone. Comes pre-signed; notarize before filing.", notarize: true, fileable: false, filed: false, show: !hasCohabitants },
-    { key: "safeguard-designation", title: "Safeguard-Person Designation", desc: "Names who will take custody of your handgun if you die or become disabled (from intake). The person you named signs it in front of a notary — don't sign it yourself.", notarize: true, fileable: false, filed: false, show: hasSafeguard },
-  ].filter((d) => (d as { show?: boolean }).show !== false).map(({ ...d }) => d as FormDoc)
+  const answers = (session?.answers ?? {}) as WizardAnswers
+  const statusByRequirement = new Map((requirements ?? []).map((row) => [row.req_code, row.status]))
+  const docs = buildPortalForms(answers, statusByRequirement)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Documents we prepared for you</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Pre-filled from your intake answers. Download, sign (and notarize where noted), then upload
-          them under Documents.
-        </p>
-      </div>
+    <div className="forms-page">
+      <DeepLinkHighlight />
+      <header className="forms-page-header">
+        <span className="portal-t-eyebrow">Prepared for you</span>
+        <h1>Your forms</h1>
+        <p>Pre-filled from your answers. Your signature goes on automatically — sign &amp; file in one tap, or download the ones that need a notary or witness.</p>
+      </header>
 
       {!session?.completed_at && (
-        <Link
-          href="/portal/intake"
-          className="flex items-center justify-between rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn"
-        >
-          Finish your intake first so these come out fully pre-filled.
-          <ArrowRight className="size-4" />
-        </Link>
+        <section className="forms-intake-reminder">
+          <span aria-hidden><ClipboardList /></span>
+          <p><strong>Finish your intake first</strong><small>so every form comes out fully pre-filled.</small></p>
+          <Button asChild><Link href="/portal/intake">Finish intake <ArrowRight aria-hidden /></Link></Button>
+        </section>
       )}
 
-      {/* The one-click deliverable — worksheet + upload guide + assembled docs */}
-      <Card className="brass-edge">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold">Your filing pack</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              One guided PDF: the answers to type into the NYPD portal in the form&apos;s own order, a
-              guide to which document goes where, and all your assembled documents. On Self-Guided you
-              file it yourself; with Full Concierge we file it for you — we prepare and organize either way.
-            </p>
+      <section className="forms-pack-hero">
+        <div className="forms-pack-illustration" aria-hidden>
+          <span className="forms-pack-page forms-pack-page-back" />
+          <span className="forms-pack-page forms-pack-page-middle" />
+          <span className="forms-pack-page forms-pack-page-front">
+            <i /><i /><i /><i /><b>PDF</b>
+          </span>
+        </div>
+        <div className="forms-pack-content">
+          <span className="portal-t-eyebrow">Your filing pack</span>
+          <h2>Everything for the NYPD portal, in one PDF</h2>
+          <ul>
+            <li><Check aria-hidden /> The answers in the portal&apos;s own order</li>
+            <li><Check aria-hidden /> Which document goes where</li>
+            <li><Check aria-hidden /> All your assembled documents</li>
+          </ul>
+          <p>On Self-Guided you prepare and submit it yourself; with Full Concierge we prepare and organize it — you review and submit your own application.</p>
+          <div className="forms-pack-actions">
+            <FilingPackDownload initialReadiness={readiness} initialOpen={query.gate === "1"} />
+            <a href="/portal/packet" target="_blank" rel="noreferrer">Just the documents <ArrowRight aria-hidden /></a>
           </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            <Button asChild>
-              <a href="/portal/filing-pack" target="_blank" rel="noreferrer">
-                <Download className="size-4" /> Download filing pack
-              </a>
-            </Button>
-            <a
-              href="/portal/packet"
-              target="_blank"
-              rel="noreferrer"
-              className="text-center text-[11px] text-text-low underline"
-            >
-              Just the documents
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <FormsSigning docs={docs} hasSignature={!!sig} />
+      <FormsSigning docs={docs} signaturePng={sig?.png_base64 ?? null} applicantName={myCase.client.full_name} />
 
-      <p className="text-xs text-muted-foreground">
-        Character references and cohabitant affidavits are handled on the{" "}
-        <Link href="/portal/people" className="text-signal underline">People</Link> page — each person gets
-        their own self-serve link, so you don&apos;t have to prepare those yourself.
-      </p>
+      <aside className="forms-people-note">
+        <span aria-hidden><UsersRound /></span>
+        <p>Character references and household affidavits are on the <Link href="/portal/people">People</Link> page — each person gets their own private link, so you don&apos;t prepare those.</p>
+      </aside>
     </div>
   )
 }

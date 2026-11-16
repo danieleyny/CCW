@@ -48,6 +48,18 @@ export type GroupIcon =
   | "lock"
   | "scale"
 
+/** The applicant-facing fact groups shared by the details page and readiness checks. */
+export const DETAIL_FACT_GROUPS: FactGroup[] = [
+  "you",
+  "address",
+  "contact",
+  "physical",
+  "employer",
+  "safeguard",
+  "safekeeping",
+  "counsel",
+]
+
 const GROUP_DISPLAY: Record<FactGroup, { label: string; description: string; icon: GroupIcon }> = {
   you: {
     label: "About you",
@@ -155,4 +167,37 @@ export function buildFactGroups(
     out.push({ key: g, ...GROUP_DISPLAY[g], rows })
   }
   return { groups: out, total }
+}
+
+export type RequiredFactState = {
+  key: string
+  label: string
+  section: string
+  complete: boolean
+}
+
+/**
+ * The exact required/visible rule used by the live details meter, expressed as
+ * serializable rows so server-side gates can reuse it without duplicating rules.
+ */
+export function requiredVisibleFacts(groups: FactGroupData[]): RequiredFactState[] {
+  const values: Record<string, string> = {}
+  for (const group of groups) {
+    for (const row of group.rows) if (row.kind === "editable") values[row.key] = row.value
+  }
+
+  const rows: RequiredFactState[] = []
+  for (const group of groups) {
+    for (const row of group.rows) {
+      const visible = !row.showWhen || row.showWhen.equals.includes((values[row.showWhen.key] ?? "").trim())
+      if (!visible || row.kind !== "editable" || row.optional) continue
+      rows.push({
+        key: row.key,
+        label: row.label,
+        section: group.label,
+        complete: (values[row.key] ?? "").trim() !== "",
+      })
+    }
+  }
+  return rows
 }
