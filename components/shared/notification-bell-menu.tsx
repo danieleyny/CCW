@@ -40,12 +40,17 @@ export function NotificationBellMenu({
     <DropdownMenu onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
-          className="relative inline-flex size-9 items-center justify-center rounded-md text-text-mid transition-colors hover:bg-surface-2 hover:text-foreground"
+          className="portal-notification-trigger relative inline-flex size-9 items-center justify-center rounded-md text-text-mid transition-colors hover:bg-surface-2 hover:text-foreground"
         >
-          <Bell className="size-5" />
+          <Bell className="size-5" aria-hidden />
+          <span className="sr-only">
+            Notifications{unread ? `, ${unread} unread` : ""}
+          </span>
           {unread > 0 && (
-            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-brass px-1 text-[10px] font-bold text-brand-foreground">
+            <span
+              aria-hidden
+              className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-brass px-1 text-[10px] font-bold text-brand-foreground"
+            >
               {unread > 9 ? "9+" : unread}
             </span>
           )}

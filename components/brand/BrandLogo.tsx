@@ -12,9 +12,10 @@ type Props = {
   motion?: "live" | "none"
   responsiveHeader?: boolean
   className?: string
+  accessibleLabel?: string | null
 }
 
-export default function BrandLogo({ tone = "ink", size = "md", href = "/", motion = "none", responsiveHeader = false, className }: Props) {
+export default function BrandLogo({ tone = "ink", size = "md", href = "/", motion = "none", responsiveHeader = false, className, accessibleLabel = "Gun License NYC home" }: Props) {
   const withIntro = usePlayOncePerLoad("logo", motion === "live")
   const motionClass = motion === "live" ? `${s.live} ${withIntro ? s.withIntro : s.noIntro}` : ""
   const inner = (
@@ -29,5 +30,5 @@ export default function BrandLogo({ tone = "ink", size = "md", href = "/", motio
   const cls = `${s.logo} ${s[tone]} ${s[size]} ${motionClass} ${responsiveHeader ? s.responsiveHeader : ""} ${className ?? ""}`
   return href === null
     ? <span className={cls}>{inner}</span>
-    : <Link href={href} className={cls} aria-label="Gun License NYC home">{inner}</Link>
+    : <Link href={href} className={cls} aria-label={accessibleLabel ?? undefined}>{inner}</Link>
 }

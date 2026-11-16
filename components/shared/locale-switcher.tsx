@@ -15,7 +15,7 @@ export function LocaleSwitcher({ current, label }: { current: Locale; label: str
   const [pending, start] = useTransition()
 
   return (
-    <label className="inline-flex items-center gap-1.5 text-xs text-text-mid">
+    <label className="portal-locale-switcher inline-flex items-center gap-1.5 text-xs text-text-mid">
       {/* Decorative next to a labeled select — yields its ~20px on narrow
           headers so the wordmark keeps breathing room on one line. */}
       <Languages className="hidden size-3.5 sm:block" aria-hidden />

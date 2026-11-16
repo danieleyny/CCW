@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bodoni_Moda, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Bodoni_Moda, Hanken_Grotesk, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import "../styles/themes.css";
 import { brand } from "@/config/brand";
@@ -32,6 +32,13 @@ const fontMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   variable: "--font-mono",
+  display: "swap",
+});
+const fontTitle = Newsreader({
+  subsets: ["latin"],
+  weight: "variable",
+  axes: ["opsz"],
+  variable: "--font-title",
   display: "swap",
 });
 
@@ -79,7 +86,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} h-full antialiased`}
+      className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} ${fontTitle.variable} h-full antialiased`}
     >
       <head>
         <BrandStyle />

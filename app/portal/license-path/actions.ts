@@ -57,7 +57,7 @@ export async function selectApplicationType(
   if (categoryChanged && (!earlyStage || !!intake?.completed_at || (evidenceCount ?? 0) > 0)) {
     return {
       error:
-        "Your case already has application work attached. Message your concierge before changing the licence type so nothing is lost or misclassified.",
+        "Your case already has application work attached. Message your concierge before changing the license type so nothing is lost or misclassified.",
     }
   }
 
