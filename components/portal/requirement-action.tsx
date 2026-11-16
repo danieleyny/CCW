@@ -223,6 +223,7 @@ export function RequirementAction({
             reqCode={reqCode}
             label="Upload the completed copy"
             current={current ?? null}
+            separateCamera={isConcierge}
           />
         )}
 
@@ -321,6 +322,7 @@ export function RequirementAction({
             current={current ?? null}
             photoSpec={reqCode === "PHO-01"}
             smartKinds={smartDocumentsForRequirement(reqCode)}
+            separateCamera={isConcierge}
           />
         )}
       </div>
@@ -424,6 +426,7 @@ export function RequirementAction({
                 reqCode={reqCode}
                 label="Upload the notarized copy"
                 current={current ?? null}
+                separateCamera={isConcierge}
               />
             )}
           </div>
