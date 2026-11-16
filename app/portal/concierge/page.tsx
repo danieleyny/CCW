@@ -218,11 +218,10 @@ export default async function ConciergeHome() {
               ctx={cardCtx}
               referenceProgress={view.referenceProgress}
               cohabitantProgress={view.cohabitantProgress}
+              disclosures={
+                <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
+              }
             />
-          </div>
-
-          <div className="concierge-disclosures-card">
-            <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
           </div>
 
           <div id="review" className="concierge-review-card scroll-mt-20" data-ready={filingReady}>
@@ -281,6 +280,18 @@ export default async function ConciergeHome() {
           </section>
         </aside>
       </div>
+
+      <section className="concierge-mobile-finish" data-ready={filingReady}>
+        {filingReady ? <FileCheck2 className="size-5" aria-hidden /> : <Lock className="size-5" aria-hidden />}
+        <small>The finish line</small>
+        <h2>Review &amp; submit</h2>
+        <p>
+          {filingReady
+            ? "Your packet is ready for your review. You submit your own NYPD application with our guidance."
+            : "Unlocks when your packet is assembled and quality-checked."}
+        </p>
+        {filingReady ? <a href="#review">Review my packet</a> : null}
+      </section>
 
       <section className="concierge-mobile-team">
         <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>

@@ -92,11 +92,13 @@ export function DocumentVault({
   ctx,
   referenceProgress,
   cohabitantProgress,
+  disclosures,
 }: {
   items: ReqChecklistItem[]
   ctx: RequirementCardCtx
   referenceProgress: ReferenceProgress | null
   cohabitantProgress: ReferenceProgress | null
+  disclosures?: React.ReactNode
 }) {
   const [filter, setFilter] = useState<Filter>("needsYou")
   useEffect(() => {
@@ -247,6 +249,9 @@ export function DocumentVault({
                 ))}
                 {bundle.key === "people" && (referenceProgress || cohabitantProgress) ? (
                   <PeopleProgress references={referenceProgress} household={cohabitantProgress} />
+                ) : null}
+                {bundle.key === "sign" && disclosures ? (
+                  <div className="concierge-vault-disclosures">{disclosures}</div>
                 ) : null}
                 {bundle.key === "confirm" ? (
                   <p className="concierge-fee-note">NYPD fees you&apos;ll pay directly: <strong>{ctx.feeSummary.total}</strong> · never to us</p>
