@@ -59,10 +59,6 @@ function selectedFromMode(mode: "self_guided" | "concierge" | null): PathId | nu
   return mode
 }
 
-function formatDollars(cents: number) {
-  return `$${(cents / 100).toLocaleString("en-US")}`
-}
-
 export function ChoosePathCards({
   packages,
   alreadyMode,
@@ -147,11 +143,6 @@ export function ChoosePathCards({
                   <h2 className="portal-plan-title">{pkg.name}</h2>
                   <p className="portal-plan-price">{pkg.priceLabel}</p>
                 </div>
-                {pkg.depositCents > 0 && (
-                  <p className="portal-plan-deposit">
-                    Deposit option: {formatDollars(pkg.depositCents)}
-                  </p>
-                )}
                 <p className="portal-plan-description">{narrative.tagline}</p>
 
                 <div className={`portal-plan-lists ${concierge ? "portal-plan-lists-featured" : ""}`}>

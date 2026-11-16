@@ -629,14 +629,6 @@ html:has(.portal-v2) body {
   font-variant-numeric: tabular-nums;
 }
 
-.portal-plan-deposit {
-  margin-top: 6px;
-  color: var(--portal-muted);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-}
-
 .portal-plan-description {
   margin-top: 12px;
   color: var(--portal-ink-2);
@@ -766,7 +758,6 @@ html:has(.portal-v2) body {
   font-size: 2.5rem;
 }
 
-.portal-choice-card[data-tone="featured-dark"] .portal-plan-deposit,
 .portal-choice-card[data-tone="featured-dark"] .portal-plan-description {
   color: var(--portal-featured-muted);
 }
