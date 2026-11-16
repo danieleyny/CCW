@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import Link from "next/link"
 import {
   ShieldCheck,
   MessageSquareWarning,
@@ -31,6 +33,8 @@ import {
   Plane,
   Building2,
   Star,
+  CircleHelp,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react"
 import { categoryKeyFor } from "@/lib/requirements/categories"
@@ -43,6 +47,7 @@ import type { FeeReceipts } from "@/components/portal/fee-panel"
 import { cn } from "@/lib/utils"
 import { LADDER_COPY, reviewerLabel, type LadderState } from "@/lib/requirements/ladder"
 import { isUnenforced } from "@/lib/legal-status"
+import { DocumentExample } from "@/components/portal/document-example"
 
 /**
  * ONE requirement, ONE card — the single presentation of a requirement, rendered by
@@ -187,13 +192,37 @@ const PRIORITY_DOT: Record<string, string> = {
   high: "bg-warn",
 }
 
-export function RequirementCard({ item, ctx }: { item: ReqChecklistItem; ctx: RequirementCardCtx }) {
+export function RequirementCard({
+  item,
+  ctx,
+  presentation = "standard",
+}: {
+  item: ReqChecklistItem
+  ctx: RequirementCardCtx
+  presentation?: "standard" | "concierge"
+}) {
+  const [guideOpen, setGuideOpen] = useState(false)
   const tone = isUnenforced(item.legalStatus) ? "muted" : LADDER_COPY[item.ladder].tone
   const dot = PRIORITY_DOT[item.severity]
   const Icon = REQ_ICON[item.reqCode] ?? CATEGORY_ICON[categoryKeyFor(item.reqCode)] ?? FileText
+  const action = actionFor(item.reqCode)
+  const concierge = presentation === "concierge"
+  const guideId = `guide-${item.id}`
+  const guideSteps = action
+    ? action.mode === "obtain" && action.steps.length > 0
+      ? action.steps
+      : [action.help]
+    : []
 
   return (
-    <li id={item.reqCode} className={cn("scroll-mt-40 card-raised p-5 sm:scroll-mt-24", GLOW_BY_TONE[tone] ?? "glow-neutral")}>
+    <li
+      id={item.reqCode}
+      className={cn(
+        "scroll-mt-40 card-raised p-5 sm:scroll-mt-24",
+        concierge && "concierge-requirement-card",
+        GLOW_BY_TONE[tone] ?? "glow-neutral"
+      )}
+    >
       <div className="mb-2.5 flex items-center justify-between gap-2">
         {isUnenforced(item.legalStatus) ? (
           <span className="shrink-0 rounded-full bg-signal-dim px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
@@ -202,20 +231,22 @@ export function RequirementCard({ item, ctx }: { item: ReqChecklistItem; ctx: Re
         ) : (
           <LadderBadge item={item} />
         )}
-        <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-wide text-text-low/70">{item.reqCode}</span>
+        {!concierge ? (
+          <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-wide text-text-low/70">{item.reqCode}</span>
+        ) : null}
       </div>
       <div className="flex items-start gap-3">
         <div className="relative shrink-0" aria-hidden>
           <div className="icon-tile">
             <Icon className={cn("size-5", ICON_TONE[tone] ?? "text-text-mid")} />
           </div>
-          {dot && <span className={cn("absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-surface-1", dot)} />}
+          {!concierge && dot ? <span className={cn("absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-surface-1", dot)} /> : null}
         </div>
 
         <div className="min-w-0 flex-1">
-          {dot && <span className="sr-only">Priority: {item.severity.replace(/_/g, " ")}</span>}
+          {!concierge && dot ? <span className="sr-only">Priority: {item.severity.replace(/_/g, " ")}</span> : null}
           <h4 className="font-display text-base font-semibold leading-[1.3]">
-            {actionFor(item.reqCode)?.customerTitle ?? item.title}
+            {action?.customerTitle ?? item.title}
           </h4>
           {item.destination && DESTINATION_COPY[item.destination] && (
             <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${DESTINATION_COPY[item.destination].cls}`}>
@@ -296,7 +327,41 @@ export function RequirementCard({ item, ctx }: { item: ReqChecklistItem; ctx: Re
             </p>
           )}
 
-          <div className="mt-3 flex items-end justify-between gap-3">
+          {concierge && action && guideSteps.length > 0 ? (
+            <div className="concierge-how-wrap">
+              <button
+                type="button"
+                className="concierge-how-button"
+                onClick={() => setGuideOpen((value) => !value)}
+                aria-expanded={guideOpen}
+                aria-controls={guideId}
+              >
+                <CircleHelp className="size-4" aria-hidden /> {guideOpen ? "Hide guide" : "How"}
+              </button>
+              {guideOpen ? (
+                <div id={guideId} className="concierge-how-guide">
+                  <div className="concierge-how-title">
+                    <span aria-hidden>?</span>
+                    <div>
+                      <small>Step-by-step</small>
+                      <strong>How to complete {action.customerTitle ?? item.title}</strong>
+                    </div>
+                  </div>
+                  <ol>
+                    {guideSteps.map((step, index) => (
+                      <li key={`${item.reqCode}-${index}`}><span>{index + 1}</span><p>{step}</p></li>
+                    ))}
+                  </ol>
+                  {action.example ? <DocumentExample id={action.example} /> : null}
+                  <Link href="/portal/messages" className="concierge-how-help">
+                    <MessageCircle className="size-4" aria-hidden /> Still stuck? Ask your team
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!concierge ? <div className="mt-3 flex items-end justify-between gap-3">
             <details className="min-w-0 text-[11px] text-text-low">
               <summary className="cursor-pointer select-none rounded transition-colors hover:text-text-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40">
                 Official requirement
@@ -307,7 +372,7 @@ export function RequirementCard({ item, ctx }: { item: ReqChecklistItem; ctx: Re
               </p>
             </details>
             <span className="shrink-0 font-mono text-[10px] tracking-wide text-text-low/70">{item.reqCode}</span>
-          </div>
+          </div> : null}
         </div>
       </div>
     </li>

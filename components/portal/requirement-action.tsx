@@ -209,7 +209,7 @@ export function RequirementAction({
           </p>
         )}
 
-        {action.example && <DocumentExample id={action.example} />}
+        {action.example && !isConcierge ? <DocumentExample id={action.example} /> : null}
 
         {wet === "notary" && generated && !done && (
           <NotaryRoutes area={dmvApplicant?.address ?? ""} />
@@ -247,7 +247,7 @@ export function RequirementAction({
   if (action.mode === "obtain") {
     return (
       <div className="mt-3 space-y-2">
-        <button
+        {!isConcierge ? <button
           type="button"
           onClick={() => setHowTo((v) => !v)}
           className="flex items-center gap-1.5 text-sm font-medium text-signal transition-colors hover:text-foreground"
@@ -255,9 +255,9 @@ export function RequirementAction({
         >
           <ChevronDown className={`size-4 transition-transform ${howTo ? "rotate-180" : ""}`} />
           How to get this
-        </button>
+        </button> : null}
 
-        {howTo && (
+        {howTo && !isConcierge ? (
           <div className="rounded-md border border-hairline bg-surface-2/40 p-3">
             <ol className="ml-4 list-decimal space-y-1.5 text-sm text-text-mid">
               {(action.steps ?? []).map((s, i) => (
@@ -275,9 +275,9 @@ export function RequirementAction({
               </a>
             )}
           </div>
-        )}
+        ) : null}
 
-        {action.example && <DocumentExample id={action.example} />}
+        {action.example && !isConcierge ? <DocumentExample id={action.example} /> : null}
 
         {/* REL-01: hand over BOTH release forms to download — employment + HIPAA
             medical. Filled with what we can; the applicant signs and brings the

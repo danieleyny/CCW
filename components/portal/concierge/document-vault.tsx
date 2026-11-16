@@ -2,7 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Lock, ArrowRight, Users, ShieldCheck, ChevronDown, Check } from "lucide-react"
+import {
+  BadgeCheck,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  FilePenLine,
+  Fingerprint,
+  GraduationCap,
+  House,
+  Landmark,
+  Lock,
+  Receipt,
+  Scale,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
 import { groupByCategory } from "@/lib/requirements/categories"
 import { isDisclosureItem } from "@/lib/requirements/sections"
 import { actionFor } from "@/lib/requirements/actions"
@@ -12,16 +28,65 @@ import type { ReferenceProgress } from "@/components/portal/requirement-action"
 import { cn } from "@/lib/utils"
 
 type Filter = "all" | "needsYou" | "received" | "done"
-const FILTERS: Filter[] = ["all", "needsYou", "received", "done"]
+const FILTERS: Filter[] = ["needsYou", "received", "done", "all"]
 const FILTER_KEY = "vaultFilter"
 
-/**
- * CONCIERGE — the document/requirement surface. It is NOT a second card implementation:
- * it renders the SAME <RequirementCard> the self-guided checklist uses (ONE_SURFACE_AND_
- * LON_FIXES Part A), grouped into labelled section bands with a summary strip. Every
- * card improvement — how-to panels, the residence-proof picker, DMV/TRN helpers —
- * lands here automatically because there is only one card.
- */
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  identity: Fingerprint,
+  residence: House,
+  records: Scale,
+  credentials: BadgeCheck,
+  training: GraduationCap,
+  people: Users,
+  prepared: FilePenLine,
+  conditional: ShieldCheck,
+  sponsor: Landmark,
+  admin: Receipt,
+}
+
+const BUNDLES = [
+  {
+    key: "upload",
+    number: 1,
+    eyebrow: "Upload these",
+    title: "Your documents",
+    sub: "Snap a photo or upload a file",
+    sections: ["identity", "residence", "records", "credentials", "training", "conditional"],
+  },
+  {
+    key: "people",
+    number: 2,
+    eyebrow: "Tell us who",
+    title: "People we contact for you",
+    sub: "Just names and emails — we do the rest",
+    sections: ["people"],
+  },
+  {
+    key: "sign",
+    number: 3,
+    eyebrow: "Read & sign",
+    title: "We prepare, you sign",
+    sub: "We fill every form — you review and sign",
+    sections: ["prepared"],
+  },
+  {
+    key: "confirm",
+    number: 4,
+    eyebrow: "Confirm",
+    title: "Fees & sign-offs",
+    sub: "Quick confirmations — most we handle",
+    sections: ["admin"],
+  },
+  {
+    key: "sponsor",
+    number: 5,
+    eyebrow: "From your sponsor",
+    title: "Sponsor documents",
+    sub: "Read-only items supplied for your case",
+    sections: ["sponsor"],
+  },
+] as const
+
 export function DocumentVault({
   items,
   ctx,
@@ -33,232 +98,234 @@ export function DocumentVault({
   referenceProgress: ReferenceProgress | null
   cohabitantProgress: ReferenceProgress | null
 }) {
-  // Open on what's left, not "All" — the list shortens as items complete, which is
-  // the whole point of the filter. Default to "Need you"; a choice made this session
-  // is remembered (sessionStorage) but a fresh visit resets to "Need you".
   const [filter, setFilter] = useState<Filter>("needsYou")
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem(FILTER_KEY)
-      // Hydrate the remembered choice AFTER mount, not in a lazy initializer — the
-      // server can't read sessionStorage, so a render-time read would mismatch on
-      // hydration. This post-mount setState is the correct pattern here.
+      // The server cannot read sessionStorage, so restore the per-tab preference after hydration.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (stored && FILTERS.includes(stored as Filter)) setFilter(stored as Filter)
     } catch {
-      /* private mode / no storage — the "Need you" default stands */
+      // Private browsing can disable storage. The default remains useful.
     }
   }, [])
-  const choose = (f: Filter) => {
-    setFilter(f)
+
+  const choose = (next: Filter) => {
+    setFilter(next)
     try {
-      sessionStorage.setItem(FILTER_KEY, f)
+      sessionStorage.setItem(FILTER_KEY, next)
     } catch {
-      /* ignore */
+      // The filter still works for the current render without persistence.
     }
   }
 
-  // The applicant's own applicable requirements (skip system-verified na + unenforced).
-  // Disclosure GENERATE items (Q10–28 affirmations) have their own section on this page,
-  // so they're excluded here to avoid showing the same card twice.
   const applicable = useMemo(
     () =>
       items.filter(
-        (i) =>
-          i.status !== "na" &&
-          !isUnenforced(i.legalStatus) &&
-          !(isDisclosureItem(i.reqCode) && actionFor(i.reqCode)?.mode === "generate")
+        (item) =>
+          item.status !== "na" &&
+          !isUnenforced(item.legalStatus) &&
+          !(isDisclosureItem(item.reqCode) && actionFor(item.reqCode)?.mode === "generate")
       ),
     [items]
   )
   const groups = useMemo(() => groupByCategory(applicable), [applicable])
-
   const totals = applicable.reduce(
-    (acc, i) => {
-      const b = bucketOf(i)
-      acc[b] += 1
+    (acc, item) => {
+      acc[bucketOf(item)] += 1
       return acc
     },
     { needsYou: 0, received: 0, done: 0 } as Record<Exclude<Filter, "all">, number>
   )
-  const total = applicable.length
-
-  // "Need you" empty but the vault isn't → don't strand the applicant on a blank
-  // panel: show everything, and say why.
   const needsYouEmpty = filter === "needsYou" && totals.needsYou === 0
   const effectiveFilter: Filter = needsYouEmpty ? "all" : filter
+  const sectionMap = new Map(groups.map((group) => [group.category.key, group]))
+  const visibleBundles = BUNDLES.map((bundle) => ({
+    ...bundle,
+    groups: bundle.sections.map((key) => sectionMap.get(key)).filter(Boolean) as typeof groups,
+  })).filter((bundle) => bundle.groups.length > 0)
+  const firstNeedsYou = groups
+    .filter((group) => group.items.some((item) => bucketOf(item) === "needsYou"))
+    .slice(0, 2)
+    .map((group) => group.category.key)
+
+  if (applicable.length === 0) {
+    return (
+      <section className="concierge-vault-empty">
+        <ShieldCheck className="size-5" aria-hidden />
+        <div><strong>Everything we need is in.</strong><p>Nothing for you to do right now.</p></div>
+      </section>
+    )
+  }
 
   return (
-    <section className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">Your document vault</h2>
-        <p className="mt-1 flex items-start gap-1.5 text-sm text-text-mid">
-          <Lock className="mt-0.5 size-3.5 shrink-0 text-text-low" />
-          Everything you send is encrypted and seen only by your concierge team. Snap a photo or upload a
-          file — we take it from there.
-        </p>
+    <section className="concierge-vault" aria-labelledby="documents-heading">
+      <header className="concierge-vault-heading">
+        <div>
+          <p className="portal-t-eyebrow text-brass-deep">Your document vault</p>
+          <h2 id="documents-heading" className="portal-title-font">Documents</h2>
+        </div>
+        <div className="concierge-vault-filters" aria-label="Filter documents">
+          {FILTERS.map((item) => (
+            <FilterChip
+              key={item}
+              active={effectiveFilter === item}
+              onClick={() => choose(item)}
+              label={{ needsYou: "Need you", received: "With us", done: "Done", all: "All" }[item]}
+              count={item === "all" ? applicable.length : totals[item]}
+            />
+          ))}
+        </div>
+      </header>
+
+      {needsYouEmpty ? (
+        <p className="concierge-vault-caught-up"><Check className="size-4" aria-hidden /> Nothing needs you right now — showing every item.</p>
+      ) : null}
+
+      <div className="concierge-vault-help">
+        <span aria-hidden><CircleHelp className="size-5" /></span>
+        <div>
+          <strong>Not sure how to get or upload something?</strong>
+          <p>Tap <b>How</b> on any item for the instructions already approved for that requirement—or message your team anytime.</p>
+        </div>
+        <small><Lock className="size-3.5" aria-hidden /> Encrypted · seen only by your team</small>
       </div>
 
-      {total === 0 ? (
-        <p className="rounded-lg border border-ok/30 bg-ok/8 p-4 text-sm text-ok">
-          <ShieldCheck className="mr-1.5 inline size-4" /> Everything we need is in. Nothing for you to do
-          right now.
-        </p>
-      ) : (
-        <>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            <FilterChip active={effectiveFilter === "all"} onClick={() => choose("all")} label="All" n={total} tone="muted" />
-            <FilterChip active={effectiveFilter === "needsYou"} onClick={() => choose("needsYou")} label="Need you" n={totals.needsYou} tone="brass" />
-            <FilterChip active={effectiveFilter === "received"} onClick={() => choose("received")} label="With us" n={totals.received} tone="signal" />
-            <FilterChip active={effectiveFilter === "done"} onClick={() => choose("done")} label="Done" n={totals.done} tone="ok" />
-          </div>
+      <nav className="concierge-category-nav" aria-label="Document categories">
+        {groups.map((group) => {
+          const Icon = SECTION_ICONS[group.category.key] ?? FilePenLine
+          const done = group.items.filter((item) => bucketOf(item) === "done").length
+          return (
+            <a key={group.category.key} href={`#vault-${group.category.key}`}>
+              <span><Icon className="size-[18px]" aria-hidden /></span>
+              <strong>{group.category.label}</strong>
+              <small>{done}/{group.items.length}</small>
+            </a>
+          )
+        })}
+      </nav>
 
-          {needsYouEmpty && (
-            <p className="flex items-start gap-1.5 rounded-md border border-ok/25 bg-ok/[0.06] p-2.5 text-sm text-ok">
-              <ShieldCheck className="mt-0.5 size-4 shrink-0" /> Nothing needs you right now — showing everything.
-            </p>
-          )}
+      <div className="concierge-mobile-contents">
+        <div><h3>What we need from you</h3><span>{totals.done} of {applicable.length} in</span></div>
+        <nav aria-label="Document sections">
+          {visibleBundles.filter((bundle) => bundle.key !== "sponsor").map((bundle) => {
+            const count = bundle.groups.reduce((sum, group) => sum + group.items.length, 0)
+            return (
+              <a key={bundle.key} href={`#bundle-${bundle.key}`}>
+                <span>{bundle.number}</span><small>{bundle.eyebrow}</small><strong>{count} items</strong>
+              </a>
+            )
+          })}
+        </nav>
+        <p><CircleHelp className="size-4" aria-hidden /> Tap <b>How</b> on anything for a step-by-step guide.</p>
+      </div>
 
-          <div className="space-y-6">
-            {groups.map(({ category, items: catItems }) => (
-              <VaultSection key={category.key} title={category.label} items={catItems} filter={effectiveFilter} ctx={ctx} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {(referenceProgress || cohabitantProgress) && (
-        <div className="rounded-lg border border-hairline bg-card p-4">
-          <div className="flex items-center gap-2">
-            <Users className="size-4 text-brass" />
-            <h3 className="text-sm font-medium">People we contact for you</h3>
-          </div>
-          <p className="mt-1 text-sm text-text-mid">
-            You just give us their names and emails — we send each of them a private link and chase the
-            notarized letters until they&apos;re back. You don&apos;t manage any of it.
-          </p>
-          <ul className="mt-3 space-y-1.5 text-sm">
-            {referenceProgress && (
-              <li className="flex items-center justify-between">
-                <span className="text-text-mid">Character references</span>
-                <span className="font-mono text-[11px] tabular-nums text-text-low">
-                  {referenceProgress.notarizedCount} of {referenceProgress.required} back
+      <div className="concierge-bundles">
+        {visibleBundles.map((bundle) => {
+          const bundleItems = bundle.groups.flatMap((group) => group.items)
+          const bundleDone = bundleItems.filter((item) => bucketOf(item) === "done").length
+          return (
+            <section key={bundle.key} id={`bundle-${bundle.key}`} className="concierge-bundle" data-bundle={bundle.key}>
+              <header className="concierge-bundle-header">
+                <span className="concierge-bundle-number">{bundle.number}</span>
+                <div><small>{bundle.eyebrow}</small><h3>{bundle.title}</h3><p>{bundle.sub}</p></div>
+                <span className="concierge-bundle-count" aria-label={`${bundleDone} of ${bundleItems.length} in`}>
+                  <strong>{bundleDone}</strong>/{bundleItems.length}
                 </span>
-              </li>
-            )}
-            {cohabitantProgress && (
-              <li className="flex items-center justify-between">
-                <span className="text-text-mid">Household affidavits</span>
-                <span className="font-mono text-[11px] tabular-nums text-text-low">
-                  {cohabitantProgress.notarizedCount} of {cohabitantProgress.required} back
-                </span>
-              </li>
-            )}
-          </ul>
-          <Link href="/portal/people" className="mt-3 inline-flex items-center gap-1.5 text-sm text-signal underline">
-            Add or update their details <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
-      )}
+              </header>
+              <div className="concierge-bundle-body">
+                {bundle.groups.map((group) => (
+                  <VaultSection
+                    key={group.category.key}
+                    sectionKey={group.category.key}
+                    title={group.category.label}
+                    items={group.items}
+                    filter={effectiveFilter}
+                    ctx={ctx}
+                    defaultOpen={firstNeedsYou.includes(group.category.key)}
+                  />
+                ))}
+                {bundle.key === "people" && (referenceProgress || cohabitantProgress) ? (
+                  <PeopleProgress references={referenceProgress} household={cohabitantProgress} />
+                ) : null}
+                {bundle.key === "confirm" ? (
+                  <p className="concierge-fee-note">NYPD fees you&apos;ll pay directly: <strong>{ctx.feeSummary.total}</strong> · never to us</p>
+                ) : null}
+              </div>
+            </section>
+          )
+        })}
+      </div>
     </section>
   )
 }
 
-/** Which summary bucket a requirement falls in, from its applicant-facing ladder. */
-function bucketOf(i: ReqChecklistItem): Exclude<Filter, "all"> {
-  if (i.status === "satisfied" || i.ladder === "approved") return "done"
-  if (i.ladder === "submitted") return "received"
-  return "needsYou" // pending / changes_requested / waiting
+function bucketOf(item: ReqChecklistItem): Exclude<Filter, "all"> {
+  if (item.status === "satisfied" || item.ladder === "approved") return "done"
+  if (item.ladder === "submitted") return "received"
+  return "needsYou"
 }
 
-function matchesFilter(item: ReqChecklistItem, filter: Filter): boolean {
-  return filter === "all" || bucketOf(item) === filter
-}
-
-/** One section band: header + count, then the shared RequirementCards. A finished
- *  section starts collapsed so completing one feels like something. */
 function VaultSection({
+  sectionKey,
   title,
   items,
   filter,
   ctx,
+  defaultOpen,
 }: {
+  sectionKey: string
   title: string
   items: ReqChecklistItem[]
   filter: Filter
   ctx: RequirementCardCtx
+  defaultOpen: boolean
 }) {
-  const done = items.filter((i) => bucketOf(i) === "done").length
-  const allDone = done === items.length && items.length > 0
-  const [open, setOpen] = useState(!allDone)
+  const [open, setOpen] = useState(defaultOpen)
+  const visible = items.filter((item) => filter === "all" || bucketOf(item) === filter)
+  const done = items.filter((item) => bucketOf(item) === "done").length
+  const Icon = SECTION_ICONS[sectionKey] ?? FilePenLine
 
-  const visible = items.filter((i) => matchesFilter(i, filter))
   if (visible.length === 0) return null
 
   return (
-    <div>
+    <section id={`vault-${sectionKey}`} className="concierge-vault-panel scroll-mt-28" data-open={open}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        className="concierge-vault-panel-header"
+        onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 border-b border-hairline pb-1.5 text-left"
+        aria-controls={`vault-panel-${sectionKey}`}
       >
-        <span className="flex items-center gap-2">
-          {allDone && <Check className="size-3.5 text-ok" />}
-          <span className="engraved-sm text-text-mid">{title}</span>
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="font-mono text-[11px] tabular-nums text-text-low">
-            {done} of {items.length} in
-          </span>
-          <ChevronDown className={cn("size-4 text-text-low transition-transform", open ? "" : "-rotate-90")} />
-        </span>
+        <span className="concierge-panel-icon"><Icon className="size-5" aria-hidden /></span>
+        <span className="concierge-panel-title"><h3>{title}</h3><small>{done} of {items.length} in</small></span>
+        <span className="concierge-panel-progress" aria-hidden><span style={{ width: `${Math.round((done / items.length) * 100)}%` }} /></span>
+        <span className="concierge-panel-toggle">{open ? "Collapse" : "Open"}<ChevronDown className="size-4" aria-hidden /></span>
       </button>
-
       {open ? (
-        <ul className="mt-3 space-y-2.5">
-          {visible.map((item) => (
-            <RequirementCard key={item.id} item={item} ctx={ctx} />
-          ))}
+        <ul id={`vault-panel-${sectionKey}`} className="concierge-vault-items">
+          {visible.map((item) => <RequirementCard key={item.id} item={item} ctx={ctx} presentation="concierge" />)}
         </ul>
-      ) : (
-        <p className="mt-1.5 text-xs text-text-low">All {items.length} in this section are in.</p>
-      )}
+      ) : null}
+    </section>
+  )
+}
+
+function PeopleProgress({ references, household }: { references: ReferenceProgress | null; household: ReferenceProgress | null }) {
+  return (
+    <div className="concierge-people-progress">
+      <div><Users className="size-4" aria-hidden /><strong>People we contact for you</strong></div>
+      {references ? <p><span>References</span><b>{references.notarizedCount}/{references.required} letters back</b></p> : null}
+      {household ? <p><span>Household affidavits</span><b>{household.notarizedCount}/{household.required} back</b></p> : null}
+      <Link href="/portal/people">Add or update names</Link>
     </div>
   )
 }
 
-function FilterChip({
-  active,
-  onClick,
-  label,
-  n,
-  tone,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  n: number
-  tone: "muted" | "brass" | "signal" | "ok"
-}) {
-  const toneClass =
-    active && tone === "brass"
-      ? "border-brass/60 bg-brass/15 text-brass-bright"
-      : active && tone === "signal"
-        ? "border-signal/50 bg-signal/12 text-signal"
-        : active && tone === "ok"
-          ? "border-ok/50 bg-ok/12 text-ok"
-          : active
-            ? "border-hairline-strong bg-surface-2 text-foreground"
-            : "border-hairline bg-card text-text-mid hover:bg-surface-2"
+function FilterChip({ active, onClick, label, count }: { active: boolean; onClick: () => void; label: string; count: number }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn("shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors", toneClass)}
-    >
-      {label} <span className="tabular-nums opacity-80">{n}</span>
+    <button type="button" onClick={onClick} aria-pressed={active} className={cn(active && "is-active")}>
+      {label} <span>{count}</span>
     </button>
   )
 }

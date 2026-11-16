@@ -1,50 +1,65 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
-import { CheckCircle2, Circle, ArrowRight } from "lucide-react"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { ArrowRight, BriefcaseBusiness, ChevronDown, FilePenLine, Home, ShieldCheck, UserRound } from "lucide-react"
 import type { DataAsk } from "@/lib/concierge/data-asks"
 
-/**
- * "What we need from you" — the data asks the portal requires, as first-class cards on
- * the concierge dashboard (they used to be reachable only by a URL the applicant never
- * saw). Each card shows progress and deep-links to the exact section that collects it.
- */
+const ICONS = {
+  details: UserRound,
+  residence: Home,
+  employment: BriefcaseBusiness,
+  safeguard: ShieldCheck,
+  lon: FilePenLine,
+  confidentiality: FilePenLine,
+} as const
+
 export function DataAsksSection({ asks }: { asks: DataAsk[] }) {
+  const [expanded, setExpanded] = useState(false)
+
   return (
-    <section className="space-y-3">
-      <div>
-        <SectionEyebrow>What we need from you</SectionEyebrow>
-        <h2 className="mt-2 text-lg font-semibold tracking-tight">Your information</h2>
-        <p className="mt-1 max-w-prose text-sm text-text-mid">
-          The details we enter into the NYPD portal for you. Fill these in and we take it from there.
-        </p>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {asks.map((a) => {
-          const done = a.captured >= a.total && a.total > 0
+    <section className="concierge-data-asks" aria-labelledby="information-heading">
+      <header className="concierge-section-heading">
+        <div>
+          <p className="portal-t-eyebrow text-brass-deep">Your information</p>
+          <h2 id="information-heading" className="portal-title-font">Details we&apos;ll reuse for you</h2>
+          <p>Complete it once. We carry the same verified details into every document we prepare.</p>
+        </div>
+        <Link href="/portal/details">Open your details <ArrowRight className="size-4" aria-hidden /></Link>
+      </header>
+
+      <div className="concierge-data-list" data-expanded={expanded}>
+        {asks.map((ask, index) => {
+          const Icon = ICONS[ask.key as keyof typeof ICONS] ?? FilePenLine
+          const done = ask.total > 0 && ask.captured >= ask.total
+          const progress = ask.total > 0 ? Math.min(100, Math.round((ask.captured / ask.total) * 100)) : 0
           return (
-            <Link
-              key={a.key}
-              href={a.href}
-              className="group flex items-center justify-between gap-3 rounded-lg border border-hairline bg-card p-4 transition-colors hover:border-signal/40"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                {done ? (
-                  <CheckCircle2 className="size-4 shrink-0 text-ok" />
-                ) : (
-                  <Circle className="size-4 shrink-0 text-text-low" />
-                )}
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">{a.label}</div>
-                  <div className={`text-xs ${done ? "text-ok" : "text-text-mid"}`}>
-                    {done ? "Captured" : `${a.captured} of ${a.total} captured`}
-                  </div>
-                </div>
-              </div>
-              <ArrowRight className="size-4 shrink-0 text-text-low transition-transform group-hover:translate-x-0.5" />
+            <Link key={ask.key} href={ask.href} className="concierge-data-row" data-mobile-hidden={index > 2}>
+              <span className="concierge-data-icon" aria-hidden><Icon className="size-[18px]" /></span>
+              <span className="concierge-data-main">
+                <strong>{ask.label}</strong>
+                <span className="concierge-data-progress" aria-label={`${ask.captured} of ${ask.total} captured`}>
+                  <span style={{ width: `${progress}%` }} />
+                </span>
+              </span>
+              <span className="concierge-data-count">{done ? "Complete" : `${ask.captured}/${ask.total}`}</span>
+              <ArrowRight className="size-4" aria-hidden />
             </Link>
           )
         })}
       </div>
+
+      {asks.length > 3 ? (
+        <button
+          type="button"
+          className="concierge-data-more"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+        >
+          {expanded ? "Show fewer sections" : `${asks.length - 3} more sections`}
+          <ChevronDown className={`size-4 transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden />
+        </button>
+      ) : null}
     </section>
   )
 }

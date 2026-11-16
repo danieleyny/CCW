@@ -1,4 +1,6 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
+import { FileCheck2, Lock, MessageCircle, Users } from "lucide-react"
 import { getMyCase } from "@/lib/portal"
 import { hasPaidPackage } from "@/lib/packages"
 import { createClient } from "@/lib/supabase/server"
@@ -9,7 +11,6 @@ import type { RequirementCardCtx } from "@/components/portal/requirement-card"
 import { buildReviewItems, readyToFile } from "@/lib/concierge/review"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
 import { sendMessage } from "@/app/portal/actions"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
 import { AgreementsGate } from "@/components/portal/concierge/agreements-gate"
@@ -19,20 +20,17 @@ import { ReviewAndFile } from "@/components/portal/concierge/review-and-file"
 import { DisclosuresSection } from "@/components/portal/concierge/disclosures-section"
 import { DataAsksSection } from "@/components/portal/concierge/data-asks-section"
 import { ControlTower } from "@/components/portal/concierge/control-tower"
+import { NextStepCard, MobileNextStepBar } from "@/components/portal/concierge/next-step-card"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { buildDataAsks } from "@/lib/concierge/data-asks"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
-import { Card, CardContent } from "@/components/ui/card"
+import { actionFor } from "@/lib/requirements/actions"
+import { isDisclosureItem } from "@/lib/requirements/sections"
+import { isUnenforced } from "@/lib/legal-status"
 
 export const metadata = { title: "Your concierge" }
 
-/**
- * CONCIERGE — the done-for-you home. Access requires a paid concierge package.
- * First run is a strict order: the agreements gate blocks everything until it's
- * signed; then the intro call. Phases 3–4 add the secure vault and the live
- * control tower into this same page.
- */
 export default async function ConciergeHome() {
   const myCase = await getMyCase()
   if (!myCase) redirect("/portal")
@@ -41,9 +39,6 @@ export default async function ConciergeHome() {
   if (serviceMode !== "concierge") redirect("/portal/choose-path")
 
   const supabase = await createClient()
-  // A sponsored applicant reaches the concierge experience through their sponsorship,
-  // not a Stripe purchase — an active (non-revoked) sponsorship unlocks it. Everyone
-  // else needs the paid Full Concierge package.
   const { data: activeSponsorship } = await supabase
     .from("case_sponsorships")
     .select("id")
@@ -56,33 +51,30 @@ export default async function ConciergeHome() {
   }
 
   const onboarding = await loadConciergeOnboarding(supabase, myCase.id)
-  const firstName = myCase.client.full_name.split(" ")[0]
-
-  // The gate blocks everything until the engagement is signed.
   if (!onboarding.agreementsSigned) {
     return <AgreementsGate defaultName={myCase.client.full_name} />
   }
 
   const stage = myCase.stage as CaseStageKey
-  const [view, gate, { data: msgs }] = await Promise.all([
+  // Service-role use is limited to resolving the authenticated client's staff-only
+  // fact rows into a read-only progress summary; no client-provided values are written.
+  const admin = createAdminClient()
+  const [view, gate, dataAsks, { data: msgs }, { data: agentRow }, { data: trackRow }] = await Promise.all([
     loadRequirementView(supabase, myCase),
     evaluatePreFilingGate(supabase, myCase.id),
+    buildDataAsks(admin, myCase.id),
     supabase
       .from("messages")
       .select("id, body, created_at, profiles:sender_id(full_name, role)")
       .eq("case_id", myCase.id)
-      .is("engagement_id", null) // staff thread only — instructor chat lives on the engagement
+      .is("engagement_id", null)
       .order("created_at"),
+    supabase.from("clients").select("profiles:assigned_staff(full_name)").eq("id", myCase.client_id).maybeSingle(),
+    supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle(),
   ])
 
   const reviewItems = buildReviewItems(view)
-  // The data the portal needs — first-class asks, deep-linked to /portal/details.
-  const dataAsks = await buildDataAsks(createAdminClient(), myCase.id)
-
-  // The SAME card context the self-guided checklist assembles — so the concierge vault
-  // renders the identical <RequirementCard> (Part A), with its DMV/TRN helpers.
-  const caseSponsored = view.items.some((i) => i.sponsorManaged)
-  const { data: trackRow } = await supabase.from("cases").select("license_track").eq("id", myCase.id).maybeSingle()
+  const caseSponsored = view.items.some((item) => item.sponsorManaged)
   const cardCtx: RequirementCardCtx = {
     caseId: myCase.id,
     clientId: myCase.client_id,
@@ -100,112 +92,211 @@ export default async function ConciergeHome() {
     isConcierge: true,
   }
 
-  // Milestone state — REAL signals only, never cosmetic.
-  const applicable = view.items.filter((i) => i.status !== "na")
+  const applicable = view.items.filter((item) => item.status !== "na")
   const controlState = {
     stage,
     requirementsTotal: applicable.length,
-    requirementsSatisfied: applicable.filter((i) => i.status === "satisfied").length,
+    requirementsSatisfied: applicable.filter((item) => item.status === "satisfied").length,
     referencesSatisfied: view.referenceProgress
       ? view.referenceProgress.notarizedCount >= view.referenceProgress.required
       : true,
     guardOk: gate.ok,
   }
-  const messages: MessageRow[] = (msgs ?? []).map((m) => {
-    const p = m.profiles as unknown as { full_name: string; role: string } | null
+  const messages: MessageRow[] = (msgs ?? []).map((message) => {
+    const profile = message.profiles as unknown as { full_name: string; role: string } | null
     return {
-      id: m.id,
-      body: m.body,
-      created_at: m.created_at,
-      senderName: p?.full_name ?? null,
-      senderRole: p?.role ?? null,
+      id: message.id,
+      body: message.body,
+      created_at: message.created_at,
+      senderName: profile?.full_name ?? null,
+      senderRole: profile?.role ?? null,
     }
   })
+  const agentName = (agentRow?.profiles as unknown as { full_name: string } | null)?.full_name ?? null
+  const agentFirst = agentName?.split(" ")[0] ?? null
+  const detailsCaptured = dataAsks.reduce((sum, ask) => sum + ask.captured, 0)
+  const detailsTotal = dataAsks.reduce((sum, ask) => sum + ask.total, 0)
+  const callBooked = Boolean(onboarding.introCall?.scheduledAt)
+  const filingReady = readyToFile(stage)
 
-  // QA Phase 9 — surface the assigned concierge (auto-assigned on payment).
-  const { data: agentRow } = await supabase
-    .from("clients")
-    .select("profiles:assigned_staff(full_name)")
-    .eq("id", myCase.client_id)
-    .maybeSingle()
-  const agentFirst =
-    (agentRow?.profiles as unknown as { full_name: string } | null)?.full_name?.split(" ")[0] ?? null
+  const firstDataAsk = dataAsks.find((ask) => ask.captured < ask.total)
+  const firstRequirement = view.items.find(
+    (item) =>
+      item.status !== "na" &&
+      item.status !== "satisfied" &&
+      item.ladder !== "approved" &&
+      item.ladder !== "submitted" &&
+      !item.sponsorManaged &&
+      !isUnenforced(item.legalStatus) &&
+      !(isDisclosureItem(item.reqCode) && actionFor(item.reqCode)?.mode === "generate")
+  )
+  const requirementAction = firstRequirement ? actionFor(firstRequirement.reqCode) : null
 
-  // UX 1.3 — an UNBOOKED call is the single most valuable action → put the compact
-  // "book your intro call" card above the fold, before the tower. Once BOOKED it's
-  // a fact, not a task → it folds into the control tower as a milestone line, so it
-  // stops occupying its own section.
-  const callBooked = !!onboarding.introCall?.scheduledAt
+  const nextStep = !callBooked
+    ? { title: "Book your 30-minute intro call", label: "Book", href: "#next-step" }
+    : firstDataAsk
+      ? { title: `Finish ${firstDataAsk.label}`, label: "Continue", href: firstDataAsk.href }
+      : firstRequirement
+        ? {
+            title: requirementAction?.customerTitle ?? firstRequirement.title,
+            label: requirementAction?.actionLabel ?? "Open item",
+            href: `#${firstRequirement.reqCode}`,
+          }
+        : filingReady
+          ? { title: "Review and approve your packet", label: "Review", href: "#review" }
+          : { title: "We’re on it", label: "View progress", href: "#progress" }
 
   return (
-    <div className="space-y-6">
+    <div className="concierge-page">
       <ScrollToTop />
       <DeepLinkHighlight />
-      <div>
-        <SectionEyebrow>Full Concierge</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Welcome, {firstName}.</h1>
-        <p className="mt-1 max-w-prose text-sm text-text-mid">
-          You&apos;re on the done-for-you path. We prepare and assemble everything — you review it at the
-          end and file your own application.
-          {agentFirst && (
-            <>
-              {" "}
-              <span className="text-foreground">{agentFirst} is your concierge.</span>
-            </>
-          )}
-        </p>
+
+      <div id="progress">
+        <ControlTower
+          state={controlState}
+          nypdControlled={isNypdControlled(stage)}
+          introCall={onboarding.introCall}
+          firstName={myCase.client.full_name.split(" ")[0]}
+          agentFirst={agentFirst}
+          detailsCaptured={detailsCaptured}
+          detailsTotal={detailsTotal}
+        />
       </div>
 
       <SponsorBanner caseId={myCase.id} />
 
-      {!callBooked && (
-        <BookCall
-          calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
-          introToken={myCase.calendly_token}
-          introCall={onboarding.introCall}
+      {!callBooked ? (
+        <NextStepCard title={nextStep.title} description="Nothing to prepare.">
+          <BookCall
+            calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
+            introToken={myCase.calendly_token}
+            introCall={onboarding.introCall}
+            embedded
+          />
+        </NextStepCard>
+      ) : firstDataAsk ? (
+        <NextStepCard
+          title={`Finish ${firstDataAsk.label}`}
+          description="Add the remaining details once; we’ll reuse them across the documents we prepare."
+          actionLabel="Open your details"
+          href={firstDataAsk.href}
+          then={firstRequirement ? requirementAction?.customerTitle ?? firstRequirement.title : "we continue preparing your packet"}
+        />
+      ) : firstRequirement ? (
+        <NextStepCard
+          title={requirementAction?.customerTitle ?? firstRequirement.title}
+          description="This is the first item that still needs you. Your concierge team will handle the follow-through."
+          actionLabel={requirementAction?.actionLabel ?? "Open item"}
+          href={`#${firstRequirement.reqCode}`}
+          then="we review what you send and move to the next item"
+        />
+      ) : filingReady ? (
+        <NextStepCard
+          title="Review and submit your packet"
+          description="Your packet is assembled and quality-checked. Review it, then submit your own application."
+          actionLabel="Review my packet"
+          href="#review"
+        />
+      ) : (
+        <NextStepCard
+          title="We’re on it"
+          description="Your team is working through the current case milestone. Nothing new is required from you right now."
+          actionLabel="See case progress"
+          href="#progress"
         />
       )}
 
-      <ControlTower
-        state={controlState}
-        nypdControlled={isNypdControlled(stage)}
-        introCall={onboarding.introCall}
-      />
+      <MobileNextStepBar title={nextStep.title} label={nextStep.label} href={nextStep.href} />
 
+      <div className="concierge-layout">
+        <div className="concierge-main-column">
+          <DataAsksSection asks={dataAsks} />
 
-      <DataAsksSection asks={dataAsks} />
-
-      <div id="vault" className="scroll-mt-20">
-        <DocumentVault
-          items={view.items}
-          ctx={cardCtx}
-          referenceProgress={view.referenceProgress}
-          cohabitantProgress={view.cohabitantProgress}
-        />
-      </div>
-
-      <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
-
-      <div id="review" className="scroll-mt-20">
-        <ReviewAndFile items={reviewItems} ready={readyToFile(stage)} caseId={myCase.id} clientId={myCase.client_id} />
-      </div>
-
-      <section className="space-y-3">
-        <div>
-          <SectionEyebrow>Your team</SectionEyebrow>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight">Message your concierge</h2>
-        </div>
-        <Card>
-          <CardContent className="p-5">
-            <MessageThread
-              caseId={myCase.id}
-              messages={messages}
-              send={sendMessage}
-              placeholder="Ask your concierge anything…"
+          <div id="vault" className="scroll-mt-20">
+            <DocumentVault
+              items={view.items}
+              ctx={cardCtx}
+              referenceProgress={view.referenceProgress}
+              cohabitantProgress={view.cohabitantProgress}
             />
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="concierge-disclosures-card">
+            <DisclosuresSection view={view} caseId={myCase.id} clientId={myCase.client_id} />
+          </div>
+
+          <div id="review" className="concierge-review-card scroll-mt-20" data-ready={filingReady}>
+            <ReviewAndFile
+              items={reviewItems}
+              ready={filingReady}
+              caseId={myCase.id}
+              clientId={myCase.client_id}
+            />
+          </div>
+
+          <section id="messages" className="concierge-messages scroll-mt-24" aria-labelledby="messages-title">
+            <header className="concierge-section-heading">
+              <div>
+                <p className="portal-t-eyebrow text-brass-deep">Your team</p>
+                <h2 id="messages-title" className="portal-title-font">Message your concierge</h2>
+                <p>Ask a question or send context without leaving your case.</p>
+              </div>
+            </header>
+            <div className="concierge-message-thread">
+              <MessageThread
+                caseId={myCase.id}
+                messages={messages}
+                send={sendMessage}
+                placeholder="Ask your concierge anything…"
+              />
+            </div>
+          </section>
+        </div>
+
+        <aside className="concierge-rail" aria-label="Concierge case summary">
+          <section className="concierge-rail-card concierge-team-card">
+            <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>
+            <div><small>Your concierge team</small><strong>{agentName ?? "Being assigned"}</strong><p>{agentName ? "Your named case contact" : "Usually within one business day"}</p></div>
+            <a href="#messages"><MessageCircle className="size-4" aria-hidden /> Message your team</a>
+            <footer>Routine follow-ups · unlimited support</footer>
+          </section>
+
+          <section className="concierge-rail-card concierge-people-card">
+            <header><Users className="size-4" aria-hidden /><strong>People we contact for you</strong></header>
+            {view.referenceProgress ? (
+              <div><span aria-label={`${view.referenceProgress.notarizedCount} of ${view.referenceProgress.required} references back`}><b>{view.referenceProgress.notarizedCount}</b>/{view.referenceProgress.required}</span><p>References</p></div>
+            ) : null}
+            {view.cohabitantProgress ? (
+              <div><span aria-label={`${view.cohabitantProgress.notarizedCount} of ${view.cohabitantProgress.required} household affidavits back`}><b>{view.cohabitantProgress.notarizedCount}</b>/{view.cohabitantProgress.required}</span><p>Household</p></div>
+            ) : null}
+            <Link href="/portal/people">Add names or check status</Link>
+          </section>
+
+          <section className="concierge-rail-card concierge-finish-card" data-ready={filingReady}>
+            {filingReady ? <FileCheck2 className="size-5" aria-hidden /> : <Lock className="size-5" aria-hidden />}
+            <small>The finish line</small>
+            <h2>Review &amp; submit</h2>
+            <p>When your packet is ready, you approve it here, then submit your own application with our guidance.</p>
+            {filingReady ? <a href="#review">Review my packet</a> : <span>Unlocks when your packet is assembled</span>}
+          </section>
+        </aside>
+      </div>
+
+      <section className="concierge-mobile-team">
+        <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>
+        <div><small>Your concierge team</small><strong>{agentName ?? "Being assigned · unlimited support"}</strong></div>
+        <a href="#messages" aria-label="Message your concierge"><MessageCircle className="size-5" /></a>
       </section>
     </div>
   )
+}
+
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
 }

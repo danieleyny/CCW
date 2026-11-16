@@ -1,5 +1,5 @@
 import { RequestCallButton } from "@/components/portal/concierge/request-call-button"
-import { BookCallModal, INTRO_CALL_MINUTES } from "@/components/portal/concierge/book-call-modal"
+import { BookCallModal } from "@/components/portal/concierge/book-call-modal"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
 
 /** Build the embed URL: opaque token (must survive for the webhook to match),
@@ -25,22 +25,21 @@ export function BookCall({
   calendlyUrl,
   introToken,
   introCall,
+  embedded = false,
 }: {
   calendlyUrl: string | null
   /** Opaque per-case token passed to Calendly (never the internal case id). */
   introToken: string
   introCall: IntroCallState | null
+  embedded?: boolean
 }) {
   // Defensive: the booked state lives in the control tower now, not here.
   if (introCall?.scheduledAt) return null
 
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <h2 className="text-lg font-semibold tracking-tight">Book your intro call</h2>
-      <p className="mt-1 max-w-prose text-sm text-text-mid">
-        {INTRO_CALL_MINUTES}&nbsp;minutes with your concierge — we&apos;ll walk through your case and answer
-        anything. Nothing to prepare.
-      </p>
+  const content = (
+    <>
+      <h2 className="portal-title-font text-[25px] font-medium tracking-tight">Book your 30-minute intro call</h2>
+      <p className="mt-1 max-w-prose text-sm text-text-mid">Nothing to prepare — we&apos;ll walk through your case and answer anything.</p>
 
       <div className="mt-4">
         {calendlyUrl ? (
@@ -49,6 +48,10 @@ export function BookCall({
           <RequestCallButton alreadyRequested={introCall?.status === "requested"} />
         )}
       </div>
-    </div>
+    </>
   )
+
+  if (embedded) return content
+
+  return <div className="rounded-lg border bg-card p-5">{content}</div>
 }

@@ -148,11 +148,22 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
                 <span aria-hidden className="portal-v2-bottom-active-mark absolute top-0" />
               )}
               <span
-                className={cn("flex h-[26px] w-[34px] items-center justify-center rounded-lg", active && "bg-signal-dim")}
+                className={cn("relative flex h-[26px] w-[34px] items-center justify-center rounded-lg", active && "bg-signal-dim")}
               >
                 <Icon className="size-5" />
+                {href === "/portal/messages" && unread > 0 ? (
+                  <span
+                    aria-hidden
+                    className="portal-v2-unread absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums"
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                ) : null}
               </span>
               {label}
+              {href === "/portal/messages" && unread > 0 ? (
+                <span className="sr-only">, {unread} unread</span>
+              ) : null}
             </Link>
           )
         })}
@@ -173,7 +184,7 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
             className={cn("relative flex h-[26px] w-[34px] items-center justify-center rounded-lg", moreActive && "bg-signal-dim")}
           >
             <MoreHorizontal className="size-5" />
-            {unread > 0 && (
+            {unread > 0 && !concierge && (
               <span
                 aria-hidden
                 className="portal-v2-unread absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums"
@@ -183,7 +194,7 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
             )}
           </span>
           More
-          {unread > 0 && <span className="sr-only">, {unread} unread</span>}
+          {unread > 0 && !concierge ? <span className="sr-only">, {unread} unread</span> : null}
         </button>
       </div>
 
