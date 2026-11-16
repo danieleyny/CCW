@@ -14,7 +14,10 @@ import type { WizardAnswers } from "@/lib/intake/answers"
 import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
 import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Your details" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.pages.detailsTitle }
+}
 
 // The applicant's own preparation groups. "sponsor" (the armed-guard company block) is
 // appended ONLY for a genuinely sponsored case — see below. A plain concealed-carry

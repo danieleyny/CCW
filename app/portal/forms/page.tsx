@@ -11,7 +11,10 @@ import { buildPortalForms } from "@/lib/forms/portal-forms"
 import { getFilingPackOutstanding } from "@/lib/filing-pack/readiness-server"
 import { getLocale, getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Your forms" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.pages.formsTitle }
+}
 
 export default async function FormsPage({
   searchParams,

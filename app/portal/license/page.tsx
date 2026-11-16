@@ -14,7 +14,10 @@ import { getLocale, getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
 import type { Locale } from "@/config/i18n"
 
-export const metadata = { title: "Your license" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.license.metadataTitle }
+}
 
 const DAY_MS = 86_400_000
 

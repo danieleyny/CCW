@@ -7,7 +7,10 @@ import { DataRequestForm } from "@/components/portal/data-request-form"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
 
-export const metadata = { title: "Your data" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.privacyTitle }
+}
 
 /**
  * PART A / Phase 3 — the applicant's own view of what we hold and what they can

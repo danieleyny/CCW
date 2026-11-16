@@ -32,7 +32,10 @@ import { isUnenforced } from "@/lib/legal-status"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
 
-export const metadata = { title: "Your concierge" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.shell.concierge }
+}
 
 export default async function ConciergeHome() {
   const [myCase, t, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])

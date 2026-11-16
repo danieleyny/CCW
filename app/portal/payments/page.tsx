@@ -5,7 +5,10 @@ import { getFees } from "@/lib/fees"
 import { PaymentsView } from "@/components/portal/payments-view"
 import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Payments" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.payments.metadataTitle }
+}
 
 export default async function PortalPayments({
   searchParams,

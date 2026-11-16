@@ -9,7 +9,10 @@ import { SetupStepper } from "@/components/portal/ui/setup-stepper"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { getLocale, getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Choose your license path" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.licensePath.metadataTitle }
+}
 
 export default async function LicensePathPage() {
   const [myCase, locale, t] = await Promise.all([getMyCase(), getLocale(), getMessages()])

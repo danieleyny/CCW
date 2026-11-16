@@ -16,6 +16,8 @@ import {
 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { markAllNotificationsRead } from "./notification-actions"
+import { interpolate } from "@/lib/i18n/interpolate"
+import type { Locale } from "@/config/i18n"
 
 export interface NotificationItem {
   id: string
@@ -29,14 +31,14 @@ export interface NotificationItem {
 
 type VisualKind = "message" | "document" | "fix" | "people" | "schedule" | "stage" | "default"
 
-const VISUALS: Record<VisualKind, { icon: LucideIcon; label: string }> = {
-  message: { icon: MessageCircle, label: "Message" },
-  document: { icon: FileText, label: "Document" },
-  fix: { icon: AlertCircle, label: "Needs attention" },
-  people: { icon: Users, label: "People" },
-  schedule: { icon: CalendarClock, label: "Schedule" },
-  stage: { icon: Flag, label: "Milestone" },
-  default: { icon: Bell, label: "Notification" },
+const VISUALS: Record<VisualKind, { icon: LucideIcon }> = {
+  message: { icon: MessageCircle },
+  document: { icon: FileText },
+  fix: { icon: AlertCircle },
+  people: { icon: Users },
+  schedule: { icon: CalendarClock },
+  stage: { icon: Flag },
+  default: { icon: Bell },
 }
 
 function visualKind(item: NotificationItem): VisualKind {
@@ -53,18 +55,18 @@ function visualKind(item: NotificationItem): VisualKind {
   return "default"
 }
 
-function relativeTime(value: string, asOf: string) {
+function relativeTime(value: string, asOf: string, locale: Locale, copy: Record<string, string>) {
   const date = new Date(value)
   const elapsed = new Date(asOf).getTime() - date.getTime()
   if (Number.isNaN(elapsed)) return ""
   const minutes = Math.max(0, Math.floor(elapsed / 60_000))
-  if (minutes < 1) return "Just now"
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 1) return copy.justNow
+  if (minutes < 60) return interpolate(copy.minutesAgo, { count: minutes })
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return interpolate(copy.hoursAgo, { count: hours })
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
+  if (days < 7) return interpolate(copy.daysAgo, { count: days })
+  return new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", { month: "short", day: "numeric" }).format(date)
 }
 
 function isToday(value: string, asOf: string) {
@@ -72,18 +74,18 @@ function isToday(value: string, asOf: string) {
   return !Number.isNaN(date.getTime()) && date.toDateString() === new Date(asOf).toDateString()
 }
 
-function NotificationRows({ items, close, asOf }: { items: NotificationItem[]; close: () => void; asOf: string }) {
+function NotificationRows({ items, close, asOf, locale, copy }: { items: NotificationItem[]; close: () => void; asOf: string; locale: Locale; copy: Record<string, string> }) {
   const groups = [
-    { label: "Today", items: items.filter((item) => isToday(item.created_at, asOf)) },
-    { label: "Earlier", items: items.filter((item) => !isToday(item.created_at, asOf)) },
+    { label: copy.today, items: items.filter((item) => isToday(item.created_at, asOf)) },
+    { label: copy.earlier, items: items.filter((item) => !isToday(item.created_at, asOf)) },
   ].filter((group) => group.items.length)
 
   if (!items.length) {
     return (
       <div className="notification-empty">
         <span aria-hidden><Bell /></span>
-        <h3>You&apos;re all caught up.</h3>
-        <p>New case updates will appear here.</p>
+        <h3>{copy.caughtUp}</h3>
+        <p>{copy.updatesAppear}</p>
       </div>
     )
   }
@@ -96,16 +98,25 @@ function NotificationRows({ items, close, asOf }: { items: NotificationItem[]; c
           <ul>
             {group.items.map((item) => {
               const kind = visualKind(item)
-              const { icon: Icon, label } = VISUALS[kind]
+              const { icon: Icon } = VISUALS[kind]
+              const label = {
+                message: copy.notificationMessage,
+                document: copy.notificationDocument,
+                fix: copy.notificationAttention,
+                people: copy.notificationPeople,
+                schedule: copy.notificationSchedule,
+                stage: copy.notificationMilestone,
+                default: copy.notificationDefault,
+              }[kind]
               const content = (
                 <div className="notification-row-inner">
                   <span className="notification-kind-icon" data-kind={kind} aria-label={label}><Icon /></span>
                   <span className="notification-row-copy">
                     <strong>{item.title}</strong>
                     {item.body ? <span>{item.body}</span> : null}
-                    <time dateTime={item.created_at}>{relativeTime(item.created_at, asOf)}</time>
+                    <time dateTime={item.created_at}>{relativeTime(item.created_at, asOf, locale, copy)}</time>
                   </span>
-                  {!item.read ? <i className="notification-unread-dot" aria-label="Unread" /> : null}
+                  {!item.read ? <i className="notification-unread-dot" aria-label={copy.unreadLabel} /> : null}
                 </div>
               )
               return (
@@ -123,7 +134,7 @@ function NotificationRows({ items, close, asOf }: { items: NotificationItem[]; c
   )
 }
 
-export function NotificationBellMenu({ items, unread, asOf }: { items: NotificationItem[]; unread: number; asOf: string }) {
+export function NotificationBellMenu({ items, unread, asOf, locale, copy }: { items: NotificationItem[]; unread: number; asOf: string; locale: Locale; copy: Record<string, string> }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<"all" | "unread">("all")
@@ -153,7 +164,7 @@ export function NotificationBellMenu({ items, unread, asOf }: { items: Notificat
           data-open={open ? "true" : "false"}
         >
           <Bell className="size-5" aria-hidden />
-          <span className="sr-only">Notifications{unread ? `, ${unread} unread` : ""}</span>
+          <span className="sr-only">{copy.notifications}{unread ? `, ${unread} ${copy.unreadLabel}` : ""}</span>
           {unread > 0 ? <span aria-hidden className="portal-notification-badge">{unread > 9 ? "9+" : unread}</span> : null}
         </button>
       </DialogTrigger>
@@ -171,24 +182,24 @@ export function NotificationBellMenu({ items, unread, asOf }: { items: Notificat
         <span className="notification-sheet-handle" aria-hidden />
         <header className="notification-panel-header">
           <span>
-            <DialogTitle>Notifications</DialogTitle>
-            <DialogDescription className="sr-only">Recent account notifications</DialogDescription>
-            {openUnread > 0 ? <b>{openUnread} new</b> : null}
+            <DialogTitle>{copy.notifications}</DialogTitle>
+            <DialogDescription className="sr-only">{copy.recentNotifications}</DialogDescription>
+            {openUnread > 0 ? <b>{interpolate(copy.newCount, { count: openUnread })}</b> : null}
           </span>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Close notifications"><X /></button>
+          <button type="button" onClick={() => setOpen(false)} aria-label={copy.closeNotifications}><X /></button>
         </header>
 
-        <nav className="notification-tabs" aria-label="Filter notifications">
-          <button type="button" aria-pressed={tab === "all"} onClick={() => setTab("all")}>All <span>{openItems.length}</span></button>
-          <button type="button" aria-pressed={tab === "unread"} onClick={() => setTab("unread")}>Unread <span>{openUnread}</span></button>
+        <nav className="notification-tabs" aria-label={copy.filterNotifications}>
+          <button type="button" aria-pressed={tab === "all"} onClick={() => setTab("all")}>{copy.all} <span>{openItems.length}</span></button>
+          <button type="button" aria-pressed={tab === "unread"} onClick={() => setTab("unread")}>{copy.unreadOnly} <span>{openUnread}</span></button>
         </nav>
 
         <div className="notification-scroll">
-          <NotificationRows items={visibleItems} close={() => setOpen(false)} asOf={asOf} />
+          <NotificationRows items={visibleItems} close={() => setOpen(false)} asOf={asOf} locale={locale} copy={copy} />
         </div>
         <footer className="notification-panel-footer">
-          <span>You&apos;re seeing the latest 15 updates.</span>
-          <Link href="/portal/messages" onClick={() => setOpen(false)}>Open messages</Link>
+          <span>{copy.latestUpdates}</span>
+          <Link href="/portal/messages" onClick={() => setOpen(false)}>{copy.openMessages}</Link>
         </footer>
       </DialogContent>
     </Dialog>

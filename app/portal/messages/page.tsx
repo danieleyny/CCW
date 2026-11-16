@@ -5,7 +5,10 @@ import { MessageThread, type MessageRow } from "@/components/shared/message-thre
 import { Card, CardContent } from "@/components/ui/card"
 import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Messages" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.messagesTitle }
+}
 
 export default async function MessagesPage() {
   const [myCase, t] = await Promise.all([getMyCase(), getMessages()])

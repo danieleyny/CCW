@@ -5,7 +5,10 @@ import { PageHeader } from "@/components/shared/page-header"
 import { ProfileForms } from "@/components/portal/profile-form"
 import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Your profile" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.profileTitle }
+}
 
 export default async function PortalProfilePage() {
   const [{ profile }, messages] = await Promise.all([requireRole(["client"]), getMessages()])

@@ -9,7 +9,10 @@ import { ApplicationReview } from "@/components/portal/concierge/application-rev
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Your application" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.pages.documentsTitle }
+}
 
 /**
  * The full document library — still needed + completed — driven off the SAME

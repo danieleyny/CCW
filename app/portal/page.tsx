@@ -23,7 +23,10 @@ import { computeNextStep } from "@/lib/portal/next-step"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
 
-export const metadata = { title: "Your application" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.yourApplication }
+}
 
 export default async function PortalHome() {
   const [myCase, t, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])

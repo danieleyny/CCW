@@ -25,7 +25,10 @@ import {
 import { getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
 
-export const metadata = { title: "References & household" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.peopleTitle }
+}
 
 /** Soft-verify signal: the invitee confirmed an email different from the one you entered. */
 function emailMismatch(onFile?: string | null, confirmed?: string | null): boolean {

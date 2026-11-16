@@ -75,7 +75,7 @@ export default async function PortalLayout({
           <BrandLogo href="/portal" tone="ink" size="sm" accessibleLabel={null} />
           <div className="portal-v2-header-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LocaleSwitcher current={locale} label={t.common.language} />
-            <NotificationBell />
+            <NotificationBell locale={locale} messages={t.ui} />
             <Link
               href="/portal/profile"
               className="portal-v2-avatar md:hidden"
@@ -90,7 +90,7 @@ export default async function PortalLayout({
               {profile.full_name}
             </Link>
             <div className="hidden md:block">
-              <AccountActions signOutLabel={t.common.signOut} />
+              <AccountActions signOutLabel={t.common.signOut} switchLabel={t.ui.switchAccount} />
             </div>
           </div>
         </div>

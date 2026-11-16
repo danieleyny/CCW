@@ -11,7 +11,10 @@ import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import type { ApplicationType } from "@/lib/application-types"
 import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Choose how we'll work together" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.choosePath.metadataTitle }
+}
 
 /**
  * CONCIERGE Phase 1 — the post-intake fork. Everyone completes intake the same

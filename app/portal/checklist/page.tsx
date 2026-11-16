@@ -12,7 +12,10 @@ import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highl
 import { getMessages } from "@/lib/i18n"
 import type { Messages } from "@/lib/i18n/messages"
 
-export const metadata = { title: "Your checklist" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.checklistTitle }
+}
 
 export default async function ChecklistPage() {
   const [myCase, messages] = await Promise.all([getMyCase(), getMessages()])

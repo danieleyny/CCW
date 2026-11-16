@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button"
  * account signs out first (clearing the session) so it reaches a fresh login
  * form instead of being bounced to the dashboard by the proxy's signed-in rule.
  */
-export function AccountActions({ signOutLabel = "Sign out" }: { signOutLabel?: string }) {
+export function AccountActions({
+  signOutLabel = "Sign out",
+  switchLabel = "Switch account",
+}: {
+  signOutLabel?: string
+  switchLabel?: string
+}) {
   return (
     <div className="flex items-center gap-0.5">
       <form action={switchAccount}>
@@ -17,7 +23,7 @@ export function AccountActions({ signOutLabel = "Sign out" }: { signOutLabel?: s
           type="submit"
           className="px-2 text-xs text-muted-foreground"
         >
-          Switch account
+          {switchLabel}
         </Button>
       </form>
       <form action={signOut}>
