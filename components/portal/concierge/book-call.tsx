@@ -2,6 +2,36 @@ import { RequestCallButton } from "@/components/portal/concierge/request-call-bu
 import { BookCallModal } from "@/components/portal/concierge/book-call-modal"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
 
+export interface BookCallCopy {
+  title: string
+  description: string
+  chooseTime: string
+  modalTitle: string
+  modalDescription: string
+  scheduledToast: string
+  frameTitle: string
+  trouble: string
+  openNewTab: string
+  request: string
+  sending: string
+  requestReceived: string
+}
+
+const DEFAULT_COPY: BookCallCopy = {
+  title: "Book your 30-minute intro call",
+  description: "Nothing to prepare — we'll walk through your case and answer anything.",
+  chooseTime: "Request my intro call",
+  modalTitle: "Book your intro call",
+  modalDescription: "Pick a time for your 30-minute concierge intro call.",
+  scheduledToast: "Your intro call is booked — we'll confirm the details shortly.",
+  frameTitle: "Schedule your concierge intro call",
+  trouble: "Having trouble?",
+  openNewTab: "Open in a new tab",
+  request: "Request my intro call",
+  sending: "Sending…",
+  requestReceived: "Request received — we'll reach out to lock in a time.",
+}
+
 /** Build the embed URL: opaque token (must survive for the webhook to match),
  *  no duplicate Calendly header, no GDPR banner. The single place these are built. */
 function embedUrl(base: string, token: string): string {
@@ -26,26 +56,28 @@ export function BookCall({
   introToken,
   introCall,
   embedded = false,
+  copy = DEFAULT_COPY,
 }: {
   calendlyUrl: string | null
   /** Opaque per-case token passed to Calendly (never the internal case id). */
   introToken: string
   introCall: IntroCallState | null
   embedded?: boolean
+  copy?: BookCallCopy
 }) {
   // Defensive: the booked state lives in the control tower now, not here.
   if (introCall?.scheduledAt) return null
 
   const content = (
     <>
-      <h2 className="portal-title-font text-[25px] font-medium tracking-tight">Book your 30-minute intro call</h2>
-      <p className="mt-1 max-w-prose text-sm text-text-mid">Nothing to prepare — we&apos;ll walk through your case and answer anything.</p>
+      <h2 className="portal-title-font text-[25px] font-medium tracking-tight">{copy.title}</h2>
+      <p className="mt-1 max-w-prose text-sm text-text-mid">{copy.description}</p>
 
-      <div className="mt-4">
+      <div className="concierge-book-call-control mt-4">
         {calendlyUrl ? (
-          <BookCallModal url={embedUrl(calendlyUrl, introToken)} />
+          <BookCallModal url={embedUrl(calendlyUrl, introToken)} copy={copy} />
         ) : (
-          <RequestCallButton alreadyRequested={introCall?.status === "requested"} />
+          <RequestCallButton alreadyRequested={introCall?.status === "requested"} copy={copy} />
         )}
       </div>
     </>

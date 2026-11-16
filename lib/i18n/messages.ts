@@ -25,6 +25,31 @@ export interface Messages {
     signOut: string
     language: string
   }
+  concierge: {
+    fullConcierge: string
+    welcome: string
+    introCall: string
+    join: string
+    documentsIn: string
+    detailsCaptured: string
+    workInProgress: string
+    step: string
+    of: string
+    nextStep: string
+    bookIntroTitle: string
+    bookIntroDescription: string
+    chooseTime: string
+    modalTitle: string
+    modalDescription: string
+    scheduledToast: string
+    frameTitle: string
+    trouble: string
+    openNewTab: string
+    request: string
+    sending: string
+    requestReceived: string
+    book: string
+  }
   legal: {
     // ⚖ Reviewed English. Do NOT translate without attorney/native sign-off.
     filesOwnApplication: string
@@ -47,6 +72,31 @@ const en: Messages = {
     signOut: "Sign out",
     language: "Language",
   },
+  concierge: {
+    fullConcierge: "Full Concierge",
+    welcome: "Welcome",
+    introCall: "Intro call",
+    join: "Join",
+    documentsIn: "Documents in",
+    detailsCaptured: "Details captured",
+    workInProgress: "What we're doing for you",
+    step: "Step",
+    of: "of",
+    nextStep: "Your next step",
+    bookIntroTitle: "Book your 30-minute intro call",
+    bookIntroDescription: "Nothing to prepare — we'll walk through your case and answer anything.",
+    chooseTime: "Request my intro call",
+    modalTitle: "Book your intro call",
+    modalDescription: "Pick a time for your 30-minute concierge intro call.",
+    scheduledToast: "Your intro call is booked — we'll confirm the details shortly.",
+    frameTitle: "Schedule your concierge intro call",
+    trouble: "Having trouble?",
+    openNewTab: "Open in a new tab",
+    request: "Request my intro call",
+    sending: "Sending…",
+    requestReceived: "Request received — we'll reach out to lock in a time.",
+    book: "Book",
+  },
   legal: {
     filesOwnApplication:
       "You file your own application — we prepare and review, we never submit it for you or represent you before the NYPD.",
@@ -67,6 +117,31 @@ const es: Partial<Messages> = {
   common: {
     signOut: "Cerrar sesión",
     language: "Idioma",
+  },
+  concierge: {
+    fullConcierge: "Servicio de conserjería",
+    welcome: "Hola",
+    introCall: "Llamada inicial",
+    join: "Entrar",
+    documentsIn: "Documentos listos",
+    detailsCaptured: "Datos guardados",
+    workInProgress: "Lo que hacemos por usted",
+    step: "Paso",
+    of: "de",
+    nextStep: "Su siguiente paso",
+    bookIntroTitle: "Reserve su llamada inicial de 30 minutos",
+    bookIntroDescription: "No necesita preparar nada — revisaremos su caso y responderemos sus preguntas.",
+    chooseTime: "Solicitar mi llamada inicial",
+    modalTitle: "Reserve su llamada inicial",
+    modalDescription: "Elija una fecha y hora para su llamada inicial de 30 minutos.",
+    scheduledToast: "Su llamada inicial está reservada — confirmaremos los detalles en breve.",
+    frameTitle: "Programe su llamada inicial",
+    trouble: "¿Tiene problemas?",
+    openNewTab: "Abrir en otra pestaña",
+    request: "Solicitar mi llamada inicial",
+    sending: "Enviando…",
+    requestReceived: "Solicitud recibida — nos comunicaremos para confirmar una hora.",
+    book: "Reservar",
   },
 }
 

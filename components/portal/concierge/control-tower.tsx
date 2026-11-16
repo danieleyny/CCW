@@ -14,8 +14,10 @@ function ProgressRing({ value, total, label }: { value: number; total: number; l
       style={{ "--concierge-progress": `${progress * 3.6}deg` } as React.CSSProperties}
     >
       <span className="concierge-hero-ring" aria-hidden>
-        <span>{value}</span>
-        <small>/{total}</small>
+        <span className="concierge-hero-ring-number">
+          <span className="concierge-hero-ring-value">{value}</span>
+          <small className="concierge-hero-ring-total">/{total}</small>
+        </span>
       </span>
       <span className="concierge-hero-stat-label">{label}</span>
     </div>
@@ -34,6 +36,17 @@ export function ControlTower({
   agentFirst,
   detailsCaptured,
   detailsTotal,
+  copy = {
+    eyebrow: "Full Concierge",
+    welcome: "Welcome",
+    introCall: "Intro call",
+    join: "Join",
+    documentsIn: "Documents in",
+    detailsCaptured: "Details captured",
+    workInProgress: "What we're doing for you",
+    step: "Step",
+    of: "of",
+  },
 }: {
   state: ConciergeCaseState
   nypdControlled: boolean
@@ -42,6 +55,17 @@ export function ControlTower({
   agentFirst: string | null
   detailsCaptured: number
   detailsTotal: number
+  copy?: {
+    eyebrow: string
+    welcome: string
+    introCall: string
+    join: string
+    documentsIn: string
+    detailsCaptured: string
+    workInProgress: string
+    step: string
+    of: string
+  }
 }) {
   const milestones = deriveMilestones(state)
   const progressIndex = milestones.findIndex((milestone) => milestone.status === "in_progress")
@@ -53,8 +77,8 @@ export function ControlTower({
       <section className="concierge-hero">
         <div className="concierge-hero-top">
           <div className="concierge-hero-copy">
-            <p className="concierge-hero-eyebrow">Full Concierge</p>
-            <h1 className="concierge-hero-title">Welcome, {firstName}.</h1>
+            <p className="concierge-hero-eyebrow">{copy.eyebrow}</p>
+            <h1 className="concierge-hero-title">{copy.welcome}, {firstName}.</h1>
             <p className="concierge-hero-lede">
               You&apos;re on the done-for-you path. We prepare and quality-check everything — you review,
               approve, and submit your own NYPD application with our guidance.
@@ -63,10 +87,10 @@ export function ControlTower({
             {introCall?.scheduledAt ? (
               <p className="concierge-hero-call">
                 <Check className="size-4" aria-hidden />
-                Intro call · {formatDateTime(introCall.scheduledAt)}
+                {copy.introCall} · {formatDateTime(introCall.scheduledAt)}
                 {introCall.joinUrl ? (
                   <a href={introCall.joinUrl} target="_blank" rel="noopener noreferrer">
-                    <Video className="size-3.5" aria-hidden /> Join
+                    <Video className="size-3.5" aria-hidden /> {copy.join}
                   </a>
                 ) : null}
               </p>
@@ -77,14 +101,14 @@ export function ControlTower({
             <ProgressRing
               value={state.requirementsSatisfied}
               total={state.requirementsTotal}
-              label="Documents in"
+              label={copy.documentsIn}
             />
-            <ProgressRing value={detailsCaptured} total={detailsTotal} label="Details captured" />
+            <ProgressRing value={detailsCaptured} total={detailsTotal} label={copy.detailsCaptured} />
           </div>
         </div>
 
         <div className="concierge-milestones">
-          <p className="concierge-milestones-label">What we&apos;re doing for you</p>
+          <p className="concierge-milestones-label">{copy.workInProgress}</p>
           <ol className="concierge-milestone-track">
             {milestones.map((milestone, index) => (
               <li key={milestone.key} data-status={milestone.status}>
@@ -99,14 +123,14 @@ export function ControlTower({
             ))}
           </ol>
 
-          <div className="concierge-milestone-mobile" aria-label={`Step ${currentIndex + 1} of 5`}>
+          <div className="concierge-milestone-mobile" aria-label={`${copy.step} ${currentIndex + 1} ${copy.of} 5`}>
             <div className="concierge-milestone-segments" aria-hidden>
               {milestones.map((milestone) => (
                 <span key={milestone.key} data-status={milestone.status} />
               ))}
             </div>
             <p>
-              Step {currentIndex + 1} of {milestones.length} · <strong>{current.label}</strong>
+              {copy.step} {currentIndex + 1} {copy.of} {milestones.length} · <strong>{current.label}</strong>
             </p>
             <small>{current.detail}</small>
           </div>

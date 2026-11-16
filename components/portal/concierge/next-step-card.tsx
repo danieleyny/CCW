@@ -8,6 +8,7 @@ export function NextStepCard({
   href,
   then,
   children,
+  eyebrow = "Your next step",
 }: {
   title: string
   description: string
@@ -15,6 +16,7 @@ export function NextStepCard({
   href?: string
   then?: string
   children?: React.ReactNode
+  eyebrow?: string
 }) {
   return (
     <section
@@ -27,7 +29,7 @@ export function NextStepCard({
         {children ? <CalendarClock className="size-6" /> : <Compass className="size-6" />}
       </span>
       <div className="concierge-next-copy">
-        <p className="portal-t-eyebrow text-brass-deep">Your next step</p>
+        <p className="portal-t-eyebrow text-brass-deep">{eyebrow}</p>
         {children ? (
           <div className="concierge-next-action">{children}</div>
         ) : (

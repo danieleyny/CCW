@@ -28,11 +28,12 @@ import { MessageThread, type MessageRow } from "@/components/shared/message-thre
 import { actionFor } from "@/lib/requirements/actions"
 import { isDisclosureItem } from "@/lib/requirements/sections"
 import { isUnenforced } from "@/lib/legal-status"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Your concierge" }
 
 export default async function ConciergeHome() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) redirect("/portal")
 
   const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
@@ -118,6 +119,20 @@ export default async function ConciergeHome() {
   const detailsTotal = dataAsks.reduce((sum, ask) => sum + ask.total, 0)
   const callBooked = Boolean(onboarding.introCall?.scheduledAt)
   const filingReady = readyToFile(stage)
+  const bookCallCopy = {
+    title: t.concierge.bookIntroTitle,
+    description: t.concierge.bookIntroDescription,
+    chooseTime: t.concierge.chooseTime,
+    modalTitle: t.concierge.modalTitle,
+    modalDescription: t.concierge.modalDescription,
+    scheduledToast: t.concierge.scheduledToast,
+    frameTitle: t.concierge.frameTitle,
+    trouble: t.concierge.trouble,
+    openNewTab: t.concierge.openNewTab,
+    request: t.concierge.request,
+    sending: t.concierge.sending,
+    requestReceived: t.concierge.requestReceived,
+  }
 
   const firstDataAsk = dataAsks.find((ask) => ask.captured < ask.total)
   const firstRequirement = view.items.find(
@@ -133,7 +148,7 @@ export default async function ConciergeHome() {
   const requirementAction = firstRequirement ? actionFor(firstRequirement.reqCode) : null
 
   const nextStep = !callBooked
-    ? { title: "Book your 30-minute intro call", label: "Book", href: "#next-step" }
+    ? { title: t.concierge.bookIntroTitle, label: t.concierge.book, href: "#next-step" }
     : firstDataAsk
       ? { title: `Finish ${firstDataAsk.label}`, label: "Continue", href: firstDataAsk.href }
       : firstRequirement
@@ -160,18 +175,30 @@ export default async function ConciergeHome() {
           agentFirst={agentFirst}
           detailsCaptured={detailsCaptured}
           detailsTotal={detailsTotal}
+          copy={{
+            eyebrow: t.concierge.fullConcierge,
+            welcome: t.concierge.welcome,
+            introCall: t.concierge.introCall,
+            join: t.concierge.join,
+            documentsIn: t.concierge.documentsIn,
+            detailsCaptured: t.concierge.detailsCaptured,
+            workInProgress: t.concierge.workInProgress,
+            step: t.concierge.step,
+            of: t.concierge.of,
+          }}
         />
       </div>
 
       <SponsorBanner caseId={myCase.id} />
 
       {!callBooked ? (
-        <NextStepCard title={nextStep.title} description="Nothing to prepare.">
+        <NextStepCard title={nextStep.title} description={t.concierge.bookIntroDescription} eyebrow={t.concierge.nextStep}>
           <BookCall
             calendlyUrl={process.env.CALENDLY_CONCIERGE_URL ?? null}
             introToken={myCase.calendly_token}
             introCall={onboarding.introCall}
             embedded
+            copy={bookCallCopy}
           />
         </NextStepCard>
       ) : firstDataAsk ? (
@@ -181,6 +208,7 @@ export default async function ConciergeHome() {
           actionLabel="Open your details"
           href={firstDataAsk.href}
           then={firstRequirement ? requirementAction?.customerTitle ?? firstRequirement.title : "we continue preparing your packet"}
+          eyebrow={t.concierge.nextStep}
         />
       ) : firstRequirement ? (
         <NextStepCard
@@ -189,6 +217,7 @@ export default async function ConciergeHome() {
           actionLabel={requirementAction?.actionLabel ?? "Open item"}
           href={`#${firstRequirement.reqCode}`}
           then="we review what you send and move to the next item"
+          eyebrow={t.concierge.nextStep}
         />
       ) : filingReady ? (
         <NextStepCard
@@ -196,6 +225,7 @@ export default async function ConciergeHome() {
           description="Your packet is assembled and quality-checked. Review it, then submit your own application."
           actionLabel="Review my packet"
           href="#review"
+          eyebrow={t.concierge.nextStep}
         />
       ) : (
         <NextStepCard
@@ -203,10 +233,11 @@ export default async function ConciergeHome() {
           description="Your team is working through the current case milestone. Nothing new is required from you right now."
           actionLabel="See case progress"
           href="#progress"
+          eyebrow={t.concierge.nextStep}
         />
       )}
 
-      <MobileNextStepBar title={nextStep.title} label={nextStep.label} href={nextStep.href} />
+      {callBooked ? <MobileNextStepBar title={nextStep.title} label={nextStep.label} href={nextStep.href} /> : null}
 
       <div className="concierge-layout">
         <div className="concierge-main-column">

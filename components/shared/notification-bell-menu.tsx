@@ -1,13 +1,16 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { markAllNotificationsRead } from "./notification-actions"
 import { cn } from "@/lib/utils"
 
@@ -29,16 +32,18 @@ export function NotificationBellMenu({
   unread: number
 }) {
   const router = useRouter()
+  const [open, setOpen] = useState(false)
 
-  function onOpenChange(open: boolean) {
-    if (open && unread > 0) {
+  function onOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen)
+    if (nextOpen && unread > 0) {
       markAllNotificationsRead().then(() => router.refresh())
     }
   }
 
   return (
-    <DropdownMenu onOpenChange={onOpenChange}>
-      <DropdownMenuTrigger asChild>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
         <button
           className="portal-notification-trigger relative inline-flex size-9 items-center justify-center rounded-md text-text-mid transition-colors hover:bg-surface-2 hover:text-foreground"
         >
@@ -55,10 +60,11 @@ export function NotificationBellMenu({
             </span>
           )}
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 p-0">
-        <div className="border-b border-hairline px-3 py-2 text-xs font-medium text-text-mid">
-          Notifications
+      </DialogTrigger>
+      <DialogContent className="top-[calc(env(safe-area-inset-top)+72px)] right-3 bottom-auto left-auto max-h-[min(32rem,calc(100dvh-88px))] w-[min(20rem,calc(100vw-1.5rem))] max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden p-0 sm:right-6">
+        <div className="border-b border-hairline px-3 py-3 pr-12">
+          <DialogTitle className="text-xs font-medium text-text-mid">Notifications</DialogTitle>
+          <DialogDescription className="sr-only">Recent account notifications</DialogDescription>
         </div>
         {items.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-text-low">You&apos;re all caught up.</p>
@@ -74,7 +80,7 @@ export function NotificationBellMenu({
               return (
                 <li key={n.id} className="border-b border-hairline last:border-0">
                   {n.link ? (
-                    <Link href={n.link} className="block hover:bg-surface-2/60">
+                    <Link href={n.link} className="block hover:bg-surface-2/60" onClick={() => setOpen(false)}>
                       {inner}
                     </Link>
                   ) : (
@@ -85,7 +91,7 @@ export function NotificationBellMenu({
             })}
           </ul>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </DialogContent>
+    </Dialog>
   )
 }

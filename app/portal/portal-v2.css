@@ -1369,16 +1369,25 @@ html:has(.portal-v2) body {
     radial-gradient(circle, #0f1d35 63%, transparent 64%),
     conic-gradient(var(--portal-gold) var(--concierge-progress), rgba(255, 255, 255, 0.13) 0);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  font-family: var(--font-title), Georgia, serif;
-  font-size: 1.55rem;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.concierge-hero-ring small {
-  margin-left: -13px;
-  margin-top: 22px;
+.concierge-hero-ring-number {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.concierge-hero-ring-value {
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1.55rem;
+}
+
+.concierge-hero-ring-total {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.57rem;
+  line-height: 1;
   color: #aeb7c7;
 }
 
@@ -2660,12 +2669,13 @@ html:has(.portal-v2) body {
   .concierge-hero-ring {
     width: 46px;
     height: 46px;
+  }
+
+  .concierge-hero-ring-value {
     font-size: 1.05rem;
   }
 
-  .concierge-hero-ring small {
-    margin-left: -8px;
-    margin-top: 15px;
+  .concierge-hero-ring-total {
     font-size: 0.44rem;
   }
 
@@ -2745,6 +2755,14 @@ html:has(.portal-v2) body {
   .concierge-next-button,
   .concierge-next-action button {
     width: 100%;
+  }
+
+  /* The scheduling control is nested in the copy column beside the icon. Let
+     only the control span the card's full inner width so its visual center is
+     the card's center, not the narrower text column's center. */
+  .concierge-book-call-control {
+    width: calc(100% + 56px);
+    margin-left: -56px;
   }
 
   .concierge-next-then {
@@ -3176,6 +3194,11 @@ html:has(.portal-v2) body {
 
   .concierge-next-icon {
     display: none;
+  }
+
+  .concierge-book-call-control {
+    width: 100%;
+    margin-left: 0;
   }
 
   .concierge-mobile-next > a {
