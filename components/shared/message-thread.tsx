@@ -4,9 +4,10 @@ import { useState, useRef, useTransition, useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { formatDateTime, initials } from "@/lib/format"
+import { initials } from "@/lib/format"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export interface MessageRow {
   id: string
@@ -38,6 +39,8 @@ export function MessageThread({
    *  "unopened for an hour" nudge doesn't fire once you've seen the thread. */
   markRead?: () => Promise<void>
 }) {
+  const { locale, messages: catalog } = usePortalI18n()
+  const t = catalog.ui
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLTextAreaElement>(null)
   const [value, setValue] = useState("")
@@ -58,7 +61,7 @@ export function MessageThread({
         setValue("")
         ref.current?.focus()
       } catch {
-        toast.error("Couldn't send. Try again.")
+        toast.error(t.sendError)
       }
     })
   }
@@ -67,7 +70,7 @@ export function MessageThread({
     <div className="flex flex-col gap-4">
       <ul className="space-y-3">
         {messages.length === 0 && (
-          <li className="text-sm text-muted-foreground">No messages yet. Say hello!</li>
+          <li className="text-sm text-muted-foreground">{t.noMessages}</li>
         )}
         {messages.map((m) => {
           const isStaff = m.senderRole === "staff" || m.senderRole === "admin"
@@ -85,9 +88,14 @@ export function MessageThread({
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{m.senderName ?? "System"}</span>
+                  <span className="text-sm font-medium">{m.senderName ?? t.system}</span>
                   <span className="text-xs text-muted-foreground">
-                    {formatDateTime(m.created_at)}
+                    {new Date(m.created_at).toLocaleString(locale === "es" ? "es-US" : "en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
                 <p className="mt-0.5 whitespace-pre-wrap text-sm">{m.body}</p>
@@ -100,7 +108,7 @@ export function MessageThread({
       <div className="flex flex-col gap-2">
         {templates && templates.length > 0 && (
           <select
-            aria-label="Insert a message template"
+            aria-label={t.insertTemplate}
             className="h-9 w-full max-w-xs rounded-md border border-input bg-background px-2 text-xs text-text-mid"
             value=""
             onChange={(e) => {
@@ -111,7 +119,7 @@ export function MessageThread({
               }
             }}
           >
-            <option value="">Insert a template…</option>
+            <option value="">{t.insertTemplateOption}</option>
             {templates.map((t) => (
               <option key={t.label} value={t.label}>
                 {t.label}
@@ -131,7 +139,7 @@ export function MessageThread({
         />
         <div className="flex justify-end">
           <Button onClick={submit} disabled={pending || !value.trim()} size="sm">
-            Send
+            {t.send}
           </Button>
         </div>
       </div>

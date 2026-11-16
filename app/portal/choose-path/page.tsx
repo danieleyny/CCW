@@ -9,6 +9,7 @@ import { PortalPageHeader } from "@/components/portal/ui/portal-page-header"
 import { SetupStepper } from "@/components/portal/ui/setup-stepper"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import type { ApplicationType } from "@/lib/application-types"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Choose how we'll work together" }
 
@@ -19,13 +20,13 @@ export const metadata = { title: "Choose how we'll work together" }
  * are sent to the surface they bought.
  */
 export default async function ChoosePathPage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
-        <h1 className="text-lg font-semibold">Almost there.</h1>
+        <h1 className="text-lg font-semibold">{t.common.almostThere}</h1>
         <p className="mt-2 text-sm text-text-mid">
-          Your case isn&apos;t set up yet. Your concierge will reach out shortly to get you started.
+          {t.common.noCase}
         </p>
       </div>
     )
@@ -52,25 +53,25 @@ export default async function ChoosePathPage() {
     .eq("id", myCase.client_id)
     .maybeSingle()
   const staffProvisioned = clientRow?.lead_source === "admin_manual"
-  const feeNote = `Service fees only — the NYPD's application fee and the fingerprint fee are paid at filing and never collected by us. You can switch plans anytime before you pay.${
+  const feeNote = `${t.choosePath.feeNote}${
     STRIPE_ENABLED
       ? ""
-      : " Card checkout is being finalized — choosing a plan records it instantly and we email your invoice within one business day."
+      : t.choosePath.feeNoteInvoice
   }`
 
   return (
     <div className="portal-plan-page">
       <ScrollToTop />
       <PortalPageHeader
-        title="How would you like to work together?"
+        title={t.choosePath.title}
         lede={
           <>
-            Same finish line, two ways there. <strong>Self-Guided:</strong> you submit your own
-            application. <strong>Full Concierge:</strong> we prepare and quality-check it with you;
-            you review and submit.
+            {t.choosePath.ledePrefix} <strong>{t.choosePath.selfGuided}</strong>{" "}
+            {t.choosePath.selfGuidedShort} <strong>{t.choosePath.concierge}</strong>{" "}
+            {t.choosePath.conciergeShort}
           </>
         }
-        stepper={<SetupStepper current={2} finalLabel="Get started" />}
+        stepper={<SetupStepper current={2} finalLabel={t.setup.getStarted} />}
       />
 
       <ChoosePathCards

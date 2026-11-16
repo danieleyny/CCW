@@ -9,6 +9,7 @@ import { FilingPackDownload } from "@/components/portal/filing-pack-download"
 import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
 import { buildPortalForms } from "@/lib/forms/portal-forms"
 import { getFilingPackOutstanding } from "@/lib/filing-pack/readiness-server"
+import { getLocale, getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Your forms" }
 
@@ -17,11 +18,11 @@ export default async function FormsPage({
 }: {
   searchParams: Promise<{ gate?: string }>
 }) {
-  const myCase = await getMyCase()
+  const [myCase, locale, t] = await Promise.all([getMyCase(), getLocale(), getMessages()])
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
+        {t.common.noCase}
       </p>
     )
   }
@@ -42,16 +43,16 @@ export default async function FormsPage({
     <div className="forms-page">
       <DeepLinkHighlight />
       <header className="forms-page-header">
-        <span className="portal-t-eyebrow">Prepared for you</span>
-        <h1>Your forms</h1>
-        <p>Pre-filled from your answers. Your signature goes on automatically — sign &amp; file in one tap, or download the ones that need a notary or witness.</p>
+        <span className="portal-t-eyebrow">{t.pages.formsEyebrow}</span>
+        <h1>{t.pages.formsTitle}</h1>
+        <p>{t.pages.formsLede}</p>
       </header>
 
       {!session?.completed_at && (
         <section className="forms-intake-reminder">
           <span aria-hidden><ClipboardList /></span>
-          <p><strong>Finish your intake first</strong><small>so every form comes out fully pre-filled.</small></p>
-          <Button asChild><Link href="/portal/intake">Finish intake <ArrowRight aria-hidden /></Link></Button>
+          <p><strong>{t.pages.finishIntakeTitle}</strong><small>{t.pages.finishIntakeDetail}</small></p>
+          <Button asChild><Link href="/portal/intake">{t.pages.finishIntake} <ArrowRight aria-hidden /></Link></Button>
         </section>
       )}
 
@@ -64,17 +65,18 @@ export default async function FormsPage({
           </span>
         </div>
         <div className="forms-pack-content">
-          <span className="portal-t-eyebrow">Your filing pack</span>
-          <h2>Everything for the NYPD portal, in one PDF</h2>
+          <span className="portal-t-eyebrow">{t.pages.filingPackEyebrow}</span>
+          <h2>{t.pages.filingPackTitle}</h2>
           <ul>
-            <li><Check aria-hidden /> The answers in the portal&apos;s own order</li>
-            <li><Check aria-hidden /> Which document goes where</li>
-            <li><Check aria-hidden /> All your assembled documents</li>
+            <li><Check aria-hidden /> {t.pages.filingPackAnswerOrder}</li>
+            <li><Check aria-hidden /> {t.pages.filingPackDocumentOrder}</li>
+            <li><Check aria-hidden /> {t.pages.filingPackDocuments}</li>
           </ul>
-          <p>On Self-Guided you prepare and submit it yourself; with Full Concierge we prepare and organize it — you review and submit your own application.</p>
+          <p>{t.pages.filingPackMode}</p>
+          {locale !== "en" ? <small>{t.common.legalEnglishNotice}</small> : null}
           <div className="forms-pack-actions">
             <FilingPackDownload initialReadiness={readiness} initialOpen={query.gate === "1"} />
-            <a href="/portal/packet" target="_blank" rel="noreferrer">Just the documents <ArrowRight aria-hidden /></a>
+            <a href="/portal/packet" target="_blank" rel="noreferrer">{t.pages.documentsOnly} <ArrowRight aria-hidden /></a>
           </div>
         </div>
       </section>
@@ -83,7 +85,7 @@ export default async function FormsPage({
 
       <aside className="forms-people-note">
         <span aria-hidden><UsersRound /></span>
-        <p>Character references and household affidavits are on the <Link href="/portal/people">People</Link> page — each person gets their own private link, so you don&apos;t prepare those.</p>
+        <p>{t.pages.peopleNotePrefix} <Link href="/portal/people">{t.pages.peopleNoteLink}</Link> {t.pages.peopleNoteSuffix}</p>
       </aside>
     </div>
   )

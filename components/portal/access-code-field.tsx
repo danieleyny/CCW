@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react"
 import { redeemAccessCode, type RedeemResult } from "@/app/portal/choose-path/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 /**
  * ACCESS CODES · Phase 1 — a quiet "Have an access code?" link under a payment
@@ -20,6 +21,8 @@ export function AccessCodeField({
   packageKey: string | null
   planName?: string
 }) {
+  const { messages } = usePortalI18n()
+  const t = messages.choosePath
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState<RedeemResult, FormData>(redeemAccessCode, {})
 
@@ -31,7 +34,7 @@ export function AccessCodeField({
         disabled={!packageKey}
         className="portal-access-trigger"
       >
-        Have an access code?
+        {t.haveAccessCode}
       </button>
     )
   }
@@ -41,13 +44,13 @@ export function AccessCodeField({
   return (
     <form action={action} className="portal-access-form">
       <p className="portal-access-label portal-t-label">
-        Access code for {planName ?? "selected plan"}
+        {t.accessCodeFor} {planName ?? t.selectedPlan}
       </p>
       <input type="hidden" name="packageKey" value={packageKey} />
       <div className="flex gap-2">
         <Input
           name="code"
-          placeholder="Access code"
+          placeholder={t.accessCode}
           autoFocus
           maxLength={64}
           autoComplete="off"
@@ -55,7 +58,7 @@ export function AccessCodeField({
           className="h-10 text-sm"
         />
         <Button type="submit" size="sm" disabled={pending} aria-busy={pending} className="h-10 shrink-0">
-          {pending ? <Loader2 className="size-4 animate-spin" /> : "Apply"}
+          {pending ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" /> : t.apply}
         </Button>
       </div>
       {state.error && (

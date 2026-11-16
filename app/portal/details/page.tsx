@@ -12,6 +12,7 @@ import { ApplicationHistory } from "@/components/portal/facts/application-histor
 import { FirearmsRecords } from "@/components/portal/facts/firearms-records"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Your details" }
 
@@ -24,7 +25,7 @@ export const metadata = { title: "Your details" }
  * questionnaire afterward is nearly empty.
  */
 export default async function DetailsPage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) redirect("/portal")
   const db = await createClient()
   const facts = await resolveFacts(db, myCase.id)
@@ -69,11 +70,9 @@ export default async function DetailsPage() {
     <div className="details-page">
       <DeepLinkHighlight />
       <div className="details-page-header">
-        <SectionEyebrow>Prepared once, reused everywhere</SectionEyebrow>
-        <h1>Your details</h1>
-        <p>
-          Everything the NYPD forms ask for, in one place. Fix something here and it&apos;s fixed on every form.
-        </p>
+        <SectionEyebrow>{t.pages.detailsEyebrow}</SectionEyebrow>
+        <h1>{t.pages.detailsTitle}</h1>
+        <p>{t.pages.detailsLede}</p>
       </div>
 
       <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter flagEligibility>

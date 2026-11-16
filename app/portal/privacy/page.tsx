@@ -4,14 +4,10 @@ import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import { brand } from "@/config/brand"
 import { DataRequestForm } from "@/components/portal/data-request-form"
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
 
 export const metadata = { title: "Your data" }
-
-const KIND_META = {
-  access: { label: "A copy of your data", icon: FileDown },
-  correction: { label: "A correction", icon: PencilLine },
-  deletion: { label: "Deletion", icon: Trash2 },
-} as const
 
 /**
  * PART A / Phase 3 — the applicant's own view of what we hold and what they can
@@ -20,8 +16,18 @@ const KIND_META = {
  * wipe we don't actually perform.
  */
 export default async function PortalPrivacyPage() {
-  await requireRole(["client"])
-  const myCase = await getMyCase()
+  const [, myCase, messages, locale] = await Promise.all([
+    requireRole(["client"]),
+    getMyCase(),
+    getMessages(),
+    getLocale(),
+  ])
+  const t = messages.ui
+  const kindMeta = {
+    access: { label: t.dataCopy, icon: FileDown },
+    correction: { label: t.dataCorrection, icon: PencilLine },
+    deletion: { label: t.dataDeletion, icon: Trash2 },
+  } as const
   const supabase = await createClient()
 
   const { data: requests } = myCase
@@ -35,55 +41,47 @@ export default async function PortalPrivacyPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Your data</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.privacyTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          What we hold for your application, and what you can ask us to do with it.
+          {t.privacyDescription}
         </p>
       </div>
 
       <section className="rounded-lg border bg-card p-4 text-sm">
         <div className="flex items-center gap-2 font-medium">
-          <ShieldCheck className="size-4 text-ok" /> How your records are held
+          <ShieldCheck className="size-4 text-ok" /> {t.recordsHeld}
         </div>
         <ul className="mt-2 space-y-1.5 text-text-mid">
-          <li>· Only you and our staff can see your case. Instructors never see your disclosures.</li>
-          <li>· Documents live in access-controlled storage and are encrypted at rest and in transit.</li>
-          <li>· We never sell your information, and we don&apos;t share it with instructors beyond what they need to teach you.</li>
+          <li>· {t.recordsRuleOne}</li>
+          <li>· {t.recordsRuleTwo}</li>
+          <li>· {t.recordsRuleThree}</li>
         </ul>
       </section>
 
       <section className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-medium">Ask us for something</h2>
+        <h2 className="text-sm font-medium">{t.askSomething}</h2>
         <DataRequestForm />
       </section>
 
       <section className="rounded-lg border border-hairline bg-card/50 p-4 text-xs leading-relaxed text-text-mid">
-        <p className="font-medium text-text-hi">What deletion actually does</p>
+        <p className="font-medium text-text-hi">{t.deletionTitle}</p>
         <p className="mt-1">
-          We remove your disclosures, intake answers, questionnaire answers, uploaded and generated
-          documents, household and reference records, and any notes on your case — including the
-          files themselves, not just the database rows.
+          {t.deletionBody}
         </p>
         <p className="mt-2">
-          <span className="font-medium text-text-hi">One thing we keep, and why:</span> when you
-          e-signed a document, we recorded a tamper-evident record of that signing. We keep the
-          proof-of-signing entry — the timestamp, the document fingerprint, and the consent wording
-          — because it&apos;s the evidence that a signature was validly obtained, and it contains
-          none of your personal story. We delete your signature image and strip the IP address and
-          device details from it.
+          <span className="font-medium text-text-hi">{t.deletionKeepTitle}</span>{" "}{t.deletionKeepBody}
         </p>
         <p className="mt-2">
-          We&apos;d rather tell you that plainly than claim a clean wipe we don&apos;t perform. If
-          you have questions, email {brand.contact.email}.
+          {interpolate(t.deletionHonesty, { email: brand.contact.email })}
         </p>
       </section>
 
       {requests && requests.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-medium">Your requests</h2>
+          <h2 className="mb-2 text-sm font-medium">{t.yourRequests}</h2>
           <ul className="divide-y rounded-lg border bg-card text-sm">
             {requests.map((r) => {
-              const meta = KIND_META[r.kind as keyof typeof KIND_META]
+              const meta = kindMeta[r.kind as keyof typeof kindMeta]
               const Icon = meta?.icon ?? FileDown
               return (
                 <li key={r.id} className="flex items-start justify-between gap-3 p-3">
@@ -93,7 +91,7 @@ export default async function PortalPrivacyPage() {
                       {meta?.label ?? r.kind}
                     </div>
                     <p className="mt-0.5 text-xs text-text-low">
-                      Filed {new Date(r.requested_at).toLocaleDateString("en-US", { dateStyle: "medium" })}
+                      {interpolate(t.filedDate, { date: new Date(r.requested_at).toLocaleDateString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium" }) })}
                       {r.resolution_note ? ` · ${r.resolution_note}` : ""}
                     </p>
                   </div>

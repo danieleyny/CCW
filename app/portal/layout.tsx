@@ -11,6 +11,7 @@ import { AccountActions } from "@/components/auth/account-actions"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
 import { getLocale, getMessages } from "@/lib/i18n"
+import { PortalI18nProvider } from "@/components/shared/portal-i18n-provider"
 import "./portal-v2.css"
 
 function getInitials(name: string | null) {
@@ -56,7 +57,9 @@ export default async function PortalLayout({
   const initials = getInitials(profile.full_name)
 
   return (
+    <PortalI18nProvider locale={locale} messages={t}>
     <div
+      lang={locale}
       className="portal-v2 flex min-h-svh flex-col bg-background text-foreground"
       // The tab bar's height, exposed so pages with their own sticky action bar
       // (intake) can extend their bottom padding past it.
@@ -78,7 +81,7 @@ export default async function PortalLayout({
               className="portal-v2-avatar md:hidden"
             >
               <span aria-hidden>{initials}</span>
-              <span className="sr-only">{profile.full_name || "Account"} profile</span>
+              <span className="sr-only">{profile.full_name || t.common.account} · {t.common.profile}</span>
             </Link>
             <Link
               href="/portal/profile"
@@ -91,7 +94,7 @@ export default async function PortalLayout({
             </div>
           </div>
         </div>
-        <PortalTopNav concierge={isConcierge} />
+            <PortalTopNav concierge={isConcierge} />
       </header>
 
       {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
@@ -109,7 +112,7 @@ export default async function PortalLayout({
       {/* Desktop only — on mobile these live in the More sheet (Profile & your data). */}
       <footer className="mx-auto hidden w-full max-w-[1120px] gap-4 px-6 pb-7 text-xs text-text-low md:flex lg:px-8">
         <Link href="/portal/profile" className="underline hover:text-text-mid">
-          Profile
+          {t.common.profile}
         </Link>
         <Link href="/portal/privacy" className="underline hover:text-text-mid">
           {t.portal.yourData}
@@ -123,5 +126,6 @@ export default async function PortalLayout({
         <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} />
       )}
     </div>
+    </PortalI18nProvider>
   )
 }

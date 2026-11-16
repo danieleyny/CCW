@@ -43,4 +43,16 @@ describe("i18n catalogs", () => {
       }
     }
   })
+
+  it("every non-legal product key is translated in every non-English locale", () => {
+    const legal = new Set<string>(LEGAL_KEYS)
+    const required = keysOf(SOURCE).filter((key) => !legal.has(key))
+    for (const l of LOCALES) {
+      if (l.key === "en") continue
+      const defined = new Set(keysOf(CATALOGS[l.key] as object))
+      for (const key of required) {
+        expect(defined.has(key), `${l.key} is missing non-legal key ${key}`).toBe(true)
+      }
+    }
+  })
 })

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight, CalendarClock, Compass } from "lucide-react"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export function NextStepCard({
   title,
@@ -18,12 +19,14 @@ export function NextStepCard({
   children?: React.ReactNode
   eyebrow?: string
 }) {
+  const { messages } = usePortalI18n()
+  const t = messages.concierge
   return (
     <section
       id="next-step"
       className="concierge-next-step scroll-mt-24"
       aria-labelledby={children ? undefined : "next-step-title"}
-      aria-label={children ? "Your next step" : undefined}
+      aria-label={children ? t.nextStep : undefined}
     >
       <span className="concierge-next-icon" aria-hidden>
         {children ? <CalendarClock className="size-6" /> : <Compass className="size-6" />}
@@ -43,17 +46,18 @@ export function NextStepCard({
             {actionLabel} <ArrowRight className="size-4" aria-hidden />
           </Link>
         ) : null}
-        {then ? <p className="concierge-next-then">Then: {then}</p> : null}
+        {then ? <p className="concierge-next-then">{t.then}: {then}</p> : null}
       </div>
     </section>
   )
 }
 
 export function MobileNextStepBar({ title, label, href }: { title: string; label: string; href: string }) {
+  const { messages } = usePortalI18n()
   return (
-    <aside className="concierge-mobile-next" aria-label="Next step">
+    <aside className="concierge-mobile-next" aria-label={messages.concierge.nextStep}>
       <span className="min-w-0">
-        <small>Next</small>
+        <small>{messages.concierge.next}</small>
         <strong>{title}</strong>
       </span>
       <Link href={href}>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { SignaturePad } from "@/components/sign/signature-pad"
 import { saveApplicantSignature, fileSignedForm } from "@/app/portal/forms/actions"
 import type { PortalFormDoc } from "@/lib/forms/portal-forms"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export type FormDoc = PortalFormDoc
 
@@ -19,6 +20,8 @@ export function FormsSigning({
   signaturePng: string | null
   applicantName: string
 }) {
+  const { messages } = usePortalI18n()
+  const t = messages.ui
   const [sigPng, setSigPng] = useState(signaturePng)
   const [hasSig, setHasSig] = useState(!!signaturePng)
   const [showPad, setShowPad] = useState(false)
@@ -35,7 +38,7 @@ export function FormsSigning({
       setSigPng(base64)
       setHasSig(true)
       setShowPad(false)
-      toast.success("Signature saved — your forms now download pre-signed.")
+      toast.success(t.formsSignatureSaved)
     })
   }
 
@@ -45,7 +48,7 @@ export function FormsSigning({
       setFiling(null)
       if (result.error) return void toast.error(result.error)
       setFiled((current) => ({ ...current, [key]: true }))
-      toast.success("Signed and filed — this requirement is complete.")
+      toast.success(t.formsFiledToast)
     })
   }
 
@@ -56,21 +59,21 @@ export function FormsSigning({
       <section className="forms-signature-card">
         <span className="forms-signature-icon" aria-hidden><Signature /></span>
         <div className="forms-signature-copy">
-          <h2>Your signature</h2>
-          <p>{hasSig ? "On file — your documents download already signed, and eligible forms can be filed in one tap." : "Sign once and every form below comes out pre-signed."}</p>
+          <h2>{t.yourSignature}</h2>
+          <p>{hasSig ? t.signatureOnFileDetail : t.signatureEmptyDetail}</p>
         </div>
-        <div className={`forms-signature-preview ${hasSig ? "has-signature" : "is-empty"}`} aria-label={hasSig ? "Signature preview" : "No signature on file"}>
+        <div className={`forms-signature-preview ${hasSig ? "has-signature" : "is-empty"}`} aria-label={hasSig ? t.signaturePreview : t.noSignatureOnFile}>
           {sigPng ? (
             <span style={{ backgroundImage: `url(data:image/png;base64,${sigPng})` }} />
           ) : hasSig ? (
             <span className="forms-signature-name">{applicantName}</span>
           ) : (
-            <span>No signature yet</span>
+            <span>{t.noSignatureYet}</span>
           )}
         </div>
-        {hasSig && <span className="forms-signature-status"><Check aria-hidden /> On file</span>}
+        {hasSig && <span className="forms-signature-status"><Check aria-hidden /> {t.onFile}</span>}
         <Button type="button" variant={hasSig ? "outline" : "default"} onClick={() => setShowPad((current) => !current)}>
-          <PenLine aria-hidden /> {showPad ? "Cancel" : hasSig ? "Re-sign" : "Add your signature"}
+          <PenLine aria-hidden /> {showPad ? t.cancel : hasSig ? t.resign : t.addSignature}
         </Button>
         {showPad && (
           <div className="forms-signature-pad">
@@ -81,12 +84,12 @@ export function FormsSigning({
 
       <section className="forms-list-section">
         <header className="forms-list-heading">
-          <h2>Your forms</h2>
-          <span>{docs.length} prepared · {filedCount} filed</span>
+          <h2>{t.yourForms}</h2>
+          <span>{interpolate(t.preparedFiled, { prepared: docs.length, filed: filedCount })}</span>
         </header>
         <div className="forms-table">
           <div className="forms-table-head" aria-hidden>
-            <span>Form</span><span>How it&apos;s signed</span><span>Status</span><span>Actions</span>
+            <span>{t.form}</span><span>{t.signingMethod}</span><span>{t.status}</span><span>{t.actions}</span>
           </div>
           {docs.map((doc) => {
             const isFiled = filed[doc.key]
@@ -98,19 +101,19 @@ export function FormsSigning({
                 </div>
                 <div className="forms-row-how"><SigningChip doc={doc} /></div>
                 <div className="forms-row-status">
-                  <span className={isFiled ? "is-filed" : ""}>{isFiled ? "Filed ✓" : "Not filed"}</span>
+                  <span className={isFiled ? "is-filed" : ""}>{isFiled ? t.filed : t.notFiled}</span>
                 </div>
                 <div className="forms-row-actions">
                   {doc.fileable && !isFiled && (
                     <Button size="sm" disabled={!hasSig || filing === doc.key} onClick={() => file(doc.key)}>
-                      <Signature aria-hidden /> {filing === doc.key ? "Filing…" : "Sign & file"}
+                      <Signature aria-hidden /> {filing === doc.key ? t.filing : t.signFile}
                     </Button>
                   )}
                   <Button asChild size="sm" variant="outline">
-                    <a href={`/portal/forms/${doc.key}`} target="_blank" rel="noreferrer"><Download aria-hidden /> Download</a>
+                    <a href={`/portal/forms/${doc.key}`} target="_blank" rel="noreferrer"><Download aria-hidden /> {t.download}</a>
                   </Button>
                 </div>
-                {doc.fileable && !hasSig && !isFiled && <p className="forms-row-hint">Add your signature above to file this in one tap.</p>}
+                {doc.fileable && !hasSig && !isFiled && <p className="forms-row-hint">{t.addSignatureHint}</p>}
               </article>
             )
           })}
@@ -121,8 +124,10 @@ export function FormsSigning({
 }
 
 function SigningChip({ doc }: { doc: FormDoc }) {
-  if (doc.fileable) return <span className="forms-signing-chip is-one-tap">Sign &amp; file in one tap</span>
-  if (doc.notarize === "notarize") return <span className="forms-signing-chip is-notary">Needs a notary</span>
-  if (doc.notarize === "witness") return <span className="forms-signing-chip is-witness">Needs a witness</span>
-  return <span className="forms-signing-chip is-download">Download, sign, upload</span>
+  const { messages } = usePortalI18n()
+  const t = messages.ui
+  if (doc.fileable) return <span className="forms-signing-chip is-one-tap">{t.oneTap}</span>
+  if (doc.notarize === "notarize") return <span className="forms-signing-chip is-notary">{t.needsNotary}</span>
+  if (doc.notarize === "witness") return <span className="forms-signing-chip is-witness">{t.needsWitness}</span>
+  return <span className="forms-signing-chip is-download">{t.downloadSignUpload}</span>
 }

@@ -7,6 +7,7 @@ import { DocumentLibrary, type LibraryEntry } from "@/components/portal/document
 import { buildApplicationReview } from "@/lib/concierge/application-review"
 import { ApplicationReview } from "@/components/portal/concierge/application-review"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Your application" }
 
@@ -18,11 +19,11 @@ export const metadata = { title: "Your application" }
  * the checklist could disagree about what was outstanding.
  */
 export default async function DocumentsPage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
+        {t.common.noCase}
       </p>
     )
   }
@@ -73,11 +74,8 @@ export default async function DocumentsPage() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Every file for your application in one place — what we still need, and what we already
-          have. This is the same list as your checklist, organized by file rather than by step.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.pages.documentsTitle}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t.pages.documentsLede}</p>
       </div>
 
       <DocumentLibrary

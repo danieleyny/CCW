@@ -8,16 +8,19 @@ import { StartRenewalButton } from "@/components/portal/start-renewal-button"
 import { DosUpgradePanel, type DosUpgrade } from "@/components/portal/dos-upgrade-panel"
 import { daysUntil } from "@/lib/format"
 import { RENEWAL_RUNWAY_DAYS } from "@/lib/license"
-import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
+import type { ApplicationType } from "@/lib/application-types"
 import { reviewUrl } from "@/lib/review"
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
+import type { Locale } from "@/config/i18n"
 
 export const metadata = { title: "Your license" }
 
 const DAY_MS = 86_400_000
 
-function renewalMonth(expires: string) {
+function renewalMonth(expires: string, locale: Locale) {
   const opens = new Date(new Date(`${expires}T00:00:00Z`).getTime() - RENEWAL_RUNWAY_DAYS * DAY_MS)
-  return opens.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
+  return opens.toLocaleDateString(locale === "es" ? "es-US" : "en-US", { month: "short", year: "numeric", timeZone: "UTC" })
 }
 
 /**
@@ -26,11 +29,11 @@ function renewalMonth(expires: string) {
  * runway — the reasons this app stays installed for the life of the license.
  */
 export default async function LicensePage() {
-  const myCase = await getMyCase()
+  const [myCase, locale, t] = await Promise.all([getMyCase(), getLocale(), getMessages()])
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
+        {t.common.noCase}
       </p>
     )
   }
@@ -96,19 +99,19 @@ export default async function LicensePage() {
     acknowledged: !!r.acknowledged_at,
   }))
   const applicationType = myCase.application_type as ApplicationType | null
-  const licenseType = applicationType
-    ? APPLICATION_TYPE_LABELS[applicationType]
-    : track === "non_resident"
-      ? "Special Carry"
-      : "Concealed Carry"
+  const licenseType = applicationType === "premise_residence"
+    ? t.licensePath.premiseResidence
+    : applicationType === "special_carry" || track === "non_resident"
+      ? t.licensePath.specialCarry
+      : t.licensePath.concealedCarry
   const configuredReviewUrl = reviewUrl()
 
   return (
     <div className="license-v2-page">
       <header className="license-v2-page-header">
-        <p className="portal-t-eyebrow">After you&apos;re licensed</p>
-        <h1>Your license</h1>
-        <p>The clocks that matter: purchase windows, inspections, reporting duties and your renewal.</p>
+        <p className="portal-t-eyebrow">{t.license.eyebrow}</p>
+        <h1>{t.license.title}</h1>
+        <p>{t.license.lede}</p>
       </header>
 
       <LicenseStatusHero
@@ -118,7 +121,7 @@ export default async function LicensePage() {
         track={track}
         countyExpires={countyExpires}
         countyDays={countyDays}
-        clientName={myCase.client.full_name || "Licensee"}
+        clientName={myCase.client.full_name || t.license.licensee}
         licenseType={licenseType}
         concierge={myCase.service_mode === "concierge"}
         renewalAlreadyOpen={!!renewalCase}
@@ -132,11 +135,11 @@ export default async function LicensePage() {
         <section className="license-v2-review" aria-labelledby="license-review-title">
           <span className="license-v2-support-icon"><MessageSquareHeart /></span>
           <div>
-            <h2 id="license-review-title">Licensed — congratulations.</h2>
-            <p>If the process went well for you, a short review helps other New Yorkers find us.</p>
+            <h2 id="license-review-title">{t.license.congratulations}</h2>
+            <p>{t.license.reviewAsk}</p>
           </div>
           <a href={configuredReviewUrl} target="_blank" rel="noopener noreferrer">
-            Leave a review <ExternalLink />
+            {t.license.leaveReview} <ExternalLink />
           </a>
         </section>
       ) : null}
@@ -148,7 +151,7 @@ export default async function LicensePage() {
           <section className="license-v2-support-card" aria-labelledby="license-renewal-title">
             <span className="license-v2-support-icon is-gold"><RefreshCw /></span>
             <div>
-              <h2 id="license-renewal-title">Renewal</h2>
+              <h2 id="license-renewal-title">{t.license.renewal}</h2>
               <p>
                 Your renewal runway opens 9 months before expiry. We&apos;ll remind you, and you&apos;ll need a refreshed live-fire certificate within 6 months of renewing. No references needed.
               </p>
@@ -157,7 +160,7 @@ export default async function LicensePage() {
               {inRunway ? (
                 <StartRenewalButton alreadyOpen={!!renewalCase} />
               ) : (
-                <span className="license-v2-open-pill">Opens ~{renewalMonth(expires)}</span>
+                <span className="license-v2-open-pill">{interpolate(t.license.opensApprox, { date: renewalMonth(expires, locale) })}</span>
               )}
             </div>
           </section>
@@ -168,12 +171,12 @@ export default async function LicensePage() {
         <section className="license-v2-support-card" aria-labelledby="license-reciprocity-title">
           <span className="license-v2-support-icon"><MapPinned /></span>
           <div>
-            <h2 id="license-reciprocity-title">Where your license is honored</h2>
-            <p>Check reciprocity for your NY license, maintained by Concealed Knowledge.</p>
+            <h2 id="license-reciprocity-title">{t.license.reciprocityTitle}</h2>
+            <p>{t.license.reciprocityDescription}</p>
           </div>
           <div className="license-v2-support-action">
             <Link href="https://concealedknowledge.com/reciprocity?home=ny" target="_blank" rel="noopener noreferrer">
-              View reciprocity <ExternalLink />
+              {t.license.viewReciprocity} <ExternalLink />
             </Link>
           </div>
         </section>

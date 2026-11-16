@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export function ProfileForms({
   fullName,
@@ -28,34 +29,35 @@ export function ProfileForms({
 
 function ContactCard({ fullName, email, phone }: { fullName: string; email: string; phone: string }) {
   const [state, formAction, pending] = useActionState<ProfileState, FormData>(updateProfile, {})
+  const { messages } = usePortalI18n()
+  const t = messages.ui
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your account</CardTitle>
+        <CardTitle>{t.accountTitle}</CardTitle>
         <p className="text-sm text-text-mid">
-          This page saves your name and phone. Your <strong>application details</strong> — address, physical
-          description, five-year history, safeguard and more — live on{" "}
+          {t.accountDescription}{" "}
           <Link href="/portal/details" className="text-signal underline underline-offset-2">
-            Your details
+            {messages.shell.yourDetails}
           </Link>
-          , and fill your forms automatically.
+          .
         </p>
       </CardHeader>
       <form action={formAction}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full name</Label>
+            <Label htmlFor="fullName">{t.fullName}</Label>
             <Input id="fullName" name="fullName" defaultValue={fullName} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t.email}</Label>
             <Input id="email" value={email} disabled readOnly />
             <p className="text-xs text-text-low">
-              This is your sign-in email — contact us if you need to change it.
+              {t.signInEmailHelp}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">{t.phone}</Label>
             <Input
               id="phone"
               name="phone"
@@ -73,11 +75,11 @@ function ContactCard({ fullName, email, phone }: { fullName: string; email: stri
           )}
           {state.ok && (
             <p className="flex items-center gap-1.5 text-sm text-ok" role="status">
-              <CheckCircle2 className="size-4" /> Saved.
+              <CheckCircle2 className="size-4" /> {t.saved}
             </p>
           )}
           <Button type="submit" disabled={pending}>
-            {pending ? "Saving…" : "Save changes"}
+            {pending ? t.saving : t.saveChanges}
           </Button>
         </CardContent>
       </form>
@@ -87,26 +89,28 @@ function ContactCard({ fullName, email, phone }: { fullName: string; email: stri
 
 function PasswordCard() {
   const [state, formAction, pending] = useActionState<ProfileState, FormData>(changePassword, {})
+  const { messages } = usePortalI18n()
+  const t = messages.ui
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Change password</CardTitle>
+        <CardTitle>{t.changePassword}</CardTitle>
       </CardHeader>
       <form action={formAction}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="password">New password</Label>
+            <Label htmlFor="password">{t.newPassword}</Label>
             <Input
               id="password"
               name="password"
               type="password"
               autoComplete="new-password"
-              placeholder="At least 8 characters"
+              placeholder={t.atLeastEight}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm">Confirm new password</Label>
+            <Label htmlFor="confirm">{t.confirmPassword}</Label>
             <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required />
           </div>
           {state.error && (
@@ -116,11 +120,11 @@ function PasswordCard() {
           )}
           {state.ok && (
             <p className="flex items-center gap-1.5 text-sm text-ok" role="status">
-              <CheckCircle2 className="size-4" /> Password updated.
+              <CheckCircle2 className="size-4" /> {t.passwordUpdated}
             </p>
           )}
           <Button type="submit" disabled={pending}>
-            {pending ? "Updating…" : "Update password"}
+            {pending ? t.updating : t.updatePassword}
           </Button>
         </CardContent>
       </form>

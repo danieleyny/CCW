@@ -2,6 +2,7 @@
 
 import { ArrowRight, CheckCircle2, Loader2, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export function StickyActionBar({
   Icon,
@@ -26,14 +27,16 @@ export function StickyActionBar({
   pendingLabel?: string
   success?: boolean
 }) {
-  const label = desktopLabel ?? `Continue with ${title}`
+  const { messages } = usePortalI18n()
+  const setup = messages.setup
+  const label = desktopLabel ?? `${setup.continue}: ${title}`
 
   return (
     <section
       className="portal-sticky-bar"
       data-success={success}
       role="region"
-      aria-label="Next step"
+      aria-label={setup.nextStep}
       aria-live="polite"
     >
       <span className="portal-sticky-icon" aria-hidden>
@@ -49,7 +52,7 @@ export function StickyActionBar({
           {detail && <span className="portal-sticky-detail"> · {detail}</span>}
         </span>
         <span className="portal-sticky-sub block truncate">{subline}</span>
-        {error && <span className="portal-sticky-error block">Couldn&apos;t save — try again</span>}
+        {error && <span className="portal-sticky-error block">{setup.saveError}</span>}
       </span>
       {!success && (
         <Button
@@ -62,12 +65,12 @@ export function StickyActionBar({
           {pending ? (
             <>
               <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
-              {pendingLabel ?? "Saving…"}
+              {pendingLabel ?? setup.saving}
             </>
           ) : (
             <>
               <span className="hidden sm:inline">{label}</span>
-              <span className="sm:hidden">{mobileLabel}</span>
+              <span className="sm:hidden">{mobileLabel === "Continue" ? setup.continue : mobileLabel}</span>
               <ArrowRight className="size-4" aria-hidden />
             </>
           )}

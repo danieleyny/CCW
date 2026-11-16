@@ -9,7 +9,7 @@ import {
   nextStage,
   type CaseStageKey,
 } from "@/config/stages"
-import { money, formatDate } from "@/lib/format"
+import { money } from "@/lib/format"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { ReticleProgress } from "@/components/ui/reticle-progress"
@@ -20,21 +20,22 @@ import { WelcomeCard } from "@/components/portal/welcome-card"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { hasPaidPackage } from "@/lib/packages"
 import { computeNextStep } from "@/lib/portal/next-step"
-import { getMessages } from "@/lib/i18n"
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
 
 export const metadata = { title: "Your application" }
 
 export default async function PortalHome() {
-  const myCase = await getMyCase()
+  const [myCase, t, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])
+  const ui = t.ui
 
   if (!myCase) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <h2 className="text-lg font-semibold">Welcome.</h2>
+          <h2 className="text-lg font-semibold">{ui.welcome}</h2>
           <p className="mt-2 text-sm text-text-mid">
-            Your case isn&apos;t set up yet. Your Gun License NYC concierge will reach out shortly to get you
-            started.
+            {ui.conciergeWillReach}
           </p>
         </CardContent>
       </Card>
@@ -63,8 +64,30 @@ export default async function PortalHome() {
   // same requirement view the checklist and documents pages read.
   const view = await loadRequirementView(supabase, myCase)
   const nextStep = computeNextStep({ items: view.items, intakeDone, stage })
-  const t = await getMessages()
-
+  const localizedNextStep = locale === "es"
+    ? {
+        ...nextStep,
+        title:
+          nextStep.title === "Finish your intake"
+            ? t.portal.finishIntake
+            : nextStep.title === "Nothing needed from you right now"
+              ? ui.nothingNeededNow
+              : nextStep.title,
+        detail:
+          nextStep.detail.startsWith("It's what builds your personalized")
+            ? ui.finishIntakeDetail
+            : nextStep.detail,
+        cta:
+          ({
+            "Continue intake": t.portal.continueIntake,
+            "See everything you've provided": ui.seeProvided,
+            "See how to get it": ui.seeHow,
+            "Start it now": ui.startNow,
+            "Invite them now": ui.inviteNow,
+            "Take a look": ui.takeLook,
+          } as Record<string, string>)[nextStep.cta] ?? nextStep.cta,
+      }
+    : nextStep
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
   const isLicensed = stage === "licensed"
@@ -96,7 +119,7 @@ export default async function PortalHome() {
     <div className="space-y-6">
       <ScrollToTop />
       <div>
-        <SectionEyebrow>Your Application</SectionEyebrow>
+        <SectionEyebrow>{ui.yourApplication}</SectionEyebrow>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           {myCase.client.full_name.split(" ")[0]}
         </h1>
@@ -111,19 +134,18 @@ export default async function PortalHome() {
       {needsConciergePayment && (
         <Card className="brass-edge">
           <CardContent className="p-5">
-            <SectionEyebrow>Almost there</SectionEyebrow>
+            <SectionEyebrow>{t.common.almostThere}</SectionEyebrow>
             <h2 className="mt-2 text-lg font-semibold tracking-tight">
-              You chose Full Concierge — finish your payment to unlock it
+              {ui.paymentUnlockTitle}
             </h2>
             <p className="mt-1 text-sm text-text-mid">
-              Once your payment is in, your done-for-you dashboard opens and we take it from there. You
-              can still switch to Self-Guided before you pay.
+              {ui.paymentUnlockDescription}
             </p>
             <Link
               href="/portal/choose-path"
               className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
             >
-              Finish enrolling <ArrowRight className="size-4" />
+              {ui.finishEnrolling} <ArrowRight className="size-4" />
             </Link>
           </CardContent>
         </Card>
@@ -136,31 +158,31 @@ export default async function PortalHome() {
         <Card className={nextStep.waiting ? "" : "brass-edge"}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between gap-3">
-              <SectionEyebrow>{nextStep.waiting ? "Where you are" : "Your next step"}</SectionEyebrow>
+              <SectionEyebrow>{localizedNextStep.waiting ? ui.whereYouAre : ui.yourNextStep}</SectionEyebrow>
               <span className="font-mono text-[11px] tabular-nums text-text-low">
-                {nextStep.done} of {nextStep.total} done
+                {interpolate(ui.doneOf, { done: localizedNextStep.done, total: localizedNextStep.total })}
               </span>
             </div>
 
-            <h2 className="mt-2 text-lg font-semibold tracking-tight">{nextStep.title}</h2>
-            {nextStep.detail && <p className="mt-1 text-sm text-text-mid">{nextStep.detail}</p>}
+            <h2 className="mt-2 text-lg font-semibold tracking-tight">{localizedNextStep.title}</h2>
+            {localizedNextStep.detail && <p className="mt-1 text-sm text-text-mid">{localizedNextStep.detail}</p>}
 
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
               <div
                 className="h-full rounded-full bg-brass transition-[width]"
-                style={{ width: `${nextStep.total ? (nextStep.done / nextStep.total) * 100 : 0}%` }}
+                style={{ width: `${localizedNextStep.total ? (localizedNextStep.done / localizedNextStep.total) * 100 : 0}%` }}
               />
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Link
-                href={nextStep.href}
+                href={localizedNextStep.href}
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
               >
-                {nextStep.cta} <ArrowRight className="size-4" />
+                {localizedNextStep.cta} <ArrowRight className="size-4" />
               </Link>
               <Link href="/portal/checklist" className="text-sm text-signal underline">
-                View everything left to do
+                {t.portal.viewEverything}
               </Link>
             </div>
           </CardContent>
@@ -183,7 +205,7 @@ export default async function PortalHome() {
           className="flex items-center justify-between rounded-md border border-danger/40 bg-danger/10 px-4 py-3.5 text-danger transition-colors hover:border-danger/60"
         >
           <span className="text-sm font-medium">
-            Your appeal window is open — 90 days, strict rules. Start here.
+            {ui.appealOpen}
           </span>
           <ArrowRight className="size-4" />
         </Link>
@@ -196,7 +218,7 @@ export default async function PortalHome() {
           className="flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
         >
           <span className="text-sm font-medium">
-            Your license — purchase authorizations, inspections, reporting duties &amp; renewal
+            {ui.licenseHubLink}
           </span>
           <ArrowRight className="size-4" />
         </Link>
@@ -210,7 +232,7 @@ export default async function PortalHome() {
         >
           <span className="flex items-center gap-2 text-sm font-medium">
             <Compass className="size-4" />
-            Choose how we&apos;ll work together — Self-Guided or Full Concierge
+            {ui.chooseWorkMode}
           </span>
           <ArrowRight className="size-4" />
         </Link>
@@ -224,7 +246,7 @@ export default async function PortalHome() {
           href="/portal/enroll"
           className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
         >
-          <span className="text-sm font-medium">Choose your package — start your engagement</span>
+          <span className="text-sm font-medium">{ui.choosePackage}</span>
           <ArrowRight className="size-4" />
         </Link>
       )}
@@ -238,7 +260,7 @@ export default async function PortalHome() {
         >
           <span className="flex items-center gap-2 text-sm font-medium">
             <CheckCircle2 className="size-4" />
-            Intake complete — view your personalized checklist
+            {ui.intakeCompleteLink}
           </span>
           <ArrowRight className="size-4" />
         </Link>
@@ -248,7 +270,7 @@ export default async function PortalHome() {
           className="flex items-center justify-between rounded-md border border-signal/30 bg-signal-dim px-4 py-3.5 text-signal transition-colors hover:border-signal/50"
         >
           <span className="text-sm font-medium">
-            Application intake — build your personalized document set
+            {ui.intakeBuildLink}
           </span>
           <ArrowRight className="size-4" />
         </Link>
@@ -266,14 +288,16 @@ export default async function PortalHome() {
       >
         <span className="text-sm font-medium">
           {trainingState.status === "booked" && trainingState.bookingAt
-            ? `Training booked — ${formatDate(trainingState.bookingAt)}`
+            ? interpolate(ui.trainingBooked, { date: new Date(trainingState.bookingAt).toLocaleDateString(locale === "es" ? "es-US" : "en-US", { month: "short", day: "numeric", year: "numeric" }) })
             : trainingState.status === "engaged"
-              ? `Your instructor: ${trainingState.instructorName} — schedule your session`
+              ? interpolate(ui.instructorNamed, { name: trainingState.instructorName ?? "" })
               : trainingState.status === "pending"
                 ? trainingState.interestedCount > 0
-                  ? `${trainingState.interestedCount} instructor${trainingState.interestedCount === 1 ? "" : "s"} interested — choose yours`
-                  : "Training request sent — awaiting interested instructors"
-                : "Find a verified local instructor"}
+                  ? trainingState.interestedCount === 1
+                    ? ui.instructorInterested
+                    : interpolate(ui.instructorsInterested, { count: trainingState.interestedCount })
+                  : ui.trainingAwaiting
+                : ui.findInstructor}
         </span>
         <ArrowRight className="size-4" />
       </Link>
@@ -283,7 +307,7 @@ export default async function PortalHome() {
         href="/portal/forms"
         className="flex items-center justify-between rounded-md border border-hairline bg-surface-2/40 px-4 py-3.5 text-text-mid transition-colors hover:text-foreground"
       >
-        <span className="text-sm font-medium">Documents we prepared for you — download &amp; sign</span>
+        <span className="text-sm font-medium">{ui.preparedDocuments}</span>
         <ArrowRight className="size-4" />
       </Link>
 
@@ -292,14 +316,14 @@ export default async function PortalHome() {
         <CardContent className="p-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <div className="engraved">Current Stage</div>
+              <div className="engraved">{ui.currentStage}</div>
               <div className="mt-1 font-display text-xl font-semibold">{stageMeta(stage).label}</div>
             </div>
             <StatusBadge status={myCase.status} />
           </div>
           <ReticleProgress currentStage={stage} />
           <p className="mt-5 rounded-md border border-brass/25 bg-brass/8 p-3 text-sm text-brass-bright">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-brass">Next //</span>{" "}
+            <span className="font-mono text-[10px] uppercase tracking-wider text-brass">{ui.nextLabel}</span>{" "}
             {next ? stageMeta(next).clientHint : stageMeta(stage).clientHint}
           </p>
         </CardContent>
@@ -308,7 +332,7 @@ export default async function PortalHome() {
       {/* Full application timeline — plain language + honest ETAs */}
       <details className="rounded-lg border bg-card">
         <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">
-          Your full application timeline
+          {ui.fullTimeline}
         </summary>
         <div className="border-t border-hairline p-5">
           <CaseTimeline currentStage={stage} />
@@ -321,15 +345,15 @@ export default async function PortalHome() {
           href="/portal/checklist"
           icon={ClipboardList}
           value={String(outstanding)}
-          label="To-dos"
+          label={ui.todos}
         />
         <HudCard
           icon={CalendarDays}
-          value={nextTraining?.class_date ? formatDate(nextTraining.class_date) : "—"}
-          label="Training"
+          value={nextTraining?.class_date ? new Date(nextTraining.class_date).toLocaleDateString(locale === "es" ? "es-US" : "en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+          label={ui.trainingLabel}
           small
         />
-        <HudCard href="/portal/payments" icon={CreditCard} value={money(paidCents)} label="Paid" small />
+        <HudCard href="/portal/payments" icon={CreditCard} value={money(paidCents)} label={ui.paidLabel} small />
       </div>
 
     </div>

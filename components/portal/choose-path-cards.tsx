@@ -9,6 +9,7 @@ import { ChoiceCard } from "@/components/portal/ui/choice-card"
 import { StickyActionBar } from "@/components/portal/ui/sticky-action-bar"
 import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
 import type { ServicePackage } from "@/lib/packages"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 type PathId = "self_guided" | "full_concierge"
 
@@ -18,40 +19,6 @@ type PlanNarrative = {
   Icon: LucideIcon
   you: string[]
   we: string[]
-}
-
-const NARRATIVE: Record<PathId, PlanNarrative> = {
-  self_guided: {
-    eyebrow: "You drive it, we guide it",
-    tagline: "The full playbook, in your hands.",
-    Icon: Compass,
-    you: [
-      "Gather your own documents",
-      "Book your own training",
-      "Submit your own application",
-    ],
-    we: [
-      "Give you the exact, personalized checklist",
-      "Prepare your forms and answer process questions",
-      "Flag gaps before you submit",
-    ],
-  },
-  full_concierge: {
-    eyebrow: "We do the legwork · you stay in control",
-    tagline: "Hand us the pieces — we organize the preparation from start to finish.",
-    Icon: ConciergeBell,
-    we: [
-      "Coordinate with your references and cohabitant affidavits",
-      "Prepare, assemble, and quality-check your whole packet",
-      "Organize a filing-ready application for your review",
-      "Follow up routinely, with unlimited support from our team",
-    ],
-    you: [
-      "Sign your forms and provide your documents",
-      "Review your finished packet",
-      "Submit your own application directly to NYPD",
-    ],
-  },
 }
 
 function selectedFromMode(mode: "self_guided" | "concierge" | null): PathId | null {
@@ -76,6 +43,24 @@ export function ChoosePathCards({
   stripeEnabled: boolean
   feeNote: string
 }) {
+  const { messages } = usePortalI18n()
+  const t = messages.choosePath
+  const narrativeByPath: Record<PathId, PlanNarrative> = {
+    self_guided: {
+      eyebrow: t.youGuideEyebrow,
+      tagline: t.selfTagline,
+      Icon: Compass,
+      you: [t.gatherDocuments, t.bookTraining, t.submitApplication],
+      we: [t.personalizedChecklist, t.prepareForms, t.flagGaps],
+    },
+    full_concierge: {
+      eyebrow: t.conciergeEyebrow,
+      tagline: t.conciergeTagline,
+      Icon: ConciergeBell,
+      we: [t.coordinateAffidavits, t.qualityCheckPacket, t.filingReadyApplication, t.routineFollowUp],
+      you: [t.signAndProvide, t.reviewPacket, t.submitToNypd],
+    },
+  }
   const saved = selectedFromMode(alreadyMode)
   const [selected, setSelected] = useState<PathId | null>(saved)
   const [state, action, pending] = useActionState<EnrollResult, FormData>(choosePath, {})
@@ -83,37 +68,37 @@ export function ChoosePathCards({
     .map((id) => packages.find((pkg) => pkg.key === id))
     .filter((pkg): pkg is ServicePackage => Boolean(pkg))
   const selectedPackage = cards.find((pkg) => pkg.key === selected) ?? null
-  const selectedNarrative = selected ? NARRATIVE[selected] : null
+  const selectedNarrative = selected ? narrativeByPath[selected] : null
   const disabled = pending || Boolean(state.requested)
 
   let nextLine = ""
-  let desktopLabel = "Continue"
+  let desktopLabel = t.continue
   if (selected === "self_guided") {
-    nextLine = "Next: tell us about you — pay when you're ready"
+    nextLine = t.nextTellUs
   } else if (selected === "full_concierge" && stripeEnabled) {
-    nextLine = "Next: secure checkout"
-    desktopLabel = "Continue to payment"
+    nextLine = t.nextCheckout
+    desktopLabel = t.continuePayment
   } else if (selected === "full_concierge") {
-    nextLine = "Next: we email your invoice"
-    desktopLabel = "Request invoice"
+    nextLine = t.nextInvoice
+    desktopLabel = t.requestInvoice
   }
-  if (state.error) nextLine = "Couldn't start — try again"
+  if (state.error) nextLine = t.couldNotStart
 
   return (
     <div className="portal-plan-picker">
       <form action={action}>
         <input type="hidden" name="mode" value="full" />
-        <div className="portal-plan-grid" role="radiogroup" aria-label="Service plan">
+        <div className="portal-plan-grid" role="radiogroup" aria-label={t.servicePlan}>
           {cards.map((pkg) => {
             const id = pkg.key as PathId
-            const narrative = NARRATIVE[id]
+            const narrative = narrativeByPath[id]
             const concierge = id === "full_concierge"
             const applicantTasks =
               isPremiseResidence(applicationType) && id === "self_guided"
                 ? [
-                    "Gather your own documents",
-                    "Coordinate your two references",
-                    "Submit your own application",
+                    t.gatherDocuments,
+                    t.coordinateReferences,
+                    t.submitApplication,
                   ]
                 : narrative.you
             const savedChoice = saved === id
@@ -126,21 +111,21 @@ export function ChoosePathCards({
                 value={id}
                 selected={selected === id}
                 current={savedChoice}
-                currentLabel={staffProvisioned && savedChoice ? "Set up for you" : "Your pick"}
+                currentLabel={staffProvisioned && savedChoice ? t.setUpForYou : t.yourPick}
                 disabled={disabled}
                 eyebrow={narrative.eyebrow}
-                title={pkg.name}
+                title={id === "full_concierge" ? t.concierge.replace(":", "") : t.selfGuided.replace(":", "")}
                 description={narrative.tagline}
                 Icon={narrative.Icon}
                 onChange={() => setSelected(id)}
                 tone={concierge ? "featured-dark" : "light"}
-                badge={concierge ? "Done for you" : undefined}
+                badge={concierge ? t.doneForYou : undefined}
                 className="portal-plan-card"
               >
                 <p className="portal-choice-eyebrow portal-t-eyebrow">{narrative.eyebrow}</p>
 
                 <div className="portal-plan-heading">
-                  <h2 className="portal-plan-title">{pkg.name}</h2>
+                  <h2 className="portal-plan-title">{id === "full_concierge" ? t.concierge.replace(":", "") : t.selfGuided.replace(":", "")}</h2>
                   <p className="portal-plan-price">{pkg.priceLabel}</p>
                 </div>
                 <p className="portal-plan-description">{narrative.tagline}</p>
@@ -148,13 +133,13 @@ export function ChoosePathCards({
                 <div className={`portal-plan-lists ${concierge ? "portal-plan-lists-featured" : ""}`}>
                   {concierge ? (
                     <>
-                      <PlanList title="We do" items={narrative.we} checks />
-                      <PlanList title="You do" items={applicantTasks} />
+                      <PlanList title={t.weDo} items={narrative.we} checks />
+                      <PlanList title={t.youDo} items={applicantTasks} />
                     </>
                   ) : (
                     <>
-                      <PlanList title="You do" items={applicantTasks} />
-                      <PlanList title="We do" items={narrative.we} checks />
+                      <PlanList title={t.youDo} items={applicantTasks} />
+                      <PlanList title={t.weDo} items={narrative.we} checks />
                     </>
                   )}
                 </div>
@@ -163,8 +148,8 @@ export function ChoosePathCards({
                   <div className="portal-plan-filing-band">
                     <Send size={18} strokeWidth={1.8} aria-hidden />
                     <p>
-                      <strong>Your filing-ready packet, fully organized.</strong>{" "}
-                      You review and submit it directly to NYPD.
+                      <strong>{t.filingReadyPacket}</strong>{" "}
+                      {t.reviewAndSubmit}
                     </p>
                   </div>
                 )}
@@ -183,15 +168,15 @@ export function ChoosePathCards({
           <StickyActionBar
             key={`${selectedPackage.key}-${state.requested ? "success" : "active"}`}
             Icon={selectedNarrative.Icon}
-            title={state.requested ? "Request received" : selectedPackage.name}
+            title={state.requested ? t.requestReceived : selectedPackage.key === "full_concierge" ? t.concierge.replace(":", "") : t.selfGuided.replace(":", "")}
             detail={state.requested ? undefined : selectedPackage.priceLabel}
             subline={
               state.requested
-                ? "We'll email your invoice within one business day, then your path unlocks."
+                ? t.invoiceTiming
                 : nextLine
             }
             pending={pending}
-            pendingLabel="Starting…"
+            pendingLabel={t.starting}
             desktopLabel={desktopLabel}
             success={Boolean(state.requested)}
           />

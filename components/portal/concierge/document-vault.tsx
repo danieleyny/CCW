@@ -26,6 +26,7 @@ import { isUnenforced } from "@/lib/legal-status"
 import { RequirementCard, type ReqChecklistItem, type RequirementCardCtx } from "@/components/portal/requirement-card"
 import type { ReferenceProgress } from "@/components/portal/requirement-action"
 import { cn } from "@/lib/utils"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 type Filter = "all" | "needsYou" | "received" | "done"
 const FILTERS: Filter[] = ["needsYou", "received", "done", "all"]
@@ -101,6 +102,8 @@ export function DocumentVault({
   disclosures?: React.ReactNode
 }) {
   const [filter, setFilter] = useState<Filter>("needsYou")
+  const { locale, messages } = usePortalI18n()
+  const t = messages.concierge
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem(FILTER_KEY)
@@ -150,12 +153,31 @@ export function DocumentVault({
     .filter((group) => group.items.some((item) => bucketOf(item) === "needsYou"))
     .slice(0, 2)
     .map((group) => group.category.key)
+  const bundleCopy = {
+    upload: { eyebrow: t.uploadThese, title: t.yourDocuments, sub: t.uploadSub },
+    people: { eyebrow: t.tellUsWho, title: t.peopleBundle, sub: t.peopleSub },
+    sign: { eyebrow: t.readSign, title: t.prepareSign, sub: t.prepareSignSub },
+    confirm: { eyebrow: t.confirmBundle, title: t.feesSignoffs, sub: t.feesSub },
+    sponsor: { eyebrow: t.sponsorBundle, title: t.sponsorDocuments, sub: t.sponsorSub },
+  } as const
+  const categoryLabels: Record<string, string> = locale === "es" ? {
+    identity: "Identidad",
+    residence: "Residencia",
+    records: "Antecedentes y declaraciones",
+    credentials: "Credenciales",
+    training: "Capacitación",
+    people: "Personas",
+    prepared: "Formularios preparados",
+    conditional: "Requisitos adicionales",
+    sponsor: "Patrocinador",
+    admin: "Tarifas y confirmaciones",
+  } : {}
 
   if (applicable.length === 0) {
     return (
       <section className="concierge-vault-empty">
         <ShieldCheck className="size-5" aria-hidden />
-        <div><strong>Everything we need is in.</strong><p>Nothing for you to do right now.</p></div>
+        <div><strong>{t.nothingNeeded}</strong><p>{t.nothingNeededDetail}</p></div>
       </section>
     )
   }
@@ -164,16 +186,16 @@ export function DocumentVault({
     <section className="concierge-vault" aria-labelledby="documents-heading">
       <header className="concierge-vault-heading">
         <div>
-          <p className="portal-t-eyebrow text-brass-deep">Your document vault</p>
-          <h2 id="documents-heading" className="portal-title-font">Documents</h2>
+          <p className="portal-t-eyebrow text-brass-deep">{t.vaultEyebrow}</p>
+          <h2 id="documents-heading" className="portal-title-font">{t.vaultTitle}</h2>
         </div>
-        <div className="concierge-vault-filters" aria-label="Filter documents">
+        <div className="concierge-vault-filters" aria-label={t.filterDocuments}>
           {FILTERS.map((item) => (
             <FilterChip
               key={item}
               active={effectiveFilter === item}
               onClick={() => choose(item)}
-              label={{ needsYou: "Need you", received: "With us", done: "Done", all: "All" }[item]}
+              label={{ needsYou: t.needYou, received: t.withUs, done: t.done, all: t.all }[item]}
               count={item === "all" ? applicable.length : totals[item]}
             />
           ))}
@@ -181,26 +203,26 @@ export function DocumentVault({
       </header>
 
       {needsYouEmpty ? (
-        <p className="concierge-vault-caught-up"><Check className="size-4" aria-hidden /> Nothing needs you right now — showing every item.</p>
+        <p className="concierge-vault-caught-up"><Check className="size-4" aria-hidden /> {t.caughtUp}</p>
       ) : null}
 
       <div className="concierge-vault-help">
         <span aria-hidden><CircleHelp className="size-5" /></span>
         <div>
-          <strong>Not sure how to get or upload something?</strong>
-          <p>Tap <b>How</b> on any item for the instructions already approved for that requirement—or message your team anytime.</p>
+          <strong>{t.vaultHelpTitle}</strong>
+          <p>{t.vaultHelpDetail}</p>
         </div>
-        <small><Lock className="size-3.5" aria-hidden /> Encrypted · seen only by your team</small>
+        <small><Lock className="size-3.5" aria-hidden /> {t.encrypted}</small>
       </div>
 
-      <nav className="concierge-category-nav" aria-label="Document categories">
+      <nav className="concierge-category-nav" aria-label={t.documentCategories}>
         {groups.map((group) => {
           const Icon = SECTION_ICONS[group.category.key] ?? FilePenLine
           const done = group.items.filter((item) => bucketOf(item) === "done").length
           return (
             <a key={group.category.key} href={`#vault-${group.category.key}`}>
               <span><Icon className="size-[18px]" aria-hidden /></span>
-              <strong>{group.category.label}</strong>
+              <strong>{categoryLabels[group.category.key] ?? group.category.label}</strong>
               <small>{done}/{group.items.length}</small>
             </a>
           )
@@ -208,18 +230,18 @@ export function DocumentVault({
       </nav>
 
       <div className="concierge-mobile-contents">
-        <div><h3>What we need from you</h3><span>{totals.done} of {applicable.length} in</span></div>
-        <nav aria-label="Document sections">
+        <div><h3>{t.whatWeNeed}</h3><span>{totals.done} {t.of} {applicable.length} {t.in}</span></div>
+        <nav aria-label={t.documentCategories}>
           {visibleBundles.filter((bundle) => bundle.key !== "sponsor").map((bundle) => {
             const count = bundle.groups.reduce((sum, group) => sum + group.items.length, 0)
             return (
               <a key={bundle.key} href={`#bundle-${bundle.key}`}>
-                <span>{bundle.number}</span><small>{bundle.eyebrow}</small><strong>{count} items</strong>
+                <span>{bundle.number}</span><small>{bundleCopy[bundle.key].eyebrow}</small><strong>{count} {t.items}</strong>
               </a>
             )
           })}
         </nav>
-        <p><CircleHelp className="size-4" aria-hidden /> Tap <b>How</b> on anything for a step-by-step guide.</p>
+        <p><CircleHelp className="size-4" aria-hidden /> {t.stepByStepHint}</p>
       </div>
 
       <div className="concierge-bundles">
@@ -230,8 +252,8 @@ export function DocumentVault({
             <section key={bundle.key} id={`bundle-${bundle.key}`} className="concierge-bundle" data-bundle={bundle.key}>
               <header className="concierge-bundle-header">
                 <span className="concierge-bundle-number">{bundle.number}</span>
-                <div><small>{bundle.eyebrow}</small><h3>{bundle.title}</h3><p>{bundle.sub}</p></div>
-                <span className="concierge-bundle-count" aria-label={`${bundleDone} of ${bundleItems.length} in`}>
+                <div><small>{bundleCopy[bundle.key].eyebrow}</small><h3>{bundleCopy[bundle.key].title}</h3><p>{bundleCopy[bundle.key].sub}</p></div>
+                <span className="concierge-bundle-count" aria-label={`${bundleDone} ${t.of} ${bundleItems.length} ${t.in}`}>
                   <strong>{bundleDone}</strong>/{bundleItems.length}
                 </span>
               </header>
@@ -240,7 +262,7 @@ export function DocumentVault({
                   <VaultSection
                     key={group.category.key}
                     sectionKey={group.category.key}
-                    title={group.category.label}
+                    title={categoryLabels[group.category.key] ?? group.category.label}
                     items={group.items}
                     filter={effectiveFilter}
                     ctx={ctx}
@@ -254,7 +276,7 @@ export function DocumentVault({
                   <div className="concierge-vault-disclosures">{disclosures}</div>
                 ) : null}
                 {bundle.key === "confirm" ? (
-                  <p className="concierge-fee-note">NYPD fees you&apos;ll pay directly: <strong>{ctx.feeSummary.total}</strong> · never to us</p>
+                  <p className="concierge-fee-note">{interpolate(t.feeDirect, { amount: ctx.feeSummary.total })}</p>
                 ) : null}
               </div>
             </section>
@@ -287,6 +309,8 @@ function VaultSection({
   defaultOpen: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const { messages } = usePortalI18n()
+  const t = messages.concierge
   const visible = items.filter((item) => filter === "all" || bucketOf(item) === filter)
   const done = items.filter((item) => bucketOf(item) === "done").length
   const Icon = SECTION_ICONS[sectionKey] ?? FilePenLine
@@ -303,9 +327,9 @@ function VaultSection({
         aria-controls={`vault-panel-${sectionKey}`}
       >
         <span className="concierge-panel-icon"><Icon className="size-5" aria-hidden /></span>
-        <span className="concierge-panel-title"><h3>{title}</h3><small>{done} of {items.length} in</small></span>
+        <span className="concierge-panel-title"><h3>{title}</h3><small>{done} {t.of} {items.length} {t.in}</small></span>
         <span className="concierge-panel-progress" aria-hidden><span style={{ width: `${Math.round((done / items.length) * 100)}%` }} /></span>
-        <span className="concierge-panel-toggle">{open ? "Collapse" : "Open"}<ChevronDown className="size-4" aria-hidden /></span>
+        <span className="concierge-panel-toggle">{open ? t.collapse : t.open}<ChevronDown className="size-4" aria-hidden /></span>
       </button>
       {open ? (
         <ul id={`vault-panel-${sectionKey}`} className="concierge-vault-items">
@@ -317,12 +341,14 @@ function VaultSection({
 }
 
 function PeopleProgress({ references, household }: { references: ReferenceProgress | null; household: ReferenceProgress | null }) {
+  const { messages } = usePortalI18n()
+  const t = messages.concierge
   return (
     <div className="concierge-people-progress">
-      <div><Users className="size-4" aria-hidden /><strong>People we contact for you</strong></div>
-      {references ? <p><span>References</span><b>{references.notarizedCount}/{references.required} letters back</b></p> : null}
-      {household ? <p><span>Household affidavits</span><b>{household.notarizedCount}/{household.required} back</b></p> : null}
-      <Link href="/portal/people">Add or update names</Link>
+      <div><Users className="size-4" aria-hidden /><strong>{t.peopleContact}</strong></div>
+      {references ? <p><span>{t.references}</span><b>{references.notarizedCount}/{references.required} {t.lettersBack}</b></p> : null}
+      {household ? <p><span>{t.household}</span><b>{household.notarizedCount}/{household.required} {t.affidavitsBack}</b></p> : null}
+      <Link href="/portal/people">{t.addUpdateNames}</Link>
     </div>
   )
 }

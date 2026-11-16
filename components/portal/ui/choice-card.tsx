@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { Check, type LucideIcon } from "lucide-react"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export type ChoiceCardFact = {
   label: string
@@ -24,7 +25,7 @@ export function ChoiceCard({
   onChange,
   tone = "light",
   badge,
-  currentLabel = "Current",
+  currentLabel,
   className,
   children,
 }: {
@@ -46,6 +47,7 @@ export function ChoiceCard({
   className?: string
   children?: ReactNode
 }) {
+  const { messages } = usePortalI18n()
   const descriptionId = `${id}-description`
 
   return (
@@ -75,7 +77,7 @@ export function ChoiceCard({
         </span>
         <span className="portal-choice-tags">
           {badge && <span className="portal-choice-badge">{badge}</span>}
-          {current && <span className="portal-choice-current">{currentLabel}</span>}
+          {current && <span className="portal-choice-current">{currentLabel ?? messages.setup.current}</span>}
         </span>
         <span className="portal-choice-radio" aria-hidden>
           <Check size={15} strokeWidth={2.2} />

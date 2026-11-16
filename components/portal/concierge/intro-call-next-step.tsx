@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { CalendarDays, Check, MessageCircle, Phone, ShieldCheck, Sparkles } from "lucide-react"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export function IntroCallNextStep({
   children,
@@ -18,6 +19,8 @@ export function IntroCallNextStep({
 }) {
   const root = useRef<HTMLElement>(null)
   const [active, setActive] = useState(true)
+  const { locale, messages } = usePortalI18n()
+  const t = messages.concierge
 
   useEffect(() => {
     const element = root.current
@@ -39,13 +42,13 @@ export function IntroCallNextStep({
       id="next-step"
       className="intro-call-next-step scroll-mt-24"
       data-active={active ? "true" : "false"}
-      aria-label="Your next step"
+      aria-label={t.nextStep}
     >
       <div className="intro-call-copy">
-        <p className="intro-call-eyebrow"><Sparkles aria-hidden /> Your next step</p>
+        <p className="intro-call-eyebrow"><Sparkles aria-hidden /> {t.nextStep}</p>
         <div className="intro-call-booking">{children}</div>
         <div className="intro-call-then">
-          <span>Then</span>
+          <span>{t.then}</span>
           <strong>{thenLabel}</strong>
           {hasProgress ? <b>{thenCaptured}/{thenTotal}</b> : null}
           {hasProgress ? <i aria-hidden><span style={{ width: `${progress}%` }} /></i> : null}
@@ -61,12 +64,12 @@ export function IntroCallNextStep({
 
         <div className="intro-call-calendar">
           <span className="intro-call-calendar-pins"><i /><i /></span>
-          <header><CalendarDays /> <b>Intro call</b><span>30 min</span></header>
-          <div className="intro-call-calendar-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span></div>
+          <header><CalendarDays /> <b>{t.call}</b><span>{t.minutes}</span></header>
+          <div className="intro-call-calendar-days"><span>{locale === "es" ? "L" : "M"}</span><span>{locale === "es" ? "M" : "T"}</span><span>{locale === "es" ? "X" : "W"}</span><span>{locale === "es" ? "J" : "T"}</span><span>{locale === "es" ? "V" : "F"}</span></div>
           <div className="intro-call-calendar-slots">
             <i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
           </div>
-          <div className="intro-call-sent"><Check /> Request sent</div>
+          <div className="intro-call-sent"><Check /> {t.requestSent}</div>
         </div>
 
         <div className="intro-call-phone">
@@ -78,13 +81,13 @@ export function IntroCallNextStep({
 
         <div className="intro-call-agent-pill">
           <span>GL</span>
-          <p><small>Your concierge team</small><b>{agentFirst ? `${agentFirst} is here to help` : "Here to help"}</b></p>
+          <p><small>{t.teamLabel}</small><b>{agentFirst ? interpolate(t.hereToHelp, { name: agentFirst }) : interpolate(t.hereToHelp, { name: "GL" })}</b></p>
           <i />
         </div>
 
-        <span className="intro-call-chip intro-call-chip-one"><ShieldCheck /> Case-ready</span>
-        <span className="intro-call-chip intro-call-chip-two"><MessageCircle /> Real answers</span>
-        <span className="intro-call-chip intro-call-chip-three"><Check /> Confirmed</span>
+        <span className="intro-call-chip intro-call-chip-one"><ShieldCheck /> {t.caseReady}</span>
+        <span className="intro-call-chip intro-call-chip-two"><MessageCircle /> {t.realAnswers}</span>
+        <span className="intro-call-chip intro-call-chip-three"><Check /> {t.confirmed}</span>
         <Sparkles className="intro-call-spark intro-call-spark-one" />
         <Sparkles className="intro-call-spark intro-call-spark-two" />
       </div>

@@ -7,17 +7,18 @@ import {
 import { PortalPageHeader } from "@/components/portal/ui/portal-page-header"
 import { SetupStepper } from "@/components/portal/ui/setup-stepper"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
+import { getLocale, getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Choose your license path" }
 
 export default async function LicensePathPage() {
-  const myCase = await getMyCase()
+  const [myCase, locale, t] = await Promise.all([getMyCase(), getLocale(), getMessages()])
   if (!myCase) {
     return (
       <div className="portal-no-case">
-        <h1 className="portal-t-card">Almost there.</h1>
+        <h1 className="portal-t-card">{t.common.almostThere}</h1>
         <p className="mt-2 text-sm text-text-mid">
-          Your case isn&apos;t set up yet. Please sign out and sign in again, or contact us for help.
+          {t.common.noCase}
         </p>
       </div>
     )
@@ -27,8 +28,8 @@ export default async function LicensePathPage() {
     <div className="portal-license-page">
       <ScrollToTop />
       <PortalPageHeader
-        title="What should your license let you do?"
-        lede="This sets your training, references and checklist."
+        title={t.licensePath.title}
+        lede={t.licensePath.lede}
         stepper={<SetupStepper current={1} />}
       />
 
@@ -40,6 +41,7 @@ export default async function LicensePathPage() {
           review and submit your own application. Not sure which fits? Ask your concierge before
           choosing.
         </p>
+        {locale !== "en" ? <p className="portal-legal-note">{t.common.legalEnglishNotice}</p> : null}
       </aside>
     </div>
   )

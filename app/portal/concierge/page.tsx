@@ -29,12 +29,13 @@ import { MessageThread, type MessageRow } from "@/components/shared/message-thre
 import { actionFor } from "@/lib/requirements/actions"
 import { isDisclosureItem } from "@/lib/requirements/sections"
 import { isUnenforced } from "@/lib/legal-status"
-import { getMessages } from "@/lib/i18n"
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
 
 export const metadata = { title: "Your concierge" }
 
 export default async function ConciergeHome() {
-  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
+  const [myCase, t, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])
   if (!myCase) redirect("/portal")
 
   const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
@@ -136,6 +137,18 @@ export default async function ConciergeHome() {
   }
 
   const firstDataAsk = dataAsks.find((ask) => ask.captured < ask.total)
+  const firstDataAskLabel = firstDataAsk
+    ? locale === "es"
+      ? {
+          details: "sus datos",
+          residence: "dónde ha vivido",
+          employment: "dónde ha trabajado",
+          safeguard: "la seguridad de su arma",
+          lon: "sus declaraciones escritas",
+          confidentiality: "confidencialidad",
+        }[firstDataAsk.key] ?? firstDataAsk.label
+      : firstDataAsk.label
+    : null
   const firstRequirement = view.items.find(
     (item) =>
       item.status !== "na" &&
@@ -151,16 +164,16 @@ export default async function ConciergeHome() {
   const nextStep = !callBooked
     ? { title: t.concierge.bookIntroTitle, label: t.concierge.book, href: "#next-step" }
     : firstDataAsk
-      ? { title: `Finish ${firstDataAsk.label}`, label: "Continue", href: firstDataAsk.href }
+      ? { title: interpolate(t.concierge.finish, { label: firstDataAskLabel ?? firstDataAsk.label }), label: t.setup.continue, href: firstDataAsk.href }
       : firstRequirement
         ? {
             title: requirementAction?.customerTitle ?? firstRequirement.title,
-            label: requirementAction?.actionLabel ?? "Open item",
+            label: requirementAction?.actionLabel ?? t.concierge.openItem,
             href: `#${firstRequirement.reqCode}`,
           }
         : filingReady
-          ? { title: "Review and approve your packet", label: "Review", href: "#review" }
-          : { title: "We’re on it", label: "View progress", href: "#progress" }
+          ? { title: t.concierge.reviewPacketTitle, label: t.concierge.review, href: "#review" }
+          : { title: t.concierge.workingTitle, label: t.concierge.viewProgress, href: "#progress" }
 
   return (
     <div className="concierge-page">
@@ -197,10 +210,10 @@ export default async function ConciergeHome() {
           agentFirst={agentFirst}
           thenLabel={
             firstDataAsk
-              ? `Finish ${firstDataAsk.label}`
+              ? interpolate(t.concierge.finish, { label: firstDataAskLabel ?? firstDataAsk.label })
               : firstRequirement
                 ? requirementAction?.customerTitle ?? firstRequirement.title
-                : "We continue preparing your packet"
+                : t.concierge.continuePreparing
           }
           thenCaptured={firstDataAsk?.captured}
           thenTotal={firstDataAsk?.total}
@@ -215,35 +228,35 @@ export default async function ConciergeHome() {
         </IntroCallNextStep>
       ) : firstDataAsk ? (
         <NextStepCard
-          title={`Finish ${firstDataAsk.label}`}
-          description="Add the remaining details once; we’ll reuse them across the documents we prepare."
-          actionLabel="Open your details"
+          title={interpolate(t.concierge.finish, { label: firstDataAskLabel ?? firstDataAsk.label })}
+          description={t.concierge.finishDetails}
+          actionLabel={t.concierge.openDetails}
           href={firstDataAsk.href}
-          then={firstRequirement ? requirementAction?.customerTitle ?? firstRequirement.title : "we continue preparing your packet"}
+          then={firstRequirement ? requirementAction?.customerTitle ?? firstRequirement.title : t.concierge.continuePreparing}
           eyebrow={t.concierge.nextStep}
         />
       ) : firstRequirement ? (
         <NextStepCard
           title={requirementAction?.customerTitle ?? firstRequirement.title}
-          description="This is the first item that still needs you. Your concierge team will handle the follow-through."
-          actionLabel={requirementAction?.actionLabel ?? "Open item"}
+          description={t.concierge.firstItemDetails}
+          actionLabel={requirementAction?.actionLabel ?? t.concierge.openItem}
           href={`#${firstRequirement.reqCode}`}
-          then="we review what you send and move to the next item"
+          then={t.concierge.teamFollowThrough}
           eyebrow={t.concierge.nextStep}
         />
       ) : filingReady ? (
         <NextStepCard
-          title="Review and submit your packet"
-          description="Your packet is assembled and quality-checked. Review it, then submit your own application."
-          actionLabel="Review my packet"
+          title={t.concierge.reviewPacketTitle}
+          description={t.concierge.reviewPacketDescription}
+          actionLabel={t.concierge.reviewMyPacket}
           href="#review"
           eyebrow={t.concierge.nextStep}
         />
       ) : (
         <NextStepCard
-          title="We’re on it"
-          description="Your team is working through the current case milestone. Nothing new is required from you right now."
-          actionLabel="See case progress"
+          title={t.concierge.workingTitle}
+          description={t.concierge.workingDescription}
+          actionLabel={t.concierge.seeProgress}
           href="#progress"
           eyebrow={t.concierge.nextStep}
         />
@@ -279,9 +292,9 @@ export default async function ConciergeHome() {
           <section id="messages" className="concierge-messages scroll-mt-24" aria-labelledby="messages-title">
             <header className="concierge-section-heading">
               <div>
-                <p className="portal-t-eyebrow text-brass-deep">Your team</p>
-                <h2 id="messages-title" className="portal-title-font">Message your concierge</h2>
-                <p>Ask a question or send context without leaving your case.</p>
+                <p className="portal-t-eyebrow text-brass-deep">{t.concierge.yourTeam}</p>
+                <h2 id="messages-title" className="portal-title-font">{t.concierge.messageConcierge}</h2>
+                <p>{t.concierge.messageDescription}</p>
               </div>
             </header>
             <div className="concierge-message-thread">
@@ -289,57 +302,57 @@ export default async function ConciergeHome() {
                 caseId={myCase.id}
                 messages={messages}
                 send={sendMessage}
-                placeholder="Ask your concierge anything…"
+                placeholder={t.concierge.askAnything}
               />
             </div>
           </section>
         </div>
 
-        <aside className="concierge-rail" aria-label="Concierge case summary">
+        <aside className="concierge-rail" aria-label={t.concierge.yourTeam}>
           <section className="concierge-rail-card concierge-team-card">
             <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>
-            <div><small>Your concierge team</small><strong>{agentName ?? "Being assigned"}</strong><p>{agentName ? "Your named case contact" : "Usually within one business day"}</p></div>
-            <a href="#messages"><MessageCircle className="size-4" aria-hidden /> Message your team</a>
-            <footer>Routine follow-ups · unlimited support</footer>
+            <div><small>{t.concierge.teamLabel}</small><strong>{agentName ?? t.concierge.beingAssigned}</strong><p>{agentName ? t.concierge.namedContact : t.concierge.assignedSoon}</p></div>
+            <a href="#messages"><MessageCircle className="size-4" aria-hidden /> {t.concierge.messageTeam}</a>
+            <footer>{t.concierge.unlimitedSupport}</footer>
           </section>
 
           <section className="concierge-rail-card concierge-people-card">
-            <header><Users className="size-4" aria-hidden /><strong>People we contact for you</strong></header>
+            <header><Users className="size-4" aria-hidden /><strong>{t.concierge.peopleContact}</strong></header>
             {view.referenceProgress ? (
-              <div><span aria-label={`${view.referenceProgress.notarizedCount} of ${view.referenceProgress.required} references back`}><b>{view.referenceProgress.notarizedCount}</b>/{view.referenceProgress.required}</span><p>References</p></div>
+              <div><span aria-label={`${view.referenceProgress.notarizedCount} ${t.concierge.of} ${view.referenceProgress.required} ${t.concierge.references}`}><b>{view.referenceProgress.notarizedCount}</b>/{view.referenceProgress.required}</span><p>{t.concierge.references}</p></div>
             ) : null}
             {view.cohabitantProgress ? (
-              <div><span aria-label={`${view.cohabitantProgress.notarizedCount} of ${view.cohabitantProgress.required} household affidavits back`}><b>{view.cohabitantProgress.notarizedCount}</b>/{view.cohabitantProgress.required}</span><p>Household</p></div>
+              <div><span aria-label={`${view.cohabitantProgress.notarizedCount} ${t.concierge.of} ${view.cohabitantProgress.required} ${t.concierge.household}`}><b>{view.cohabitantProgress.notarizedCount}</b>/{view.cohabitantProgress.required}</span><p>{t.concierge.household}</p></div>
             ) : null}
-            <Link href="/portal/people">Add names or check status</Link>
+            <Link href="/portal/people">{t.concierge.addNames}</Link>
           </section>
 
           <section className="concierge-rail-card concierge-finish-card" data-ready={filingReady}>
             {filingReady ? <FileCheck2 className="size-5" aria-hidden /> : <Lock className="size-5" aria-hidden />}
-            <small>The finish line</small>
-            <h2>Review &amp; submit</h2>
-            <p>When your packet is ready, you approve it here, then submit your own application with our guidance.</p>
-            {filingReady ? <a href="#review">Review my packet</a> : <span>Unlocks when your packet is assembled</span>}
+            <small>{t.concierge.finishLine}</small>
+            <h2>{t.concierge.reviewSubmit}</h2>
+            <p>{t.concierge.finishLineDescription}</p>
+            {filingReady ? <a href="#review">{t.concierge.reviewMyPacket}</a> : <span>{t.concierge.unlocksAssembled}</span>}
           </section>
         </aside>
       </div>
 
       <section className="concierge-mobile-finish" data-ready={filingReady}>
         {filingReady ? <FileCheck2 className="size-5" aria-hidden /> : <Lock className="size-5" aria-hidden />}
-        <small>The finish line</small>
-        <h2>Review &amp; submit</h2>
+        <small>{t.concierge.finishLine}</small>
+        <h2>{t.concierge.reviewSubmit}</h2>
         <p>
           {filingReady
-            ? "Your packet is ready for your review. You submit your own NYPD application with our guidance."
-            : "Unlocks when your packet is assembled and quality-checked."}
+            ? t.concierge.readyReview
+            : t.concierge.mobileUnlocks}
         </p>
-        {filingReady ? <a href="#review">Review my packet</a> : null}
+        {filingReady ? <a href="#review">{t.concierge.reviewMyPacket}</a> : null}
       </section>
 
       <section className="concierge-mobile-team">
         <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>
-        <div><small>Your concierge team</small><strong>{agentName ?? "Being assigned · unlimited support"}</strong></div>
-        <a href="#messages" aria-label="Message your concierge"><MessageCircle className="size-5" /></a>
+        <div><small>{t.concierge.teamLabel}</small><strong>{agentName ?? `${t.concierge.beingAssigned} · ${t.concierge.unlimitedSupport}`}</strong></div>
+        <a href="#messages" aria-label={t.concierge.messageConcierge}><MessageCircle className="size-5" /></a>
       </section>
     </div>
   )

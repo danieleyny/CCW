@@ -1,7 +1,7 @@
 import { Check, Landmark, Video } from "lucide-react"
 import { deriveMilestones, type ConciergeCaseState } from "@/config/concierge-milestones"
-import { formatDateTime } from "@/lib/format"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 function ProgressRing({ value, total, label }: { value: number; total: number; label: string }) {
   const safeTotal = Math.max(total, 1)
@@ -67,10 +67,23 @@ export function ControlTower({
     of: string
   }
 }) {
+  const { locale, messages } = usePortalI18n()
+  const t = messages.concierge
   const milestones = deriveMilestones(state)
-  const progressIndex = milestones.findIndex((milestone) => milestone.status === "in_progress")
-  const currentIndex = progressIndex === -1 ? milestones.length - 1 : progressIndex
-  const current = milestones[currentIndex]
+  const milestoneCopy = {
+    documents: [t.milestoneDocuments, t.milestoneDocumentsDetail],
+    worksheet: [t.milestoneWorksheet, t.milestoneWorksheetDetail],
+    references: [t.milestoneReferences, t.milestoneReferencesDetail],
+    packet: [t.milestonePacket, t.milestonePacketDetail],
+    review: [t.milestoneReview, t.milestoneReviewDetail],
+  } as const
+  const localizedMilestones = milestones.map((milestone) => {
+    const localized = milestoneCopy[milestone.key as keyof typeof milestoneCopy]
+    return localized ? { ...milestone, label: localized[0], detail: localized[1] } : milestone
+  })
+  const progressIndex = localizedMilestones.findIndex((milestone) => milestone.status === "in_progress")
+  const currentIndex = progressIndex === -1 ? localizedMilestones.length - 1 : progressIndex
+  const current = localizedMilestones[currentIndex]
 
   return (
     <>
@@ -80,14 +93,18 @@ export function ControlTower({
             <p className="concierge-hero-eyebrow">{copy.eyebrow}</p>
             <h1 className="concierge-hero-title">{copy.welcome}, {firstName}.</h1>
             <p className="concierge-hero-lede">
-              You&apos;re on the done-for-you path. We prepare and quality-check everything — you review,
-              approve, and submit your own NYPD application with our guidance.
-              {agentFirst ? <strong> {agentFirst} is your concierge.</strong> : null}
+              {t.heroLede}
+              {agentFirst ? <strong> {interpolate(t.conciergeNamed, { name: agentFirst })}</strong> : null}
             </p>
             {introCall?.scheduledAt ? (
               <p className="concierge-hero-call">
                 <Check className="size-4" aria-hidden />
-                {copy.introCall} · {formatDateTime(introCall.scheduledAt)}
+                {copy.introCall} · {new Date(introCall.scheduledAt).toLocaleString(locale === "es" ? "es-US" : "en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
                 {introCall.joinUrl ? (
                   <a href={introCall.joinUrl} target="_blank" rel="noopener noreferrer">
                     <Video className="size-3.5" aria-hidden /> {copy.join}
@@ -110,7 +127,7 @@ export function ControlTower({
         <div className="concierge-milestones">
           <p className="concierge-milestones-label">{copy.workInProgress}</p>
           <ol className="concierge-milestone-track">
-            {milestones.map((milestone, index) => (
+            {localizedMilestones.map((milestone, index) => (
               <li key={milestone.key} data-status={milestone.status}>
                 <span className="concierge-milestone-dot" aria-hidden>
                   {milestone.status === "done" ? <Check className="size-4" /> : index + 1}
@@ -125,12 +142,12 @@ export function ControlTower({
 
           <div className="concierge-milestone-mobile" aria-label={`${copy.step} ${currentIndex + 1} ${copy.of} 5`}>
             <div className="concierge-milestone-segments" aria-hidden>
-              {milestones.map((milestone) => (
+              {localizedMilestones.map((milestone) => (
                 <span key={milestone.key} data-status={milestone.status} />
               ))}
             </div>
             <p>
-              {copy.step} {currentIndex + 1} {copy.of} {milestones.length} · <strong>{current.label}</strong>
+              {copy.step} {currentIndex + 1} {copy.of} {localizedMilestones.length} · <strong>{current.label}</strong>
             </p>
             <small>{current.detail}</small>
           </div>
@@ -140,8 +157,7 @@ export function ControlTower({
       {nypdControlled ? (
         <p className="concierge-info-bar">
           <Landmark className="size-4" aria-hidden />
-          Your application is with the NYPD. This phase runs on the NYPD&apos;s timeline; we&apos;ll keep
-          watch and let you know when its status changes.
+          {t.nypdTimeline}
         </p>
       ) : null}
     </>

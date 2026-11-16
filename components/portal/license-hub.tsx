@@ -22,7 +22,9 @@ import { REPORT_KINDS, nextEligiblePurchaseOn } from "@/lib/license"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { formatDateTime, daysUntil } from "@/lib/format"
+import { daysUntil } from "@/lib/format"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import type { Locale } from "@/config/i18n"
 
 export interface AuthRow {
   id: string
@@ -49,13 +51,30 @@ function hoursUntil(iso: string | null) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 3_600_000)
 }
 
-function formatCalendarDate(value: string) {
-  return new Date(`${value}T00:00:00Z`).toLocaleDateString("en-US", {
+function formatCalendarDate(value: string, locale: Locale) {
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString(locale === "es" ? "es-US" : "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
     timeZone: "UTC",
   })
+}
+
+function formatInspectionDateTime(value: string | null, locale: Locale) {
+  if (!value) return "—"
+  return new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value))
+}
+
+function formatReportDateTime(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value))
 }
 
 function StatusPill({ kind, children }: { kind: "gold" | "green" | "red" | "grey"; children: ReactNode }) {
@@ -110,6 +129,8 @@ function AuthorizationBlock({
   onCancelEdit: () => void
   start: TransitionStartFunction
 }) {
+  const { locale, messages } = usePortalI18n()
+  const t = messages.license
   const authDaysLeft = daysUntil(authorization.expiresOn)
   const expired = !authorization.acquiredOn && authDaysLeft != null && authDaysLeft < 0
   const inspectionHoursLeft = hoursUntil(authorization.inspectionDue)
@@ -120,14 +141,14 @@ function AuthorizationBlock({
     inspectionHoursLeft < 0
 
   const status = authorization.inspectedOn
-    ? <StatusPill kind="green">Inspected <Check /></StatusPill>
+    ? <StatusPill kind="green">{t.inspected} <Check /></StatusPill>
     : inspectionOverdue
-      ? <StatusPill kind="red">Inspection overdue</StatusPill>
+      ? <StatusPill kind="red">{t.inspectionOverdue}</StatusPill>
       : authorization.acquiredOn
-        ? <StatusPill kind="green">Bought</StatusPill>
+        ? <StatusPill kind="green">{t.bought}</StatusPill>
         : expired
-          ? <StatusPill kind="grey">Expired</StatusPill>
-          : <StatusPill kind="gold">Window open</StatusPill>
+          ? <StatusPill kind="grey">{t.windowExpired}</StatusPill>
+          : <StatusPill kind="gold">{t.windowOpen}</StatusPill>
 
   const purchaseState: RingState = authorization.acquiredOn ? "done" : expired ? "overdue" : "running"
   const inspectionState: RingState = authorization.inspectedOn
@@ -149,7 +170,7 @@ function AuthorizationBlock({
       fd.set("authId", authorization.id)
       const res = await logPurchase(fd)
       if (res.error) toast.error(res.error)
-      else toast.success("Purchase logged — the 72-hour inspection clock is running.")
+      else toast.success(t.purchaseSaved)
     })
 
   return (
@@ -157,8 +178,8 @@ function AuthorizationBlock({
       <div className="license-v2-authorization-top">
         <span className="license-v2-auth-icon"><ScanLine /></span>
         <div>
-          <h3>{authorization.handgunDesc || "Handgun not entered yet"}</h3>
-          <p>Authorized {formatCalendarDate(authorization.authorizedOn)}</p>
+          <h3>{authorization.handgunDesc || t.handgunMissing}</h3>
+          <p>{interpolate(t.authorized, { date: formatCalendarDate(authorization.authorizedOn, locale) })}</p>
         </div>
         {status}
       </div>
@@ -169,36 +190,36 @@ function AuthorizationBlock({
           progress={purchaseProgress}
           value={String(Math.max(0, authDaysLeft ?? 0))}
           ariaLabel={authorization.acquiredOn
-            ? `Purchase authorization used on ${formatCalendarDate(authorization.acquiredOn)}`
+            ? interpolate(t.usedOn, { date: formatCalendarDate(authorization.acquiredOn, locale) })
             : expired
-              ? "Purchase window expired"
-              : `${Math.max(0, authDaysLeft ?? 0)} days left in purchase window`}
-          title="Purchase window"
+              ? t.windowExpired
+              : interpolate(t.daysPurchaseWindow, { days: Math.max(0, authDaysLeft ?? 0) })}
+          title={t.purchaseWindow}
           detail={authorization.acquiredOn
-            ? <>Used · bought {formatCalendarDate(authorization.acquiredOn)}</>
+            ? <>{interpolate(t.usedBought, { date: formatCalendarDate(authorization.acquiredOn, locale) })}</>
             : expired
-              ? <>Overdue — contact your concierge</>
-              : <>{Math.max(0, authDaysLeft ?? 0)} days left · until {formatCalendarDate(authorization.expiresOn)}</>}
+              ? <>{t.overdueContact}</>
+              : <>{interpolate(t.daysLeftUntil, { days: Math.max(0, authDaysLeft ?? 0), date: formatCalendarDate(authorization.expiresOn, locale) })}</>}
         />
         <ClockCard
           state={inspectionState}
           progress={inspectionProgress}
           value={authorization.acquiredOn ? String(Math.max(0, inspectionHoursLeft ?? 0)) : "—"}
           ariaLabel={authorization.inspectedOn
-            ? `Inspected ${formatCalendarDate(authorization.inspectedOn)}`
+            ? interpolate(t.inspectedOn, { date: formatCalendarDate(authorization.inspectedOn, locale) })
             : inspectionOverdue
-              ? "Handgun inspection overdue"
+              ? t.inspectionOverdue
               : authorization.acquiredOn
-                ? `${Math.max(0, inspectionHoursLeft ?? 0)} hours left to present for inspection`
-                : "Inspection clock starts after purchase"}
-          title="Inspection"
+                ? interpolate(t.hoursInspection, { hours: Math.max(0, inspectionHoursLeft ?? 0) })
+                : t.inspectionClockStarts}
+          title={t.inspection}
           detail={authorization.inspectedOn
-            ? <>Inspected {formatCalendarDate(authorization.inspectedOn)}</>
+            ? <>{interpolate(t.inspectedOn, { date: formatCalendarDate(authorization.inspectedOn, locale) })}</>
             : inspectionOverdue
-              ? <>Overdue — contact your concierge</>
+              ? <>{t.overdueContact}</>
               : authorization.acquiredOn
-                ? <>Present it by {formatDateTime(authorization.inspectionDue)}</>
-                : <>Starts after purchase</>}
+                ? <>{interpolate(t.presentBy, { date: formatInspectionDateTime(authorization.inspectionDue, locale) })}</>
+                : <>{t.startsAfterPurchase}</>}
         />
       </div>
 
@@ -209,9 +230,9 @@ function AuthorizationBlock({
             name="acquiredOn"
             required
             className="license-v2-date-input"
-            aria-label="Purchase date"
+            aria-label={t.purchaseDate}
           />
-          <Button type="submit" variant="gold" disabled={pending}>Mark bought</Button>
+          <Button type="submit" variant="gold" disabled={pending}>{t.markBought}</Button>
         </form>
       ) : null}
 
@@ -224,32 +245,32 @@ function AuthorizationBlock({
                 fd.set("authId", authorization.id)
                 const res = await markInspected(fd)
                 if (res.error) toast.error(res.error)
-                else toast.success("Inspection recorded.")
+                else toast.success(t.inspectionSaved)
               })
             }
           >
             <Button type="submit" variant="gold" disabled={pending}>
-              <BadgeCheck /> Mark inspected
+              <BadgeCheck /> {t.markInspected}
             </Button>
           </form>
-          <Button type="button" variant="outline" onClick={onEdit}><Pencil /> Edit</Button>
+          <Button type="button" variant="outline" onClick={onEdit}><Pencil /> {t.edit}</Button>
         </div>
       ) : null}
 
       {authorization.inspectedOn ? (
         <div className="license-v2-auth-actions">
-          <Button type="button" variant="outline" onClick={onEdit}><Pencil /> Edit</Button>
+          <Button type="button" variant="outline" onClick={onEdit}><Pencil /> {t.edit}</Button>
         </div>
       ) : null}
 
       {editing && authorization.acquiredOn ? (
         <form className="license-v2-edit-form" action={savePurchase}>
           <label>
-            <span>Purchase date</span>
+            <span>{t.purchaseDate}</span>
             <Input type="date" name="acquiredOn" defaultValue={authorization.acquiredOn} required />
           </label>
-          <Button type="submit" variant="gold" disabled={pending}>Save purchase date</Button>
-          <Button type="button" variant="ghost" onClick={onCancelEdit}>Cancel</Button>
+          <Button type="submit" variant="gold" disabled={pending}>{t.savePurchaseDate}</Button>
+          <Button type="button" variant="ghost" onClick={onCancelEdit}>{t.cancel}</Button>
         </form>
       ) : null}
     </li>
@@ -265,6 +286,8 @@ export function LicenseHub({
   reports: ReportRow[]
   showAuthorizations: boolean
 }) {
+  const { locale, messages } = usePortalI18n()
+  const t = messages.license
   const [pending, start] = useTransition()
   const [showAuthForm, setShowAuthForm] = useState(false)
   const [editingAuthId, setEditingAuthId] = useState<string | null>(null)
@@ -289,11 +312,12 @@ export function LicenseHub({
           <div className="license-v2-section-header">
             <span className="license-v2-section-icon"><CircleDot /></span>
             <div>
-              <h2 id="license-authorizations-title">Purchase authorizations</h2>
-              <p>Valid 30 days · present the handgun for inspection within 72 hours of buying.</p>
+              <h2 id="license-authorizations-title">{t.purchaseAuthorizations}</h2>
+              <p>{messages.legal.purchaseAuthorizationRule}</p>
+              {locale !== "en" ? <small>{messages.common.legalEnglishNotice}</small> : null}
             </div>
             <span className={`license-v2-eligibility${eligibleNow ? " is-eligible" : " is-waiting"}`}>
-              {eligibleNow ? <><Check /> Eligible · 1 per 90 days</> : <>Next purchase {formatCalendarDate(nextEligible!)}</>}
+              {eligibleNow ? <><Check /> {t.eligible}</> : <>{interpolate(t.nextPurchase, { date: formatCalendarDate(nextEligible!, locale) })}</>}
             </span>
           </div>
 
@@ -312,7 +336,7 @@ export function LicenseHub({
             {auths.length === 0 ? (
               <li className="license-v2-auth-empty">
                 <Clock3 />
-                <p><strong>No authorizations yet</strong> — log one when the License Division issues it, and we&apos;ll keep the clocks.</p>
+                <p><strong>{t.noAuthorizations}</strong> — {t.noAuthorizationDetail}</p>
               </li>
             ) : null}
           </ul>
@@ -326,25 +350,25 @@ export function LicenseHub({
                   if (res.error) toast.error(res.error)
                   else {
                     setShowAuthForm(false)
-                    toast.success("Authorization logged — valid 30 days.")
+                    toast.success(t.authorizationSaved)
                   }
                 })
               }
             >
               <label>
-                <span>Authorization date</span>
-                <Input type="date" name="authorizedOn" required aria-label="Authorization date" />
+                <span>{t.authorizationDate}</span>
+                <Input type="date" name="authorizedOn" required aria-label={t.authorizationDate} />
               </label>
               <label>
-                <span>Handgun</span>
-                <Input name="handgunDesc" placeholder="Make/model (optional)" />
+                <span>{t.handgun}</span>
+                <Input name="handgunDesc" placeholder={t.handgunOptional} />
               </label>
-              <Button type="submit" variant="gold" disabled={pending}>Save authorization</Button>
-              <Button type="button" variant="ghost" onClick={() => setShowAuthForm(false)}>Cancel</Button>
+              <Button type="submit" variant="gold" disabled={pending}>{t.saveAuthorization}</Button>
+              <Button type="button" variant="ghost" onClick={() => setShowAuthForm(false)}>{t.cancel}</Button>
             </form>
           ) : (
             <Button variant="outline" className="license-v2-log-auth" onClick={() => setShowAuthForm(true)}>
-              <Plus /> Log a new authorization
+              <Plus /> {t.logNewAuthorization}
             </Button>
           )}
         </section>
@@ -354,17 +378,15 @@ export function LicenseHub({
         <div className="license-v2-section-header">
           <span className="license-v2-section-icon is-amber"><ShieldQuestion /></span>
           <div>
-            <h2 id="license-report-title">Something changed? Report it.</h2>
-            <p>
-              License holders must promptly report certain changes (38 RCNY §5-24). Filing here records it,
-              alerts your consultant, and we walk you through the NYPD step. When in doubt, report — candor protects your license.
-            </p>
+            <h2 id="license-report-title">{t.reportTitle}</h2>
+            <p>{messages.legal.reportChangesRule}</p>
+            {locale !== "en" ? <small>{messages.common.legalEnglishNotice}</small> : null}
           </div>
         </div>
 
         {reportDone ? (
           <p className="license-v2-report-done" role="status">
-            <CheckCircle2 /> Report filed — your consultant will follow up with the exact NYPD reporting step.
+            <CheckCircle2 /> {t.reportFollowUp}
           </p>
         ) : (
           <form
@@ -375,13 +397,13 @@ export function LicenseHub({
                 if (res.error) toast.error(res.error)
                 else {
                   setReportDone(true)
-                  toast.success("Report filed.")
+                  toast.success(t.reportFiled)
                 }
               })
             }
           >
             <fieldset>
-              <legend>What changed?</legend>
+              <legend>{t.whatChanged}</legend>
               <div className="license-v2-report-primary">
                 {REPORT_KINDS.map((kind, index) => (
                   <label
@@ -406,7 +428,7 @@ export function LicenseHub({
                 aria-expanded={showMoreReportKinds}
                 onClick={() => setShowMoreReportKinds((open) => !open)}
               >
-                5 more reasons <ChevronDown />
+                {interpolate(t.moreReasons, { count: 5 })} <ChevronDown />
               </button>
             </fieldset>
 
@@ -414,17 +436,17 @@ export function LicenseHub({
               {selectedReport ? (
                 <p className="license-v2-report-hint"><Sparkles /> {selectedReport.hint}</p>
               ) : (
-                <p className="license-v2-report-hint"><Sparkles /> Choose the change that best matches what happened.</p>
+                <p className="license-v2-report-hint"><Sparkles /> {t.chooseChange}</p>
               )}
               <Textarea
                 name="details"
                 value={reportDetails}
                 onChange={(event) => setReportDetails(event.target.value)}
                 rows={4}
-                placeholder="Describe what happened / what changed, with dates."
+                placeholder={t.describeChange}
               />
               <Button type="submit" disabled={pending || !reportKind || reportDetails.trim().length < 10}>
-                File the report <span aria-hidden>→</span>
+                {t.fileReport} <span aria-hidden>→</span>
               </Button>
             </div>
           </form>
@@ -432,16 +454,16 @@ export function LicenseHub({
 
         {reports.length > 0 ? (
           <div className="license-v2-recent-reports">
-            <h3>Recent reports</h3>
+            <h3>{t.recentReports}</h3>
             <ul>
               {reports.map((report) => {
                 const kind = REPORT_KINDS.find((item) => item.key === report.kind)
                 return (
                   <li key={report.id}>
                     <span className="license-v2-report-row-icon"><FilePlus2 /></span>
-                    <span><strong>{kind?.label ?? report.kind.replace(/_/g, " ")}</strong><small>{formatDateTime(report.reportedAt)}</small></span>
+                    <span><strong>{kind?.label ?? report.kind.replace(/_/g, " ")}</strong><small>{formatReportDateTime(report.reportedAt, locale)}</small></span>
                     <StatusPill kind={report.acknowledged ? "green" : "grey"}>
-                      {report.acknowledged ? <>Acknowledged <Check /></> : "Sent"}
+                      {report.acknowledged ? <>{t.acknowledged} <Check /></> : t.sent}
                     </StatusPill>
                   </li>
                 )

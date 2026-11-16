@@ -3,15 +3,16 @@ import { getMyCase } from "@/lib/portal"
 import { sendMessage } from "@/app/portal/actions"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { Card, CardContent } from "@/components/ui/card"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Messages" }
 
 export default async function MessagesPage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
+        {t.common.noCase}
       </p>
     )
   }
@@ -38,9 +39,9 @@ export default async function MessagesPage() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Messages</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.ui.messagesTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Questions? Message your Gun License NYC specialist any time.
+          {t.ui.messagesDescription}
         </p>
       </div>
       <Card>
@@ -49,7 +50,7 @@ export default async function MessagesPage() {
             caseId={myCase.id}
             messages={messages}
             send={sendMessage}
-            placeholder="Message your specialist…"
+            placeholder={t.ui.messagePlaceholder}
           />
         </CardContent>
       </Card>

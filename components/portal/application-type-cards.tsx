@@ -23,6 +23,8 @@ import {
   type ChoiceCardFact,
 } from "@/components/portal/ui/choice-card"
 import { StickyActionBar } from "@/components/portal/ui/sticky-action-bar"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import type { Messages } from "@/lib/i18n/messages"
 
 type Card = {
   id: ApplicantSelectableApplicationType
@@ -33,69 +35,74 @@ type Card = {
   Icon: LucideIcon
 }
 
-const CARDS: Card[] = [
+function getCards(t: Messages["licensePath"]): Card[] {
+  return [
   {
     id: "premise_residence",
-    eyebrow: "Keep it at home",
-    title: "Premise Residence",
-    description: "A handgun kept at your NYC home — not carried in public.",
+    eyebrow: t.keepAtHome,
+    title: t.premiseResidence,
+    description: t.premiseDescription,
     facts: [
-      { label: "References", value: "2", note: "non-family" },
-      { label: "Training", value: "None", note: "no 16 + 2-hr course" },
-      { label: "Checklist", value: "Home", note: "ID, residence, household" },
+      { label: t.references, value: "2", note: t.nonFamily },
+      { label: t.training, value: t.none, note: t.noCourse },
+      { label: t.checklist, value: t.home, note: t.residenceHousehold },
     ],
     Icon: Home,
   },
   {
     id: "concealed_carry",
-    eyebrow: "Carry in NYC",
-    title: "Concealed Carry",
-    description: "Authority to carry concealed, for an eligible NYC applicant.",
+    eyebrow: t.carryInNyc,
+    title: t.concealedCarry,
+    description: t.concealedDescription,
     facts: [
-      { label: "References", value: "4", note: "character" },
-      { label: "Training", value: "16 + 2 hrs", note: "classroom + live-fire" },
-      { label: "Checklist", value: "Carry", note: "carry-specific" },
+      { label: t.references, value: "4", note: t.character },
+      { label: t.training, value: "16 + 2 hrs", note: t.classroomLiveFire },
+      { label: t.checklist, value: t.carry, note: t.carrySpecific },
     ],
     Icon: ShieldCheck,
   },
   {
     id: "special_carry",
-    eyebrow: "Extend a county license",
-    title: "Special Carry",
-    description: "You live outside NYC and already hold a NY county carry license.",
+    eyebrow: t.extendCounty,
+    title: t.specialCarry,
+    description: t.specialDescription,
     facts: [
-      { label: "Requires", value: "County", note: "your active license" },
-      { label: "Review", value: "NYC", note: "NYC documents" },
-      { label: "Scope", value: "Personal", note: "carry only" },
+      { label: t.requires, value: t.county, note: t.activeLicense },
+      { label: t.review, value: t.nyc, note: t.nycDocuments },
+      { label: t.scope, value: t.personal, note: t.carryOnly },
     ],
     Icon: MapPinned,
   },
-]
+  ]
+}
 
-function getSelectableType(type: ApplicationType | null) {
-  return CARDS.some((card) => card.id === type)
+function getSelectableType(type: ApplicationType | null, cards: Card[]) {
+  return cards.some((card) => card.id === type)
     ? (type as ApplicantSelectableApplicationType)
     : null
 }
 
 export function ApplicationTypeCards({ current }: { current: ApplicationType | null }) {
-  const saved = getSelectableType(current)
+  const { messages } = usePortalI18n()
+  const t = messages.licensePath
+  const cards = getCards(t)
+  const saved = getSelectableType(current, cards)
   const [selected, setSelected] = useState<ApplicantSelectableApplicationType | null>(saved)
   const [state, action, pending] = useActionState<SelectApplicationTypeResult, FormData>(
     selectApplicationType,
     {}
   )
-  const selectedCard = CARDS.find((card) => card.id === selected)
-  const savedCard = CARDS.find((card) => card.id === saved)
+  const selectedCard = cards.find((card) => card.id === selected)
+  const savedCard = cards.find((card) => card.id === saved)
   const switching = Boolean(selectedCard && savedCard && selectedCard.id !== savedCard.id)
   const subline = switching
-    ? `Replaces ${savedCard?.title} · Next: choose your plan`
-    : "Next: choose your plan"
+    ? `${t.replaces} ${savedCard?.title} · ${t.nextChoosePlan}`
+    : t.nextChoosePlan
 
   return (
     <form action={action}>
-      <div className="portal-choice-grid" role="radiogroup" aria-label="License path">
-        {CARDS.map((card) => (
+      <div className="portal-choice-grid" role="radiogroup" aria-label={t.radioLabel}>
+        {cards.map((card) => (
           <ChoiceCard
             key={card.id}
             id={`application-type-${card.id}`}
@@ -135,6 +142,8 @@ export function ApplicationTypeCards({ current }: { current: ApplicationType | n
 }
 
 export function StaffAssistedApplicationTypes() {
+  const { messages } = usePortalI18n()
+  const t = messages.licensePath
   return (
     <Link className="portal-staff-row" href="/portal/messages">
       <span className="portal-staff-icon" aria-hidden>
@@ -142,10 +151,10 @@ export function StaffAssistedApplicationTypes() {
       </span>
       <span className="min-w-0">
         <span className="block text-[0.90625rem] font-semibold leading-5">
-          Premise Business, armed work or retired law enforcement?
+          {t.staffQuestion}
         </span>
         <span className="mt-0.5 block text-[0.8125rem] leading-5 text-text-mid">
-          These need a quick staff review — message your concierge and we&apos;ll set it up.
+          {t.staffAnswer}
         </span>
       </span>
       <ChevronRight className="portal-staff-arrow size-4" aria-hidden />

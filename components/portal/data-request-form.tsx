@@ -6,32 +6,31 @@ import { FileDown, PencilLine, Trash2 } from "lucide-react"
 import { submitDataRequest } from "@/app/portal/privacy/actions"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
-const KINDS = [
-  { key: "access", label: "Send me a copy", icon: FileDown, hint: "We'll put together everything we hold for your case." },
-  { key: "correction", label: "Fix something", icon: PencilLine, hint: "Tell us what's wrong and we'll correct it." },
-  {
-    key: "deletion",
-    label: "Delete my data",
-    icon: Trash2,
-    hint: "Read what deletion does, below, before you ask for this — it can't be undone.",
-  },
-] as const
+type RequestKind = "access" | "correction" | "deletion"
 
 /**
  * Deliberately a two-step: pick, then confirm. Deletion is irreversible and
  * shouldn't be one click away from a mis-tap.
  */
 export function DataRequestForm() {
-  const [kind, setKind] = useState<(typeof KINDS)[number]["key"] | null>(null)
+  const { messages } = usePortalI18n()
+  const t = messages.ui
+  const kinds = [
+    { key: "access" as const, label: t.sendCopy, icon: FileDown, hint: t.sendCopyHint },
+    { key: "correction" as const, label: t.fixSomething, icon: PencilLine, hint: t.fixSomethingHint },
+    { key: "deletion" as const, label: t.deleteData, icon: Trash2, hint: t.deleteDataHint },
+  ]
+  const [kind, setKind] = useState<RequestKind | null>(null)
   const [pending, start] = useTransition()
 
-  const selected = KINDS.find((k) => k.key === kind)
+  const selected = kinds.find((k) => k.key === kind)
 
   return (
     <div className="mt-3 space-y-3">
       <div className="grid gap-2 sm:grid-cols-3">
-        {KINDS.map((k) => {
+        {kinds.map((k) => {
           const Icon = k.icon
           const active = kind === k.key
           return (
@@ -59,7 +58,7 @@ export function DataRequestForm() {
               const res = await submitDataRequest(fd)
               if (res.error) toast.error(res.error)
               else {
-                toast.success("Request filed — we'll follow up by email.")
+                toast.success(t.requestFiled)
                 setKind(null)
               }
             })
@@ -71,11 +70,11 @@ export function DataRequestForm() {
           <textarea
             name="detail"
             rows={3}
-            placeholder="Anything you'd like us to know (optional)."
+            placeholder={t.requestDetailPlaceholder}
             className="w-full rounded-md border bg-surface-1 px-2 py-1.5 text-sm"
           />
           <Button type="submit" size="sm" disabled={pending} variant={selected.key === "deletion" ? "outline" : "default"}>
-            {pending ? "Filing…" : `Submit request`}
+            {pending ? t.filingRequest : t.submitRequest}
           </Button>
         </form>
       )}

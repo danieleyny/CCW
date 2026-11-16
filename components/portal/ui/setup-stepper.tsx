@@ -1,14 +1,20 @@
+"use client"
+
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
+
 export function SetupStepper({
   current,
-  finalLabel = "Payment",
+  finalLabel,
 }: {
   current: 1 | 2 | 3
   finalLabel?: string
 }) {
-  const steps = ["License path", "Plan", finalLabel] as const
+  const { messages } = usePortalI18n()
+  const setup = messages.setup
+  const steps = [setup.licensePath, setup.plan, finalLabel ?? setup.payment] as const
 
   return (
-    <ol aria-label="Setup" className="portal-setup-stepper">
+    <ol aria-label={setup.setup} className="portal-setup-stepper">
       {steps.map((label, index) => {
         const step = (index + 1) as 1 | 2 | 3
         const complete = step < current

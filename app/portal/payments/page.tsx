@@ -3,6 +3,7 @@ import { getMyCase } from "@/lib/portal"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { getFees } from "@/lib/fees"
 import { PaymentsView } from "@/components/portal/payments-view"
+import { getMessages } from "@/lib/i18n"
 
 export const metadata = { title: "Payments" }
 
@@ -12,11 +13,11 @@ export default async function PortalPayments({
   searchParams: Promise<{ status?: string }>
 }) {
   const { status } = await searchParams
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-text-mid">
-        Your case isn&apos;t set up yet.
+        {t.common.noCase}
       </p>
     )
   }

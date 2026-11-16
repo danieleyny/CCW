@@ -23,8 +23,48 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import type { Messages } from "@/lib/i18n/messages"
 
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean }
+
+const LABEL_KEYS: Record<string, keyof Messages["shell"]> = {
+  Home: "home",
+  Checklist: "checklist",
+  Documents: "documents",
+  People: "people",
+  Concierge: "concierge",
+  "Your application": "yourApplication",
+  Messages: "messages",
+  Forms: "forms",
+  "Prepared forms": "preparedForms",
+  Payments: "payments",
+  License: "license",
+  "Your license": "yourLicense",
+  Appeal: "appeal",
+  "Your details": "yourDetails",
+  "Profile & your data": "profileAndData",
+}
+
+const STATUS_KEYS: Record<string, keyof Messages["shell"]> = {
+  "Entered once, reused on every form": "detailsStatus",
+  "Your case team & instructor": "messagesStatus",
+  "Documents we filled out for you": "formsStatus",
+  "Invoices & receipts": "paymentsStatus",
+  "Available after issuance": "licenseStatus",
+  "Only if your application is denied": "appealStatus",
+  "Account, password & privacy": "profileStatus",
+}
+
+function localizeLabel(label: string, shell: Messages["shell"]) {
+  const key = LABEL_KEYS[label]
+  return key ? shell[key] : label
+}
+
+function localizeStatus(status: string, shell: Messages["shell"]) {
+  const key = STATUS_KEYS[status]
+  return key ? shell[key] : status
+}
 
 /** The four thumb-primary destinations always in the bar (+ a 5th "More" tab). */
 const PRIMARY: Item[] = [
@@ -92,8 +132,10 @@ function useActive() {
 /** Desktop: a horizontal tab row under the header. */
 export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
   const isActive = useActive()
+  const { messages } = usePortalI18n()
+  const shell = messages.shell
   return (
-    <nav aria-label="Primary" className="portal-v2-top-nav hidden border-t border-hairline md:block">
+    <nav aria-label={shell.primary} className="portal-v2-top-nav hidden border-t border-hairline md:block">
       <div className="portal-v2-top-nav-wrap mx-auto flex max-w-[1120px] flex-nowrap gap-1 overflow-x-auto px-6 lg:px-8">
         {(concierge ? DESKTOP_CONCIERGE : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
@@ -106,7 +148,7 @@ export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
               className="portal-v2-top-nav-item flex shrink-0 items-center gap-2 px-3 py-2.5 text-[13px] font-medium transition-colors"
             >
               <Icon className="size-4" />
-              {label}
+              {localizeLabel(label, shell)}
             </Link>
           )
         })}
@@ -123,13 +165,15 @@ export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
 export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: number; concierge?: boolean }) {
   const isActive = useActive()
   const [moreOpen, setMoreOpen] = useState(false)
+  const { messages } = usePortalI18n()
+  const shell = messages.shell
   const primary = concierge ? PRIMARY_CONCIERGE : PRIMARY
   const more = concierge ? MORE_CONCIERGE : MORE
   const moreActive = more.some((m) => isActive(m.href, m.exact))
 
   return (
     <nav
-      aria-label="Primary"
+      aria-label={shell.primary}
       className="portal-v2-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-hairline md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
@@ -160,9 +204,9 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
                   </span>
                 ) : null}
               </span>
-              {label}
+              {localizeLabel(label, shell)}
               {href === "/portal/messages" && unread > 0 ? (
-                <span className="sr-only">, {unread} unread</span>
+                <span className="sr-only">, {unread} {shell.unread}</span>
               ) : null}
             </Link>
           )
@@ -193,8 +237,8 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
               </span>
             )}
           </span>
-          More
-          {unread > 0 && !concierge ? <span className="sr-only">, {unread} unread</span> : null}
+          {shell.more}
+          {unread > 0 && !concierge ? <span className="sr-only">, {unread} {shell.unread}</span> : null}
         </button>
       </div>
 
@@ -205,7 +249,7 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
         >
           <SheetHeader className="gap-3 px-5 pb-2 pt-3">
             <span aria-hidden className="portal-v2-more-handle mx-auto" />
-            <SheetTitle className="portal-t-eyebrow text-left text-text-mid">More</SheetTitle>
+            <SheetTitle className="portal-t-eyebrow text-left text-text-mid">{shell.more}</SheetTitle>
           </SheetHeader>
           <ul className="px-3 pb-4">
             {more.map((item) => {
@@ -213,8 +257,8 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
               const active = isActive(item.href, item.exact)
               const status =
                 item.href === "/portal/messages" && unread > 0
-                  ? `${unread} unread from your case team`
-                  : item.status
+                  ? `${unread} ${shell.unreadFromTeam}`
+                  : localizeStatus(item.status, shell)
               return (
                 <li key={item.href}>
                   <SheetClose asChild>
@@ -229,7 +273,7 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className={cn("block text-sm font-medium", active ? "text-brass-bright" : "text-foreground")}>
-                          {item.label}
+                          {localizeLabel(item.label, shell)}
                         </span>
                         <span className="block truncate text-[12px] text-text-low">{status}</span>
                       </span>
