@@ -1,3 +1,5 @@
+"use client"
+
 import { Check, Landmark, Video } from "lucide-react"
 import { deriveMilestones, type ConciergeCaseState } from "@/config/concierge-milestones"
 import type { IntroCallState } from "@/lib/concierge/onboarding"

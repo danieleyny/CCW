@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { ArrowRight, CalendarClock, Compass } from "lucide-react"
 import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
