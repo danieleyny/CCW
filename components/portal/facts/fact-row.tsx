@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useTransition } from "react"
-import { Check, Pencil, Loader2, AlertCircle } from "lucide-react"
+import { AlertCircle, Check, CheckCircle2, FileText, Loader2, LockKeyhole, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { setCaseFact } from "@/app/portal/facts/actions"
 import type { FactRowMeta } from "@/lib/facts/details-view"
@@ -32,7 +32,7 @@ export function FactRow({
   /** Move focus to the next editable input in the list (Enter / tab-through). */
   focusNext: (from: HTMLElement) => boolean
 }) {
-  const { key, label, type, kind, options, placeholder, uses, onFile, optional, example } = meta
+  const { key, label, type, kind, options, placeholder, uses, onFile, optional, example, owner } = meta
   const [editing, setEditing] = useState(false) // pencil opened a filled/ssn row
   const [showExample, setShowExample] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -44,7 +44,7 @@ export function FactRow({
 
   // Only a positive reuse signal — never "not on a form yet", which read as "why am I
   // filling this?" on a field that does feed the application.
-  const usesLabel = uses > 0 ? `used on ${uses} form${uses === 1 ? "" : "s"}` : ""
+  const usesLabel = uses > 0 ? `Used on ${uses} form${uses === 1 ? "" : "s"}` : ""
 
   // When does the row show an input rather than a read-only value?
   //  editable → whenever it's empty, or being edited/focused
@@ -102,6 +102,7 @@ export function FactRow({
   // (driven by the live draft, no save round-trip). Not the destructive red — at first
   // load every field is empty, and an error-red page is the wrong first impression.
   const needsRing = kind === "editable" && !optional && draft.trim() === "" && !focused
+  const isWide = !!example || /address|street|method|firm/i.test(key)
   const commonProps = {
     id: inputId,
     "data-fact-input": true as const,
@@ -113,31 +114,28 @@ export function FactRow({
     },
     onBlur,
     onKeyDown,
-    className: `h-9 w-full max-w-[20rem] rounded-md border bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 ${
-      needsRing ? "border-warn/40 ring-2 ring-warn/15" : "border-hairline-strong"
-    }`,
+    className: `details-fact-input ${needsRing ? "is-required-empty" : optional ? "is-optional" : ""}`,
   }
 
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-hairline py-2.5 last:border-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          {asInput ? (
-            <label htmlFor={inputId} className="cursor-text text-sm font-medium">
-              {label}
-            </label>
-          ) : (
-            <div className="text-sm font-medium">{label}</div>
-          )}
-          {optional && (
-            <span className="rounded-full border border-signal/40 bg-signal/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-signal">
-              Only if it applies
+    <div data-fact-field className={`details-field ${isWide ? "is-wide" : ""} ${meta.showWhen ? "is-conditional" : ""}`}>
+      <div className="details-field-label-row">
+        <label htmlFor={inputId}>{label}</label>
+        <div className="details-field-meta">
+          {optional && <span className="details-optional-tag">Optional</span>}
+          {owner === "sponsor" && <span className="details-sponsor-tag">From your sponsor</span>}
+          {usesLabel && (
+            <span className="details-uses-label">
+              <FileText aria-hidden className="size-3" /> {usesLabel}
             </span>
           )}
         </div>
+      </div>
 
-        {asInput ? (
-          <div className="mt-1 flex items-center gap-2">
+      {asInput ? (
+        <div className="details-input-wrap">
+          {kind === "ssn" && <LockKeyhole aria-hidden className="details-input-lock size-4" />}
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             {options ? (
               <select
                 {...commonProps}
@@ -160,61 +158,54 @@ export function FactRow({
                 inputMode={type === "phone" ? "tel" : type === "zip" || kind === "ssn" ? "numeric" : undefined}
                 maxLength={type === "zip" ? 5 : kind === "ssn" ? 4 : undefined}
                 autoComplete={kind === "ssn" ? "off" : undefined}
-                placeholder={placeholder ?? (kind === "ssn" ? "last 4 digits" : undefined)}
+                placeholder={placeholder ?? (kind === "ssn" ? "••••" : undefined)}
                 onChange={(e) => setDraft(e.target.value)}
               />
             )}
             <StatusMark status={status} />
           </div>
-        ) : (
-          <div className="mt-0.5 flex items-center gap-2 text-sm text-text-mid">
-            {kind === "ssn"
-              ? "On file (hidden) · never shared with your sponsor"
-              : value || <span className="text-text-low">—</span>}
-            <StatusMark status={status} />
-          </div>
-        )}
+        </div>
+      ) : (
+        <div className="details-filled-row">
+          <CheckCircle2 aria-hidden className="size-[22px] shrink-0 text-ok" />
+          <span className="min-w-0 flex-1 break-words">
+            {kind === "ssn" ? "On file ••••" : value || <span className="text-text-low">—</span>}
+          </span>
+          <StatusMark status={status} />
+          <button
+            type="button"
+            aria-label={`Edit ${label}`}
+            className="details-pencil-button"
+            onClick={() => {
+              setDraft(kind === "ssn" ? "" : value)
+              setEditing(true)
+            }}
+          >
+            <Pencil aria-hidden className="size-3.5" />
+          </button>
+        </div>
+      )}
 
-        {example && (
-          <div className="mt-1">
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => setShowExample((v) => !v)}
-              className="text-[11px] font-medium text-signal underline-offset-2 hover:underline"
-            >
-              {showExample ? "Hide example" : "Show me an example"}
-            </button>
-            {showExample && (
-              <p className="mt-1 rounded-md border border-hairline bg-surface-2/40 p-2 text-[12px] italic text-text-mid">
-                &ldquo;{example}&rdquo;
-              </p>
-            )}
-          </div>
-        )}
-        {usesLabel && <div className="mt-0.5 text-[11px] text-text-low">{usesLabel}</div>}
-        {status === "error" && (
-          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-danger">
-            <AlertCircle className="size-3" /> Couldn&apos;t save — click away to try again.
-          </div>
-        )}
-      </div>
-
-      {/* Pencil for a filled/ssn-on-file row. tabIndex -1 so it never sits between two
-          empty inputs in the tab order; still clickable. */}
-      {!asInput && (
+      {example && asInput && (
+        <div className="details-example-wrap">
         <button
           type="button"
-          tabIndex={-1}
-          aria-label={`Edit ${label}`}
-          className="shrink-0 rounded-md p-2 text-text-low hover:bg-surface-3 hover:text-foreground"
-          onClick={() => {
-            setDraft(kind === "ssn" ? "" : value)
-            setEditing(true)
-          }}
+          onClick={() => setShowExample((current) => !current)}
+          className="details-example-toggle"
         >
-          <Pencil className="size-3.5" />
+          {showExample ? "Hide example" : "Show me an example"}
         </button>
+        {showExample && (
+          <p className="details-example-strip">
+            <span aria-hidden>✨</span> <strong>Example:</strong> {example}
+          </p>
+        )}
+        </div>
+      )}
+      {status === "error" && (
+        <div className="details-field-error">
+          <AlertCircle aria-hidden className="size-3" /> Couldn&apos;t save — click away to try again.
+        </div>
       )}
     </div>
   )

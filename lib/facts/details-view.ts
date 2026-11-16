@@ -26,23 +26,74 @@ export interface FactRowMeta {
   value: string
   /** SSN only: whether one is on file (shown as "On file (hidden)"). */
   onFile?: boolean
+  /** Display-only ownership cue for sponsor-supplied values. */
+  owner?: "applicant" | "sponsor"
 }
 export interface FactGroupData {
   key: FactGroup
   label: string
+  description: string
+  icon: GroupIcon
   rows: FactRowMeta[]
 }
 
-const GROUP_LABEL: Record<FactGroup, string> = {
-  you: "Applicant",
-  address: "Address",
-  contact: "Contact",
-  physical: "Description",
-  employer: "Employer",
-  sponsor: "The company",
-  safeguard: "Safeguard",
-  safekeeping: "Safekeeping location",
-  counsel: "Counsel",
+export type GroupIcon =
+  | "id-card"
+  | "home"
+  | "phone"
+  | "user"
+  | "briefcase"
+  | "building"
+  | "shield-check"
+  | "lock"
+  | "scale"
+
+const GROUP_DISPLAY: Record<FactGroup, { label: string; description: string; icon: GroupIcon }> = {
+  you: {
+    label: "About you",
+    description: "Your legal name and status, exactly as on your ID.",
+    icon: "id-card",
+  },
+  address: {
+    label: "Home address",
+    description: "Where you live in NYC. Must match your proof of residence.",
+    icon: "home",
+  },
+  contact: {
+    label: "Contact",
+    description: "How the NYPD and your concierge reach you.",
+    icon: "phone",
+  },
+  physical: {
+    label: "Description",
+    description: "Printed on your license. Use what’s on your ID.",
+    icon: "user",
+  },
+  employer: {
+    label: "Employment",
+    description: "Your current job, if you have one. More fields appear if you say yes.",
+    icon: "briefcase",
+  },
+  sponsor: {
+    label: "Your sponsor",
+    description: "Filled in by your sponsor.",
+    icon: "building",
+  },
+  safeguard: {
+    label: "Safeguard person",
+    description: "Someone 21+ who will hold your firearm if needed. It can’t be you.",
+    icon: "shield-check",
+  },
+  safekeeping: {
+    label: "Where it’s kept",
+    description: "The address where the firearm is secured.",
+    icon: "lock",
+  },
+  counsel: {
+    label: "Attorney",
+    description: "Only if a lawyer represents you on this application.",
+    icon: "scale",
+  },
 }
 
 /** How many questionnaires reference each fact — the "used on N forms" line. */
@@ -98,9 +149,10 @@ export function buildFactGroups(
         uses: uses[f.key] ?? 0,
         value: kind === "ssn" ? "" : facts[f.key] ?? "",
         onFile: kind === "ssn" ? hasSsn : undefined,
+        owner: f.owner,
       }
     })
-    out.push({ key: g, label: GROUP_LABEL[g], rows })
+    out.push({ key: g, ...GROUP_DISPLAY[g], rows })
   }
   return { groups: out, total }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useTransition } from "react"
-import { Trash2, Plus, Loader2, Check, AlertCircle } from "lucide-react"
+import { AlertCircle, Check, Clock3, Loader2, Plus, Trash2 } from "lucide-react"
 import { saveApplicationHistory } from "@/app/portal/facts/actions"
 import { portalDate } from "@/lib/forms/format"
 import { Button } from "@/components/ui/button"
@@ -34,11 +34,11 @@ function HistoryDates({
     <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
       <div className="space-y-1">
         <Label className="text-[11px] text-text-low">From</Label>
-        <Input type="date" className="w-[10rem]" value={fromMonth ?? ""} onChange={(e) => onFrom(e.target.value)} />
+        <Input aria-label="From date" type="date" className="w-[10rem]" value={fromMonth ?? ""} onChange={(e) => onFrom(e.target.value)} />
       </div>
       <div className="space-y-1">
         <Label className="text-[11px] text-text-low">To</Label>
-        <Input type="date" className="w-[10rem]" value={toMonth ?? ""} disabled={present} onChange={(e) => onTo(e.target.value)} />
+        <Input aria-label="To date" type="date" className="w-[10rem]" value={toMonth ?? ""} disabled={present} onChange={(e) => onTo(e.target.value)} />
       </div>
       <label className="flex items-center gap-1.5 pb-2.5 text-xs text-text-mid">
         <input
@@ -134,22 +134,23 @@ export function ApplicationHistory({
   return (
     <section
       id="history"
-      className="scroll-mt-20 space-y-4 rounded-lg border border-hairline bg-card p-4"
+      className="details-section-card details-repeatable-card"
       onChange={markDirty}
       onBlur={onSectionBlur}
     >
-      <div>
-        <h3 className="text-sm font-semibold">Five-year history</h3>
-        <p className="mt-0.5 text-xs text-text-mid">
-          Question 29 on the application — where you&apos;ve lived and worked. List newest first.
-        </p>
-      </div>
+      <header className="details-section-header">
+        <div className="details-section-icon"><Clock3 aria-hidden className="size-5" /></div>
+        <div className="min-w-0 flex-1">
+          <h2>5-year history</h2>
+          <p>Places you&apos;ve lived and worked. List the newest first.</p>
+        </div>
+      </header>
 
       {/* Residence — Q29 */}
       <div className="space-y-2">
         <Label className="text-xs">Places of residence — past 5 years</Label>
         {res.map((h, i) => (
-          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+          <div key={i} className="details-repeatable-entry space-y-3">
             <div className="flex items-start justify-between gap-2">
               <HistoryDates
                 fromMonth={h.fromMonth}
@@ -157,7 +158,7 @@ export function ApplicationHistory({
                 onFrom={(v) => setRes((c) => c.map((x, j) => (j === i ? { ...x, fromMonth: v } : x)))}
                 onTo={(v) => setRes((c) => c.map((x, j) => (j === i ? { ...x, toMonth: v } : x)))}
               />
-              <Button variant="ghost" size="icon" onClick={() => setRes((c) => c.filter((_, j) => j !== i))}>
+              <Button aria-label={`Remove residence ${i + 1}`} variant="ghost" size="icon" onClick={() => setRes((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -174,8 +175,8 @@ export function ApplicationHistory({
             </div>
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={() => setRes((c) => [...c, {}])}>
-          <Plus className="size-4" /> Add residence
+        <Button className="details-add-another" variant="outline" size="sm" onClick={() => setRes((c) => [...c, {}])}>
+          <Plus className="size-4" /> Add another residence
         </Button>
       </div>
 
@@ -184,7 +185,7 @@ export function ApplicationHistory({
         <Label className="text-xs">Places of employment — past 5 years</Label>
         <EmploymentCoverage seed={employerSeed} show={emp.some((h) => h._seeded)} />
         {emp.map((h, i) => (
-          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+          <div key={i} className="details-repeatable-entry space-y-3">
             {h._seeded && (
               <p className="text-[11px] text-signal">Filled in from your employer — edit if anything&apos;s off.</p>
             )}
@@ -195,7 +196,7 @@ export function ApplicationHistory({
                 onFrom={(v) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, fromMonth: v } : x)))}
                 onTo={(v) => setEmp((c) => c.map((x, j) => (j === i ? { ...x, toMonth: v } : x)))}
               />
-              <Button variant="ghost" size="icon" onClick={() => setEmp((c) => c.filter((_, j) => j !== i))}>
+              <Button aria-label={`Remove employment ${i + 1}`} variant="ghost" size="icon" onClick={() => setEmp((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -218,21 +219,22 @@ export function ApplicationHistory({
             />
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={() => setEmp((c) => [...c, {}])}>
-          <Plus className="size-4" /> Add employment
+        <Button className="details-add-another" variant="outline" size="sm" onClick={() => setEmp((c) => [...c, {}])}>
+          <Plus className="size-4" /> Add another employment
         </Button>
       </div>
 
       {/* Other pistol licences (Q9) — its OWN card, not part of employment: it's a
           different question about a licence you already hold, not a job. Behind a
           Yes/No; the four fields render only on Yes. */}
-      <div className="space-y-2 rounded-md border border-hairline bg-surface-2/30 p-3">
+      <div className="details-repeatable-entry space-y-2 bg-surface-2/30">
         <div>
           <h3 className="text-sm font-semibold">Other pistol licences</h3>
           <p className="mt-0.5 text-xs text-text-mid">Question 9 on the application.</p>
         </div>
         <Label className="text-xs">Do you hold a pistol licence from another New York county?</Label>
         <select
+          aria-label="Do you hold a pistol licence from another New York county?"
           className="h-9 w-full max-w-[12rem] rounded-md border border-hairline-strong bg-surface-3 px-3 text-sm outline-none"
           value={hasOoc}
           onChange={(e) => {
@@ -251,18 +253,18 @@ export function ApplicationHistory({
             <Input placeholder="County" value={ooc.county} onChange={(e) => setOoc((o) => ({ ...o, county: e.target.value }))} />
             <div className="space-y-1">
               <Label className="text-[11px] text-text-low">Date issued</Label>
-              <Input type="date" value={ooc.issuedOn} onChange={(e) => setOoc((o) => ({ ...o, issuedOn: e.target.value }))} />
+              <Input aria-label="Other licence date issued" type="date" value={ooc.issuedOn} onChange={(e) => setOoc((o) => ({ ...o, issuedOn: e.target.value }))} />
             </div>
             <div className="space-y-1">
               <Label className="text-[11px] text-text-low">Expires</Label>
-              <Input type="date" value={ooc.expiresOn} onChange={(e) => setOoc((o) => ({ ...o, expiresOn: e.target.value }))} />
+              <Input aria-label="Other licence expiration date" type="date" value={ooc.expiresOn} onChange={(e) => setOoc((o) => ({ ...o, expiresOn: e.target.value }))} />
             </div>
           </div>
         )}
       </div>
 
       {/* #11 — saves happen automatically; this is a status line, not the only path. */}
-      <div className="flex items-center gap-2 text-xs" aria-live="polite">
+      <div className="details-repeatable-footer flex items-center gap-2 text-xs" aria-live="polite">
         {status === "saving" && (
           <span className="flex items-center gap-1.5 text-text-low">
             <Loader2 className="size-3.5 animate-spin" /> Saving…

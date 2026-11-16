@@ -67,42 +67,41 @@ export default async function DetailsPage() {
     .join(", ")
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="details-page">
+      <div className="details-page-header">
         <SectionEyebrow>Prepared once, reused everywhere</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your details</h1>
-        <p className="mt-1 max-w-prose text-sm text-text-mid">
-          Everything the NYPD forms ask for, in one place. Correct something here and it&apos;s corrected on
-          every form that uses it — so your questionnaires stay nearly empty.
+        <h1>Your details</h1>
+        <p>
+          Everything the NYPD forms ask for, in one place. Fix something here and it&apos;s fixed on every form.
         </p>
       </div>
 
-      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter flagEligibility />
+      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter flagEligibility>
+        <ApplicationHistory
+          caseId={myCase.id}
+          residence={intake.residenceHistory ?? []}
+          employment={intake.employmentHistory ?? []}
+          employerSeed={{
+            employed: fx("employer.employed") === "Yes",
+            startDate: fx("employer.startDate"),
+            name: fx("employer.name"),
+            address: employerAddress,
+            occupation: fx("applicant.jobTitle"),
+          }}
+          outOfCity={{
+            number: intake.outOfCityLicenseNumber ?? "",
+            county: intake.outOfCityCounty ?? "",
+            issuedOn: intake.outOfCityIssuedOn ?? "",
+            expiresOn: intake.outOfCityExpiresOn ?? "",
+          }}
+        />
 
-      <ApplicationHistory
-        caseId={myCase.id}
-        residence={intake.residenceHistory ?? []}
-        employment={intake.employmentHistory ?? []}
-        employerSeed={{
-          employed: fx("employer.employed") === "Yes",
-          startDate: fx("employer.startDate"),
-          name: fx("employer.name"),
-          address: employerAddress,
-          occupation: fx("applicant.jobTitle"),
-        }}
-        outOfCity={{
-          number: intake.outOfCityLicenseNumber ?? "",
-          county: intake.outOfCityCounty ?? "",
-          issuedOn: intake.outOfCityIssuedOn ?? "",
-          expiresOn: intake.outOfCityExpiresOn ?? "",
-        }}
-      />
-
-      <FirearmsRecords
-        caseId={myCase.id}
-        firearms={intake.firearms ?? []}
-        otherLicenses={intake.otherLicenses ?? []}
-      />
+        <FirearmsRecords
+          caseId={myCase.id}
+          firearms={intake.firearms ?? []}
+          otherLicenses={intake.otherLicenses ?? []}
+        />
+      </FactGroups>
     </div>
   )
 }
