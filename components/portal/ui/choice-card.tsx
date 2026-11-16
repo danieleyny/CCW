@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { Check, type LucideIcon } from "lucide-react"
 
 export type ChoiceCardFact = {
@@ -18,9 +19,14 @@ export function ChoiceCard({
   eyebrow,
   title,
   description,
-  facts,
+  facts = [],
   Icon,
   onChange,
+  tone = "light",
+  badge,
+  currentLabel = "Current",
+  className,
+  children,
 }: {
   id: string
   name: string
@@ -31,14 +37,27 @@ export function ChoiceCard({
   eyebrow: string
   title: string
   description: string
-  facts: ChoiceCardFact[]
+  facts?: ChoiceCardFact[]
   Icon: LucideIcon
   onChange: () => void
+  tone?: "light" | "featured-dark"
+  badge?: string
+  currentLabel?: string
+  className?: string
+  children?: ReactNode
 }) {
   const descriptionId = `${id}-description`
 
   return (
-    <>
+    <label
+      className={["portal-choice-card", className].filter(Boolean).join(" ")}
+      data-selected={selected}
+      data-tone={tone}
+      htmlFor={id}
+      onClick={() => {
+        if (!disabled) onChange()
+      }}
+    >
       <input
         className="portal-choice-input sr-only"
         type="radio"
@@ -50,17 +69,25 @@ export function ChoiceCard({
         aria-describedby={descriptionId}
         onChange={onChange}
       />
-      <label className="portal-choice-card" data-selected={selected} htmlFor={id}>
-        <span className="portal-choice-top">
-          <span className="portal-choice-icon" aria-hidden>
-            <Icon size={22} strokeWidth={1.65} />
-          </span>
-          {current && <span className="portal-choice-current">Current</span>}
-          <span className="portal-choice-radio" aria-hidden>
-            <Check size={15} strokeWidth={2.2} />
-          </span>
+      <span className="portal-choice-top">
+        <span className="portal-choice-icon" aria-hidden>
+          <Icon size={22} strokeWidth={1.65} />
         </span>
+        <span className="portal-choice-tags">
+          {badge && <span className="portal-choice-badge">{badge}</span>}
+          {current && <span className="portal-choice-current">{currentLabel}</span>}
+        </span>
+        <span className="portal-choice-radio" aria-hidden>
+          <Check size={15} strokeWidth={2.2} />
+        </span>
+      </span>
 
+      {children ? (
+        <div id={descriptionId} className="portal-choice-custom">
+          {children}
+        </div>
+      ) : (
+        <>
         <span className="portal-choice-eyebrow portal-t-eyebrow">{eyebrow}</span>
         <span className="portal-choice-title portal-t-card">{title}</span>
         <span id={descriptionId} className="portal-choice-description portal-t-body">
@@ -76,7 +103,8 @@ export function ChoiceCard({
             </span>
           ))}
         </span>
-      </label>
-    </>
+        </>
+      )}
+    </label>
   )
 }

@@ -5,7 +5,8 @@ import { getActivePackages, hasPaidPackage } from "@/lib/packages"
 import { accessCodesEnabled } from "@/lib/access-codes"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { PortalPageHeader } from "@/components/portal/ui/portal-page-header"
+import { SetupStepper } from "@/components/portal/ui/setup-stepper"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import type { ApplicationType } from "@/lib/application-types"
 
@@ -51,20 +52,26 @@ export default async function ChoosePathPage() {
     .eq("id", myCase.client_id)
     .maybeSingle()
   const staffProvisioned = clientRow?.lead_source === "admin_manual"
+  const feeNote = `Service fees only — the NYPD's application fee and the fingerprint fee are paid at filing and never collected by us. You can switch plans anytime before you pay.${
+    STRIPE_ENABLED
+      ? ""
+      : " Card checkout is being finalized — choosing a plan records it instantly and we email your invoice within one business day."
+  }`
 
   return (
-    <div className="space-y-6">
+    <div className="portal-plan-page">
       <ScrollToTop />
-      <div>
-        <SectionEyebrow>One decision</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          How would you like to work together?
-        </h1>
-        <p className="mt-1 max-w-prose text-sm text-text-mid">
-          Same finish line, two ways to get there. Either way, <b>you file your own NYPD application</b> —
-          the law requires it. The difference is how much of everything before that we take off your plate.
-        </p>
-      </div>
+      <PortalPageHeader
+        title="How would you like to work together?"
+        lede={
+          <>
+            Same finish line, two ways there. <strong>Self-Guided:</strong> you submit your own
+            application. <strong>Full Concierge:</strong> we prepare and quality-check it with you;
+            you review and submit.
+          </>
+        }
+        stepper={<SetupStepper current={2} finalLabel="Get started" />}
+      />
 
       <ChoosePathCards
         packages={packages}
@@ -72,14 +79,9 @@ export default async function ChoosePathPage() {
         staffProvisioned={staffProvisioned}
         codesEnabled={codesEnabled}
         applicationType={myCase.application_type as ApplicationType}
+        stripeEnabled={STRIPE_ENABLED}
+        feeNote={feeNote}
       />
-
-      <p className="text-xs text-text-low">
-        Service fees only — the NYPD&apos;s application fee and the fingerprint fee are paid separately at
-        filing and are never collected by us. You can switch paths anytime before you pay.
-        {!STRIPE_ENABLED &&
-          " Card checkout is being finalized — choosing a path records it instantly and we send your invoice within one business day."}
-      </p>
     </div>
   )
 }

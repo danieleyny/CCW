@@ -6,7 +6,7 @@ export function PortalPageHeader({
   stepper,
 }: {
   title: string
-  lede: string
+  lede: ReactNode
   stepper?: ReactNode
 }) {
   return (
