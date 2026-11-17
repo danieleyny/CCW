@@ -96,6 +96,59 @@ export interface MaterializeResult {
 }
 
 /**
+ * Retire still-open applicant requirements from a jurisdiction the case is no
+ * longer using. This is deliberately narrower than materialization: versioned
+ * rows inside the selected jurisdiction remain untouched, sponsor-owned packet
+ * rows remain untouched, and completed/rejected evidence is never rewritten.
+ *
+ * Call this only after a guarded legal-category change. The caller is
+ * responsible for refusing the change when completed work or evidence exists.
+ */
+export async function retireOtherJurisdictionRequirements(
+  admin: DB,
+  caseId: string,
+  jurisdictionKey: string
+): Promise<number> {
+  const { data: target, error: jurisdictionError } = await admin
+    .from("jurisdiction_profiles")
+    .select("id")
+    .eq("key", jurisdictionKey as Database["public"]["Enums"]["jurisdiction_key"])
+    .maybeSingle()
+  if (jurisdictionError) throw jurisdictionError
+  if (!target) throw new Error(`Unknown jurisdiction profile: ${jurisdictionKey}`)
+
+  const { data, error } = await admin
+    .from("case_requirements")
+    .select("id, status, requirement:requirements!inner(jurisdiction_id, party)")
+    .eq("case_id", caseId)
+  if (error) throw error
+
+  const rows = (data ?? []) as unknown as Array<{
+    id: string
+    status: Database["public"]["Enums"]["case_req_status"]
+    requirement: { jurisdiction_id: string; party: string } | null
+  }>
+  const ids = rows
+    .filter(
+      (row) =>
+        row.requirement?.party !== "sponsor" &&
+        row.requirement?.jurisdiction_id !== target.id &&
+        (row.status === "pending" || row.status === "na")
+    )
+    .map((row) => row.id)
+
+  if (ids.length) {
+    const { error: updateError } = await admin
+      .from("case_requirements")
+      .update({ status: "na" })
+      .in("id", ids)
+    if (updateError) throw updateError
+  }
+
+  return ids.length
+}
+
+/**
  * Upsert the per-case requirement instances from the active registry + answers.
  * Trusted system operation — pass a service-role (admin) client; never clobbers
  * an already `satisfied`/`rejected` row or its evidence binding (only moves

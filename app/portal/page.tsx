@@ -22,6 +22,7 @@ import { hasPaidPackage } from "@/lib/packages"
 import { computeNextStep } from "@/lib/portal/next-step"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
+import type { ApplicationType } from "@/lib/application-types"
 
 export async function generateMetadata() {
   const t = await getMessages()
@@ -198,6 +199,7 @@ export default async function PortalHome() {
           firstName={myCase.client.full_name.split(" ")[0]}
           trainingHandled={trainingState.status === "engaged" || trainingState.status === "booked"}
           intakeDone={intakeDone}
+          applicationType={myCase.application_type as ApplicationType | null}
         />
       )}
 

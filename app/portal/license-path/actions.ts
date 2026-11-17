@@ -7,10 +7,10 @@ import { requireRole } from "@/lib/auth"
 import { getMyCase } from "@/lib/portal"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
-import { materializeCaseRequirements } from "@/lib/requirements/materialize"
+import { retireOtherJurisdictionRequirements } from "@/lib/requirements/materialize"
+import { rematerializeCase } from "@/lib/requirements/rematerialize"
 import {
   APPLICANT_SELECTABLE_APPLICATION_TYPES,
-  applicationTypeToGeneratorAnswers,
   applicationTypeToLegacyLicenseType,
   type ApplicantSelectableApplicationType,
 } from "@/lib/application-types"
@@ -44,7 +44,14 @@ export async function selectApplicationType(
   if (!myCase) return { error: "Your case isn't set up yet." }
 
   const admin = createAdminClient()
-  const [{ data: intake }, { count: evidenceCount }] = await Promise.all([
+  const [
+    { data: intake },
+    { count: documentCount },
+    { count: referenceCount },
+    { count: cohabitantCount },
+    { count: preparedAnswerCount },
+    { count: completedRequirementCount },
+  ] = await Promise.all([
     admin
       .from("intake_sessions")
       .select("answers, completed_at")
@@ -54,11 +61,37 @@ export async function selectApplicationType(
       .from("documents")
       .select("id", { count: "exact", head: true })
       .eq("case_id", myCase.id),
+    admin
+      .from("character_references")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", myCase.id),
+    admin
+      .from("cohabitants")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", myCase.id),
+    admin
+      .from("requirement_answers")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", myCase.id),
+    admin
+      .from("case_requirements")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", myCase.id)
+      .in("status", ["satisfied", "rejected"]),
   ])
 
   const categoryChanged = myCase.application_type !== parsed.data.applicationType
-  const earlyStage = myCase.stage === "lead" || myCase.stage === "eligibility_screened"
-  if (categoryChanged && (!earlyStage || !!intake?.completed_at || (evidenceCount ?? 0) > 0)) {
+  const earlyStage =
+    myCase.stage === "lead" ||
+    myCase.stage === "eligibility_screened" ||
+    myCase.stage === "signed_up_paid"
+  const attachedWorkCount =
+    (documentCount ?? 0) +
+    (referenceCount ?? 0) +
+    (cohabitantCount ?? 0) +
+    (preparedAnswerCount ?? 0) +
+    (completedRequirementCount ?? 0)
+  if (categoryChanged && (!earlyStage || !!intake?.completed_at || attachedWorkCount > 0)) {
     return {
       error:
         "Your case already has application work attached. Message your concierge before changing the license type so nothing is lost or misclassified.",
@@ -81,6 +114,24 @@ export async function selectApplicationType(
     .eq("id", myCase.id)
   if (error) return { error: "We couldn't save that selection. Try again." }
 
+  // clients.track is the legacy audience/routing value. Keep it aligned for
+  // Special Carry so older portal and reporting code does not continue to
+  // treat an outside-NYC applicant as a resident while application_type and
+  // the requirements engine say otherwise. Preserve a real business track;
+  // only unwind non_resident when the applicant leaves Special Carry.
+  const nextClientTrack = applicationType === "special_carry"
+    ? "non_resident"
+    : myCase.client.track === "non_resident"
+      ? "resident"
+      : null
+  if (nextClientTrack) {
+    const { error: trackError } = await admin
+      .from("clients")
+      .update({ track: nextClientTrack })
+      .eq("id", myCase.client_id)
+    if (trackError) throw trackError
+  }
+
   // Preserve partial answers, but make the category server-canonical and clear
   // carry-course data when the applicant chooses the home-only route.
   if (intake) {
@@ -95,6 +146,10 @@ export async function selectApplicationType(
       delete normalized.trainingStatus
       delete normalized.trainingInstructor
       delete normalized.trainingDate
+    } else if (applicationType === "special_carry") {
+      normalized.residence = "non_resident"
+    } else if (normalized.residence === "non_resident") {
+      normalized.residence = "nyc"
     }
     await admin
       .from("intake_sessions")
@@ -103,12 +158,10 @@ export async function selectApplicationType(
   }
 
   const jurisdiction = applicationType === "special_carry" ? "special_carry" : "nyc"
-  await materializeCaseRequirements(
-    admin,
-    myCase.id,
-    jurisdiction,
-    applicationTypeToGeneratorAnswers(applicationType)
-  )
+  const retiredRequirements = categoryChanged
+    ? await retireOtherJurisdictionRequirements(admin, myCase.id, jurisdiction)
+    : 0
+  await rematerializeCase(admin, myCase.id)
 
   await logActivity({
     action: "case.application_type_selected",
@@ -120,6 +173,7 @@ export async function selectApplicationType(
       from: myCase.application_type,
       to: applicationType,
       selected_at: selectedAt,
+      retired_other_jurisdiction_requirements: retiredRequirements,
     },
   })
 

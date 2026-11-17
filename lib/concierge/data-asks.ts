@@ -7,6 +7,10 @@ import { hasCaseSsn } from "@/lib/facts/ssn"
 import { buildFactGroups, type FactGroupData } from "@/lib/facts/details-view"
 import type { FactGroup } from "@/lib/facts/registry"
 import type { WizardAnswers } from "@/lib/intake/answers"
+import {
+  applicationTypeNeedsCarryTraining,
+  type ApplicationType,
+} from "@/lib/application-types"
 
 type DB = SupabaseClient<Database>
 
@@ -44,14 +48,32 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
   const hasSsn = await hasCaseSsn(admin, caseId)
   const { groups } = buildFactGroups(facts, hasSsn, ["you", "address", "contact", "physical", "employer", "safeguard"], false)
 
-  const [{ data: intakeRow }, { data: reqRows }] = await Promise.all([
+  const [
+    { data: intakeRow },
+    { data: answerRows },
+    { data: requirementRows },
+    { data: caseRow },
+  ] = await Promise.all([
     admin.from("intake_sessions").select("answers").eq("case_id", caseId).maybeSingle(),
     admin.from("requirement_answers").select("req_code, answers").eq("case_id", caseId).in("req_code", ["LON-01", "CON-01"]),
+    admin.from("case_requirements").select("req_code, status").eq("case_id", caseId).in("req_code", ["LON-01", "CON-01"]),
+    admin.from("cases").select("application_type, is_renewal").eq("id", caseId).maybeSingle(),
   ])
   const intake = (intakeRow?.answers ?? {}) as WizardAnswers
-  const byCode = new Map((reqRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
+  const byCode = new Map((answerRows ?? []).map((r) => [r.req_code, (r.answers ?? {}) as Record<string, unknown>]))
   const lon = byCode.get("LON-01") ?? {}
   const con = byCode.get("CON-01") ?? {}
+  const materializedCodes = new Set((requirementRows ?? []).map((r) => r.req_code))
+  const applicableCodes = new Set(
+    (requirementRows ?? []).filter((r) => r.status !== "na").map((r) => r.req_code)
+  )
+  const applicationType = caseRow?.application_type as ApplicationType | null | undefined
+  const includeLon = materializedCodes.has("LON-01")
+    ? applicableCodes.has("LON-01")
+    : applicationTypeNeedsCarryTraining(applicationType) && !caseRow?.is_renewal
+  const includeConfidentiality = materializedCodes.has("CON-01")
+    ? applicableCodes.has("CON-01")
+    : true
 
   const details = countGroups(groups, ["you", "address", "contact", "physical"])
   const employer = countGroups(groups, ["employer"])
@@ -60,8 +82,9 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
   const resCount = (intake.residenceHistory ?? []).length
   const empCount = (intake.employmentHistory ?? []).length
 
-  // Letter of Necessity — a carry applicant needs the "all"/"carry" statements
-  // (lop3, lop6). Every track this platform serves carries, so it's always asked.
+  // Letter of Necessity is carry-only. Premise Residence must never see this
+  // ask; the materialized requirement is authoritative, with the explicit case
+  // category as the compatibility fallback for older unmaterialized cases.
   const lonHave = ["lop3", "lop6"].filter((k) => typeof lon[k] === "string" && (lon[k] as string).trim()).length
 
   const asks: DataAsk[] = [
@@ -72,13 +95,17 @@ export async function buildDataAsks(admin: DB, caseId: string): Promise<DataAsk[
   ]
   // Concierge home is /portal/concierge — the LON/CON cards live in its vault, each
   // RequirementCard carrying id=reqCode (and opening its questionnaire on the hash).
-  asks.push({ key: "lon", label: "Your written statements", captured: lonHave, total: 2, href: "/portal/concierge#LON-01" })
-  asks.push({
-    key: "confidentiality",
-    label: "Confidentiality (optional)",
-    captured: con.requesting === "yes" || con.requesting === "no" ? 1 : 0,
-    total: 1,
-    href: "/portal/concierge#CON-01",
-  })
+  if (includeLon) {
+    asks.push({ key: "lon", label: "Your written statements", captured: lonHave, total: 2, href: "/portal/concierge#LON-01" })
+  }
+  if (includeConfidentiality) {
+    asks.push({
+      key: "confidentiality",
+      label: "Confidentiality (optional)",
+      captured: con.requesting === "yes" || con.requesting === "no" ? 1 : 0,
+      total: 1,
+      href: "/portal/concierge#CON-01",
+    })
+  }
   return asks
 }

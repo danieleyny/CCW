@@ -24,6 +24,7 @@ import {
 } from "./actions"
 import { getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
+import type { ApplicationType } from "@/lib/application-types"
 
 export async function generateMetadata() {
   const t = await getMessages()
@@ -65,6 +66,7 @@ export default async function PeoplePage({
   const requiredRefs = requiredReferences((intake?.answers ?? {}) as WizardAnswers, {
     isRenewal: kase?.is_renewal ?? false,
     licenseTrack: (kase?.license_track as "carry_guard" | "special_carry_guard" | undefined) ?? undefined,
+    applicationType: myCase.application_type as ApplicationType | null,
   })
 
   const [refs, cohabs, reqs] = await Promise.all([
