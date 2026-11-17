@@ -103,9 +103,15 @@ export default async function LicensePage() {
     acknowledged: !!r.acknowledged_at,
   }))
   const applicationType = myCase.application_type as ApplicationType | null
-  const licenseType = applicationType === "premise_residence"
+  // Historical cases predate the explicit application_type column. Their
+  // established behavior was carry, with non-residents routed to Special
+  // Carry, so mirror that compatibility rule in the selector rather than
+  // showing a label with no matching card selected.
+  const effectiveApplicationType: ApplicationType = applicationType
+    ?? (track === "non_resident" ? "special_carry" : "concealed_carry")
+  const licenseType = effectiveApplicationType === "premise_residence"
     ? t.licensePath.premiseResidence
-    : applicationType === "special_carry" || track === "non_resident"
+    : effectiveApplicationType === "special_carry"
       ? t.licensePath.specialCarry
       : t.licensePath.concealedCarry
   const configuredReviewUrl = reviewUrl()
@@ -130,7 +136,7 @@ export default async function LicensePage() {
           </span>
         </div>
 
-        <ApplicationTypeCards current={applicationType} context="license" />
+        <ApplicationTypeCards current={effectiveApplicationType} context="license" />
 
         <div className="license-v2-path-safety">
           <p>{t.license.pathSafety}</p>
