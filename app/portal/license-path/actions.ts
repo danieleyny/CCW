@@ -18,6 +18,7 @@ import type { Json } from "@/lib/supabase/types"
 
 const schema = z.object({
   applicationType: z.enum(APPLICANT_SELECTABLE_APPLICATION_TYPES),
+  returnTo: z.enum(["choose-path", "license"]).default("choose-path"),
 })
 
 export type SelectApplicationTypeResult = { error?: string }
@@ -33,7 +34,10 @@ export async function selectApplicationType(
   formData: FormData
 ): Promise<SelectApplicationTypeResult> {
   const auth = await requireRole(["client"])
-  const parsed = schema.safeParse({ applicationType: formData.get("applicationType") })
+  const parsed = schema.safeParse({
+    applicationType: formData.get("applicationType"),
+    returnTo: formData.get("returnTo") || "choose-path",
+  })
   if (!parsed.success) return { error: "Choose the option that matches what you want to apply for." }
 
   const myCase = await getMyCase()
@@ -120,5 +124,5 @@ export async function selectApplicationType(
   })
 
   revalidatePath("/portal", "layout")
-  redirect("/portal/choose-path")
+  redirect(parsed.data.returnTo === "license" ? "/portal/license" : "/portal/choose-path")
 }

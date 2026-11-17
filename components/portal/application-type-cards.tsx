@@ -82,9 +82,16 @@ function getSelectableType(type: ApplicationType | null, cards: Card[]) {
     : null
 }
 
-export function ApplicationTypeCards({ current }: { current: ApplicationType | null }) {
+export function ApplicationTypeCards({
+  current,
+  context = "setup",
+}: {
+  current: ApplicationType | null
+  context?: "setup" | "license"
+}) {
   const { messages } = usePortalI18n()
   const t = messages.licensePath
+  const license = messages.license
   const cards = getCards(t)
   const saved = getSelectableType(current, cards)
   const [selected, setSelected] = useState<ApplicantSelectableApplicationType | null>(saved)
@@ -95,12 +102,16 @@ export function ApplicationTypeCards({ current }: { current: ApplicationType | n
   const selectedCard = cards.find((card) => card.id === selected)
   const savedCard = cards.find((card) => card.id === saved)
   const switching = Boolean(selectedCard && savedCard && selectedCard.id !== savedCard.id)
-  const subline = switching
-    ? `${t.replaces} ${savedCard?.title} · ${t.nextChoosePlan}`
-    : t.nextChoosePlan
+  const subline = context === "license"
+    ? license.pathUpdatesChecklist
+    : switching
+      ? `${t.replaces} ${savedCard?.title} · ${t.nextChoosePlan}`
+      : t.nextChoosePlan
+  const showAction = Boolean(selectedCard && (context === "setup" || switching || !savedCard))
 
   return (
-    <form action={action}>
+    <form action={action} className={context === "license" ? "license-v2-path-form" : undefined}>
+      <input type="hidden" name="returnTo" value={context === "license" ? "license" : "choose-path"} />
       <div className="portal-choice-grid" role="radiogroup" aria-label={t.radioLabel}>
         {cards.map((card) => (
           <ChoiceCard
@@ -127,7 +138,7 @@ export function ApplicationTypeCards({ current }: { current: ApplicationType | n
         </p>
       )}
 
-      {selectedCard && (
+      {showAction && selectedCard && (
         <StickyActionBar
           key={`${selectedCard.id}-${state.error ? "error" : "ready"}`}
           Icon={selectedCard.Icon}
@@ -135,6 +146,8 @@ export function ApplicationTypeCards({ current }: { current: ApplicationType | n
           subline={subline}
           pending={pending}
           error={state.error}
+          desktopLabel={context === "license" ? `${license.pathUpdateAction}: ${selectedCard.title}` : undefined}
+          mobileLabel={context === "license" ? license.pathUpdateAction : undefined}
         />
       )}
     </form>

@@ -255,6 +255,14 @@ export interface Messages {
     reciprocityTitle: string
     reciprocityDescription: string
     viewReciprocity: string
+    pathEyebrow: string
+    pathTitle: string
+    pathDescription: string
+    pathCurrent: string
+    pathUpdatesChecklist: string
+    pathUpdateAction: string
+    pathSafety: string
+    pathAskConcierge: string
     purchaseAuthorizations: string
     eligible: string
     nextPurchase: string
@@ -744,6 +752,14 @@ const en: Messages = {
     reciprocityTitle: "Where your license is honored",
     reciprocityDescription: "Check reciprocity for your NY license, maintained by Concealed Knowledge.",
     viewReciprocity: "View reciprocity",
+    pathEyebrow: "Your application path",
+    pathTitle: "Compare or change your license type",
+    pathDescription: "See what each license allows, who it is for, and the training, references and documents it requires.",
+    pathCurrent: "Current path",
+    pathUpdatesChecklist: "Updates the license path and rebuilds your checklist",
+    pathUpdateAction: "Update path",
+    pathSafety: "You can switch directly while your case is new. Once intake or documents are attached, your concierge must review the change so completed work is not lost or assigned to the wrong license.",
+    pathAskConcierge: "Ask your concierge about a change",
     purchaseAuthorizations: "Purchase authorizations",
     eligible: "Eligible · 1 per 90 days",
     nextPurchase: "Next purchase {date}",
@@ -1450,6 +1466,14 @@ const es: DeepPartial<Messages> = {
     reciprocityTitle: "Dónde se reconoce su licencia",
     reciprocityDescription: "Consulte la reciprocidad de su licencia de NY, mantenida por Concealed Knowledge.",
     viewReciprocity: "Ver reciprocidad",
+    pathEyebrow: "Ruta de su solicitud",
+    pathTitle: "Compare o cambie su tipo de licencia",
+    pathDescription: "Vea qué permite cada licencia, para quién es y qué capacitación, referencias y documentos requiere.",
+    pathCurrent: "Ruta actual",
+    pathUpdatesChecklist: "Actualiza el tipo de licencia y vuelve a crear su lista",
+    pathUpdateAction: "Actualizar ruta",
+    pathSafety: "Puede cambiar directamente mientras su caso sea nuevo. Cuando ya haya completado el cuestionario o enviado documentos, su conserje debe revisar el cambio para no perder ni clasificar mal el trabajo completado.",
+    pathAskConcierge: "Consultar el cambio con su conserje",
     purchaseAuthorizations: "Autorizaciones de compra",
     nextPurchase: "Próxima compra {date}",
     noAuthorizations: "Aún no hay autorizaciones",

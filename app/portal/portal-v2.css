@@ -3458,6 +3458,98 @@ button.profile-shortcut:hover {
   line-height: 1.55;
 }
 
+.license-v2-path-panel {
+  margin-bottom: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 94% 4%, color-mix(in srgb, var(--portal-gold) 17%, transparent), transparent 25%),
+    linear-gradient(145deg, var(--portal-paper), color-mix(in srgb, var(--portal-navy) 4%, var(--portal-paper)));
+  padding: 26px;
+  box-shadow: var(--shadow-card);
+}
+
+.license-v2-path-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.license-v2-path-header .portal-t-eyebrow {
+  color: var(--portal-gold-deep);
+}
+
+.license-v2-path-header h2 {
+  margin-top: 6px;
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.license-v2-path-header > div > p:last-child {
+  max-width: 680px;
+  margin-top: 8px;
+  color: var(--portal-ink-2);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.license-v2-path-current {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--portal-gold) 46%, var(--hairline));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--portal-gold) 11%, var(--portal-paper));
+  padding: 8px 12px;
+  color: var(--portal-ink-2);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.license-v2-path-current strong {
+  color: var(--portal-ink);
+  font-weight: 700;
+}
+
+.license-v2-path-form .portal-choice-card {
+  background: color-mix(in srgb, var(--surface-2) 75%, var(--portal-paper));
+}
+
+.license-v2-path-form .portal-choice-card[data-selected="true"] {
+  background: var(--portal-paper);
+}
+
+.license-v2-path-safety {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 16px;
+}
+
+.license-v2-path-safety p {
+  max-width: 800px;
+  color: var(--portal-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.license-v2-path-safety a {
+  flex: 0 0 auto;
+  color: var(--portal-navy);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.license-v2-path-safety a:hover {
+  color: var(--portal-gold-deep);
+}
+
 .license-v2-before,
 .license-v2-status-hero {
   display: grid;
@@ -4611,6 +4703,35 @@ button.profile-shortcut:hover {
 
   .license-v2-page-header > p:last-child {
     font-size: 0.875rem;
+  }
+
+  .license-v2-path-panel {
+    margin-bottom: 18px;
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .license-v2-path-header,
+  .license-v2-path-safety {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .license-v2-path-header {
+    gap: 12px;
+  }
+
+  .license-v2-path-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .license-v2-path-current {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
+  .license-v2-path-safety {
+    gap: 10px;
   }
 
   .license-v2-before,

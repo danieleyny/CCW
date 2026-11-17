@@ -13,6 +13,7 @@ import { reviewUrl } from "@/lib/review"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { interpolate } from "@/lib/i18n/interpolate"
 import type { Locale } from "@/config/i18n"
+import { ApplicationTypeCards } from "@/components/portal/application-type-cards"
 
 export async function generateMetadata() {
   const t = await getMessages()
@@ -116,6 +117,26 @@ export default async function LicensePage() {
         <h1>{t.license.title}</h1>
         <p>{t.license.lede}</p>
       </header>
+
+      <section className="license-v2-path-panel" aria-labelledby="license-path-title">
+        <div className="license-v2-path-header">
+          <div>
+            <p className="portal-t-eyebrow">{t.license.pathEyebrow}</p>
+            <h2 id="license-path-title">{t.license.pathTitle}</h2>
+            <p>{t.license.pathDescription}</p>
+          </div>
+          <span className="license-v2-path-current">
+            {t.license.pathCurrent}: <strong>{licenseType}</strong>
+          </span>
+        </div>
+
+        <ApplicationTypeCards current={applicationType} context="license" />
+
+        <div className="license-v2-path-safety">
+          <p>{t.license.pathSafety}</p>
+          <Link href="/portal/messages">{t.license.pathAskConcierge}</Link>
+        </div>
+      </section>
 
       <LicenseStatusHero
         expires={expires}
