@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -15,6 +16,7 @@ import { smartDocument } from "@/lib/requirements/smart-documents"
 import { requiredReferences } from "@/lib/intake/schema"
 import { referenceComposition, familyCapMessage } from "@/lib/references/composition"
 import type { WizardAnswers } from "@/lib/intake/answers"
+import { notifyTeamOfPortalMessage } from "@/lib/messages/team-notification"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -315,7 +317,7 @@ export async function deleteCohabitant(id: string, caseId: string) {
 
 // ── Messaging ─────────────────────────────────────────────────────────────────
 export async function sendMessage(caseId: string, body: string) {
-  const { userId } = await requireRole(["client"])
+  const { userId, email, profile } = await requireRole(["client"])
   const trimmed = body.trim()
   if (!trimmed) return
   const supabase = await createClient()
@@ -325,6 +327,14 @@ export async function sendMessage(caseId: string, body: string) {
     .insert({ case_id: caseId, sender_id: userId, body: trimmed })
   if (error) throw error
   await logActivity({ action: "message.sent", caseId, entity: "message", detail: { from: "client" } })
+  after(() =>
+    notifyTeamOfPortalMessage({
+      caseId,
+      senderName: profile.full_name,
+      senderEmail: email,
+      thread: "concierge",
+    })
+  )
   revalidatePath("/portal/messages")
 }
 
@@ -335,7 +345,7 @@ export async function sendMessage(caseId: string, body: string) {
  * thread. `threadKey` is the engagement id (MessageThread passes it opaquely).
  */
 export async function sendEngagementMessage(engagementId: string, body: string) {
-  const { userId, profile } = await requireRole(["client", "instructor"])
+  const { userId, email, profile } = await requireRole(["client", "instructor"])
   const role = profile.role
   const trimmed = body.trim()
   if (!trimmed || !engagementId) return
@@ -386,6 +396,16 @@ export async function sendEngagementMessage(engagementId: string, body: string) 
   }
 
   await logActivity({ action: "message.sent", caseId: eng.case_id, entity: "message", detail: { from: role, engagement: engagementId } })
+  if (role === "client") {
+    after(() =>
+      notifyTeamOfPortalMessage({
+        caseId: eng.case_id,
+        senderName: profile.full_name,
+        senderEmail: email,
+        thread: "instructor",
+      })
+    )
+  }
   revalidatePath("/portal/marketplace")
   revalidatePath(`/instructor/cases/${eng.case_id}`)
 }
