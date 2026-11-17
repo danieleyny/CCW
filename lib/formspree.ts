@@ -24,6 +24,7 @@ const SOURCE_LABELS: Record<string, string> = {
   "subscribe:law-watch": "Law Watch signup",
   "subscribe:fit-report": "CK fit report",
   "subscribe:reciprocity-card": "CK reciprocity card",
+  portal_message: "Portal message",
 }
 
 export function submissionLabel(source: string): string {
