@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table"
 import { formatDate, daysSince } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import type { CaseStageKey } from "@/config/stages"
+import { NYPD_CONTROLLED_STAGES, type CaseStageKey } from "@/config/stages"
 
 export const metadata = { title: "Cases" }
 
@@ -36,6 +36,15 @@ export default async function CasesPage({
   const page = Math.max(1, Number(sp.page) || 1)
   const supabase = await createClient()
 
+  let waitingCaseIds: string[] | null = null
+  if (sp.waiting === "third-party" || sp.waiting === "applicant") {
+    const [{ data: references }, { data: cohabitants }] = await Promise.all([
+      supabase.from("reference_requests").select("case_id").in("status", ["sent", "opened"]).is("revoked_at", null),
+      supabase.from("cohabitants").select("case_id").eq("affidavit_status", "not_started").not("sent_at", "is", null).is("token_revoked_at", null),
+    ])
+    waitingCaseIds = [...new Set([...(references ?? []).map((row) => row.case_id), ...(cohabitants ?? []).map((row) => row.case_id)])]
+  }
+
   let query = supabase
     .from("cases")
     .select(
@@ -50,6 +59,12 @@ export default async function CasesPage({
   if (sp.borough) query = query.eq("clients.borough", sp.borough)
   if (sp.q) query = query.ilike("clients.full_name", `%${sp.q}%`)
   if (sp.mine === "1") query = query.eq("clients.assigned_staff", userId)
+  if (sp.waiting === "nypd") query = query.eq("status", "active").in("stage", NYPD_CONTROLLED_STAGES)
+  if (sp.waiting === "third-party") query = query.eq("status", "active").in("id", waitingCaseIds?.length ? waitingCaseIds : ["00000000-0000-0000-0000-000000000000"])
+  if (sp.waiting === "applicant") {
+    query = query.eq("status", "active").not("stage", "in", `(${NYPD_CONTROLLED_STAGES.join(",")})`)
+    if (waitingCaseIds?.length) query = query.not("id", "in", `(${waitingCaseIds.join(",")})`)
+  }
 
   const { data, count } = await query
   const rows = data ?? []

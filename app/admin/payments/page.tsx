@@ -18,15 +18,16 @@ import {
 
 export const metadata = { title: "Payments" }
 
-export default async function AdminPayments() {
+export default async function AdminPayments({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const auth = await requireStaff()
+  const sp = await searchParams
   const isAdmin = auth.profile.role === "admin"
   const supabase = await createClient()
 
   const [{ data: payments }, { data: cases }] = await Promise.all([
     supabase
       .from("payments")
-      .select("id, amount_cents, type, status, description, hosted_invoice_url, paid_at, created_at, clients(full_name)")
+      .select("id, client_id, amount_cents, type, status, description, hosted_invoice_url, paid_at, created_at, clients(full_name)")
       .order("created_at", { ascending: false }),
     supabase
       .from("cases")
@@ -35,7 +36,7 @@ export default async function AdminPayments() {
       .order("created_at", { ascending: false }),
   ])
 
-  const rows = payments ?? []
+  const rows = (payments ?? []).filter((payment) => !sp.client || payment.client_id === sp.client)
   const collected = rows.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount_cents, 0)
   const outstanding = rows
     .filter((p) => p.status === "pending")

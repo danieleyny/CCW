@@ -32,7 +32,7 @@ export default async function QueuePage({
   >
 
   // Default to the most valuable non-empty tab.
-  const requested = sp.tab as QueueBucket | undefined
+  const requested = (sp.bucket ?? sp.tab) as QueueBucket | undefined
   const active: QueueBucket =
     requested && QUEUE_TABS.some((t) => t.key === requested)
       ? requested
@@ -75,7 +75,7 @@ export default async function QueuePage({
       ) : (
         <ul className="space-y-2">
           {rows.map((r) => (
-            <li key={r.caseId} className="rounded-lg border bg-card p-3">
+            <li id={`case-${r.caseId}`} key={r.caseId} className="scroll-mt-24 rounded-lg border bg-card p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium">
