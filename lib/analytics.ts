@@ -17,6 +17,9 @@ export type ConversionEvent =
   | "admin_pipeline_viewed" // staff opened the read-only pipeline or leads board
   | "admin_cases_viewed" // staff opened the read-only case list
   | "admin_case_preview_opened" // staff opened a safe case preview
+  | "admin_case_tab_viewed" // staff opened a case workspace tab
+  | "admin_stage_dialog_opened" // staff opened the guarded stage/status dialog
+  | "admin_stage_change_blocked" // stage preview or server enforcement refused a move
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

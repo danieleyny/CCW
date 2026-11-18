@@ -23,7 +23,7 @@ import { sendBookingInvites } from "@/lib/calendar/invites"
 import { isArmedTrack, openDosUpgrade, grantDosArmedStatus } from "@/lib/dos"
 import { getStripe } from "@/lib/stripe"
 import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing"
-import { STAGE_KEYS, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
+import { STAGE_KEYS, isNypdControlled, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
 import { materializeCaseRequirements } from "@/lib/requirements/materialize"
 import { actionFor } from "@/lib/requirements/actions"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
@@ -35,6 +35,55 @@ import {
 // ── stage changes (pipeline drag + case file) ────────────────────────────────
 export type StageChangeResult = { ok: true } | { ok: false; blockers: string[] }
 
+export type StagePreviewResult = {
+  gated: boolean
+  ok: boolean
+  blockers: string[]
+  signedOffBy: string | null
+  signedOffAt: string | null
+}
+
+const caseStageChangeSchema = z.object({
+  caseId: z.string().uuid(),
+  stage: z.enum(STAGE_KEYS as [CaseStageKey, ...CaseStageKey[]]),
+  note: z.string().trim().max(2000).optional(),
+})
+
+const caseStatusChangeSchema = z.object({
+  caseId: z.string().uuid(),
+  status: z.enum(["active", "blocked", "on_hold", "closed", "approved", "denied"]),
+  note: z.string().trim().min(1, "Add a reason for the status change.").max(2000),
+})
+
+/** Read-only mirror of the server-side CP-5 enforcement used by setCaseStage. */
+export async function previewStageChange(caseIdInput: string, stageInput: CaseStageKey): Promise<StagePreviewResult> {
+  await requireStaff()
+  const { caseId, stage } = caseStageChangeSchema.parse({ caseId: caseIdInput, stage: stageInput })
+  const gated = stageIndex(stage) >= stageIndex("application_assembled")
+  if (!gated) {
+    return { gated: false, ok: true, blockers: [], signedOffBy: null, signedOffAt: null }
+  }
+
+  const supabase = await createClient()
+  const [gate, signoff] = await Promise.all([
+    evaluatePreFilingGate(supabase, caseId),
+    supabase
+      .from("cases")
+      .select("qa_signed_off_at, profiles:qa_signed_off_by(full_name)")
+      .eq("id", caseId)
+      .single(),
+  ])
+  if (signoff.error) throw signoff.error
+  const signer = signoff.data?.profiles as unknown as { full_name: string | null } | null
+  return {
+    gated: true,
+    ok: gate.ok,
+    blockers: gate.blockers.map((blocker) => blocker.detail),
+    signedOffBy: signer?.full_name ?? null,
+    signedOffAt: signoff.data?.qa_signed_off_at ?? null,
+  }
+}
+
 /**
  * V3-P2.4 / V4-A1 — the CP-5 gate lives HERE, server-side: a case cannot be
  * dragged into application_assembled OR ANY LATER STAGE until every blocking
@@ -43,11 +92,22 @@ export type StageChangeResult = { ok: true } | { ok: false; blockers: string[] }
  * staff member has signed off. Failing returns the specific blocker list,
  * never a generic error.
  */
-export async function setCaseStage(caseId: string, stage: CaseStageKey): Promise<StageChangeResult> {
+export async function setCaseStage(caseIdInput: string, stageInput: CaseStageKey, noteInput?: string): Promise<StageChangeResult> {
   await requireStaff()
-  if (!STAGE_KEYS.includes(stage)) throw new Error("Invalid stage")
+  const { caseId, stage, note } = caseStageChangeSchema.parse({ caseId: caseIdInput, stage: stageInput, note: noteInput })
 
   const supabase = await createClient()
+
+  const { data: current, error: currentError } = await supabase
+    .from("cases")
+    .select("stage")
+    .eq("id", caseId)
+    .single()
+  if (currentError) throw currentError
+  const movingBack = stageIndex(stage) < stageIndex(current.stage as CaseStageKey)
+  if ((movingBack || isNypdControlled(stage)) && !note) {
+    throw new Error("Add a reason for this stage change.")
+  }
 
   // Gate every stage AT OR PAST application_assembled (index 7) — not just the
   // two named stages. Stages after `filed` (fingerprinting, decision, licensed)
@@ -80,7 +140,7 @@ export async function setCaseStage(caseId: string, stage: CaseStageKey): Promise
     clientId: kase.client_id,
     entity: "case",
     entityId: caseId,
-    detail: await withOnBehalf(supabase, caseId, { to: stage }),
+    detail: await withOnBehalf(supabase, caseId, { to: stage, note: note || null }),
   })
 
   // Notify the client (stubbed until email keys are set).
@@ -281,8 +341,13 @@ export async function reassignCase(formData: FormData) {
   revalidatePath("/admin/cases")
 }
 
-export async function setCaseStatus(caseId: string, status: string) {
+export async function setCaseStatus(caseIdInput: string, statusInput: string, noteInput?: string) {
   await requireStaff()
+  const { caseId, status, note } = caseStatusChangeSchema.parse({
+    caseId: caseIdInput,
+    status: statusInput,
+    note: noteInput,
+  })
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("cases")
@@ -291,7 +356,7 @@ export async function setCaseStatus(caseId: string, status: string) {
     .select("client_id")
     .single()
   if (error) throw error
-  await logActivity({ action: "case.status_changed", caseId, clientId: data.client_id, detail: { status } })
+  await logActivity({ action: "case.status_changed", caseId, clientId: data.client_id, detail: { status, note } })
   revalidatePath(`/admin/cases/${caseId}`)
   revalidatePath("/admin/pipeline")
 }

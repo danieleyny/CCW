@@ -31,6 +31,7 @@ export function MessageThread({
   placeholder = "Write a message…",
   templates,
   markRead,
+  draftSeed,
 }: {
   caseId: string
   messages: MessageRow[]
@@ -41,13 +42,15 @@ export function MessageThread({
   /** Fired once on mount — marks the other party's messages read so the
    *  "unopened for an hour" nudge doesn't fire once you've seen the thread. */
   markRead?: () => Promise<void>
+  /** Prefills an editable draft; changing it never sends a message. */
+  draftSeed?: string
 }) {
   const { locale, messages: catalog } = usePortalI18n()
   const portalUser = usePortalUserAvatar()
   const t = catalog.ui
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLTextAreaElement>(null)
-  const [value, setValue] = useState("")
+  const [value, setValue] = useState(draftSeed ?? "")
   const marked = useRef(false)
 
   useEffect(() => {

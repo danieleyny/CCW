@@ -31,6 +31,7 @@ export interface CasePreviewData {
   stageLabel: string
   phaseLabel: string
   days: number
+  stalled: boolean
   progressStep: number
   whoseMove: CaseMoveOwner
   nextStep: string
@@ -93,7 +94,7 @@ function nextDestination(caseId: string, whoseMove: CaseMoveOwner, nextStep: str
   if (whoseMove !== "Staff") return { href: base, action: "Open case" }
   const value = nextStep.toLowerCase()
   if (value.includes("reply") || value.includes("message")) return { href: `${base}?tab=messages`, action: "Reply" }
-  if (value.includes("document") || value.includes("upload")) return { href: `${base}?tab=documents`, action: "Go to documents" }
+  if (value.includes("document") || value.includes("upload") || value.includes("review")) return { href: `${base}?tab=checklist`, action: "Start review" }
   if (value.includes("qa") || value.includes("sign-off") || value.includes("sign off")) return { href: "/admin/queue?bucket=ready", action: "Review & sign" }
   if (value.includes("intro call")) return { href: `${base}?tab=application`, action: "Open intro call" }
   return { href: base, action: "Open case" }
@@ -234,6 +235,7 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     stageLabel: stageMeta(stage).short,
     phaseLabel: phaseLabel(stage),
     days: card?.days ?? daysSince(kase.stage_entered_at || kase.updated_at),
+    stalled: card?.stalled ?? false,
     progressStep: card?.progressStep ?? Math.max(1, Math.min(11, stageIndex(stage) - stageIndex("signed_up_paid") + 1)),
     whoseMove,
     nextStep,

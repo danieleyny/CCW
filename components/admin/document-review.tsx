@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
+import Link from "next/link"
 import { ExternalLink, Check, X, Link2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { reviewDocument } from "@/app/admin/actions"
@@ -36,6 +37,8 @@ export interface DocRow {
   // ── Requirement context (from the registry; never duplicated in this file) ──
   /** The requirement this upload answers, e.g. "IDN-02". Null when unmatched. */
   reqCode: string | null
+  /** Case-requirement row used to deep-link into the checklist workbench. */
+  reqId: string | null
   /** Human requirement name, e.g. "Proof of address". */
   reqTitle: string | null
   /** "What makes it acceptable" — the registry's own description. May be empty. */
@@ -102,6 +105,7 @@ function uploaderLabel(doc: DocRow): string {
 interface Group {
   key: string
   reqCode: string | null
+  reqId: string | null
   title: string | null
   acceptance: string | null
   blocking: boolean
@@ -159,6 +163,7 @@ export function DocumentReview({
         g = {
           key,
           reqCode: d.reqCode,
+          reqId: d.reqId,
           title: d.reqTitle,
           acceptance: d.acceptance,
           blocking: d.reqBlocking,
@@ -258,6 +263,11 @@ export function DocumentReview({
                     </span>
                   )}
                   {g.reqStatus && <StatusBadge status={g.reqStatus} />}
+                  {g.reqId && (
+                    <Link href={`/admin/cases/${caseId}?tab=checklist&req=${g.reqId}`} className="text-xs font-medium text-signal hover:underline">
+                      Open in checklist
+                    </Link>
+                  )}
                   <span className="ml-auto text-xs text-muted-foreground">
                     {received} {received === 1 ? "file" : "files"} received
                   </span>
