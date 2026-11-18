@@ -1837,6 +1837,18 @@
 
 /* ── Admin V2 light shell + Today queue ───────────────────────── */
 .admin-shell { color-scheme: light; --background:#F6F7F9; --foreground:#101828; --card:#fff; --card-foreground:#101828; --popover:#fff; --popover-foreground:#101828; --muted:#EEF1F4; --muted-foreground:#667085; --accent:#EEF1F4; --accent-foreground:#14254A; --border:rgba(10,15,26,.10); }
+:root:has(.admin-shell) {
+  --portal-ink: #0a0f1a;
+  --portal-ink-2: #4a5160;
+  --portal-muted: #667085;
+  --portal-navy: #14254a;
+  --portal-gold: #d9b25f;
+  --portal-gold-deep: #8a6420;
+  --surface-2: #f6f7f9;
+  --hairline: rgba(10,15,26,.10);
+  --tone-ok: #067647;
+  --tone-prog: #1d4ed8;
+}
 .admin-shell :is(a,button,input):focus-visible { outline:2px solid #14254A; outline-offset:2px; box-shadow:0 0 0 2px #D9B25F; }
 .admin-sidebar-actions > div { width:100%; justify-content:flex-start; gap:.25rem; }
 .admin-sidebar-actions button { min-height:32px; padding-inline:.35rem; color:#C4CEE0 !important; }

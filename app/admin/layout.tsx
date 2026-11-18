@@ -5,6 +5,7 @@ import { loadAdminNavCounts } from "@/lib/admin/nav-counts"
 import { AdminShell } from "@/components/admin/admin-shell"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { AccountActions } from "@/components/auth/account-actions"
+import "../portal/portal-v2.css"
 
 export const metadata: Metadata = {
   title: { default: "Today · Staff", template: "%s · Staff" },
