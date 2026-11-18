@@ -7,7 +7,7 @@ import {
   type RegistryVersion,
 } from "@/components/admin/requirements-registry"
 
-export const metadata = { title: "Requirements registry" }
+export const metadata = { title: { absolute: "Requirements registry · Staff" } }
 
 export default async function RequirementsAdminPage({
   searchParams,

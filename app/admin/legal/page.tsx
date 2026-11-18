@@ -12,7 +12,7 @@ import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { staleTemplateWarnings } from "@/lib/forms/drift"
 import { markRequirementVerified, flagRequirementForReview } from "./actions"
 
-export const metadata = { title: "Legal verification" }
+export const metadata = { title: { absolute: "Legal verification · Staff" } }
 
 /**
  * V3-P1.3 — the standing legal-verification register. Every ACTIVE registry rule

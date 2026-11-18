@@ -5,7 +5,7 @@ import { getCaseSsn } from "@/lib/facts/ssn"
 import { buildPortalWorksheet } from "@/lib/disclosures/worksheet-portal"
 import { PortalWorksheet } from "@/components/admin/portal-worksheet"
 
-export const metadata = { title: "Portal-entry worksheet" }
+export const metadata = { title: { absolute: "Portal-entry worksheet · Staff" } }
 
 /**
  * Staff-only portal-entry worksheet — the values in the NYPD online portal's order and

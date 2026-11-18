@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-export const metadata = { title: "Payments" }
+export const metadata = { title: { absolute: "Payments · Staff" } }
 
 export default async function AdminPayments({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const auth = await requireStaff()

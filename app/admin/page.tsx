@@ -3,7 +3,7 @@ import { requireStaff } from "@/lib/auth"
 import { loadToday, type TodayItemType, type TodayScope } from "@/lib/admin/today"
 import { TodayDashboard } from "@/components/admin/today-dashboard"
 
-export const metadata = { title: "Today" }
+export const metadata = { title: { absolute: "Today · Staff" } }
 
 const SCOPES = new Set<TodayScope>(["mine", "team", "unassigned"])
 const TYPES = new Set<TodayItemType | "all">(["all", "message", "document", "qa", "concierge", "people", "payment", "stalled", "task", "privacy"])

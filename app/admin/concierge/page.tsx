@@ -7,7 +7,7 @@ import { stageMeta } from "@/config/stages"
 import { ConciergeTeam, type StaffMember } from "@/components/admin/concierge-team"
 import { DeleteDemoCasesButton } from "@/components/admin/delete-demo-cases-button"
 
-export const metadata = { title: "Concierge" }
+export const metadata = { title: { absolute: "Concierge · Staff" } }
 
 const TONE_CLASS: Record<QueueTone, string> = {
   attention: "border-brass/40 bg-brass/10 text-brass-bright",

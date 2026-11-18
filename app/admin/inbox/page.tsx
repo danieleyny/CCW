@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { formatDateTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-export const metadata = { title: "Inbox" }
+export const metadata = { title: { absolute: "Inbox · Staff" } }
 
 /**
  * V3-P2.5 — the unified cross-case inbox. Previously messages were reachable

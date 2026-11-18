@@ -339,8 +339,16 @@ export async function loadToday(
     ...(people?.[0].data ?? []).map((row) => ({ ...row, expiresAt: row.expires_at })),
     ...(people?.[1].data ?? []).filter((row) => row.token_expires_at).map((row) => ({ ...row, expiresAt: row.token_expires_at as string })),
   ]
+  const peopleByCase = new Map<string, typeof peopleRows>()
   for (const row of peopleRows) {
-    const c = cases.get(row.case_id)
+    const rows = peopleByCase.get(row.case_id) ?? []
+    rows.push(row)
+    peopleByCase.set(row.case_id, rows)
+  }
+  for (const [caseId, rows] of peopleByCase) {
+    rows.sort((a, b) => a.expiresAt.localeCompare(b.expiresAt))
+    const row = rows[0]
+    const c = cases.get(caseId)
     if (!c) continue
     const expires = new Date(row.expiresAt)
     if (expires.getTime() > now.getTime() + 7 * DAY) continue
@@ -348,10 +356,10 @@ export async function loadToday(
     const section = sectionFor(due, now) ?? "week"
     const daysLeft = Math.max(0, Math.ceil((expires.getTime() - now.getTime()) / DAY))
     allItems.push(caseItem({
-      id: `people-${row.id}`, caseId: row.case_id, type: "people", section,
-      title: `Follow up on people — ${c.clientName}`, reason: "A reference or household link is nearing expiration.", owner: "Third party",
+      id: `people-${caseId}`, caseId, type: "people", section,
+      title: `Follow up on ${rows.length} ${rows.length === 1 ? "person" : "people"} — ${c.clientName}`, reason: "Reference or household links are nearing expiration.", owner: "Third party",
       age: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`, ageDays: daysBetween(row.created_at, now), triggerAt: row.created_at,
-      dueAt: due.toISOString(), href: `/admin/cases/${row.case_id}?tab=people`, action: "Open people",
+      dueAt: due.toISOString(), href: `/admin/cases/${caseId}?tab=people`, action: "Open people",
     }, c))
   }
 
@@ -400,7 +408,7 @@ export async function loadToday(
   schedule.sort((a, b) => a.when.localeCompare(b.when))
 
   const staffCaseIds = new Set(scoped.filter((item) => item.owner === "You" || item.owner === "Team").map((item) => item.caseId).filter(Boolean))
-  const referenceCases = new Set(peopleRows.map((row) => row.case_id))
+  const referenceCases = new Set(peopleByCase.keys())
   const nypdCases: CaseContext[] = []
   const thirdPartyCases: CaseContext[] = []
   const applicantCases: CaseContext[] = []
@@ -412,7 +420,8 @@ export async function loadToday(
     else if (referenceCases.has(c.id)) thirdPartyCases.push(c)
     else applicantCases.push(c)
   }
-  const expiringThisWeek = peopleRows.filter((row) => new Date(row.expiresAt).getTime() <= now.getTime() + 7 * DAY).length
+  const thirdPartyCaseIds = new Set(thirdPartyCases.map((c) => c.id))
+  const expiringThisWeek = peopleRows.filter((row) => thirdPartyCaseIds.has(row.case_id) && new Date(row.expiresAt).getTime() <= now.getTime() + 7 * DAY).length
   const applicantOldest = applicantCases.reduce((max, c) => Math.max(max, daysBetween(c.updatedAt, now)), 0)
   const applicantPast14 = applicantCases.filter((c) => daysBetween(c.updatedAt, now) > 14).length
   const waiting: TodayWaiting = {

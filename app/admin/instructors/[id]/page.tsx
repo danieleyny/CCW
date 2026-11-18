@@ -12,7 +12,7 @@ import { setInstructorVerified, setInstructorPublicListing } from "../actions"
 
 const NYC_BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"]
 
-export const metadata = { title: "Instructor" }
+export const metadata = { title: { absolute: "Instructor · Staff" } }
 
 /**
  * B2B — admin instructor detail. Read-only profile / verification / service area

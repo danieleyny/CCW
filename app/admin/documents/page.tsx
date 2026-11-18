@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatDate } from "@/lib/format"
 
-export const metadata = { title: "Documents to review" }
+export const metadata = { title: { absolute: "Documents to review · Staff" } }
 
 /**
  * B4 — the "Docs to review" stat now links here (it used to point at /admin

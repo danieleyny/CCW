@@ -8,7 +8,7 @@ import { buildQaQueue, sortQueue, QUEUE_TABS, type QueueBucket } from "@/lib/adm
 import { stageMeta, type CaseStageKey } from "@/config/stages"
 import { cn } from "@/lib/utils"
 
-export const metadata = { title: "Filing queue" }
+export const metadata = { title: { absolute: "Filing queue · Staff" } }
 
 /**
  * PART B / Phase 6 — work the queue, not one case at a time. Every pre-filing

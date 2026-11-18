@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatDateTime } from "@/lib/format"
 
-export const metadata = { title: "Calendar" }
+export const metadata = { title: { absolute: "Calendar · Staff" } }
 
 interface AgendaRow {
   id: string

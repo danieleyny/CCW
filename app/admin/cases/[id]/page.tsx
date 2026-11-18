@@ -58,6 +58,8 @@ import {
 } from "@/components/ui/table"
 import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
 
+export const metadata = { title: { absolute: "Case file · Staff" } }
+
 export default async function CaseFilePage({
   params,
   searchParams,

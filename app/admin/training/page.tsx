@@ -5,6 +5,8 @@ import { TRAINING_BUCKET } from "@/lib/training/server"
 import { createTrainingClass, duplicateTrainingClass, refundRegistration, updateRegistration } from "./actions"
 import { TRAINING_CLASS_PRICE_CENTS } from "@/content/training/config"
 
+export const metadata = { title: { absolute: "Training · Staff" } }
+
 export default async function AdminTrainingPage() {
   await requireAdmin()
   const db = createAdminClient() as any

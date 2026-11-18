@@ -10,7 +10,7 @@ import {
   type CoverageStatus,
 } from "@/config/application-coverage"
 
-export const metadata = { title: "Application coverage" }
+export const metadata = { title: { absolute: "Application coverage · Staff" } }
 
 const STATUS_META: Record<CoverageStatus, { label: string; icon: typeof CheckCircle2; tone: string }> = {
   ok: { label: "Captured", icon: CheckCircle2, tone: "text-ok" },

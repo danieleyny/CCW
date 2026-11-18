@@ -4,7 +4,7 @@ import { PipelineBoard, type PipelineCase } from "@/components/admin/pipeline-bo
 import { daysSince } from "@/lib/format"
 import type { CaseStageKey } from "@/config/stages"
 
-export const metadata = { title: "Pipeline" }
+export const metadata = { title: { absolute: "Pipeline · Staff" } }
 
 export default async function PipelinePage() {
   const supabase = await createClient()

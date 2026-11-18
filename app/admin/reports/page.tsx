@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { money } from "@/lib/format"
 import { CASE_STAGES, stageMeta, type CaseStageKey } from "@/config/stages"
 
-export const metadata = { title: "Reports" }
+export const metadata = { title: { absolute: "Reports · Staff" } }
 
 export default async function Reports() {
   const supabase = await createClient()

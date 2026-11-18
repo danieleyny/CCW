@@ -17,7 +17,7 @@ import { formatDate, daysSince } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { NYPD_CONTROLLED_STAGES, type CaseStageKey } from "@/config/stages"
 
-export const metadata = { title: "Cases" }
+export const metadata = { title: { absolute: "Cases · Staff" } }
 
 const PAGE_SIZE = 25
 

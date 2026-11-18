@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
 import { setInstructorVerified } from "./actions"
 
-export const metadata = { title: "Instructors" }
+export const metadata = { title: { absolute: "Instructors · Staff" } }
 
 export default async function AdminInstructorsPage() {
   await requireStaff()

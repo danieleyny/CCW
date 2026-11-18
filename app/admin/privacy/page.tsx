@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/shared/page-header"
 import { DataRequestRow } from "@/components/admin/data-request-row"
 
-export const metadata = { title: "Privacy requests" }
+export const metadata = { title: { absolute: "Privacy requests · Staff" } }
 
 /**
  * PART A / Phase 3 — the staff queue for access / correction / deletion
