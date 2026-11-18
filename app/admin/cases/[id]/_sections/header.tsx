@@ -45,7 +45,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CASE_STAGES, isNypdControlled, stageIndex, stageMeta, type CaseStageKey } from "@/config/stages"
 import { trackEvent } from "@/lib/analytics"
-import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 export type CaseWorkspaceTab =
@@ -189,7 +188,7 @@ export function CaseHeader(props: HeaderProps) {
                       </PopoverContent>
                     </Popover>
                   </span>
-                  <span>Opened {formatDate(props.openedAt)}</span>
+                  <span>Opened {formatCaseDate(props.openedAt)}</span>
                   {props.nypdRef && <span className="font-mono">NYPD {props.nypdRef}</span>}
                   {props.borough && <span>{props.borough}</span>}
                 </div>
@@ -438,7 +437,7 @@ function StageChangeDialog({ caseId, clientName, stage, status, compact = false 
           {target && (
             <div role="alert" className={cn("rounded-lg border p-3 text-xs", previewing ? "border-hairline bg-surface-2" : preview?.ok ? "border-ok/30 bg-ok/8 text-ok" : "border-danger/30 bg-danger/8 text-danger")}>
               {previewing ? "Checking the pre-filing gate…" : preview?.gated ? preview.ok ? (
-                <p className="flex items-center gap-1.5 font-medium"><CheckCircle2 className="size-4" /> Pre-filing gate passes{preview.signedOffBy ? ` · signed off by ${preview.signedOffBy}` : ""}{preview.signedOffAt ? ` ${formatDate(preview.signedOffAt)}` : ""}</p>
+                <p className="flex items-center gap-1.5 font-medium"><CheckCircle2 className="size-4" /> Pre-filing gate passes{preview.signedOffBy ? ` · signed off by ${preview.signedOffBy}` : ""}{preview.signedOffAt ? ` ${formatCaseDate(preview.signedOffAt)}` : ""}</p>
               ) : (
                 <><p className="flex items-center gap-1.5 font-semibold"><ShieldAlert className="size-4" /> The pre-filing gate doesn&apos;t pass yet</p><ul className="mt-2 list-disc space-y-1 pl-5">{preview?.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul></>
               ) : <p className="flex items-center gap-1.5"><CheckCircle2 className="size-4" /> No gate on this step</p>}
@@ -481,4 +480,13 @@ function StageChangeDialog({ caseId, clientName, stage, status, compact = false 
       </DialogContent>
     </Dialog>
   )
+}
+
+function formatCaseDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "America/New_York",
+  }).format(new Date(value))
 }
