@@ -14,6 +14,7 @@ export type ConversionEvent =
   | "checklist_generated" // a personalized /checklist was produced
   | "contact_submitted" // a lead form was submitted (contact or checklist capture)
   | "pricing_viewed" // the /pricing page was viewed
+  | "admin_pipeline_viewed" // staff opened the read-only pipeline or leads board
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

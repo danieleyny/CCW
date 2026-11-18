@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { buildQaQueue } from "@/lib/admin/queue"
 import { loadConciergeQueue } from "@/lib/concierge/queue"
-import { isNypdControlled, type CaseStageKey } from "@/config/stages"
+import { isNypdControlled, stageMeta, type CaseStageKey } from "@/config/stages"
 import {
   DOCUMENT_REVIEW_BUSINESS_DAYS,
   MESSAGE_REPLY_BUSINESS_DAYS,
@@ -26,6 +26,59 @@ export type TodayScope = "mine" | "team" | "unassigned"
 export type TodayItemType = "message" | "document" | "qa" | "concierge" | "people" | "payment" | "stalled" | "task" | "privacy"
 export type TodaySection = "overdue" | "today" | "week"
 export type TodayOwner = "You" | "Team" | "Applicant" | "Third party" | "NYPD"
+
+export type CaseMoveOwner = "Staff" | "Applicant" | "Third party" | "NYPD" | "Licensed"
+
+export interface CaseOwnershipRow {
+  stage: CaseStageKey
+  licenseIssuedOn?: string | null
+  licenseExpiresOn?: string | null
+}
+
+export interface CaseOwnershipSignals {
+  nextAppointment?: string | null
+  staffNextStep?: string | null
+  thirdPartyNextStep?: string | null
+  applicantNextStep?: string | null
+}
+
+/**
+ * Shared owner/next-step precedence for Today and Pipeline. The inputs are
+ * deliberately pre-derived signals so callers can gather them in batches and
+ * this function remains deterministic and easy to verify.
+ */
+export function deriveCaseOwnership(
+  caseRow: CaseOwnershipRow,
+  signals: CaseOwnershipSignals
+): { whoseMove: CaseMoveOwner; nextStep: string } {
+  if (isNypdControlled(caseRow.stage)) {
+    return {
+      whoseMove: "NYPD",
+      nextStep: signals.nextAppointment || stageMeta(caseRow.stage).short,
+    }
+  }
+  if (caseRow.stage === "licensed") {
+    if (caseRow.licenseIssuedOn) {
+      const issued = new Date(caseRow.licenseIssuedOn).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+      const renewalYear = caseRow.licenseExpiresOn
+        ? new Date(caseRow.licenseExpiresOn).getUTCFullYear()
+        : null
+      return {
+        whoseMove: "Licensed",
+        nextStep: renewalYear ? `Licensed ${issued} · renew ${renewalYear}` : `Licensed ${issued}`,
+      }
+    }
+    return { whoseMove: "Licensed", nextStep: "Licensed" }
+  }
+  if (signals.staffNextStep) return { whoseMove: "Staff", nextStep: signals.staffNextStep }
+  if (signals.thirdPartyNextStep) return { whoseMove: "Third party", nextStep: signals.thirdPartyNextStep }
+  return { whoseMove: "Applicant", nextStep: signals.applicantNextStep || stageMeta(caseRow.stage).clientHint }
+}
 
 export interface TodayItem {
   id: string
@@ -416,8 +469,12 @@ export async function loadToday(
     if (c.status !== "active" || staffCaseIds.has(c.id)) continue
     if (scope === "mine" && c.assignedStaff !== userId) continue
     if (scope === "unassigned" && c.assignedStaff) continue
-    if (isNypdControlled(c.stage)) nypdCases.push(c)
-    else if (referenceCases.has(c.id)) thirdPartyCases.push(c)
+    const ownership = deriveCaseOwnership(
+      { stage: c.stage },
+      { thirdPartyNextStep: referenceCases.has(c.id) ? "Waiting on references or household" : null }
+    )
+    if (ownership.whoseMove === "NYPD") nypdCases.push(c)
+    else if (ownership.whoseMove === "Third party") thirdPartyCases.push(c)
     else applicantCases.push(c)
   }
   const thirdPartyCaseIds = new Set(thirdPartyCases.map((c) => c.id))

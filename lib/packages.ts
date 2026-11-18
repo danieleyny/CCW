@@ -78,11 +78,28 @@ export async function hasPaidPackage(db: DB, caseId: string, key: string): Promi
  */
 export async function paidPackageCaseIds(db: DB, caseIds: string[], key: string): Promise<Set<string>> {
   if (caseIds.length === 0) return new Set()
-  const { data } = await db
+  const { data, error } = await db
     .from("payments")
     .select("case_id")
     .eq("status", "paid")
     .eq("package_key", key)
     .in("case_id", caseIds)
+  if (error) throw error
   return new Set((data ?? []).map((p) => p.case_id).filter((x): x is string => !!x))
+}
+
+/**
+ * The package-agnostic batch form of the canonical paid-payment rule. Pipeline
+ * classification uses this because access-code, offline, deposit, and full
+ * payments all make a case active regardless of which package produced them.
+ */
+export async function paidCaseIds(db: DB, caseIds: string[]): Promise<Set<string>> {
+  if (caseIds.length === 0) return new Set()
+  const { data, error } = await db
+    .from("payments")
+    .select("case_id")
+    .eq("status", "paid")
+    .in("case_id", caseIds)
+  if (error) throw error
+  return new Set((data ?? []).map((payment) => payment.case_id).filter((id): id is string => !!id))
 }

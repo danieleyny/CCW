@@ -1,56 +1,30 @@
+import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
-import { PageHeader } from "@/components/shared/page-header"
-import { PipelineBoard, type PipelineCase } from "@/components/admin/pipeline-board"
-import { daysSince } from "@/lib/format"
-import type { CaseStageKey } from "@/config/stages"
+import { loadPipeline, type PipelineAssignedFilter, type PipelineServiceFilter, type PipelineTrackFilter, type PipelineView } from "@/lib/admin/pipeline"
+import { PipelineBoard } from "@/components/admin/pipeline-board"
+import { TrackView } from "@/components/analytics/track-view"
 
 export const metadata = { title: { absolute: "Pipeline · Staff" } }
 
-export default async function PipelinePage() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("cases")
-    .select("id, stage, status, is_renewal, is_demo, stage_entered_at, updated_at, clients(full_name, borough)")
-    .order("created_at", { ascending: false })
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
 
-  // V3-P2.5 — blocking counts for the stall signal, one query for the board.
-  const ids = (data ?? []).map((c) => c.id)
-  const blockingByCase = new Map<string, number>()
-  if (ids.length) {
-    const { data: reqs } = await supabase
-      .from("case_requirements")
-      .select("case_id, requirements!inner(blocking)")
-      .in("case_id", ids)
-      .eq("status", "pending")
-    for (const r of reqs ?? []) {
-      if ((r.requirements as unknown as { blocking: boolean })?.blocking) {
-        blockingByCase.set(r.case_id, (blockingByCase.get(r.case_id) ?? 0) + 1)
-      }
-    }
+export default async function PipelinePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { userId } = await requireStaff()
+  const sp = await searchParams
+  const view: PipelineView = first(sp.view) === "leads" ? "leads" : "active"
+  const trackValue = first(sp.track)
+  const serviceValue = first(sp.service)
+  const assignedValue = first(sp.assigned)
+  const filters = {
+    track: (["premise", "concealed", "special"].includes(trackValue ?? "") ? trackValue : "all") as PipelineTrackFilter,
+    service: (["concierge", "self_guided", "none"].includes(serviceValue ?? "") ? serviceValue : "all") as PipelineServiceFilter,
+    assigned: (assignedValue || "all") as PipelineAssignedFilter,
+    stalled: first(sp.stalled) === "1",
+    currentUserId: userId,
   }
-
-  const cases: PipelineCase[] = (data ?? []).map((c) => {
-    const client = c.clients as unknown as { full_name: string; borough: string | null }
-    return {
-      id: c.id,
-      stage: c.stage as CaseStageKey,
-      status: c.status,
-      isRenewal: c.is_renewal,
-      isDemo: c.is_demo,
-      clientName: client?.full_name ?? "Unknown",
-      borough: client?.borough ?? null,
-      daysInStage: daysSince(c.stage_entered_at ?? c.updated_at) ?? 0,
-      blockingCount: blockingByCase.get(c.id) ?? 0,
-    }
-  })
-
-  return (
-    <div>
-      <PageHeader
-        title="Pipeline"
-        description="Drag a case across the 13 stages. Red edge = stalled past 14 days or blocked; assembly/filing are gated by pre-filing QA."
-      />
-      <PipelineBoard initialCases={cases} />
-    </div>
-  )
+  const supabase = await createClient()
+  const data = await loadPipeline(supabase, { view, showHidden: first(sp.hidden) === "1", filters })
+  return <><TrackView event="admin_pipeline_viewed" params={{ view, track: filters.track, service: filters.service, assigned: filters.assigned, stalled: filters.stalled, showHidden: data.showHidden }} /><PipelineBoard data={data} /></>
 }

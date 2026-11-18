@@ -1855,6 +1855,15 @@
 .admin-sidebar-actions button:hover { color:#fff !important; background:rgba(255,255,255,.08) !important; }
 .admin-filter-scroll { scrollbar-width:none; }
 .admin-filter-scroll::-webkit-scrollbar { display:none; }
+.pipeline-agency-column { background-image:repeating-linear-gradient(135deg,rgba(102,112,133,.035) 0,rgba(102,112,133,.035) 1px,transparent 1px,transparent 9px); }
+.pipeline-card-list { max-height:calc(100svh - 310px); scrollbar-width:thin; scrollbar-color:rgba(20,37,74,.2) transparent; }
+@media (min-width:768px) and (max-width:1023px) {
+  .pipeline-desktop > .pipeline-column { width:220px; min-width:220px; }
+  .pipeline-column-header { position:sticky; top:0; }
+}
+@media (min-width:1024px) {
+  .pipeline-card-list { max-height:calc(100svh - 300px); }
+}
 @media (prefers-reduced-motion:no-preference) {
   .admin-today-row { transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease; }
   .admin-today-row:hover { transform:translateY(-1px); box-shadow:0 7px 18px rgba(15,30,58,.06); }
