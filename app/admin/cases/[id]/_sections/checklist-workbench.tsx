@@ -189,17 +189,20 @@ export function ChecklistWorkbench(props: ChecklistProps) {
           <div className="mt-3 grid grid-cols-2 rounded-lg bg-surface-2 p-1 text-xs"><button type="button" onClick={() => setGrouping("who")} className={cn("min-h-9 rounded-md", grouping === "who" && "bg-card font-semibold shadow-sm")}>Who acts</button><button type="button" onClick={() => setGrouping("topic")} className={cn("min-h-9 rounded-md", grouping === "topic" && "bg-card font-semibold shadow-sm")}>Topic</button></div>
         </div>
         <div role="listbox" aria-label="Requirements" tabIndex={0} onKeyDown={onListKeyDown} className="max-h-[68dvh] overflow-y-auto p-2 outline-none">
-          {groups.map(([group, items]) => (
-            <section key={group} className="mb-3 last:mb-0">
-              <h3 className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-text-low">{group} · {items.length}</h3>
-              <div className="space-y-1">
-                {items.map((item) => {
-                  const active = item.id === selected.id
-                  return <button key={item.id} type="button" role="option" aria-selected={active} onClick={() => navigate(item.id)} className={cn("relative w-full rounded-lg px-3 py-2.5 text-left text-xs hover:bg-surface-2", active && "bg-brass/8 pl-4 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-brass")}><span className={cn("block font-medium leading-snug", item.status === "na" && "text-text-low line-through")}>{item.title}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-text-low"><StatusDot status={item.status} /> {statusLine(item, props.documents)}{!item.blocking && <span className="rounded bg-surface-3 px-1">Optional</span>}</span></button>
-                })}
-              </div>
-            </section>
-          ))}
+          {groups.map(([group, items]) => {
+            const rows = <RequirementRows items={items} selectedId={selected.id} documents={props.documents} onSelect={navigate} />
+            return grouping === "who" && group === "Done" ? (
+              <details key={group} className="mb-3 last:mb-0">
+                <summary className="cursor-pointer rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-text-low hover:bg-surface-2">{group} · {items.length}</summary>
+                {rows}
+              </details>
+            ) : (
+              <section key={group} className="mb-3 last:mb-0">
+                <h3 className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-text-low">{group} · {items.length}</h3>
+                {rows}
+              </section>
+            )
+          })}
         </div>
       </aside>
 
@@ -259,6 +262,17 @@ export function ChecklistWorkbench(props: ChecklistProps) {
 }
 
 function LaneButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) { return <button type="button" onClick={onClick} className={cn("min-h-9 rounded-md", active && "bg-card font-semibold shadow-sm")}>{children}</button> }
+
+function RequirementRows({ items, selectedId, documents, onSelect }: { items: WorkbenchRequirement[]; selectedId: string; documents: DocRow[]; onSelect: (id: string) => void }) {
+  return (
+    <div className="space-y-1">
+      {items.map((item) => {
+        const active = item.id === selectedId
+        return <button key={item.id} type="button" role="option" aria-selected={active} onClick={() => onSelect(item.id)} className={cn("relative w-full rounded-lg px-3 py-2.5 text-left text-xs hover:bg-surface-2", active && "bg-brass/8 pl-4 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-brass")}><span className={cn("block font-medium leading-snug", item.status === "na" && "text-text-low line-through")}>{item.title}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-text-low"><StatusDot status={item.status} /> {statusLine(item, documents)}{!item.blocking && <span className="rounded bg-surface-3 px-1">Optional</span>}</span></button>
+      })}
+    </div>
+  )
+}
 
 function StatusDot({ status }: { status: string }) { return status === "satisfied" ? <CheckCircle2 className="size-3 text-ok" /> : status === "rejected" ? <X className="size-3 text-danger" /> : status === "na" ? <Ban className="size-3 text-text-low" /> : <span className="size-1.5 rounded-full bg-warn" /> }
 

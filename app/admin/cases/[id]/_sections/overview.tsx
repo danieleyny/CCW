@@ -71,13 +71,13 @@ export function CaseOverview(props: OverviewProps) {
             </div>
             <div className="mt-4 grid gap-2 md:grid-cols-3">
               {props.preview.openBeforeFiling.boxes.map((box) => (
-                <Link key={box.label} href={`/admin/cases/${props.caseId}?tab=checklist&group=${encodeURIComponent(box.label)}`} className="rounded-xl border border-hairline bg-surface-1 p-3 transition-colors hover:border-brass/40 hover:bg-brass/5">
+                <div key={box.label} className="rounded-xl border border-hairline bg-surface-1 p-3">
                   <div className="flex items-center justify-between"><span className="text-xs font-semibold text-text-mid">{box.label}</span><b className="font-display text-xl">{box.count}</b></div>
                   <ul className="mt-2 space-y-1.5 text-xs text-text-mid">
-                    {box.titles.map((title) => <li key={title} className="flex items-start justify-between gap-2"><span className="line-clamp-2">{title}</span><ArrowRight className="mt-0.5 size-3.5 shrink-0" /></li>)}
+                    {box.items.map((item) => <li key={item.id}><Link href={`/admin/cases/${props.caseId}?tab=checklist&req=${item.id}`} className="flex items-start justify-between gap-2 rounded-md py-0.5 transition-colors hover:text-signal"><span className="line-clamp-2">{item.title}</span><ArrowRight className="mt-0.5 size-3.5 shrink-0" /></Link></li>)}
                     {box.count === 0 && <li className="flex items-center gap-1.5 text-ok"><CheckCircle2 className="size-3.5" /> Nothing waiting</li>}
                   </ul>
-                </Link>
+                </div>
               ))}
             </div>
           </section>

@@ -15,6 +15,7 @@ export interface CasePreviewOpenBox {
   label: string
   count: number
   titles: string[]
+  items: Array<{ id: string; title: string }>
 }
 
 export interface CasePreviewData {
@@ -154,9 +155,9 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     const requirement = row.requirements as unknown as { blocking: boolean }
     return requirement.blocking && row.status !== "satisfied" && row.status !== "na"
   })
-  const reviewTitles: string[] = []
-  const applicantTitles: string[] = []
-  const thirdPartyTitles: string[] = []
+  const reviewItems: Array<{ id: string; title: string }> = []
+  const applicantItems: Array<{ id: string; title: string }> = []
+  const thirdPartyItems: Array<{ id: string; title: string }> = []
   for (const row of openRequirements) {
     const title = (row.requirements as unknown as { title: string }).title
     const document = row.document_id ? documents.get(row.document_id) : null
@@ -164,14 +165,14 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     const cohabitant = row.cohabitant_id ? cohabitants.get(row.cohabitant_id) : null
     const thirdPartyOpen = !!reference && ["sent", "opened"].includes(reference.status)
       || !!cohabitant && !!cohabitant.sent_at && !cohabitant.token_revoked_at && cohabitant.affidavit_status === "not_started"
-    if (document?.status === "pending") reviewTitles.push(title)
-    else if (thirdPartyOpen) thirdPartyTitles.push(title)
-    else applicantTitles.push(title)
+    if (document?.status === "pending") reviewItems.push({ id: row.id, title })
+    else if (thirdPartyOpen) thirdPartyItems.push({ id: row.id, title })
+    else applicantItems.push({ id: row.id, title })
   }
   const boxes: CasePreviewOpenBox[] = [
-    { label: "Staff to review", count: reviewTitles.length, titles: reviewTitles.slice(0, 3) },
-    { label: "Applicant to send", count: applicantTitles.length, titles: applicantTitles.slice(0, 3) },
-    { label: "Third party", count: thirdPartyTitles.length, titles: thirdPartyTitles.slice(0, 3) },
+    { label: "Staff to review", count: reviewItems.length, titles: reviewItems.slice(0, 3).map((item) => item.title), items: reviewItems.slice(0, 3) },
+    { label: "Applicant to send", count: applicantItems.length, titles: applicantItems.slice(0, 3).map((item) => item.title), items: applicantItems.slice(0, 3) },
+    { label: "Third party", count: thirdPartyItems.length, titles: thirdPartyItems.slice(0, 3).map((item) => item.title), items: thirdPartyItems.slice(0, 3) },
   ]
   const beforeFiled = stageIndex(stage) < stageIndex("filed")
   const isLead = card?.classification === "leads"
