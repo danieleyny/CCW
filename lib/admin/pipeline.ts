@@ -56,6 +56,10 @@ export interface PipelineCard {
   pendingAmount: string | null
   lastStep: string | null
   progressStep: number
+  classification: PipelineView
+  phase: ActivePhaseKey
+  leadGroup: LeadGroupKey
+  hiddenDuplicate: boolean
 }
 
 export interface PipelineColumn {
@@ -88,7 +92,11 @@ export interface PipelineData {
   filters: PipelineFilters
   staff: PipelineStaffOption[]
   asOf: string
+  /** Server-only consumers such as Cases use this to share every pipeline rule. */
+  allCards: PipelineCard[]
 }
+
+export type PipelineClientData = Omit<PipelineData, "allCards">
 
 interface RawCase {
   id: string
@@ -342,6 +350,7 @@ export async function loadPipeline(
       filters,
       staff: [],
       asOf: now.toISOString(),
+      allCards: [],
     }
   }
 
@@ -544,6 +553,7 @@ export async function loadPipeline(
       classification: paid ? "active" : "leads",
       phase: activePhase(c.stage),
       leadGroup: group,
+      hiddenDuplicate: duplicate.hidden,
     }
   })
 
@@ -603,6 +613,7 @@ export async function loadPipeline(
     filters,
     staff,
     asOf: now.toISOString(),
+    allCards: cards,
   }
 }
 

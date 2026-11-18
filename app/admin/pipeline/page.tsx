@@ -25,6 +25,8 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
     currentUserId: userId,
   }
   const supabase = await createClient()
-  const data = await loadPipeline(supabase, { view, showHidden: first(sp.hidden) === "1", filters })
+  const result = await loadPipeline(supabase, { view, showHidden: first(sp.hidden) === "1", filters })
+  const { allCards: _allCards, ...data } = result
+  void _allCards
   return <><TrackView event="admin_pipeline_viewed" params={{ view, track: filters.track, service: filters.service, assigned: filters.assigned, stalled: filters.stalled, showHidden: data.showHidden }} /><PipelineBoard data={data} /></>
 }

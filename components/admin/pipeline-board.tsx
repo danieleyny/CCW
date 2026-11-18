@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Clock3, LayoutGrid, LockKeyhole, Users } from "lucide-react"
 import { CASE_STAGES } from "@/config/stages"
-import type { PipelineCard, PipelineColumn, PipelineData } from "@/lib/admin/pipeline"
+import type { PipelineCard, PipelineClientData, PipelineColumn } from "@/lib/admin/pipeline"
 import { cn } from "@/lib/utils"
 
 const PROGRESS_STAGES = CASE_STAGES.slice(2)
@@ -64,7 +64,7 @@ function MobileRow({ card, lead }: { card: PipelineCard; lead: boolean }) {
   return <Link href={`/admin/cases/${card.id}`} aria-label={accessible} className={cn("block min-h-11 border-b border-black/[.07] bg-white px-3 py-3 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#14254A]", !lead && card.stalled && "border-l-[3px] border-l-[#B42318]")}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><strong title={card.clientName} className="line-clamp-2 text-[14px] leading-tight text-[#101828]">{card.clientName}</strong><p className="mt-1 truncate font-mono text-[9.5px] uppercase tracking-[.09em] text-[#667085]">{card.trackLabel} · {card.serviceLabel}</p></div><Owner card={card} /></div>{(card.isDemo || card.isDuplicate) && <div className="mt-1.5 flex gap-1">{card.isDemo && <Tag tone="gold">Demo</Tag>}{card.isDuplicate && <Tag>Duplicate</Tag>}</div>}{!lead && <ProgressTrack card={card} />}<div className="mt-2.5 flex min-w-0 items-center gap-1.5 text-[10.5px] text-[#667085]">{!lead && <><span className={cn("size-1.5 shrink-0 rounded-full", moveColor(card.whoseMove))} /><span className="shrink-0">{card.whoseMove}</span><span aria-hidden>·</span></>}<span title={lead ? card.lastStep ?? undefined : card.nextStep} className="min-w-0 truncate text-[#344054]">{lead ? card.lastStep : card.nextStep}</span>{lead && card.pendingAmount && <span className="shrink-0 font-semibold text-[#805B00]">· {card.pendingAmount}</span>}<span className={cn("ml-auto shrink-0 tabular-nums", (lead ? card.days >= 30 : card.stalled) && "font-semibold text-[#B42318]")}>{card.days}d{card.nypdControlled ? " · their clock" : lead ? " ago" : card.stalled ? " · stalled" : ""}</span></div></Link>
 }
 
-export function PipelineBoard({ data }: { data: PipelineData }) {
+export function PipelineBoard({ data }: { data: PipelineClientData }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

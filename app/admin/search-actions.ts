@@ -3,6 +3,7 @@
 import { z } from "zod"
 import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { adminSearchPatterns } from "@/lib/admin/search"
 
 const querySchema = z.string().trim().min(2).max(80)
 
@@ -21,12 +22,12 @@ export async function searchAdminCases(input: string): Promise<AdminSearchResult
   const query = querySchema.safeParse(input)
   if (!query.success) return []
   const db = await createClient()
-  const pattern = `%${query.data.replaceAll("%", "").replaceAll("_", "")}%`
+  const pattern = adminSearchPatterns(query.data)
   const select = "id, full_name, email, phone, track"
   const [names, emails, phones] = await Promise.all([
-    db.from("clients").select(select).ilike("full_name", pattern).limit(8),
-    db.from("clients").select(select).ilike("email", pattern).limit(8),
-    db.from("clients").select(select).ilike("phone", pattern).limit(8),
+    db.from("clients").select(select).ilike("full_name", pattern.textPattern).limit(8),
+    db.from("clients").select(select).ilike("email", pattern.textPattern).limit(8),
+    db.from("clients").select(select).ilike("phone", pattern.phonePattern).limit(8),
   ])
   const clients = new Map<string, { id: string; full_name: string; email: string | null; phone: string | null; track: string }>()
   for (const row of [...(names.data ?? []), ...(emails.data ?? []), ...(phones.data ?? [])]) clients.set(row.id, row)

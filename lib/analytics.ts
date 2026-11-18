@@ -15,6 +15,8 @@ export type ConversionEvent =
   | "contact_submitted" // a lead form was submitted (contact or checklist capture)
   | "pricing_viewed" // the /pricing page was viewed
   | "admin_pipeline_viewed" // staff opened the read-only pipeline or leads board
+  | "admin_cases_viewed" // staff opened the read-only case list
+  | "admin_case_preview_opened" // staff opened a safe case preview
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return
