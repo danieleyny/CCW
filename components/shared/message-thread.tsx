@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 import { TeamLogoAvatar } from "@/components/brand/team-logo-avatar"
+import { UserAvatar } from "@/components/shared/user-avatar"
+import { usePortalUserAvatar } from "@/components/portal/portal-user-avatar-provider"
 
 export interface MessageRow {
   id: string
@@ -41,6 +43,7 @@ export function MessageThread({
   markRead?: () => Promise<void>
 }) {
   const { locale, messages: catalog } = usePortalI18n()
+  const portalUser = usePortalUserAvatar()
   const t = catalog.ui
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -75,9 +78,16 @@ export function MessageThread({
         )}
         {messages.map((m) => {
           const isStaff = m.senderRole === "staff" || m.senderRole === "admin"
+          const isClient = m.senderRole === "client"
           return (
             <li key={m.id} className="flex gap-3">
-              {isStaff && !m.senderName ? (
+              {isClient && portalUser ? (
+                <UserAvatar
+                  name={m.senderName ?? portalUser.fullName}
+                  avatar={portalUser.avatar}
+                  size={32}
+                />
+              ) : isStaff && !m.senderName ? (
                 <TeamLogoAvatar size="sm" className="size-8" />
               ) : (
                 <Avatar className="size-8">

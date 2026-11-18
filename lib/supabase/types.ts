@@ -3131,6 +3131,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_key: string | null
+          avatar_kind: string | null
+          avatar_path: string | null
           contact_pref: string
           created_at: string
           full_name: string
@@ -3142,6 +3145,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_key?: string | null
+          avatar_kind?: string | null
+          avatar_path?: string | null
           contact_pref?: string
           created_at?: string
           full_name?: string
@@ -3153,6 +3159,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_key?: string | null
+          avatar_kind?: string | null
+          avatar_path?: string | null
           contact_pref?: string
           created_at?: string
           full_name?: string
@@ -5046,6 +5055,14 @@ export type Database = {
       }
     }
     Functions: {
+      update_own_profile_avatar: {
+        Args: {
+          p_key?: string | null
+          p_kind: string | null
+          p_path?: string | null
+        }
+        Returns: string | null
+      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined

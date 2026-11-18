@@ -28,6 +28,8 @@ const csp = [
   `img-src 'self' data: blob: https: https://*.stripe.com`,
   `font-src 'self' data:`,
   `media-src 'self'`,
+  // Browser-side HEIC conversion runs libheif in a blob-backed worker.
+  `worker-src 'self' blob:`,
   `object-src 'none'`,
   `base-uri 'self'`,
   `frame-ancestors 'none'`,

@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const notifyFormspreeMock = vi.fn(async () => undefined)
+const notifyFormspreeMock = vi.fn<
+  (source: string, fields: Record<string, unknown>) => Promise<void>
+>(async () => undefined)
 
 vi.mock("@/lib/formspree", () => ({
-  notifyFormspree: (...args: unknown[]) => notifyFormspreeMock(...args),
+  notifyFormspree: (source: string, fields: Record<string, unknown>) =>
+    notifyFormspreeMock(source, fields),
 }))
 
 import { notifyTeamOfPortalMessage } from "@/lib/messages/team-notification"
@@ -38,7 +41,8 @@ describe("portal message team notifications", () => {
       thread: "instructor",
     })
 
-    const [, fields] = notifyFormspreeMock.mock.calls[0] as [string, Record<string, unknown>]
+    const fields = notifyFormspreeMock.mock.calls[0]?.[1]
+    expect(fields).toBeDefined()
     expect(fields).toMatchObject({
       name: "Portal client",
       thread: "Training instructor",

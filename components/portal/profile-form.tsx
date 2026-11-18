@@ -1,14 +1,14 @@
 "use client"
 
-import { useActionState, useEffect, useState, type ReactNode } from "react"
+import { useActionState, useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
+  Camera,
   Check,
   Database,
   Eye,
   EyeOff,
-  Globe,
   IdCard,
   KeyRound,
   ListChecks,
@@ -23,7 +23,9 @@ import { updateProfile, changePassword, type ProfileState } from "@/app/portal/p
 import { Button } from "@/components/ui/button"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
 import { usePortalI18n, interpolate } from "@/components/shared/portal-i18n-provider"
-import { LOCALES } from "@/config/i18n"
+import { ProfilePhotoPicker } from "@/components/portal/profile-photo-picker"
+import { usePortalUserAvatar } from "@/components/portal/portal-user-avatar-provider"
+import { UserAvatar } from "@/components/shared/user-avatar"
 
 type SequencedProfileState = ProfileState & { submissionId: number }
 
@@ -43,19 +45,6 @@ async function changePasswordWithSequence(
 ): Promise<SequencedProfileState> {
   const result = await changePassword(previous, formData)
   return { ...result, submissionId: previous.submissionId + 1 }
-}
-
-function initialsFor(name: string) {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-
-  return initials || null
 }
 
 function TimedSuccess({ children }: { children: ReactNode }) {
@@ -89,6 +78,10 @@ export function ProfileForms({
   memberSince: string | null
 }) {
   const { locale, messages } = usePortalI18n()
+  const portalUser = usePortalUserAvatar()
+  const avatarButton = useRef<HTMLButtonElement>(null)
+  const [photoOpen, setPhotoOpen] = useState(false)
+  const [photoSession, setPhotoSession] = useState(0)
   const t = messages.ui
   const plan = serviceMode === "concierge"
     ? t.fullConcierge
@@ -102,17 +95,40 @@ export function ProfileForms({
         timeZone: "America/New_York",
       }).format(new Date(memberSince))
     : null
-  const currentLanguage = LOCALES.find((item) => item.key === locale)?.nativeLabel ?? locale
+
+  function openPhotoPicker() {
+    setPhotoSession((session) => session + 1)
+    setPhotoOpen(true)
+  }
+
+  function changePhotoOpen(nextOpen: boolean) {
+    setPhotoOpen(nextOpen)
+    if (!nextOpen) window.requestAnimationFrame(() => avatarButton.current?.focus())
+  }
 
   return (
     <div className="profile-v2-stack">
       <section className="profile-identity-card" aria-label={t.profileIdentityLabel}>
-        <div className="profile-avatar" aria-hidden>
-          {initialsFor(fullName) ?? <User />}
-        </div>
+        <button
+          ref={avatarButton}
+          type="button"
+          className="profile-avatar-button"
+          aria-label="Change profile photo"
+          onClick={openPhotoPicker}
+        >
+          <UserAvatar
+            name={fullName}
+            avatar={portalUser?.avatar ?? { kind: null, key: null, path: null, url: null }}
+            className="profile-avatar"
+          />
+          <span className="profile-avatar-camera" aria-hidden><Camera /></span>
+        </button>
         <div className="profile-identity-copy">
           <h2>{fullName}</h2>
           <p>{email}</p>
+          <button type="button" className="profile-change-photo" onClick={openPhotoPicker}>
+            Change photo
+          </button>
           {(plan || memberDate) && (
             <div className="profile-identity-chips">
               {plan && (
@@ -131,6 +147,7 @@ export function ProfileForms({
           )}
         </div>
       </section>
+      <ProfilePhotoPicker key={photoSession} open={photoOpen} onOpenChange={changePhotoOpen} />
 
       <div className="profile-forms-grid">
         <ContactCard fullName={fullName} email={email} phone={phone} />
@@ -165,16 +182,11 @@ export function ProfileForms({
             title={t.yourDataShortcut}
             description={t.yourDataShortcutDescription}
           />
-          <div className="profile-shortcut profile-language-shortcut">
-            <span className="profile-shortcut-icon" aria-hidden>
-              <Globe />
-            </span>
-            <span className="profile-shortcut-copy">
-              <strong>{t.languageShortcut}</strong>
-              <small>{currentLanguage}</small>
-            </span>
-            <LocaleSwitcher current={locale} label={messages.common.language} />
-          </div>
+          <LocaleSwitcher
+            current={locale}
+            label={t.languageShortcut}
+            variant="tile"
+          />
           <form action={signOut} className="profile-shortcut-form">
             <button type="submit" className="profile-shortcut profile-signout-shortcut">
               <span className="profile-shortcut-icon" aria-hidden>

@@ -12,20 +12,10 @@ import { NotificationBell } from "@/components/shared/notification-bell"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { PortalI18nProvider } from "@/components/shared/portal-i18n-provider"
-import { User } from "lucide-react"
+import { PortalUserAvatarProvider } from "@/components/portal/portal-user-avatar-provider"
+import { UserAvatar } from "@/components/shared/user-avatar"
+import { getProfileAvatarUrl } from "@/lib/profile-avatar"
 import "./portal-v2.css"
-
-function getInitials(name: string | null) {
-  const initials = name
-    ?.trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-
-  return initials || null
-}
 
 export default async function PortalLayout({
   children,
@@ -52,13 +42,23 @@ export default async function PortalLayout({
     .select("id", { count: "exact", head: true })
     .eq("read", false)
 
-  const [locale, t] = await Promise.all([getLocale(), getMessages()])
+  const [locale, t, avatarUrl] = await Promise.all([
+    getLocale(),
+    getMessages(),
+    profile.avatar_kind === "upload" ? getProfileAvatarUrl(profile.avatar_path) : null,
+  ])
   // CONCIERGE QA Phase 4 — the done-for-you path gets its own nav (no checklist).
   const isConcierge = myCase?.service_mode === "concierge"
-  const initials = getInitials(profile.full_name)
+  const avatar = {
+    kind: profile.avatar_kind === "animal" || profile.avatar_kind === "upload" ? profile.avatar_kind : null,
+    key: profile.avatar_key,
+    path: profile.avatar_path,
+    url: avatarUrl,
+  } as const
 
   return (
     <PortalI18nProvider locale={locale} messages={t}>
+    <PortalUserAvatarProvider userId={profile.id} fullName={profile.full_name} initialAvatar={avatar}>
     <div
       lang={locale}
       className="portal-v2 flex min-h-svh flex-col bg-background text-foreground"
@@ -81,13 +81,14 @@ export default async function PortalLayout({
               href="/portal/profile"
               className="portal-v2-avatar md:hidden"
             >
-              {initials ? <span aria-hidden>{initials}</span> : <User aria-hidden />}
+              <UserAvatar name={profile.full_name} avatar={avatar} size={32} />
               <span className="sr-only">{profile.full_name || t.common.account} · {t.common.profile}</span>
             </Link>
             <Link
               href="/portal/profile"
-              className="hidden text-sm font-medium text-muted-foreground hover:text-foreground md:inline"
+              className="hidden items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground md:flex"
             >
+              <UserAvatar name={profile.full_name} avatar={avatar} size={32} />
               {profile.full_name}
             </Link>
             <div className="hidden md:block">
@@ -127,6 +128,7 @@ export default async function PortalLayout({
         <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} />
       )}
     </div>
+    </PortalUserAvatarProvider>
     </PortalI18nProvider>
   )
 }

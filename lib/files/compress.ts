@@ -4,9 +4,8 @@
  * Why: phone photos (the gun-safe shot, notarized scans) routinely exceed the
  * 5 MB portal-safe cap, and iPhones shoot HEIC. Instead of rejecting the user
  * at a REQUIRED step, we decode in the browser, downscale to a sane document
- * resolution, and re-encode as JPEG (~1–2 MB). Safari decodes HEIC natively;
- * where decode fails (e.g. HEIC on desktop Chrome) we fall back to the original
- * file and let the validator make the call.
+ * resolution, and re-encode as JPEG (~1–2 MB). Native HEIC decode is attempted
+ * first; browsers without it lazily load the CSP-safe `heic-to` decoder.
  *
  * Browser-only (canvas). Never throws — worst case returns the input file.
  */
@@ -26,7 +25,14 @@ export async function compressImageFile(file: File): Promise<File> {
   if (!isHeic && file.size <= SKIP_UNDER_BYTES) return file
 
   try {
-    const bitmap = await createImageBitmap(file)
+    let bitmap: ImageBitmap
+    try {
+      bitmap = await createImageBitmap(file)
+    } catch (error) {
+      if (!isHeic) throw error
+      const { heicTo } = await import("heic-to/csp")
+      bitmap = await heicTo({ blob: file, type: "bitmap" })
+    }
     const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
     const w = Math.max(1, Math.round(bitmap.width * scale))
     const h = Math.max(1, Math.round(bitmap.height * scale))
