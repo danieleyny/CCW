@@ -8,13 +8,16 @@ import { searchAdminCases, type AdminSearchResult } from "@/app/admin/search-act
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function CommandPalette({ open, onOpenChange, role }: { open: boolean; onOpenChange: (open: boolean) => void; role: string }) {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<AdminSearchResult[]>([])
   const [selected, setSelected] = useState(0)
   const [pending, startTransition] = useTransition()
-  const nav = useMemo(() => ADMIN_NAV.filter((item) => !query || item.label.toLowerCase().includes(query.toLowerCase())), [query])
+  const nav = useMemo(
+    () => ADMIN_NAV.filter((item) => (!item.adminOnly || role === "admin") && (!query || item.label.toLowerCase().includes(query.toLowerCase()))),
+    [query, role]
+  )
   const rows = [...nav.map((item) => ({ id: `nav-${item.key}`, href: item.href, title: item.label, sub: item.group })), ...results.map((item) => ({ id: `case-${item.caseId}`, href: `/admin/cases/${item.caseId}`, title: item.name, sub: `${item.track} · ${item.stage}` }))]
 
   useEffect(() => {

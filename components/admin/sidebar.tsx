@@ -23,7 +23,7 @@ export function AdminNavGroups({ counts, role, compact = false, onNavigate }: { 
         <div key={group} className={cn("mb-4", compact && "mb-2")}>
           {!compact && <p className="mb-1.5 px-3 font-mono text-[10px] font-medium uppercase tracking-[.2em] text-[#8FA0C2]">{group}</p>}
           <div className="space-y-0.5">
-            {ADMIN_NAV.filter((item) => item.group === group).map((item) => {
+            {ADMIN_NAV.filter((item) => item.group === group && (!item.adminOnly || role === "admin")).map((item) => {
               const active = item.exact ? pathname === item.href : pathname.startsWith(item.href)
               const badge = item.adminOnlyBadge && role !== "admin" ? undefined : counts[item.key]
               const Icon = item.icon

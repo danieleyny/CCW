@@ -44,7 +44,7 @@ export function AdminShell({ children, counts, name, role, notification, account
         })}
         <Sheet><SheetTrigger asChild><button className="flex min-h-11 flex-col items-center justify-center gap-1 text-[10px] font-medium text-[#667085]"><MoreHorizontal className="size-5" />More</button></SheetTrigger><SheetContent side="bottom" className="max-h-[82svh] rounded-t-2xl bg-[#14254A] p-0 text-white"><SheetHeader className="border-b border-white/10"><SheetTitle className="text-white">All staff pages</SheetTitle><SheetDescription className="text-[#9DABC4]">The complete consultant workspace.</SheetDescription></SheetHeader><div className="overflow-y-auto p-3"><AdminNavGroups counts={counts} role={role} /></div></SheetContent></Sheet>
       </nav>
-      <CommandPalette open={palette} onOpenChange={setPalette} />
+      <CommandPalette open={palette} onOpenChange={setPalette} role={role} />
     </div>
   )
 }

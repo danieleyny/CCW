@@ -30,6 +30,7 @@ export interface AdminNavItem {
   group: AdminNavGroup
   icon: LucideIcon
   exact?: boolean
+  adminOnly?: boolean
   adminOnlyBadge?: boolean
 }
 
@@ -45,8 +46,8 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { key: "training", href: "/admin/training", label: "Training", group: "Operations", icon: GraduationCap },
   { key: "instructors", href: "/admin/instructors", label: "Instructors", group: "Operations", icon: UserRoundCheck },
   { key: "requirements", href: "/admin/requirements", label: "Requirements", group: "Governance", icon: ScrollText },
-  { key: "legal", href: "/admin/legal", label: "Legal review", group: "Governance", icon: Scale, adminOnlyBadge: true },
-  { key: "privacy", href: "/admin/privacy", label: "Privacy", group: "Governance", icon: ShieldCheck, adminOnlyBadge: true },
+  { key: "legal", href: "/admin/legal", label: "Legal review", group: "Governance", icon: Scale, adminOnly: true, adminOnlyBadge: true },
+  { key: "privacy", href: "/admin/privacy", label: "Privacy", group: "Governance", icon: ShieldCheck, adminOnly: true, adminOnlyBadge: true },
   { key: "reports", href: "/admin/reports", label: "Reports", group: "Governance", icon: BarChart3 },
 ]
 
