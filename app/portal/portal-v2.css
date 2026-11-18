@@ -224,6 +224,11 @@ html:has(.portal-v2) body {
   letter-spacing: 0.06em;
 }
 
+.portal-v2-avatar > svg {
+  width: 16px;
+  height: 16px;
+}
+
 .portal-v2-top-nav-wrap {
   scrollbar-width: none;
 }
@@ -1635,7 +1640,8 @@ html:has(.portal-v2) body {
 .intro-call-wave-two { animation-delay: .45s; }
 
 .intro-call-agent-pill { position: absolute; z-index: 5; right: 32px; bottom: 28px; display: flex; min-width: 245px; align-items: center; gap: 10px; border: 1px solid rgba(20,37,74,.1); border-radius: 999px; background: rgba(255,255,255,.94); padding: 8px 12px 8px 8px; box-shadow: 0 15px 30px -24px rgba(10,18,34,.7); }
-.intro-call-agent-pill > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--portal-navy); font: 750 .62rem var(--font-mono), monospace; color: #fff; }
+.intro-call-agent-pill > .intro-call-agent-initials { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--portal-navy); font: 750 .62rem var(--font-mono), monospace; color: #fff; }
+.intro-call-agent-pill > [data-team-logo-avatar] { width: 34px; height: 34px; }
 .intro-call-agent-pill p { display: grid; line-height: 1.25; }
 .intro-call-agent-pill small { font-size: .55rem; color: var(--portal-muted); }
 .intro-call-agent-pill b { font-size: .68rem; }
@@ -1770,7 +1776,8 @@ html:has(.portal-v2) body {
   .intro-call-phone { top: 37px; right: 14%; width: 54px; height: 101px; border-width: 3px; border-radius: 16px; }
   .intro-call-phone > svg { width: 19px; height: 19px; }
   .intro-call-agent-pill { right: 7%; bottom: 7px; min-width: 184px; padding: 5px 8px 5px 5px; }
-  .intro-call-agent-pill > span { width: 28px; height: 28px; font-size: .5rem; }
+  .intro-call-agent-pill > .intro-call-agent-initials,
+  .intro-call-agent-pill > [data-team-logo-avatar] { width: 28px; height: 28px; font-size: .5rem; }
   .intro-call-agent-pill small { font-size: .45rem; }
   .intro-call-agent-pill b { font-size: .54rem; }
   .intro-call-chip { padding: 4px 6px; font-size: .42rem; }
@@ -1902,6 +1909,11 @@ html:has(.portal-v2) body {
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.09em;
+}
+
+.profile-avatar > svg {
+  width: 28px;
+  height: 28px;
 }
 
 .profile-identity-copy {
@@ -6863,6 +6875,9 @@ button.profile-shortcut:hover {
   place-items: center;
   border: 1px solid rgba(217, 178, 95, 0.45);
   border-radius: 14px;
+}
+
+.concierge-team-avatar:not([data-team-logo-avatar]) {
   background: linear-gradient(135deg, #14254a, #314c7d);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.68rem;

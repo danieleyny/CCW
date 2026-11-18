@@ -3,16 +3,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { CalendarDays, Check, MessageCircle, Phone, ShieldCheck, Sparkles } from "lucide-react"
 import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import { TeamLogoAvatar } from "@/components/brand/team-logo-avatar"
 
 export function IntroCallNextStep({
   children,
-  agentFirst,
+  agentName,
   thenLabel,
   thenCaptured,
   thenTotal,
 }: {
   children: ReactNode
-  agentFirst: string | null
+  agentName: string | null
   thenLabel: string
   thenCaptured?: number
   thenTotal?: number
@@ -21,6 +22,7 @@ export function IntroCallNextStep({
   const [active, setActive] = useState(true)
   const { locale, messages } = usePortalI18n()
   const t = messages.concierge
+  const agentFirst = agentName?.trim().split(/\s+/)[0] ?? null
 
   useEffect(() => {
     const element = root.current
@@ -80,8 +82,12 @@ export function IntroCallNextStep({
         </div>
 
         <div className="intro-call-agent-pill">
-          <span>GL</span>
-          <p><small>{t.teamLabel}</small><b>{agentFirst ? interpolate(t.hereToHelp, { name: agentFirst }) : interpolate(t.hereToHelp, { name: "GL" })}</b></p>
+          {agentName ? (
+            <span className="intro-call-agent-initials">{getInitials(agentName)}</span>
+          ) : (
+            <TeamLogoAvatar size="sm" />
+          )}
+          <p><small>{t.teamLabel}</small><b>{agentFirst ? interpolate(t.hereToHelp, { name: agentFirst }) : t.hereToHelpTeam}</b></p>
           <i />
         </div>
 
@@ -93,4 +99,14 @@ export function IntroCallNextStep({
       </div>
     </section>
   )
+}
+
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
 }

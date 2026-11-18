@@ -12,6 +12,7 @@ import { NotificationBell } from "@/components/shared/notification-bell"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
 import { getLocale, getMessages } from "@/lib/i18n"
 import { PortalI18nProvider } from "@/components/shared/portal-i18n-provider"
+import { User } from "lucide-react"
 import "./portal-v2.css"
 
 function getInitials(name: string | null) {
@@ -23,7 +24,7 @@ function getInitials(name: string | null) {
     .join("")
     .toUpperCase()
 
-  return initials || "GL"
+  return initials || null
 }
 
 export default async function PortalLayout({
@@ -80,7 +81,7 @@ export default async function PortalLayout({
               href="/portal/profile"
               className="portal-v2-avatar md:hidden"
             >
-              <span aria-hidden>{initials}</span>
+              {initials ? <span aria-hidden>{initials}</span> : <User aria-hidden />}
               <span className="sr-only">{profile.full_name || t.common.account} · {t.common.profile}</span>
             </Link>
             <Link

@@ -8,6 +8,7 @@ import { initials } from "@/lib/format"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import { TeamLogoAvatar } from "@/components/brand/team-logo-avatar"
 
 export interface MessageRow {
   id: string
@@ -76,16 +77,20 @@ export function MessageThread({
           const isStaff = m.senderRole === "staff" || m.senderRole === "admin"
           return (
             <li key={m.id} className="flex gap-3">
-              <Avatar className="size-8">
-                <AvatarFallback
-                  className={cn(
-                    "text-xs",
-                    isStaff ? "bg-signal-dim text-signal" : "bg-brass/15 text-brass-bright"
-                  )}
-                >
-                  {initials(m.senderName ?? "?")}
-                </AvatarFallback>
-              </Avatar>
+              {isStaff && !m.senderName ? (
+                <TeamLogoAvatar size="sm" className="size-8" />
+              ) : (
+                <Avatar className="size-8">
+                  <AvatarFallback
+                    className={cn(
+                      "text-xs",
+                      isStaff ? "bg-signal-dim text-signal" : "bg-brass/15 text-brass-bright"
+                    )}
+                  >
+                    {initials(m.senderName ?? "?")}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{m.senderName ?? t.system}</span>

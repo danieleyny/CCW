@@ -423,6 +423,7 @@ export interface Messages {
     minutes: string
     requestSent: string
     hereToHelp: string
+    hereToHelpTeam: string
     caseReady: string
     realAnswers: string
     confirmed: string
@@ -920,6 +921,7 @@ const en: Messages = {
     minutes: "30 min",
     requestSent: "Request sent",
     hereToHelp: "{name} is here to help",
+    hereToHelpTeam: "We're here to help",
     caseReady: "Case-ready",
     realAnswers: "Real answers",
     confirmed: "Confirmed",
@@ -1627,6 +1629,7 @@ const es: DeepPartial<Messages> = {
     minutes: "30 min",
     requestSent: "Solicitud enviada",
     hereToHelp: "{name} está aquí para ayudarle",
+    hereToHelpTeam: "Estamos aquí para ayudarle",
     caseReady: "Caso encaminado",
     realAnswers: "Respuestas claras",
     confirmed: "Confirmado",

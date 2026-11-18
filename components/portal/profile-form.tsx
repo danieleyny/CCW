@@ -55,7 +55,7 @@ function initialsFor(name: string) {
     .join("")
     .toUpperCase()
 
-  return initials || "GL"
+  return initials || null
 }
 
 function TimedSuccess({ children }: { children: ReactNode }) {
@@ -108,7 +108,7 @@ export function ProfileForms({
     <div className="profile-v2-stack">
       <section className="profile-identity-card" aria-label={t.profileIdentityLabel}>
         <div className="profile-avatar" aria-hidden>
-          {initialsFor(fullName)}
+          {initialsFor(fullName) ?? <User />}
         </div>
         <div className="profile-identity-copy">
           <h2>{fullName}</h2>

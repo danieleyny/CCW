@@ -26,6 +26,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { buildDataAsks } from "@/lib/concierge/data-asks"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
+import { TeamLogoAvatar } from "@/components/brand/team-logo-avatar"
 import { actionFor } from "@/lib/requirements/actions"
 import { isDisclosureItem } from "@/lib/requirements/sections"
 import { isUnenforced } from "@/lib/legal-status"
@@ -210,7 +211,7 @@ export default async function ConciergeHome() {
 
       {!callBooked ? (
         <IntroCallNextStep
-          agentFirst={agentFirst}
+          agentName={agentName}
           thenLabel={
             firstDataAsk
               ? interpolate(t.concierge.finish, { label: firstDataAskLabel ?? firstDataAsk.label })
@@ -313,7 +314,11 @@ export default async function ConciergeHome() {
 
         <aside className="concierge-rail" aria-label={t.concierge.yourTeam}>
           <section className="concierge-rail-card concierge-team-card">
-            <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>
+            {agentName ? (
+              <span className="concierge-team-avatar" aria-hidden>{getInitials(agentName)}</span>
+            ) : (
+              <TeamLogoAvatar className="concierge-team-avatar" />
+            )}
             <div><small>{t.concierge.teamLabel}</small><strong>{agentName ?? t.concierge.beingAssigned}</strong><p>{agentName ? t.concierge.namedContact : t.concierge.assignedSoon}</p></div>
             <a href="#messages"><MessageCircle className="size-4" aria-hidden /> {t.concierge.messageTeam}</a>
             <footer>{t.concierge.unlimitedSupport}</footer>
@@ -353,7 +358,11 @@ export default async function ConciergeHome() {
       </section>
 
       <section className="concierge-mobile-team">
-        <span className="concierge-team-avatar" aria-hidden>{agentName ? getInitials(agentName) : "GL"}</span>
+        {agentName ? (
+          <span className="concierge-team-avatar" aria-hidden>{getInitials(agentName)}</span>
+        ) : (
+          <TeamLogoAvatar className="concierge-team-avatar" />
+        )}
         <div><small>{t.concierge.teamLabel}</small><strong>{agentName ?? `${t.concierge.beingAssigned} · ${t.concierge.unlimitedSupport}`}</strong></div>
         <a href="#messages" aria-label={t.concierge.messageConcierge}><MessageCircle className="size-5" /></a>
       </section>
