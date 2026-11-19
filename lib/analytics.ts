@@ -23,6 +23,9 @@ export type ConversionEvent =
   | "admin_queue_viewed" // staff opened the filing queue desk or matrix
   | "admin_signoff_dialog_opened" // staff opened the guarded QA attestation
   | "admin_signoff_refused" // the server re-check or role check refused QA sign-off
+  | "admin_inbox_viewed" // staff opened an inbox tab/scope
+  | "admin_inbox_reply_sent" // staff replied from the inbox or focus queue
+  | "admin_inbox_focus_completed" // staff reached the end of a focus snapshot
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

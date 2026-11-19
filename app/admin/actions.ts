@@ -493,6 +493,9 @@ export async function postMessage(caseId: string, body: string) {
   if (error) throw error
   await logActivity({ action: "message.sent", caseId, entity: "message" })
   revalidatePath(`/admin/cases/${caseId}`)
+  revalidatePath("/admin/inbox")
+  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
 }
 
 /**
@@ -978,6 +981,7 @@ export async function markCaseMessagesRead(caseId: string) {
     .eq("read", false)
     .neq("sender_id", userId)
   revalidatePath("/admin/inbox")
+  revalidatePath("/admin", "layout")
 }
 
 // ── manual client creation ───────────────────────────────────────────────────

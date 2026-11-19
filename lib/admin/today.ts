@@ -4,10 +4,15 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { buildQaQueue } from "@/lib/admin/queue"
 import { loadConciergeQueue } from "@/lib/concierge/queue"
-import { isNypdControlled, stageMeta, type CaseStageKey } from "@/config/stages"
+import { isNypdControlled, type CaseStageKey } from "@/config/stages"
+import { addAdminBusinessDays, adminDayKey } from "@/lib/admin/business-time"
+import { loadInbox } from "@/lib/admin/inbox"
+import type { InboxData } from "@/lib/admin/inbox-model"
+export { deriveCaseOwnership } from "@/lib/admin/ownership"
+export type { CaseMoveOwner } from "@/lib/admin/ownership"
+import { deriveCaseOwnership } from "@/lib/admin/ownership"
 import {
   DOCUMENT_REVIEW_BUSINESS_DAYS,
-  MESSAGE_REPLY_BUSINESS_DAYS,
   PAYMENT_FOLLOWUP_DAYS,
   REFERENCE_EXPIRY_WARN_DAYS,
   STALLED_DAYS,
@@ -26,59 +31,6 @@ export type TodayScope = "mine" | "team" | "unassigned"
 export type TodayItemType = "message" | "document" | "qa" | "concierge" | "people" | "payment" | "stalled" | "task" | "privacy"
 export type TodaySection = "overdue" | "today" | "week"
 export type TodayOwner = "You" | "Team" | "Applicant" | "Third party" | "NYPD"
-
-export type CaseMoveOwner = "Staff" | "Applicant" | "Third party" | "NYPD" | "Licensed"
-
-export interface CaseOwnershipRow {
-  stage: CaseStageKey
-  licenseIssuedOn?: string | null
-  licenseExpiresOn?: string | null
-}
-
-export interface CaseOwnershipSignals {
-  nextAppointment?: string | null
-  staffNextStep?: string | null
-  thirdPartyNextStep?: string | null
-  applicantNextStep?: string | null
-}
-
-/**
- * Shared owner/next-step precedence for Today and Pipeline. The inputs are
- * deliberately pre-derived signals so callers can gather them in batches and
- * this function remains deterministic and easy to verify.
- */
-export function deriveCaseOwnership(
-  caseRow: CaseOwnershipRow,
-  signals: CaseOwnershipSignals
-): { whoseMove: CaseMoveOwner; nextStep: string } {
-  if (isNypdControlled(caseRow.stage)) {
-    return {
-      whoseMove: "NYPD",
-      nextStep: signals.nextAppointment || stageMeta(caseRow.stage).short,
-    }
-  }
-  if (caseRow.stage === "licensed") {
-    if (caseRow.licenseIssuedOn) {
-      const issued = new Date(caseRow.licenseIssuedOn).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        timeZone: "UTC",
-      })
-      const renewalYear = caseRow.licenseExpiresOn
-        ? new Date(caseRow.licenseExpiresOn).getUTCFullYear()
-        : null
-      return {
-        whoseMove: "Licensed",
-        nextStep: renewalYear ? `Licensed ${issued} · renew ${renewalYear}` : `Licensed ${issued}`,
-      }
-    }
-    return { whoseMove: "Licensed", nextStep: "Licensed" }
-  }
-  if (signals.staffNextStep) return { whoseMove: "Staff", nextStep: signals.staffNextStep }
-  if (signals.thirdPartyNextStep) return { whoseMove: "Third party", nextStep: signals.thirdPartyNextStep }
-  return { whoseMove: "Applicant", nextStep: signals.applicantNextStep || stageMeta(caseRow.stage).clientHint }
-}
 
 export interface TodayItem {
   id: string
@@ -130,6 +82,7 @@ export interface TodayData {
   health: TodayHealthItem[]
   errors: string[]
   unassignedCount: number
+  inboxNeedsReplyCount: number
   asOf: string
 }
 
@@ -146,23 +99,12 @@ interface CaseContext {
 }
 
 const DAY = 86_400_000
-const NY_TZ = "America/New_York"
-
 function dayKey(value: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: NY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(value)
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ""
-  return `${get("year")}-${get("month")}-${get("day")}`
+  return adminDayKey(value)
 }
 
 function addBusinessDays(value: Date, count: number) {
-  const date = new Date(value)
-  let added = 0
-  while (added < count) {
-    date.setUTCDate(date.getUTCDate() + 1)
-    const weekday = new Intl.DateTimeFormat("en-US", { timeZone: NY_TZ, weekday: "short" }).format(date)
-    if (weekday !== "Sat" && weekday !== "Sun") added++
-  }
-  return date
+  return addAdminBusinessDays(value, count)
 }
 
 function sectionFor(due: Date, now: Date): TodaySection | null {
@@ -248,7 +190,7 @@ export async function loadToday(
   const startKey = dayKey(now)
   const sourceNames = ["Messages", "Documents", "Final QA", "Concierge", "Tasks", "People", "Payments", "Privacy", "Schedule", "Legal review"] as const
   const settled = await Promise.allSettled([
-    db.from("messages").select("id, case_id, body, read, created_at, profiles:sender_id(role)").is("engagement_id", null).eq("read", false).order("created_at", { ascending: true }),
+    loadInbox(db, { userId, scope, showHidden: false, now }),
     db.from("documents").select("id, case_id, created_at").eq("status", "pending").order("created_at", { ascending: true }),
     buildQaQueue(db),
     loadConciergeQueue(db),
@@ -284,27 +226,19 @@ export async function loadToday(
 
   const allItems: TodayItem[] = []
 
-  const messages = ok<{ data: Array<{ id: string; case_id: string; body: string; created_at: string; profiles: unknown }> }>(0)?.data ?? []
-  const messageByCase = new Map<string, typeof messages>()
-  for (const message of messages) {
-    const profile = message.profiles as { role?: string } | null
-    if (profile?.role !== "client") continue
-    const rows = messageByCase.get(message.case_id) ?? []
-    rows.push(message)
-    messageByCase.set(message.case_id, rows)
-  }
-  for (const [caseId, rows] of messageByCase) {
-    const c = cases.get(caseId)
+  const inbox = ok<InboxData>(0)
+  const messageThreads = (inbox?.threads ?? []).filter((thread) => thread.needsReply && thread.waitingSince && thread.dueAt)
+  for (const thread of messageThreads) {
+    const c = cases.get(thread.caseId)
     if (!c) continue
-    const first = rows[0]
-    const due = addBusinessDays(new Date(first.created_at), MESSAGE_REPLY_BUSINESS_DAYS)
+    const due = new Date(thread.dueAt!)
     const section = sectionFor(due, now)
     if (!section) continue
     allItems.push(caseItem({
-      id: `message-${caseId}`, caseId, type: "message", section,
-      title: `Reply to ${c.clientName}`, reason: `“${first.body}”`, owner: ownerFor(c, userId),
-      age: ageText(first.created_at, now, "unanswered"), ageDays: daysBetween(first.created_at, now), triggerAt: first.created_at,
-      dueAt: due.toISOString(), href: `/admin/cases/${caseId}?tab=messages`, action: "Reply",
+      id: `message-${thread.caseId}`, caseId: thread.caseId, type: "message", section,
+      title: `Reply to ${c.clientName}`, reason: `“${thread.firstUnansweredBody ?? thread.lastBody}”`, owner: ownerFor(c, userId),
+      age: ageText(thread.waitingSince!, now, "unanswered"), ageDays: daysBetween(thread.waitingSince!, now), triggerAt: thread.waitingSince!,
+      dueAt: due.toISOString(), href: `/admin/inbox?tab=needs&scope=${scope}&thread=${thread.caseId}`, action: "Reply",
     }, c))
   }
 
@@ -487,18 +421,18 @@ export async function loadToday(
     applicant: { count: applicantCases.length, detail: `Oldest wait ${applicantOldest} days · ${applicantPast14} past 14 days`, href: "/admin/cases?waiting=applicant" },
   }
 
-  const oldestMessage = messages[0]?.created_at
+  const oldestMessage = messageThreads.map((thread) => thread.waitingSince).filter((value): value is string => !!value).sort()[0]
   const oldestDocument = documents[0]?.created_at
   const stalledCases = [...cases.values()].filter((c) => c.status === "active" && !isNypdControlled(c.stage) && daysBetween(c.stageEnteredAt, now) > STALLED_DAYS)
   const legalResult = ok<{ count: number | null }>(9)
   const health: TodayHealthItem[] = [
-    { key: "message", label: "Oldest unanswered client message", value: oldestMessage ? ageText(oldestMessage, now) : "None", pastTarget: !!oldestMessage && daysBetween(oldestMessage, now) >= MESSAGE_REPLY_BUSINESS_DAYS, available: !errors.includes("Messages") },
+    { key: "message", label: "Oldest unanswered client message", value: oldestMessage ? ageText(oldestMessage, now) : "None", pastTarget: messageThreads.some((thread) => thread.overdue), available: !errors.includes("Messages") },
     { key: "document", label: "Oldest document waiting for review", value: oldestDocument ? ageText(oldestDocument, now) : "None", pastTarget: !!oldestDocument && daysBetween(oldestDocument, now) >= DOCUMENT_REVIEW_BUSINESS_DAYS, available: !errors.includes("Documents") },
     { key: "stalled", label: "Cases with no movement in 14+ days", value: String(stalledCases.length), pastTarget: stalledCases.length > 0, available: true },
     ...(role === "admin" ? [{ key: "legal" as const, label: "Rules awaiting attorney verification", value: legalResult ? String(legalResult.count ?? 0) : "Unavailable", pastTarget: (legalResult?.count ?? 0) > 0, available: !errors.includes("Legal review") }] : []),
   ]
 
-  return { items: scoped, schedule, waiting, health, errors, unassignedCount, asOf: now.toISOString() }
+  return { items: scoped, schedule, waiting, health, errors, unassignedCount, inboxNeedsReplyCount: inbox?.counts.needs ?? 0, asOf: now.toISOString() }
 }
 
 export const todayDateHelpers = { addBusinessDays, sectionFor, dayKey }

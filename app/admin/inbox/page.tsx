@@ -1,115 +1,75 @@
-import Link from "next/link"
-import { MessageSquare, Mail } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
+import { TrackView } from "@/components/analytics/track-view"
+import { AdminInboxWorkspace } from "@/components/admin/admin-inbox-workspace"
+import { redirect } from "next/navigation"
 import { requireStaff } from "@/lib/auth"
-import { PageHeader } from "@/components/shared/page-header"
-import { formatDateTime } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { loadInbox } from "@/lib/admin/inbox"
+import { inboxThreadMatchesTab, type InboxScope, type InboxTab } from "@/lib/admin/inbox-model"
+import { createClient } from "@/lib/supabase/server"
+import { loadInboxConversationPage } from "./actions"
 
 export const metadata = { title: { absolute: "Inbox · Staff" } }
 
-/**
- * V3-P2.5 — the unified cross-case inbox. Previously messages were reachable
- * only by opening each case one at a time; now every conversation is one list,
- * unread-first. Opening a case clears its unread state.
- */
-export default async function InboxPage() {
-  await requireStaff()
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function inboxTab(value: string | undefined): InboxTab {
+  return value === "unread" || value === "waiting" || value === "all" ? value : "needs"
+}
+
+function inboxScope(value: string | undefined): InboxScope {
+  return value === "team" || value === "unassigned" ? value : "mine"
+}
+
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const { userId, profile } = await requireStaff()
+  const params = await searchParams
+  if (!first(params.tab) || !first(params.scope)) {
+    const next = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      const settled = first(value)
+      if (settled) next.set(key, settled)
+    }
+    if (!next.has("tab")) next.set("tab", "needs")
+    if (!next.has("scope")) next.set("scope", "mine")
+    redirect(`/admin/inbox?${next.toString()}`)
+  }
+  const tab = inboxTab(first(params.tab))
+  const scope = inboxScope(first(params.scope))
+  const mode = first(params.mode) === "focus" ? "focus" : "inbox"
+  const showHidden = first(params.hidden) === "1"
+  const query = first(params.q)?.trim() ?? ""
+  const requestedThread = first(params.thread) ?? null
   const supabase = await createClient()
-
-  // Latest message + unread count per case, assembled in one pass.
-  // B1B — the staff inbox is the STAFF↔CLIENT lane only (engagement_id IS NULL).
-  // Without this, the newest instructor↔applicant message could surface as a
-  // case's preview line even though staff aren't a party to it.
-  const { data: msgs } = await supabase
-    .from("messages")
-    .select("id, case_id, body, read, created_at, profiles:sender_id(full_name, role)")
-    .is("engagement_id", null)
-    .order("created_at", { ascending: false })
-    .limit(500)
-
-  interface Thread {
-    caseId: string
-    lastBody: string
-    lastAt: string
-    lastSender: string
-    unread: number
-  }
-  const threads = new Map<string, Thread>()
-  for (const m of msgs ?? []) {
-    const p = m.profiles as unknown as { full_name: string; role: string } | null
-    const t = threads.get(m.case_id)
-    const isClientUnread = !m.read && p?.role === "client"
-    if (!t) {
-      threads.set(m.case_id, {
-        caseId: m.case_id,
-        lastBody: m.body,
-        lastAt: m.created_at,
-        lastSender: p?.full_name ?? "—",
-        unread: isClientUnread ? 1 : 0,
-      })
-    } else if (isClientUnread) {
-      t.unread++
-    }
-  }
-
-  const caseIds = [...threads.keys()]
-  const names = new Map<string, string>()
-  if (caseIds.length) {
-    const { data: cases } = await supabase.from("cases").select("id, clients(full_name)").in("id", caseIds)
-    for (const c of cases ?? []) {
-      names.set(c.id, (c.clients as unknown as { full_name: string } | null)?.full_name ?? "—")
-    }
-  }
-
-  const list = [...threads.values()].sort((a, b) => {
-    if ((a.unread > 0) !== (b.unread > 0)) return a.unread > 0 ? -1 : 1
-    return b.lastAt.localeCompare(a.lastAt)
-  })
-  const totalUnread = list.reduce((s, t) => s + t.unread, 0)
+  const inbox = await loadInbox(supabase, { userId, scope, showHidden, query })
+  const visible = inbox.threads.filter((thread) => inboxThreadMatchesTab(thread, mode === "focus" ? "needs" : tab))
+  const selected = visible.find((thread) => thread.caseId === requestedThread) ?? visible[0] ?? null
+  const conversation = selected
+    ? await loadInboxConversationPage({ caseId: selected.caseId })
+    : null
 
   return (
-    <div>
-      <PageHeader
-        title={`Inbox${totalUnread ? ` (${totalUnread})` : ""}`}
-        description="Every client conversation in one place — unread first. Opening a case marks it read."
+    <>
+      <TrackView event="admin_inbox_viewed" params={{ tab, scope }} />
+      <AdminInboxWorkspace
+        key={`${scope}:${tab}:${mode}:${showHidden}:${query}`}
+        threads={inbox.threads}
+        counts={inbox.counts}
+        hidden={inbox.hidden}
+        tab={tab}
+        scope={scope}
+        mode={mode}
+        showHidden={showHidden}
+        query={query}
+        initialThreadId={selected?.caseId ?? null}
+        initialThreadExplicit={!!requestedThread || mode === "focus"}
+        initialConversation={conversation}
+        staffName={profile.full_name || "Staff"}
       />
-      {list.length === 0 ? (
-        <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-          No conversations yet.
-        </p>
-      ) : (
-        <ul className="divide-y rounded-lg border bg-card">
-          {list.map((t) => (
-            <li key={t.caseId}>
-              <Link
-                href={`/admin/cases/${t.caseId}`}
-                className="flex items-start gap-3 p-3 transition-colors hover:bg-accent"
-              >
-                {t.unread > 0 ? (
-                  <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-signal text-[10px] font-bold text-background">
-                    {t.unread}
-                  </span>
-                ) : (
-                  <MessageSquare className="mt-1 size-4 shrink-0 text-text-low" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={cn("text-sm", t.unread > 0 ? "font-semibold" : "font-medium")}>
-                      {names.get(t.caseId) ?? "—"}
-                    </span>
-                    <span className="shrink-0 text-xs text-text-low">{formatDateTime(t.lastAt)}</span>
-                  </div>
-                  <p className={cn("truncate text-xs", t.unread > 0 ? "text-foreground" : "text-text-low")}>
-                    <Mail className="mr-1 inline size-3" />
-                    {t.lastSender}: {t.lastBody}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    </>
   )
 }

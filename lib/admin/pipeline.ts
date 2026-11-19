@@ -13,7 +13,8 @@ import { STALLED_DAYS } from "@/config/service-targets"
 import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
 import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
 import { paidCaseIds } from "@/lib/packages"
-import { deriveCaseOwnership, type CaseMoveOwner } from "@/lib/admin/today"
+import { deriveCaseOwnership, type CaseMoveOwner } from "@/lib/admin/ownership"
+import { duplicateCaseMetadata } from "@/lib/admin/case-visibility"
 
 type DB = SupabaseClient<Database>
 
@@ -116,12 +117,6 @@ interface RawCase {
   qaSignedOffBy: string | null
   licenseIssuedOn: string | null
   licenseExpiresOn: string | null
-}
-
-interface DuplicateMeta {
-  duplicate: boolean
-  hidden: boolean
-  label: string | null
 }
 
 interface PendingPaymentRow {
@@ -245,27 +240,6 @@ function appointmentLabel(type: string, scheduledAt: string) {
     timeZone: "America/New_York",
   })
   return `${label} ${date}`
-}
-
-function duplicateMetadata(cases: RawCase[]): Map<string, DuplicateMeta> {
-  const clusters = new Map<string, RawCase[]>()
-  for (const c of cases) {
-    const email = c.clientEmail?.trim().toLowerCase()
-    const key = email ? `email:${email}` : `client:${c.clientId}`
-    const rows = clusters.get(key) ?? []
-    rows.push(c)
-    clusters.set(key, rows)
-  }
-  const result = new Map<string, DuplicateMeta>()
-  for (const rows of clusters.values()) {
-    rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    rows.forEach((c, index) => result.set(c.id, {
-      duplicate: rows.length > 1,
-      hidden: rows.length > 1 && index > 0,
-      label: rows.length > 1 ? `${index + 1} of ${rows.length} cases for this client` : null,
-    }))
-  }
-  return result
 }
 
 function matchesFilters(card: PipelineCard, filters: PipelineFilters) {
@@ -396,7 +370,7 @@ export async function loadPipeline(
 
   const staff = (staffResult.data ?? []).map((person) => ({ id: person.id, name: person.full_name || "Staff" }))
   const staffName = new Map(staff.map((person) => [person.id, person.name]))
-  const duplicates = duplicateMetadata(cases)
+  const duplicates = duplicateCaseMetadata(cases)
 
   const pendingPayment = new Map<string, PendingPaymentRow>()
   for (const payment of pendingPayments.data ?? []) {
@@ -621,7 +595,7 @@ export const pipelineModel = {
   activePhase,
   leadGroup,
   applicationTrack,
-  duplicateMetadata,
+  duplicateMetadata: duplicateCaseMetadata,
   matchesFilters,
   activePhases: ACTIVE_PHASES,
   leadGroups: LEAD_GROUPS,
