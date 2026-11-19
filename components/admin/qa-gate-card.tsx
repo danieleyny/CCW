@@ -1,11 +1,7 @@
 "use client"
 
-import { useTransition } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { ShieldCheck, ShieldAlert } from "lucide-react"
-import { signPreFilingQa } from "@/app/admin/actions"
-import { Button } from "@/components/ui/button"
+import { PreFilingSignoffDialog } from "@/components/admin/pre-filing-signoff-dialog"
 import { cn } from "@/lib/utils"
 
 /**
@@ -20,6 +16,9 @@ export function QaGateCard({
   signedOffBy,
   signedOffAt,
   trainerReviewed,
+  applicant = "Applicant",
+  staffName = "Staff member",
+  serviceMode = null,
 }: {
   caseId: string
   blockers: string[]
@@ -28,9 +27,10 @@ export function QaGateCard({
   signedOffAt: string | null
   /** How much of the concierge-safe work a trainer has already checked. */
   trainerReviewed?: { done: number; total: number } | null
+  applicant?: string
+  staffName?: string
+  serviceMode?: "concierge" | "self_guided" | null
 }) {
-  const router = useRouter()
-  const [pending, start] = useTransition()
   const signed = !!signedOffBy
 
   return (
@@ -63,22 +63,13 @@ export function QaGateCard({
       ) : readyForSignOff ? (
         <div className="mt-1 space-y-2 text-sm">
           <p className="text-signal">Every check passes — a named sign-off is the last step before assembly.</p>
-          <Button
-            size="sm"
-            disabled={pending}
-            onClick={() =>
-              start(async () => {
-                const res = await signPreFilingQa(caseId)
-                if (!res.ok) toast.error("Gate re-check failed", { description: res.blockers.join(" · ") })
-                else {
-                  toast.success("QA signed off — recorded in the activity log")
-                  router.refresh()
-                }
-              })
-            }
-          >
-            <ShieldCheck className="size-3.5" /> Sign off pre-filing QA
-          </Button>
+          <PreFilingSignoffDialog
+            caseId={caseId}
+            applicant={applicant}
+            staffName={staffName}
+            serviceMode={serviceMode}
+            label="Sign off pre-filing QA"
+          />
         </div>
       ) : (
         <ul className="mt-1 list-disc pl-5 text-sm text-warn">

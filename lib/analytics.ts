@@ -20,6 +20,9 @@ export type ConversionEvent =
   | "admin_case_tab_viewed" // staff opened a case workspace tab
   | "admin_stage_dialog_opened" // staff opened the guarded stage/status dialog
   | "admin_stage_change_blocked" // stage preview or server enforcement refused a move
+  | "admin_queue_viewed" // staff opened the filing queue desk or matrix
+  | "admin_signoff_dialog_opened" // staff opened the guarded QA attestation
+  | "admin_signoff_refused" // the server re-check or role check refused QA sign-off
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

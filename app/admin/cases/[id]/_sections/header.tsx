@@ -68,6 +68,7 @@ interface HeaderProps {
   phone: string | null
   borough: string | null
   serviceLabel: string
+  serviceMode: "concierge" | "self_guided" | null
   trackLabel: string
   applicationLabel: string | null
   openedAt: string
@@ -211,7 +212,7 @@ export function CaseHeader(props: HeaderProps) {
                   {!props.hasInvite && !props.canRecordLicense && !props.canStartRenewal && <DropdownMenuItem disabled>No additional actions</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <StageChangeDialog caseId={props.caseId} clientName={props.clientName} stage={props.stage} status={props.status} />
+              <StageChangeDialog caseId={props.caseId} clientName={props.clientName} stage={props.stage} status={props.status} serviceMode={props.serviceMode} />
             </div>
           </div>
 
@@ -238,7 +239,7 @@ export function CaseHeader(props: HeaderProps) {
       <div className="fixed inset-x-3 bottom-[76px] z-30 flex gap-2 rounded-xl border border-hairline bg-card/95 p-2 shadow-lg backdrop-blur-sm md:hidden">
         <Button asChild variant="outline" className="flex-1"><Link href={`/admin/cases/${props.caseId}?tab=messages`}><MessageSquare /> Message</Link></Button>
         <DownloadsMenu caseId={props.caseId} compact />
-        <StageChangeDialog caseId={props.caseId} clientName={props.clientName} stage={props.stage} status={props.status} compact />
+        <StageChangeDialog caseId={props.caseId} clientName={props.clientName} stage={props.stage} status={props.status} serviceMode={props.serviceMode} compact />
       </div>
     </>
   )
@@ -331,7 +332,7 @@ function DownloadsMenu({ caseId, compact = false }: { caseId: string; compact?: 
   )
 }
 
-function StageChangeDialog({ caseId, clientName, stage, status, compact = false }: { caseId: string; clientName: string; stage: CaseStageKey; status: string; compact?: boolean }) {
+function StageChangeDialog({ caseId, clientName, stage, status, serviceMode, compact = false }: { caseId: string; clientName: string; stage: CaseStageKey; status: string; serviceMode: "concierge" | "self_guided" | null; compact?: boolean }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [target, setTarget] = useState<CaseStageKey | "">("")
@@ -427,7 +428,11 @@ function StageChangeDialog({ caseId, clientName, stage, status, compact = false 
               <SelectContent>
                 {CASE_STAGES.map((item) => (
                   <SelectItem key={item.key} value={item.key} disabled={item.key === stage}>
-                    {item.order}. {item.label}{stageIndex(item.key) < stageIndex(stage) ? " (back)" : ""}{isNypdControlled(item.key) ? " · NYPD milestone" : ""}
+                    {item.order}. {item.key === "filed"
+                      ? serviceMode === "concierge"
+                        ? "Filed on NYPD portal — by the applicant with our guidance"
+                        : "Filed on NYPD portal — by the applicant"
+                      : item.label}{stageIndex(item.key) < stageIndex(stage) ? " (back)" : ""}{isNypdControlled(item.key) ? " · NYPD milestone" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>

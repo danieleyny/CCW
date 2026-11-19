@@ -64,7 +64,7 @@ export default async function CaseFilePage({
 }) {
   const { id } = await params
   const { tab, req: selectedRequirementId } = await searchParams
-  await requireStaff()
+  const { profile: staffProfile } = await requireStaff()
   const supabase = await createClient()
 
   // Sponsoring company (staff-only) — surface the rep's self-assessment, flagged
@@ -463,6 +463,7 @@ export default async function CaseFilePage({
         phone={client.phone}
         borough={client.borough}
         serviceLabel={preview.serviceLabel}
+        serviceMode={kase.service_mode}
         trackLabel={preview.trackLabel}
         applicationLabel={kase.application_type ? APPLICATION_TYPE_LABELS[kase.application_type as ApplicationType] : null}
         openedAt={kase.opened_at}
@@ -575,6 +576,9 @@ export default async function CaseFilePage({
             readyForSignOff={gate.readyForSignOff}
             signedOffBy={signedOffByName}
             signedOffAt={kase.qa_signed_off_at}
+            applicant={client.full_name}
+            staffName={staffProfile.full_name || "Staff member"}
+            serviceMode={kase.service_mode}
           />
           <RequirementsReview caseId={id} rows={reqRows} />
           <div className="flex justify-end">

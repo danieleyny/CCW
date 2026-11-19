@@ -89,7 +89,7 @@ export function RequirementsReview({ caseId, rows }: { caseId: string; rows: Cas
 
       <ul className="divide-y rounded-lg border bg-card">
         {visible.map((r) => (
-          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
+          <li id={`requirement-${r.id}`} key={r.id} className="flex scroll-mt-24 flex-wrap items-center justify-between gap-2 p-3 text-sm target:bg-brass/8">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[11px]">{r.reqCode}</span>
