@@ -1,5 +1,7 @@
 /** Small formatting helpers used across the UI. */
 
+export const DISPLAY_TIME_ZONE = "America/New_York"
+
 export function money(cents: number | null | undefined, currency = "usd"): string {
   if (cents == null) return "—"
   return new Intl.NumberFormat("en-US", {
@@ -11,13 +13,19 @@ export function money(cents: number | null | undefined, currency = "usd"): strin
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—"
   const d = typeof value === "string" ? new Date(value) : value
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  return d.toLocaleDateString("en-US", {
+    timeZone: DISPLAY_TIME_ZONE,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
 }
 
 export function formatDateTime(value: string | Date | null | undefined): string {
   if (!value) return "—"
   const d = typeof value === "string" ? new Date(value) : value
   return d.toLocaleString("en-US", {
+    timeZone: DISPLAY_TIME_ZONE,
     month: "short",
     day: "numeric",
     hour: "numeric",

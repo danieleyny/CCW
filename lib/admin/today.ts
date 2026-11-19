@@ -8,6 +8,7 @@ import { isNypdControlled, type CaseStageKey } from "@/config/stages"
 import { addAdminBusinessDays, adminDayKey } from "@/lib/admin/business-time"
 import { loadInbox } from "@/lib/admin/inbox"
 import type { InboxData } from "@/lib/admin/inbox-model"
+import { loadCalendar, type CalendarData } from "@/lib/admin/calendar"
 export { deriveCaseOwnership } from "@/lib/admin/ownership"
 export type { CaseMoveOwner } from "@/lib/admin/ownership"
 import { deriveCaseOwnership } from "@/lib/admin/ownership"
@@ -201,10 +202,15 @@ export async function loadToday(
     ]),
     db.from("payments").select("id, case_id, client_id, created_at, status").eq("status", "pending"),
     role === "admin" ? db.from("data_requests").select("id, case_id, client_id, requested_at, kind, status").in("status", ["open", "acknowledged"]) : Promise.resolve({ data: [], error: null }),
-    Promise.all([
-      db.from("appointments").select("id, case_id, scheduled_at, type, location, clients(full_name)").gte("scheduled_at", `${startKey}T00:00:00-05:00`).lt("scheduled_at", new Date(now.getTime() + DAY).toISOString()),
-      db.from("bookings").select("id, case_id, starts_at, type, status, cases(clients(full_name)), instructors(name)").neq("status", "cancelled").gte("starts_at", `${startKey}T00:00:00-05:00`).lt("starts_at", new Date(now.getTime() + DAY).toISOString()),
-    ]),
+    loadCalendar(db, {
+      from: startKey,
+      to: startKey,
+      scope: scope === "mine" ? "mine" : "team",
+      types: [],
+      host: "anyone",
+      currentUserId: userId,
+      now,
+    }),
     role === "admin" ? db.from("requirements").select("id", { count: "exact", head: true }).eq("needs_legal_review", true) : Promise.resolve({ count: 0, error: null }),
   ])
 
@@ -379,20 +385,18 @@ export async function loadToday(
   const scoped = sortItems(allItems.filter((item) => inScope(item, scope, userId)))
   const unassignedCount = allItems.filter((item) => item.unassigned).length
 
-  const schedulePair = ok<[{ data: Array<Record<string, unknown>> }, { data: Array<Record<string, unknown>> }]>(8)
-  const schedule: TodayScheduleItem[] = []
-  for (const raw of schedulePair?.[0].data ?? []) {
-    if (!raw.case_id) continue
-    const client = raw.clients as { full_name?: string } | null
-    const type = String(raw.type)
-    schedule.push({ id: `appointment-${raw.id}`, caseId: String(raw.case_id), when: String(raw.scheduled_at), title: client?.full_name ?? "Appointment", detail: type.replaceAll("_", " "), owner: type === "fingerprinting" || type === "nypd_interview" ? "NYPD milestone" : "You" })
-  }
-  for (const raw of schedulePair?.[1].data ?? []) {
-    const caseRow = raw.cases as { clients?: { full_name?: string } | null } | null
-    const instructor = raw.instructors as { name?: string } | null
-    schedule.push({ id: `booking-${raw.id}`, caseId: String(raw.case_id), when: String(raw.starts_at), title: caseRow?.clients?.full_name ?? "Training", detail: instructor?.name ?? String(raw.type).replaceAll("_", " "), owner: "Instructor" })
-  }
-  schedule.sort((a, b) => a.when.localeCompare(b.when))
+  const calendar = ok<CalendarData>(8)
+  if (calendar?.errors.length) errors.push(...calendar.errors.map((source) => `Schedule: ${source}`))
+  const schedule: TodayScheduleItem[] = (calendar?.events ?? [])
+    .filter((event): event is typeof event & { caseId: string } => !!event.caseId)
+    .map((event) => ({
+      id: event.id,
+      caseId: event.caseId,
+      when: event.startsAt,
+      title: event.clientName,
+      detail: event.type,
+      owner: event.owner === "NYPD" ? "NYPD milestone" : event.owner === "Instructor" ? "Instructor" : "You",
+    }))
 
   const staffCaseIds = new Set(scoped.filter((item) => item.owner === "You" || item.owner === "Team").map((item) => item.caseId).filter(Boolean))
   const referenceCases = new Set(peopleByCase.keys())

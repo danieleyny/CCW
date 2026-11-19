@@ -29,6 +29,8 @@ export type ConversionEvent =
   | "admin_concierge_viewed" // staff opened a concierge workspace tab
   | "admin_concierge_agent_changed" // admin changed the concierge-agent label
   | "admin_demo_delete_confirmed" // admin completed typed demo-case deletion
+  | "admin_calendar_viewed" // staff opened the agenda or week calendar
+  | "admin_calendar_join_clicked" // staff opened an intro-call join link
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return
