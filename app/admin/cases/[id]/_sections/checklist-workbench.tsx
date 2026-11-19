@@ -217,7 +217,7 @@ export function ChecklistWorkbench(props: ChecklistProps) {
             <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-brass" /> {actor}</span>
             <span>· {statusLine(selected, props.documents)}</span>
             <span className="rounded bg-surface-2 px-2 py-1 font-mono">{selected.authority ?? "Source not listed"}</span>
-            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-1 font-medium", verified ? "bg-ok/10 text-ok" : "bg-warn/10 text-warn")}><Scale className="size-3" /> {verified ? "Attorney-verified" : "Awaiting attorney review"}</span>
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-1 font-medium", verified ? "bg-ok/10 text-ok" : "bg-warn/10 text-warn")}><Scale className="size-3" /> {verified ? "Reviewed" : "Needs review"}</span>
           </div>
         </div>
 

@@ -1,251 +1,196 @@
-import { ShieldAlert, ShieldCheck, ExternalLink, Ban, CalendarClock } from "lucide-react"
+import { Suspense } from "react"
 import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
-import { PageHeader } from "@/components/shared/page-header"
-import { Button } from "@/components/ui/button"
-import {
-  LegalStatusBadge,
-  LegalStatusEditor,
-  type LegalStatusKey,
-} from "@/components/admin/legal-status-editor"
-import { LEGAL_REVIEW_STALE_DAYS } from "@/lib/legal-status"
 import { staleTemplateWarnings } from "@/lib/forms/drift"
-import { markRequirementVerified, flagRequirementForReview } from "./actions"
+import { CATEGORIES, categoryKeyFor } from "@/lib/requirements/categories"
+import { ruleReviewCounts } from "@/lib/admin/rule-review"
+import {
+  ruleReviewStatus,
+  worstRuleReviewStatus,
+} from "@/lib/admin/rule-review-model"
+import {
+  RuleReviewPermissionNotice,
+  RuleReviewSkeleton,
+  RuleReviewWorkspace,
+  type RecentRuleReview,
+  type RuleReviewGroup,
+  type RuleReviewVersion,
+} from "@/components/admin/rule-review-workspace"
+import type { LegalStatus } from "@/lib/legal-status"
 
-export const metadata = { title: { absolute: "Legal verification · Staff" } }
+export const metadata = { title: { absolute: "Rule review · Staff" } }
 
-/**
- * V3-P1.3 — the standing legal-verification register. Every ACTIVE registry rule
- * with its authority + source, and whether a NY attorney has signed off on it.
- * Persistent + audited (replaces the old useState verify-live checklist).
- */
-export default async function LegalPage() {
-  await requireStaff()
+type Search = {
+  status?: string | string[]
+  topic?: string | string[]
+  mode?: string | string[]
+  rule?: string | string[]
+}
+
+interface RawRequirement {
+  id: string
+  req_code: string
+  title: string
+  description: string | null
+  authority: string | null
+  source_url: string | null
+  severity: string
+  blocking: boolean
+  trigger_cond: string
+  effective_from: string
+  effective_to: string | null
+  needs_legal_review: boolean
+  verified_by: string | null
+  verified_on: string | null
+  legal_status: LegalStatus
+  legal_status_note: string | null
+  legal_citation: string | null
+  jurisdiction_profiles: { key: string; label: string } | null
+}
+
+function value(input: string | string[] | undefined, fallback: string) {
+  return Array.isArray(input) ? input[0] ?? fallback : input ?? fallback
+}
+
+function changedFields(current: RawRequirement, previous: RawRequirement | undefined) {
+  if (!previous) return null
+  const fields: Array<[keyof RawRequirement, string]> = [
+    ["title", "title"],
+    ["description", "requirement text"],
+    ["authority", "authority"],
+    ["source_url", "source"],
+    ["severity", "severity"],
+    ["blocking", "filing impact"],
+    ["trigger_cond", "application condition"],
+  ]
+  const changed = fields.filter(([key]) => current[key] !== previous[key]).map(([, label]) => label)
+  if (!changed.length) return "No rule-text fields changed; this version refreshed the effective date."
+  return `${changed.join(", ")} changed.`
+}
+
+function topicLabel(key: string) {
+  return CATEGORIES.find((category) => category.key === key)?.label ?? "Conditional"
+}
+
+async function RuleReviewData({ search }: { search: Search }) {
   const supabase = await createClient()
+  const now = new Date()
+  const today = now.toISOString().slice(0, 10)
 
-  const today = new Date().toISOString().slice(0, 10)
-  const { data: rows } = await supabase
-    .from("requirements")
-    .select(
-      "id, req_code, title, authority, source_url, severity, blocking, trigger_cond, effective_from, needs_legal_review, verified_by, verified_on, legal_status, legal_status_note, legal_citation, jurisdiction_profiles(key, label)"
-    )
-    .lte("effective_from", today)
-    .or(`effective_to.is.null,effective_to.gte.${today}`)
-    .order("req_code", { ascending: true })
+  const [{ data, error }, counts, templateWarnings] = await Promise.all([
+    supabase
+      .from("requirements")
+      .select("id, req_code, title, description, authority, source_url, severity, blocking, trigger_cond, effective_from, effective_to, needs_legal_review, verified_by, verified_on, legal_status, legal_status_note, legal_citation, jurisdiction_profiles(key, label)")
+      .order("req_code", { ascending: true })
+      .order("effective_from", { ascending: true }),
+    ruleReviewCounts(supabase, now),
+    staleTemplateWarnings(supabase),
+  ])
+  if (error) throw error
 
-  const all = (rows ?? []).map((r) => ({
-    ...r,
-    jurisdiction: (r.jurisdiction_profiles as unknown as { key: string; label: string } | null)?.label ?? "—",
-  }))
-
-  // Resolve verifier names in one pass.
-  const verifierIds = [...new Set(all.map((r) => r.verified_by).filter(Boolean))] as string[]
+  const all = (data ?? []) as unknown as RawRequirement[]
+  const active = all.filter((row) => row.effective_from <= today && (!row.effective_to || row.effective_to >= today))
+  const verifierIds = [...new Set(active.map((row) => row.verified_by).filter(Boolean))] as string[]
   const names = new Map<string, string>()
   if (verifierIds.length) {
-    const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", verifierIds)
-    for (const p of profs ?? []) names.set(p.id, p.full_name ?? "—")
+    const { data: profiles, error: profileError } = await supabase.from("profiles").select("id, full_name").in("id", verifierIds)
+    if (profileError) throw profileError
+    for (const profile of profiles ?? []) names.set(profile.id, profile.full_name ?? "Admin")
   }
 
-  const pending = all.filter((r) => r.needs_legal_review)
-  const verified = all.filter((r) => !r.needs_legal_review)
+  const versions = new Map<string, RawRequirement[]>()
+  for (const row of all) {
+    const key = `${row.jurisdiction_profiles?.key ?? "unknown"}:${row.req_code}`
+    const list = versions.get(key) ?? []
+    list.push(row)
+    versions.set(key, list)
+  }
+  for (const list of versions.values()) list.sort((a, b) => a.effective_from.localeCompare(b.effective_from))
 
-  // A verification isn't permanent — NYC is litigation-driven and a rule
-  // confirmed a year ago may have been enjoined since.
-  const cutoffDate = new Date()
-  cutoffDate.setUTCDate(cutoffDate.getUTCDate() - LEGAL_REVIEW_STALE_DAYS)
-  const staleCutoff = cutoffDate.toISOString().slice(0, 10)
-  const stale = verified.filter((r) => !r.verified_on || r.verified_on < staleCutoff)
-  const unenforced = all.filter((r) => r.legal_status !== "enforced")
-  // Template drift (3G): official PDFs change without notice; surface a warning,
-  // never an auto-swap.
-  const templateWarnings = await staleTemplateWarnings(supabase)
+  const grouped = new Map<string, RuleReviewGroup>()
+  for (const row of active) {
+    const jurisdictionKey = row.jurisdiction_profiles?.key ?? "unknown"
+    const history = versions.get(`${jurisdictionKey}:${row.req_code}`) ?? [row]
+    const currentIndex = history.findIndex((item) => item.id === row.id)
+    const status = ruleReviewStatus(row, now)
+    const version: RuleReviewVersion = {
+      id: row.id,
+      jurisdictionKey,
+      jurisdictionLabel: row.jurisdiction_profiles?.label ?? "Unknown jurisdiction",
+      status,
+      legalStatus: row.legal_status,
+      legalStatusNote: row.legal_status_note,
+      citation: row.legal_citation,
+      sourceUrl: row.source_url,
+      authority: row.authority,
+      effectiveFrom: row.effective_from,
+      version: currentIndex + 1,
+      changedSummary: changedFields(row, currentIndex > 0 ? history[currentIndex - 1] : undefined),
+      verifiedByName: row.verified_by ? names.get(row.verified_by) ?? "Admin" : null,
+      verifiedOn: row.verified_on,
+      blocking: row.blocking,
+    }
+    const topicKey = categoryKeyFor(row.req_code)
+    const existing = grouped.get(row.req_code)
+    if (existing) existing.versions.push(version)
+    else grouped.set(row.req_code, {
+      reqCode: row.req_code,
+      title: row.title,
+      description: row.description,
+      severity: row.severity,
+      triggerCond: row.trigger_cond,
+      topicKey,
+      topicLabel: topicLabel(topicKey),
+      status,
+      mixedStatusTooltip: null,
+      versions: [version],
+    })
+  }
+
+  const groups = [...grouped.values()].map((group) => {
+    group.versions.sort((a, b) => a.jurisdictionKey.localeCompare(b.jurisdictionKey))
+    group.status = worstRuleReviewStatus(group.versions.map((version) => version.status))
+    const distinct = new Set(group.versions.map((version) => version.status))
+    if (group.status === "not_enforced") {
+      group.mixedStatusTooltip = group.versions
+        .map((version) => `${version.jurisdictionLabel}: ${version.legalStatus.replaceAll("_", " ")}${version.legalStatusNote ? ` — ${version.legalStatusNote}` : ""}`)
+        .join(" · ")
+    } else if (distinct.size > 1) {
+      group.mixedStatusTooltip = group.versions
+        .map((version) => `${version.jurisdictionLabel}: ${version.status.replaceAll("_", " ")}`)
+        .join(" · ")
+    }
+    return group
+  })
+
+  const recentByCode = new Map<string, RecentRuleReview>()
+  for (const row of active
+    .filter((item) => !item.needs_legal_review && item.verified_on)
+    .sort((a, b) => (b.verified_on ?? "").localeCompare(a.verified_on ?? ""))) {
+    if (!recentByCode.has(row.req_code)) recentByCode.set(row.req_code, {
+      reqCode: row.req_code,
+      staffName: row.verified_by ? names.get(row.verified_by) ?? "Admin" : "Admin",
+      reviewedOn: row.verified_on!,
+    })
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Legal verification"
-        description="Every active registry rule, its authority, and whether a NY attorney has confirmed it. Nothing here is presumed correct until verified — NYC is a litigation-driven jurisdiction and rules shift."
-      />
-
-      {stale.length > 0 && (
-        <div className="rounded-lg border border-warn/30 bg-warn/8 p-3 text-sm">
-          <div className="flex items-center gap-2 font-semibold text-warn">
-            <CalendarClock className="size-4" />
-            {stale.length} verified rule{stale.length === 1 ? "" : "s"} not reviewed in{" "}
-            {LEGAL_REVIEW_STALE_DAYS}+ days
-          </div>
-          <p className="mt-1 text-xs text-text-mid">
-            {stale
-              .slice(0, 8)
-              .map((r) => r.req_code)
-              .join(", ")}
-            {stale.length > 8 && `, and ${stale.length - 8} more`}. A confirmation from last quarter
-            can be overtaken by litigation — re-check and re-save the status to renew the date.
-          </p>
-        </div>
-      )}
-
-      {templateWarnings.length > 0 && (
-        <div className="rounded-lg border border-warn/30 bg-warn/8 p-3 text-sm">
-          <div className="flex items-center gap-2 font-semibold text-warn">
-            <ShieldAlert className="size-4" /> {templateWarnings.length} official form
-            {templateWarnings.length === 1 ? "" : "s"} need re-verification
-          </div>
-          <ul className="mt-1 space-y-0.5 text-xs text-text-mid">
-            {templateWarnings.map((w) => (
-              <li key={w.key}>
-                <b>{w.formNumber ?? w.key}</b>
-                {w.revision ? ` (${w.revision})` : ""} — {w.reason}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {unenforced.length > 0 && (
-        <div className="rounded-lg border border-signal/30 bg-signal/5 p-3 text-sm">
-          <div className="flex items-center gap-2 font-semibold text-signal">
-            <Ban className="size-4" /> Not currently enforceable ({unenforced.length})
-          </div>
-          <ul className="mt-1 space-y-0.5 text-xs text-text-mid">
-            {/* Jurisdiction included: the same req_code exists once per
-                profile, and without it two rows look like a duplication bug. */}
-            {unenforced.map((r) => (
-              <li key={r.id}>
-                <span className="font-mono">{r.req_code}</span>{" "}
-                <span className="text-text-low">({r.jurisdiction})</span> —{" "}
-                {r.legal_citation ?? "no citation recorded"}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1 text-xs text-text-low">
-            These can never block filing — the database enforces it, not just the UI.
-          </p>
-        </div>
-      )}
-
-      <section>
-        <h2 className="engraved mb-2 flex items-center gap-2 text-warn">
-          <ShieldAlert className="size-4" /> Awaiting attorney verification ({pending.length})
-        </h2>
-        <RuleList rows={pending} names={names} pending />
-      </section>
-
-      <section>
-        <h2 className="engraved mb-2 flex items-center gap-2 text-ok">
-          <ShieldCheck className="size-4" /> Verified ({verified.length})
-        </h2>
-        <RuleList rows={verified} names={names} pending={false} />
-      </section>
-
-      <p className="text-xs text-text-low">
-        Verifying is admin-only and recorded in the activity log (who + when). If litigation or an
-        NYPD change touches a rule, flag it back for review — future corrections should be new dated
-        versions in the registry, not edits to history.
-      </p>
-    </div>
+    <RuleReviewWorkspace
+      groups={groups}
+      counts={counts}
+      templateWarnings={templateWarnings}
+      recent={[...recentByCode.values()].slice(0, 5)}
+      filter={value(search.status, "attention")}
+      topic={value(search.topic, "all")}
+      mode={value(search.mode, "list")}
+      rule={value(search.rule, "")}
+    />
   )
 }
 
-function RuleList({
-  rows,
-  names,
-  pending,
-}: {
-  rows: Array<{
-    id: string
-    req_code: string
-    title: string
-    authority: string | null
-    source_url: string | null
-    severity: string
-    blocking: boolean
-    trigger_cond: string
-    effective_from: string
-    verified_by: string | null
-    verified_on: string | null
-    legal_status: string
-    legal_status_note: string | null
-    legal_citation: string | null
-    jurisdiction: string
-  }>
-  names: Map<string, string>
-  pending: boolean
-}) {
-  if (rows.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
-        {pending ? "Nothing awaiting review." : "Nothing verified yet."}
-      </p>
-    )
-  }
-  return (
-    <ul className="space-y-2">
-      {rows.map((r) => (
-        <li key={r.id} className="rounded-lg border bg-card p-3 text-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[11px]">{r.req_code}</span>
-                <span className="font-medium">{r.title}</span>
-                {!r.blocking && r.legal_status === "enforced" && (
-                  <span className="rounded bg-signal-dim px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-signal">
-                    advisory
-                  </span>
-                )}
-                <LegalStatusBadge status={r.legal_status as LegalStatusKey} />
-              </div>
-              {r.legal_citation && (
-                <p className="mt-1 text-xs italic text-text-mid">{r.legal_citation}</p>
-              )}
-              <p className="mt-1 text-xs text-text-low">
-                {r.jurisdiction} · {r.authority ?? "no authority cited"} · trigger <code>{r.trigger_cond}</code> · since{" "}
-                {r.effective_from}
-                {!pending && r.verified_on && (
-                  <>
-                    {" "}
-                    · verified {r.verified_on} by {names.get(r.verified_by ?? "") ?? "—"}
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {r.source_url && (
-                <a
-                  href={r.source_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-signal underline"
-                >
-                  source <ExternalLink className="size-3" />
-                </a>
-              )}
-              {pending ? (
-                <form action={markRequirementVerified}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <Button type="submit" size="sm" variant="outline">
-                    <ShieldCheck className="size-3.5" /> Mark verified
-                  </Button>
-                </form>
-              ) : (
-                <form action={flagRequirementForReview}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <Button type="submit" size="sm" variant="ghost" className="text-text-low">
-                    <Ban className="size-3.5" /> Flag for review
-                  </Button>
-                </form>
-              )}
-            </div>
-          </div>
-          <LegalStatusEditor
-            id={r.id}
-            reqCode={r.req_code}
-            status={r.legal_status as LegalStatusKey}
-            note={r.legal_status_note}
-            citation={r.legal_citation}
-          />
-        </li>
-      ))}
-    </ul>
-  )
+export default async function RuleReviewPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const auth = await requireStaff()
+  if (auth.profile.role !== "admin") return <RuleReviewPermissionNotice />
+  const search = await searchParams
+  return <Suspense fallback={<RuleReviewSkeleton />}><RuleReviewData search={search} /></Suspense>
 }

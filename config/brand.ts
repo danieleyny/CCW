@@ -115,6 +115,27 @@ export const paletteLight = {
 /** Back-compat alias — nothing imports the raw palette today, but keep it. */
 export const palette = paletteDark
 
+/** Light staff-console palette. Kept here so admin redesigns share one source. */
+export const staffPalette = {
+  "staff-canvas": "#F6F7F9",
+  "staff-paper": "#FFFFFF",
+  "staff-ink": "#101828",
+  "staff-navy": "#14254A",
+  "staff-muted": "#667085",
+  "staff-subtle": "#98A2B3",
+  "staff-gold": "#D9B25F",
+  "staff-green": "#21845A",
+  "staff-green-bg": "#E6F4EC",
+  "staff-amber": "#B54708",
+  "staff-amber-bg": "#FFFAEB",
+  "staff-red": "#B42318",
+  "staff-red-bg": "#FEF3F2",
+  "staff-slate": "#475467",
+  "staff-slate-bg": "#F2F4F7",
+  "staff-line": "rgba(16,24,40,0.10)",
+  "staff-line-on-dark": "rgba(255,255,255,0.20)",
+} as const
+
 const INK = "#0B0A07" // near-black ink for text on brass (both themes)
 
 type Palette = Record<keyof typeof paletteDark, string>
@@ -170,7 +191,7 @@ const varsFrom = (obj: Record<string, string>) =>
  * runtime toggle and no flash.
  */
 export function brandCss(): string {
-  const light = varsFrom({ ...paletteLight, ...shadcnFor(paletteLight, paletteLight["surface-1"]) })
+  const light = varsFrom({ ...paletteLight, ...shadcnFor(paletteLight, paletteLight["surface-1"]), ...staffPalette })
   const dark = varsFrom({ ...paletteDark, ...shadcnFor(paletteDark, "#0A0C10") })
   // `--app-bg-dark` is published on :root (not just .dark) so the DOCUMENT can be
   // painted obsidian on app routes — otherwise overscroll/short pages reveal the

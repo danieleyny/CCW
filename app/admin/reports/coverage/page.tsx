@@ -35,7 +35,7 @@ export default async function CoverageReport() {
     <div className="space-y-6">
       <PageHeader
         title="Application coverage"
-        description="Every field on NYPD PD 643-041 (Rev. 11-10) mapped to where we capture it — or an explicit, flagged gap. Attorney-reviewable; confirm 'verify' rows against the live NYPD portal."
+        description="Every field on NYPD PD 643-041 (Rev. 11-10) mapped to where we capture it — or an explicit, flagged gap. Team-reviewable; confirm 'verify' rows against the live NYPD portal."
       />
 
       {/* Roll-up */}

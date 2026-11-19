@@ -9,6 +9,7 @@ import { addAdminBusinessDays, adminDayKey } from "@/lib/admin/business-time"
 import { loadInbox } from "@/lib/admin/inbox"
 import type { InboxData } from "@/lib/admin/inbox-model"
 import { loadCalendar, type CalendarData } from "@/lib/admin/calendar"
+import { ruleReviewCounts, type RuleReviewCounts } from "@/lib/admin/rule-review"
 export { deriveCaseOwnership } from "@/lib/admin/ownership"
 export type { CaseMoveOwner } from "@/lib/admin/ownership"
 import { deriveCaseOwnership } from "@/lib/admin/ownership"
@@ -189,7 +190,7 @@ export async function loadToday(
   }
 
   const startKey = dayKey(now)
-  const sourceNames = ["Messages", "Documents", "Final QA", "Concierge", "Tasks", "People", "Payments", "Privacy", "Schedule", "Legal review"] as const
+  const sourceNames = ["Messages", "Documents", "Final QA", "Concierge", "Tasks", "People", "Payments", "Privacy", "Schedule", "Rule review"] as const
   const settled = await Promise.allSettled([
     loadInbox(db, { userId, scope, showHidden: false, now }),
     db.from("documents").select("id, case_id, created_at").eq("status", "pending").order("created_at", { ascending: true }),
@@ -211,7 +212,7 @@ export async function loadToday(
       currentUserId: userId,
       now,
     }),
-    role === "admin" ? db.from("requirements").select("id", { count: "exact", head: true }).eq("needs_legal_review", true) : Promise.resolve({ count: 0, error: null }),
+    role === "admin" ? ruleReviewCounts(db, now) : Promise.resolve({ attention: 0 }),
   ])
 
   const errors: string[] = []
@@ -428,12 +429,12 @@ export async function loadToday(
   const oldestMessage = messageThreads.map((thread) => thread.waitingSince).filter((value): value is string => !!value).sort()[0]
   const oldestDocument = documents[0]?.created_at
   const stalledCases = [...cases.values()].filter((c) => c.status === "active" && !isNypdControlled(c.stage) && daysBetween(c.stageEnteredAt, now) > STALLED_DAYS)
-  const legalResult = ok<{ count: number | null }>(9)
+  const legalResult = ok<RuleReviewCounts>(9)
   const health: TodayHealthItem[] = [
     { key: "message", label: "Oldest unanswered client message", value: oldestMessage ? ageText(oldestMessage, now) : "None", pastTarget: messageThreads.some((thread) => thread.overdue), available: !errors.includes("Messages") },
     { key: "document", label: "Oldest document waiting for review", value: oldestDocument ? ageText(oldestDocument, now) : "None", pastTarget: !!oldestDocument && daysBetween(oldestDocument, now) >= DOCUMENT_REVIEW_BUSINESS_DAYS, available: !errors.includes("Documents") },
     { key: "stalled", label: "Cases with no movement in 14+ days", value: String(stalledCases.length), pastTarget: stalledCases.length > 0, available: true },
-    ...(role === "admin" ? [{ key: "legal" as const, label: "Rules awaiting attorney verification", value: legalResult ? String(legalResult.count ?? 0) : "Unavailable", pastTarget: (legalResult?.count ?? 0) > 0, available: !errors.includes("Legal review") }] : []),
+    ...(role === "admin" ? [{ key: "legal" as const, label: "Rules that need our team review", value: legalResult ? String(legalResult.attention) : "Unavailable", pastTarget: (legalResult?.attention ?? 0) > 0, available: !errors.includes("Rule review") }] : []),
   ]
 
   return { items: scoped, schedule, waiting, health, errors, unassignedCount, inboxNeedsReplyCount: inbox?.counts.needs ?? 0, asOf: now.toISOString() }

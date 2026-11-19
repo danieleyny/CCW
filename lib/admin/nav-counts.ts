@@ -6,6 +6,7 @@ import type { AdminNavKey } from "@/config/admin-nav"
 import { buildQaQueue } from "@/lib/admin/queue"
 import { conciergeAttentionCount } from "@/lib/concierge/board"
 import { loadToday } from "@/lib/admin/today"
+import { ruleReviewCounts } from "@/lib/admin/rule-review"
 
 type DB = SupabaseClient<Database>
 export type AdminNavCounts = Partial<Record<AdminNavKey, number>>
@@ -18,7 +19,7 @@ export async function loadAdminNavCounts(db: DB, userId: string, role: string): 
     Promise.resolve(null),
     buildQaQueue(db),
     conciergeAttentionCount(db, userId),
-    role === "admin" ? db.from("requirements").select("id", { count: "exact", head: true }).eq("needs_legal_review", true) : Promise.resolve({ count: 0 }),
+    role === "admin" ? ruleReviewCounts(db) : Promise.resolve({ attention: 0 }),
     role === "admin" ? db.from("data_requests").select("id", { count: "exact", head: true }).in("status", ["open", "acknowledged"]) : Promise.resolve({ count: 0 }),
   ])
 
@@ -30,7 +31,7 @@ export async function loadAdminNavCounts(db: DB, userId: string, role: string): 
   }
   if (results[3].status === "fulfilled") counts.queue = results[3].value.filter((row) => row.bucket === "ready" || row.bucket === "signed").length
   if (results[4].status === "fulfilled") counts.concierge = results[4].value
-  if (results[5].status === "fulfilled") counts.legal = results[5].value.count ?? 0
+  if (results[5].status === "fulfilled") counts.legal = results[5].value.attention
   if (results[6].status === "fulfilled") counts.privacy = results[6].value.count ?? 0
   return counts
 }
