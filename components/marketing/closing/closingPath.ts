@@ -32,7 +32,9 @@ export function getV2ClosingFrame(time: number, reducedMotion = false) {
   const cycle = Math.floor(safeTime / V2_CYCLE)
   const localTime = safeTime % V2_CYCLE
   const travelProgress = Math.min(1, localTime / V2_TRAVEL)
-  const head = 1 - Math.pow(1 - travelProgress, 3)
+  // `at()` samples the curve by accumulated arc length, so linear progress
+  // gives the traveling light a visually constant speed around the bend.
+  const head = travelProgress
   const celebrationTime = localTime - V2_TRAVEL
   const celebrating = celebrationTime >= 0 && celebrationTime < V2_CELEBRATE
   const fadeStart = V2_TRAVEL + V2_CELEBRATE + V2_HOLD

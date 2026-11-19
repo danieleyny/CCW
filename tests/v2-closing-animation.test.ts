@@ -4,10 +4,15 @@ import { getV2ClosingFrame, V2_CELEBRATE, V2_CYCLE, V2_HOLD, V2_RESET, V2_TRAVEL
 describe("V2 closing animation loop", () => {
   it("travels to the call-to-action before celebrating", () => {
     expect(getV2ClosingFrame(0).head).toBe(0)
-    expect(getV2ClosingFrame(V2_TRAVEL / 2).head).toBeGreaterThan(0.5)
+    expect(getV2ClosingFrame(V2_TRAVEL / 2).head).toBeCloseTo(0.5)
     const arrival = getV2ClosingFrame(V2_TRAVEL)
     expect(arrival.head).toBe(1)
     expect(arrival.celebrating).toBe(true)
+  })
+
+  it("keeps an even travel speed through the final stretch", () => {
+    const heads = [0, 0.25, 0.5, 0.75, 1].map((fraction) => getV2ClosingFrame(V2_TRAVEL * fraction).head)
+    expect(heads).toEqual([0, 0.25, 0.5, 0.75, 1])
   })
 
   it("holds, fades, and then starts a fresh cycle", () => {
