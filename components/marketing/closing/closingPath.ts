@@ -15,10 +15,30 @@ export const BURST: "first" | "every" = "first"
 type Point = [number, number]
 type Spark = { x: number; y: number; vx: number; vy: number; radius: number; life: number; color: number; streak: boolean }
 type Star = { x: number; y: number; delay: number; radius: number; color: number }
+type V2BurstParticle = { angle: number; distance: number; delay: number; radius: number; color: string; streak: boolean }
 type ClosingOptions = { reducedMotion: boolean; mobile: () => boolean; monoFont: string; palette?: Palette; section?: HTMLElement }
 
 const v2Gold = "#D9B25F"
 const v2Light = "#F0D58C"
+export const V2_TRAVEL = 3.4
+export const V2_CELEBRATE = 1.4
+export const V2_HOLD = 1.4
+export const V2_RESET = 0.6
+export const V2_CYCLE = V2_TRAVEL + V2_CELEBRATE + V2_HOLD + V2_RESET
+
+export function getV2ClosingFrame(time: number, reducedMotion = false) {
+  if (reducedMotion) return { cycle: 0, localTime: V2_TRAVEL, head: 1, pathAlpha: 1, celebrating: false, celebrationTime: 0 }
+  const safeTime = Math.max(0, time)
+  const cycle = Math.floor(safeTime / V2_CYCLE)
+  const localTime = safeTime % V2_CYCLE
+  const travelProgress = Math.min(1, localTime / V2_TRAVEL)
+  const head = 1 - Math.pow(1 - travelProgress, 3)
+  const celebrationTime = localTime - V2_TRAVEL
+  const celebrating = celebrationTime >= 0 && celebrationTime < V2_CELEBRATE
+  const fadeStart = V2_TRAVEL + V2_CELEBRATE + V2_HOLD
+  const pathAlpha = localTime < fadeStart ? 1 : Math.max(0, 1 - (localTime - fadeStart) / V2_RESET)
+  return { cycle, localTime, head, pathAlpha, celebrating, celebrationTime }
+}
 
 function cubic(a: Point, b: Point, c: Point, d: Point, t: number): Point {
   const u = 1 - t
@@ -37,6 +57,7 @@ function startV2ClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, opti
   let lengths: number[] = []
   let total = 1
   let button = { x: 0, y: 0, width: 0, height: 0 }
+  let burstParticles: V2BurstParticle[] = []
   let lastPulse = -1
 
   const at = (fraction: number): Point => {
@@ -69,6 +90,16 @@ function startV2ClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, opti
     points = Array.from({ length: 601 }, (_, index) => cubic(start, c1, c2, end, index / 600))
     lengths = points.map((point, index) => index ? (lengths[index - 1] ?? 0) + Math.hypot(point[0] - points[index - 1][0], point[1] - points[index - 1][1]) : 0)
     total = lengths.at(-1) || 1
+    const random = seeded(29)
+    const burstColors = [v2Gold, v2Light, "#FFFFFF", "#8EA0C2"]
+    burstParticles = Array.from({ length: mobile ? 26 : 38 }, (_, index) => ({
+      angle: random() * Math.PI * 2,
+      distance: (mobile ? 28 : 38) + random() * (mobile ? 42 : 64),
+      delay: random() * 0.22,
+      radius: 1.2 + random() * 2.1,
+      color: burstColors[Math.floor(random() * burstColors.length)] ?? v2Light,
+      streak: index % 4 === 0,
+    }))
   }
 
   const dot = (context: CanvasRenderingContext2D, point: Point, radius: number, alpha: number) => {
@@ -82,19 +113,87 @@ function startV2ClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, opti
     lastPulse = pulseWindow
     anchor.dataset.pulsed = "true"
     anchor.dataset.celebrate = `v2-${pulseWindow}`
-    window.setTimeout(() => { if (anchor.dataset.celebrate === `v2-${pulseWindow}`) delete anchor.dataset.celebrate }, 760)
+    window.setTimeout(() => { if (anchor.dataset.celebrate === `v2-${pulseWindow}`) delete anchor.dataset.celebrate }, 1000)
+  }
+
+  const drawBurst = (context: CanvasRenderingContext2D, elapsed: number) => {
+    const centerX = button.x + button.width / 2
+    const centerY = button.y + button.height / 2
+    const bloom = Math.max(0, 1 - elapsed / 0.95)
+    if (bloom > 0) {
+      const glow = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(button.width, 180) * 0.8)
+      glow.addColorStop(0, `rgba(240,213,140,${0.28 * bloom})`)
+      glow.addColorStop(0.48, `rgba(217,178,95,${0.16 * bloom})`)
+      glow.addColorStop(1, "rgba(217,178,95,0)")
+      context.globalAlpha = 1
+      context.fillStyle = glow
+      context.beginPath()
+      context.arc(centerX, centerY, Math.max(button.width, 180) * 0.8, 0, Math.PI * 2)
+      context.fill()
+    }
+    for (let index = 0; index < 3; index++) {
+      const progress = (elapsed - index * 0.12) / 0.82
+      if (progress < 0 || progress > 1) continue
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const offset = 4 + eased * (22 + index * 7)
+      context.globalAlpha = 0.72 * (1 - progress)
+      context.strokeStyle = index === 1 ? v2Light : v2Gold
+      context.lineWidth = 2.4 - progress * 1.6
+      context.beginPath()
+      context.roundRect(button.x - offset, button.y - offset, button.width + offset * 2, button.height + offset * 2, 15 + offset)
+      context.stroke()
+    }
+    for (const particle of burstParticles) {
+      const progress = (elapsed - particle.delay) / 0.92
+      if (progress < 0 || progress > 1) continue
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const edgeX = centerX + Math.cos(particle.angle) * (button.width / 2 + 5)
+      const edgeY = centerY + Math.sin(particle.angle) * (button.height / 2 + 5)
+      const x = edgeX + Math.cos(particle.angle) * particle.distance * eased
+      const y = edgeY + Math.sin(particle.angle) * particle.distance * eased + 8 * progress * progress
+      const alpha = Math.pow(1 - progress, 1.25)
+      context.globalAlpha = alpha
+      context.fillStyle = particle.color
+      context.strokeStyle = particle.color
+      context.lineCap = "round"
+      if (particle.streak) {
+        const tail = Math.max(0, eased - 0.15)
+        context.lineWidth = particle.radius * 0.75
+        context.beginPath()
+        context.moveTo(edgeX + Math.cos(particle.angle) * particle.distance * tail, edgeY + Math.sin(particle.angle) * particle.distance * tail)
+        context.lineTo(x, y)
+        context.stroke()
+      } else if (progress > 0.25 && Math.round(particle.distance) % 3 === 0) {
+        const size = particle.radius * (1 - progress * 0.4) * 2.2
+        context.save()
+        context.shadowColor = particle.color
+        context.shadowBlur = 8
+        context.beginPath()
+        context.moveTo(x, y - size)
+        context.quadraticCurveTo(x, y, x + size, y)
+        context.quadraticCurveTo(x, y, x, y + size)
+        context.quadraticCurveTo(x, y, x - size, y)
+        context.quadraticCurveTo(x, y, x, y - size)
+        context.fill()
+        context.restore()
+      } else {
+        context.beginPath()
+        context.arc(x, y, particle.radius * (1 - progress * 0.45), 0, Math.PI * 2)
+        context.fill()
+      }
+    }
   }
 
   let built = false
   return runCanvasLoop(canvas, (context, width, height, time) => {
     if (!built) { build(width, height); built = true }
     const mobile = options.mobile()
-    const drawTime = options.reducedMotion ? 1.6 : time
-    const head = Math.min(1, 1 - Math.pow(1 - Math.min(1, drawTime / 1.6), 3))
+    const frame = getV2ClosingFrame(time, options.reducedMotion)
+    const { head, pathAlpha } = frame
     const spacing = mobile ? 7 : 9
     const count = Math.ceil(total / spacing)
     context.save()
-    context.globalAlpha = .9
+    context.globalAlpha = .9 * pathAlpha
     context.strokeStyle = v2Gold
     context.lineWidth = mobile ? 2.6 : 3
     context.lineCap = "round"
@@ -108,51 +207,38 @@ function startV2ClosingPath(canvas: HTMLCanvasElement, anchor: HTMLElement, opti
     for (let index = 0; index <= count; index++) {
       const fraction = index / count
       if (fraction > head) break
-      dot(context, at(fraction), mobile ? 1.8 : 2.1, 0.48 + fraction * 0.5)
+      dot(context, at(fraction), mobile ? 1.8 : 2.1, (0.48 + fraction * 0.5) * pathAlpha)
     }
     const markers = mobile ? [0.24, 0.52, 0.78] : STATIONS
     for (const [index, fraction] of markers.entries()) {
       if (fraction > head) continue
       const point = at(fraction)
-      context.globalAlpha = 0.9; context.strokeStyle = v2Light; context.lineWidth = 1
+      context.globalAlpha = 0.9 * pathAlpha; context.strokeStyle = v2Light; context.lineWidth = 1
       context.beginPath(); context.arc(point[0], point[1], mobile ? 3 : 4, 0, Math.PI * 2); context.stroke()
-      dot(context, point, mobile ? 1.1 : 1.4, 1)
+      dot(context, point, mobile ? 1.1 : 1.4, pathAlpha)
       if (!mobile) {
-        context.globalAlpha = 0.88; context.fillStyle = "#8E98AA"; context.font = `500 11px ${options.monoFont}`; context.textAlign = "center"
+        context.globalAlpha = 0.88 * pathAlpha; context.fillStyle = "#8E98AA"; context.font = `500 11px ${options.monoFont}`; context.textAlign = "center"
         context.fillText(`0${index + 1} ${LABELS[index]}`, point[0], point[1] + 24)
       }
     }
-    if (head >= 1 && !options.reducedMotion) {
-      const elapsed = Math.max(0, time - 1.6)
-      const pulseWindow = Math.floor(elapsed / 5)
-      const local = elapsed % 5
-      if (local < 1.4) {
-        const fraction = 1 - Math.pow(1 - local / 1.4, 3)
-        const point = at(fraction)
-        for (let index = 0; index < 6; index++) {
-          const tail = fraction - index * 0.014
-          if (tail < 0) break
-          const tailPoint = at(tail)
-          context.globalAlpha = (1 - index / 6) * 0.8; context.fillStyle = "#FFFFFF"
-          context.beginPath(); context.arc(tailPoint[0], tailPoint[1], 2.4 - index * 0.22, 0, Math.PI * 2); context.fill()
-        }
-        const glow = context.createRadialGradient(point[0], point[1], 0, point[0], point[1], 10)
-        glow.addColorStop(0, "rgba(255,255,255,.95)"); glow.addColorStop(1, "rgba(240,213,140,0)")
-        context.globalAlpha = 1; context.fillStyle = glow; context.beginPath(); context.arc(point[0], point[1], 10, 0, Math.PI * 2); context.fill()
-      }
-      if (local >= 1.4 && local < 2.2) {
-        setPulse(pulseWindow)
-        const origin: Point = mobile ? [button.x + button.width / 2, button.y] : [button.x, button.y + button.height / 2]
-        for (let index = 0; index < 6; index++) {
-          const angle = (Math.PI * 2 * index) / 6 + (mobile ? -Math.PI / 2 : Math.PI)
-          const distance = 10 + index * 2 + (local - 1.4) * 18
-          const alpha = 1 - (local - 1.4) / 0.8
-          context.globalAlpha = alpha; context.fillStyle = v2Light; context.beginPath(); context.arc(origin[0] + Math.cos(angle) * distance, origin[1] + Math.sin(angle) * distance, 2, 0, Math.PI * 2); context.fill()
-        }
+    if (!options.reducedMotion && head > 0 && head < 1) {
+      for (let index = 0; index < 9; index++) {
+        const tail = head - index * 0.009
+        if (tail < 0) break
+        const tailPoint = at(tail)
+        context.globalAlpha = (1 - index / 9) * 0.88
+        context.fillStyle = index < 3 ? "#FFFFFF" : v2Light
+        context.beginPath()
+        context.arc(tailPoint[0], tailPoint[1], 3.7 - index * 0.32, 0, Math.PI * 2)
+        context.fill()
       }
     }
+    if (frame.celebrating) {
+      setPulse(frame.cycle)
+      drawBurst(context, frame.celebrationTime)
+    }
     context.globalAlpha = 1
-  }, { reducedMotion: options.reducedMotion, stillTime: 1.6, rootMargin: "200px 0px", onResize: (width, height) => { if (width && height) { build(width, height); built = true } } })
+  }, { reducedMotion: options.reducedMotion, stillTime: V2_TRAVEL, rootMargin: "200px 0px", onResize: (width, height) => { if (width && height) { build(width, height); built = true } } })
 }
 
 export function mix(fraction: number) {

@@ -66,10 +66,21 @@
   radial-gradient(max(32vw,220px) 220px at 95% 100%, rgba(90,130,200,.35), transparent 72%); filter: blur(14px); opacity: .95; }
 :global([data-theme="v2"]) .btnChrome { overflow: hidden; }
 :global([data-theme="v2"]) .btnChrome::after { position: absolute; inset: -24% auto -24% -45%; width: 40%; z-index: 0; content: ""; pointer-events: none; background: linear-gradient(105deg, transparent, rgba(240,213,140,.35), transparent); transform: translateX(-180%) skewX(-14deg); animation: v2Shimmer 7s ease-in-out 2.5s infinite; }
-:global([data-theme="v2"]) .ctaAnchor[data-celebrate] .btnChrome { animation: v2Pulse .7s ease-out; }
-:global([data-theme="v2"]) .ctaAnchor[data-celebrate] .arrow { animation: v2Nudge .3s ease-in-out; }
-@keyframes v2Pulse { from { box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 0 rgba(240,213,140,.55); } to { box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 14px rgba(240,213,140,0); } }
-@keyframes v2Nudge { 50% { transform: translateX(4px); } }
+:global([data-theme="v2"]) .ctaAnchor[data-celebrate] .btnChrome { animation: v2Pulse 1s cubic-bezier(.2,.9,.25,1.2); }
+:global([data-theme="v2"]) .ctaAnchor[data-celebrate] .btnChrome::after { animation: v2CelebrationSweep .78s cubic-bezier(.2,.75,.2,1) forwards; }
+:global([data-theme="v2"]) .ctaAnchor[data-celebrate] .arrow { animation: v2Nudge .68s cubic-bezier(.2,.9,.25,1.35); }
+@keyframes v2Pulse {
+  0%,100% { transform: scale(1); filter: brightness(1); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 0 rgba(240,213,140,0), 0 14px 30px -18px var(--cta-dark-bg); }
+  24% { transform: scale(1.075); filter: brightness(1.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 10px rgba(240,213,140,.16), 0 0 48px 8px rgba(217,178,95,.28); }
+  52% { transform: scale(.985); filter: brightness(1.06); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 18px rgba(240,213,140,0), 0 0 32px 2px rgba(217,178,95,.16); }
+}
+@keyframes v2Nudge { 0%,100% { transform: none; } 42% { transform: translateX(8px) scale(1.08); } }
+@keyframes v2CelebrationSweep { from { transform: translateX(-180%) skewX(-14deg); opacity: 0; } 18% { opacity: 1; } to { transform: translateX(420%) skewX(-14deg); opacity: 0; } }
 @keyframes v2Shimmer { 0%, 12%, 100% { transform: translateX(-180%) skewX(-14deg); opacity: 0; } 16% { opacity: 1; } 30% { transform: translateX(420%) skewX(-14deg); opacity: 0; } }
 @media (max-width: 899px) { :global([data-theme="v2"]) .closing { padding-top: 128px; } }
-@media (prefers-reduced-motion: reduce) { :global([data-theme="v2"]) .btnChrome::after { animation: none; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  :global([data-theme="v2"]) .btnChrome::after,
+  :global([data-theme="v2"]) .ctaAnchor[data-celebrate] .btnChrome,
+  :global([data-theme="v2"]) .ctaAnchor[data-celebrate] .arrow { animation: none; }
+  :global([data-theme="v2"]) .btnChrome::after { opacity: 0; }
+}
