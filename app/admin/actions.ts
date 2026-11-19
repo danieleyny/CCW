@@ -464,6 +464,14 @@ export async function reviewDocument(input: {
       reqCodes: resolvedReqCodes,
     }),
   })
+  await logActivity({
+    action: "document.reviewed",
+    caseId: input.caseId,
+    clientId: input.clientId,
+    entity: "document",
+    entityId: input.documentId,
+    detail: { status: input.status },
+  })
 
   const client = doc.clients as unknown as { full_name: string; email: string | null }
   await notifyClient({
