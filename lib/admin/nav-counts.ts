@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import type { AdminNavKey } from "@/config/admin-nav"
 import { buildQaQueue } from "@/lib/admin/queue"
-import { conciergeAttentionCount } from "@/lib/concierge/queue"
+import { conciergeAttentionCount } from "@/lib/concierge/board"
 import { loadToday } from "@/lib/admin/today"
 
 type DB = SupabaseClient<Database>
@@ -22,7 +22,7 @@ export async function loadAdminNavCounts(db: DB, userId: string, role: string): 
       db.from("bookings").select("id", { count: "exact", head: true }).neq("status", "cancelled").gte("starts_at", `${date}T00:00:00-05:00`).lt("starts_at", next),
     ]),
     buildQaQueue(db),
-    conciergeAttentionCount(db),
+    conciergeAttentionCount(db, userId),
     role === "admin" ? db.from("requirements").select("id", { count: "exact", head: true }).eq("needs_legal_review", true) : Promise.resolve({ count: 0 }),
     role === "admin" ? db.from("data_requests").select("id", { count: "exact", head: true }).in("status", ["open", "acknowledged"]) : Promise.resolve({ count: 0 }),
   ])

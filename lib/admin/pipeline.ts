@@ -48,6 +48,7 @@ export interface PipelineCard {
   days: number
   stalled: boolean
   nypdControlled: boolean
+  qaSignedOff: boolean
   ownerId: string | null
   ownerName: string | null
   ownerInitials: string
@@ -515,6 +516,7 @@ export async function loadPipeline(
       days: paid ? days : inactivityDays,
       stalled,
       nypdControlled,
+      qaSignedOff: !!c.qaSignedOffBy,
       ownerId: c.assignedStaff,
       ownerName,
       ownerInitials: ownerInitials(ownerName),

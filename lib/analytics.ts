@@ -26,6 +26,9 @@ export type ConversionEvent =
   | "admin_inbox_viewed" // staff opened an inbox tab/scope
   | "admin_inbox_reply_sent" // staff replied from the inbox or focus queue
   | "admin_inbox_focus_completed" // staff reached the end of a focus snapshot
+  | "admin_concierge_viewed" // staff opened a concierge workspace tab
+  | "admin_concierge_agent_changed" // admin changed the concierge-agent label
+  | "admin_demo_delete_confirmed" // admin completed typed demo-case deletion
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return
