@@ -18,6 +18,7 @@ interface OverviewProps {
   openTasks: number
   overdueTasks: number
   paymentSummary: string
+  paymentComped: boolean
   filedAt: string | null
   nypdRef: string | null
   licenseIssuedOn: string | null
@@ -125,7 +126,7 @@ export function CaseOverview(props: OverviewProps) {
             <Vital icon={ShieldCheck} label="Training valid until" value={props.trainingExpiresOn ? formatDate(props.trainingExpiresOn) : "Not recorded"} warn={props.trainingDaysLeft != null && props.trainingDaysLeft <= 30} danger={props.trainingDaysLeft != null && props.trainingDaysLeft < 0} />
             <Vital icon={CalendarDays} label="Next appointment" value={props.nextAppointment ? formatDateTime(props.nextAppointment.scheduled_at) : "None scheduled"} />
             <Vital icon={Clock} label="Open tasks" value={`${props.openTasks}${props.overdueTasks ? ` · ${props.overdueTasks} overdue` : ""}`} warn={props.overdueTasks > 0} />
-            <Vital icon={FileCheck2} label="Payments" value={props.paymentSummary} />
+            <Vital icon={FileCheck2} label="Payments" value={props.paymentSummary} comped={props.paymentComped} />
           </dl>
         </section>
 
@@ -146,6 +147,6 @@ function Info({ label, value, mono = false }: { label: string; value: string; mo
   return <div className="rounded-xl bg-surface-2 p-3"><dt className="text-[10px] uppercase tracking-wide text-text-low">{label}</dt><dd className={cn("mt-1 font-medium capitalize", mono && "font-mono")}>{value}</dd></div>
 }
 
-function Vital({ icon: Icon, label, value, warn, danger }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; warn?: boolean; danger?: boolean }) {
-  return <div className="flex items-center gap-2 py-2.5"><Icon className="size-4 shrink-0 text-text-low" /><dt className="min-w-0 flex-1 text-text-mid">{label}</dt><dd className={cn("text-right text-xs font-medium", warn && "text-warn", danger && "text-danger")}>{value}</dd></div>
+function Vital({ icon: Icon, label, value, warn, danger, comped }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; warn?: boolean; danger?: boolean; comped?: boolean }) {
+  return <div className={cn("flex items-center gap-2 py-2.5", comped && "-mx-2 rounded-lg border-l-[3px] border-l-[var(--comp)] bg-[var(--comp-tint)] px-2")}><Icon className={cn("size-4 shrink-0 text-text-low", comped && "text-[var(--comp)]")} /><dt className="min-w-0 flex-1 text-text-mid">{label}</dt><dd className={cn("text-right text-xs font-medium", warn && "text-warn", danger && "text-danger", comped && "text-[var(--comp)]")}>{value}</dd></div>
 }

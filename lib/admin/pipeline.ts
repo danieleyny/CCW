@@ -15,6 +15,7 @@ import { agreementsCurrentFor } from "@/lib/concierge/onboarding"
 import { paidCaseIds } from "@/lib/packages"
 import { deriveCaseOwnership, type CaseMoveOwner } from "@/lib/admin/ownership"
 import { duplicateCaseMetadata } from "@/lib/admin/case-visibility"
+import { accessCodeLabel } from "@/lib/admin/payments"
 
 type DB = SupabaseClient<Database>
 
@@ -56,6 +57,7 @@ export interface PipelineCard {
   isDuplicate: boolean
   duplicateLabel: string | null
   pendingAmount: string | null
+  compLabel: string | null
   lastStep: string | null
   progressStep: number
   classification: PipelineView
@@ -331,6 +333,7 @@ export async function loadPipeline(
 
   const [
     paidIds,
+    compPayments,
     pendingPayments,
     staffResult,
     messagesResult,
@@ -346,6 +349,7 @@ export async function loadPipeline(
     agreementsResult,
   ] = await Promise.all([
     paidCaseIds(db, ids),
+    db.from("payments").select("case_id, description").eq("status", "paid").eq("amount_cents", 0).in("case_id", ids),
     db.from("payments").select("case_id, amount_cents, currency, created_at, package_key").eq("status", "pending").in("case_id", ids),
     db.from("profiles").select("id, full_name, role").in("role", ["staff", "admin"]).order("full_name"),
     db.from("messages").select("case_id, created_at, read, profiles:sender_id(role)").in("case_id", ids).is("engagement_id", null),
@@ -362,7 +366,7 @@ export async function loadPipeline(
   ])
 
   for (const [label, result] of [
-    ["Pending payments", pendingPayments], ["Staff", staffResult], ["Messages", messagesResult],
+    ["Comp payments", compPayments], ["Pending payments", pendingPayments], ["Staff", staffResult], ["Messages", messagesResult],
     ["Documents", documentsResult], ["Tasks", tasksResult], ["References", referencesResult],
     ["Cohabitants", cohabitantsResult], ["Bookings", bookingsResult], ["Appointments", appointmentsResult],
     ["Intro calls", introsResult], ["Requirements", requirementsResult], ["Intake", intakesResult],
@@ -378,6 +382,10 @@ export async function loadPipeline(
     if (!payment.case_id) continue
     const current = pendingPayment.get(payment.case_id)
     if (!current || payment.created_at > current.created_at) pendingPayment.set(payment.case_id, payment)
+  }
+  const compByCase = new Map<string, string>()
+  for (const payment of compPayments.data ?? []) {
+    if (payment.case_id && !compByCase.has(payment.case_id)) compByCase.set(payment.case_id, accessCodeLabel(payment.description))
   }
 
   const unreadClientMessages = new Map<string, number>()
@@ -524,6 +532,7 @@ export async function loadPipeline(
       isDuplicate: duplicate.duplicate,
       duplicateLabel: duplicate.label,
       pendingAmount,
+      compLabel: compByCase.get(c.id) ?? null,
       lastStep: lastStep[group],
       progressStep,
       classification: paid ? "active" : "leads",

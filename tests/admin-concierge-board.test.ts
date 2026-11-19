@@ -25,6 +25,7 @@ function card(overrides: Partial<PipelineCard> = {}): PipelineCard {
     isDuplicate: false,
     duplicateLabel: null,
     pendingAmount: null,
+    compLabel: null,
     lastStep: null,
     progressStep: 3,
     classification: "active",

@@ -64,6 +64,9 @@ html:has(.portal-v2) body {
   --ok: #15803d;
   --warn: #b45309;
   --danger: #b91c1c;
+  --comp: #7c3aed;
+  --comp-tint: #f4eeff;
+  --comp-border: #ddd0fb;
   --tone-todo: #c08a2e;
   --tone-wait: #14254a;
   --tone-prog: #3b6fd8;
@@ -113,6 +116,14 @@ html:has(.portal-v2) body {
   min-height: 100svh;
   background: var(--background);
   color: var(--foreground);
+}
+
+/* The V2 staff shell shares the portal tokens but is not nested under
+   .portal-v2. Re-publish the comp semantics for every admin payment surface. */
+.admin-shell {
+  --comp: #7c3aed;
+  --comp-tint: #f4eeff;
+  --comp-border: #ddd0fb;
 }
 
 .portal-title-font,

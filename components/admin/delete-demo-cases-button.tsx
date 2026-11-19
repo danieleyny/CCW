@@ -53,7 +53,8 @@ export function DeleteDemoCasesButton({ count }: { count: number }) {
         return
       }
       trackEvent("admin_demo_delete_confirmed", { count: response.deleted ?? 0 })
-      setResult(`Deleted ${response.deleted ?? 0} demo case${response.deleted === 1 ? "" : "s"}.`)
+      const excluded = response.excluded ?? 0
+      setResult(`Deleted ${response.deleted ?? 0} demo case${response.deleted === 1 ? "" : "s"}.${excluded ? ` ${excluded} with real Stripe payments were kept for manual review.` : ""}`)
     })
   }
 

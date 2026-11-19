@@ -8,6 +8,7 @@ import { loadPipeline } from "@/lib/admin/pipeline"
 import { deriveCaseOwnership, type CaseMoveOwner } from "@/lib/admin/today"
 import { stageIndex, stageMeta, type CaseStageKey } from "@/config/stages"
 import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
+import { accessCodeLabel } from "@/lib/admin/payments"
 
 const caseIdSchema = z.string().uuid()
 
@@ -43,13 +44,14 @@ export interface CasePreviewData {
   lastStep: string | null
   pendingAmount: string | null
   paymentStatus: string
+  paymentComped: boolean
   openBeforeFiling: {
     total: number
     boxes: CasePreviewOpenBox[]
     gate: { passes: boolean; blockerCount: number } | null
   } | null
   activity: Array<{ id: string; at: string; line: string }>
-  jump: Array<{ key: string; label: string; summary: string; href: string; alert: boolean }>
+  jump: Array<{ key: string; label: string; summary: string; href: string; alert: boolean; comped?: boolean }>
 }
 
 const PHASES: Array<{ label: string; stages: CaseStageKey[] }> = [
@@ -120,7 +122,7 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     db.from("cohabitants").select("id, affidavit_status, sent_at, token_revoked_at").eq("case_id", caseId),
     db.from("messages").select("id, created_at, read, profiles:sender_id(role)").eq("case_id", caseId).is("engagement_id", null).order("created_at", { ascending: false }),
     db.from("training_sessions").select("class_date, range_date, passed, created_at").eq("case_id", caseId).order("created_at", { ascending: false }),
-    db.from("payments").select("amount_cents, currency, status, created_at, paid_at").eq("case_id", caseId).order("created_at", { ascending: false }),
+    db.from("payments").select("amount_cents, currency, status, description, created_at, paid_at").eq("case_id", caseId).order("created_at", { ascending: false }),
     db.from("tasks").select("id, status").eq("case_id", caseId),
     db.from("activity_log").select("id, action, entity, created_at").eq("case_id", caseId).order("created_at", { ascending: false }).limit(12),
   ])
@@ -202,10 +204,11 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     ? `Complete · valid to ${new Date(kase.training_expires_on ?? kase.training_completed_on).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`
     : training?.class_date ? `Scheduled ${new Date(training.class_date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}` : "Not scheduled"
   const payments = paymentsResult.data ?? []
-  const paidTotal = payments.filter((payment) => payment.status === "paid").reduce((sum, payment) => sum + payment.amount_cents, 0)
+  const paidTotal = payments.filter((payment) => payment.status === "paid" && payment.amount_cents > 0).reduce((sum, payment) => sum + payment.amount_cents, 0)
+  const compPayment = payments.find((payment) => payment.status === "paid" && payment.amount_cents === 0)
   const pendingPayment = payments.find((payment) => payment.status === "pending")
   const money = (amount: number, currency = "usd") => new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(amount / 100)
-  const paymentSummary = paidTotal > 0 ? "Paid in full" : pendingPayment ? `${money(pendingPayment.amount_cents, pendingPayment.currency)} requested` : "No payment requested"
+  const paymentSummary = paidTotal > 0 ? "Paid in full" : compPayment ? `Comped · ${accessCodeLabel(compPayment.description)}` : pendingPayment ? `${money(pendingPayment.amount_cents, pendingPayment.currency)} requested` : "No payment requested"
   const openTasks = (tasksResult.data ?? []).filter((task) => task.status !== "done").length
   const base = `/admin/cases/${caseId}`
   const jump = [
@@ -214,7 +217,7 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     { key: "people", label: "People", summary: `${referenceDone} of ${refs.length} refs`, href: `${base}?tab=people`, alert: false },
     { key: "messages", label: "Messages", summary: unreadMessages > 0 ? `${unreadMessages} unread` : lastMessage ? `Last ${new Date(lastMessage).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "No messages", href: `${base}?tab=messages`, alert: unreadMessages > 0 },
     { key: "training", label: "Training", summary: trainingSummary, href: `${base}?tab=training`, alert: false },
-    { key: "payments", label: "Payments", summary: paymentSummary, href: `/admin/payments?client=${client.id}`, alert: false },
+    { key: "payments", label: "Payments", summary: paymentSummary, href: `/admin/payments?client=${client.id}`, alert: false, comped: !!compPayment },
     { key: "tasks", label: "Tasks", summary: `${openTasks} open`, href: `${base}?tab=tasks`, alert: false },
     { key: "activity", label: "Activity", summary: "Full history", href: `${base}?tab=activity`, alert: false },
   ]
@@ -247,6 +250,7 @@ export async function getCasePreview(caseIdInput: string): Promise<CasePreviewDa
     lastStep: isLead ? card?.lastStep ?? null : null,
     pendingAmount: isLead ? card?.pendingAmount ?? null : null,
     paymentStatus: isLead ? pendingPaymentStatus : paymentSummary,
+    paymentComped: !!compPayment,
     openBeforeFiling,
     activity: safeActivity,
     jump,

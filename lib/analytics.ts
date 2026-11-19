@@ -31,6 +31,11 @@ export type ConversionEvent =
   | "admin_demo_delete_confirmed" // admin completed typed demo-case deletion
   | "admin_calendar_viewed" // staff opened the agenda or week calendar
   | "admin_calendar_join_clicked" // staff opened an intro-call join link
+  | "admin_payments_viewed" // staff opened the payments ledger with a filter
+  | "admin_payment_request_sent" // staff sent or queued a payment request
+  | "admin_offline_payment_recorded" // admin recorded money received outside Stripe
+  | "admin_test_data_marked" // admin explicitly marked suggested clients as test
+  | "admin_test_data_deleted" // admin completed typed test-data deletion
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

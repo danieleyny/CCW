@@ -59,6 +59,7 @@ export interface CasesRow {
   openedAt: string
   updatedAt: string
   pendingAmount: string | null
+  compLabel: string | null
   lastStep: string | null
 }
 
@@ -257,6 +258,7 @@ export async function loadCasesOverview(
       openedAt: raw.opened_at,
       updatedAt: raw.updated_at,
       pendingAmount: card?.pendingAmount ?? null,
+      compLabel: card?.compLabel ?? null,
       lastStep: card?.classification === "leads" ? card.lastStep : null,
     }]
   })

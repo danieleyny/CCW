@@ -52,6 +52,7 @@ import { getCasePreview } from "@/app/admin/cases/preview-actions"
 import { CaseHeader, type CaseWorkspaceTab } from "@/app/admin/cases/[id]/_sections/header"
 import { CaseOverview } from "@/app/admin/cases/[id]/_sections/overview"
 import { ChecklistWorkbench, type WorkbenchRequirement } from "@/app/admin/cases/[id]/_sections/checklist-workbench"
+import { accessCodeLabel } from "@/lib/admin/payments"
 
 export const metadata = { title: { absolute: "Case file · Staff" } }
 
@@ -440,10 +441,13 @@ export default async function CaseFilePage({
     + (cohabRes.data ?? []).filter((cohabitant) => cohabitant.affidavit_status !== "notarized").length
   const openTasks = tasks.filter((task) => task.status !== "done")
   const overdueTasks = openTasks.filter((task) => task.dueDate && task.dueDate < new Date().toISOString().slice(0, 10)).length
-  const paidTotal = (paymentsRes.data ?? []).filter((payment) => payment.status === "paid").reduce((sum, payment) => sum + payment.amount_cents, 0)
+  const paidTotal = (paymentsRes.data ?? []).filter((payment) => payment.status === "paid" && payment.amount_cents > 0).reduce((sum, payment) => sum + payment.amount_cents, 0)
+  const compPayment = (paymentsRes.data ?? []).find((payment) => payment.status === "paid" && payment.amount_cents === 0)
   const requestedPayment = (paymentsRes.data ?? []).find((payment) => payment.status === "pending")
   const paymentSummary = paidTotal > 0
     ? `Paid · ${money(paidTotal)}`
+    : compPayment
+      ? `Comped · ${accessCodeLabel(compPayment.description)}`
     : requestedPayment
       ? `${money(requestedPayment.amount_cents)} requested`
       : "Not paid"
@@ -509,6 +513,7 @@ export default async function CaseFilePage({
             openTasks={openTasks.length}
             overdueTasks={overdueTasks}
             paymentSummary={paymentSummary}
+            paymentComped={!!compPayment}
             filedAt={filedActivity?.created_at ?? null}
             nypdRef={kase.nypd_app_ref}
             licenseIssuedOn={kase.license_issued_on}
@@ -892,14 +897,16 @@ export default async function CaseFilePage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paymentsRes.data ?? []).map((p) => (
-                    <TableRow key={p.id}>
+                  {(paymentsRes.data ?? []).map((p) => {
+                    const comped = p.status === "paid" && p.amount_cents === 0
+                    return (
+                    <TableRow key={p.id} className={comped ? "border-l-[3px] border-l-[var(--comp)] bg-gradient-to-r from-[var(--comp-tint)] to-white" : undefined}>
                       <TableCell className="font-medium">{p.description ?? "—"}</TableCell>
-                      <TableCell>{money(p.amount_cents)}</TableCell>
-                      <TableCell><StatusBadge status={p.status} /></TableCell>
+                      <TableCell className={comped ? "font-semibold text-[var(--comp)]" : undefined}>{comped ? "$0 · comp" : money(p.amount_cents)}</TableCell>
+                      <TableCell>{comped ? <span className="inline-flex rounded-full border border-[var(--comp-border)] bg-[var(--comp-tint)] px-2 py-1 text-xs font-semibold text-[var(--comp)]">🎁 Comped</span> : <StatusBadge status={p.status} />}</TableCell>
                       <TableCell className="text-muted-foreground">{p.paid_at ? formatDate(p.paid_at) : "—"}</TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             )}

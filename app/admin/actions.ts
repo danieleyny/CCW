@@ -615,6 +615,14 @@ export interface RequestPaymentResult {
   error?: string
 }
 
+const requestPaymentSchema = z.object({
+  caseId: z.string().uuid(),
+  amountCents: z.number().int().min(50),
+  type: z.enum(["deposit", "full", "installment"]),
+  description: z.string().trim().max(500),
+  packageKey: z.enum(["self_guided", "full_concierge"]).optional(),
+})
+
 /**
  * Staff-requested payment. With Stripe on, issue a REAL hosted invoice that
  * emails the client a branded pay link (Stripe Invoicing). With Stripe off,
@@ -630,29 +638,31 @@ export async function requestPayment(input: {
   packageKey?: string
 }): Promise<RequestPaymentResult> {
   await requireStaff()
-  if (!input.amountCents || input.amountCents < 50) return { ok: false, error: "Enter a valid amount" }
+  const parsed = requestPaymentSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the payment details" }
+  const value = parsed.data
 
   const supabase = await createClient()
   const { data: kase } = await supabase
     .from("cases")
     .select("client_id")
-    .eq("id", input.caseId)
+    .eq("id", value.caseId)
     .single()
   const clientId = kase?.client_id ?? null
-  const description = input.description || `${input.type} payment`
+  const description = value.description || `${value.type} payment`
 
   // The pending row first — it's the record of truth either path shares, and its
   // id is the invoice's reconciliation key.
   const { data: payment, error } = await supabase
     .from("payments")
     .insert({
-      case_id: input.caseId,
+      case_id: value.caseId,
       client_id: clientId,
-      amount_cents: input.amountCents,
-      type: input.type,
+      amount_cents: value.amountCents,
+      type: value.type,
       status: "pending",
       description,
-      package_key: input.packageKey || null,
+      package_key: value.packageKey || null,
     })
     .select("id")
     .single()
@@ -671,8 +681,8 @@ export async function requestPayment(input: {
         const invoice = await createAndSendInvoice(stripe, {
           customerId,
           paymentId: payment.id,
-          caseId: input.caseId,
-          amountCents: input.amountCents,
+          caseId: value.caseId,
+          amountCents: value.amountCents,
           description,
         })
         await supabase
@@ -681,11 +691,11 @@ export async function requestPayment(input: {
           .eq("id", payment.id)
         await logActivity({
           action: "payment.invoiced",
-          caseId: input.caseId,
+          caseId: value.caseId,
           clientId,
           entity: "payment",
           entityId: payment.id,
-          detail: { amount: input.amountCents, type: input.type, stripe_invoice_id: invoice.id },
+          detail: { amount: value.amountCents, type: value.type, stripe_invoice_id: invoice.id },
         })
         revalidatePath("/admin/payments")
         return { ok: true, hostedInvoiceUrl: invoice.hostedInvoiceUrl }
@@ -700,7 +710,7 @@ export async function requestPayment(input: {
   // Stripe-off (or no client email / Stripe error) fallback: a staff task so the
   // request is actioned by a human. Mirrors the enroll-page invoice fallback.
   await supabase.from("tasks").insert({
-    case_id: input.caseId,
+    case_id: value.caseId,
     title: `Send invoice: ${description}`,
     description: "Payment requested from the admin console. Send the invoice / payment link.",
     priority: 1,
@@ -708,11 +718,11 @@ export async function requestPayment(input: {
   })
   await logActivity({
     action: "payment.requested",
-    caseId: input.caseId,
+    caseId: value.caseId,
     clientId,
     entity: "payment",
     entityId: payment.id,
-    detail: { amount: input.amountCents, type: input.type },
+    detail: { amount: value.amountCents, type: value.type },
   })
   revalidatePath("/admin/payments")
   return { ok: true, fallback: true }
@@ -1130,25 +1140,78 @@ export async function setConciergeAgent(
  * Hard-delete every demo case (and its children, via FK cascade) so cleanup after
  * a presentation is one click. Admin-only, logged.
  */
-export async function deleteDemoCases(): Promise<{ ok?: boolean; deleted?: number; error?: string }> {
-  const { profile } = await requireAdmin()
-  const admin = createAdminClient()
-  const { data: demos } = await admin.from("cases").select("id").eq("is_demo", true)
-  const ids = (demos ?? []).map((c) => c.id)
-  if (ids.length === 0) return { ok: true, deleted: 0 }
+const caseIdListSchema = z.array(z.string().uuid()).max(500)
 
-  const { error } = await admin.from("cases").delete().in("id", ids)
+export async function markCasesAsTest(caseIdsInput: string[]): Promise<{ ok?: boolean; marked?: number; error?: string }> {
+  const { profile } = await requireAdmin()
+  const parsed = caseIdListSchema.safeParse(caseIdsInput)
+  if (!parsed.success || parsed.data.length === 0) return { error: "Choose at least one test client." }
+  const ids = [...new Set(parsed.data)]
+  const supabase = await createClient()
+  const { data: existing, error: readError } = await supabase.from("cases").select("id").in("id", ids)
+  if (readError) return { error: readError.message }
+  const visibleIds = (existing ?? []).map((row) => row.id)
+  if (visibleIds.length === 0) return { error: "No matching cases were found." }
+  const { error } = await supabase.from("cases").update({ is_demo: true }).in("id", visibleIds)
   if (error) return { error: error.message }
+  await logActivity({
+    action: "demo.cases_marked",
+    entity: "case",
+    detail: { count: visibleIds.length, by: profile.full_name },
+  })
+  revalidatePath("/admin/payments")
+  revalidatePath("/admin/pipeline")
+  revalidatePath("/admin/cases")
+  return { ok: true, marked: visibleIds.length }
+}
+
+export async function deleteDemoCases(caseIdsInput?: string[]): Promise<{ ok?: boolean; deleted?: number; deletedClients?: number; excluded?: number; error?: string }> {
+  const { profile } = await requireAdmin()
+  const parsed = caseIdsInput === undefined ? null : caseIdListSchema.safeParse(caseIdsInput)
+  if (parsed && !parsed.success) return { error: "The selected test cases were invalid." }
+  const admin = createAdminClient()
+  let query = admin.from("cases").select("id, client_id").eq("is_demo", true)
+  const requested = parsed?.data ? [...new Set(parsed.data)] : null
+  if (requested?.length) query = query.in("id", requested)
+  const { data: demos, error: demoError } = await query
+  if (demoError) return { error: demoError.message }
+  const ids = (demos ?? []).map((c) => c.id)
+  if (ids.length === 0) return { ok: true, deleted: 0, deletedClients: 0, excluded: 0 }
+
+  // Service-role use is justified here because this admin-only cleanup spans
+  // cascading staff/client records. Never delete a case tied to real Stripe money.
+  const { data: paidRows, error: paidError } = await admin
+    .from("payments")
+    .select("case_id, amount_cents, status, stripe_payment_intent, stripe_invoice_id, stripe_session_id")
+    .in("case_id", ids)
+    .eq("status", "paid")
+    .gt("amount_cents", 0)
+  if (paidError) return { error: paidError.message }
+  const protectedIds = new Set((paidRows ?? [])
+    .filter((row) => row.stripe_payment_intent || row.stripe_invoice_id || row.stripe_session_id)
+    .map((row) => row.case_id)
+    .filter((id): id is string => !!id))
+  const deletable = (demos ?? []).filter((row) => !protectedIds.has(row.id))
+  const deletableIds = deletable.map((row) => row.id)
+  if (deletableIds.length === 0) {
+    return { ok: true, deleted: 0, deletedClients: 0, excluded: protectedIds.size }
+  }
+
+  const { error } = await admin.from("cases").delete().in("id", deletableIds)
+  if (error) return { error: error.message }
+
+  const deletedClients = new Set(deletable.map((row) => row.client_id)).size
 
   await logActivity({
     action: "demo.cases_deleted",
     entity: "case",
-    detail: { count: ids.length, by: profile.full_name },
+    detail: { count: deletableIds.length, clients: deletedClients, excluded: protectedIds.size, by: profile.full_name },
   })
   revalidatePath("/admin/concierge")
   revalidatePath("/admin/pipeline")
   revalidatePath("/admin/cases")
-  return { ok: true, deleted: ids.length }
+  revalidatePath("/admin/payments")
+  return { ok: true, deleted: deletableIds.length, deletedClients, excluded: protectedIds.size }
 }
 
 // ── CONCIERGE QA Phase 3 — record an offline payment ─────────────────────────
@@ -1161,6 +1224,14 @@ export async function deleteDemoCases(): Promise<{ ok?: boolean; deleted?: numbe
  */
 export type OfflinePaymentResult = { ok?: boolean; error?: string }
 
+const offlinePaymentSchema = z.object({
+  caseId: z.string().uuid(),
+  amountCents: z.number().int().min(50),
+  packageKey: z.enum(["self_guided", "full_concierge"]),
+  method: z.enum(["check", "transfer", "cash", "other"]),
+  reference: z.string().trim().max(300).optional(),
+})
+
 export async function recordOfflinePayment(input: {
   caseId: string
   amountCents: number
@@ -1169,54 +1240,55 @@ export async function recordOfflinePayment(input: {
   reference?: string
 }): Promise<OfflinePaymentResult> {
   const { profile } = await requireAdmin()
-  if (!input.amountCents || input.amountCents < 50) return { error: "Enter a valid amount" }
-  if (!input.packageKey) return { error: "Choose a package" }
+  const parsed = offlinePaymentSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the payment details" }
+  const value = parsed.data
 
   const supabase = await createClient()
-  const { data: kase } = await supabase.from("cases").select("client_id").eq("id", input.caseId).single()
+  const { data: kase } = await supabase.from("cases").select("client_id").eq("id", value.caseId).single()
   const clientId = kase?.client_id ?? null
   const methodLabel =
-    { check: "check", transfer: "bank transfer", cash: "cash", other: "other" }[input.method] ?? input.method
+    { check: "check", transfer: "bank transfer", cash: "cash", other: "other" }[value.method] ?? value.method
   const description = `Offline payment recorded (${methodLabel}${
-    input.reference ? ` · ref ${input.reference}` : ""
+    value.reference ? ` · ref ${value.reference}` : ""
   }) by ${profile.full_name}`
 
   const { data: payment, error } = await supabase
     .from("payments")
     .insert({
-      case_id: input.caseId,
+      case_id: value.caseId,
       client_id: clientId,
-      amount_cents: input.amountCents,
+      amount_cents: value.amountCents,
       type: "full",
       status: "paid",
       paid_at: new Date().toISOString(),
-      package_key: input.packageKey,
+      package_key: value.packageKey,
       description,
     })
     .select("id")
     .single()
   if (error || !payment) return { error: error?.message ?? "Could not record the payment" }
 
-  if (input.packageKey === "full_concierge") {
-    await autoAssignConciergeAgent(supabase, input.caseId)
+  if (value.packageKey === "full_concierge") {
+    await autoAssignConciergeAgent(supabase, value.caseId)
   }
 
   await logActivity({
     action: "payment.offline_recorded",
-    caseId: input.caseId,
+    caseId: value.caseId,
     clientId,
     entity: "payment",
     entityId: payment.id,
     detail: {
-      amount_cents: input.amountCents,
-      package: input.packageKey,
-      method: input.method,
-      reference: input.reference ?? null,
+      amount_cents: value.amountCents,
+      package: value.packageKey,
+      method: value.method,
+      reference: value.reference ?? null,
       by: profile.full_name,
     },
   })
   revalidatePath("/admin/payments")
-  revalidatePath(`/admin/cases/${input.caseId}`)
+  revalidatePath(`/admin/cases/${value.caseId}`)
   return { ok: true }
 }
 
