@@ -22,9 +22,11 @@ const TABS: Array<{ key: InboxTab; label: string; count: keyof InboxCounts }> = 
   { key: "all", label: "All", count: "all" },
 ]
 
-function relativeWait(value: string | null) {
+const NYC_TIME_ZONE = "America/New_York"
+
+function relativeWait(value: string | null, nowMs: number) {
   if (!value) return "Just now"
-  const ms = Math.max(0, Date.now() - new Date(value).getTime())
+  const ms = Math.max(0, nowMs - new Date(value).getTime())
   const minutes = Math.floor(ms / 60_000)
   if (minutes < 60) return `${Math.max(1, minutes)} min`
   const hours = Math.floor(minutes / 60)
@@ -33,9 +35,9 @@ function relativeWait(value: string | null) {
   return `${days} day${days === 1 ? "" : "s"}`
 }
 
-function waitedBucket(value: string | null) {
+function waitedBucket(value: string | null, nowMs: number) {
   if (!value) return "under_1_day"
-  const days = Math.floor(Math.max(0, Date.now() - new Date(value).getTime()) / 86_400_000)
+  const days = Math.floor(Math.max(0, nowMs - new Date(value).getTime()) / 86_400_000)
   if (days < 1) return "under_1_day"
   if (days <= 3) return "1_3_days"
   if (days <= 7) return "4_7_days"
@@ -53,14 +55,43 @@ function threadTag(thread: InboxThread) {
 }
 
 function formatMessageTime(value: string) {
-  return new Date(value).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+  return new Date(value).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: NYC_TIME_ZONE,
+  })
 }
 
-function dayLabel(value: string) {
+function dateParts(value: string) {
+  return Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      timeZone: NYC_TIME_ZONE,
+      year: "numeric",
+    })
+      .formatToParts(new Date(value))
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  )
+}
+
+function dayKey(value: string) {
+  const parts = dateParts(value)
+  return `${parts.year}-${parts.month}-${parts.day}`
+}
+
+function dayLabel(value: string, nowIso: string) {
   const date = new Date(value)
-  const today = new Date()
-  if (date.toDateString() === today.toDateString()) return "TODAY"
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: date.getFullYear() === today.getFullYear() ? undefined : "numeric" }).toUpperCase()
+  if (dayKey(value) === dayKey(nowIso)) return "TODAY"
+  return date
+    .toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      timeZone: NYC_TIME_ZONE,
+      year: dateParts(value).year === dateParts(nowIso).year ? undefined : "numeric",
+    })
+    .toUpperCase()
 }
 
 function updateUrl(current: URLSearchParams, updates: Record<string, string | null>) {
@@ -86,6 +117,7 @@ interface Props {
   initialThreadExplicit: boolean
   initialConversation: InboxConversationPage | null
   staffName: string
+  nowIso: string
 }
 
 interface SendAttempt {
@@ -98,6 +130,7 @@ export function AdminInboxWorkspace(props: Props) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [threads, setThreads] = useState(props.threads)
+  const [nowMs] = useState(() => new Date(props.nowIso).getTime())
   const [selectedId, setSelectedId] = useState(props.initialThreadId)
   const [mobileThreadOpen, setMobileThreadOpen] = useState(props.initialThreadExplicit)
   const [conversations, setConversations] = useState<Record<string, InboxConversationPage>>(() => props.initialThreadId && props.initialConversation ? { [props.initialThreadId]: props.initialConversation } : {})
@@ -258,7 +291,7 @@ export function AdminInboxWorkspace(props: Props) {
       setThreads(updated)
       setDrafts((current) => ({ ...current, [activeId]: "" }))
       setAttempts((current) => ({ ...current, [activeId]: null }))
-      trackEvent("admin_inbox_reply_sent", { waited_bucket: waitedBucket(activeThread.waitingSince), from: props.mode === "focus" ? "focus" : "inbox" })
+      trackEvent("admin_inbox_reply_sent", { waited_bucket: waitedBucket(activeThread.waitingSince, nowMs), from: props.mode === "focus" ? "focus" : "inbox" })
       if (props.mode === "focus") {
         setRepliedIds((current) => current.includes(activeId) ? current : [...current, activeId])
         setSkippedIds((current) => current.filter((id) => id !== activeId))
@@ -320,6 +353,8 @@ export function AdminInboxWorkspace(props: Props) {
       onRetry={(body) => void sendReply(body)}
       onLoadEarlier={loadEarlier}
       earlierPending={earlierPending}
+      nowIso={props.nowIso}
+      nowMs={nowMs}
       onExit={() => navigate({ mode: null, thread: null })}
       onPrevious={() => setFocusIndex((index) => Math.max(0, index - 1))}
       onSkip={() => {
@@ -358,7 +393,7 @@ export function AdminInboxWorkspace(props: Props) {
         </div>
 
         {noReplies ? <div className="grid min-h-[430px] place-items-center p-8 text-center"><div><span className="mx-auto grid size-12 place-items-center rounded-full bg-[#ECFDF3] text-[#027A48]"><Check className="size-6" /></span><h2 className="mt-4 font-display text-2xl">No one is waiting on a reply</h2><p className="mt-2 text-sm text-[#667085]">{props.counts.waiting} conversations are waiting on the client. New messages appear here and in Today.</p></div></div> : visibleThreads.length === 0 ? <div className="p-8 text-center text-sm text-[#667085]">No conversations match this view.</div> : <div role="listbox" aria-label="Client conversations" tabIndex={0} className="max-h-[calc(100svh-350px)] overflow-y-auto outline-none lg:max-h-[calc(100svh-276px)]">
-          {visibleThreads.map((thread) => <ThreadRow key={thread.caseId} thread={thread} selected={thread.caseId === activeId} onOpen={() => openThread(thread.caseId)} />)}
+          {visibleThreads.map((thread) => <ThreadRow key={thread.caseId} thread={thread} selected={thread.caseId === activeId} nowMs={nowMs} onOpen={() => openThread(thread.caseId)} />)}
         </div>}
         <p className="border-t border-black/10 p-3 text-[11px] leading-relaxed text-[#667085]">This inbox is the client lane only. Instructor messages stay in each case&apos;s Instructor lane.</p>
       </div>
@@ -378,19 +413,20 @@ export function AdminInboxWorkspace(props: Props) {
           onRetry={(body) => void sendReply(body)}
           onLoadEarlier={loadEarlier}
           earlierPending={earlierPending}
+          nowIso={props.nowIso}
         /> : <div className="grid min-h-[620px] place-items-center text-sm text-[#667085]">Pick a conversation</div>}
       </div>
     </section>
   </div>
 }
 
-function ThreadRow({ thread, selected, onOpen }: { thread: InboxThread; selected: boolean; onOpen: () => void }) {
+function ThreadRow({ thread, selected, nowMs, onOpen }: { thread: InboxThread; selected: boolean; nowMs: number; onOpen: () => void }) {
   const tag = threadTag(thread)
   const preview = thread.lastSender === "client" ? thread.lastBody : `${thread.lastSenderName ? `${firstName(thread.lastSenderName)}: ` : "You: "}${thread.lastBody}`
-  return <button type="button" role="option" aria-selected={selected} aria-label={`${thread.clientName}, ${tag}, waiting ${relativeWait(thread.waitingSince ?? thread.lastAt)}, ${thread.unread} unread`} onClick={onOpen} className={cn("grid min-h-[116px] w-full grid-cols-[36px_minmax(0,1fr)_auto] gap-3 border-b border-black/10 px-3 py-4 text-left hover:bg-[#F9FAFB]", selected ? "border-l-4 border-l-[#D9B25F] bg-[#FBF8EF] pl-2" : thread.overdue && thread.needsReply ? "border-l-4 border-l-[#D92D20] pl-2" : "border-l-4 border-l-transparent pl-2") }>
+  return <button type="button" role="option" aria-selected={selected} aria-label={`${thread.clientName}, ${tag}, waiting ${relativeWait(thread.waitingSince ?? thread.lastAt, nowMs)}, ${thread.unread} unread`} onClick={onOpen} className={cn("grid min-h-[116px] w-full grid-cols-[36px_minmax(0,1fr)_auto] gap-3 border-b border-black/10 px-3 py-4 text-left hover:bg-[#F9FAFB]", selected ? "border-l-4 border-l-[#D9B25F] bg-[#FBF8EF] pl-2" : thread.overdue && thread.needsReply ? "border-l-4 border-l-[#D92D20] pl-2" : "border-l-4 border-l-transparent pl-2") }>
     <span className="grid size-9 place-items-center rounded-full bg-[#E7ECF4] text-xs font-bold text-[#14254A]">{initials(thread.clientName)}</span>
     <span className="min-w-0"><span className="flex items-center gap-2"><strong className="truncate text-sm text-[#101828]">{thread.clientName}</strong>{thread.unread > 0 && <span className="size-2 shrink-0 rounded-full bg-[#0E9384]" aria-label="Unread" />}</span><span className={cn("mt-1 block overflow-hidden text-ellipsis text-sm leading-5 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]", thread.unread > 0 ? "font-medium text-[#344054]" : "text-[#667085]")}>{preview}</span><span className="mt-2 block truncate font-mono text-[10px] tracking-wide text-[#667085]">{thread.trackLabel} · {thread.stageLabel.toUpperCase()}</span></span>
-    <span className="flex min-w-[88px] flex-col items-end gap-1"><span className="text-[11px] text-[#667085]">{relativeWait(thread.waitingSince ?? thread.lastAt)}</span><span className={cn("rounded-full px-2 py-1 text-[10px] font-semibold", tag === "Reply overdue" ? "bg-[#FEE4E2] text-[#B42318]" : tag === "Needs reply" ? "bg-[#FEF0C7] text-[#93370D]" : "bg-[#F2F4F7] text-[#475467]")}>{tag}</span>{thread.unread > 0 && <span className="text-[10px] font-semibold text-[#0E9384]">{thread.unread} unread</span>}{thread.unassigned && <span className="text-[10px] font-semibold text-[#667085]">Unassigned</span>}</span>
+    <span className="flex min-w-[88px] flex-col items-end gap-1"><span className="text-[11px] text-[#667085]">{relativeWait(thread.waitingSince ?? thread.lastAt, nowMs)}</span><span className={cn("rounded-full px-2 py-1 text-[10px] font-semibold", tag === "Reply overdue" ? "bg-[#FEE4E2] text-[#B42318]" : tag === "Needs reply" ? "bg-[#FEF0C7] text-[#93370D]" : "bg-[#F2F4F7] text-[#475467]")}>{tag}</span>{thread.unread > 0 && <span className="text-[10px] font-semibold text-[#0E9384]">{thread.unread} unread</span>}{thread.unassigned && <span className="text-[10px] font-semibold text-[#667085]">Unassigned</span>}</span>
   </button>
 }
 
@@ -408,6 +444,7 @@ interface ConversationProps {
   onRetry: (body: string) => void
   onLoadEarlier: () => void
   earlierPending: boolean
+  nowIso: string
   focus?: boolean
 }
 
@@ -425,6 +462,7 @@ function Conversation({
   onRetry,
   onLoadEarlier,
   earlierPending,
+  nowIso,
   focus,
 }: ConversationProps) {
   const timeline = useMemo(() => {
@@ -447,14 +485,14 @@ function Conversation({
         {conversation?.hasEarlier && <div className="mb-5 text-center"><button type="button" onClick={onLoadEarlier} disabled={earlierPending} className="min-h-11 rounded-lg border border-black/10 px-4 text-xs font-semibold text-[#475467] hover:bg-[#F9FAFB] disabled:opacity-60">{earlierPending ? "Loading…" : "Load earlier"}</button></div>}
         {timeline.length === 0 && <p className="py-12 text-center text-sm text-[#667085]">No messages yet.</p>}
         {timeline.map((item, index) => {
-          const day = new Date(item.at).toDateString()
-          const previousDay = index > 0 ? new Date(timeline[index - 1].at).toDateString() : ""
+          const day = dayKey(item.at)
+          const previousDay = index > 0 ? dayKey(timeline[index - 1].at) : ""
           const separator = day !== previousDay
-          if (item.kind === "upload") return <div key={`upload-${item.upload.id}`}>{separator && <DaySeparator label={dayLabel(item.at)} />}<div className="my-4 text-center"><span className="inline-flex max-w-full rounded-full bg-[#F2F4F7] px-3 py-1.5 text-[11px] text-[#475467]">{thread.clientFirstName} uploaded {item.upload.fileName} to {item.upload.documentType}</span></div></div>
+          if (item.kind === "upload") return <div key={`upload-${item.upload.id}`}>{separator && <DaySeparator label={dayLabel(item.at, nowIso)} />}<div className="my-4 text-center"><span className="inline-flex max-w-full rounded-full bg-[#F2F4F7] px-3 py-1.5 text-[11px] text-[#475467]">{thread.clientFirstName} uploaded {item.upload.fileName} to {item.upload.documentType}</span></div></div>
           const message = item.message
           const client = message.senderRole === "client"
           const opened = message.id === lastMessageId && client && message.read && thread.needsReply
-          return <div key={message.id}>{separator && <DaySeparator label={dayLabel(item.at)} />}<div className={cn("mb-4 flex", client ? "justify-start" : "justify-end")}><div className="max-w-[82%]"><p className={cn("mb-1 text-[11px] text-[#667085]", !client && "text-right")}>{client ? thread.clientFirstName : firstName(message.senderName)} · {formatMessageTime(message.createdAt)}</p><div className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed", client ? "rounded-bl-md bg-[#E9F4FB] text-[#182230]" : "rounded-br-md bg-[#14254A] text-white")}>{message.body}</div>{opened && <p className="mt-1 text-[11px] text-[#667085]">Opened, not answered</p>}</div></div></div>
+          return <div key={message.id}>{separator && <DaySeparator label={dayLabel(item.at, nowIso)} />}<div className={cn("mb-4 flex", client ? "justify-start" : "justify-end")}><div className="max-w-[82%]"><p className={cn("mb-1 text-[11px] text-[#667085]", !client && "text-right")}>{client ? thread.clientFirstName : firstName(message.senderName)} · {formatMessageTime(message.createdAt)}</p><div className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed", client ? "rounded-bl-md bg-[#E9F4FB] text-[#182230]" : "rounded-br-md bg-[#14254A] text-white")}>{message.body}</div>{opened && <p className="mt-1 text-[11px] text-[#667085]">Opened, not answered</p>}</div></div></div>
         })}
         {attempt && <div className="mb-4 flex justify-end"><div className="max-w-[82%] opacity-60"><p className="mb-1 text-right text-[11px] text-[#667085]">{attempt.status === "sending" ? "Sending · sending…" : "Not sent · not sent"}</p><div className="rounded-2xl rounded-br-md bg-[#14254A] px-4 py-3 text-sm leading-relaxed text-white">{attempt.body}</div>{attempt.status === "failed" && <p className="mt-2 rounded-lg bg-[#FEF3F2] p-2 text-xs text-[#B42318]">Didn&apos;t send. Your reply is saved here. <button type="button" onClick={() => onRetry(attempt.body)} className="font-bold underline">Try again</button></p>}</div></div>}
       </>}
@@ -492,6 +530,7 @@ interface FocusProps extends Omit<ConversationProps, "onBack" | "focus" | "threa
   finished: boolean
   replied: number
   skipped: number
+  nowMs: number
   onExit: () => void
   onPrevious: () => void
   onSkip: () => void
@@ -510,6 +549,8 @@ function FocusView({
   onRetry,
   onLoadEarlier,
   earlierPending,
+  nowIso,
+  nowMs,
   index,
   total,
   overdue,
@@ -526,8 +567,8 @@ function FocusView({
   return <div className="mx-auto min-w-0 max-w-[1000px] space-y-4 pb-24 lg:pb-0">
     <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-mono text-xs uppercase tracking-[.16em] text-[#667085]">Work / Inbox · Focus</p><button type="button" onClick={onExit} className="min-h-11 rounded-lg border border-black/10 bg-white px-4 text-sm font-semibold text-[#14254A]">Exit focus</button></div>
     <div className="rounded-2xl border border-black/10 bg-white p-4"><div className="flex items-center justify-between gap-3 text-sm"><strong>{index + 1} of {total}</strong><span className="text-[#667085]">Oldest first · {overdue} overdue</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF1F4]"><div className="h-full rounded-full bg-[#D9B25F] transition-[width] motion-reduce:transition-none" style={{ width: `${Math.max(4, ((index + 1) / Math.max(1, total)) * 100)}%` }} /></div></div>
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_18px_45px_rgba(15,30,58,.08)]"><Conversation thread={thread} conversation={conversation} loading={loading} attempt={attempt} draft={draft} replyRef={replyRef} logRef={logRef} onDraft={onDraft} onSend={onSend} onRetry={onRetry} onLoadEarlier={onLoadEarlier} earlierPending={earlierPending} focus /></div>
+    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_18px_45px_rgba(15,30,58,.08)]"><Conversation thread={thread} conversation={conversation} loading={loading} attempt={attempt} draft={draft} replyRef={replyRef} logRef={logRef} onDraft={onDraft} onSend={onSend} onRetry={onRetry} onLoadEarlier={onLoadEarlier} earlierPending={earlierPending} nowIso={nowIso} focus /></div>
     <div className="flex items-center justify-between gap-3"><button type="button" onClick={onPrevious} disabled={index === 0} className="min-h-11 rounded-lg border border-black/10 bg-white px-4 text-sm font-semibold disabled:opacity-40">← Previous</button><p className="hidden text-xs text-[#667085] sm:block">Skip leaves it in Needs reply. Opening a conversation marks it read.</p><button type="button" onClick={onSkip} className="min-h-11 rounded-lg border border-black/10 bg-white px-4 text-sm font-semibold">Skip →</button></div>
-    {nextThreads.length > 0 && <section className="rounded-2xl border border-black/10 bg-white p-4"><h2 className="font-mono text-[10px] uppercase tracking-[.16em] text-[#667085]">Up next</h2><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{nextThreads.map((next) => <div key={next.caseId} className="min-w-0 rounded-xl bg-[#F9FAFB] p-3"><strong className="block truncate text-sm">{next.clientName}</strong><q className="mt-1 block truncate text-xs text-[#667085]">{next.lastBody}</q><span className="mt-2 block font-mono text-[10px] text-[#667085]">{relativeWait(next.waitingSince)}</span></div>)}</div></section>}
+    {nextThreads.length > 0 && <section className="rounded-2xl border border-black/10 bg-white p-4"><h2 className="font-mono text-[10px] uppercase tracking-[.16em] text-[#667085]">Up next</h2><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{nextThreads.map((next) => <div key={next.caseId} className="min-w-0 rounded-xl bg-[#F9FAFB] p-3"><strong className="block truncate text-sm">{next.clientName}</strong><q className="mt-1 block truncate text-xs text-[#667085]">{next.lastBody}</q><span className="mt-2 block font-mono text-[10px] text-[#667085]">{relativeWait(next.waitingSince, nowMs)}</span></div>)}</div></section>}
   </div>
 }

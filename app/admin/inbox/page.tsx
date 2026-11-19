@@ -69,6 +69,7 @@ export default async function InboxPage({
         initialThreadExplicit={!!requestedThread || mode === "focus"}
         initialConversation={conversation}
         staffName={profile.full_name || "Staff"}
+        nowIso={new Date().toISOString()}
       />
     </>
   )
