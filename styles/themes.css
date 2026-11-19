@@ -29,13 +29,14 @@
   /* Navy & Champagne: these are deliberately V2-local.  The V0 fallback and
      the other comparison colorways remain byte-for-byte independent. */
   --gold: #D9B25F; --gold-light: #F0D58C; --gold-deep: #8A6420; --gold-on-dark: #E6C886;
+  --logo-gold: #D3B36B;
   --gold-rule: linear-gradient(90deg, #D9B25F, #F0D58C);
   --gold-hair: linear-gradient(90deg, transparent, #D9B25F, #F0D58C, #D9B25F, transparent);
   --gold-btn: linear-gradient(180deg, #F3DC9C 0%, #D9B25F 60%, #C49A47 100%);
   --gold-tint: rgba(217,178,95,.14);
-  --logo-arc-1: #2FA8EE; --logo-arc-2: #5B6CFF; --logo-arc-3: #8A5BEA; --logo-arc-4: #C24FC9; --logo-arc-5: #EE5E8C;
-  --logo-dot: #EE5E8C;
-  --nyc-grad: linear-gradient(90deg,#2FA8EE,#8A5BEA 55%,#EE5E8C);
+  --logo-arc-1: var(--logo-gold); --logo-arc-2: var(--logo-gold); --logo-arc-3: var(--logo-gold); --logo-arc-4: var(--logo-gold); --logo-arc-5: var(--logo-gold);
+  --logo-dot: var(--logo-gold);
+  --nyc-grad: linear-gradient(90deg, var(--logo-gold), var(--logo-gold));
 }
 [data-theme="v3"] {
   --bg: #F7F4EE; --surface: #FFFDF8; --line: rgba(20,33,28,.10);
@@ -73,8 +74,8 @@
   --logo-arc-1: var(--phase-1); --logo-arc-2: var(--phase-2); --logo-arc-3: var(--phase-3); --logo-arc-4: var(--phase-4); --logo-arc-5: var(--phase-5);
 }
 [data-theme] .onDark { --logo-arc-1: var(--phase-dark-1); --logo-arc-2: var(--phase-dark-2); --logo-arc-3: var(--phase-dark-3); --logo-arc-4: var(--phase-dark-4); --logo-arc-5: var(--phase-dark-5); }
-[data-theme="v2"] { --logo-arc-1: #2FA8EE; --logo-arc-2: #5B6CFF; --logo-arc-3: #8A5BEA; --logo-arc-4: #C24FC9; --logo-arc-5: #EE5E8C; }
-[data-theme="v2"] .onDark { --logo-arc-1: #2FA8EE; --logo-arc-2: #5B6CFF; --logo-arc-3: #8A5BEA; --logo-arc-4: #C24FC9; --logo-arc-5: #EE5E8C; }
+[data-theme="v2"] { --logo-arc-1: var(--logo-gold); --logo-arc-2: var(--logo-gold); --logo-arc-3: var(--logo-gold); --logo-arc-4: var(--logo-gold); --logo-arc-5: var(--logo-gold); }
+[data-theme="v2"] .onDark { --logo-arc-1: var(--logo-gold); --logo-arc-2: var(--logo-gold); --logo-arc-3: var(--logo-gold); --logo-arc-4: var(--logo-gold); --logo-arc-5: var(--logo-gold); }
 
 /* One restrained champagne moment per viewport. These selectors are all V2
    only so nested marketing modules need not leak presentation into the live

@@ -24,7 +24,7 @@ export const THEMES = {
     warmAlpha: 0.38,
     path: ["#D29A2E", "#F0C766"],
     pathGlow: "rgba(226,170,64,.45)",
-    logoArcs: ["#2FA8EE", "#5B6CFF", "#8A5BEA", "#C24FC9", "#EE5E8C"],
+    logoArcs: ["#D3B36B", "#D3B36B", "#D3B36B", "#D3B36B", "#D3B36B"],
     gold: "#D9B25F", goldLight: "#F0D58C", goldText: "#E3BF6A",
     ice: ["#9DB4DE", "#8FAEDD", "#7E9BD0", "#A9C1E6"],
     waveRamp: ["#4E6EAE", "#89A6D6", "#E2CB8E", "#E3BF6A"],

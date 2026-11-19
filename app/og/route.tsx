@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   const title = (searchParams.get("title") ?? brand.tagline).slice(0, 110)
   const eyebrow = (searchParams.get("eyebrow") ?? "NYC · gun license, handled").slice(0, 60)
   // The new light medallion scope reads crisply on the obsidian card.
-  const logoUrl = new URL("/brand/logo-mark-light-512.png", request.url).href
+  const logoUrl = new URL("/brand/logo-mark-light-512.png?v=frame1", request.url).href
 
   return new ImageResponse(
     (
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
             >
               Gun License
             </div>
-            <div style={{ display: "flex", marginLeft: 12, fontSize: 20, fontWeight: 600, letterSpacing: 4, color: "#8A5BEA" }}>NYC</div>
+            <div style={{ display: "flex", marginLeft: 12, fontSize: 20, fontWeight: 600, letterSpacing: 4, color: "#D3B36B" }}>NYC</div>
           </div>
           <div style={{ display: "flex", fontSize: 22, color: TEXT_MID }}>{brand.domain}</div>
         </div>

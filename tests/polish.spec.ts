@@ -254,7 +254,7 @@ for (const viewport of viewports) {
       await page.waitForTimeout(500)
 
       const logoArcs = await page.locator('[data-theme="v2"]').evaluate((scope) => [...scope.querySelectorAll('path[stroke*="logo-arc"]')].slice(0, 5).map((path) => getComputedStyle(path).stroke))
-      expect(logoArcs).toEqual(["rgb(47, 168, 238)", "rgb(91, 108, 255)", "rgb(138, 91, 234)", "rgb(194, 79, 201)", "rgb(238, 94, 140)"])
+      expect(logoArcs).toEqual(Array(5).fill("rgb(211, 179, 107)"))
 
       const stations = await page.getByTestId("hero-map-overlay").evaluate((canvas, points) => {
         const c = canvas as HTMLCanvasElement

@@ -4,7 +4,8 @@
 .light { color: var(--dark-ink, #F4F7F9); }
 .word { display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap; }
 .wordMain { font-family: var(--font-sans), sans-serif; font-weight: 600; letter-spacing: -0.01em; color: currentColor; }
-.wordNyc { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 600; letter-spacing: 0.12em; color: var(--logo-arc-2, #5B6CFF); background: var(--nyc-grad, linear-gradient(90deg, var(--logo-arc-1, #2FA8EE), var(--logo-arc-3, #8A5BEA) 55%, var(--logo-arc-5, #EE5E8C))); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.wordNyc { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 600; letter-spacing: 0.12em; color: #D3B36B; background: var(--nyc-grad, linear-gradient(90deg, #D3B36B, #D3B36B)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.ink .wordNyc { --nyc-grad: linear-gradient(90deg, #A9802F, #A9802F); color: #A9802F; }
 .md .wordMain { font-size: 19px; } .md .wordNyc { font-size: 13.5px; }
 .sm .wordMain { font-size: 17px; } .sm .wordNyc { font-size: 12px; }
 .sm { gap: 10px; }

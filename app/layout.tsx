@@ -66,12 +66,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.svg?v=frame1", type: "image/svg+xml" },
+      { url: "/favicon-32.png?v=frame1", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png?v=frame1", sizes: "16x16", type: "image/png" },
     ],
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico?v=frame1",
+    apple: "/apple-touch-icon.png?v=frame1",
   },
   ...(Object.keys(verification).length ? { verification } : {}),
 };
