@@ -13,6 +13,8 @@ import { ruleReviewCounts, type RuleReviewCounts } from "@/lib/admin/rule-review
 export { deriveCaseOwnership } from "@/lib/admin/ownership"
 export type { CaseMoveOwner } from "@/lib/admin/ownership"
 import { deriveCaseOwnership } from "@/lib/admin/ownership"
+import { privacyCounts } from "@/lib/admin/privacy"
+import { privacyTiming } from "@/lib/admin/privacy-model"
 import {
   DOCUMENT_REVIEW_BUSINESS_DAYS,
   PAYMENT_FOLLOWUP_DAYS,
@@ -202,7 +204,7 @@ export async function loadToday(
       db.from("cohabitants").select("id, case_id, token_expires_at, created_at, affidavit_status, answered_at, token_revoked_at").eq("affidavit_status", "not_started").not("sent_at", "is", null),
     ]),
     db.from("payments").select("id, case_id, client_id, created_at, status").eq("status", "pending"),
-    role === "admin" ? db.from("data_requests").select("id, case_id, client_id, requested_at, kind, status").in("status", ["open", "acknowledged"]) : Promise.resolve({ data: [], error: null }),
+    privacyCounts(db, now),
     loadCalendar(db, {
       from: startKey,
       to: startKey,
@@ -371,15 +373,19 @@ export async function loadToday(
     }, c))
   }
 
-  const privacy = ok<{ data: Array<{ id: string; case_id: string | null; client_id: string | null; requested_at: string; kind: string }> }>(7)?.data ?? []
+  const privacy = ok<Awaited<ReturnType<typeof privacyCounts>>>(7)?.requests ?? []
   for (const request of privacy) {
-    const c = request.case_id ? cases.get(request.case_id) : null
+    const c = request.caseId ? cases.get(request.caseId) : null
+    const timing = privacyTiming(request.requestedAt, now)
+    const due = new Date(timing.dueAt)
+    const section = sectionFor(due, now)
+    if (!section) continue
     allItems.push({
-      id: `privacy-${request.id}`, caseId: request.case_id, type: "privacy", section: "week",
+      id: `privacy-${request.id}`, caseId: request.caseId, type: "privacy", section,
       title: `Open privacy request${c ? ` — ${c.clientName}` : ""}`, reason: request.kind.replaceAll("_", " "),
-      clientName: c?.clientName ?? "Privacy request", track: c?.track ?? "ADMIN ONLY", owner: "You", unassigned: false,
-      assignedStaff: userId, age: ageText(request.requested_at, now), ageDays: daysBetween(request.requested_at, now), triggerAt: request.requested_at,
-      dueAt: new Date(now.getTime() + 7 * DAY).toISOString(), href: `/admin/privacy#${request.id}`, action: "Open request",
+      clientName: c?.clientName ?? "Privacy request", track: c?.track ?? "PRIVACY", owner: "You", unassigned: false,
+      assignedStaff: userId, age: timing.label, ageDays: timing.days, triggerAt: request.requestedAt,
+      dueAt: timing.dueAt, href: `/admin/privacy?r=${request.id}`, action: "Open request",
     })
   }
 

@@ -6,13 +6,13 @@ import { requireStaff, requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
-import { eraseCase } from "@/lib/privacy/erase"
+import { eraseCase, previewErasure, type ErasurePreview } from "@/lib/privacy/erase"
 
 /** Acknowledge that we've seen a request — staff-level. */
-export async function acknowledgeDataRequest(formData: FormData) {
+export async function acknowledgeDataRequest(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
   const auth = await requireStaff()
   const parsed = z.object({ id: z.string().uuid() }).safeParse({ id: formData.get("id") })
-  if (!parsed.success) throw new Error("Invalid request id")
+  if (!parsed.success) return { error: "Invalid request." }
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -23,7 +23,8 @@ export async function acknowledgeDataRequest(formData: FormData) {
       acknowledged_at: new Date().toISOString(),
     })
     .eq("id", parsed.data.id)
-  if (error) throw error
+    .eq("status", "open")
+  if (error) return { error: "The request could not be acknowledged." }
 
   await logActivity({
     action: "privacy.request_acknowledged",
@@ -31,6 +32,8 @@ export async function acknowledgeDataRequest(formData: FormData) {
     entityId: parsed.data.id,
   })
   revalidatePath("/admin/privacy")
+  revalidatePath("/admin")
+  return { ok: true }
 }
 
 /** Close a request without erasing — export delivered, correction made, or refused. */
@@ -40,25 +43,38 @@ export async function resolveDataRequest(formData: FormData) {
     .object({
       id: z.string().uuid(),
       status: z.enum(["fulfilled", "refused"]),
-      resolution_note: z.string().trim().max(1000).optional(),
+      resolution_note: z.string().trim().min(1).max(1000),
     })
     .safeParse({
       id: formData.get("id"),
       status: formData.get("status"),
-      resolution_note: formData.get("resolution_note") ?? undefined,
+      resolution_note: formData.get("resolution_note"),
     })
-  if (!parsed.success) throw new Error("Invalid resolution")
+  if (!parsed.success) return { error: "A note is required and must be 1,000 characters or fewer." }
 
   const supabase = await createClient()
+  const { data: request, error: requestError } = await supabase
+    .from("data_requests")
+    .select("id, kind, status")
+    .eq("id", parsed.data.id)
+    .single()
+  if (requestError || !request) return { error: "Request not found." }
+  if (!['open', 'acknowledged'].includes(request.status)) return { error: "This request is already closed." }
+  if (parsed.data.status === "fulfilled" && request.status !== "acknowledged") {
+    return { error: "Acknowledge the request before marking it done." }
+  }
+  if (parsed.data.status === "fulfilled" && request.kind === "deletion") {
+    return { error: "Deletion requests close only after erasure or refusal." }
+  }
   const { error } = await supabase
     .from("data_requests")
     .update({
       status: parsed.data.status,
-      resolution_note: parsed.data.resolution_note || null,
+      resolution_note: parsed.data.resolution_note,
       fulfilled_at: new Date().toISOString(),
     })
     .eq("id", parsed.data.id)
-  if (error) throw error
+  if (error) return { error: "The request could not be closed." }
 
   await logActivity({
     action: "privacy.request_resolved",
@@ -67,6 +83,39 @@ export async function resolveDataRequest(formData: FormData) {
     detail: { status: parsed.data.status },
   })
   revalidatePath("/admin/privacy")
+  revalidatePath("/admin")
+  return { ok: true }
+}
+
+/** Admin-only, read-only preview. The interactive session and RLS perform all reads. */
+export async function previewDataErasure(requestId: string): Promise<{ preview?: ErasurePreview; error?: string }> {
+  await requireAdmin()
+  const parsed = z.string().uuid().safeParse(requestId)
+  if (!parsed.success) return { error: "Invalid request." }
+
+  const supabase = await createClient()
+  const { data: request, error } = await supabase
+    .from("data_requests")
+    .select("id, case_id, kind")
+    .eq("id", parsed.data)
+    .single()
+  if (error || !request) return { error: "Request not found." }
+  if (request.kind !== "deletion" || !request.case_id) return { error: "This request cannot be previewed." }
+
+  try {
+    const preview = await previewErasure(supabase, request.case_id)
+    await logActivity({
+      action: "privacy.erasure_previewed",
+      caseId: request.case_id,
+      entity: "data_request",
+      entityId: request.id,
+      detail: { counts: { ...preview.erase, storage_objects: preview.files, ...preview.minimize } },
+    })
+    return { preview }
+  } catch (previewError) {
+    console.error("[privacy] erasure preview failed:", previewError)
+    return { error: "The erasure review could not be loaded." }
+  }
 }
 
 /**
@@ -112,7 +161,7 @@ export async function executeErasure(formData: FormData): Promise<{ ok?: boolean
     })
   } catch (err) {
     console.error("[privacy] erasure failed:", err)
-    return { error: "Erasure failed and was recorded. Check data_erasure_log before retrying." }
+    return { error: "Erasure stopped. Nothing after the failed step ran, and the receipt says so. Check the erasure log before trying again." }
   }
 
   await admin
@@ -133,5 +182,6 @@ export async function executeErasure(formData: FormData): Promise<{ ok?: boolean
     detail: receipt.surfaces,
   })
   revalidatePath("/admin/privacy")
+  revalidatePath("/admin")
   return { ok: true }
 }

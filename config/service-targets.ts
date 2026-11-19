@@ -6,6 +6,7 @@ export const QA_SIGNOFF_DAYS = 3
 export const STALLED_DAYS = 14
 export const REFERENCE_EXPIRY_WARN_DAYS = 2
 export const PAYMENT_FOLLOWUP_DAYS = 7
+export const PRIVACY_RESPONSE_DAYS = 30
 
 /**
  * Initial operational targets for the Reports workspace. The 14-day defaults
