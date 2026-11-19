@@ -14,6 +14,19 @@ type ClassRow = {
 
 export const TRAINING_BUCKET = "training-ids"
 
+export type TrainingStripeMode = "test" | "live" | "not_configured" | "invalid"
+
+/** Report the paired key mode without exposing either key. Mixed or partial
+ * credentials are deliberately treated as invalid. */
+export function trainingStripeMode(): TrainingStripeMode {
+  const secret = process.env.TRAINING_STRIPE_SECRET_KEY
+  const publishable = process.env.NEXT_PUBLIC_TRAINING_STRIPE_PUBLISHABLE_KEY
+  if (!secret && !publishable) return "not_configured"
+  if (secret?.startsWith("sk_test_") && publishable?.startsWith("pk_test_")) return "test"
+  if (secret?.startsWith("sk_live_") && publishable?.startsWith("pk_live_")) return "live"
+  return "invalid"
+}
+
 /** Public-only fallback lets a visual preview render before its database
  * environment is connected. Real availability always comes from Postgres. */
 const previewClass: PublicTrainingClass = {
@@ -31,11 +44,9 @@ const previewClass: PublicTrainingClass = {
 /** Test keys are permitted on the redesign preview. Live keys remain blocked
  * until the owner supplies the refund policy in content/training/config.ts. */
 export function trainingStripeEnabled() {
-  const secret = process.env.TRAINING_STRIPE_SECRET_KEY
-  const publishable = process.env.NEXT_PUBLIC_TRAINING_STRIPE_PUBLISHABLE_KEY
-  if (!secret || !publishable) return false
-  if (secret.startsWith("sk_test_") && publishable.startsWith("pk_test_")) return true
-  return hasConfirmedRefundPolicy && secret.startsWith("sk_live_") && publishable.startsWith("pk_live_")
+  const mode = trainingStripeMode()
+  if (mode === "test") return true
+  return hasConfirmedRefundPolicy && mode === "live"
 }
 
 /** Preview permits the UI flow despite the intentionally unpublished refund

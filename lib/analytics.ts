@@ -36,6 +36,8 @@ export type ConversionEvent =
   | "admin_offline_payment_recorded" // admin recorded money received outside Stripe
   | "admin_test_data_marked" // admin explicitly marked suggested clients as test
   | "admin_test_data_deleted" // admin completed typed test-data deletion
+  | "admin_training_viewed" // admin opened the class-and-registration workspace
+  | "admin_training_class_created" // admin created a class or duplicated one
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

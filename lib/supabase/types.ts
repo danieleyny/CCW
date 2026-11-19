@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -1070,7 +1075,9 @@ export type Database = {
       }
       cases: {
         Row: {
-          application_type: Database["public"]["Enums"]["application_type"] | null
+          application_type:
+            | Database["public"]["Enums"]["application_type"]
+            | null
           application_type_selected_at: string | null
           application_type_selected_by: string | null
           calendly_token: string
@@ -1099,7 +1106,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          application_type?: Database["public"]["Enums"]["application_type"] | null
+          application_type?:
+            | Database["public"]["Enums"]["application_type"]
+            | null
           application_type_selected_at?: string | null
           application_type_selected_by?: string | null
           calendly_token?: string
@@ -1128,7 +1137,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          application_type?: Database["public"]["Enums"]["application_type"] | null
+          application_type?:
+            | Database["public"]["Enums"]["application_type"]
+            | null
           application_type_selected_at?: string | null
           application_type_selected_by?: string | null
           calendly_token?: string
@@ -1324,6 +1335,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["case_id"]
+          },
+        ]
+      }
+      client_notification_preferences: {
+        Row: {
+          cadence: Database["public"]["Enums"]["follow_up_cadence"]
+          client_id: string
+          created_at: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cadence?: Database["public"]["Enums"]["follow_up_cadence"]
+          client_id: string
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cadence?: Database["public"]["Enums"]["follow_up_cadence"]
+          client_id?: string
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notification_preferences_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notification_preferences_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2550,6 +2600,56 @@ export type Database = {
         }
         Relationships: []
       }
+      legacy_lead_outreach: {
+        Row: {
+          campaign_key: string
+          client_id: string
+          created_at: string
+          email: string
+          failure_reason: string | null
+          id: string
+          resend_email_id: string | null
+          sent_at: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_key: string
+          client_id: string
+          created_at?: string
+          email: string
+          failure_reason?: string | null
+          id?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_key?: string
+          client_id?: string
+          created_at?: string
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legacy_lead_outreach_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       license_reports: {
         Row: {
           acknowledged_at: string | null
@@ -2618,6 +2718,109 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_contacts: {
+        Row: {
+          account_created_at: string | null
+          client_id: string | null
+          consent_version: string
+          consented_at: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          source: string
+          suppressed_at: string | null
+          suppression_reason: string | null
+          track: Database["public"]["Enums"]["client_track"] | null
+          unsubscribed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_created_at?: string | null
+          client_id?: string | null
+          consent_version: string
+          consented_at: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          source: string
+          suppressed_at?: string | null
+          suppression_reason?: string | null
+          track?: Database["public"]["Enums"]["client_track"] | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_created_at?: string | null
+          client_id?: string | null
+          consent_version?: string
+          consented_at?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          source?: string
+          suppressed_at?: string | null
+          suppression_reason?: string | null
+          track?: Database["public"]["Enums"]["client_track"] | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_email_log: {
+        Row: {
+          campaign_key: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          marketing_contact_id: string
+          resend_email_id: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_key: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          marketing_contact_id: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_key?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          marketing_contact_id?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_email_log_marketing_contact_id_fkey"
+            columns: ["marketing_contact_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -3182,6 +3385,59 @@ export type Database = {
           },
         ]
       }
+      promo_code_claims: {
+        Row: {
+          case_id: string
+          claimed_at: string
+          client_id: string
+          code_fingerprint: string
+          code_label: string
+        }
+        Insert: {
+          case_id: string
+          claimed_at?: string
+          client_id: string
+          code_fingerprint: string
+          code_label: string
+        }
+        Update: {
+          case_id?: string
+          claimed_at?: string
+          client_id?: string
+          code_fingerprint?: string
+          code_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_claims_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_claims_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "promo_code_claims_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "promo_code_claims_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_authorizations: {
         Row: {
           acquired_on: string | null
@@ -3249,6 +3505,59 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reference_request_documents: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          position: number
+          reference_request_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          position: number
+          reference_request_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          position?: number
+          reference_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_request_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_request_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "reference_request_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "reference_request_documents_reference_request_id_fkey"
+            columns: ["reference_request_id"]
+            isOneToOne: false
+            referencedRelation: "reference_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -4402,6 +4711,105 @@ export type Database = {
           },
         ]
       }
+      training_classes: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          hours_copy: string | null
+          id: string
+          instructor_name: string
+          location_private: string | null
+          location_public: string
+          price_cents: number
+          registration_closes_at: string | null
+          sessions: Json
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          vendor_access_code: string | null
+          vendor_class_urls: Json
+          vendor_company: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          hours_copy?: string | null
+          id?: string
+          instructor_name: string
+          location_private?: string | null
+          location_public: string
+          price_cents: number
+          registration_closes_at?: string | null
+          sessions: Json
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          vendor_access_code?: string | null
+          vendor_class_urls?: Json
+          vendor_company: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          hours_copy?: string | null
+          id?: string
+          instructor_name?: string
+          location_private?: string | null
+          location_public?: string
+          price_cents?: number
+          registration_closes_at?: string | null
+          sessions?: Json
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          vendor_access_code?: string | null
+          vendor_class_urls?: Json
+          vendor_company?: string
+        }
+        Relationships: []
+      }
+      training_interest: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip_hash: string
+          name: string
+          phone_e164: string
+          source: string
+          status: string
+          timeframe: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip_hash: string
+          name: string
+          phone_e164: string
+          source: string
+          status?: string
+          timeframe: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip_hash?: string
+          name?: string
+          phone_e164?: string
+          source?: string
+          status?: string
+          timeframe?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       training_locations: {
         Row: {
           address: string | null
@@ -4456,6 +4864,122 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["instructor_id"]
+          },
+        ]
+      }
+      training_registrations: {
+        Row: {
+          address1: string
+          address2: string
+          admin_notes: string | null
+          agreed_terms_at: string
+          agreed_terms_version: string
+          amount_cents: number
+          background: string
+          city: string
+          class_id: string
+          created_at: string
+          dob: string
+          email: string
+          emergency_name: string
+          emergency_phone: string
+          experience: string
+          first_name: string
+          gender: string
+          home_phone: string
+          id: string
+          id_file_path: string | null
+          last_name: string
+          medical_notes: string | null
+          middle_name: string
+          mobile_phone: string
+          paid_at: string | null
+          sms_opt_in: boolean
+          state: string
+          status: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          us_citizen: string
+          utm: Json
+          zip: string
+        }
+        Insert: {
+          address1: string
+          address2?: string
+          admin_notes?: string | null
+          agreed_terms_at: string
+          agreed_terms_version: string
+          amount_cents: number
+          background: string
+          city: string
+          class_id: string
+          created_at?: string
+          dob: string
+          email: string
+          emergency_name: string
+          emergency_phone: string
+          experience: string
+          first_name: string
+          gender: string
+          home_phone?: string
+          id?: string
+          id_file_path?: string | null
+          last_name: string
+          medical_notes?: string | null
+          middle_name?: string
+          mobile_phone: string
+          paid_at?: string | null
+          sms_opt_in?: boolean
+          state: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          us_citizen: string
+          utm?: Json
+          zip: string
+        }
+        Update: {
+          address1?: string
+          address2?: string
+          admin_notes?: string | null
+          agreed_terms_at?: string
+          agreed_terms_version?: string
+          amount_cents?: number
+          background?: string
+          city?: string
+          class_id?: string
+          created_at?: string
+          dob?: string
+          email?: string
+          emergency_name?: string
+          emergency_phone?: string
+          experience?: string
+          first_name?: string
+          gender?: string
+          home_phone?: string
+          id?: string
+          id_file_path?: string | null
+          last_name?: string
+          medical_notes?: string | null
+          middle_name?: string
+          mobile_phone?: string
+          paid_at?: string | null
+          sms_opt_in?: boolean
+          state?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          us_citizen?: string
+          utm?: Json
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_registrations_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "training_classes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4534,6 +5058,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trainer_case_scope"
             referencedColumns: ["instructor_id"]
+          },
+        ]
+      }
+      training_waitlist: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_waitlist_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "training_classes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5055,14 +5608,6 @@ export type Database = {
       }
     }
     Functions: {
-      update_own_profile_avatar: {
-        Args: {
-          p_key?: string | null
-          p_kind: string | null
-          p_path?: string | null
-        }
-        Returns: string | null
-      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
@@ -5195,6 +5740,16 @@ export type Database = {
       case_visible: { Args: { p_case_id: string }; Returns: boolean }
       choose_instructor: {
         Args: { p_instructor_id: string; p_offer_id: string }
+        Returns: string
+      }
+      claim_promo_code: {
+        Args: {
+          p_case_id: string
+          p_client_id: string
+          p_code_fingerprint: string
+          p_code_label: string
+          p_max_uses: number
+        }
         Returns: string
       }
       client_visible: { Args: { p_client_id: string }; Returns: boolean }
@@ -6054,6 +6609,14 @@ export type Database = {
         Returns: Database["public"]["Enums"]["concierge_scope"]
       }
       unlockrows: { Args: { "": string }; Returns: number }
+      update_own_profile_avatar: {
+        Args: {
+          p_key?: string | null
+          p_kind: string | null
+          p_path?: string | null
+        }
+        Returns: string | null
+      }
       updategeometrysrid: {
         Args: {
           catalogn_name: string
@@ -6190,6 +6753,7 @@ export type Database = {
         | "notarized_release"
         | "filed_application_copy"
       engagement_status: "active" | "completed" | "cancelled" | "declined"
+      follow_up_cadence: "standard" | "proactive" | "essential_only"
       jurisdiction_key:
         | "nyc"
         | "nassau"
@@ -6256,12 +6820,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6285,11 +6849,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6310,11 +6874,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6335,11 +6899,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6352,11 +6916,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6504,6 +7068,7 @@ export const Constants = {
         "filed_application_copy",
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
+      follow_up_cadence: ["standard", "proactive", "essential_only"],
       jurisdiction_key: [
         "nyc",
         "nassau",
@@ -6555,4 +7120,3 @@ export const Constants = {
     },
   },
 } as const
-

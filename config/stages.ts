@@ -4,6 +4,10 @@
  * ordered and drives the admin pipeline columns and the client progress timeline.
  */
 
+/** Shared advisory copy for the training planner. It is informational only;
+ * class creation never treats the hours as a legal or operational gate. */
+export const TRAINING_PLAN_REQUIREMENT = "16-hour classroom + 2-hour live fire"
+
 export const CASE_STAGES = [
   {
     key: "lead",
