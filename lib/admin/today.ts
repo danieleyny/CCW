@@ -20,7 +20,9 @@ import {
   PAYMENT_FOLLOWUP_DAYS,
   REFERENCE_EXPIRY_WARN_DAYS,
   STALLED_DAYS,
+  INSTRUCTOR_VERIFY_DAYS,
 } from "@/config/service-targets"
+import { instructorCounts } from "@/lib/admin/instructors"
 
 type DB = SupabaseClient<Database>
 
@@ -192,7 +194,7 @@ export async function loadToday(
   }
 
   const startKey = dayKey(now)
-  const sourceNames = ["Messages", "Documents", "Final QA", "Concierge", "Tasks", "People", "Payments", "Privacy", "Schedule", "Rule review"] as const
+  const sourceNames = ["Messages", "Documents", "Final QA", "Concierge", "Tasks", "People", "Payments", "Privacy", "Schedule", "Rule review", "Instructor verification"] as const
   const settled = await Promise.allSettled([
     loadInbox(db, { userId, scope, showHidden: false, now }),
     db.from("documents").select("id, case_id, created_at").eq("status", "pending").order("created_at", { ascending: true }),
@@ -215,6 +217,7 @@ export async function loadToday(
       now,
     }),
     role === "admin" ? ruleReviewCounts(db, now) : Promise.resolve({ attention: 0 }),
+    role === "admin" ? instructorCounts(db, now) : Promise.resolve({ needsVerification: 0, oldestWaitingDays: 0, oldest: null }),
   ])
 
   const errors: string[] = []
@@ -357,6 +360,25 @@ export async function loadToday(
       age: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`, ageDays: daysBetween(row.created_at, now), triggerAt: row.created_at,
       dueAt: due.toISOString(), href: `/admin/cases/${caseId}?tab=people`, action: "Open people",
     }, c))
+  }
+
+  const instructorWaiting = ok<Awaited<ReturnType<typeof instructorCounts>>>(10)
+  if (role === "admin" && instructorWaiting?.oldest) {
+    const instructor = instructorWaiting.oldest
+    const triggerAt = [instructor.created_at, instructor.updated_at, instructor.onboarding_completed_at]
+      .filter((value): value is string => !!value)
+      .sort()
+      .at(-1) ?? instructor.created_at
+    const due = new Date(new Date(triggerAt).getTime() + INSTRUCTOR_VERIFY_DAYS * DAY)
+    const section = sectionFor(due, now) ?? "week"
+    allItems.push({
+      id: `instructor-${instructor.id}`, caseId: null, type: "people", section,
+      title: `Verify ${instructor.name}`, reason: "Their profile is complete and the credential check is waiting on an admin.",
+      clientName: instructor.name, track: "INSTRUCTOR", owner: "You", unassigned: false, assignedStaff: userId,
+      age: `${instructor.status.waitingDays} day${instructor.status.waitingDays === 1 ? "" : "s"} waiting`,
+      ageDays: instructor.status.waitingDays, triggerAt, dueAt: due.toISOString(),
+      href: `/admin/instructors/verify?i=${instructor.id}`, action: "Verify",
+    })
   }
 
   const payments = ok<{ data: Array<{ id: string; case_id: string | null; client_id: string | null; created_at: string }> }>(6)?.data ?? []

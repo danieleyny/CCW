@@ -44,7 +44,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { key: "pipeline", href: "/admin/pipeline", label: "Pipeline", group: "Cases", icon: KanbanSquare },
   { key: "payments", href: "/admin/payments", label: "Payments", group: "Operations", icon: CreditCard },
   { key: "training", href: "/admin/training", label: "Training", group: "Operations", icon: GraduationCap },
-  { key: "instructors", href: "/admin/instructors", label: "Instructors", group: "Operations", icon: UserRoundCheck },
+  { key: "instructors", href: "/admin/instructors", label: "Instructors", group: "Operations", icon: UserRoundCheck, adminOnlyBadge: true },
   { key: "requirements", href: "/admin/requirements", label: "Requirements", group: "Governance", icon: ScrollText },
   { key: "legal", href: "/admin/legal", label: "Rule review", group: "Governance", icon: Scale, adminOnly: true, adminOnlyBadge: true },
   { key: "privacy", href: "/admin/privacy", label: "Privacy", group: "Governance", icon: ShieldCheck },

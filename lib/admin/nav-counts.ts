@@ -8,6 +8,7 @@ import { conciergeAttentionCount } from "@/lib/concierge/board"
 import { loadToday } from "@/lib/admin/today"
 import { ruleReviewCounts } from "@/lib/admin/rule-review"
 import { privacyCounts } from "@/lib/admin/privacy"
+import { instructorCounts } from "@/lib/admin/instructors"
 
 type DB = SupabaseClient<Database>
 export type AdminNavCounts = Partial<Record<AdminNavKey, number>>
@@ -22,6 +23,7 @@ export async function loadAdminNavCounts(db: DB, userId: string, role: string): 
     conciergeAttentionCount(db, userId),
     role === "admin" ? ruleReviewCounts(db) : Promise.resolve({ attention: 0 }),
     privacyCounts(db, today),
+    role === "admin" ? instructorCounts(db, today) : Promise.resolve({ needsVerification: 0 }),
   ])
 
   const counts: AdminNavCounts = {}
@@ -34,6 +36,7 @@ export async function loadAdminNavCounts(db: DB, userId: string, role: string): 
   if (results[4].status === "fulfilled") counts.concierge = results[4].value
   if (results[5].status === "fulfilled") counts.legal = results[5].value.attention
   if (results[6].status === "fulfilled") counts.privacy = results[6].value.total
+  if (results[7].status === "fulfilled") counts.instructors = results[7].value.needsVerification
   return counts
 }
 

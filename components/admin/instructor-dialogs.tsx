@@ -1,0 +1,34 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { AlertTriangle, CheckCircle2 } from "lucide-react"
+import { toast } from "sonner"
+import type { AdminInstructorRow } from "@/lib/admin/instructors"
+import { requestInstructorChanges, retryInstructorMatching, setInstructorVerified } from "@/app/admin/instructors/actions"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+const CHECKS = ["Name on the credential matches", "Credential is current (not expired)", "Covers the NYC 16-hour + live-fire course"]
+
+export function NotYetDialog({ row, open, onOpenChange }: { row: AdminInstructorRow; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter()
+  const [pending, start] = useTransition()
+  const suggested = row.flags[0] ? `Please remove “${row.flags[0].phrase}” from your bio. The 18-hour course must be in person.` : ""
+  const [note, setNote] = useState(suggested)
+  const reachable = !!row.email || !!row.profile_id
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>Tell {row.name.split(" ")[0]} what to fix</DialogTitle><DialogDescription>Sent in their dashboard and by email.</DialogDescription></DialogHeader><label className="text-xs font-semibold text-[#344054]">What needs to change<textarea value={note} maxLength={1000} onChange={(event) => setNote(event.target.value)} className="mt-2 min-h-28 w-full rounded-lg border border-black/15 bg-white p-3 text-sm font-normal outline-none focus:ring-2 focus:ring-[#D9B25F]" /></label><p className="text-xs text-[#667085]">{row.profile_id ? "They’ll see this in their instructor dashboard and receive an email when email delivery is enabled." : row.email ? `No account yet. We’ll email ${row.email}.` : "No way to reach them."}</p><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={pending || !reachable || !note.trim()} onClick={() => start(async () => { const result = await requestInstructorChanges({ id: row.id, note }); if (!result.ok) { toast.error(result.error); return } toast.success(`Sent to ${row.name.split(" ")[0]}.`); onOpenChange(false); router.refresh() })}>{pending ? "Sending…" : "Send"}</Button></DialogFooter></DialogContent></Dialog>
+}
+
+export function VerifyDialog({ row, open, onOpenChange, checksConfirmed = true }: { row: AdminInstructorRow; open: boolean; onOpenChange: (open: boolean) => void; checksConfirmed?: boolean }) {
+  const router = useRouter()
+  const [pending, start] = useTransition()
+  const [note, setNote] = useState("")
+  const [matchingFailed, setMatchingFailed] = useState(false)
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>Verify {row.name}?</DialogTitle><DialogDescription>DCJS {row.dcjs_id ?? "not provided"} · {row.area}</DialogDescription></DialogHeader>{matchingFailed ? <div className="rounded-xl border border-[#E7C46F] bg-[#FFF7E6] p-3 text-xs leading-5 text-[#805B00]"><b>Verified, but matching didn’t run.</b> {row.name} is verified. Open requests in their area weren’t matched yet.<Button size="sm" variant="outline" className="mt-3 w-full" disabled={pending} onClick={() => start(async () => { const result = await retryInstructorMatching(row.id); if (!result.ok) { toast.error(result.error); return } toast.success(`Matching ran again — ${result.matched ?? 0} requests added.`); setMatchingFailed(false); onOpenChange(false); router.refresh() })}>Run matching again</Button></div> : <><div className="space-y-2 rounded-xl bg-[#F8F9FB] p-3">{CHECKS.map((check) => <p key={check} className="flex items-center gap-2 text-xs text-[#344054]"><CheckCircle2 className="size-4 text-[#16734A]" />{check}</p>)}</div><div className="rounded-xl border border-[#B7E2CA] bg-[#E8F6EE] p-3 text-xs leading-5 text-[#16603E]">Once verified and set up, {row.name.split(" ")[0]} will be matched to the <b>{row.matchPreview} open training request{row.matchPreview === 1 ? "" : "s"}</b> in their area right away.</div><label className="text-xs font-semibold text-[#344054]">Optional note<textarea maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} className="mt-2 min-h-20 w-full rounded-lg border border-black/15 bg-white p-3 text-sm font-normal" /></label><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={pending || !checksConfirmed || row.flags.length > 0} className="bg-[#14254A] text-white hover:bg-[#1E3563]" onClick={() => start(async () => { const result = await setInstructorVerified({ id: row.id, verified: true, note, checksConfirmed: true, previewCount: row.matchPreview }); if (!result.ok) { toast.error(result.error); return } if (result.matchingFailed) { setMatchingFailed(true); return } toast.success(`${row.name} is verified.`); onOpenChange(false); router.refresh() })}>Verify</Button></DialogFooter></>}</DialogContent></Dialog>
+}
+
+export function UnverifyDialog({ row, open, onOpenChange }: { row: AdminInstructorRow; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter(); const [pending, start] = useTransition(); const [reason, setReason] = useState("")
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>Un-verify {row.name}?</DialogTitle><DialogDescription>{row.status.label} · {row.activeStudents} active student{row.activeStudents === 1 ? "" : "s"}</DialogDescription></DialogHeader><div className="flex gap-2 rounded-xl border border-[#E7C46F] bg-[#FFF7E6] p-3 text-xs leading-5 text-[#805B00]"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{row.name.split(" ")[0]} will disappear from applicant matching and the public directory. Their <b>{row.activeStudents} active students</b> stay assigned. Message them or reassign from each case.</div><label className="text-xs font-semibold text-[#344054]">Reason<textarea required maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-black/15 bg-white p-3 text-sm font-normal" /></label><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button variant="destructive" disabled={pending || !reason.trim()} onClick={() => start(async () => { const result = await setInstructorVerified({ id: row.id, verified: false, reason }); if (!result.ok) { toast.error(result.error); return } toast.success(`${row.name} is no longer verified.`); onOpenChange(false); router.refresh() })}>Un-verify</Button></DialogFooter></DialogContent></Dialog>
+}

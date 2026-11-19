@@ -7,6 +7,8 @@ export const STALLED_DAYS = 14
 export const REFERENCE_EXPIRY_WARN_DAYS = 2
 export const PAYMENT_FOLLOWUP_DAYS = 7
 export const PRIVACY_RESPONSE_DAYS = 30
+/** Admin credential-verification target; operational only, never a filing rule. */
+export const INSTRUCTOR_VERIFY_DAYS = 3
 
 /**
  * Initial operational targets for the Reports workspace. The 14-day defaults
