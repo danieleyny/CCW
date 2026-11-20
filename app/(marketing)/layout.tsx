@@ -1,5 +1,6 @@
 import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketing/json-ld"
 import { MarketingFrame } from "@/components/marketing/v2/MarketingFrame"
+import ThemeScope from "@/components/theme/ThemeScope"
 import "./marketing-v2.css"
 import "./hero-guided-path.css"
 
@@ -23,7 +24,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           "@graph": [organizationSchema, websiteSchema],
         }}
       />
-      <MarketingFrame>{children}</MarketingFrame>
+      <ThemeScope theme="v2">
+        <MarketingFrame>{children}</MarketingFrame>
+      </ThemeScope>
     </>
   )
 }
