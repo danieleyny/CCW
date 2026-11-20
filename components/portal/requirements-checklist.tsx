@@ -320,7 +320,7 @@ export function RequirementsChecklist({
             <h2 className="portal-title-font mt-1.5 text-[24px] font-medium">{t.checklistFinishIntake}</h2>
             <p className="mt-1 max-w-2xl text-[14px] leading-5 text-white/72">{t.checklistFinishIntakeDetail}</p>
           </div>
-          <Link href="/portal/intake" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-gold-button)] px-5 text-[14px] font-semibold text-[#0b1220] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+          <Link href="/portal/intake" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl [background:var(--portal-gold-button)] px-5 text-[14px] font-semibold text-[#0b1220] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
             {t.checklistContinueIntake}
           </Link>
         </section>
