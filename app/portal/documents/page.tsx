@@ -8,6 +8,7 @@ import { buildApplicationReview } from "@/lib/concierge/application-review"
 import { ApplicationReview } from "@/components/portal/concierge/application-review"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { getMessages } from "@/lib/i18n"
+import { categoryKeyFor } from "@/lib/requirements/categories"
 
 export async function generateMetadata() {
   const t = await getMessages()
@@ -21,8 +22,12 @@ export async function generateMetadata() {
  * surface under an upload slot it had nothing to do with, and why this page and
  * the checklist could disagree about what was outstanding.
  */
-export default async function DocumentsPage() {
-  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
+export default async function DocumentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string | string[]; group?: string | string[] }>
+}) {
+  const [myCase, t, query] = await Promise.all([getMyCase(), getMessages(), searchParams])
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
@@ -68,6 +73,10 @@ export default async function DocumentsPage() {
       title: actionFor(i.reqCode)?.customerTitle ?? i.title,
       officialTitle: i.title,
       status: i.status,
+      ladder: i.ladder,
+      destination: i.destination ?? null,
+      categoryKey: categoryKeyFor(i.reqCode),
+      parts: i.parts ?? null,
       files: view.filesByReq[i.reqCode] ?? [],
     }))
 
@@ -76,22 +85,12 @@ export default async function DocumentsPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">{t.pages.documentsTitle}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.pages.documentsLede}</p>
-      </div>
-
       <DocumentLibrary
         needed={needed}
         completed={completed}
         loose={view.looseFiles}
-        caseId={myCase.id}
-        clientId={myCase.client.id}
-        prefills={view.prefills}
-        generated={view.generated}
-        signatureOnFile={view.signatureOnFile}
-        feeSummary={view.feeSummary}
-        feeReceipts={view.feeReceipts}
+        initialTab={typeof query.tab === "string" ? query.tab : null}
+        initialGroup={typeof query.group === "string" ? query.group : null}
       />
     </div>
   )
