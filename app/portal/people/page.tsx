@@ -209,7 +209,7 @@ function TabCard({
       role="tab"
       aria-selected={active}
       className={cn(
-        "flex min-w-[168px] items-center gap-3 rounded-2xl border px-4 py-3 transition md:min-w-0 md:flex-1 md:px-5 md:py-4",
+        "flex min-w-[168px] items-center gap-2 rounded-2xl border px-3 py-3 transition sm:gap-3 sm:px-4 md:min-w-0 md:flex-1 md:px-5 md:py-4",
         active
           ? "border-[var(--portal-navy)] bg-[var(--portal-navy)] text-white shadow-[0_16px_34px_rgba(10,18,34,.13)]"
           : "border-hairline bg-white text-foreground hover:border-[var(--portal-navy)]/20"
@@ -217,10 +217,10 @@ function TabCard({
     >
       <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", active ? "bg-white/10 text-[var(--portal-gold-light)]" : "bg-[var(--portal-profile-blue)] text-[var(--portal-navy)]")}>{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-semibold">{title}</span>
+        <span className="block truncate text-[13px] font-semibold sm:text-[14px]">{title}</span>
         <span className={cn("mt-0.5 hidden truncate text-[11px] md:block", active ? "text-white/66" : "text-text-low")}>{status}</span>
       </span>
-      <span className={cn("shrink-0 font-mono text-[12px] font-semibold", active ? "text-[var(--portal-gold-light)]" : "text-text-mid")}>{count}</span>
+      <span className={cn("shrink-0 font-mono text-[11px] font-semibold sm:text-[12px]", active ? "text-[var(--portal-gold-light)]" : "text-text-mid")}>{count}</span>
     </Link>
   )
 }
