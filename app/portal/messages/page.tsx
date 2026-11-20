@@ -6,7 +6,10 @@ import { sendMessage } from "@/app/portal/actions"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { getMessages } from "@/lib/i18n"
 import { MESSAGE_REPLY_BUSINESS_DAYS } from "@/config/service-targets"
-import { interpolate } from "@/components/shared/portal-i18n-provider"
+
+function fill(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), template)
+}
 
 export async function generateMetadata() {
   const t = await getMessages()
@@ -55,7 +58,7 @@ function GuideCards({
   hasInstructor: boolean
   tablet?: boolean
 }) {
-  const responseDays = interpolate(
+  const responseDays = fill(
     MESSAGE_REPLY_BUSINESS_DAYS === 1 ? t.messagesReplyScheduleOne : t.messagesReplyScheduleMany,
     { days: MESSAGE_REPLY_BUSINESS_DAYS }
   )
