@@ -7,6 +7,8 @@ import { ensureIntakeSession } from "./actions"
 import { IntakeWizard } from "@/components/portal/intake/intake-wizard"
 import { AI_ENABLED } from "@/lib/ai"
 import { redirect } from "next/navigation"
+import { getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
 import {
   applicationTypeToLegacyLicenseType,
   isPremisesApplication,
@@ -16,11 +18,11 @@ import {
 export const metadata = { title: "Application intake" }
 
 export default async function IntakePage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) {
     return (
-      <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
+      <p className="portal-intake-no-case">
+        {t.portal.intake.noCase}
       </p>
     )
   }
@@ -122,24 +124,15 @@ export default async function IntakePage() {
   }
 
   return (
-    <div>
+    <div className="portal-intake-page">
       {sponsorName && (
-        <div className="mb-5 rounded-lg border border-brass/30 bg-brass/[0.06] p-4">
-          <p className="text-sm font-medium text-brass">Let&apos;s start with your interview</p>
-          <p className="mt-1 text-sm text-text-mid">
-            {sponsorName} is sponsoring your licence and handles the company paperwork. This
-            application, though, is yours — only you can answer these questions, so we start here.
-            It takes a few minutes and saves as you go.
+        <div className="portal-intake-sponsor">
+          <p>{t.portal.intake.sponsorTitle}</p>
+          <p>
+            {interpolate(t.portal.intake.sponsorBody, { sponsor: sponsorName })}
           </p>
         </div>
       )}
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Application intake</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A guided interview that builds your personalized document set. Your
-          answers save as you go — you can stop and resume anytime.
-        </p>
-      </div>
       <IntakeWizard
         caseId={myCase.id}
         isRenewal={!!myCase.is_renewal}
@@ -152,6 +145,7 @@ export default async function IntakePage() {
         applicant={applicant}
         licenseTrack={(myCase.license_track as string | null) ?? null}
         applicationType={(myCase.application_type as ApplicationType | null) ?? null}
+        copy={t.portal.intake}
       />
     </div>
   )

@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Pencil, Compass, Check as CheckIcon, ChevronDown, LogOut } from "lucide-react"
+import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowLeft, Sparkles, Pencil, Check as CheckIcon, ChevronDown, LogOut, Info, LockKeyhole, Scale, Clock3 } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   INTAKE_STEPS,
@@ -56,6 +56,12 @@ import {
   isPremisesApplication,
   type ApplicationType,
 } from "@/lib/application-types"
+import type { Messages } from "@/lib/i18n/messages"
+import { interpolate } from "@/lib/i18n/interpolate"
+
+const INTAKE_TIME_ESTIMATE_MIN: number | null = null
+type IntakeCopy = Messages["portal"]["intake"]
+type PortalDisclosureQuestion = ReturnType<typeof applicablePortalDisclosures>[number]
 
 interface Disclosure {
   id: string
@@ -93,6 +99,7 @@ export function IntakeWizard({
   applicant,
   licenseTrack = null,
   applicationType = null,
+  copy,
 }: {
   caseId: string
   isRenewal?: boolean
@@ -108,25 +115,47 @@ export function IntakeWizard({
   licenseTrack?: string | null
   /** Canonical NYPD application category selected before this interview. */
   applicationType?: ApplicationType | null
+  copy: IntakeCopy
 }) {
   const router = useRouter()
   const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), 6))
   const [a, setAnswers] = useState<WizardAnswers>(initialAnswers)
   const [saving, setSaving] = useState(false)
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [savedAt, setSavedAt] = useState<number | null>(null)
+  const [saveClock, setSaveClock] = useState(() => Date.now())
   const [generating, setGenerating] = useState(false)
   const [eligReasons, setEligReasons] = useState<string[] | null>(null)
   const [attorneyReview, setAttorneyReview] = useState(false)
-  const intakeSteps = isPremisesApplication(applicationType ?? applicationTypeFromLegacy(a))
-    ? INTAKE_STEPS.map((item) =>
-        item.n === 5 ? { ...item, label: "History & references" } : item
-      )
-    : INTAKE_STEPS
+  const premisesApplication = isPremisesApplication(
+    applicationType ?? applicationTypeFromLegacy(a)
+  )
+  const intakeSteps = useMemo(
+    () =>
+      INTAKE_STEPS.map((item) => ({
+        ...item,
+        label:
+          item.n === 5 && premisesApplication
+            ? copy.step5PremisesLabel
+            : copy[`step${item.n}Label`],
+        title: copy[`step${item.n}Title`],
+        description: copy[`step${item.n}Description`],
+        instruction: copy[`step${item.n}Instruction`],
+      })),
+    [copy, premisesApplication]
+  )
   // F5 — a completed applicant re-opening their answers to review/edit. Saving a
   // step is non-destructive; only finishing (generate → completeIntake) rebuilds.
   const [editing, setEditing] = useState(false)
   const [guardOverride, setGuardOverride] = useState<SubmissionGuard | null>(null)
   const [narrativeEdits, setNarrativeEdits] = useState<Record<string, string>>({})
   const [stepErrors, setStepErrors] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!savedAt) return
+    const timer = window.setInterval(() => setSaveClock(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [savedAt])
 
   const patch = (p: Partial<WizardAnswers>) => setAnswers((s) => ({ ...s, ...p }))
 
@@ -151,15 +180,22 @@ export function IntakeWizard({
 
   async function persist(next: number): Promise<boolean> {
     setSaving(true)
+    setSaveState("saving")
     try {
       const res = await saveIntakeStep(caseId, next, a)
       if (res && "error" in res && res.error) {
         toast.error(res.error)
+        setSaveState("error")
         return false
       }
+      const saved = Date.now()
+      setSavedAt(saved)
+      setSaveClock(saved)
+      setSaveState("saved")
       return true
     } catch {
       toast.error("Couldn't save progress.")
+      setSaveState("error")
       return false
     } finally {
       setSaving(false)
@@ -209,6 +245,11 @@ export function IntakeWizard({
     setStep((s) => Math.max(s - 1, 1))
   }
 
+  async function saveAndExit() {
+    const ok = await persist(step)
+    if (ok) router.push("/portal")
+  }
+
   async function generate() {
     setGenerating(true)
     try {
@@ -249,45 +290,60 @@ export function IntakeWizard({
   }
 
   const effGuard = guardOverride ?? guard
+  const currentStep = intakeSteps[step - 1]
+  const requiredLeft = issuesForStep(step).length
+  const savedMinutes = savedAt ? Math.max(0, Math.floor((saveClock - savedAt) / 60_000)) : 0
+  const saveLabel =
+    saveState === "saving"
+      ? copy.saving
+      : saveState === "error"
+        ? copy.notSaved
+        : saveState === "saved"
+          ? savedMinutes > 0
+            ? interpolate(copy.savedMinutes, { count: savedMinutes })
+            : copy.savedNow
+          : copy.stopAnyTime
 
   // ── Completed: review + pre-submission gate ────────────────────────────────
   if (completed && !attorneyReview && !editing) {
     return (
-      <div className="space-y-5">
-        <div className="rounded-lg border bg-card p-5">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-5 text-ok" />
-            <h2 className="text-lg font-semibold">Requirements generated</h2>
+      <div className="portal-intake-complete">
+        <div className="portal-intake-complete-header">
+          <div>
+            <CheckCircle2 aria-hidden />
+            <p className="portal-t-eyebrow">{copy.checklistReady}</p>
+            <h1>{copy.checklistReady}</h1>
+            <p>{copy.checklistReadyBody}</p>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your personalized checklist is ready. Before we can assemble your filing pack,
-            finish the items below.
-          </p>
+          <div className="portal-intake-complete-actions">
+            <ChoosePathCta copy={copy} />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditing(true)
+                setStep(1)
+              }}
+            >
+              <Pencil className="size-4" /> {copy.editAnswers}
+            </Button>
+          </div>
         </div>
-
-        {/* CONCIERGE Phase 1 — the fork. With the personalized checklist in hand,
-            the ONE next move is deciding HOW we work together: Self-Guided (you
-            drive) or Full Concierge (we drive). Everything downstream flows from
-            that choice, so it comes before the checklist itself. */}
-        <ChoosePathCta />
 
         {effGuard && (
           <div
             className={cn(
-              "rounded-lg border p-4 text-sm",
-              effGuard.ok
-                ? "border-ok/30 bg-ok/10 text-ok"
-                : "border-warn/30 bg-warn/10 text-warn"
+              "portal-intake-guard",
+              effGuard.ok ? "is-ready" : "is-blocked"
             )}
           >
             {effGuard.ok ? (
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4" /> Ready for staff QA — no blockers.
+                <CheckCircle2 className="size-4" /> {copy.readyQa}
               </span>
             ) : (
               <div>
                 <div className="flex items-center gap-2 font-medium">
-                  <ShieldAlert className="size-4" /> Submission is blocked until:
+                  <ShieldAlert className="size-4" /> {copy.blockedUntil}
                 </div>
                 <ul className="mt-1 list-disc pl-6">
                   {effGuard.blockers.map((b) => (
@@ -300,34 +356,32 @@ export function IntakeWizard({
         )}
 
         {disclosures.length > 0 && (
-          <div className="rounded-lg border bg-card p-5">
-            <h3 className="engraved mb-3 text-text-low">
-              Written explanations (required for each disclosure)
-            </h3>
-            <ul className="space-y-4">
+          <div className="portal-intake-explanations">
+            <h2>{copy.explanations}</h2>
+            <ul>
               {disclosures.map((d) => {
                 const val = narrativeEdits[d.id] ?? d.narrative
                 const empty = !val || val.trim() === ""
                 return (
-                  <li key={d.id} className="rounded-md border border-hairline p-3">
-                    <div className="mb-1 flex items-center gap-2 text-xs">
-                      <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-text-mid">
+                  <li key={d.id}>
+                    <div className="portal-intake-explanation-meta">
+                      <span>
                         {d.type.replace(/_/g, " ")}
                         {d.question_no ? ` · Q${d.question_no}` : ""}
                       </span>
-                      {empty && <span className="text-warn">needs explanation</span>}
+                      {empty && <em>{copy.explanationNeeded}</em>}
                     </div>
                     <Textarea
                       rows={3}
                       defaultValue={d.narrative}
-                      placeholder="Explain what happened, the outcome, and context…"
+                      placeholder={copy.explanationPlaceholder}
                       onChange={(e) =>
                         setNarrativeEdits((m) => ({ ...m, [d.id]: e.target.value }))
                       }
                     />
                     <div className="mt-2">
                       <Button size="sm" variant="outline" onClick={() => saveNarrative(d.id)}>
-                        Save explanation
+                        {copy.saveExplanation}
                       </Button>
                     </div>
                   </li>
@@ -336,18 +390,6 @@ export function IntakeWizard({
             </ul>
           </div>
         )}
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setEditing(true)
-              setStep(1)
-            }}
-          >
-            <Pencil className="size-4" /> Review &amp; edit my answers
-          </Button>
-        </div>
       </div>
     )
   }
@@ -355,18 +397,15 @@ export function IntakeWizard({
   // ── Attorney-review hard gate ──────────────────────────────────────────────
   if (attorneyReview) {
     return (
-      <div className="rounded-lg border border-danger/30 bg-danger/10 p-6">
-        <div className="flex items-center gap-2 text-danger">
+      <div className="portal-intake-attorney">
+        <div>
           <ShieldAlert className="size-5" />
-          <h2 className="text-lg font-semibold">Attorney review required</h2>
+          <h2>{copy.attorneyTitle}</h2>
         </div>
-        <p className="mt-2 text-sm text-text-mid">
-          Based on your answers, your application needs a firearms-attorney review
-          before any further spend. Our team will reach out — we&apos;ve flagged
-          your case. You can still update your answers below.
-        </p>
+        <p>{copy.attorneyBody}</p>
+        <p className="portal-intake-answers-saved">{copy.answersSaved}</p>
         <Button className="mt-4" variant="outline" onClick={() => setAttorneyReview(false)}>
-          Back to my answers
+          {copy.backAnswers}
         </Button>
       </div>
     )
@@ -374,99 +413,321 @@ export function IntakeWizard({
 
   // ── Wizard steps ───────────────────────────────────────────────────────────
   return (
-    <div className="space-y-5">
-      <StepHeader step={step} steps={intakeSteps} onJump={goToStep} />
+    <div className="portal-intake-wizard">
+      <IntakePageHeader
+        step={step}
+        currentStep={currentStep}
+        copy={copy}
+        saveState={saveState}
+        saveLabel={saveLabel}
+        saving={saving}
+        onRetry={() => void persist(step)}
+        onSaveExit={() => void saveAndExit()}
+      />
 
-      <div className="space-y-5 pt-4">
-        {editing && (
-          <div className="rounded-md border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
-            <div className="flex items-center gap-2 font-medium">
-              <ShieldAlert className="size-4" /> You&apos;re editing answers you already submitted.
+      <StepHeader
+        step={step}
+        steps={intakeSteps}
+        onJump={goToStep}
+        saveState={saveState}
+        saveLabel={saveLabel}
+        saving={saving}
+        onRetry={() => void persist(step)}
+        onSaveExit={() => void saveAndExit()}
+        copy={copy}
+      />
+
+      {editing ? (
+        <div className="portal-intake-editing-banner">
+          <div>
+            <ShieldAlert aria-hidden />
+            <div>
+              <strong>{copy.editingTitle}</strong>
+              <p>{copy.editingBody}</p>
             </div>
-            <p className="mt-1 text-xs">
-              When you finish, we update your checklist from these answers. Completed reference
-              letters and household affidavits are preserved.
-            </p>
-            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setEditing(false)}>
-              Cancel — keep my current answers
-            </Button>
           </div>
-        )}
+          <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
+            {copy.cancelEditing}
+          </Button>
+        </div>
+      ) : null}
 
-        <div className="rounded-lg border bg-card p-5">
+      <div className="portal-intake-layout">
+        <StepRail step={step} steps={intakeSteps} onJump={goToStep} copy={copy} />
+
+        <div className="portal-intake-main-column">
+          <WhyAskDisclosure step={step} copy={copy} />
+          <section className="portal-intake-form-card">
+            <header className="portal-intake-form-header">
+              <p className="portal-t-eyebrow">
+                {interpolate(copy.stepLabel, { current: step, label: currentStep.label })}
+              </p>
+              <h2>{currentStep.title}</h2>
+              <p>{currentStep.instruction}</p>
+            </header>
+            <div className="portal-intake-form-body">
           {step === 1 && (
-            <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} applicationType={applicationType} />
+                <StepEligibility a={a} patch={patch} reasons={eligReasons} attempted={stepErrors.length > 0} licenseTrack={licenseTrack} applicationType={applicationType} copy={copy} />
           )}
           {step === 2 && <StepIdentity a={a} patch={patch} />}
           {step === 3 && <StepHousehold a={a} patch={patch} applicant={applicant} />}
           {step === 4 && (
-            <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} />
+                <StepDisclosures a={a} patch={patch} aiEnabled={aiEnabled} attempted={stepErrors.length > 0} copy={copy} />
           )}
           {step === 5 && (
             <StepHistory a={a} patch={patch} attempted={stepErrors.length > 0} isRenewal={isRenewal} applicationType={applicationType} />
           )}
-          {step === 6 && <StepReview a={a} />}
+              {step === 6 && <StepReview a={a} />}
+            </div>
+            <div className="portal-intake-form-footer">
+              <IntakeErrorSummary errors={stepErrors} onJump={scrollToFirstError} copy={copy} />
+              <IntakeActions
+                step={step}
+                nextLabel={intakeSteps[step]?.label}
+                requiredLeft={requiredLeft}
+                saving={saving}
+                generating={generating}
+                onBack={back}
+                onNext={() => void next()}
+                onGenerate={() => void generate()}
+                copy={copy}
+              />
+            </div>
+          </section>
         </div>
+
+        <WhyAskColumn step={step} copy={copy} />
       </div>
 
-      {/* Sticky action bar — sticky (not fixed) so the iOS keyboard shoves it up
-          correctly. Names the next step for momentum. The error list docks here as
-          a compact pill that stays announced (role=alert) and expands on tap. */}
-      <div
-        className="sticky bottom-0 z-10 -mx-4 mt-5 border-t border-hairline bg-surface-2 px-4 pt-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
-      >
-        {stepErrors.length > 0 && (
-          <details role="alert" className="mb-2.5 overflow-hidden rounded-md border border-warn/30 bg-warn/10 text-warn">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-2.5 text-sm">
-              <span className="flex items-center gap-2 font-medium">
-                <ShieldAlert className="size-4 shrink-0" />
-                {stepErrors.length} {stepErrors.length === 1 ? "thing needs" : "things need"} attention
-              </span>
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => { e.preventDefault(); scrollToFirstError() }}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); scrollToFirstError() } }}
-                className="shrink-0 rounded bg-warn/20 px-2.5 py-1 text-xs font-semibold"
-              >
-                Jump →
-              </span>
-            </summary>
-            <ul className="list-disc px-2.5 pb-2.5 pl-7 text-sm">
-              {stepErrors.map((e) => (
-                <li key={e}>{e}</li>
-              ))}
-            </ul>
-          </details>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={back}
-            disabled={step === 1 || saving || generating}
-            aria-label="Back"
-            className="size-[52px] shrink-0 p-0"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          {step < 6 ? (
-            <Button onClick={next} disabled={saving} className="h-[52px] flex-1">
-              {saving ? "Saving…" : (
-                <>
-                  Next: {intakeSteps[step]?.label} <ArrowRight className="size-4" />
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button onClick={generate} disabled={generating} className="h-[52px] flex-1">
-              <Sparkles className="size-4" />
-              {generating ? "Generating…" : "Generate my requirements"}
-            </Button>
-          )}
-        </div>
+      <div className="portal-intake-mobile-actions">
+        <IntakeErrorSummary errors={stepErrors} onJump={scrollToFirstError} copy={copy} />
+        <IntakeActions
+          step={step}
+          nextLabel={intakeSteps[step]?.label}
+          requiredLeft={requiredLeft}
+          saving={saving}
+          generating={generating}
+          onBack={back}
+          onNext={() => void next()}
+          onGenerate={() => void generate()}
+          copy={copy}
+        />
       </div>
+    </div>
+  )
+}
+
+function IntakePageHeader({
+  step,
+  currentStep,
+  copy,
+  saveState,
+  saveLabel,
+  saving,
+  onRetry,
+  onSaveExit,
+}: {
+  step: number
+  currentStep: IntakeStep
+  copy: IntakeCopy
+  saveState: "idle" | "saving" | "saved" | "error"
+  saveLabel: string
+  saving: boolean
+  onRetry: () => void
+  onSaveExit: () => void
+}) {
+  return (
+    <header className="portal-intake-page-header">
+      <div>
+        <p className="portal-t-eyebrow">
+          {interpolate(copy.eyebrow, { current: step, total: 6 })}
+        </p>
+        <h1>{currentStep.title}</h1>
+        <p>{copy.pageSubline}</p>
+      </div>
+      <div className="portal-intake-save-cluster">
+        <SaveStatus state={saveState} label={saveLabel} onRetry={onRetry} />
+        <Button variant="outline" onClick={onSaveExit} disabled={saving}>
+          <LogOut aria-hidden /> {copy.saveExit}
+        </Button>
+      </div>
+    </header>
+  )
+}
+
+function SaveStatus({
+  state,
+  label,
+  onRetry,
+}: {
+  state: "idle" | "saving" | "saved" | "error"
+  label: string
+  onRetry: () => void
+}) {
+  const content = (
+    <>
+      {state === "saved" ? <CheckCircle2 aria-hidden /> : <Clock3 aria-hidden />}
+      <span>{label}</span>
+    </>
+  )
+  return (
+    <div className={cn("portal-intake-save-status", `is-${state}`)} aria-live="polite">
+      {state === "error" ? (
+        <button type="button" onClick={onRetry}>{content}</button>
+      ) : content}
+    </div>
+  )
+}
+
+function StepRail({
+  step,
+  steps,
+  onJump,
+  copy,
+}: {
+  step: number
+  steps: readonly IntakeStep[]
+  onJump: (n: number) => void
+  copy: IntakeCopy
+}) {
+  return (
+    <aside className="portal-intake-step-rail">
+      <ol aria-label="Intake progress">
+        {steps.map((item) => {
+          const done = item.n < step
+          const current = item.n === step
+          const future = item.n > step
+          return (
+            <li key={item.key} aria-current={current ? "step" : undefined}>
+              <button type="button" disabled={future} onClick={() => onJump(item.n)}>
+                <span className={cn("portal-intake-step-dot", done && "is-done", current && "is-current")}>
+                  {done ? <CheckIcon aria-hidden /> : item.n}
+                </span>
+                <span>
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+      <p>{copy.stopAnyTime}</p>
+      {INTAKE_TIME_ESTIMATE_MIN ? <small>{INTAKE_TIME_ESTIMATE_MIN} minutes</small> : null}
+    </aside>
+  )
+}
+
+type WhyCard = { title: string; body: string; kind: "why" | "privacy" | "guidance" }
+
+function whyCards(step: number, copy: IntakeCopy): WhyCard[] {
+  const sees =
+    step === 3 ? copy.sees3 : step === 4 ? copy.sees4 : step === 5 ? copy.sees5 : copy.onlyTeam
+  const cards: WhyCard[] = [
+    { title: copy.whyAsk, body: copy[`why${step}`], kind: "why" },
+    { title: copy.whoSees, body: sees, kind: "privacy" },
+  ]
+  if (step === 1) cards.push({ title: copy.unsure, body: copy.unsure1, kind: "guidance" })
+  if (step === 2) cards.push({ title: copy.tip, body: copy.tip2, kind: "guidance" })
+  if (step === 4) cards.push({ title: copy.unsure4Title, body: copy.unsure4, kind: "guidance" })
+  return cards
+}
+
+function WhyCardIcon({ kind }: { kind: WhyCard["kind"] }) {
+  if (kind === "privacy") return <LockKeyhole aria-hidden />
+  if (kind === "guidance") return <Scale aria-hidden />
+  return <Info aria-hidden />
+}
+
+function WhyAskColumn({ step, copy }: { step: number; copy: IntakeCopy }) {
+  return (
+    <aside className="portal-intake-why-column" aria-label={copy.whyAsk}>
+      {whyCards(step, copy).map((card) => (
+        <section key={`${card.kind}-${card.title}`} className={cn("portal-intake-why-card", `is-${card.kind}`)}>
+          <WhyCardIcon kind={card.kind} />
+          <div>
+            <h2>{card.title}</h2>
+            <p>{card.body}</p>
+          </div>
+        </section>
+      ))}
+    </aside>
+  )
+}
+
+function WhyAskDisclosure({ step, copy }: { step: number; copy: IntakeCopy }) {
+  return (
+    <details className="portal-intake-why-disclosure">
+      <summary><Info aria-hidden /> {copy.whyAsk}<ChevronDown aria-hidden /></summary>
+      <div>
+        {whyCards(step, copy).map((card) => (
+          <section key={`${card.kind}-${card.title}`}>
+            <strong>{card.title}</strong>
+            <p>{card.body}</p>
+          </section>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function IntakeErrorSummary({
+  errors,
+  onJump,
+  copy,
+}: {
+  errors: string[]
+  onJump: () => void
+  copy: IntakeCopy
+}) {
+  if (errors.length === 0) return null
+  return (
+    <details role="alert" className="portal-intake-error-summary">
+      <summary>
+        <span><ShieldAlert aria-hidden /> {errors.length === 1 ? copy.attentionOne : interpolate(copy.attentionMany, { count: errors.length })}</span>
+        <button type="button" onClick={(event) => { event.preventDefault(); onJump() }}>{copy.jump}</button>
+      </summary>
+      <ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul>
+    </details>
+  )
+}
+
+function IntakeActions({
+  step,
+  nextLabel,
+  requiredLeft,
+  saving,
+  generating,
+  onBack,
+  onNext,
+  onGenerate,
+  copy,
+}: {
+  step: number
+  nextLabel?: string
+  requiredLeft: number
+  saving: boolean
+  generating: boolean
+  onBack: () => void
+  onNext: () => void
+  onGenerate: () => void
+  copy: IntakeCopy
+}) {
+  return (
+    <div className="portal-intake-action-row">
+      <Button variant="outline" onClick={onBack} disabled={step === 1 || saving || generating} aria-label={copy.back}>
+        <ArrowLeft aria-hidden /> <span>{copy.back}</span>
+      </Button>
+      {requiredLeft > 0 ? <small>{interpolate(copy.leftStep, { count: requiredLeft })}</small> : <span />}
+      {step < 6 ? (
+        <Button className="portal-intake-next" onClick={onNext} disabled={saving}>
+          {saving ? copy.saving : interpolate(copy.next, { label: nextLabel ?? "" })}
+        </Button>
+      ) : (
+        <Button className="portal-intake-generate" onClick={onGenerate} disabled={generating}>
+          <Sparkles aria-hidden /> {generating ? copy.generating : copy.generate}
+        </Button>
+      )}
     </div>
   )
 }
@@ -476,29 +737,11 @@ export function IntakeWizard({
  * The path fork now comes BEFORE intake, so only Self-Guided applicants reach
  * this completed state — hand them straight to their personalized checklist.
  */
-function ChoosePathCta() {
+function ChoosePathCta({ copy }: { copy: IntakeCopy }) {
   return (
-    <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-5">
-      <div className="engraved text-brass">Your next step</div>
-      <div className="mt-2 flex items-start gap-3">
-        <Compass className="mt-0.5 size-5 shrink-0 text-brass" />
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Your checklist is ready</h2>
-          <p className="mt-1 text-sm text-text-mid">
-            We&apos;ve built your personalized document set from your answers. Work it top-down — it&apos;s
-            ordered worst-first, so the longest-lead items come up early.
-          </p>
-        </div>
-      </div>
-      <div className="mt-4">
-        <Link
-          href="/portal/checklist"
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
-        >
-          View your checklist <ArrowRight className="size-4" />
-        </Link>
-      </div>
-    </div>
+    <Link href="/portal/checklist" className="portal-intake-checklist-link">
+      <Sparkles aria-hidden /> {copy.viewChecklist}
+    </Link>
   )
 }
 
@@ -511,90 +754,78 @@ function ChoosePathCta() {
  * the original labeled chip rail, unchanged. The <ol> carries the meaning for a
  * screen reader; the segments are aria-hidden decoration.
  */
-type IntakeStep = { n: number; key: string; label: string }
+type IntakeStep = {
+  n: number
+  key: string
+  label: string
+  title: string
+  description: string
+  instruction: string
+}
 
 function StepHeader({
   step,
   steps,
   onJump,
+  saveState,
+  saveLabel,
+  saving,
+  onRetry,
+  onSaveExit,
+  copy,
 }: {
   step: number
   steps: readonly IntakeStep[]
   onJump: (n: number) => void
+  saveState: "idle" | "saving" | "saved" | "error"
+  saveLabel: string
+  saving: boolean
+  onRetry: () => void
+  onSaveExit: () => void
+  copy: IntakeCopy
 }) {
   const [open, setOpen] = useState(false)
   const current = steps[step - 1]
 
   return (
     <>
-      {/* MOBILE — sticky under the app bar (h-14 = 3.5rem + safe area). */}
-      <div
-        className="sticky z-10 -mx-4 border-b border-hairline bg-surface-2 px-4 py-2.5 sm:hidden"
-        style={{ top: "calc(3.5rem + env(safe-area-inset-top))" }}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <span className="engraved-sm text-brass">Step {step} of 6</span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              aria-expanded={open}
-              aria-haspopup="dialog"
-              className="inline-flex items-center gap-1 text-xs text-text-mid hover:text-foreground"
-            >
-              All steps <ChevronDown className="size-3.5" />
-            </button>
-            <Link href="/portal" className="inline-flex items-center gap-1 text-xs text-text-low hover:text-text-mid">
-              <LogOut className="size-3.5" /> Save &amp; exit
-            </Link>
-          </div>
+      <div className="portal-intake-mobile-step-header">
+        <div>
+          <span>{interpolate(copy.eyebrow, { current: step, total: 6 })}</span>
+          <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog">
+            {copy.allSteps} <ChevronDown aria-hidden />
+          </button>
         </div>
-        <div className="mt-0.5 font-display text-[17px] font-semibold tracking-tight">{current?.label}</div>
-        <div aria-hidden className="mt-2 flex gap-1">
+        <strong>{current?.label}</strong>
+        <div aria-hidden className="portal-intake-mobile-segments">
           {steps.map((s) => (
             <span
               key={s.n}
-              className={cn(
-                "h-[3px] flex-1 rounded-full",
-                s.n < step
-                  ? "bg-brass/60"
-                  : s.n === step
-                    ? "bg-signal shadow-[0_0_6px_var(--signal)]"
-                    : "bg-hairline"
-              )}
+              className={cn(s.n < step && "is-done", s.n === step && "is-current")}
             />
           ))}
         </div>
       </div>
 
-      {/* DESKTOP — the labeled chip rail, unchanged. */}
-      <ol className="hidden flex-wrap gap-1.5 text-xs sm:flex" aria-label="Intake progress">
-        {steps.map((s) => (
-          <li
-            key={s.n}
-            aria-current={s.n === step ? "step" : undefined}
-            className={cn(
-              "rounded-md border px-2.5 py-1",
-              s.n === step
-                ? "border-brass/40 bg-brass/10 text-brass"
-                : s.n < step
-                  ? "border-ok/30 bg-ok/10 text-ok"
-                  : "border-hairline text-text-low"
-            )}
-          >
-            {s.n}. {s.label}
-          </li>
-        ))}
-      </ol>
+      <div className="portal-intake-tablet-stepbar">
+        <p>{interpolate(copy.eyebrow, { current: step, total: 6 })} · <strong>{current?.label}</strong></p>
+        <div aria-hidden>{steps.map((item) => <span key={item.key} className={cn(item.n < step && "is-done", item.n === step && "is-current")} />)}</div>
+      </div>
 
       {/* All-steps sheet (mobile). Completed steps jump; the wizard validates
           forward, so future steps are listed but not tappable. */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]">
+        <SheetContent side="bottom" className="portal-intake-steps-sheet gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]">
           <SheetHeader>
-            <SheetTitle className="engraved-sm text-left text-text-mid">All steps</SheetTitle>
+            <SheetTitle className="text-left">{copy.allSteps}</SheetTitle>
           </SheetHeader>
-          <ol className="px-3 pb-6" aria-label="Intake steps">
+          <div className="portal-intake-sheet-save">
+            <SaveStatus state={saveState} label={saveLabel} onRetry={onRetry} />
+            <Button variant="outline" size="sm" onClick={onSaveExit} disabled={saving}>
+              <LogOut aria-hidden /> {copy.saveExit}
+            </Button>
+          </div>
+          <ol aria-label="Intake steps">
             {steps.map((s) => {
               const done = s.n < step
               const cur = s.n === step
@@ -611,27 +842,15 @@ function StepHeader({
                         setOpen(false)
                       }
                     }}
-                    className={cn(
-                      "flex min-h-[52px] w-full items-center gap-3 rounded-lg px-2 text-left transition-colors",
-                      future ? "opacity-50" : "hover:bg-surface-2"
-                    )}
+                    className={cn(future && "is-future", cur && "is-current")}
                   >
-                    <span
-                      className={cn(
-                        "flex size-7 shrink-0 items-center justify-center rounded-full border font-mono text-xs",
-                        done
-                          ? "border-ok/40 bg-ok/10 text-ok"
-                          : cur
-                            ? "border-brass/50 bg-brass/10 text-brass"
-                            : "border-hairline text-text-low"
-                      )}
-                    >
+                    <span className={cn("portal-intake-step-dot", done && "is-done", cur && "is-current")}>
                       {done ? <CheckIcon className="size-3.5" /> : s.n}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium">{s.label}</span>
-                      <span className="block text-[12px] text-text-low">
-                        {done ? "Completed — tap to review" : cur ? "You're here" : "Not yet"}
+                    <span>
+                      <strong>{s.label}</strong>
+                      <span>
+                        {done ? copy.completedReview : cur ? copy.youAreHere : copy.notYet}
                       </span>
                     </span>
                   </button>
@@ -750,7 +969,8 @@ function StepEligibility({
   attempted,
   licenseTrack,
   applicationType,
-}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null; applicationType: ApplicationType | null }) {
+  copy,
+}: StepProps & { reasons: string[] | null; attempted: boolean; licenseTrack: string | null; applicationType: ApplicationType | null; copy: IntakeCopy }) {
   // Red exactly when (and only when) eligibilityStepIssues blocks on it.
   const dobBad = attempted && (!a.dob || ageFromDob(a.dob) < 21)
   const residenceBad = attempted && !a.residence
@@ -877,15 +1097,20 @@ function StepEligibility({
         <Check label="Current unlawful drug use" checked={!!a.prohibitorUnlawfulDrug} onChange={(v) => patch({ prohibitorUnlawfulDrug: v })} />
       </div>
       {reasons && reasons.length > 0 && (
-        <div className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
-          <div className="flex items-center gap-2 font-medium">
-            <ShieldAlert className="size-4" /> This needs attorney review before continuing:
+        <div className="portal-intake-eligibility-stop">
+          <div>
+            <ShieldAlert aria-hidden />
+            <span>
+              <small>{copy.beforeFurther}</small>
+              <strong>{copy.eligibilityConcern}</strong>
+            </span>
           </div>
-          <ul className="mt-1 list-disc pl-6">
+          <ul>
             {reasons.map((r) => (
               <li key={r}>{r}</li>
             ))}
           </ul>
+          <p>{copy.changeMistake}</p>
         </div>
       )}
     </div>
@@ -1174,7 +1399,8 @@ function StepDisclosures({
   patch,
   aiEnabled,
   attempted,
-}: StepProps & { aiEnabled?: boolean; attempted: boolean }) {
+  copy,
+}: StepProps & { aiEnabled?: boolean; attempted: boolean; copy: IntakeCopy }) {
   const arrests = a.arrests ?? []
   // Don't pre-seed every question as "No" — an unanswered question shows neither
   // button selected, so the applicant makes a conscious Yes/No choice instead of
@@ -1183,17 +1409,53 @@ function StepDisclosures({
   const visibleQuestions = applicablePortalDisclosures(a)
   const answeredNos = new Set(q.filter((x) => typeof x.yes === "boolean").map((x) => x.no))
   const answeredCount = visibleQuestions.filter((i) => answeredNos.has(i.no)).length
+  const [focusedMode, setFocusedMode] = useState(false)
+  const [focusedIndex, setFocusedIndex] = useState(0)
+  const focusedHeading = useRef<HTMLHeadingElement>(null)
+  const activeIndex = Math.min(focusedIndex, Math.max(0, visibleQuestions.length - 1))
+  const activeQuestion = visibleQuestions[activeIndex]
+
+  useEffect(() => {
+    if (focusedMode) focusedHeading.current?.focus()
+  }, [focusedMode, activeIndex])
+
+  useEffect(() => {
+    if (!focusedMode || !activeQuestion) return
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return
+      const key = event.key.toLowerCase()
+      if (key === "y") {
+        event.preventDefault()
+        setQ(activeQuestion.no, true)
+      } else if (key === "n") {
+        event.preventDefault()
+        setQ(activeQuestion.no, false)
+      } else if (event.key === "Enter") {
+        event.preventDefault()
+        setFocusedIndex((index) => Math.min(index + 1, visibleQuestions.length - 1))
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault()
+        setFocusedIndex((index) => Math.max(index - 1, 0))
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+    // setQ intentionally closes over the current answer array; every answer
+    // changes activeQuestion's render and reinstalls this listener with fresh state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeQuestion, focusedMode, visibleQuestions.length])
+
   return (
     <div className="space-y-5">
       {/* Candor callout — the intro is doing legal work, so give it the weight. */}
-      <div className="brass-edge rounded-lg border border-brass/40 bg-brass/8 p-4">
-        <div className="flex items-center gap-2 text-brass">
+      <div className="portal-intake-candor">
+        <div>
           <ShieldAlert className="size-5 shrink-0" />
-          <h2 className="font-display text-base font-semibold">Tell us everything</h2>
+          <h2>Tell us everything</h2>
         </div>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-text-mid">
-          Disclose{" "}<b>every</b>{" "}matter — even sealed or dismissed. An item we didn&apos;t disclose
-          that turns up in the background check is far more damaging than the event itself.
+        <p>
+          Disclose every matter, even sealed or dismissed. An item we didn&apos;t disclose that turns up in the background check is far more damaging than the event itself.
         </p>
       </div>
 
@@ -1260,8 +1522,31 @@ function StepDisclosures({
       </section>
 
       {/* The live NYPD online-portal questions — not the retired paper Q10–28 set. */}
-      <section>
-        <SectionHeader label={`NYPD disclosures · Q${PORTAL_DISCLOSURE_RANGE}`} count={`${answeredCount} / ${visibleQuestions.length}`} />
+      <section className="portal-intake-question-section">
+        <div className="portal-intake-question-section-heading">
+          <SectionHeader label={`NYPD disclosures · Q${PORTAL_DISCLOSURE_RANGE}`} count={`${answeredCount} of ${visibleQuestions.length} answered`} />
+          <button type="button" onClick={() => { setFocusedIndex(0); setFocusedMode((value) => !value) }}>
+            {focusedMode ? copy.backList : copy.answerOne}
+          </button>
+        </div>
+        {focusedMode && activeQuestion ? (
+          <FocusedDisclosureQuestion
+            item={activeQuestion}
+            answer={q.find((answer) => answer.no === activeQuestion.no)}
+            index={activeIndex}
+            total={visibleQuestions.length}
+            attempted={attempted}
+            headingRef={focusedHeading}
+            aiEnabled={aiEnabled}
+            onAnswer={setQ}
+            onNarrative={setQNarrative}
+            onPrevious={() => setFocusedIndex((index) => Math.max(index - 1, 0))}
+            onNext={() => setFocusedIndex((index) => Math.min(index + 1, visibleQuestions.length - 1))}
+            onBack={() => setFocusedMode(false)}
+            copy={copy}
+          />
+        ) : (
+          <>
         <div className="mb-3 rounded-md border border-hairline bg-surface-2 p-2.5">
           <div className="text-[12px] text-text-mid">{answeredCount} of {visibleQuestions.length} applicable questions answered</div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
@@ -1271,7 +1556,7 @@ function StepDisclosures({
             />
           </div>
         </div>
-        <div className="space-y-3">
+        <div className="portal-intake-question-list">
           {visibleQuestions.map((item) => {
             const cur = q.find((x) => x.no === item.no)
             const isYes = cur?.yes === true
@@ -1290,14 +1575,15 @@ function StepDisclosures({
                 data-intake-invalid={attempted && !answered ? "" : undefined}
                 tabIndex={attempted && !answered ? -1 : undefined}
                 className={cn(
-                  "card-soft p-3.5 transition-colors",
+                  "portal-intake-question-card",
                   // Both answers read as ANSWERED — Yes in brass (the accent), No in a
                   // neutral filled state. Never dim "No": a factual "No" is a complete
                   // answer, and dimming it reads as "not done yet" (finding 4). Disclosing
                   // is correct, so neither answer is styled as a bad outcome.
-                  isYes && "border-l-[3px] border-l-brass bg-brass/[0.04] glow-neutral",
-                  isNo && "border-l-[3px] border-l-hairline-strong bg-surface-2/40",
-                  !answered && "ring-1 ring-signal/25"
+                  isYes && "is-yes",
+                  isNo && "is-no",
+                  !answered && "is-unanswered",
+                  attempted && !answered && "is-invalid"
                 )}
               >
                 <div className="flex items-start gap-2.5">
@@ -1348,7 +1634,7 @@ function StepDisclosures({
                       isYes ? "text-brand-foreground" : "text-text-mid"
                     )}
                   >
-                    Yes
+                    {copy.yes}
                   </button>
                   <button
                     type="button"
@@ -1360,15 +1646,15 @@ function StepDisclosures({
                       isNo ? "text-text-hi" : "text-text-mid"
                     )}
                   >
-                    No
+                    {copy.no}
                   </button>
                 </div>
 
                 {/* The answer has a visible consequence in the moment. */}
                 {isYes && !item.conditionalOnYesOf && (
-                  <div aria-live="polite" className="mt-3 border-t border-dashed border-hairline pt-3">
-                    <label htmlFor={`q-narr-${item.no}`} className="engraved-sm text-warn">
-                      Your explanation · required before filing
+                  <div aria-live="polite" className="portal-intake-question-explanation">
+                    <label htmlFor={`q-narr-${item.no}`}>
+                      {copy.explainLabel}
                     </label>
                     <Textarea
                       id={`q-narr-${item.no}`}
@@ -1379,12 +1665,22 @@ function StepDisclosures({
                       onChange={(e) => setQNarrative(item.no, e.target.value)}
                       {...invalidAttrs(attempted && !cur?.narrative?.trim())}
                     />
+                    {aiEnabled ? (
+                      <DisclosureAssistant
+                        facts={{ kind: "other", whatHappened: cur?.narrative ?? "" }}
+                        onDraft={(draft) => setQNarrative(item.no, draft)}
+                        label={copy.helpWrite}
+                      />
+                    ) : null}
                   </div>
                 )}
+                {attempted && !answered ? <p className="portal-intake-question-error">{copy.chooseAnswer}</p> : null}
               </div>
             )
           })}
         </div>
+          </>
+        )}
       </section>
     </div>
   )
@@ -1407,6 +1703,84 @@ function StepDisclosures({
     const others = q.filter((x) => x.no !== no)
     patch({ questionnaireVersion: "nypd_portal_v1", questionnaire: [...others, { no, yes: cur?.yes ?? true, narrative }] })
   }
+}
+
+function FocusedDisclosureQuestion({
+  item,
+  answer,
+  index,
+  total,
+  attempted,
+  headingRef,
+  aiEnabled,
+  onAnswer,
+  onNarrative,
+  onPrevious,
+  onNext,
+  onBack,
+  copy,
+}: {
+  item: PortalDisclosureQuestion
+  answer?: QuestionAnswer
+  index: number
+  total: number
+  attempted: boolean
+  headingRef: React.RefObject<HTMLHeadingElement | null>
+  aiEnabled?: boolean
+  onAnswer: (no: number, yes: boolean) => void
+  onNarrative: (no: number, narrative: string) => void
+  onPrevious: () => void
+  onNext: () => void
+  onBack: () => void
+  copy: IntakeCopy
+}) {
+  const isYes = answer?.yes === true
+  const isNo = answer?.yes === false
+  const answered = isYes || isNo
+  return (
+    <div className="portal-intake-focused-question" role="radiogroup" aria-label={`Q${item.no}: ${item.text}`}>
+      <p className="portal-t-eyebrow">{interpolate(copy.questionOf, { current: index + 1, total })}</p>
+      <h3 ref={headingRef} tabIndex={-1}>{item.text}</h3>
+      {item.note ? <p className="portal-intake-focused-note">{item.note}</p> : null}
+      <p className="sr-only">{copy.keyboardHint}</p>
+      <div className="portal-intake-focused-answers">
+        <button type="button" role="radio" aria-checked={isYes} className={cn(isYes && "is-selected")} onClick={() => onAnswer(item.no, true)}>
+          <kbd>Y</kbd>{copy.yes}
+        </button>
+        <button type="button" role="radio" aria-checked={isNo} className={cn(isNo && "is-selected")} onClick={() => onAnswer(item.no, false)}>
+          <kbd>N</kbd>{copy.no}
+        </button>
+      </div>
+      {attempted && !answered ? <p className="portal-intake-question-error">{copy.chooseAnswer}</p> : null}
+      {isYes && !item.conditionalOnYesOf ? (
+        <div className="portal-intake-question-explanation">
+          <label htmlFor={`focused-q-narr-${item.no}`}>{copy.explainLabel}</label>
+          <Textarea
+            id={`focused-q-narr-${item.no}`}
+            rows={4}
+            placeholder={item.explainHelp ?? "What happened, when, and how it resolved."}
+            value={answer?.narrative ?? ""}
+            onChange={(event) => onNarrative(item.no, event.target.value)}
+            {...invalidAttrs(attempted && !answer?.narrative?.trim())}
+          />
+          {aiEnabled ? (
+            <DisclosureAssistant
+              facts={{ kind: "other", whatHappened: answer?.narrative ?? "" }}
+              onDraft={(draft) => onNarrative(item.no, draft)}
+              label={copy.helpWrite}
+            />
+          ) : null}
+        </div>
+      ) : null}
+      <div className="portal-intake-focused-nav">
+        <button type="button" onClick={onBack}>{copy.backList}</button>
+        <div>
+          <Button variant="outline" onClick={onPrevious} disabled={index === 0} aria-label={copy.back}><ArrowLeft aria-hidden /></Button>
+          <Button variant="outline" onClick={onNext} disabled={index >= total - 1}>{copy.next.replace(": {label}", "")}</Button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -1801,14 +2175,13 @@ function StepReview({ a }: { a: WizardAnswers }) {
     references: a.references?.length ?? 0,
   }
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-semibold">Review &amp; generate</h2>
+    <div className="portal-intake-review">
       <p className="text-sm text-muted-foreground">
         We&apos;ll build your personalized requirements from these answers.
         Conditional documents (cohabitant affidavits, certificates of disposition,
         narratives) are added automatically.
       </p>
-      <ul className="grid gap-1 text-sm sm:grid-cols-2">
+      <ul>
         <li>Application: <b>{APPLICATION_TYPE_LABELS[applicationTypeFromLegacy(a) ?? "concealed_carry"]}</b></li>
         <li>Residence: <b>{a.residence === "non_resident" ? "Special Carry" : "NYC"}</b></li>
         <li>Cohabitants: <b>{counts.cohabitants}</b></li>

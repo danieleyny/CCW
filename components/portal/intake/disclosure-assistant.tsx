@@ -7,6 +7,16 @@ import { draftMyDisclosure } from "@/app/portal/intake/ai-actions"
 import type { ArrestEntry } from "@/lib/intake/answers"
 import { Button } from "@/components/ui/button"
 
+type DisclosureFactsInput = {
+  kind: "arrest" | "summons" | "order_of_protection" | "domestic_incident" | "other"
+  occurredOn?: string
+  jurisdiction?: string
+  charge?: string
+  disposition?: string
+  whatHappened: string
+  outcome?: string
+}
+
 /**
  * PART C / Phase 12 — the guardrailed writing assistant, applicant-facing.
  *
@@ -17,13 +27,18 @@ import { Button } from "@/components/ui/button"
  */
 export function DisclosureAssistant({
   arrest,
+  facts,
   onDraft,
+  label = "Help me word this",
 }: {
-  arrest: ArrestEntry
+  arrest?: ArrestEntry
+  facts?: DisclosureFactsInput
   onDraft: (draft: string) => void
+  label?: string
 }) {
   const [pending, start] = useTransition()
   const [open, setOpen] = useState(false)
+  const sourceText = arrest?.narrative ?? facts?.whatHappened ?? ""
 
   if (!open) {
     return (
@@ -32,10 +47,10 @@ export function DisclosureAssistant({
         size="sm"
         className="text-signal"
         onClick={() => setOpen(true)}
-        disabled={!arrest.narrative?.trim()}
-        title={arrest.narrative?.trim() ? undefined : "Write a few words about what happened first"}
+        disabled={!sourceText.trim()}
+        title={sourceText.trim() ? undefined : "Write a few words about what happened first"}
       >
-        <Sparkles className="size-4" /> Help me word this
+        <Sparkles className="size-4" /> {label}
       </Button>
     )
   }
@@ -53,13 +68,15 @@ export function DisclosureAssistant({
           disabled={pending}
           onClick={() =>
             start(async () => {
-              const res = await draftMyDisclosure({
-                kind: "arrest",
-                occurredOn: arrest.occurredOn,
-                jurisdiction: arrest.jurisdiction,
-                disposition: arrest.disposition,
-                whatHappened: arrest.narrative ?? "",
-              })
+              const res = await draftMyDisclosure(
+                facts ?? {
+                  kind: "arrest",
+                  occurredOn: arrest?.occurredOn,
+                  jurisdiction: arrest?.jurisdiction,
+                  disposition: arrest?.disposition,
+                  whatHappened: arrest?.narrative ?? "",
+                }
+              )
               if (res.error) toast.error(res.error)
               else if (res.draft) {
                 onDraft(res.draft)
