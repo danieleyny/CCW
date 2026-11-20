@@ -36,6 +36,7 @@ import {
   CircleHelp,
   MessageCircle,
   MapPin,
+  ArrowLeft,
   type LucideIcon,
 } from "lucide-react"
 import { categoryKeyFor } from "@/lib/requirements/categories"
@@ -49,6 +50,7 @@ import { cn } from "@/lib/utils"
 import { LADDER_COPY, reviewerLabel, type LadderState } from "@/lib/requirements/ladder"
 import { isUnenforced } from "@/lib/legal-status"
 import { DocumentExample } from "@/components/portal/document-example"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 /**
  * ONE requirement, ONE card — the single presentation of a requirement, rendered by
@@ -111,12 +113,32 @@ const LADDER_TONE: Record<string, string> = {
 
 function LadderBadge({ item }: { item: ReqChecklistItem }) {
   const copy = LADDER_COPY[item.ladder]
+  const { messages } = usePortalI18n()
+  const t = messages.ui
+  const label = item.ladder === "pending"
+    ? t.checklistStatusNotStarted
+    : item.ladder === "waiting"
+      ? t.checklistStatusWaiting
+      : item.ladder === "submitted"
+        ? t.checklistStatusReceived
+        : item.ladder === "approved"
+          ? t.checklistStatusApproved
+          : t.checklistStatusFix
+  const hint = item.ladder === "pending"
+    ? t.checklistStatusPendingHint
+    : item.ladder === "waiting"
+      ? t.checklistStatusWaitingHint
+      : item.ladder === "submitted"
+        ? t.checklistStatusReceivedHint
+        : item.ladder === "approved"
+          ? t.checklistStatusApprovedHint
+          : t.checklistStatusFixHint
   return (
     <span
-      title={copy.hint}
+      title={hint}
       className={cn("shrink-0 rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide", LADDER_TONE[copy.tone])}
     >
-      {copy.label}
+      {label}
     </span>
   )
 }
@@ -197,17 +219,31 @@ export function RequirementCard({
   item,
   ctx,
   presentation = "standard",
+  selected = false,
+  onSelect,
+  rowSubline,
+  showStatusOnPhone = true,
+  onClose,
 }: {
   item: ReqChecklistItem
   ctx: RequirementCardCtx
-  presentation?: "standard" | "concierge"
+  presentation?: "standard" | "concierge" | "row" | "panel"
+  selected?: boolean
+  onSelect?: () => void
+  rowSubline?: string
+  showStatusOnPhone?: boolean
+  onClose?: () => void
 }) {
   const [guideOpen, setGuideOpen] = useState(false)
+  const { messages } = usePortalI18n()
+  const t = messages.ui
   const tone = isUnenforced(item.legalStatus) ? "muted" : LADDER_COPY[item.ladder].tone
   const dot = PRIORITY_DOT[item.severity]
   const Icon = REQ_ICON[item.reqCode] ?? CATEGORY_ICON[categoryKeyFor(item.reqCode)] ?? FileText
   const action = actionFor(item.reqCode)
   const concierge = presentation === "concierge"
+  const row = presentation === "row"
+  const panel = presentation === "panel"
   const guideId = `guide-${item.id}`
   const guideSteps = action
     ? action.mode === "obtain" && action.steps.length > 0
@@ -217,11 +253,159 @@ export function RequirementCard({
 
   const statusBadge = isUnenforced(item.legalStatus) ? (
     <span className="shrink-0 rounded-full bg-signal-dim px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal">
-      Not required
+      {t.checklistNotRequired}
     </span>
   ) : (
     <LadderBadge item={item} />
   )
+
+  if (row) {
+    const approved = item.ladder === "approved" || item.status === "satisfied"
+    return (
+      <li id={item.reqCode} className="scroll-mt-44 sm:scroll-mt-28">
+        <button
+          id={`checklist-row-${item.reqCode}`}
+          type="button"
+          aria-controls="checklist-item-panel"
+          aria-current={selected ? "true" : undefined}
+          onClick={onSelect}
+          className={cn(
+            "relative flex min-h-[68px] w-full items-center gap-3 border-l-[3px] px-2.5 py-3 text-left transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-signal/35 sm:px-3",
+            selected
+              ? "border-l-[var(--portal-navy)] bg-[linear-gradient(90deg,rgba(20,37,74,.09),rgba(20,37,74,.025)_70%,transparent)]"
+              : "border-l-transparent hover:bg-surface-2/65"
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border",
+              approved ? "border-ok/25 bg-ok/[0.08] text-ok" : "border-hairline bg-surface-2 text-[var(--portal-navy)]"
+            )}
+          >
+            {approved ? <Check className="size-4" strokeWidth={2.5} /> : <Icon className="size-4" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14px] font-semibold text-foreground">{action?.customerTitle ?? item.title}</span>
+            <span className="mt-0.5 block truncate text-[12px] text-text-low">{rowSubline ?? LADDER_COPY[item.ladder].hint}</span>
+          </span>
+          {dot ? (
+            <span className="hidden shrink-0 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-danger lg:inline">
+              · {t.checklistHighPriority}
+            </span>
+          ) : null}
+          <span className={cn("shrink-0", !showStatusOnPhone && "hidden sm:inline-flex")}>{statusBadge}</span>
+        </button>
+      </li>
+    )
+  }
+
+  if (panel) {
+    const destination = item.destination === "portal_upload"
+      ? t.checklistDestinationPortal
+      : item.destination === "interview"
+        ? t.checklistDestinationInterview
+        : t.checklistDestinationInternal
+    const received = item.ladder === "submitted"
+    const approved = item.ladder === "approved" || item.status === "satisfied"
+    return (
+      <article id="checklist-item-panel" className="min-h-full bg-white">
+        <div className="sticky top-0 z-10 border-b border-hairline bg-white/96 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              {onClose ? (
+                <button type="button" onClick={onClose} aria-label={t.checklistBackToItems} className="-ml-1 flex size-9 shrink-0 items-center justify-center rounded-full text-[var(--portal-navy)] hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/35 xl:hidden">
+                  <ArrowLeft className="size-5" />
+                </button>
+              ) : null}
+              {statusBadge}
+            </div>
+            <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-text-low">{item.reqCode}</span>
+          </div>
+          <h2 id="checklist-item-panel-title" tabIndex={-1} className="portal-title-font mt-3 text-[23px] font-medium leading-[1.16] tracking-[-.015em] outline-none">
+            {action?.customerTitle ?? item.title}
+          </h2>
+        </div>
+
+        <div className="space-y-5 p-5">
+          {item.description ? <p className="text-[14px] leading-6 text-text-mid">{item.description}</p> : null}
+          <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.07em]", DESTINATION_COPY[item.destination ?? "internal"]?.cls ?? DESTINATION_COPY.internal.cls)}>
+            {destination}
+          </span>
+
+          {(item.reviewNote || item.ladder === "changes_requested" || item.status === "rejected") ? (
+            <section className="rounded-2xl border border-warn/30 bg-warn/[0.08] p-4">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-warn">{t.checklistWhatNeedsFixing}</p>
+              <p className="mt-1.5 text-[12px] font-semibold text-warn">{t.checklistFrom} {item.reviewerKind === "trainer" ? t.checklistInstructorReviewer : reviewerLabel(item.reviewerKind)}</p>
+              <p className="mt-2 text-[13px] leading-5 text-text-mid">{item.reviewNote ?? t.checklistFixFallback}</p>
+            </section>
+          ) : null}
+
+          {isUnenforced(item.legalStatus) ? (
+            <p className="flex items-start gap-2 rounded-2xl border border-signal/25 bg-signal/[0.05] p-4 text-[13px] leading-5 text-signal">
+              <Gavel className="mt-0.5 size-4 shrink-0" />
+              <span><strong>{t.checklistNotCurrentlyRequired}</strong> — {t.checklistCourtStoppedExplanation}{item.legalCitation ? ` (${item.legalCitation})` : ""}.</span>
+            </p>
+          ) : received ? (
+            <p className="rounded-2xl border border-hairline bg-surface-2/45 p-4 text-[13px] leading-5 text-text-mid">{t.checklistStatusReceivedHint}</p>
+          ) : approved ? (
+            <p className="flex items-center gap-2 rounded-2xl border border-ok/25 bg-ok/[0.055] p-4 text-[13px] text-ok"><Check className="size-4" />{t.checklistStatusApprovedHint}</p>
+          ) : item.sponsorManaged ? (
+            <p className="rounded-2xl border border-hairline bg-surface-2/45 p-4 text-[13px] leading-5 text-text-mid">{t.checklistSponsorHandles}</p>
+          ) : (
+            <div className={cn(action?.mode === "obtain" && "[&>div>button:first-child]:hidden")}>
+              <RequirementAction
+                reqCode={item.reqCode}
+                status={item.status}
+                caseId={ctx.caseId}
+                clientId={ctx.clientId}
+                prefill={ctx.prefills[item.reqCode] ?? {}}
+                generated={ctx.generated[item.reqCode] ?? null}
+                current={ctx.currentByReq[item.reqCode] ?? null}
+                referenceProgress={ctx.referenceProgress}
+                cohabitantProgress={ctx.cohabitantProgress}
+                signatureOnFile={ctx.signatureOnFile}
+                feeSummary={ctx.feeSummary}
+                feeReceipts={ctx.feeReceipts}
+                dmvApplicant={item.reqCode === "DMV-01" ? ctx.dmvApplicant : null}
+                lockParty={ctx.caseSponsored ? "applicant" : undefined}
+                licenseTrack={ctx.licenseTrack}
+                isConcierge={ctx.isConcierge}
+              />
+            </div>
+          )}
+
+          {item.parts && item.parts.have > 0 && item.parts.have < item.parts.need && !item.sponsorManaged ? (
+            <p className="rounded-2xl border border-brass/30 bg-brass/[0.06] p-3 text-[12px] text-brass-bright">
+              {interpolatePanel(t.checklistPartsUploaded, { have: item.parts.have, need: item.parts.need, remaining: item.parts.need - item.parts.have })}
+            </p>
+          ) : null}
+
+          {item.preparedBySponsor && !item.sponsorManaged && item.ladder !== "approved" ? (
+            <p className="rounded-2xl border border-brass/30 bg-brass/[0.06] p-3 text-[12px] leading-5 text-text-mid">{t.checklistSponsorPrepared}</p>
+          ) : null}
+
+          {action && guideSteps.length > 0 && !isUnenforced(item.legalStatus) ? (
+            <section className="border-t border-hairline pt-5">
+              <h3 className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-text-low">{t.checklistHowToGetIt}</h3>
+              <ol className="mt-3 space-y-3">
+                {guideSteps.map((step, index) => (
+                  <li key={`${item.reqCode}-panel-${index}`} className="flex gap-3 text-[13px] leading-5 text-text-mid">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-brass/35 bg-brass/[0.08] font-mono text-[10px] font-semibold text-brass-bright">{index + 1}</span>
+                    <span className="pt-0.5">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+
+          {item.authority ? (
+            <p className="border-t border-hairline pt-4 font-mono text-[10px] leading-4 text-text-low">{t.checklistSource}: {item.authority}</p>
+          ) : null}
+        </div>
+      </article>
+    )
+  }
 
   const titleAndDescription = (
     <>
@@ -398,5 +582,12 @@ export function RequirementCard({
         {concierge ? <div className="concierge-requirement-actions">{actionContent}</div> : null}
       </div>
     </li>
+  )
+}
+
+function interpolatePanel(template: string, values: Record<string, string | number>): string {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+    template
   )
 }

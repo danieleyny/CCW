@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import { CheckCircle2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
@@ -9,17 +8,22 @@ import { computePortalReadiness } from "@/lib/disclosures/readiness"
 import { pendingConversionReqCodes } from "@/lib/requirements/photo-conversion"
 import { portalTrackForCase } from "@/config/portal-steps"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
-import { ReadinessCard } from "@/components/portal/readiness-card"
 import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
 import { getMessages } from "@/lib/i18n"
-import type { Messages } from "@/lib/i18n/messages"
+import { computeNextStep } from "@/lib/portal/next-step"
+import { actionFor } from "@/lib/requirements/actions"
+import type { CaseStageKey } from "@/config/stages"
 
 export async function generateMetadata() {
   const t = await getMessages()
   return { title: t.ui.checklistTitle }
 }
 
-export default async function ChecklistPage() {
+export default async function ChecklistPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ item?: string | string[]; section?: string | string[] }>
+}) {
   const [myCase, messages] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) return <NoCase message={messages.common.noCase} />
 
@@ -64,13 +68,27 @@ export default async function ChecklistPage() {
       )
     : null
 
+  const query = await searchParams
+  const requestedItem = typeof query.item === "string" ? query.item : null
+  const requestedSection = typeof query.section === "string" ? query.section : null
+  const homeNextStep = computeNextStep({
+    items: view.items,
+    intakeDone: view.intakeDone,
+    stage: myCase.stage as CaseStageKey,
+  })
+  const homeNextItem = view.items.find(
+    (item) => (actionFor(item.reqCode)?.customerTitle ?? item.title) === homeNextStep.title
+  )
+
   return (
     <div>
       <DeepLinkHighlight />
-      <Header intakeDone={view.intakeDone} messages={messages} />
-      {readiness && <ReadinessCard readiness={readiness} />}
       <RequirementsChecklist
         items={view.items}
+        intakeDone={view.intakeDone}
+        readiness={readiness}
+        initialItem={requestedItem ?? homeNextItem?.reqCode ?? null}
+        initialSection={requestedSection}
         caseId={myCase.id}
         clientId={myCase.client.id}
         prefills={view.prefills}
@@ -86,32 +104,6 @@ export default async function ChecklistPage() {
         licenseTrack={trackRow?.license_track ?? null}
         isConcierge={false}
       />
-    </div>
-  )
-}
-
-function Header({ intakeDone, messages }: { intakeDone: boolean; messages: Messages }) {
-  return (
-    <div className="mb-5">
-      {/* Desktop heading — on mobile the sticky checklist header carries the title. */}
-      <h1 className="hidden text-2xl font-semibold tracking-tight sm:block">{messages.ui.checklistTitle}</h1>
-      {intakeDone ? (
-        <>
-          <div className="mt-3 flex items-center gap-2 rounded-md border border-ok/30 bg-ok/8 px-3 py-2 text-sm text-ok">
-            <CheckCircle2 className="size-4 shrink-0" />
-            <span>
-              {messages.ui.checklistComplete}
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {messages.ui.checklistJourney}
-          </p>
-        </>
-      ) : (
-        <p className="mt-1 text-sm text-muted-foreground">
-          {messages.ui.checklistActions}
-        </p>
-      )}
     </div>
   )
 }
