@@ -30,15 +30,60 @@ export function formatDate(value: string | Date | null | undefined): string {
   })
 }
 
-export function formatDateTime(value: string | Date | null | undefined): string {
+export function formatDateTime(value: string | Date | null | undefined, locale = "en-US"): string {
   if (!value) return "—"
   const d = typeof value === "string" ? new Date(value) : value
-  return d.toLocaleString("en-US", {
+  return d.toLocaleString(locale, {
     timeZone: DISPLAY_TIME_ZONE,
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+  })
+}
+
+export function formatTime(value: string | Date, locale = "en-US"): string {
+  const d = typeof value === "string" ? new Date(value) : value
+  return d.toLocaleTimeString(locale, {
+    timeZone: DISPLAY_TIME_ZONE,
+    hour: "numeric",
+    minute: "2-digit",
+  })
+}
+
+function displayDateParts(value: string | Date) {
+  const d = typeof value === "string" ? new Date(value) : value
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: DISPLAY_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d)
+  const number = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value ?? 0)
+  return { year: number("year"), month: number("month"), day: number("day") }
+}
+
+export function calendarDayKey(value: string | Date): string {
+  const { year, month, day } = displayDateParts(value)
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
+
+export function formatCalendarDay(
+  value: string | Date,
+  { locale = "en-US", today = "Today", yesterday = "Yesterday" } = {}
+): string {
+  const target = displayDateParts(value)
+  const current = displayDateParts(new Date())
+  const targetIndex = Date.UTC(target.year, target.month - 1, target.day) / 86_400_000
+  const currentIndex = Date.UTC(current.year, current.month - 1, current.day) / 86_400_000
+  if (targetIndex === currentIndex) return today
+  if (targetIndex === currentIndex - 1) return yesterday
+  const d = typeof value === "string" ? new Date(value) : value
+  return d.toLocaleDateString(locale, {
+    timeZone: DISPLAY_TIME_ZONE,
+    weekday: "long",
+    month: "short",
+    day: "numeric",
   })
 }
 
