@@ -2022,6 +2022,8 @@ html:has(.portal-v2) body {
 }
 
 .portal-home-timeline-sheet {
+  width: min(520px, 100vw) !important;
+  max-width: 520px !important;
   background: #fbfaf7;
   color: var(--portal-ink);
 }
@@ -2294,6 +2296,11 @@ html:has(.portal-v2) body {
 }
 
 @media (max-width: 760px) {
+  .portal-home-timeline-sheet {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
   .portal-home-page {
     gap: 16px;
   }
