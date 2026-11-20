@@ -56,10 +56,10 @@ export function AgreementsGate({ defaultName }: { defaultName: string }) {
   const canSubmit = name.trim().length >= 2 && png.length > 0 && allAgreed
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="concierge-agreements space-y-6">
+      <div className="concierge-agreements-header">
         <SectionEyebrow>Before we begin</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your engagement, in plain English</h1>
+        <h1 className="portal-title-font mt-2 text-3xl font-medium tracking-tight">Your engagement, in plain English</h1>
         <p className="mt-1 max-w-prose text-sm text-text-mid">
           {AGREEMENTS.length} short agreements set out exactly what we do and the line we never cross.
           Open each one, choose <span className="text-foreground">I agree</span> or{" "}

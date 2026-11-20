@@ -5,27 +5,30 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { resolveFacts } from "@/lib/facts/resolve"
 import { hasCaseSsn } from "@/lib/facts/ssn"
 import { type FactGroup } from "@/lib/facts/registry"
-import { buildFactGroups } from "@/lib/facts/details-view"
+import { buildFactGroups, DETAIL_FACT_GROUPS } from "@/lib/facts/details-view"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { FactGroups } from "@/components/portal/facts/fact-groups"
 import { ApplicationHistory } from "@/components/portal/facts/application-history"
 import { FirearmsRecords } from "@/components/portal/facts/firearms-records"
 import type { WizardAnswers } from "@/lib/intake/answers"
+import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
+import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Your details" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.pages.detailsTitle }
+}
 
 // The applicant's own preparation groups. "sponsor" (the armed-guard company block) is
 // appended ONLY for a genuinely sponsored case — see below. A plain concealed-carry
 // applicant must never be shown Company legal name / Agency licence / Gun custodian.
-const BASE_GROUPS: FactGroup[] = ["you", "address", "contact", "physical", "employer", "safeguard", "safekeeping", "counsel"]
-
 /**
  * "Your details" — the preparation form. Every reusable fact captured once, edited
  * in place, propagated to every form. Enter your details here and every
  * questionnaire afterward is nearly empty.
  */
 export default async function DetailsPage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) redirect("/portal")
   const db = await createClient()
   const facts = await resolveFacts(db, myCase.id)
@@ -45,7 +48,7 @@ export default async function DetailsPage() {
     .is("revoked_at", null)
     .limit(1)
     .maybeSingle()
-  const groupOrder: FactGroup[] = sponsorship ? [...BASE_GROUPS, "sponsor"] : BASE_GROUPS
+  const groupOrder: FactGroup[] = sponsorship ? [...DETAIL_FACT_GROUPS, "sponsor"] : DETAIL_FACT_GROUPS
 
   // Rows built server-side (registry + form-usage counts stay off the client); the
   // meter and inline saves are then driven from client state. Renewal-only fields (the
@@ -67,43 +70,41 @@ export default async function DetailsPage() {
     .join(", ")
 
   return (
-    <div className="space-y-6">
-      <div>
-        <SectionEyebrow>Prepared once, reused everywhere</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your details</h1>
-        <p className="mt-1 max-w-prose text-sm text-text-mid">
-          Everything the NYPD forms ask for, in one place. Correct something here and it&apos;s corrected on
-          every form that uses it — so your questionnaires stay nearly empty.
-        </p>
+    <div className="details-page">
+      <DeepLinkHighlight />
+      <div className="details-page-header">
+        <SectionEyebrow>{t.pages.detailsEyebrow}</SectionEyebrow>
+        <h1>{t.pages.detailsTitle}</h1>
+        <p>{t.pages.detailsLede}</p>
       </div>
 
-      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter flagEligibility />
+      <FactGroups caseId={myCase.id} groups={groupData} total={total} showMeter flagEligibility>
+        <ApplicationHistory
+          caseId={myCase.id}
+          residence={intake.residenceHistory ?? []}
+          employment={intake.employmentHistory ?? []}
+          employerSeed={{
+            employed: fx("employer.employed") === "Yes",
+            startDate: fx("employer.startDate"),
+            name: fx("employer.name"),
+            address: employerAddress,
+            occupation: fx("applicant.jobTitle"),
+          }}
+          outOfCity={{
+            number: intake.outOfCityLicenseNumber ?? "",
+            county: intake.outOfCityCounty ?? "",
+            issuedOn: intake.outOfCityIssuedOn ?? "",
+            expiresOn: intake.outOfCityExpiresOn ?? "",
+          }}
+          outOfCityHeld={intake.outOfCityHeld ?? ""}
+        />
 
-      <ApplicationHistory
-        caseId={myCase.id}
-        residence={intake.residenceHistory ?? []}
-        employment={intake.employmentHistory ?? []}
-        employerSeed={{
-          employed: fx("employer.employed") === "Yes",
-          startDate: fx("employer.startDate"),
-          name: fx("employer.name"),
-          address: employerAddress,
-          occupation: fx("applicant.jobTitle"),
-        }}
-        outOfCity={{
-          number: intake.outOfCityLicenseNumber ?? "",
-          county: intake.outOfCityCounty ?? "",
-          issuedOn: intake.outOfCityIssuedOn ?? "",
-          expiresOn: intake.outOfCityExpiresOn ?? "",
-        }}
-        outOfCityHeld={intake.outOfCityHeld ?? ""}
-      />
-
-      <FirearmsRecords
-        caseId={myCase.id}
-        firearms={intake.firearms ?? []}
-        otherLicenses={intake.otherLicenses ?? []}
-      />
+        <FirearmsRecords
+          caseId={myCase.id}
+          firearms={intake.firearms ?? []}
+          otherLicenses={intake.otherLicenses ?? []}
+        />
+      </FactGroups>
     </div>
   )
 }

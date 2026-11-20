@@ -26,26 +26,93 @@ export interface FactRowMeta {
   value: string
   /** SSN only: whether one is on file (shown as "On file (hidden)"). */
   onFile?: boolean
+  /** Display-only ownership cue for sponsor-supplied values. */
+  owner?: "applicant" | "sponsor"
 }
 export interface FactGroupData {
   key: FactGroup
   label: string
   /** A group-level explanation rendered above the rows (e.g. the safeguard "not you" rule). */
   note?: string
+  description: string
+  icon: GroupIcon
   rows: FactRowMeta[]
 }
 
-const GROUP_LABEL: Record<FactGroup, string> = {
-  you: "Applicant",
-  address: "Address",
-  contact: "Contact",
-  physical: "Description",
-  employer: "Employer",
-  sponsor: "The company",
-  safeguard: "Safeguard",
-  safekeeping: "Safekeeping location",
-  counsel: "Counsel",
-  county_license: "Home-county carry licence",
+export type GroupIcon =
+  | "id-card"
+  | "home"
+  | "phone"
+  | "user"
+  | "briefcase"
+  | "building"
+  | "shield-check"
+  | "lock"
+  | "scale"
+
+/** The applicant-facing fact groups shared by the details page and readiness checks. */
+export const DETAIL_FACT_GROUPS: FactGroup[] = [
+  "you",
+  "address",
+  "contact",
+  "physical",
+  "employer",
+  "safeguard",
+  "safekeeping",
+  "counsel",
+]
+
+const GROUP_DISPLAY: Record<FactGroup, { label: string; description: string; icon: GroupIcon }> = {
+  you: {
+    label: "About you",
+    description: "Your legal name and status, exactly as on your ID.",
+    icon: "id-card",
+  },
+  address: {
+    label: "Home address",
+    description: "Where you live in NYC. Must match your proof of residence.",
+    icon: "home",
+  },
+  contact: {
+    label: "Contact",
+    description: "How the NYPD and your concierge reach you.",
+    icon: "phone",
+  },
+  physical: {
+    label: "Description",
+    description: "Printed on your license. Use what’s on your ID.",
+    icon: "user",
+  },
+  employer: {
+    label: "Employment",
+    description: "Your current job, if you have one. More fields appear if you say yes.",
+    icon: "briefcase",
+  },
+  sponsor: {
+    label: "Your sponsor",
+    description: "Filled in by your sponsor.",
+    icon: "building",
+  },
+  safeguard: {
+    label: "Safeguard person",
+    description: "Someone 21+ who will hold your firearm if needed. It can’t be you.",
+    icon: "shield-check",
+  },
+  safekeeping: {
+    label: "Where it’s kept",
+    description: "The address where the firearm is secured.",
+    icon: "lock",
+  },
+  counsel: {
+    label: "Attorney",
+    description: "Only if a lawyer represents you on this application.",
+    icon: "scale",
+  },
+  county_license: {
+    label: "Home-county carry license",
+    description: "The active New York county license supporting a Special Carry application.",
+    icon: "id-card",
+  },
 }
 
 /** How many questionnaires reference each fact — the "used on N forms" line. */
@@ -127,9 +194,43 @@ export function buildFactGroups(
         uses: uses[f.key] ?? 0,
         value: kind === "ssn" ? "" : facts[f.key] ?? "",
         onFile: kind === "ssn" ? hasSsn : undefined,
+        owner: f.owner,
       }
     })
-    out.push({ key: g, label: GROUP_LABEL[g], note: GROUP_NOTES[g], rows })
+    out.push({ key: g, ...GROUP_DISPLAY[g], note: GROUP_NOTES[g], rows })
   }
   return { groups: out, total }
+}
+
+export type RequiredFactState = {
+  key: string
+  label: string
+  section: string
+  complete: boolean
+}
+
+/**
+ * The exact required/visible rule used by the live details meter, expressed as
+ * serializable rows so server-side gates can reuse it without duplicating rules.
+ */
+export function requiredVisibleFacts(groups: FactGroupData[]): RequiredFactState[] {
+  const values: Record<string, string> = {}
+  for (const group of groups) {
+    for (const row of group.rows) if (row.kind === "editable") values[row.key] = row.value
+  }
+
+  const rows: RequiredFactState[] = []
+  for (const group of groups) {
+    for (const row of group.rows) {
+      const visible = !row.showWhen || row.showWhen.equals.includes((values[row.showWhen.key] ?? "").trim())
+      if (!visible || row.kind !== "editable" || row.optional) continue
+      rows.push({
+        key: row.key,
+        label: row.label,
+        section: group.label,
+        complete: (values[row.key] ?? "").trim() !== "",
+      })
+    }
+  }
+  return rows
 }

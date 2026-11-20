@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { ExternalLink } from "lucide-react"
 import { brand } from "@/config/brand"
 import { type Partner, partnerPath, partnerFullName, partnerConsultationPath } from "@/config/partners"
 import { Button } from "@/components/ui/button"
@@ -61,7 +62,12 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
                     rel="noopener"
                     className={`rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40 ${h.stackInSummary ? "basis-full" : ""}`}
                   >
-                    <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>{h.label} ↗</CredentialBadge>
+                    <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>
+                      <span className="inline-flex items-center gap-1">
+                        {h.label}
+                        <ExternalLink className="size-3 shrink-0" aria-hidden />
+                      </span>
+                    </CredentialBadge>
                   </a>
                 ) : (
                   <CredentialBadge key={h.label} primary={h.tier === "primary"} className={h.stackInSummary ? "basis-full w-fit" : undefined}>
@@ -143,9 +149,9 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
                         href={h.href}
                         target="_blank"
                         rel="noopener"
-                        className="text-sm text-signal hover:underline"
+                        className="inline-flex items-center gap-1 text-sm text-signal hover:underline"
                       >
-                        View ↗
+                        View <ExternalLink className="size-3.5 shrink-0" aria-hidden />
                       </a>
                     )}
                   </li>

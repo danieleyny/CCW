@@ -999,7 +999,7 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     }
   }
 
-  // ── PART A/P1 Rule: quarterly registry legal review. A rule confirmed last
+  // ── PART A/P1 Rule: quarterly registry rule review. A rule confirmed last
   // year may have been enjoined since — NYC is litigation-driven. This is the
   // standing cadence that makes /admin/legal's staleness visible instead of
   // waiting for someone to wonder.
@@ -1026,8 +1026,8 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
         windowKey: quarter,
         recipient: a.id,
         kind: "action_required",
-        title: `Quarterly requirement legal review — ${quarter}`,
-        body: `${staleCount ?? 0} active rule(s) have not been attorney-verified in ${LEGAL_REVIEW_STALE_DAYS}+ days. Re-check each rule's enforcement status and citation.`,
+        title: `Quarterly rule review — ${quarter}`,
+        body: `${staleCount ?? 0} active rule(s) have not been reviewed by our team in ${LEGAL_REVIEW_STALE_DAYS}+ days. Re-check each rule's enforcement status and citation.`,
         link: "/admin/legal",
       })
       if (f) firedForAnyone = true
@@ -1038,8 +1038,8 @@ export async function runReminderEngine(admin: DB, now = new Date()): Promise<Fi
     if (firedForAnyone) {
       await admin.from("tasks").insert({
         case_id: null,
-        title: `Quarterly requirement legal review — ${quarter}`,
-        description: `Re-confirm every active registry rule's legal enforcement status and citation in /admin/legal. ${staleCount ?? 0} rule(s) are past the ${LEGAL_REVIEW_STALE_DAYS}-day mark.`,
+        title: `Quarterly rule review — ${quarter}`,
+        description: `Re-confirm every active registry rule's enforcement status and citation in /admin/legal. ${staleCount ?? 0} rule(s) are past the ${LEGAL_REVIEW_STALE_DAYS}-day mark.`,
         priority: 1,
         status: "open",
       })

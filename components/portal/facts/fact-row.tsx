@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useTransition } from "react"
-import { Check, Pencil, Loader2, AlertCircle } from "lucide-react"
+import { AlertCircle, Check, CheckCircle2, FileText, Loader2, LockKeyhole, Pencil } from "lucide-react"
 import { setCaseFact } from "@/app/portal/facts/actions"
 import type { FactRowMeta } from "@/lib/facts/details-view"
 import { NY_COUNTIES, isKnownNyCounty } from "@/lib/ny-counties"
@@ -32,26 +32,23 @@ export function FactRow({
   onSsnSaved: () => void
   /** Move focus to the next editable input in the list (Enter / tab-through). */
   focusNext: (from: HTMLElement) => boolean
-  /** A live validation conflict (e.g. this safeguard field is the applicant's own). Rings
-   *  the field red and shows the message — reuses the save-error inline style. */
+  /** A live validation conflict, such as a safeguard matching the applicant. */
   conflictMessage?: string
 }) {
-  const { key, label, type, kind, options, placeholder, uses, onFile, optional, example } = meta
+  const { key, label, type, kind, options, placeholder, uses, onFile, optional, example, owner } = meta
   const [editing, setEditing] = useState(false) // pencil opened a filled/ssn row
   const [showExample, setShowExample] = useState(false)
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState(value)
   const [saved, setSaved] = useState(value) // last persisted value (ssn: always "")
   const [status, setStatus] = useState<Status>("idle")
-  // The specific server rejection (e.g. "that's your own email address") — shown inline so
-  // the reason lands on the field, not just a toast that scrolls away.
   const [serverError, setServerError] = useState("")
   const [, start] = useTransition()
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Only a positive reuse signal — never "not on a form yet", which read as "why am I
   // filling this?" on a field that does feed the application.
-  const usesLabel = uses > 0 ? `used on ${uses} form${uses === 1 ? "" : "s"}` : ""
+  const usesLabel = uses > 0 ? `Used on ${uses} form${uses === 1 ? "" : "s"}` : ""
 
   // When does the row show an input rather than a read-only value?
   //  editable → whenever it's empty, or being edited/focused
@@ -110,6 +107,7 @@ export function FactRow({
   // (driven by the live draft, no save round-trip). Not the destructive red — at first
   // load every field is empty, and an error-red page is the wrong first impression.
   const needsRing = kind === "editable" && !optional && draft.trim() === "" && !focused
+  const isWide = !!example || /address|street|method|firm/i.test(key)
   const commonProps = {
     id: inputId,
     "data-fact-input": true as const,
@@ -121,31 +119,36 @@ export function FactRow({
     },
     onBlur,
     onKeyDown,
-    className: `h-9 w-full max-w-[20rem] rounded-md border bg-surface-3 px-3 text-sm text-foreground outline-none focus-visible:border-signal/50 focus-visible:ring-2 focus-visible:ring-signal/40 ${
-      conflictMessage || serverError ? "border-danger/50 ring-2 ring-danger/20" : needsRing ? "border-warn/40 ring-2 ring-warn/15" : "border-hairline-strong"
+    className: `details-fact-input ${
+      conflictMessage || serverError
+        ? "is-invalid"
+        : needsRing
+          ? "is-required-empty"
+          : optional
+            ? "is-optional"
+            : ""
     }`,
   }
 
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-hairline py-2.5 last:border-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          {asInput ? (
-            <label htmlFor={inputId} className="cursor-text text-sm font-medium">
-              {label}
-            </label>
-          ) : (
-            <div className="text-sm font-medium">{label}</div>
-          )}
-          {optional && (
-            <span className="rounded-full border border-signal/40 bg-signal/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-signal">
-              Only if it applies
+    <div data-fact-field className={`details-field ${isWide ? "is-wide" : ""} ${meta.showWhen ? "is-conditional" : ""}`}>
+      <div className="details-field-label-row">
+        <label htmlFor={inputId}>{label}</label>
+        <div className="details-field-meta">
+          {optional && <span className="details-optional-tag">Optional</span>}
+          {owner === "sponsor" && <span className="details-sponsor-tag">From your sponsor</span>}
+          {usesLabel && (
+            <span className="details-uses-label">
+              <FileText aria-hidden className="size-3" /> {usesLabel}
             </span>
           )}
         </div>
+      </div>
 
-        {asInput ? (
-          <div className="mt-1 flex items-center gap-2">
+      {asInput ? (
+        <div className="details-input-wrap">
+          {kind === "ssn" && <LockKeyhole aria-hidden className="details-input-lock size-4" />}
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             {options ? (
               <select
                 {...commonProps}
@@ -163,8 +166,6 @@ export function FactRow({
                 ))}
               </select>
             ) : type === "county" ? (
-              // A county autocompletes the 62 NY counties (shared list) and allows an
-              // out-of-state value, flagged below — never blocked (finding 7).
               <>
                 <input
                   {...commonProps}
@@ -178,8 +179,8 @@ export function FactRow({
                   }}
                 />
                 <datalist id={`${inputId}-counties`}>
-                  {NY_COUNTIES.map((c) => (
-                    <option key={c} value={c} />
+                  {NY_COUNTIES.map((county) => (
+                    <option key={county} value={county} />
                   ))}
                 </datalist>
               </>
@@ -190,7 +191,7 @@ export function FactRow({
                 inputMode={type === "phone" ? "tel" : type === "zip" || kind === "ssn" ? "numeric" : undefined}
                 maxLength={type === "zip" ? 5 : kind === "ssn" ? 4 : undefined}
                 autoComplete={kind === "ssn" ? "off" : undefined}
-                placeholder={placeholder ?? (kind === "ssn" ? "last 4 digits" : undefined)}
+                placeholder={placeholder ?? (kind === "ssn" ? "••••" : undefined)}
                 onChange={(e) => {
                   setDraft(e.target.value)
                   if (serverError) setServerError("")
@@ -199,67 +200,61 @@ export function FactRow({
             )}
             <StatusMark status={status} />
           </div>
-        ) : null}
-        {asInput && type === "county" && !isKnownNyCounty(draft) && (
-          <p className="mt-1 text-[11px] text-warn">
-            Not a New York county — fine if it&apos;s out of state, just check the spelling matches the licence.
-          </p>
-        )}
-        {!asInput && (
-          <div className="mt-0.5 flex items-center gap-2 text-sm text-text-mid">
+        </div>
+      ) : (
+        <div className="details-filled-row">
+          <CheckCircle2 aria-hidden className="size-[22px] shrink-0 text-ok" />
+          <span className="min-w-0 flex-1 break-words">
             {kind === "ssn"
-              ? "On file (hidden) · never shared with your sponsor"
+              ? "On file •••• · never shared with your sponsor"
               : value || <span className="text-text-low">—</span>}
-            <StatusMark status={status} />
-          </div>
-        )}
+          </span>
+          <StatusMark status={status} />
+          <button
+            type="button"
+            aria-label={`Edit ${label}`}
+            className="details-pencil-button"
+            onClick={() => {
+              setDraft(kind === "ssn" ? "" : value)
+              setEditing(true)
+            }}
+          >
+            <Pencil aria-hidden className="size-3.5" />
+          </button>
+        </div>
+      )}
 
-        {example && (
-          <div className="mt-1">
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => setShowExample((v) => !v)}
-              className="text-[11px] font-medium text-signal underline-offset-2 hover:underline"
-            >
-              {showExample ? "Hide example" : "Show me an example"}
-            </button>
-            {showExample && (
-              <p className="mt-1 rounded-md border border-hairline bg-surface-2/40 p-2 text-[12px] italic text-text-mid">
-                &ldquo;{example}&rdquo;
-              </p>
-            )}
-          </div>
-        )}
-        {usesLabel && <div className="mt-0.5 text-[11px] text-text-low">{usesLabel}</div>}
-        {conflictMessage && (
-          <div className="mt-1 flex items-start gap-1 text-[11px] text-danger">
-            <AlertCircle className="mt-0.5 size-3 shrink-0" /> <span>{conflictMessage}</span>
-          </div>
-        )}
-        {status === "error" && (
-          <div className="mt-0.5 flex items-start gap-1 text-[11px] text-danger">
-            <AlertCircle className="mt-0.5 size-3 shrink-0" />{" "}
-            <span>{serverError || "Couldn't save — click away to try again."}</span>
-          </div>
-        )}
-      </div>
+      {asInput && type === "county" && draft.trim() && !isKnownNyCounty(draft) && (
+        <p className="details-field-hint">
+          Not a New York county — fine if it is out of state; check that the spelling matches the license.
+        </p>
+      )}
 
-      {/* Pencil for a filled/ssn-on-file row. tabIndex -1 so it never sits between two
-          empty inputs in the tab order; still clickable. */}
-      {!asInput && (
+      {example && asInput && (
+        <div className="details-example-wrap">
         <button
           type="button"
-          tabIndex={-1}
-          aria-label={`Edit ${label}`}
-          className="shrink-0 rounded-md p-2 text-text-low hover:bg-surface-3 hover:text-foreground"
-          onClick={() => {
-            setDraft(kind === "ssn" ? "" : value)
-            setEditing(true)
-          }}
+          onClick={() => setShowExample((current) => !current)}
+          className="details-example-toggle"
         >
-          <Pencil className="size-3.5" />
+          {showExample ? "Hide example" : "Show me an example"}
         </button>
+        {showExample && (
+          <p className="details-example-strip">
+            <span aria-hidden>✨</span> <strong>Example:</strong> {example}
+          </p>
+        )}
+        </div>
+      )}
+      {conflictMessage && (
+        <div className="details-field-error">
+          <AlertCircle aria-hidden className="size-3" /> {conflictMessage}
+        </div>
+      )}
+      {status === "error" && (
+        <div className="details-field-error">
+          <AlertCircle aria-hidden className="size-3" /> {serverError || "Couldn't save — click away to try again."}
+        </div>
       )}
     </div>
   )

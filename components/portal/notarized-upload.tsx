@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { validateFile } from "@/lib/files/validator"
 import { compressImageFile } from "@/lib/files/compress"
 import { Button } from "@/components/ui/button"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 /**
  * Applicant fallback uploader for a notarized doc they collected directly.
@@ -25,6 +26,7 @@ export function NotarizedUpload({
   record: (input: { targetId: string; path: string; fileName: string; documentId: string }) => Promise<void>
   label?: string
 }) {
+  const { messages } = usePortalI18n()
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -60,7 +62,7 @@ export function NotarizedUpload({
     <>
       <input ref={inputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onFile} />
       <Button size="sm" variant="ghost" disabled={busy} onClick={() => inputRef.current?.click()}>
-        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />} {label}
+        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />} {label === "Upload notarized" ? messages.ui.uploadNotarized : label}
       </Button>
     </>
   )

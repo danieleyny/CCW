@@ -10,6 +10,19 @@ import { logActivity } from "@/lib/activity"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { affirmationOfUnderstanding, socialMediaDisclosure } from "@/lib/forms/documents"
 import { formatSocialAccounts, type WizardAnswers } from "@/lib/intake/answers"
+import { getFilingPackOutstanding } from "@/lib/filing-pack/readiness-server"
+import type { FilingPackReadiness } from "@/lib/filing-pack/readiness"
+
+/** Re-check immediately before download; the client never decides readiness. */
+export async function checkFilingPackReadiness(): Promise<
+  { data: FilingPackReadiness; error?: never } | { data?: never; error: string }
+> {
+  await requireRole(["client"])
+  const myCase = await getMyCase()
+  if (!myCase) return { error: "No case found." }
+  const db = await createClient()
+  return { data: await getFilingPackOutstanding(db, myCase) }
+}
 
 /** Save the applicant's e-signature; downloaded forms then come pre-signed. */
 export async function saveApplicantSignature(base64: string): Promise<{ ok?: boolean; error?: string }> {

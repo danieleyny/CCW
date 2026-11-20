@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { requestPayment } from "@/app/admin/actions"
 import { Input } from "@/components/ui/input"
@@ -15,38 +16,46 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-type Result =
-  | { kind: "invoiced"; url: string | null }
-  | { kind: "fallback" }
-  | null
-
 const modeToPackage = (m: string | null | undefined) =>
   m === "concierge" ? "full_concierge" : m === "self_guided" ? "self_guided" : ""
 
+function dollars(value: string) {
+  const amount = Number.parseFloat(value)
+  if (!Number.isFinite(amount)) return "$0"
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount)
+}
+
 export function RequestPaymentForm({
   cases,
+  onSuccess,
+  stripeEnabled = false,
 }: {
   cases: { id: string; name: string; serviceMode?: string | null }[]
+  onSuccess?: () => void
+  stripeEnabled?: boolean
 }) {
+  const router = useRouter()
   const [pending, start] = useTransition()
   const [caseId, setCaseId] = useState("")
   const [amount, setAmount] = useState("")
   const [type, setType] = useState<"deposit" | "full" | "installment">("deposit")
   const [description, setDescription] = useState("")
   const [packageKey, setPackageKey] = useState("")
-  const [result, setResult] = useState<Result>(null)
+  const [error, setError] = useState<string | null>(null)
 
   // Default the package to the case's chosen path so an invoice, once paid,
   // unlocks the right thing.
   function pickCase(id: string) {
     setCaseId(id)
     setPackageKey(modeToPackage(cases.find((c) => c.id === id)?.serviceMode))
+    setError(null)
   }
 
   function submit() {
     const cents = Math.round(parseFloat(amount) * 100)
-    if (!caseId) return toast.error("Pick a client")
-    if (!cents || cents < 50) return toast.error("Enter a valid amount")
+    if (!caseId) return setError("Pick a client.")
+    if (!cents || cents < 50) return setError("Enter a valid amount.")
+    setError(null)
     start(async () => {
       const res = await requestPayment({
         caseId,
@@ -56,65 +65,27 @@ export function RequestPaymentForm({
         packageKey: packageKey || undefined,
       })
       if (!res.ok) {
-        toast.error(res.error ?? "Failed")
+        setError(res.error ?? "The payment request could not be sent.")
         return
       }
       if (res.hostedInvoiceUrl !== undefined && !res.fallback) {
-        setResult({ kind: "invoiced", url: res.hostedInvoiceUrl ?? null })
         toast.success("Invoice sent to the client")
       } else {
-        setResult({ kind: "fallback" })
-        toast.success("Payment recorded — a task was opened to send the invoice")
+        toast.success("Payment request saved — a task was opened to send the invoice")
       }
       setAmount("")
       setDescription("")
+      router.refresh()
+      onSuccess?.()
     })
-  }
-
-  if (result) {
-    return (
-      <div className="rounded-lg border border-ok/30 bg-ok/8 p-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-ok">
-          <CheckCircle2 className="size-4" />
-          {result.kind === "invoiced" ? "Invoice created and emailed to the client." : "Payment requested."}
-        </div>
-        {result.kind === "fallback" && (
-          <p className="mt-1.5 text-xs text-text-mid">
-            Stripe is off — a &ldquo;send invoice&rdquo; task was opened for this case.
-          </p>
-        )}
-        {result.kind === "invoiced" && result.url && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button asChild size="sm" variant="outline">
-              <a href={result.url} target="_blank" rel="noreferrer">
-                <ExternalLink className="mr-1.5 size-3.5" /> Open invoice
-              </a>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                navigator.clipboard.writeText(result.url!)
-                toast.success("Invoice link copied")
-              }}
-            >
-              <Copy className="mr-1.5 size-3.5" /> Copy link
-            </Button>
-          </div>
-        )}
-        <Button className="mt-3" size="sm" variant="outline" onClick={() => setResult(null)}>
-          Request another
-        </Button>
-      </div>
-    )
   }
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1.5">
-        <Label>Client</Label>
+        <Label htmlFor="rp-client">Client</Label>
         <Select value={caseId} onValueChange={pickCase}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="rp-client" className="w-full">
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
           <SelectContent>
@@ -127,9 +98,9 @@ export function RequestPaymentForm({
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>Package (unlocks on payment)</Label>
+        <Label htmlFor="rp-package">Package (unlocks on payment)</Label>
         <Select value={packageKey || "none"} onValueChange={(v) => setPackageKey(v === "none" ? "" : v)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="rp-package" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -140,9 +111,9 @@ export function RequestPaymentForm({
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>Type</Label>
+        <Label htmlFor="rp-type">Type</Label>
         <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="rp-type" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -174,14 +145,15 @@ export function RequestPaymentForm({
         />
       </div>
       <div className="sm:col-span-2">
-        <Button onClick={submit} disabled={pending} aria-busy={pending}>
+        <div className="mb-3 rounded-xl border border-black/10 bg-[#F8F9FB] p-3 text-sm leading-relaxed text-[#475467]">
+          {cases.find((item) => item.id === caseId)?.name || "The client"} gets an email with a payment link for <strong className="text-[#101828]">{dollars(amount)}</strong>. {packageKey ? `${packageKey === "full_concierge" ? "Full Concierge" : "Self-Guided"} unlocks when it is paid.` : "No package unlock is attached."}
+          {!stripeEnabled ? " This opens a task to send the invoice manually while Stripe is off." : null}
+        </div>
+        {error ? <p role="alert" className="mb-3 text-sm font-medium text-[#B42318]">{error}</p> : null}
+        <Button onClick={submit} disabled={pending} aria-busy={pending} className="w-full bg-[#14254A] text-white">
           {pending && <Loader2 className="mr-1.5 size-4 animate-spin" />}
-          {pending ? "Requesting…" : "Request payment"}
+          {pending ? "Sending…" : `Send ${dollars(amount)} request`}
         </Button>
-        <p className="mt-2 text-xs text-text-low">
-          With Stripe on, this emails the client a hosted invoice. Otherwise it opens a task to send
-          one manually.
-        </p>
       </div>
     </div>
   )

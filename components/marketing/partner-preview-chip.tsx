@@ -7,9 +7,9 @@ import Link from "next/link"
  */
 export function PartnerPreviewChip({ path }: { path: string }) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-brass/50 bg-card/95 px-3 py-1.5 text-xs shadow-lg backdrop-blur">
-      <span className="font-medium text-brass">Preview — not live</span>
-      <Link href={`${path}?preview=off`} className="text-text-low underline hover:text-text-hi">
+    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-[var(--electric)]/50 bg-[var(--paper)]/95 px-3 py-1.5 text-xs shadow-lg backdrop-blur">
+      <span className="font-medium text-[var(--electric-deep)]">Preview — not live</span>
+      <Link href={`${path}?preview=off`} className="text-[var(--ink-muted)] underline hover:text-[var(--ink)]">
         Exit
       </Link>
     </div>

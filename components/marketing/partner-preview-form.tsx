@@ -1,7 +1,6 @@
 "use client"
 
 import { useActionState } from "react"
-import { Button } from "@/components/ui/button"
 import { submitPreviewCode, type PreviewFormState } from "@/app/(marketing)/partners/preview-actions"
 
 const INITIAL: PreviewFormState = {}
@@ -27,13 +26,13 @@ export function PartnerPreviewForm({ path }: { path: string }) {
           aria-invalid={state.error ? true : undefined}
           defaultValue={state.value ?? ""}
           placeholder="Preview code"
-          className="min-w-0 flex-1 rounded-md border border-hairline bg-card px-3 py-2 text-sm text-text-hi outline-none placeholder:text-text-low focus:border-hairline-strong"
+          className="min-w-0 flex-1 rounded-md border border-[var(--rule)] bg-[var(--paper)] px-3 py-2 text-base text-[var(--ink)] outline-none transition-colors placeholder:text-[var(--ink-muted)] focus-visible:border-[var(--electric)] focus-visible:ring-2 focus-visible:ring-[var(--electric)]/30 md:text-sm"
         />
-        <Button type="submit" disabled={pending} className="shrink-0">
+        <button type="submit" disabled={pending} className="button shrink-0 disabled:opacity-50">
           Enter
-        </Button>
+        </button>
       </div>
-      <p aria-live="polite" className="mt-2 min-h-5 text-left text-sm text-danger">
+      <p aria-live="polite" className="mt-2 min-h-5 text-left text-sm text-[var(--error)]">
         {state.error ?? ""}
       </p>
     </form>

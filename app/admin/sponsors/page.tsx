@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export const metadata = { title: "Sponsorships", robots: { index: false, follow: false } }
+export const metadata = { title: { absolute: "Sponsorships · Staff" }, robots: { index: false, follow: false } }
 
 const SCOPE_LABEL: Record<string, string> = {
   packet_only: "Packet only",

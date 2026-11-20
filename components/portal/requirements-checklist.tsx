@@ -13,18 +13,12 @@ import { isUnenforced } from "@/lib/legal-status"
 import { cn } from "@/lib/utils"
 import type { FeeSummary } from "@/lib/fees"
 import type { FeeReceipts } from "@/components/portal/fee-panel"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 // Re-exported so existing importers (requirement-view, next-step, vault) keep working.
 export type { ReqChecklistItem } from "@/components/portal/requirement-card"
 
 type FilterKey = "all" | "todo" | "done" | "notarizing"
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "todo", label: "To do" },
-  { key: "done", label: "Completed" },
-  { key: "notarizing", label: "Needs notarization" },
-]
 
 /**
  * The client's checklist, driven by the DB requirements engine (case_requirements
@@ -75,6 +69,26 @@ export function RequirementsChecklist({
   /** Concierge case — unlocks the DMV 'Request help' hatch. */
   isConcierge?: boolean
 }) {
+  const { locale, messages } = usePortalI18n()
+  const t = messages.ui
+  const filters: { key: FilterKey; label: string }[] = [
+    { key: "all", label: t.all },
+    { key: "todo", label: t.toDo },
+    { key: "done", label: t.completed },
+    { key: "notarizing", label: t.needsNotarization },
+  ]
+  const categoryLabels: Record<string, string> = locale === "es" ? {
+    identity: t.categoryIdentity,
+    residence: t.categoryResidence,
+    records: t.categoryRecords,
+    credentials: t.categoryCredentials,
+    training: t.categoryTraining,
+    people: t.categoryPeople,
+    prepared: t.categoryPrepared,
+    conditional: t.categoryConditional,
+    sponsor: t.categorySponsor,
+    admin: t.categoryAdmin,
+  } : {}
   // System controls (FMT-01, the intake-derived eligibility items) are things we
   // verify, not tasks for the customer — showing them as "Confirm" buttons was
   // asking someone to vouch for a machine check. Admin/QA still sees them.
@@ -128,7 +142,7 @@ export function RequirementsChecklist({
   if (applicable.length === 0 && notApplicable.length === 0 && unenforcedItems.length === 0) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your personalized requirements haven&apos;t been generated yet.
+        {t.requirementsNotGenerated}
       </p>
     )
   }
@@ -141,22 +155,22 @@ export function RequirementsChecklist({
       <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 -mx-4 space-y-2.5 border-b border-hairline bg-surface-2 px-4 py-3 sm:static sm:mx-0 sm:space-y-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
         {/* Mobile: a compact title + count (the page h1 is desktop-only). */}
         <div className="flex items-center justify-between gap-3 sm:hidden">
-          <span className="font-display text-base font-semibold">Your checklist</span>
+          <span className="font-display text-base font-semibold">{t.checklistTitle}</span>
           <span className="shrink-0 font-mono text-[12px] tabular-nums text-text-mid">
-            {satisfied} / {applicable.length} done
+            {interpolate(t.doneCount, { done: satisfied, total: applicable.length })}
           </span>
         </div>
         {/* Desktop label row. */}
         <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
           <ShieldCheck className="size-4 text-ok" />
           <span>
-            {satisfied} of {applicable.length} requirements satisfied
+            {interpolate(t.requirementsSatisfied, { done: satisfied, total: applicable.length })}
           </span>
         </div>
 
         <div
           role="progressbar"
-          aria-label="Checklist progress"
+          aria-label={t.checklistProgress}
           aria-valuemin={0}
           aria-valuemax={applicable.length}
           aria-valuenow={satisfied}
@@ -172,10 +186,10 @@ export function RequirementsChecklist({
             obvious there's more; wraps on desktop. */}
         <div
           role="group"
-          aria-label="Filter your checklist"
+          aria-label={t.filterChecklist}
           className="-mb-1 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,#000_88%,transparent)] sm:mb-0 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:[mask-image:none]"
         >
-          {FILTERS.map((f) => {
+          {filters.map((f) => {
             const count = groups[f.key].length
             if (f.key === "notarizing" && count === 0) return null
             const active = filter === f.key
@@ -209,7 +223,7 @@ export function RequirementsChecklist({
           <section key={category.key} aria-labelledby={`cat-${category.key}`}>
             <div className="mb-3 flex items-center gap-3">
               <h3 id={`cat-${category.key}`} className="engraved shrink-0 text-text-low">
-                {category.label}
+                {categoryLabels[category.key] ?? category.label}
               </h3>
               <div aria-hidden className="h-px min-w-6 flex-1 bg-gradient-to-r from-hairline to-transparent" />
               {catAll.length > 0 && (
@@ -230,14 +244,14 @@ export function RequirementsChecklist({
 
       {shown.length === 0 && (
         <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
-          {filter === "todo" ? "Nothing left to do here — every item is complete." : "Nothing in this view yet."}
+          {filter === "todo" ? t.nothingLeft : t.nothingInView}
         </p>
       )}
 
       {notApplicable.length > 0 && (
         <details className="rounded-lg border bg-card/50 px-4 py-3">
           <summary className="cursor-pointer text-xs text-muted-foreground">
-            Not applicable to your case ({notApplicable.length})
+            {interpolate(t.notApplicable, { count: notApplicable.length })}
           </summary>
           <ul className="mt-3 space-y-1.5">
             {notApplicable.map((item) => (

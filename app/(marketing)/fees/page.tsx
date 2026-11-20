@@ -3,7 +3,6 @@ import { getPublicFeeTable } from "@/lib/public-data"
 import { FACTS } from "@/content/facts"
 import { formatDate } from "@/lib/format"
 import { buildMetadata } from "@/lib/seo"
-import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
@@ -24,6 +23,24 @@ export const metadata = buildMetadata({
  * Every amount is DB-sourced — an admin fee edit flows straight here. We never
  * collect these fees; the page says so plainly and links the primary sources.
  */
+
+const measure: React.CSSProperties = { width: "min(100% - 48px, 820px)", marginInline: "auto" }
+const wide: React.CSSProperties = { width: "min(100% - 48px, 1000px)", marginInline: "auto" }
+const linkStyle = { color: "var(--electric-deep)", textDecoration: "none" as const }
+
+const cell: React.CSSProperties = { padding: "16px", color: "var(--ink-soft)", fontSize: 14, borderBottom: "1px solid var(--rule)", verticalAlign: "top" }
+const head: React.CSSProperties = {
+  padding: "14px 16px",
+  fontFamily: "var(--mono)",
+  fontSize: 11,
+  fontWeight: 500,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  color: "var(--ink-muted)",
+  textAlign: "left",
+  borderBottom: "1px solid var(--ink)",
+}
+
 export default async function FeesPage() {
   const rows = await getPublicFeeTable()
   // The two fees everyone pays (the retired-LEO waiver row carries amount 0 and
@@ -56,7 +73,7 @@ export default async function FeesPage() {
   ]
 
   return (
-    <>
+    <div className="guide-page">
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Fees", path: "/fees" }]} />
       <PageHero
         eyebrow="Government fees"
@@ -64,7 +81,7 @@ export default async function FeesPage() {
         subtitle="The government fees, straight from our records — each with who sets it, who it's paid to, and when we last checked."
       />
 
-      <section className="mx-auto max-w-3xl px-4 pb-4 pt-8 sm:px-6">
+      <div className="article-body" style={{ ...measure, padding: "56px 0 8px" }}>
         <DirectAnswer>
           A NYC gun license carries two government fees: the{" "}
           <strong>{application?.amount ?? "NYPD"} NYPD License Division application fee</strong> and
@@ -72,67 +89,86 @@ export default async function FeesPage() {
           directly to the government — never to us — and both are non-refundable regardless of the
           outcome. Training and notarization are billed separately by those providers.
         </DirectAnswer>
-      </section>
+      </div>
 
-      <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <div className="overflow-x-auto rounded-xl border border-hairline">
-          <table className="w-full min-w-[38rem] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-hairline bg-card text-xs uppercase tracking-wide text-text-low">
-                <th className="px-4 py-3 font-medium">Fee</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Paid to</th>
-                <th className="px-4 py-3 font-medium">Set by</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payable.map((r) => (
-                <tr key={r.key} className="border-b border-hairline align-top last:border-0">
-                  <td className="px-4 py-4">
-                    <div className="font-medium text-text-hi">{r.label}</div>
-                    {r.notes && <p className="mt-1 text-xs text-text-low">{r.notes}</p>}
-                  </td>
-                  <td className="px-4 py-4 font-mono font-semibold text-text-hi">{r.amount}</td>
-                  <td className="px-4 py-4 text-text-mid">{r.payTo}</td>
-                  <td className="px-4 py-4 text-text-mid">{r.authority ?? "—"}</td>
+      <section style={{ padding: "24px 0" }}>
+        <div style={wide}>
+          <div style={{ overflowX: "auto", border: "1px solid var(--rule)", background: "var(--ivory)" }}>
+            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr>
+                  <th style={head}>Fee</th>
+                  <th style={head}>Amount</th>
+                  <th style={head}>Paid to</th>
+                  <th style={head}>Set by</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {payable.map((r) => (
+                  <tr key={r.key}>
+                    <td style={cell}>
+                      <div style={{ fontWeight: 600, color: "var(--ink)" }}>{r.label}</div>
+                      {r.notes && (
+                        <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--ink-muted)" }}>{r.notes}</p>
+                      )}
+                    </td>
+                    <td style={{ ...cell, fontFamily: "var(--mono)", fontWeight: 600, color: "var(--ink)" }}>
+                      {r.amount}
+                    </td>
+                    <td style={cell}>{r.payTo}</td>
+                    <td style={cell}>{r.authority ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {leoWaiver && (
+            <p
+              style={{
+                marginTop: 16,
+                border: "1px solid var(--rule)",
+                background: "var(--ivory)",
+                padding: "14px 16px",
+                fontSize: 14,
+                color: "var(--ink-soft)",
+              }}
+            >
+              <strong style={{ color: "var(--ink)" }}>Retired law enforcement:</strong> {leoWaiver.notes}{" "}
+              See{" "}
+              <Link href="/retired-leo" style={linkStyle}>
+                retired law enforcement
+              </Link>
+              .
+            </p>
+          )}
+
+          {lastVerified && (
+            <p style={{ marginTop: 16, fontSize: 12, color: "var(--ink-muted)" }}>
+              Fees last verified {formatDate(lastVerified)}. Amounts are read live from our records;
+              government agencies can change them at any time, so confirm the current figure with the
+              agency before you pay.
+            </p>
+          )}
         </div>
-
-        {leoWaiver && (
-          <p className="mt-4 rounded-lg border border-hairline bg-card px-4 py-3 text-sm text-text-mid">
-            <span className="font-medium text-text-hi">Retired law enforcement:</span> {leoWaiver.notes}{" "}
-            See <Link href="/retired-leo" className="text-signal hover:underline">retired law enforcement</Link>.
-          </p>
-        )}
-
-        {lastVerified && (
-          <p className="mt-4 text-xs text-text-low">
-            Fees last verified {formatDate(lastVerified)}. Amounts are read live from our records;
-            government agencies can change them at any time, so confirm the current figure with the
-            agency before you pay.
-          </p>
-        )}
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 pb-4 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold tracking-tight">Who sets these fees</h2>
-        <p className="mt-3 text-text-mid">
+      <div className="article-body" style={{ ...measure, padding: "8px 0" }}>
+        <h3>Who sets these fees</h3>
+        <p>
           We don&apos;t set any government amount and we can&apos;t refund it. Here&apos;s the
           authority behind each, with a link to the primary source so you can check us:
         </p>
         <FactList facts={[FACTS.applicationFee, FACTS.fingerprintFee]} />
-      </section>
+      </div>
 
       <FaqBlock faqs={FAQS} />
 
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
-          <Button asChild size="lg">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
+      <section style={{ padding: "24px 0 8px" }}>
+        <div style={{ ...measure, textAlign: "center" }}>
+          <Link className="button" href="/eligibility">
+            Check your eligibility <span className="button-arrow" aria-hidden="true">→</span>
+          </Link>
         </div>
       </section>
 
@@ -144,6 +180,6 @@ export default async function FeesPage() {
           { label: "How long the process takes", href: "/timeline" },
         ]}
       />
-    </>
+    </div>
   )
 }

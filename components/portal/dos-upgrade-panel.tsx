@@ -6,6 +6,8 @@ import { toast } from "sonner"
 import { setDosGuardCardReturned, setDosFeePaid } from "@/app/portal/license/actions"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import type { Locale } from "@/config/i18n"
 
 export interface DosUpgrade {
   dos_1619f_status: string
@@ -17,15 +19,9 @@ export interface DosUpgrade {
   registration_expires_on: string | null
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  outstanding: "Outstanding",
-  filed: "Filed with DOS",
-  approved: "Approved",
-}
-
-function fmt(d: string | null) {
+function fmt(d: string | null, locale: Locale) {
   if (!d) return null
-  return new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" })
+  return new Date(`${d}T00:00:00Z`).toLocaleDateString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeZone: "UTC" })
 }
 
 /**
@@ -35,39 +31,49 @@ function fmt(d: string | null) {
  * clear the assignment. Not part of the NYPD packet; never a filing blocker.
  */
 export function DosUpgradePanel({ dos }: { dos: DosUpgrade }) {
+  const { locale, messages } = usePortalI18n()
+  const t = messages.license
+  const statusLabel: Record<string, string> = {
+    outstanding: t.outstanding,
+    filed: t.filedDos,
+    approved: t.approved,
+  }
   const [pending, start] = useTransition()
 
   const toggle = (fn: (v: boolean) => Promise<{ ok?: boolean; error?: string }>, next: boolean) =>
     start(async () => {
       const r = await fn(next)
       if (r.error) toast.error(r.error)
-      else toast.success("Saved.")
+      else toast.success(t.saved)
     })
 
   return (
-    <div className="rounded-lg border border-brass/30 bg-brass/[0.04] p-5">
-      <div className="flex items-center gap-2">
-        <ShieldAlert className="size-4 text-brass" />
-        <h2 className="text-sm font-semibold">Armed-status upgrade (NYS DOS)</h2>
+    <section className="license-v2-dos" aria-labelledby="license-dos-title">
+      <div className="license-v2-dos-header">
+        <span className="license-v2-section-icon is-amber"><ShieldAlert /></span>
+        <div>
+          <h2 id="license-dos-title">{t.dosTitle}</h2>
+          <p>
+            This is a separate filing from your NYPD licence — different agency, different timeline. Your NYPD
+            licence alone does not make you armed-qualified: both approvals must be active and your employer must
+            clear the assignment.
+          </p>
+          {locale !== "en" ? <small>{messages.common.legalEnglishNotice}</small> : null}
+        </div>
       </div>
-      <p className="mt-1 text-xs text-text-mid">
-        This is a separate filing from your NYPD licence — different agency, different timeline. Your NYPD
-        licence alone does not make you armed-qualified: both approvals must be active and your employer must
-        clear the assignment.
-      </p>
 
-      <ul className="mt-4 space-y-2 text-sm">
-        <ReadItem label="DOS-1619-f (armed-status application)" value={STATUS_LABEL[dos.dos_1619f_status] ?? dos.dos_1619f_status} done={dos.dos_1619f_status === "approved"} />
-        <ReadItem label="47-hour firearms course certificate" value={STATUS_LABEL[dos.firearms_47hr_status] ?? dos.firearms_47hr_status} done={dos.firearms_47hr_status === "approved"} />
+      <ul className="license-v2-dos-list">
+        <ReadItem label={t.dosApplication} value={statusLabel[dos.dos_1619f_status] ?? dos.dos_1619f_status} done={dos.dos_1619f_status === "approved"} />
+        <ReadItem label={t.firearmsCourse} value={statusLabel[dos.firearms_47hr_status] ?? dos.firearms_47hr_status} done={dos.firearms_47hr_status === "approved"} />
         <ToggleItem
-          label="Return your current security guard ID card"
-          hint="Submitting the upgrade means surrendering your current guard card."
+          label={t.returnGuardCard}
+          hint={t.returnGuardCardHint}
           done={dos.guard_card_returned}
           disabled={pending}
           onToggle={() => toggle(setDosGuardCardReturned, !dos.guard_card_returned)}
         />
         <ToggleItem
-          label="$25 DOS fee paid"
+          label={t.dosFee}
           done={dos.dos_fee_paid}
           disabled={pending}
           onToggle={() => toggle(setDosFeePaid, !dos.dos_fee_paid)}
@@ -75,29 +81,29 @@ export function DosUpgradePanel({ dos }: { dos: DosUpgrade }) {
       </ul>
 
       {(dos.inservice_due_on || dos.firearms_annual_due_on || dos.registration_expires_on) && (
-        <div className="mt-4 rounded-md border border-hairline bg-surface-2/40 p-3">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-text-mid">
-            <CalendarClock className="size-3.5" /> Keeping armed status
+        <div className="license-v2-dos-clocks">
+          <div>
+            <CalendarClock /> {t.keepingArmedStatus}
           </div>
-          <ul className="mt-1.5 space-y-1 text-xs text-text-mid">
-            {dos.inservice_due_on && <li>Next 8-hour annual in-service due <b>{fmt(dos.inservice_due_on)}</b></li>}
-            {dos.firearms_annual_due_on && <li>Next 8-hour annual firearms course due <b>{fmt(dos.firearms_annual_due_on)}</b></li>}
-            {dos.registration_expires_on && <li>Registration renews by <b>{fmt(dos.registration_expires_on)}</b> (two-year cycle)</li>}
+          <ul>
+            {dos.inservice_due_on && <li>{t.nextInService} <b>{fmt(dos.inservice_due_on, locale)}</b></li>}
+            {dos.firearms_annual_due_on && <li>{t.nextFirearms} <b>{fmt(dos.firearms_annual_due_on, locale)}</b></li>}
+            {dos.registration_expires_on && <li>{interpolate(t.registrationRenews, { date: fmt(dos.registration_expires_on, locale) ?? "" })}</li>}
           </ul>
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
 function ReadItem({ label, value, done }: { label: string; value: string; done: boolean }) {
   return (
-    <li className="flex items-start justify-between gap-3">
-      <span className="flex items-start gap-2">
+    <li className="license-v2-dos-item">
+      <span>
         {done ? <Check className="mt-0.5 size-4 text-ok" /> : <Circle className="mt-0.5 size-4 text-text-low" />}
         <span>{label}</span>
       </span>
-      <span className={cn("shrink-0 text-xs", done ? "text-ok" : "text-text-mid")}>{value}</span>
+      <span className={cn("license-v2-dos-status", done ? "is-done" : "")}>{value}</span>
     </li>
   )
 }
@@ -115,17 +121,19 @@ function ToggleItem({
   disabled: boolean
   onToggle: () => void
 }) {
+  const { messages } = usePortalI18n()
+  const t = messages.license
   return (
-    <li className="flex items-start justify-between gap-3">
-      <span className="flex items-start gap-2">
+    <li className="license-v2-dos-item">
+      <span>
         {done ? <Check className="mt-0.5 size-4 text-ok" /> : <Circle className="mt-0.5 size-4 text-text-low" />}
         <span>
           {label}
-          {hint && <span className="block text-xs text-text-low">{hint}</span>}
+          {hint && <small>{hint}</small>}
         </span>
       </span>
-      <Button size="sm" variant={done ? "ghost" : "outline"} className="min-h-[32px] shrink-0" disabled={disabled} onClick={onToggle}>
-        {disabled ? <Loader2 className="size-3.5 animate-spin" /> : done ? "Undo" : "Mark done"}
+      <Button size="sm" variant={done ? "ghost" : "outline"} className="min-h-11 shrink-0" disabled={disabled} onClick={onToggle}>
+        {disabled ? <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" /> : done ? t.undo : t.markDone}
       </Button>
     </li>
   )

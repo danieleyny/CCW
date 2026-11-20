@@ -1,8 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { NotificationBellMenu, type NotificationItem } from "./notification-bell-menu"
+import { SOURCE } from "@/lib/i18n/messages"
+import type { Locale } from "@/config/i18n"
 
 /** Server wrapper: loads the signed-in user's notifications (RLS-scoped). */
-export async function NotificationBell() {
+export async function NotificationBell({
+  locale = "en",
+  messages = SOURCE.ui,
+}: {
+  locale?: Locale
+  messages?: Record<string, string>
+} = {}) {
   const supabase = await createClient()
   const { data } = await supabase
     .from("notifications")
@@ -11,5 +19,5 @@ export async function NotificationBell() {
     .limit(15)
   const items = (data ?? []) as NotificationItem[]
   const unread = items.filter((i) => !i.read).length
-  return <NotificationBellMenu items={items} unread={unread} />
+  return <NotificationBellMenu items={items} unread={unread} asOf={new Date().toISOString()} locale={locale} copy={messages} />
 }

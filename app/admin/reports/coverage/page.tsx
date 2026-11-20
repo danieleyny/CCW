@@ -10,7 +10,7 @@ import {
   type CoverageStatus,
 } from "@/config/application-coverage"
 
-export const metadata = { title: "Application coverage" }
+export const metadata = { title: { absolute: "Application coverage · Staff" } }
 
 const STATUS_META: Record<CoverageStatus, { label: string; icon: typeof CheckCircle2; tone: string }> = {
   ok: { label: "Captured", icon: CheckCircle2, tone: "text-ok" },
@@ -35,7 +35,7 @@ export default async function CoverageReport() {
     <div className="space-y-6">
       <PageHeader
         title="Application coverage"
-        description="Every field on NYPD PD 643-041 (Rev. 11-10) mapped to where we capture it — or an explicit, flagged gap. Attorney-reviewable; confirm 'verify' rows against the live NYPD portal."
+        description="Every field on NYPD PD 643-041 (Rev. 11-10) mapped to where we capture it — or an explicit, flagged gap. Team-reviewable; confirm 'verify' rows against the live NYPD portal."
       />
 
       {/* Roll-up */}

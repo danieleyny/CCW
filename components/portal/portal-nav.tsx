@@ -23,8 +23,48 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import type { Messages } from "@/lib/i18n/messages"
 
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean }
+
+const LABEL_KEYS: Record<string, keyof Messages["shell"]> = {
+  Home: "home",
+  Checklist: "checklist",
+  Documents: "documents",
+  People: "people",
+  Concierge: "concierge",
+  "Your application": "yourApplication",
+  Messages: "messages",
+  Forms: "forms",
+  "Prepared forms": "preparedForms",
+  Payments: "payments",
+  License: "license",
+  "Your license": "yourLicense",
+  Appeal: "appeal",
+  "Your details": "yourDetails",
+  "Profile & your data": "profileAndData",
+}
+
+const STATUS_KEYS: Record<string, keyof Messages["shell"]> = {
+  "Entered once, reused on every form": "detailsStatus",
+  "Your case team & instructor": "messagesStatus",
+  "Documents we filled out for you": "formsStatus",
+  "Invoices & receipts": "paymentsStatus",
+  "Available after issuance": "licenseStatus",
+  "Only if your application is denied": "appealStatus",
+  "Account, password & privacy": "profileStatus",
+}
+
+function localizeLabel(label: string, shell: Messages["shell"]) {
+  const key = LABEL_KEYS[label]
+  return key ? shell[key] : label
+}
+
+function localizeStatus(status: string, shell: Messages["shell"]) {
+  const key = STATUS_KEYS[status]
+  return key ? shell[key] : status
+}
 
 /** The four thumb-primary destinations always in the bar (+ a 5th "More" tab). */
 const PRIMARY: Item[] = [
@@ -85,15 +125,18 @@ const DESKTOP_CONCIERGE: Item[] = [
 
 function useActive() {
   const pathname = usePathname()
-  return (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href))
+  return (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
 }
 
 /** Desktop: a horizontal tab row under the header. */
 export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
   const isActive = useActive()
+  const { messages } = usePortalI18n()
+  const shell = messages.shell
   return (
-    <nav aria-label="Primary" className="hidden border-b border-hairline md:block">
-      <div className="mx-auto flex max-w-3xl flex-wrap gap-1 px-4">
+    <nav aria-label={shell.primary} className="portal-v2-top-nav hidden border-t border-hairline md:block">
+      <div className="portal-v2-top-nav-wrap mx-auto flex max-w-[1120px] flex-nowrap gap-1 overflow-x-auto px-6 lg:px-8">
         {(concierge ? DESKTOP_CONCIERGE : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           return (
@@ -101,13 +144,11 @@ export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
-                active ? "border-brass text-brass" : "border-transparent text-text-mid hover:text-foreground"
-              )}
+              data-active={active}
+              className="portal-v2-top-nav-item flex shrink-0 items-center gap-2 px-3 py-2.5 text-[13px] font-medium transition-colors"
             >
               <Icon className="size-4" />
-              {label}
+              {localizeLabel(label, shell)}
             </Link>
           )
         })}
@@ -122,17 +163,18 @@ export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
  * color (signal is reserved for "needs your attention"). Safe-area aware.
  */
 export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: number; concierge?: boolean }) {
-  const pathname = usePathname()
   const isActive = useActive()
   const [moreOpen, setMoreOpen] = useState(false)
+  const { messages } = usePortalI18n()
+  const shell = messages.shell
   const primary = concierge ? PRIMARY_CONCIERGE : PRIMARY
   const more = concierge ? MORE_CONCIERGE : MORE
-  const moreActive = more.some((m) => pathname.startsWith(m.href))
+  const moreActive = more.some((m) => isActive(m.href, m.exact))
 
   return (
     <nav
-      aria-label="Primary"
-      className="glass-bar fixed inset-x-0 bottom-0 z-20 border-t border-hairline md:hidden"
+      aria-label={shell.primary}
+      className="portal-v2-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-hairline md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex min-h-[60px] max-w-3xl items-stretch justify-around">
@@ -143,23 +185,29 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={cn(
-                "relative flex min-w-16 flex-1 flex-col items-center justify-center gap-1 pt-1 text-[11px] font-medium transition-colors",
-                active ? "text-brass-bright" : "text-text-mid"
-              )}
+              data-active={active}
+              className="portal-v2-bottom-item relative flex min-w-16 flex-1 flex-col items-center justify-center gap-1 pt-1 text-[11px] font-medium transition-colors"
             >
               {active && (
-                <span aria-hidden className="absolute top-0 h-[3px] w-[22px] rounded-full bg-brass" />
+                <span aria-hidden className="portal-v2-bottom-active-mark absolute top-0" />
               )}
               <span
-                className={cn(
-                  "flex h-[26px] w-[34px] items-center justify-center rounded-lg transition-colors",
-                  active && "bg-[color-mix(in_oklab,var(--brass)_14%,transparent)]"
-                )}
+                className={cn("relative flex h-[26px] w-[34px] items-center justify-center rounded-lg", active && "bg-signal-dim")}
               >
                 <Icon className="size-5" />
+                {href === "/portal/messages" && unread > 0 ? (
+                  <span
+                    aria-hidden
+                    className="portal-v2-unread absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums"
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                ) : null}
               </span>
-              {label}
+              {localizeLabel(label, shell)}
+              {href === "/portal/messages" && unread > 0 ? (
+                <span className="sr-only">, {unread} {shell.unread}</span>
+              ) : null}
             </Link>
           )
         })}
@@ -167,71 +215,65 @@ export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: nu
         {/* More — opens the sheet */}
         <button
           type="button"
-          aria-label="More"
           aria-expanded={moreOpen}
           aria-haspopup="dialog"
           onClick={() => setMoreOpen(true)}
-          className={cn(
-            "relative flex min-w-16 flex-1 flex-col items-center justify-center gap-1 pt-1 text-[11px] font-medium transition-colors",
-            moreActive ? "text-brass-bright" : "text-text-mid"
-          )}
+          data-active={moreActive}
+          className="portal-v2-bottom-item relative flex min-w-16 flex-1 flex-col items-center justify-center gap-1 pt-1 text-[11px] font-medium transition-colors"
         >
           {moreActive && (
-            <span aria-hidden className="absolute top-0 h-[3px] w-[22px] rounded-full bg-brass" />
+            <span aria-hidden className="portal-v2-bottom-active-mark absolute top-0" />
           )}
           <span
-            className={cn(
-              "relative flex h-[26px] w-[34px] items-center justify-center rounded-lg transition-colors",
-              moreActive && "bg-[color-mix(in_oklab,var(--brass)_14%,transparent)]"
-            )}
+            className={cn("relative flex h-[26px] w-[34px] items-center justify-center rounded-lg", moreActive && "bg-signal-dim")}
           >
             <MoreHorizontal className="size-5" />
-            {unread > 0 && (
+            {unread > 0 && !concierge && (
               <span
-                aria-label={`${unread} unread`}
-                className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-[9px] font-bold tabular-nums text-brand-foreground"
+                aria-hidden
+                className="portal-v2-unread absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums"
               >
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
           </span>
-          More
+          {shell.more}
+          {unread > 0 && !concierge ? <span className="sr-only">, {unread} {shell.unread}</span> : null}
         </button>
       </div>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]"
+          className="portal-v2-more-sheet gap-0 pb-[env(safe-area-inset-bottom)]"
         >
-          <SheetHeader>
-            <SheetTitle className="engraved-sm text-left text-text-mid">More</SheetTitle>
+          <SheetHeader className="gap-3 px-5 pb-2 pt-3">
+            <span aria-hidden className="portal-v2-more-handle mx-auto" />
+            <SheetTitle className="portal-t-eyebrow text-left text-text-mid">{shell.more}</SheetTitle>
           </SheetHeader>
           <ul className="px-3 pb-4">
             {more.map((item) => {
               const Icon = item.icon
-              const active = pathname.startsWith(item.href)
+              const active = isActive(item.href, item.exact)
               const status =
                 item.href === "/portal/messages" && unread > 0
-                  ? `${unread} unread from your case team`
-                  : item.status
+                  ? `${unread} ${shell.unreadFromTeam}`
+                  : localizeStatus(item.status, shell)
               return (
                 <li key={item.href}>
                   <SheetClose asChild>
                     <Link
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex min-h-[56px] items-center gap-3 rounded-lg px-2 transition-colors hover:bg-surface-2",
-                        item.conditional && "opacity-70"
-                      )}
+                      data-active={active}
+                      className={cn("portal-v2-more-row flex items-center gap-3 rounded-xl px-2 transition-colors", item.conditional && "opacity-70")}
                     >
-                      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface-2">
-                        <Icon className={cn("size-[18px]", active ? "text-brass-bright" : "text-text-mid")} />
+                      <span className="portal-v2-more-icon">
+                        <Icon className={cn("size-[18px]", active && "text-brass-deep")} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className={cn("block text-sm font-medium", active ? "text-brass-bright" : "text-foreground")}>
-                          {item.label}
+                          {localizeLabel(item.label, shell)}
                         </span>
                         <span className="block truncate text-[12px] text-text-low">{status}</span>
                       </span>

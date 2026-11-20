@@ -23,6 +23,63 @@ import type { Database } from "@/lib/supabase/types"
 
 type DB = SupabaseClient<Database>
 
+const ERASURE_NARRATIVE_TABLES = [
+  "disclosures",
+  "requirement_answers",
+  "license_reports",
+] as const
+
+const ERASURE_CASE_TABLES = [
+  "case_notes",
+  "messages",
+  "cohabitants",
+  "character_references",
+  "purchase_authorizations",
+] as const
+
+const ERASURE_DOCUMENT_TABLE = "documents" as const
+const ERASURE_INTAKE_TABLE = "intake_sessions" as const
+const ERASURE_SIGNATURE_TABLE = "signatures" as const
+const ERASURE_SIGNATURE_EVENT_TABLE = "signature_events" as const
+
+/**
+ * The destructive table scope, in the exact order eraseCase processes it.
+ * previewErasure and the label-coverage test both consume this list so the
+ * review screen cannot silently drift away from the real erasure.
+ */
+export const ERASURE_DELETE_TABLES = [
+  ERASURE_DOCUMENT_TABLE,
+  ...ERASURE_NARRATIVE_TABLES,
+  ERASURE_INTAKE_TABLE,
+  ...ERASURE_CASE_TABLES,
+  ERASURE_SIGNATURE_TABLE,
+] as const
+
+export const ERASURE_MINIMIZE_TABLES = [ERASURE_SIGNATURE_EVENT_TABLE] as const
+
+export const ERASURE_SURFACE_LABELS = {
+  documents: "Documents",
+  storage_objects: "Stored files",
+  disclosures: "Disclosures",
+  requirement_answers: "Questionnaire answers",
+  license_reports: "Post-license reports",
+  intake_sessions: "Intake answers",
+  case_notes: "Notes",
+  messages: "Messages",
+  cohabitants: "Household members",
+  character_references: "References",
+  purchase_authorizations: "Purchase authorizations",
+  signatures: "Signature images",
+  signature_events: "Signing records",
+  signature_events_minimized: "Signatures",
+} as const
+
+export interface ErasurePreview {
+  erase: Record<string, number>
+  files: number
+  minimize: Record<string, number>
+}
+
 /** Per-surface counts, so the record says what actually happened. */
 export interface ErasureReceipt {
   caseId: string
@@ -35,6 +92,37 @@ export interface EraseOptions {
   /** Staff profile id performing it. */
   actor?: string | null
   note?: string | null
+}
+
+/**
+ * Read-only counterpart to eraseCase. It counts exactly the same case-scoped
+ * rows and stored-file paths but never inserts, updates, deletes, or removes.
+ */
+export async function previewErasure(db: DB, caseId: string): Promise<ErasurePreview> {
+  const erase: Record<string, number> = {}
+  let files = 0
+
+  for (const table of ERASURE_DELETE_TABLES) {
+    if (table === ERASURE_DOCUMENT_TABLE) {
+      const { data, error } = await db.from(ERASURE_DOCUMENT_TABLE).select("id, file_path").eq("case_id", caseId)
+      if (error) throw new Error(`Could not preview documents: ${error.message}`)
+      erase.documents = data?.length ?? 0
+      files = (data ?? []).filter((row) => !!row.file_path).length
+      continue
+    }
+    const { data, error } = await db.from(table).select("id").eq("case_id", caseId)
+    if (error) throw new Error(`Could not preview ${table}: ${error.message}`)
+    erase[table] = data?.length ?? 0
+  }
+
+  const minimize: Record<string, number> = {}
+  for (const table of ERASURE_MINIMIZE_TABLES) {
+    const { data, error } = await db.from(table).select("id").eq("case_id", caseId)
+    if (error) throw new Error(`Could not preview ${table}: ${error.message}`)
+    minimize[table] = data?.length ?? 0
+  }
+
+  return { erase, files, minimize }
 }
 
 /**
@@ -100,7 +188,7 @@ export async function eraseCase(db: DB, caseId: string, opts: EraseOptions = {})
   // Before the `documents` rows go, because the rows are how we find the paths.
   // A generated affirmation or arrest statement has the narrative rendered into
   // it — deleting the row without the object leaves the story on disk.
-  const { data: docs } = await db.from("documents").select("id, file_path").eq("case_id", caseId)
+  const { data: docs } = await db.from(ERASURE_DOCUMENT_TABLE).select("id, file_path").eq("case_id", caseId)
   const paths = (docs ?? []).map((d) => d.file_path).filter((p): p is string => !!p)
   if (paths.length) {
     const { error } = await db.storage.from("documents").remove(paths)
@@ -108,12 +196,12 @@ export async function eraseCase(db: DB, caseId: string, opts: EraseOptions = {})
     await count("storage_objects", paths.length)
   }
   if (docs?.length) {
-    await db.from("documents").delete().eq("case_id", caseId)
-    await count("documents", docs.length)
+    await db.from(ERASURE_DOCUMENT_TABLE).delete().eq("case_id", caseId)
+    await count(ERASURE_DOCUMENT_TABLE, docs.length)
   }
 
   // ── Surfaces 1–4: every copy of the narrative ──────────────────────────────
-  for (const table of ["disclosures", "requirement_answers", "license_reports"] as const) {
+  for (const table of ERASURE_NARRATIVE_TABLES) {
     const { data: rows } = await db.from(table).select("id").eq("case_id", caseId)
     if (rows?.length) {
       await db.from(table).delete().eq("case_id", caseId)
@@ -121,21 +209,15 @@ export async function eraseCase(db: DB, caseId: string, opts: EraseOptions = {})
     }
   }
   {
-    const { data: rows } = await db.from("intake_sessions").select("id").eq("case_id", caseId)
+    const { data: rows } = await db.from(ERASURE_INTAKE_TABLE).select("id").eq("case_id", caseId)
     if (rows?.length) {
-      await db.from("intake_sessions").delete().eq("case_id", caseId)
-      await count("intake_sessions", rows.length)
+      await db.from(ERASURE_INTAKE_TABLE).delete().eq("case_id", caseId)
+      await count(ERASURE_INTAKE_TABLE, rows.length)
     }
   }
 
   // ── Everything else scoped to the case ─────────────────────────────────────
-  for (const table of [
-    "case_notes",
-    "messages",
-    "cohabitants",
-    "character_references",
-    "purchase_authorizations",
-  ] as const) {
+  for (const table of ERASURE_CASE_TABLES) {
     const { data: rows } = await db.from(table).select("id").eq("case_id", caseId)
     if (rows?.length) {
       await db.from(table).delete().eq("case_id", caseId)
@@ -147,10 +229,10 @@ export async function eraseCase(db: DB, caseId: string, opts: EraseOptions = {})
   // The handwritten image is biometric-adjacent PII; the hash binding in
   // signature_events is what actually evidences the signing.
   {
-    const { data: sigs } = await db.from("signatures").select("id").eq("case_id", caseId)
+    const { data: sigs } = await db.from(ERASURE_SIGNATURE_TABLE).select("id").eq("case_id", caseId)
     if (sigs?.length) {
-      await db.from("signatures").delete().eq("case_id", caseId)
-      await count("signatures", sigs.length)
+      await db.from(ERASURE_SIGNATURE_TABLE).delete().eq("case_id", caseId)
+      await count(ERASURE_SIGNATURE_TABLE, sigs.length)
     }
   }
 
@@ -159,10 +241,10 @@ export async function eraseCase(db: DB, caseId: string, opts: EraseOptions = {})
   // identifies a person and keep what evidences the act. This is disclosed to
   // the applicant — we never tell someone their data is gone when it is not.
   {
-    const { data: evs } = await db.from("signature_events").select("id").eq("case_id", caseId)
+    const { data: evs } = await db.from(ERASURE_SIGNATURE_EVENT_TABLE).select("id").eq("case_id", caseId)
     if (evs?.length) {
       await db
-        .from("signature_events")
+        .from(ERASURE_SIGNATURE_EVENT_TABLE)
         .update({ ip: null, user_agent: null })
         .eq("case_id", caseId)
       await count("signature_events_minimized", evs.length)

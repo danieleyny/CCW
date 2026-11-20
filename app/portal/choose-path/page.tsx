@@ -5,11 +5,16 @@ import { getActivePackages, hasPaidPackage } from "@/lib/packages"
 import { accessCodesEnabled } from "@/lib/access-codes"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
+import { PortalPageHeader } from "@/components/portal/ui/portal-page-header"
+import { SetupStepper } from "@/components/portal/ui/setup-stepper"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import type { ApplicationType } from "@/lib/application-types"
+import { getMessages } from "@/lib/i18n"
 
-export const metadata = { title: "Choose how we'll work together" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.choosePath.metadataTitle }
+}
 
 /**
  * CONCIERGE Phase 1 — the post-intake fork. Everyone completes intake the same
@@ -18,13 +23,13 @@ export const metadata = { title: "Choose how we'll work together" }
  * are sent to the surface they bought.
  */
 export default async function ChoosePathPage() {
-  const myCase = await getMyCase()
+  const [myCase, t] = await Promise.all([getMyCase(), getMessages()])
   if (!myCase) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
-        <h1 className="text-lg font-semibold">Almost there.</h1>
+        <h1 className="text-lg font-semibold">{t.common.almostThere}</h1>
         <p className="mt-2 text-sm text-text-mid">
-          Your case isn&apos;t set up yet. Your concierge will reach out shortly to get you started.
+          {t.common.noCase}
         </p>
       </div>
     )
@@ -51,20 +56,26 @@ export default async function ChoosePathPage() {
     .eq("id", myCase.client_id)
     .maybeSingle()
   const staffProvisioned = clientRow?.lead_source === "admin_manual"
+  const feeNote = `${t.choosePath.feeNote}${
+    STRIPE_ENABLED
+      ? ""
+      : t.choosePath.feeNoteInvoice
+  }`
 
   return (
-    <div className="space-y-6">
+    <div className="portal-plan-page">
       <ScrollToTop />
-      <div>
-        <SectionEyebrow>One decision</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          How would you like to work together?
-        </h1>
-        <p className="mt-1 max-w-prose text-sm text-text-mid">
-          Same finish line, two ways to get there. Either way, <b>you file your own NYPD application</b> —
-          the law requires it. The difference is how much of everything before that we take off your plate.
-        </p>
-      </div>
+      <PortalPageHeader
+        title={t.choosePath.title}
+        lede={
+          <>
+            {t.choosePath.ledePrefix} <strong>{t.choosePath.selfGuided}</strong>{" "}
+            {t.choosePath.selfGuidedShort} <strong>{t.choosePath.concierge}</strong>{" "}
+            {t.choosePath.conciergeShort}
+          </>
+        }
+        stepper={<SetupStepper current={2} finalLabel={t.setup.getStarted} />}
+      />
 
       <ChoosePathCards
         packages={packages}
@@ -72,14 +83,9 @@ export default async function ChoosePathPage() {
         staffProvisioned={staffProvisioned}
         codesEnabled={codesEnabled}
         applicationType={myCase.application_type as ApplicationType}
+        stripeEnabled={STRIPE_ENABLED}
+        feeNote={feeNote}
       />
-
-      <p className="text-xs text-text-low">
-        Service fees only — the NYPD&apos;s application fee and the fingerprint fee are paid separately at
-        filing and are never collected by us. You can switch paths anytime before you pay.
-        {!STRIPE_ENABLED &&
-          " Card checkout is being finalized — choosing a path records it instantly and we send your invoice within one business day."}
-      </p>
     </div>
   )
 }

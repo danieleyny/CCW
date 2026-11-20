@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { LogoLockup } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { tokenActive } from "@/lib/references/process"
 import { CohabitantFlow } from "@/components/public/cohabitant-flow"
 
@@ -60,7 +60,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       {/* UNBRAND DECISION: shown to a THIRD PARTY (an adult cohabitant) from an
           emailed link — kept branded on purpose so it doesn't read as phishing.
           The affidavit PDF they sign is unbranded (lib/pdf/builder); this page is not. */}
-      <LogoLockup className="mb-6 text-lg" />
+      <BrandLogo tone="ink" size="sm" className="mb-6" />
       {children}
     </div>
   )

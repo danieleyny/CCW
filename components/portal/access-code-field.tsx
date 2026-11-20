@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react"
 import { redeemAccessCode, type RedeemResult } from "@/app/portal/choose-path/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 /**
  * ACCESS CODES · Phase 1 — a quiet "Have an access code?" link under a payment
@@ -13,7 +14,15 @@ import { Button } from "@/components/ui/button"
  * redeemAccessCode — this component never sees the valid codes. On success the
  * action redirects to the destination the purchase would have reached.
  */
-export function AccessCodeField({ packageKey }: { packageKey: string }) {
+export function AccessCodeField({
+  packageKey,
+  planName,
+}: {
+  packageKey: string | null
+  planName?: string
+}) {
+  const { messages } = usePortalI18n()
+  const t = messages.choosePath
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState<RedeemResult, FormData>(redeemAccessCode, {})
 
@@ -22,20 +31,26 @@ export function AccessCodeField({ packageKey }: { packageKey: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-2 text-xs text-text-low underline underline-offset-2 hover:text-text-mid"
+        disabled={!packageKey}
+        className="portal-access-trigger"
       >
-        Have an access code?
+        {t.haveAccessCode}
       </button>
     )
   }
 
+  if (!packageKey) return null
+
   return (
-    <form action={action} className="mt-2 space-y-1.5">
+    <form action={action} className="portal-access-form">
+      <p className="portal-access-label portal-t-label">
+        {t.accessCodeFor} {planName ?? t.selectedPlan}
+      </p>
       <input type="hidden" name="packageKey" value={packageKey} />
       <div className="flex gap-2">
         <Input
           name="code"
-          placeholder="Access code"
+          placeholder={t.accessCode}
           autoFocus
           maxLength={64}
           autoComplete="off"
@@ -43,7 +58,7 @@ export function AccessCodeField({ packageKey }: { packageKey: string }) {
           className="h-10 text-sm"
         />
         <Button type="submit" size="sm" disabled={pending} aria-busy={pending} className="h-10 shrink-0">
-          {pending ? <Loader2 className="size-4 animate-spin" /> : "Apply"}
+          {pending ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" /> : t.apply}
         </Button>
       </div>
       {state.error && (

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { brand } from "@/config/brand"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
-import { LogoMark } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { footerColumns } from "@/lib/marketing-routes"
 import { LangToggle } from "@/components/marketing/lang-toggle"
 
@@ -19,13 +19,7 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <div className="md:col-span-2">
-            <Link
-              href="/"
-              className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground"
-            >
-              <LogoMark className="size-8 text-brass" />
-              {brand.logo.wordmark}
-            </Link>
+            <BrandLogo tone="light" size="sm" />
             <p className="mt-4 max-w-sm text-sm text-text-mid">{brand.tagline}</p>
             <p className="mt-4 font-mono text-xs text-text-low">
               {brand.contact.email} · {brand.contact.phone} · {brand.contact.address}

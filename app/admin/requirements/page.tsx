@@ -6,8 +6,9 @@ import {
   RequirementsRegistry,
   type RegistryVersion,
 } from "@/components/admin/requirements-registry"
+import { ruleReviewCounts } from "@/lib/admin/rule-review"
 
-export const metadata = { title: "Requirements registry" }
+export const metadata = { title: { absolute: "Requirements registry · Staff" } }
 
 export default async function RequirementsAdminPage({
   searchParams,
@@ -17,6 +18,7 @@ export default async function RequirementsAdminPage({
   await requireStaff()
   const sp = await searchParams
   const supabase = await createClient()
+  const reviewCounts = await ruleReviewCounts(supabase)
 
   const { data: jurisdictions } = await supabase
     .from("jurisdiction_profiles")
@@ -46,10 +48,9 @@ export default async function RequirementsAdminPage({
         description="The versioned, authority-cited compliance registry. A rule change is a dated data edit — retire a version and add a new one; future cases pick up the change while existing cases keep their prior version."
       />
       <div className="rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-xs text-warn">
-        ⚠ These citations were corrected against NYPD&apos;s checklist, 38 RCNY, and DCJS standards
-        (July 2026) but still require attorney sign-off before client-facing filing use.{" "}
+        ⚠ <b>{reviewCounts.attention} rules need a review</b> by our team before they&apos;re relied on for filing.{" "}
         <Link href="/admin/legal" className="font-medium underline">
-          Open the legal-verification register →
+          Open Rule review
         </Link>
       </div>
       <RequirementsRegistry

@@ -24,7 +24,7 @@ export const brand = {
     address: "New York, NY",
   },
   logo: {
-    // SVG mark lives in components/brand/logo.tsx; wordmark in the display typeface.
+    // The reusable R1 Medallion Scope and wordmark live in components/brand/.
     wordmark: "Gun License NYC",
     mark: "◎",
   },
@@ -32,7 +32,7 @@ export const brand = {
   // firms cannot represent applicants, cannot expedite, and are not endorsed; only
   // a NY-licensed attorney may represent an applicant before the License Division.
   disclaimer:
-    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division; only a New York-licensed attorney may. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. On every service plan, you control your NYPD portal account and submit your own application; Full Concierge adds preparation, review, organization, and screen-by-screen guidance. The NYPD retains full investigative discretion.",
+    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division; only a New York-licensed attorney may. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. You review and submit your own application; we prepare and organize your filing materials. The NYPD retains full investigative discretion.",
   fonts: {
     display: "var(--font-display)",
     sans: "var(--font-sans)",
@@ -115,6 +115,27 @@ export const paletteLight = {
 /** Back-compat alias — nothing imports the raw palette today, but keep it. */
 export const palette = paletteDark
 
+/** Light staff-console palette. Kept here so admin redesigns share one source. */
+export const staffPalette = {
+  "staff-canvas": "#F6F7F9",
+  "staff-paper": "#FFFFFF",
+  "staff-ink": "#101828",
+  "staff-navy": "#14254A",
+  "staff-muted": "#667085",
+  "staff-subtle": "#98A2B3",
+  "staff-gold": "#D9B25F",
+  "staff-green": "#21845A",
+  "staff-green-bg": "#E6F4EC",
+  "staff-amber": "#B54708",
+  "staff-amber-bg": "#FFFAEB",
+  "staff-red": "#B42318",
+  "staff-red-bg": "#FEF3F2",
+  "staff-slate": "#475467",
+  "staff-slate-bg": "#F2F4F7",
+  "staff-line": "rgba(16,24,40,0.10)",
+  "staff-line-on-dark": "rgba(255,255,255,0.20)",
+} as const
+
 const INK = "#0B0A07" // near-black ink for text on brass (both themes)
 
 type Palette = Record<keyof typeof paletteDark, string>
@@ -170,7 +191,7 @@ const varsFrom = (obj: Record<string, string>) =>
  * runtime toggle and no flash.
  */
 export function brandCss(): string {
-  const light = varsFrom({ ...paletteLight, ...shadcnFor(paletteLight, paletteLight["surface-1"]) })
+  const light = varsFrom({ ...paletteLight, ...shadcnFor(paletteLight, paletteLight["surface-1"]), ...staffPalette })
   const dark = varsFrom({ ...paletteDark, ...shadcnFor(paletteDark, "#0A0C10") })
   // `--app-bg-dark` is published on :root (not just .dark) so the DOCUMENT can be
   // painted obsidian on app routes — otherwise overscroll/short pages reveal the

@@ -1,7 +1,6 @@
-import Link from "next/link"
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { ArrowLeft, FileDown, Send, Ban, Clock, GraduationCap, CalendarDays, MessageSquare } from "lucide-react"
+import { Send, Ban } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireStaff } from "@/lib/auth"
@@ -9,19 +8,14 @@ import { type CaseStageKey, stageIndex } from "@/config/stages"
 import { buildMessageTemplates } from "@/config/message-templates"
 import { getFees } from "@/lib/fees"
 import { evaluatePreFilingGate } from "@/lib/qa-gate"
-import { ReticleProgress } from "@/components/ui/reticle-progress"
 import { money, formatDate, formatDateTime, daysSince, daysUntil } from "@/lib/format"
-import { StageControl } from "@/components/admin/stage-control"
 import { RematerializeButton } from "@/components/admin/rematerialize-button"
 import { DocumentReview, type DocRow } from "@/components/admin/document-review"
 import { RequirementsReview, type CaseReqRow } from "@/components/admin/requirements-review"
 import { ConciergeCockpit } from "@/components/admin/concierge-cockpit"
-import { InviteClientButton } from "@/components/admin/invite-client-button"
-import { RecordLicenseControl } from "@/components/admin/record-license-control"
 import { DisclosureReview, type DisclosureRow } from "@/components/admin/disclosure-review"
 import { CaseNotes, type NoteRow } from "@/components/admin/case-notes"
 import { CaseTasks, type CaseTaskRow, type StaffOption } from "@/components/admin/case-tasks"
-import { AssignControl, AssignTrainerControl } from "@/components/admin/assign-control"
 import { QaGateCard } from "@/components/admin/qa-gate-card"
 import { IntakeReview, type IntakeData } from "@/components/admin/intake-review"
 import { MarkMessagesRead } from "@/components/admin/mark-read"
@@ -32,7 +26,6 @@ import {
   adminConfirmBooking,
   adminCancelBooking,
 } from "@/app/admin/actions"
-import { AdminStartRenewal } from "@/components/admin/start-renewal"
 import {
   sendReferenceRequest,
   sendCohabitantRequest,
@@ -42,11 +35,9 @@ import {
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ApplicationTab } from "@/components/admin/application-tab"
 import { assembleApplicationTab } from "@/lib/portal/application-tab"
-import { assembleCompletion } from "@/lib/portal/completion"
-import { CompletionBars } from "@/components/admin/completion-bars"
 import { revealCaseSsn, openCaseDocument, setStepEntered } from "@/app/admin/cases/[id]/application-actions"
 import {
   Table,
@@ -57,22 +48,29 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/application-types"
+import { getCasePreview } from "@/app/admin/cases/preview-actions"
+import { CaseHeader, type CaseWorkspaceTab } from "@/app/admin/cases/[id]/_sections/header"
+import { CaseOverview } from "@/app/admin/cases/[id]/_sections/overview"
+import { ChecklistWorkbench, type WorkbenchRequirement } from "@/app/admin/cases/[id]/_sections/checklist-workbench"
+import { accessCodeLabel } from "@/lib/admin/payments"
+
+export const metadata = { title: { absolute: "Case file · Staff" } }
 
 export default async function CaseFilePage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string; req?: string; group?: string }>
 }) {
   const { id } = await params
-  const { tab } = await searchParams
-  await requireStaff()
+  const { tab, req: selectedRequirementId } = await searchParams
+  const { profile: staffProfile } = await requireStaff()
   const supabase = await createClient()
 
   // Sponsoring company (staff-only) — surface the rep's self-assessment, flagged
   // when they answered "not sure" so a human resolves it before go-live.
-  const { data: sponsorshipRow } = await createAdminClient()
+  const { data: sponsorshipRow } = await supabase
     .from("case_sponsorships")
     .select(
       "sponsor:sponsors(legal_name, agency_license_number, custodian_name, carry_business_status, carry_business_number, carry_business_expires)"
@@ -98,6 +96,8 @@ export default async function CaseFilePage({
     .single()
   if (!kase) notFound()
 
+  const activeTab = normalizeTab(tab)
+
   const client = kase.clients as unknown as {
     id: string
     full_name: string
@@ -109,6 +109,11 @@ export default async function CaseFilePage({
     license_type: string | null
     profile_id: string | null
   }
+
+  // This uses the same ownership/next-step model as Today, Pipeline and Cases.
+  // Start it alongside the case-detail queries so the Overview does not add a
+  // second sequential round trip to the server render.
+  const previewPromise = getCasePreview(id)
 
   const [
     reqsRes,
@@ -135,7 +140,7 @@ export default async function CaseFilePage({
   ] = await Promise.all([
     supabase
       .from("case_requirements")
-      .select("id, req_code, status, notes, document_id, requirements!inner(title, description, authority, severity, blocking)")
+      .select("id, req_code, status, notes, document_id, reference_id, cohabitant_id, updated_at, requirements!inner(title, description, authority, severity, blocking, legal_status, needs_legal_review, verified_on, party)")
       .eq("case_id", id)
       .order("req_code"),
     supabase.from("disclosures").select("*").eq("case_id", id).order("type"),
@@ -157,7 +162,7 @@ export default async function CaseFilePage({
     // Training tab (engagementMessagesRes below).
     supabase
       .from("messages")
-      .select("id, body, created_at, profiles:sender_id(full_name, role)")
+      .select("id, body, created_at, read, profiles:sender_id(full_name, role)")
       .eq("case_id", id)
       .is("engagement_id", null)
       .order("created_at"),
@@ -196,17 +201,21 @@ export default async function CaseFilePage({
     supabase.from("instructors").select("id, name, verified").order("verified", { ascending: false }).order("name"),
   ])
 
+  // Shared model used by Today, Pipeline and the Cases preview. Keeping this as
+  // the case-page source prevents a second ownership/next-step rule set.
+  const preview = await previewPromise
+
   // Map every upload to the requirement it answers, so the reviewer sees WHAT a
   // file is meant to satisfy — not just "ID.jpg". The registry (requirements) is
   // the single source of the label + acceptance line; nothing is duplicated here.
-  type ReqInfo = { reqCode: string; title: string; acceptance: string | null; blocking: boolean; severity: string; status: string }
+  type ReqInfo = { id: string; reqCode: string; title: string; acceptance: string | null; blocking: boolean; severity: string; status: string }
   const reqByCode = new Map<string, ReqInfo>()
   const reqCodeByDocId = new Map<string, string>() // the doc bound as a requirement's satisfying evidence
   const docIdToReqCodes = new Map<string, string[]>() // one upload can satisfy several requirements
   for (const r of reqsRes.data ?? []) {
     const req = r.requirements as unknown as { title: string; description: string | null; blocking: boolean; severity: string }
     reqByCode.set(r.req_code, {
-      reqCode: r.req_code, title: req.title, acceptance: req.description,
+      id: r.id, reqCode: r.req_code, title: req.title, acceptance: req.description,
       blocking: req.blocking, severity: req.severity, status: r.status,
     })
     if (r.document_id) {
@@ -234,7 +243,7 @@ export default async function CaseFilePage({
         id: d.id, type: d.type, status: d.status, notarized: d.notarized,
         version: d.version, review_notes: d.review_notes, file_name: d.file_name, hasFile,
         generated: d.generated, signed_at: d.signed_at, created_at: d.created_at,
-        reqCode, reqTitle: req?.title ?? null, acceptance: req?.acceptance ?? null,
+        reqCode, reqId: req?.id ?? null, reqTitle: req?.title ?? null, acceptance: req?.acceptance ?? null,
         reqBlocking: req?.blocking ?? false, reqStatus: req?.status ?? null,
         sameFileAs: alsoTitles,
       }
@@ -296,6 +305,46 @@ export default async function CaseFilePage({
 
   // People: token status per reference / cohabitant.
   const refReqByRef = new Map((refReqsRes.data ?? []).map((r) => [r.reference_id, r]))
+  const cohabitantById = new Map((cohabRes.data ?? []).map((row) => [row.id, row]))
+
+  const workbenchRequirements: WorkbenchRequirement[] = (reqsRes.data ?? []).map((row) => {
+    const requirement = row.requirements as unknown as {
+      title: string
+      description: string | null
+      authority: string | null
+      severity: string
+      blocking: boolean
+      legal_status: string
+      needs_legal_review: boolean
+      verified_on: string | null
+    }
+    const reference = row.reference_id ? refReqByRef.get(row.reference_id) : null
+    const cohabitant = row.cohabitant_id ? cohabitantById.get(row.cohabitant_id) : null
+    const thirdPartyStatus = reference
+      ? reference.revoked_at ? "revoked" : reference.notarized_at ? "notarized" : reference.answered_at ? "submitted" : reference.opened_at ? "opened" : reference.sent_at ? "sent" : "not_sent"
+      : cohabitant
+        ? cohabitant.token_revoked_at ? "revoked" : cohabitant.affidavit_status === "notarized" ? "notarized" : cohabitant.answered_at ? "submitted" : cohabitant.opened_at ? "opened" : cohabitant.sent_at || cohabitant.token ? "sent" : "not_sent"
+        : null
+    return {
+      id: row.id,
+      reqCode: row.req_code,
+      title: requirement.title,
+      description: requirement.description,
+      authority: requirement.authority,
+      legalStatus: requirement.legal_status,
+      verifiedOn: requirement.verified_on,
+      needsLegalReview: requirement.needs_legal_review,
+      blocking: requirement.blocking,
+      severity: requirement.severity,
+      status: row.status,
+      notes: row.notes,
+      documentId: row.document_id,
+      referenceId: row.reference_id,
+      cohabitantId: row.cohabitant_id,
+      updatedAt: row.updated_at,
+      thirdPartyStatus,
+    }
+  })
 
   const notes: NoteRow[] = (notesRes.data ?? []).map((n) => ({
     id: n.id, body: n.body, pinned: n.pinned, createdAt: n.created_at,
@@ -372,7 +421,6 @@ export default async function CaseFilePage({
   // Left-rail vitals.
   const stage = kase.stage as CaseStageKey
   const blockingOpen = reqRows.filter((r) => r.blocking && r.status === "pending").length
-  const daysInStage = daysSince(kase.stage_entered_at) ?? 0
   const lastClientMsg = [...(messagesRes.data ?? [])]
     .reverse()
     .find((m) => (m.profiles as unknown as { role: string } | null)?.role === "client")
@@ -384,165 +432,111 @@ export default async function CaseFilePage({
   const clientIdleDays = daysSince(lastClientActivity ?? null)
   const trainingDaysLeft = daysUntil(kase.training_expires_on)
   const nextAppt = apptRes.data?.[0]
-  const lastMessage = (messagesRes.data ?? []).at(-1)
+  const unreadClientMessages = (messagesRes.data ?? []).filter((message) => {
+    const sender = message.profiles as unknown as { role: string } | null
+    return sender?.role === "client" && !message.read
+  }).length
+  const pendingDocumentReviews = docs.filter((document) => document.status === "pending" && (!document.generated || !!document.signed_at)).length
+  const pendingPeople = (refsRes.data ?? []).filter((reference) => !reference.notarized).length
+    + (cohabRes.data ?? []).filter((cohabitant) => cohabitant.affidavit_status !== "notarized").length
+  const openTasks = tasks.filter((task) => task.status !== "done")
+  const overdueTasks = openTasks.filter((task) => task.dueDate && task.dueDate < new Date().toISOString().slice(0, 10)).length
+  const paidTotal = (paymentsRes.data ?? []).filter((payment) => payment.status === "paid" && payment.amount_cents > 0).reduce((sum, payment) => sum + payment.amount_cents, 0)
+  const compPayment = (paymentsRes.data ?? []).find((payment) => payment.status === "paid" && payment.amount_cents === 0)
+  const requestedPayment = (paymentsRes.data ?? []).find((payment) => payment.status === "pending")
+  const paymentSummary = paidTotal > 0
+    ? `Paid · ${money(paidTotal)}`
+    : compPayment
+      ? `Comped · ${accessCodeLabel(compPayment.description)}`
+    : requestedPayment
+      ? `${money(requestedPayment.amount_cents)} requested`
+      : "Not paid"
+  const filedActivity = (activityRes.data ?? []).find((activity) => {
+    const detail = activity.detail as { to?: string } | null
+    return activity.action === "case.stage_advanced" && detail?.to === "filed"
+  })
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <MarkMessagesRead caseId={id} />
-      <Link
-        href="/admin/cases"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> All cases
-      </Link>
-
-      {/* Header + left-rail vitals */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-semibold tracking-tight">{client.full_name}</h2>
-                <StatusBadge status={kase.status} />
-                {kase.is_demo && (
-                  <span className="rounded bg-warn/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-warn">
-                    Demo
-                  </span>
-                )}
-                {kase.is_renewal && (
-                  <span className="rounded bg-brass/15 px-2 py-0.5 text-xs font-medium text-brass-bright">Renewal</span>
-                )}
-                <span className="rounded border border-hairline bg-surface-2 px-2 py-0.5 text-xs font-medium text-text-mid">
-                  {kase.application_type
-                    ? APPLICATION_TYPE_LABELS[kase.application_type as ApplicationType]
-                    : "Application type unclassified"}
-                </span>
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                {client.email ?? "no email"} · {client.phone ?? "no phone"} · {client.borough ?? "—"} ·{" "}
-                <span className="capitalize">{client.track.replace(/_/g, " ")}</span>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                <span>Consultant</span>
-                <AssignControl caseId={id} clientId={client.id} current={client.assigned_staff} staff={staff} />
-                <span>· Trainer</span>
-                <AssignTrainerControl caseId={id} current={activeInstructorId} instructors={verifiedInstructors} />
-                <span>· Opened {formatDate(kase.opened_at)}{kase.nypd_app_ref && ` · NYPD ${kase.nypd_app_ref}`}</span>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <StageControl caseId={kase.id} stage={stage} status={kase.status} />
-              <div className="flex items-center gap-2">
-                <a
-                  href={`/admin/cases/${kase.id}/worksheet`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-signal/40 bg-signal/8 px-3 py-1.5 text-xs font-medium text-signal transition-colors hover:bg-signal/15"
-                >
-                  <FileDown className="size-3.5" /> Portal worksheet
-                </a>
-                <a
-                  href={`/admin/cases/${kase.id}/filing-pack`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-brass/40 bg-brass/8 px-3 py-1.5 text-xs font-medium text-brass-bright transition-colors hover:bg-brass/15"
-                >
-                  <FileDown className="size-3.5" /> Filing pack
-                </a>
-                <a
-                  href={`/admin/cases/${kase.id}/packet`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-xs font-medium text-text-mid transition-colors hover:text-foreground"
-                >
-                  <FileDown className="size-3.5" /> Docs only
-                </a>
-              </div>
-              {stageIndex(stage) >= stageIndex("filed") && (
-                <RecordLicenseControl
-                  caseId={kase.id}
-                  isSpecialCarry={client.track === "non_resident"}
-                  defaultLicenseType={client.license_type}
-                  issued={!!kase.license_expires_on}
-                />
-              )}
-              {stage === "licensed" && !kase.is_renewal && <AdminStartRenewal caseId={kase.id} />}
-              {/* CONCIERGE QA Phase 5 — a provisioned account is never left with
-                  no route in: send or copy a set-password invite. */}
-              {client.profile_id && client.email && <InviteClientButton caseId={kase.id} />}
-            </div>
-          </div>
-
-          {/* Vitals strip — the numbers that matter, always visible */}
-          <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-5">
-            <Vital tone={blockingOpen ? "warn" : "ok"}>
-              <b>{blockingOpen}</b>&nbsp;blocking requirement{blockingOpen === 1 ? "" : "s"} open
-            </Vital>
-            <Vital tone={daysInStage > 14 ? "warn" : "none"}>
-              <Clock className="size-3.5" /> <b>{daysInStage}d</b>&nbsp;in stage
-            </Vital>
-            <Vital tone={clientIdleDays != null && clientIdleDays > 7 ? "warn" : "none"}>
-              <MessageSquare className="size-3.5" />
-              {clientIdleDays == null ? "no client activity yet" : <><b>{clientIdleDays}d</b>&nbsp;since client activity</>}
-            </Vital>
-            <Vital tone={trainingDaysLeft != null && trainingDaysLeft <= 30 ? (trainingDaysLeft < 0 ? "danger" : "warn") : "none"}>
-              <GraduationCap className="size-3.5" />
-              {trainingDaysLeft == null
-                ? "training not recorded"
-                : trainingDaysLeft < 0
-                  ? <>training <b>expired</b></>
-                  : <>training valid&nbsp;<b>{trainingDaysLeft}d</b></>}
-            </Vital>
-            <Vital tone="none">
-              <CalendarDays className="size-3.5" />
-              {nextAppt
-                ? <>{nextAppt.type} {formatDateTime(nextAppt.scheduled_at)}</>
-                : lastMessage
-                  ? <>last msg {formatDate(lastMessage.created_at)}</>
-                  : "no upcoming appointment"}
-            </Vital>
-          </div>
-
-          <ReticleProgress currentStage={stage} className="mt-6" />
-
-          {/* Completion at a glance — portal / interview / overall, one metrics pass. */}
-          <div className="mt-5 rounded-lg border border-hairline bg-surface-2/40 p-3">
-            <Suspense fallback={<div className="text-xs text-text-low">Computing completion…</div>}>
-              <CompletionBarsLoader caseId={id} />
-            </Suspense>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CONCIERGE Phase 5 — the done-for-you cockpit, only for concierge cases */}
-      {kase.service_mode === "concierge" && (
-        <ConciergeCockpit
-          caseId={kase.id}
-          clientName={client.full_name}
-          stage={stage}
-          metricsSlot={
-            <Suspense fallback={<div className="text-xs text-text-low">Computing completion…</div>}>
-              <CompletionBarsLoader caseId={id} compact />
-            </Suspense>
-          }
-        />
-      )}
+    <div className="mx-auto max-w-[1440px] overflow-x-clip pb-24 md:pb-0">
+      {activeTab === "messages" && <MarkMessagesRead caseId={id} />}
+      <CaseHeader
+        caseId={id}
+        clientId={client.id}
+        clientName={client.full_name}
+        email={client.email}
+        phone={client.phone}
+        borough={client.borough}
+        serviceLabel={preview.serviceLabel}
+        serviceMode={kase.service_mode}
+        trackLabel={preview.trackLabel}
+        applicationLabel={kase.application_type ? APPLICATION_TYPE_LABELS[kase.application_type as ApplicationType] : null}
+        openedAt={kase.opened_at}
+        nypdRef={kase.nypd_app_ref}
+        ownerName={preview.ownerName}
+        trainerName={activeInstructorName}
+        assignedStaff={client.assigned_staff}
+        assignedTrainer={activeInstructorId}
+        staff={staff}
+        instructors={verifiedInstructors}
+        stage={stage}
+        status={kase.status}
+        daysInStage={preview.days}
+        stalled={preview.stalled}
+        whoseMove={preview.whoseMove}
+        isLead={preview.isLead}
+        leadGroup={preview.leadGroup}
+        isRenewal={kase.is_renewal}
+        isDemo={kase.is_demo}
+        hasInvite={!!client.profile_id && !!client.email}
+        canRecordLicense={stageIndex(stage) >= stageIndex("filed")}
+        canStartRenewal={stage === "licensed" && !kase.is_renewal}
+        currentTab={activeTab}
+        counts={{ blocking: blockingOpen, documents: pendingDocumentReviews, people: pendingPeople, messages: unreadClientMessages, tasks: openTasks.length }}
+        licenseType={client.license_type}
+        licenseIssued={!!kase.license_expires_on}
+        isSpecialCarry={client.track === "non_resident"}
+      />
 
       {/* Tabs */}
-      <Tabs defaultValue={tab === "requirements" || tab === "documents" || tab === "intake" || tab === "disclosures" || tab === "people" || tab === "training" || tab === "notes" || tab === "tasks" || tab === "messages" || tab === "activity" ? tab : "application"}>
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="application">Application</TabsTrigger>
-          <TabsTrigger value="requirements">Requirements ({blockingOpen})</TabsTrigger>
-          <TabsTrigger value="intake">Intake responses</TabsTrigger>
-          <TabsTrigger value="disclosures">Disclosures ({disclosureRows.length})</TabsTrigger>
-          <TabsTrigger value="documents">Documents ({docs.length})</TabsTrigger>
-          <TabsTrigger value="people">People</TabsTrigger>
-          <TabsTrigger value="training">Training &amp; Scheduling</TabsTrigger>
-          <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks ({tasks.filter((t) => t.status !== "done").length})</TabsTrigger>
-          <TabsTrigger value="messages">Messages ({messages.length})</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue={activeTab}>
+        <TabsContent value="overview" className="mt-0">
+          <CaseOverview
+            caseId={id}
+            preview={preview}
+            messages={messages}
+            unreadMessages={unreadClientMessages}
+            pinnedNote={notes.find((note) => note.pinned) ?? null}
+            clientIdleDays={clientIdleDays}
+            trainingExpiresOn={kase.training_expires_on}
+            trainingDaysLeft={trainingDaysLeft}
+            nextAppointment={nextAppt ?? null}
+            openTasks={openTasks.length}
+            overdueTasks={overdueTasks}
+            paymentSummary={paymentSummary}
+            paymentComped={!!compPayment}
+            filedAt={filedActivity?.created_at ?? null}
+            nypdRef={kase.nypd_app_ref}
+            licenseIssuedOn={kase.license_issued_on}
+            licenseExpiresOn={kase.license_expires_on}
+            concierge={kase.service_mode === "concierge" ? <ConciergeCockpit caseId={id} clientName={client.full_name} stage={stage} /> : undefined}
+          />
+        </TabsContent>
+
+        <TabsContent value="checklist" className="mt-0">
+          <ChecklistWorkbench
+            caseId={id}
+            clientId={client.id}
+            clientFirstName={client.full_name.split(/\s+/)[0] ?? "client"}
+            requirements={workbenchRequirements}
+            documents={docs}
+            selectedId={selectedRequirementId ?? null}
+            messages={messages}
+            notes={notes}
+            engagementId={activeEngagementId}
+            instructorMessages={staffLaneMessages}
+            openDocument={openCaseDocument}
+          />
+        </TabsContent>
 
         <TabsContent value="application" className="mt-4">
           <Suspense fallback={<div className="rounded-lg border border-hairline bg-card p-6 text-sm text-text-mid">Loading the portal transcription…</div>}>
@@ -587,6 +581,9 @@ export default async function CaseFilePage({
             readyForSignOff={gate.readyForSignOff}
             signedOffBy={signedOffByName}
             signedOffAt={kase.qa_signed_off_at}
+            applicant={client.full_name}
+            staffName={staffProfile.full_name || "Staff member"}
+            serviceMode={kase.service_mode}
           />
           <RequirementsReview caseId={id} rows={reqRows} />
           <div className="flex justify-end">
@@ -900,14 +897,16 @@ export default async function CaseFilePage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paymentsRes.data ?? []).map((p) => (
-                    <TableRow key={p.id}>
+                  {(paymentsRes.data ?? []).map((p) => {
+                    const comped = p.status === "paid" && p.amount_cents === 0
+                    return (
+                    <TableRow key={p.id} className={comped ? "border-l-[3px] border-l-[var(--comp)] bg-gradient-to-r from-[var(--comp-tint)] to-white" : undefined}>
                       <TableCell className="font-medium">{p.description ?? "—"}</TableCell>
-                      <TableCell>{money(p.amount_cents)}</TableCell>
-                      <TableCell><StatusBadge status={p.status} /></TableCell>
+                      <TableCell className={comped ? "font-semibold text-[var(--comp)]" : undefined}>{comped ? "$0 · comp" : money(p.amount_cents)}</TableCell>
+                      <TableCell>{comped ? <span className="inline-flex rounded-full border border-[var(--comp-border)] bg-[var(--comp-tint)] px-2 py-1 text-xs font-semibold text-[var(--comp)]">🎁 Comped</span> : <StatusBadge status={p.status} />}</TableCell>
                       <TableCell className="text-muted-foreground">{p.paid_at ? formatDate(p.paid_at) : "—"}</TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             )}
@@ -915,11 +914,16 @@ export default async function CaseFilePage({
         </TabsContent>
 
         <TabsContent value="notes" className="mt-4">
-          <CaseNotes caseId={id} notes={notes} />
-        </TabsContent>
-
-        <TabsContent value="tasks" className="mt-4">
-          <CaseTasks caseId={id} tasks={tasks} staff={staff} />
+          <div className="grid gap-5 xl:grid-cols-2">
+            <section className="rounded-2xl border border-hairline bg-card p-4 sm:p-5">
+              <h2 className="mb-4 font-display text-xl">Staff notes</h2>
+              <CaseNotes caseId={id} notes={notes} />
+            </section>
+            <section className="rounded-2xl border border-hairline bg-card p-4 sm:p-5">
+              <h2 className="mb-4 font-display text-xl">Tasks</h2>
+              <CaseTasks caseId={id} tasks={tasks} staff={staff} />
+            </section>
+          </div>
         </TabsContent>
 
         <TabsContent value="messages" className="mt-4">
@@ -968,20 +972,6 @@ export default async function CaseFilePage({
   )
 }
 
-function Vital({ children, tone }: { children: React.ReactNode; tone: "ok" | "warn" | "danger" | "none" }) {
-  const tones = {
-    ok: "border-ok/30 bg-ok/8 text-ok",
-    warn: "border-warn/30 bg-warn/8 text-warn",
-    danger: "border-danger/30 bg-danger/10 text-danger",
-    none: "border-hairline bg-surface-1 text-text-mid",
-  }
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 ${tones[tone]}`}>
-      {children}
-    </span>
-  )
-}
-
 function Empty({ children }: { children: React.ReactNode }) {
   return (
     <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -996,13 +986,6 @@ function Empty({ children }: { children: React.ReactNode }) {
  * page already passed requireStaff(). Uses the service-role client to read the SSN
  * PRESENCE (not value) and the concierge-prepared answers a client RLS session can't see.
  */
-/** Streams the three completion bars for the case header (and concierge cockpit). */
-async function CompletionBarsLoader({ caseId, compact = false }: { caseId: string; compact?: boolean }) {
-  const metrics = await assembleCompletion(createAdminClient(), caseId)
-  if (!metrics) return <p className="text-xs text-text-low">No application data yet — completion appears once intake is in.</p>
-  return <CompletionBars metrics={metrics} caseId={caseId} compact={compact} />
-}
-
 async function ApplicationTabLoader({ caseId }: { caseId: string }) {
   const admin = createAdminClient()
   const data = await assembleApplicationTab(admin, caseId)
@@ -1020,4 +1003,13 @@ async function ApplicationTabLoader({ caseId }: { caseId: string }) {
       uploadSetHref={`/admin/cases/${caseId}/upload-set`}
     />
   )
+}
+
+function normalizeTab(value: string | undefined): CaseWorkspaceTab {
+  if (value === "requirements") return "checklist"
+  if (value === "tasks" || value === "notes") return "notes"
+  if (value === "intake") return "intake"
+  if (value === "activity") return "activity"
+  const allowed: CaseWorkspaceTab[] = ["overview", "checklist", "documents", "people", "disclosures", "training", "messages", "notes", "application"]
+  return allowed.includes(value as CaseWorkspaceTab) ? value as CaseWorkspaceTab : "overview"
 }

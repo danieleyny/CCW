@@ -1,0 +1,14 @@
+[
+  { "key": "fox", "name": "Fox", "bg": "#FFE3CC", "file": "fox.svg" },
+  { "key": "panda", "name": "Panda", "bg": "#E6F0FF", "file": "panda.svg" },
+  { "key": "bear", "name": "Bear", "bg": "#F4E6D8", "file": "bear.svg" },
+  { "key": "cat", "name": "Cat", "bg": "#EDE7FF", "file": "cat.svg" },
+  { "key": "dog", "name": "Pup", "bg": "#FFF1CF", "file": "dog.svg" },
+  { "key": "bunny", "name": "Bunny", "bg": "#FFE6EF", "file": "bunny.svg" },
+  { "key": "owl", "name": "Owl", "bg": "#E3F4EC", "file": "owl.svg" },
+  { "key": "penguin", "name": "Penguin", "bg": "#DDF3FF", "file": "penguin.svg" },
+  { "key": "koala", "name": "Koala", "bg": "#E9EEF3", "file": "koala.svg" },
+  { "key": "lion", "name": "Lion", "bg": "#FFF0C8", "file": "lion.svg" },
+  { "key": "frog", "name": "Frog", "bg": "#E2F7D9", "file": "frog.svg" },
+  { "key": "tiger", "name": "Tiger", "bg": "#FFE8D1", "file": "tiger.svg" }
+]

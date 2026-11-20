@@ -20,7 +20,7 @@ export const metadata = buildMetadata({
 const buildFaqs = (fees: Fees) => [
   {
     q: "How do I get a gun license in NYC?",
-    a: "You apply through the NYPD License Division: confirm you're eligible, complete New York's 18-hour firearms course, assemble your documents, then file, get fingerprinted, and attend an interview. You control the portal and submit on every plan; Full Concierge prepares, checks, organizes, and guides you screen by screen.",
+    a: "You apply through the NYPD License Division: confirm you're eligible, complete New York's 18-hour firearms course, assemble your documents (references, cohabitant affidavits, proof of residence, photos, and disclosures), then submit your application, get fingerprinted, and attend an interview. Gun License NYC can prepare and organize your filing materials, but you review and submit your own application — and the NYPD decides the outcome.",
   },
   {
     q: "How long does the NYC concealed carry process take?",
@@ -80,7 +80,7 @@ export default async function Faq() {
   const fees = await getPublicFees()
   const FAQS = buildFaqs(fees)
   return (
-    <>
+    <div className="guide-page">
       <JsonLd data={faqSchema(FAQS)} />
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "FAQ", path: "/faq" }]} />
       <PageHero
@@ -88,22 +88,17 @@ export default async function Faq() {
         title="Questions, answered"
         subtitle="Straight answers to what people ask us most — no jargon, no sales pitch."
       />
-      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <div className="space-y-3">
-          {FAQS.map((f) => (
-            <details
-              key={f.q}
-              className="group rounded-lg border border-hairline bg-card p-5 [&_summary::-webkit-details-marker]:hidden"
-            >
-              <summary className="flex cursor-pointer items-center justify-between font-display text-base font-medium">
-                {f.q}
-                <span className="font-mono text-signal transition-transform group-open:rotate-45">
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-text-mid">{f.a}</p>
-            </details>
-          ))}
+
+      <section style={{ padding: "56px 0 8px" }}>
+        <div className="article-body" style={{ width: "min(100% - 48px, 820px)", marginInline: "auto" }}>
+          <div className="faq-block" style={{ marginTop: 0, borderTop: "none", paddingTop: 0 }}>
+            {FAQS.map((f) => (
+              <details className="faq-item" key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -115,6 +110,6 @@ export default async function Faq() {
           { label: "Find your borough's page", href: "/gun-license" },
         ]}
       />
-    </>
+    </div>
   )
 }

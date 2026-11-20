@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Three Hero Visuals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Azeret+Mono:wght@400;500&display=swap">
+<style>
+:root{--ivory:#F7F5EF;--paper:#FFFEFA;--deep:#ECE8DE;--ink:#0A1019;--soft:#4D5562;--muted:#767D87;--rule:#D7D3C9;
+ --electric:#3978F6;--cyan:#5BE7F6;--violet:#7659FF;--magenta:#E24BAE;--verm:#F05B58;--tang:#FF8A43;--ok:#10836A;
+ --spectral:linear-gradient(96deg,var(--cyan),var(--electric) 26%,var(--violet) 48%,var(--magenta) 70%,var(--verm) 86%,var(--tang));
+ --display:"Bodoni Moda",Georgia,serif;--sans:"Hanken Grotesk",system-ui,sans-serif;--mono:"Azeret Mono",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ivory);color:var(--ink);font-family:var(--sans);
+ background-image:radial-gradient(circle at 1px 1px,rgba(7,17,31,.045) .7px,transparent .8px);background-size:8px 8px}
+.wrap{max-width:1120px;margin:0 auto;padding:44px 32px 90px}
+h1{font-family:var(--display);font-size:40px;font-weight:500;letter-spacing:-.03em;margin:8px 0 6px}
+.sub{color:var(--soft);max-width:60ch;margin:0 0 8px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--electric)}
+.opt{margin-top:46px;padding-top:30px;border-top:1px solid var(--rule)}
+.opt-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.opt h2{font-family:var(--display);font-size:29px;font-weight:500;letter-spacing:-.025em;margin:6px 0 0}
+.opt .pitch{color:var(--soft);max-width:62ch;margin:10px 0 0;font-size:15.5px;line-height:1.6}
+.replay{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:#fff;
+ border:0;border-radius:6px;padding:10px 16px;cursor:pointer}
+.frame{margin-top:24px;border:1px solid var(--rule);border-radius:12px;background:var(--paper);padding:30px;
+ display:grid;place-items:center;min-height:440px;overflow:hidden;position:relative}
+.cost{margin-top:12px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ============ 1 · THE LINE ============ */
+/* draw 260-1160 · walk-in 1350-2050 · beat · cross 2300-4050 · arrive + confetti 4050 */
+.line-stage{width:100%;max-width:880px;position:relative}
+.line-stage svg{width:100%;height:auto;display:block;overflow:visible}
+.stage-kicker{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+ color:var(--muted);margin:0 0 4px}
+
+.ghost{fill:none;stroke:#CFCBC2;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;
+ stroke-dasharray:2 9;opacity:0}
+.playing .ghost{animation:ghostIn 600ms ease-out forwards 120ms, ghostOut 1750ms linear forwards 2300ms}
+@keyframes ghostIn{to{opacity:1}}
+@keyframes ghostOut{to{opacity:.12}}
+
+.trace{fill:none;stroke:url(#g1);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+ stroke-dasharray:var(--done) var(--gap);stroke-dashoffset:var(--done)}
+.playing .trace{animation:draw 900ms cubic-bezier(.4,.05,.2,1) forwards 260ms}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+.trace2{fill:none;stroke:url(#g1);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+ stroke-dasharray:0 var(--done) 0 var(--gap)}
+.playing .trace2{animation:fill 1750ms linear forwards 2300ms}
+@keyframes fill{to{stroke-dasharray:0 var(--done) var(--rest) var(--gap)}}
+
+.stop{fill:var(--paper);stroke:var(--rule);stroke-width:2.5;transform-box:fill-box;transform-origin:center;opacity:0}
+.playing .stop{animation:pop 420ms cubic-bezier(.2,.9,.3,1.4) forwards var(--sd)}
+@keyframes pop{0%{opacity:0;transform:scale(.5)}40%{opacity:1}60%{transform:scale(1.22)}100%{opacity:1;transform:scale(1)}}
+.stop.done{stroke:var(--electric)}
+.stop.ahead{stroke:#D3CFC6;stroke-width:2}
+.playing .stop.ahead{animation:popAhead 420ms ease-out forwards var(--sd),
+                                lightUp 380ms cubic-bezier(.2,.9,.3,1.4) forwards var(--ld)}
+@keyframes popAhead{0%{opacity:0;transform:scale(.6)}100%{opacity:.75;transform:scale(1)}}
+@keyframes lightUp{0%{opacity:.75;transform:scale(1);stroke:#D3CFC6;stroke-width:2}
+ 55%{opacity:1;transform:scale(1.32);stroke:var(--electric);stroke-width:2.5}
+ 100%{opacity:1;transform:scale(1);stroke:var(--electric);stroke-width:2.5}}
+.stop-label.ahead-l{fill:#B9B4A9}
+.playing .stop-label.ahead-l{animation:labelUp 380ms ease-out forwards var(--ld)}
+@keyframes labelUp{to{fill:var(--muted)}}
+
+.here{fill:var(--electric);stroke:var(--paper);stroke-width:3.5}
+.halo{fill:var(--electric);opacity:0;transform-box:fill-box;transform-origin:center}
+.playing .halo{animation:halo 900ms ease-out forwards 1080ms}
+@keyframes halo{0%{opacity:.42;transform:scale(.7)}100%{opacity:0;transform:scale(2.6)}}
+.stop-label{font-family:var(--mono);font-size:8.5px;letter-spacing:.13em;fill:var(--muted);text-transform:uppercase}
+
+/* ---- the walker: our shield, personified ---- */
+.walker{opacity:0}
+.playing .walker{animation:walkerIn 260ms ease-out forwards 1180ms}
+@keyframes walkerIn{to{opacity:1}}
+.shield-body{fill:#4B4F55}
+.shield-check{fill:none;stroke:#E0A93F;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.spire{stroke:#4B4F55;stroke-width:1.6;stroke-linecap:round}
+.eye-w{fill:#FFFDF8}.eye-p{fill:#2B2E33}
+.limb{fill:#4B4F55;transform-box:fill-box;transform-origin:50% 0}
+.playing .leg-a{animation:swF 170ms linear 4.1 1350ms, swF 170ms linear 10.3 2300ms}
+.playing .leg-b{animation:swB 170ms linear 4.1 1350ms, swB 170ms linear 10.3 2300ms}
+/* arms mirror the legs, then shoot up at the finish */
+.playing .arm-a{animation:swB 170ms linear 4.1 1350ms, reach 400ms ease-out both 2060ms,
+                          swB 170ms linear 10.3 2300ms, cheerR 520ms cubic-bezier(.2,.9,.3,1.5) forwards 4050ms}
+.playing .arm-b{animation:swF 170ms linear 4.1 1350ms, swF 170ms linear 10.3 2300ms,
+                          cheerL 520ms cubic-bezier(.2,.9,.3,1.5) forwards 4050ms}
+@keyframes swF{0%{transform:rotate(24deg)}50%{transform:rotate(-24deg)}100%{transform:rotate(24deg)}}
+@keyframes swB{0%{transform:rotate(-24deg)}50%{transform:rotate(24deg)}100%{transform:rotate(-24deg)}}
+@keyframes reach{to{transform:rotate(-50deg)}}          /* holds a hand out to you */
+@keyframes cheerR{to{transform:rotate(-152deg)}}
+@keyframes cheerL{to{transform:rotate(152deg)}}
+.bob{transform-box:fill-box;transform-origin:50% 100%}
+.playing .bob{animation:bob 85ms linear 8.2 1350ms, bob 85ms linear 20.6 2300ms,
+                        arrive 520ms cubic-bezier(.2,.9,.3,1.5) forwards 4050ms}
+@keyframes bob{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-1.5px) rotate(-2deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes arrive{0%{transform:translateY(0) scale(1)}
+ 32%{transform:translateY(-9px) scale(1.05)}
+ 66%{transform:translateY(0) scale(.93,1.07)}
+ 100%{transform:translateY(0) scale(1)}}
+.playing .shield-check{animation:glint 620ms ease-out 2 1900ms, glint 700ms ease-out 2 4200ms}
+@keyframes glint{0%{stroke:#E0A93F}45%{stroke:#FFD887}100%{stroke:#E0A93F}}
+/* eyes shut into happy arcs on arrival */
+.playing .eye-p{animation:squint 520ms ease-out forwards 4120ms}
+@keyframes squint{to{transform:scaleY(.25) translateY(2.4px)}}
+.eye-p{transform-box:fill-box;transform-origin:center}
+
+/* ---- confetti ---- */
+.conf{opacity:0;transform-box:fill-box;transform-origin:center}
+.playing .conf{animation:conf var(--cd) cubic-bezier(.15,.6,.5,1) forwards var(--cdel)}
+@keyframes conf{
+ 0%{opacity:0;transform:translate(0,0) rotate(0deg) scale(.3)}
+ 10%{opacity:1}
+ 40%{transform:translate(calc(var(--dx)*.55),var(--peak)) rotate(calc(var(--rot)*.45)) scale(1)}
+ 78%{opacity:1}
+ 100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(1)}}
+
+/* ---- readout: names the stage the walker is standing on ---- */
+.readout{margin:22px 0 0;height:36px;position:relative}
+@media (max-width:560px){.readout{height:40px}.readout span{font-size:9px;letter-spacing:.1em}}
+.readout span{position:absolute;left:0;right:0;top:0;opacity:0;
+ font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+ color:var(--muted);text-align:center;line-height:1.7}
+.readout b{color:var(--ink);font-weight:500}
+.readout .fin b{color:#1F7A4D}
+.playing .readout span{animation:rIn 200ms ease-out forwards var(--in), rOut 180ms ease-in forwards var(--out)}
+.playing .readout .fin{animation:rIn 300ms ease-out forwards var(--in)}
+@keyframes rIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rOut{to{opacity:0}}
+
+@media (prefers-reduced-motion:reduce){
+  .playing .ghost,.playing .trace,.playing .trace2,.playing .stop,.playing .stop.ahead,
+  .playing .walker,.playing .bob,.playing .leg-a,.playing .leg-b,.playing .arm-a,.playing .arm-b,
+  .playing .halo,.playing .conf,
+  .playing .shield-check,.playing .eye-p,.playing .stop-label.ahead-l,
+  .playing .readout span{animation:none!important}
+  .ghost{opacity:.12}.trace2{stroke-dasharray:0 var(--done) var(--rest) var(--gap)}
+  .stop{opacity:1}.stop.ahead{stroke:var(--electric);stroke-width:2.5;opacity:1}
+  .walker{opacity:1}.here-plate,.here-label{opacity:0}
+  .readout .fin{opacity:1}
+}
+
+/* ============ 2 · THE BOARD ============ */
+.board{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;width:100%;max-width:560px;perspective:900px}
+.tile{aspect-ratio:1/1.16;border-radius:6px;background:var(--deep);border:1px solid var(--rule);
+ display:grid;place-items:center;transform-style:preserve-3d;position:relative}
+.playing .tile{animation:flip 520ms cubic-bezier(.25,.8,.3,1) forwards var(--td)}
+@keyframes flip{0%{transform:rotateX(-92deg);opacity:.35}100%{transform:rotateX(0);opacity:1}}
+.tile .mk{font-size:15px;color:var(--ok);opacity:0}
+.playing .tile .mk{animation:show 240ms ease-out forwards calc(var(--td) + 340ms)}
+@keyframes show{to{opacity:1}}
+.tile.done{background:var(--paper)}
+.tile.mine{background:var(--ink);border-color:var(--ink)}
+.tile.mine .mk{color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:.1em}
+.board-foot{display:flex;justify-content:space-between;width:100%;max-width:560px;margin-top:20px;
+ font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.board-foot b{color:var(--ink);font-weight:500}
+
+/* ============ 3 · THE DEPTH ============ */
+.depth{width:100%;max-width:540px;height:360px;position:relative;perspective:1100px}
+.rig{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 260ms cubic-bezier(.2,.7,.2,1)}
+.lyr{position:absolute;left:6%;right:6%;border-radius:9px;background:var(--paper);border:1px solid var(--rule);
+ box-shadow:0 24px 44px -30px rgba(10,16,25,.55);display:flex;align-items:center;justify-content:center;
+ font-family:var(--mono);font-size:10px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
+.l1{top:236px;height:62px;transform:translateZ(-90px)} .l2{top:186px;height:62px;transform:translateZ(-58px)}
+.l3{top:136px;height:62px;transform:translateZ(-26px)}
+.face{position:absolute;left:0;right:0;top:6px;border-radius:11px;background:var(--paper);border:1px solid var(--rule);
+ box-shadow:0 40px 70px -40px rgba(10,16,25,.6);padding:22px 26px;transform:translateZ(30px);overflow:hidden}
+.face-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+ text-transform:uppercase;color:var(--muted)}
+.face-top b{color:var(--electric);font-weight:500}
+.bar{height:3px;border-radius:2px;background:var(--deep);margin-top:15px;overflow:hidden}
+.bar i{display:block;height:100%;width:58%;background:var(--spectral);transform:scaleX(0);transform-origin:0 50%}
+.playing .bar i{animation:grow 900ms cubic-bezier(.3,.7,.2,1) forwards 620ms}
+@keyframes grow{to{transform:scaleX(1)}}
+.face h3{margin:18px 0 0;font-size:21px;font-weight:600;letter-spacing:-.025em}
+.face p{margin:8px 0 0;color:var(--soft);font-size:13.5px}
+.sheen{position:absolute;top:0;bottom:0;width:46%;pointer-events:none;left:-60%;
+ background:linear-gradient(100deg,transparent,rgba(255,255,255,.85),transparent)}
+.playing .sheen{animation:sweep 1100ms cubic-bezier(.3,.4,.2,1) forwards 700ms}
+@keyframes sweep{to{left:120%}}
+.playing .lyr,.playing .face{animation:rise 700ms cubic-bezier(.2,.75,.2,1) forwards var(--rd)}
+@keyframes rise{from{opacity:.35;transform:translateZ(var(--z,0)) translateY(34px)}to{opacity:1}}
+.hint{position:absolute;left:0;bottom:-2px;font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+ text-transform:uppercase;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.playing *{animation:none!important}.trace{stroke-dashoffset:0}.bar i{transform:none}}
+@media (max-width:760px){.board{grid-template-columns:repeat(4,1fr)}.frame{padding:20px}}
+</style></head><body>
+<div class="wrap">
+  <p class="eyebrow">Gun License NYC · Hero visual</p>
+  <h1>Three options</h1>
+  <p class="sub">Each runs on load and then stops. Hit replay to watch again. Pick one and I&rsquo;ll build it properly.</p>
+
+  <!-- 1 -->
+  <section class="opt" id="o1">
+    <div class="opt-head">
+      <div><p class="eyebrow">Option 01</p><h2>The Line</h2></div>
+      <button class="replay" data-t="o1">Replay</button>
+    </div>
+    <p class="pitch">A transit line for your licence, using the thirteen real pipeline stages. You get six stops in on your own and stall at <em>Document collection</em> — where almost everyone stalls. Then our shield walks in from off the map, holds out a hand, and walks you through every remaining stage: laying the line down under its feet, lighting each station, and naming what it&rsquo;s handling as it goes. It finishes at <em>Licensed</em>, throws its arms up, and the confetti goes off.</p>
+    <div class="frame"><div class="line-stage">
+      <p class="stage-kicker">Your licence &mdash; all thirteen stages</p>
+      <svg viewBox="0 100 640 190" role="img" aria-label="Thirteen-stage licence journey: six done, then our shield walks you through the remaining seven to licensed">
+        <defs><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="600" y2="0">
+          <stop offset="0" stop-color="#5BE7F6"/><stop offset=".28" stop-color="#3978F6"/>
+          <stop offset=".52" stop-color="#7659FF"/><stop offset=".74" stop-color="#E24BAE"/>
+          <stop offset="1" stop-color="#FF8A43"/></linearGradient></defs>
+        <path id="ghost"  class="ghost"  d="M40 232 L104 232 L152 184 L232 184 L280 232 L360 232 L408 184 L468 184 L516 136 L600 136"/>
+        <path id="route"  class="trace"  d="M40 232 L104 232 L152 184 L232 184 L280 232 L360 232 L408 184 L468 184 L516 136 L600 136"/>
+        <path id="route2" class="trace2" d="M40 232 L104 232 L152 184 L232 184 L280 232 L360 232 L408 184 L468 184 L516 136 L600 136"/>
+        <g id="stops"></g>
+        <g id="confetti"></g>
+
+        <!-- the shield, personified: skyline crown, eyes, gold check, arms and legs -->
+        <g id="walker" class="walker">
+          <g transform="scale(.86)">
+            <g class="bob">
+              <rect class="limb leg-b" x="-4.6" y="-13" width="3.1" height="13" rx="1.55"/>
+              <rect class="limb leg-a" x="1.5"  y="-13" width="3.1" height="13" rx="1.55"/>
+              <rect class="limb arm-b" x="-14.6" y="-31" width="2.7" height="12" rx="1.35"/>
+              <rect class="limb arm-a" x="11.9"  y="-31" width="2.7" height="12" rx="1.35"/>
+              <g class="body">
+                <rect class="shield-body" x="-10.4" y="-38"   width="2.8" height="4.4"/>
+                <rect class="shield-body" x="-6.4"  y="-40.5" width="3.2" height="7"/>
+                <line class="spire" x1="-4.8" y1="-40.5" x2="-4.8" y2="-44.4"/>
+                <rect class="shield-body" x="-1.8" y="-39"   width="3.6" height="5.4"/>
+                <rect class="shield-body" x="3"    y="-41.4" width="3"   height="7.8"/>
+                <line class="spire" x1="4.5" y1="-41.4" x2="4.5" y2="-45.6"/>
+                <rect class="shield-body" x="7.6"  y="-37.4" width="2.8" height="4"/>
+                <path class="shield-body" d="M-12 -34 L12 -34 L12 -22 C12 -16 6 -13.2 0 -11 C-6 -13.2 -12 -16 -12 -22 Z"/>
+                <circle class="eye-w" cx="-4.6" cy="-27.2" r="3"/>
+                <circle class="eye-w" cx="4.6"  cy="-27.2" r="3"/>
+                <circle class="eye-p" cx="-3.9" cy="-26.9" r="1.4"/>
+                <circle class="eye-p" cx="5.3"  cy="-26.9" r="1.4"/>
+                <path class="shield-check" d="M-5.2 -18.6 L-1.8 -15.4 L5.2 -22.6"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </svg>
+      <p class="readout" id="readout"></p>
+    </div></div>
+    <p class="cost">3 svg paths + 13 circles + 1 walker + 34 confetti rects · transform &amp; stroke only · plays once · ~5.5s</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="opt" id="o2">
+    <div class="opt-head">
+      <div><p class="eyebrow">Option 02</p><h2>The Board</h2></div>
+      <button class="replay" data-t="o2">Replay</button>
+    </div>
+    <p class="pitch">Twenty-four tiles — one per requirement — flip over in a wave, like a departure board. Twenty-three land handled. One lands black: yours. The arithmetic of the whole service, done in front of you in a second and a half, with no sentence needed.</p>
+    <div class="frame">
+      <div class="board" id="board" aria-label="Twenty-four requirements, twenty-three handled"></div>
+      <div class="board-foot"><span>24 requirements</span><span><b>23 handled by us</b> · 1 for you</span></div>
+    </div>
+    <p class="cost">24 divs · rotateX only · flips once · ~1.6s</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="opt" id="o3">
+    <div class="opt-head">
+      <div><p class="eyebrow">Option 03</p><h2>The Depth</h2></div>
+      <button class="replay" data-t="o3">Replay</button>
+    </div>
+    <p class="pitch">No story — a feel. The case file is a real object in space: four layers at different depths that rise into place, a single sheen crossing the face, and the whole rig tilting to follow your cursor. Move your mouse over it. This is the Linear/Apple register: restraint plus responsiveness reading as expensive.</p>
+    <div class="frame"><div class="depth" id="depth">
+      <div class="rig" id="rig">
+        <div class="lyr l1" style="--rd:340ms;--z:-90px">Next steps</div>
+        <div class="lyr l2" style="--rd:250ms;--z:-58px">Requirements</div>
+        <div class="lyr l3" style="--rd:160ms;--z:-26px">Application</div>
+        <div class="face" style="--rd:60ms;--z:30px">
+          <div class="face-top"><span>Case file · NYC carry</span><b>Stage 06 / 13</b></div>
+          <div class="bar"><i></i></div>
+          <h3>Confirm your training date</h3>
+          <p>Everything else already handled — 14 of 24 ready.</p>
+          <span class="sheen" aria-hidden="true"></span>
+        </div>
+      </div>
+      <p class="hint">move your cursor across it</p>
+    </div></div>
+    <p class="cost">4 layers · transform only · settles in ~1s · cursor tilt on desktop</p>
+  </section>
+</div>
+
+<script>
+// ---- 1 · the line: real stages, then the shield that walks you across
+var LINE = (function(){
+  var path=document.getElementById('route'), g=document.getElementById('stops'),
+      walker=document.getElementById('walker'), conf=document.getElementById('confetti'),
+      readout=document.getElementById('readout');
+  var len=path.getTotalLength();
+
+  // the real pipeline stages, verbatim from config/stages.ts
+  var STAGES=['Inquiry','Eligibility screened','Signed up & paid','Training scheduled',
+    'Training complete','Document collection','Notarization','Assembled & QA’d',
+    'Filed on NYPD portal','Interview booked','NYPD investigation','Decision','Licensed'];
+  var N=STAGES.length, HERE=6;
+
+  var doneLen=len*((HERE-1)/(N-1));
+  ['route','route2'].forEach(function(id){
+    var el=document.getElementById(id);
+    el.style.setProperty('--done',doneLen);
+    el.style.setProperty('--rest',len-doneLen);
+    el.style.setProperty('--gap',len+2);   // never let the dash pattern wrap onto the route
+  });
+
+  var T={ walkIn:1350, walkInDur:700, cross:2300, crossDur:1750, arrive:4050 };
+
+  for(var i=1;i<=N;i++){
+    var pt=path.getPointAtLength(len*((i-1)/(N-1)));
+    var ahead=i>HERE;
+    var d = ahead ? Math.round(1000+(i-HERE)*55)
+                  : Math.round(300+((i-1)/(HERE-1))*760);
+    var c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y);
+    c.setAttribute('r', i===HERE?9:6.5);
+    c.setAttribute('class','stop'+(ahead?' ahead':' done')+(i===HERE?' here':''));
+    c.style.setProperty('--sd',d+'ms');
+    if(ahead) c.style.setProperty('--ld', Math.round(T.cross+((i-HERE)/(N-HERE))*T.crossDur-90)+'ms');
+    if(i===HERE){
+      var h=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      h.setAttribute('cx',pt.x); h.setAttribute('cy',pt.y); h.setAttribute('r',11);
+      h.setAttribute('class','halo'); g.appendChild(h);
+    }
+    g.appendChild(c);
+    var lab=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lab.setAttribute('x',pt.x); lab.setAttribute('y',pt.y+ (i===HERE?30:24));
+    lab.setAttribute('text-anchor','middle');
+    lab.setAttribute('class','stop-label'+(ahead?' ahead-l':''));
+    lab.textContent=String(i).padStart(2,'0'); g.appendChild(lab);
+  }
+
+  // ---- readout: names the stage under the walker's feet, in step with it
+  (function(){
+    function row(html,inMs,outMs,cls){
+      var sp=document.createElement('span');
+      if(cls) sp.className=cls;
+      sp.innerHTML=html;
+      sp.style.setProperty('--in',inMs+'ms');
+      if(outMs!=null) sp.style.setProperty('--out',outMs+'ms');
+      readout.appendChild(sp);
+    }
+    row('Stage 06 &middot; <b>'+STAGES[5]+'</b> &mdash; stalled, seven stages to go', 1180, T.cross);
+    var seg=T.crossDur/(N-HERE);
+    for(var i=HERE+1;i<N;i++){
+      var t0=Math.round(T.cross+(i-HERE-1)*seg);
+      row('Stage '+String(i).padStart(2,'0')+' &middot; <b>'+STAGES[i-1]+'</b> &mdash; handled by us',
+          t0+120, Math.round(t0+seg));
+    }
+    row('Stage 13 &middot; <b>'+STAGES[12]+'</b> &mdash; we walked you the rest', T.arrive+260, null, 'fin');
+  })();
+
+  // ---- confetti at the finish line
+  (function(){
+    var end=path.getPointAtLength(len);
+    conf.setAttribute('transform','translate('+end.x+','+(end.y-14)+')');
+    var COLS=['#5BE7F6','#3978F6','#7659FF','#E24BAE','#FF8A43','#E0A93F','#1F7A4D'];
+    for(var i=0;i<34;i++){
+      var a=(-Math.PI*0.96)+Math.random()*(Math.PI*0.70);   // up, fanned back into frame
+      var sp=34+Math.random()*54;
+      var r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      var w=2+Math.random()*2.4, h=3.4+Math.random()*3.4;
+      r.setAttribute('x',-w/2); r.setAttribute('y',-h/2);
+      r.setAttribute('width',w); r.setAttribute('height',h);
+      r.setAttribute('rx',.6);
+      r.setAttribute('fill',COLS[i%COLS.length]);
+      r.setAttribute('class','conf');
+      var dx=Math.cos(a)*sp, peak=Math.sin(a)*sp;
+      r.style.setProperty('--dx',dx.toFixed(1)+'px');
+      r.style.setProperty('--peak',peak.toFixed(1)+'px');
+      r.style.setProperty('--dy',(peak+52+Math.random()*36).toFixed(1)+'px');  // then gravity
+      r.style.setProperty('--rot',Math.round(-300+Math.random()*600)+'deg');
+      r.style.setProperty('--cd',Math.round(1150+Math.random()*520)+'ms');
+      r.style.setProperty('--cdel',Math.round(T.arrive+60+Math.random()*220)+'ms');
+      conf.appendChild(r);
+    }
+  })();
+
+  // constant-speed keyframes along a stretch of the route
+  var LIFT=2.5; // stand on the line, not through it
+  function frames(from,to,lead){
+    var pts=[], STEPS=46;
+    if(lead) pts.push(lead);
+    for(var k=0;k<=STEPS;k++) pts.push(path.getPointAtLength(from+(to-from)*(k/STEPS)));
+    var cum=[0];
+    for(var k=1;k<pts.length;k++){
+      var dx=pts[k].x-pts[k-1].x, dy=pts[k].y-pts[k-1].y;
+      cum.push(cum[k-1]+Math.hypot(dx,dy));
+    }
+    var total=cum[cum.length-1]||1;
+    return pts.map(function(p,k){
+      return { transform:'translate('+p.x.toFixed(2)+'px,'+(p.y-LIFT).toFixed(2)+'px)',
+               offset: Math.min(1, cum[k]/total) };
+    });
+  }
+
+  var anims=[];
+  function run(){
+    anims.forEach(function(a){ a.cancel(); }); anims=[];
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){
+      var e=path.getPointAtLength(len);
+      walker.style.transform='translate('+e.x+'px,'+(e.y-LIFT)+'px)';
+      return;
+    }
+    var p0=path.getPointAtLength(0);
+    var meet=doneLen-12;  // stand beside stage 06, not on top of it
+    // 1 · walks in from off-stage and catches up to where you stalled
+    anims.push(walker.animate(frames(0,meet,{x:-52,y:p0.y}),
+      {duration:T.walkInDur, delay:T.walkIn, easing:'linear', fill:'both'}));
+    // 'forwards' only — 'both' would back-apply this start pose and swallow the walk-in
+    anims.push(walker.animate(frames(meet,len),
+      {duration:T.crossDur, delay:T.cross, easing:'linear', fill:'forwards'}));
+  }
+  return { run:run };
+})();
+
+// ---- 2 · the board
+(function(){
+  var b=document.getElementById('board'), MINE=17;
+  for(var i=0;i<24;i++){
+    var col=i%6, row=Math.floor(i/6);
+    var d=document.createElement('div');
+    d.className='tile '+(i===MINE?'mine':'done');
+    d.style.setProperty('--td',((col+row)*58)+'ms');
+    d.innerHTML='<span class="mk">'+(i===MINE?'YOURS':'&#10003;')+'</span>';
+    b.appendChild(d);
+  }
+})();
+
+// ---- 3 · cursor tilt
+(function(){
+  var host=document.getElementById('depth'), rig=document.getElementById('rig');
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  host.addEventListener('pointermove',function(e){
+    var r=host.getBoundingClientRect();
+    var x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+    rig.style.transform='rotateY('+(x*13).toFixed(2)+'deg) rotateX('+(-y*10).toFixed(2)+'deg)';
+  });
+  host.addEventListener('pointerleave',function(){ rig.style.transform=''; });
+})();
+
+// ---- play / replay
+function play(id){ var s=document.getElementById(id); s.classList.remove('playing');
+  void s.offsetWidth; s.classList.add('playing'); if(id==='o1') LINE.run(); }
+['o1','o2','o3'].forEach(function(id){ play(id); });
+document.querySelectorAll('.replay').forEach(function(b){
+  b.addEventListener('click',function(){ play(b.dataset.t); });
+});
+</script>
+</body></html>

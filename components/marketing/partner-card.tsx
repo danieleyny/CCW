@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import { ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { type Partner, partnerPath, partnerFullName, partnerConsultationPath } from "@/config/partners"
 
@@ -92,7 +93,10 @@ export function PartnerCard({ partner }: { partner: Partner }) {
                     className={`rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40 ${h.stackInSummary ? "basis-full" : ""}`}
                   >
                     <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>
-                      {h.label} ↗
+                      <span className="inline-flex items-center gap-1">
+                        {h.label}
+                        <ExternalLink className="size-3 shrink-0" aria-hidden />
+                      </span>
                     </CredentialBadge>
                   </a>
                 ) : (

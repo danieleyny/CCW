@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { LogoLockup } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { safeguardTokenActive, findSafeguardInviteByToken } from "@/lib/safeguard/invite"
 import { SafeguardFlow } from "@/components/public/safeguard-flow"
 
@@ -55,7 +55,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
       {/* Shown to a THIRD PARTY from an emailed link — kept branded so it doesn't read
           as phishing. The acknowledgement PDF they sign is the official NYPD form. */}
-      <LogoLockup className="mb-6 text-lg" />
+      <BrandLogo href={null} className="mb-6" accessibleLabel="Gun License NYC" />
       {children}
     </div>
   )

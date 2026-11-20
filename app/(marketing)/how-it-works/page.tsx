@@ -2,7 +2,6 @@ import Link from "next/link"
 import { CASE_STAGES } from "@/config/stages"
 import { JOURNEY } from "@/content/journey"
 import { buildMetadata } from "@/lib/seo"
-import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { RelatedLinks } from "@/components/marketing/page-blocks"
@@ -17,9 +16,11 @@ export const metadata = buildMetadata({
   hreflang: "/how-it-works",
 })
 
+const measure: React.CSSProperties = { width: "min(100% - 48px, 820px)", marginInline: "auto" }
+
 export default function HowItWorks() {
   return (
-    <>
+    <div className="guide-page">
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "How it works", path: "/how-it-works" }]} />
       {/* Copy note: this page renders content/journey.ts (the PUBLIC story), not
           config/stages.ts (the internal pipeline vocabulary). Staff say "Lead /
@@ -30,21 +31,35 @@ export default function HowItWorks() {
         subtitle="New York's process is tough — which is exactly why having it handled matters. Here's the whole path, and what we do at each point so you don't have to."
       />
 
-      <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <ol className="relative space-y-3 border-l border-hairline pl-6">
-          {CASE_STAGES.map((s) => (
-            <li key={s.key} className="relative">
-              <span className="absolute -left-[31px] top-1.5 flex size-3 items-center justify-center">
-                <span className="size-2 rounded-full bg-brass shadow-[0_0_8px_var(--brass-glow)]" />
-              </span>
-              <div className="rounded-lg border border-hairline bg-card p-5">
-                <div className="engraved text-brass">Step {String(s.order).padStart(2, "0")}</div>
-                <div className="mt-1 font-display text-lg font-semibold">{JOURNEY[s.key].label}</div>
-                <p className="mt-1 text-sm text-text-mid">{JOURNEY[s.key].description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+      <section style={{ padding: "56px 0 40px" }}>
+        <div style={measure}>
+          <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+            {CASE_STAGES.map((s) => (
+              <li
+                key={s.key}
+                style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "20px 22px" }}
+              >
+                <div
+                  style={{
+                    color: "var(--electric)",
+                    fontFamily: "var(--mono)",
+                    fontSize: 11,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Step {String(s.order).padStart(2, "0")}
+                </div>
+                <div style={{ marginTop: 4, fontFamily: "var(--display)", fontSize: 20, fontWeight: 600 }}>
+                  {JOURNEY[s.key].label}
+                </div>
+                <p style={{ margin: "6px 0 0", color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.55 }}>
+                  {JOURNEY[s.key].description}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       {/* V5 — the full 24-document citation wall lives here (relocated off the
@@ -54,17 +69,17 @@ export default function HowItWorks() {
 
       {/* V5b — the Refile Promise, at the QA-gate payoff: this is the gate said
           out loud. Always beside brand.disclaimer. */}
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
+      <section style={{ padding: "48px 0", borderTop: "1px solid var(--rule)" }}>
+        <div style={{ width: "min(100% - 48px, 680px)", marginInline: "auto" }}>
           <RefilePromise />
         </div>
       </section>
 
-      <section className="border-t border-hairline">
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <Button asChild size="lg">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
+      <section style={{ padding: "8px 0 8px" }}>
+        <div style={{ ...measure, textAlign: "center" }}>
+          <Link className="button" href="/eligibility">
+            Check your eligibility <span className="button-arrow" aria-hidden="true">→</span>
+          </Link>
         </div>
       </section>
 
@@ -76,6 +91,6 @@ export default function HowItWorks() {
           { label: "Your borough's page", href: "/gun-license" },
         ]}
       />
-    </>
+    </div>
   )
 }

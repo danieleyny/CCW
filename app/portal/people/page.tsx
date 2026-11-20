@@ -22,8 +22,14 @@ import {
   revokeReferenceLink,
   revokeCohabitantLink,
 } from "./actions"
+import { getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
+import type { ApplicationType } from "@/lib/application-types"
 
-export const metadata = { title: "References & household" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.peopleTitle }
+}
 
 /** Soft-verify signal: the invitee confirmed an email different from the one you entered. */
 function emailMismatch(onFile?: string | null, confirmed?: string | null): boolean {
@@ -41,11 +47,12 @@ export default async function PeoplePage({
   const { tab } = await searchParams
   const initialTab = tab === "household" ? "household" : "references"
 
-  const myCase = await getMyCase()
+  const [myCase, messages] = await Promise.all([getMyCase(), getMessages()])
+  const t = messages.ui
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
+        {messages.common.noCase}
       </p>
     )
   }
@@ -59,6 +66,7 @@ export default async function PeoplePage({
   const requiredRefs = requiredReferences((intake?.answers ?? {}) as WizardAnswers, {
     isRenewal: kase?.is_renewal ?? false,
     licenseTrack: (kase?.license_track as "carry_guard" | "special_carry_guard" | undefined) ?? undefined,
+    applicationType: myCase.application_type as ApplicationType | null,
   })
 
   const [refs, cohabs, reqs] = await Promise.all([
@@ -82,40 +90,39 @@ export default async function PeoplePage({
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">References &amp; household</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.peopleTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Add your character references and everyone 18+ living with you.
+          {t.peopleDescription}
         </p>
       </div>
 
       <Tabs defaultValue={initialTab}>
         <TabsList>
-          <TabsTrigger value="references">References ({refs.data?.length ?? 0})</TabsTrigger>
-          <TabsTrigger value="household">Household ({cohabs.data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="references">{t.references} ({refs.data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="household">{t.household} ({cohabs.data?.length ?? 0})</TabsTrigger>
         </TabsList>
         <TabsContent value="references" className="mt-4 space-y-6">
           <ReferenceCollector caseId={myCase.id} references={(refs.data ?? []) as ReferenceRow[]} required={requiredRefs} />
 
           {(refs.data ?? []).length > 0 && (
             <div>
-              <h2 className="engraved mb-2 text-text-low">Outreach</h2>
+              <h2 className="engraved mb-2 text-text-low">{t.outreach}</h2>
               <p className="mb-3 text-xs text-muted-foreground">
-                Send each reference a one-click link to confirm and attest — no account needed.
-                Batch them so you can notarize all references plus cohabitant affidavits in one sitting.
+                {t.outreachDescription}
               </p>
               <ul className="space-y-2">
                 {(refs.data ?? []).map((r) => {
                   const req = reqByRef.get(r.id)
                   const reqSt = req?.status
                   const label = r.notarized
-                    ? "notarized"
+                    ? t.notarized
                     : r.received
-                      ? "responded"
+                      ? t.responded
                       : reqSt === "opened"
-                        ? "opened link"
+                        ? t.openedLink
                         : reqSt
-                          ? "invited"
-                          : "not invited"
+                          ? t.invited
+                          : t.notInvited
                   const tone = r.notarized
                     ? "bg-ok/12 text-ok"
                     : r.received
@@ -128,11 +135,11 @@ export default async function PeoplePage({
                         {r.contact_email ? (
                           <span className="text-text-low"> · {r.contact_email}</span>
                         ) : (
-                          <span className="text-warn"> · add an email to invite</span>
+                          <span className="text-warn"> · {t.addEmailInvite}</span>
                         )}
                         {emailMismatch(r.contact_email, req?.confirmed_email) && (
                           <span className="mt-0.5 block text-[11px] text-warn">
-                            Confirmed a different email: {req?.confirmed_email}
+                            {interpolate(t.differentEmail, { email: req?.confirmed_email ?? "" })}
                           </span>
                         )}
                       </span>
@@ -150,7 +157,7 @@ export default async function PeoplePage({
                             <input type="hidden" name="referenceId" value={r.id} />
                             <Button type="submit" size="sm" variant="outline">
                               <Send className="size-3.5" />
-                              {reqSt ? "Resend" : "Send link"}
+                              {reqSt ? t.resend : t.sendLink}
                             </Button>
                           </form>
                         )}
@@ -158,7 +165,7 @@ export default async function PeoplePage({
                           <form action={revokeReferenceLink}>
                             <input type="hidden" name="referenceId" value={r.id} />
                             <Button type="submit" size="sm" variant="ghost" className="text-text-low">
-                              <Ban className="size-3.5" /> Revoke
+                              <Ban className="size-3.5" /> {t.revoke}
                             </Button>
                           </form>
                         )}
@@ -175,10 +182,9 @@ export default async function PeoplePage({
 
           {(cohabs.data ?? []).length > 0 && (
             <div>
-              <h2 className="engraved mb-2 text-text-low">Affidavits</h2>
+              <h2 className="engraved mb-2 text-text-low">{t.affidavits}</h2>
               <p className="mb-3 text-xs text-muted-foreground">
-                Each adult gets a one-click link to confirm and notarize their affidavit — we build the
-                document for them. Or upload a notarized copy yourself.
+                {t.affidavitsDescription}
               </p>
               <ul className="space-y-2">
                 {(cohabs.data ?? []).map((c) => {
@@ -188,14 +194,14 @@ export default async function PeoplePage({
                   const state = cohabitantState(c)
                   const label =
                     state === "notarized"
-                      ? "notarized"
+                      ? t.notarized
                       : state === "submitted"
-                        ? "confirmed"
+                        ? t.confirmed
                         : state === "opened"
-                          ? "opened link"
+                          ? t.openedLink
                           : state === "invited"
-                            ? "invited"
-                            : "not invited"
+                            ? t.invited
+                            : t.notInvited
                   const tone = st === "notarized" ? "bg-ok/12 text-ok" : st === "received" ? "bg-signal-dim text-signal" : "bg-surface-2 text-text-mid"
                   return (
                     <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 text-sm">
@@ -204,11 +210,11 @@ export default async function PeoplePage({
                         {c.contact_email ? (
                           <span className="text-text-low"> · {c.contact_email}</span>
                         ) : (
-                          <span className="text-warn"> · add an email to invite</span>
+                          <span className="text-warn"> · {t.addEmailInvite}</span>
                         )}
                         {emailMismatch(c.contact_email, c.confirmed_email) && (
                           <span className="mt-0.5 block text-[11px] text-warn">
-                            Confirmed a different email: {c.confirmed_email}
+                            {interpolate(t.differentEmail, { email: c.confirmed_email ?? "" })}
                           </span>
                         )}
                       </span>
@@ -226,7 +232,7 @@ export default async function PeoplePage({
                             <input type="hidden" name="cohabitantId" value={c.id} />
                             <Button type="submit" size="sm" variant="outline">
                               <Send className="size-3.5" />
-                              {c.token ? "Resend" : "Send link"}
+                              {c.token ? t.resend : t.sendLink}
                             </Button>
                           </form>
                         )}
@@ -234,7 +240,7 @@ export default async function PeoplePage({
                           <form action={revokeCohabitantLink}>
                             <input type="hidden" name="cohabitantId" value={c.id} />
                             <Button type="submit" size="sm" variant="ghost" className="text-text-low">
-                              <Ban className="size-3.5" /> Revoke
+                              <Ban className="size-3.5" /> {t.revoke}
                             </Button>
                           </form>
                         )}

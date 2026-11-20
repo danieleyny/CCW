@@ -14,6 +14,30 @@ export type ConversionEvent =
   | "checklist_generated" // a personalized /checklist was produced
   | "contact_submitted" // a lead form was submitted (contact or checklist capture)
   | "pricing_viewed" // the /pricing page was viewed
+  | "admin_pipeline_viewed" // staff opened the read-only pipeline or leads board
+  | "admin_cases_viewed" // staff opened the read-only case list
+  | "admin_case_preview_opened" // staff opened a safe case preview
+  | "admin_case_tab_viewed" // staff opened a case workspace tab
+  | "admin_stage_dialog_opened" // staff opened the guarded stage/status dialog
+  | "admin_stage_change_blocked" // stage preview or server enforcement refused a move
+  | "admin_queue_viewed" // staff opened the filing queue desk or matrix
+  | "admin_signoff_dialog_opened" // staff opened the guarded QA attestation
+  | "admin_signoff_refused" // the server re-check or role check refused QA sign-off
+  | "admin_inbox_viewed" // staff opened an inbox tab/scope
+  | "admin_inbox_reply_sent" // staff replied from the inbox or focus queue
+  | "admin_inbox_focus_completed" // staff reached the end of a focus snapshot
+  | "admin_concierge_viewed" // staff opened a concierge workspace tab
+  | "admin_concierge_agent_changed" // admin changed the concierge-agent label
+  | "admin_demo_delete_confirmed" // admin completed typed demo-case deletion
+  | "admin_calendar_viewed" // staff opened the agenda or week calendar
+  | "admin_calendar_join_clicked" // staff opened an intro-call join link
+  | "admin_payments_viewed" // staff opened the payments ledger with a filter
+  | "admin_payment_request_sent" // staff sent or queued a payment request
+  | "admin_offline_payment_recorded" // admin recorded money received outside Stripe
+  | "admin_test_data_marked" // admin explicitly marked suggested clients as test
+  | "admin_test_data_deleted" // admin completed typed test-data deletion
+  | "admin_training_viewed" // admin opened the class-and-registration workspace
+  | "admin_training_class_created" // admin created a class or duplicated one
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

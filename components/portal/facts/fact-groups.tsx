@@ -1,19 +1,55 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, ChevronRight, CheckCircle2 } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import {
+  ArrowRight,
+  Briefcase,
+  Building2,
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  FileBadge2,
+  Home,
+  IdCard,
+  Lock,
+  Phone,
+  Save,
+  Scale,
+  ShieldCheck,
+  User,
+  type LucideIcon,
+} from "lucide-react"
 import { FactRow } from "./fact-row"
 import { flagAttorneyReview } from "@/app/portal/facts/actions"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import type { FactGroupData, FactRowMeta } from "@/lib/facts/details-view"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
+import type { FactGroupData, GroupIcon } from "@/lib/facts/details-view"
 import { detectSelfDesignation, selfDesignationKeyMessages } from "@/lib/safeguard/self-designation"
 
+const GROUP_ICONS: Record<GroupIcon, LucideIcon> = {
+  "id-card": IdCard,
+  home: Home,
+  phone: Phone,
+  user: User,
+  briefcase: Briefcase,
+  building: Building2,
+  "shield-check": ShieldCheck,
+  lock: Lock,
+  scale: Scale,
+}
+
+type SectionProgress = {
+  id: string
+  label: string
+  icon: LucideIcon
+  captured?: number
+  total?: number
+}
+
 /**
- * Grouped, inline-editable fact rows — the one preparation surface, reused by the
- * applicant's "Your details" screen and (at full scope) the sponsor's file. Empty
- * fields are live inputs; the meter and collapse-to-read-only are driven from client
- * state so nothing revalidates mid-typing. The SSN is included only when the server
- * builder was asked for it (the applicant's own screen) — never for a sponsor.
+ * Grouped, inline-editable fact rows — the one preparation surface reused by the
+ * applicant and sponsor views. Persistence remains in the existing row actions.
  */
 export function FactGroups({
   caseId,
@@ -21,54 +57,37 @@ export function FactGroups({
   total,
   showMeter = false,
   flagEligibility = false,
+  children,
 }: {
   caseId: string
   groups: FactGroupData[]
   /** Editable, non-SSN denominator for the meter. */
   total: number
   showMeter?: boolean
-  /** The applicant's OWN screen — enables the citizenship eligibility routing. A
-   *  sponsor editing a file must not flag the applicant, so it stays off there. */
+  /** Applicant-only citizenship escalation. Sponsors must never flag a case. */
   flagEligibility?: boolean
+  /** History and firearms stay inside the same visual/scroll-spy workspace. */
+  children?: ReactNode
 }) {
-  // key → current value, for every editable row (drives the meter + collapse).
   const [values, setValues] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {}
-    for (const g of groups) for (const r of g.rows) if (r.kind === "editable") v[r.key] = r.value
-    return v
+    const current: Record<string, string> = {}
+    for (const group of groups) {
+      for (const row of group.rows) if (row.kind === "editable") current[row.key] = row.value
+    }
+    return current
   })
   const [ssnOnFile, setSsnOnFile] = useState<Record<string, boolean>>(() => {
-    const s: Record<string, boolean> = {}
-    for (const g of groups) for (const r of g.rows) if (r.kind === "ssn") s[r.key] = !!r.onFile
-    return s
-  })
-
-  const containerRef = useRef<HTMLDivElement>(null)
-  function focusNext(from: HTMLElement): boolean {
-    const inputs = Array.from(containerRef.current?.querySelectorAll<HTMLElement>("[data-fact-input]") ?? [])
-    const i = inputs.indexOf(from)
-    if (i >= 0 && i < inputs.length - 1) {
-      inputs[i + 1].focus()
-      return true
+    const current: Record<string, boolean> = {}
+    for (const group of groups) {
+      for (const row of group.rows) if (row.kind === "ssn") current[row.key] = !!row.onFile
     }
-    return false
-  }
+    return current
+  })
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // A conditional row is shown only when its trigger fact holds one of its values.
-  // A hidden conditional field counts for nothing — not the meter, not readiness.
-  const isVisible = (r: FactRowMeta) => !r.showWhen || r.showWhen.equals.includes((values[r.showWhen.key] ?? "").trim())
-
-  // Optional facts never count; conditionally-hidden fields don't either — and the
-  // denominator recomputes live as a conditional toggles (#14).
-  const { requiredKeys, liveTotal } = useMemo(() => {
-    const s = new Set<string>()
-    for (const g of groups) for (const r of g.rows) if (r.kind === "editable" && !r.optional && isVisible(r)) s.add(r.key)
-    return { requiredKeys: s, liveTotal: s.size }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, values])
-  // The safeguard person cannot be the applicant. Detect it live from the same values
-  // that drive the meter, ring the offending rows, and exclude them from "captured" — a
-  // conflicting safeguard field is filled but not validly complete.
+  // A safeguard must be a different person from the applicant. Keep conflicts in
+  // the same state that drives the progress meter so a filled-but-invalid value
+  // cannot make a section or the whole page look complete.
   const conflictMessages = useMemo(() => {
     const fields = detectSelfDesignation({
       applicant: {
@@ -87,83 +106,179 @@ export function FactGroups({
     return selfDesignationKeyMessages(fields)
   }, [values])
 
+  function focusNext(from: HTMLElement): boolean {
+    const inputs = Array.from(containerRef.current?.querySelectorAll<HTMLElement>("[data-fact-input]") ?? [])
+    const index = inputs.indexOf(from)
+    if (index >= 0 && index < inputs.length - 1) {
+      inputs[index + 1].focus()
+      return true
+    }
+    return false
+  }
+
+  const groupProgress = useMemo(
+    () =>
+      groups.map((group) => {
+        const rows = group.rows.filter(
+          (row) =>
+            !row.showWhen || row.showWhen.equals.includes((values[row.showWhen.key] ?? "").trim())
+        )
+        const required = rows.filter((row) => row.kind === "editable" && !row.optional)
+        return {
+          group,
+          rows,
+          captured: required.filter(
+            (row) => (values[row.key] ?? "").trim() !== "" && !conflictMessages[row.key]
+          ).length,
+          total: required.length,
+        }
+      }),
+    [groups, values, conflictMessages]
+  )
+
+  const requiredKeys = useMemo(() => {
+    const keys = new Set<string>()
+    for (const item of groupProgress) {
+      for (const row of item.rows) if (row.kind === "editable" && !row.optional) keys.add(row.key)
+    }
+    return keys
+  }, [groupProgress])
+  const liveTotal = requiredKeys.size
   const captured = useMemo(
-    () => [...requiredKeys].filter((k) => (values[k] ?? "").trim() !== "" && !conflictMessages[k]).length,
+    () => [...requiredKeys].filter((key) => (values[key] ?? "").trim() !== "" && !conflictMessages[key]).length,
     [requiredKeys, values, conflictMessages]
   )
 
-  const citizenship = values["applicant.citizenship"] ?? ""
-
-  // A2 — the fields still needed: required, currently VISIBLE, and empty. Listed in
-  // page order and grouped by section so the dialog reads like the page.
   const outstanding = useMemo(() => {
-    const out: { key: string; label: string; section: string }[] = []
-    for (const g of groups)
-      for (const r of g.rows)
-        if (r.kind === "editable" && !r.optional && isVisible(r) && (values[r.key] ?? "").trim() === "")
-          out.push({ key: r.key, label: r.label, section: g.label })
-    return out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, values])
+    const items: { key: string; label: string; section: string }[] = []
+    for (const item of groupProgress) {
+      for (const row of item.rows) {
+        if (
+          row.kind === "editable" &&
+          !row.optional &&
+          ((values[row.key] ?? "").trim() === "" || Boolean(conflictMessages[row.key]))
+        ) {
+          items.push({ key: row.key, label: row.label, section: item.group.label })
+        }
+      }
+    }
+    return items
+  }, [groupProgress, values, conflictMessages])
+
+  const navSections = useMemo<SectionProgress[]>(
+    () => [
+      ...groupProgress
+        .filter((item) => item.rows.length > 0)
+        .map((item) => ({
+          id: item.group.key,
+          label: item.group.label,
+          icon: GROUP_ICONS[item.group.icon],
+          captured: item.captured,
+          total: item.total,
+        })),
+      { id: "history", label: "5-year history", icon: Clock3 },
+      { id: "records", label: "Firearms & licences", icon: FileBadge2 },
+    ],
+    [groupProgress]
+  )
+  const sectionIds = useMemo(() => navSections.map((section) => section.id), [navSections])
+  const [activeSection, setActiveSection] = useState(sectionIds[0] ?? "")
+
+  useEffect(() => {
+    const elements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => !!element)
+    if (!elements.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const atPageEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8
+        if (atPageEnd) {
+          const lastId = sectionIds[sectionIds.length - 1]
+          if (lastId) setActiveSection(lastId)
+          return
+        }
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible[0]?.target.id) setActiveSection(visible[0].target.id)
+      },
+      { rootMargin: "-132px 0px -62%", threshold: [0, 0.08, 0.35] }
+    )
+    for (const element of elements) observer.observe(element)
+    return () => observer.disconnect()
+  }, [sectionIds])
 
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  // Scroll a field into view, focus it, and pulse its ring once so the eye lands on it.
   const jumpTo = (key: string) => {
     setDialogOpen(false)
-    // Let the dialog close before we scroll/focus underneath it.
     setTimeout(() => {
-      const el = document.getElementById(`fact-${key}`)
-      if (!el) return
-      el.scrollIntoView({ behavior: "smooth", block: "center" })
-      ;(el as HTMLElement).focus({ preventScroll: true })
-      el.classList.remove("fact-pulse")
-      void (el as HTMLElement).offsetWidth // restart the animation
-      el.classList.add("fact-pulse")
-      setTimeout(() => el.classList.remove("fact-pulse"), 1900)
+      const element = document.getElementById(`fact-${key}`)
+      if (!element) return
+      element.scrollIntoView({ behavior: "smooth", block: "center" })
+      ;(element as HTMLElement).focus({ preventScroll: true })
+      const pulseTarget = element.closest<HTMLElement>("[data-fact-field]") ?? element
+      pulseTarget.classList.remove("fact-pulse")
+      void pulseTarget.offsetWidth
+      pulseTarget.classList.add("fact-pulse")
+      setTimeout(() => pulseTarget.classList.remove("fact-pulse"), 1900)
     }, 60)
   }
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id)
+    if (!element) return
+    setActiveSection(id)
+    element.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  const citizenship = values["applicant.citizenship"] ?? ""
+  const meter = showMeter ? (
+    <Meter
+      captured={captured}
+      total={liveTotal || total}
+      outstandingCount={outstanding.length}
+      onJump={() => outstanding[0] && jumpTo(outstanding[0].key)}
+      onOpen={() => setDialogOpen(true)}
+    />
+  ) : null
+
   return (
-    <div className="space-y-6">
-      {showMeter && (
-        <Meter
-          captured={captured}
-          total={liveTotal || total}
-          outstandingCount={outstanding.length}
-          onOpen={() => setDialogOpen(true)}
-        />
-      )}
+    <>
       {showMeter && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="details-needed-dialog max-w-md">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="portal-title-font text-2xl">
                 {outstanding.length} still needed
               </DialogTitle>
+              <DialogDescription>
+                Choose any missing detail to jump directly to that field.
+              </DialogDescription>
             </DialogHeader>
             {outstanding.length > 0 && (
               <button
                 type="button"
                 onClick={() => jumpTo(outstanding[0].key)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brass px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brass-bright"
+                className="details-gold-button"
               >
-                Jump to the next one still needed <ArrowRight className="size-4" />
+                Jump to the next one <ArrowRight aria-hidden className="size-4" />
               </button>
             )}
             <ul className="mt-1 max-h-[50vh] space-y-1 overflow-y-auto">
               {groupOutstanding(outstanding).map(({ section, items }) => (
                 <li key={section}>
-                  <div className="engraved-sm px-1 pb-1 pt-2 text-text-low">{section}</div>
-                  {items.map((o) => (
+                  <div className="portal-t-label px-1 pb-1 pt-3 text-text-low">{section}</div>
+                  {items.map((item) => (
                     <button
-                      key={o.key}
+                      key={item.key}
                       type="button"
-                      onClick={() => jumpTo(o.key)}
-                      className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-surface-2"
+                      onClick={() => jumpTo(item.key)}
+                      className="details-needed-row"
                     >
-                      <span>{o.label}</span>
-                      <ChevronRight className="size-4 shrink-0 text-text-low" />
+                      <span>{item.label}</span>
+                      <ChevronRight aria-hidden className="size-4 shrink-0 text-text-low" />
                     </button>
                   ))}
                 </li>
@@ -172,121 +287,219 @@ export function FactGroups({
           </DialogContent>
         </Dialog>
       )}
-      <div ref={containerRef} className="space-y-6">
-        {groups.map((g) => {
-          const rows = g.rows.filter(isVisible)
-          if (rows.length === 0) return null // a group whose every field is conditionally hidden
-          return (
-            <section key={g.key} id={g.key} className="scroll-mt-20 rounded-lg border border-hairline bg-card p-4">
-              <div className="engraved mb-1 text-text-low">{g.label}</div>
-              {g.note && (
-                <p className="mb-3 rounded-md border border-hairline bg-surface-2/40 p-2.5 text-[12px] leading-relaxed text-text-mid">
-                  {g.note}
-                </p>
-              )}
-              {rows.map((r) => (
-                <FactRow
-                  key={r.key}
-                  caseId={caseId}
-                  meta={r.kind === "ssn" ? { ...r, onFile: ssnOnFile[r.key] } : r}
-                  value={r.kind === "editable" ? values[r.key] ?? "" : r.value}
-                  onSaved={(key, next) => setValues((prev) => ({ ...prev, [key]: next }))}
-                  onSsnSaved={() => setSsnOnFile((prev) => ({ ...prev, [r.key]: true }))}
-                  focusNext={focusNext}
-                  conflictMessage={conflictMessages[r.key]}
-                />
-              ))}
-              {/* #3 — "Neither" is an ELIGIBILITY answer, not a data point. State the
-                  general federal rule, don't conclude about their status, and route to
-                  attorney review. */}
-              {g.key === "you" && citizenship === "Neither" && (
-                <CitizenshipEligibilityNotice caseId={caseId} flagEligibility={flagEligibility} />
-              )}
-            </section>
-          )
-        })}
+
+      <div className="details-mobile-meter">{meter}</div>
+      <MobileSectionNav
+        sections={navSections}
+        active={activeSection}
+        onSelect={scrollToSection}
+      />
+
+      <div className="details-workspace">
+        <aside className="details-sidebar">
+          {meter}
+          <SectionNav sections={navSections} active={activeSection} onSelect={scrollToSection} />
+          <p className="details-autosave-note">
+            <Save aria-hidden className="size-4" /> Every answer saves as you go.
+          </p>
+        </aside>
+
+        <div ref={containerRef} className="details-sections">
+          {groupProgress.map(({ group, rows, captured: groupCaptured, total: groupTotal }) => {
+            if (rows.length === 0) return null
+            const Icon = GROUP_ICONS[group.icon]
+            const complete = groupTotal === 0 || groupCaptured === groupTotal
+            return (
+              <section key={group.key} id={group.key} className="details-section-card">
+                <header className="details-section-header">
+                  <div className="details-section-icon">
+                    <Icon aria-hidden className="size-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2>{group.label}</h2>
+                    <p>{group.description}</p>
+                    {group.note && <p className="details-section-note">{group.note}</p>}
+                  </div>
+                  <span
+                    className={cn("details-count-pill", complete && "is-complete")}
+                    aria-label={`${groupCaptured} of ${groupTotal} required details captured in ${group.label}`}
+                  >
+                    {complete && <Check aria-hidden className="size-3.5" />}
+                    {groupCaptured}/{groupTotal}
+                  </span>
+                </header>
+
+                <div className="details-fields-grid">
+                  {rows.map((row) => (
+                    <FactRow
+                      key={row.key}
+                      caseId={caseId}
+                      meta={row.kind === "ssn" ? { ...row, onFile: ssnOnFile[row.key] } : row}
+                      value={row.kind === "editable" ? values[row.key] ?? "" : row.value}
+                      onSaved={(key, next) => setValues((previous) => ({ ...previous, [key]: next }))}
+                      onSsnSaved={() => setSsnOnFile((previous) => ({ ...previous, [row.key]: true }))}
+                      focusNext={focusNext}
+                      conflictMessage={conflictMessages[row.key]}
+                    />
+                  ))}
+                  {group.key === "you" && citizenship === "Neither" && (
+                    <CitizenshipEligibilityNotice caseId={caseId} flagEligibility={flagEligibility} />
+                  )}
+                </div>
+              </section>
+            )
+          })}
+          {children}
+        </div>
       </div>
-    </div>
+    </>
+  )
+}
+
+function SectionNav({
+  sections,
+  active,
+  onSelect,
+}: {
+  sections: SectionProgress[]
+  active: string
+  onSelect: (id: string) => void
+}) {
+  return (
+    <nav aria-label="Sections" className="details-section-nav">
+      {sections.map((section) => {
+        const Icon = section.icon
+        const isActive = active === section.id
+        return (
+          <a
+            key={section.id}
+            href={`#${section.id}`}
+            aria-current={isActive ? "true" : undefined}
+            className={cn("details-nav-row", isActive && "is-active")}
+            onClick={(event) => {
+              event.preventDefault()
+              onSelect(section.id)
+            }}
+          >
+            <span className="details-nav-icon"><Icon aria-hidden className="size-3.5" /></span>
+            <span className="min-w-0 flex-1 truncate">{section.label}</span>
+            {typeof section.total === "number" && (
+              <span className="details-nav-count">{section.captured}/{section.total}</span>
+            )}
+          </a>
+        )
+      })}
+    </nav>
+  )
+}
+
+function MobileSectionNav({
+  sections,
+  active,
+  onSelect,
+}: {
+  sections: SectionProgress[]
+  active: string
+  onSelect: (id: string) => void
+}) {
+  return (
+    <nav aria-label="Sections" className="details-mobile-nav">
+      <div className="details-mobile-nav-track">
+        {sections.map((section) => (
+          <a
+            key={section.id}
+            href={`#${section.id}`}
+            aria-current={active === section.id ? "true" : undefined}
+            className={cn("details-mobile-pill", active === section.id && "is-active")}
+            onClick={(event) => {
+              event.preventDefault()
+              onSelect(section.id)
+            }}
+          >
+            <span>{section.label}</span>
+            {typeof section.total === "number" && <b>{section.captured}/{section.total}</b>}
+          </a>
+        ))}
+      </div>
+    </nav>
   )
 }
 
 function CitizenshipEligibilityNotice({ caseId, flagEligibility }: { caseId: string; flagEligibility: boolean }) {
-  // Route it to a human (idempotent). Only from the applicant's own screen.
   useEffect(() => {
     if (flagEligibility) void flagAttorneyReview(caseId, "citizenship_neither")
   }, [caseId, flagEligibility])
   return (
-    <div className="mt-3 rounded-md border border-danger/40 bg-danger/[0.06] p-3 text-sm">
-      <p className="font-medium text-danger">We can&apos;t move this application forward yet.</p>
+    <div className="details-eligibility-notice">
+      <p className="font-semibold text-danger">We can&apos;t move this application forward yet.</p>
       <p className="mt-1 text-text-mid">
         Under federal law (18 U.S.C. § 922(g)(5)), a person who is neither a U.S. citizen nor a lawful
         permanent resident is generally prohibited from possessing a firearm. We can&apos;t advise on your
         specific situation, and we won&apos;t take payment while this is unresolved.
       </p>
       <p className="mt-1 text-text-mid">
-        We&apos;ve flagged your case for attorney review — your consultant will reach out about the right
-        next step.
+        We&apos;ve flagged your case for attorney review — your consultant will reach out about the right next step.
       </p>
     </div>
   )
 }
 
-/** Group the outstanding fields by their section, preserving page order. */
 function groupOutstanding(outstanding: { key: string; label: string; section: string }[]) {
-  const out: { section: string; items: { key: string; label: string; section: string }[] }[] = []
-  for (const o of outstanding) {
-    const last = out[out.length - 1]
-    if (last && last.section === o.section) last.items.push(o)
-    else out.push({ section: o.section, items: [o] })
+  const grouped: { section: string; items: { key: string; label: string; section: string }[] }[] = []
+  for (const item of outstanding) {
+    const previous = grouped[grouped.length - 1]
+    if (previous?.section === item.section) previous.items.push(item)
+    else grouped.push({ section: item.section, items: [item] })
   }
-  return out
+  return grouped
 }
 
-/**
- * A2 — the progress bar IS the answer to "which one's missing?". With something
- * outstanding it's a button that opens the list; done, it's a calm "all captured".
- */
 function Meter({
   captured,
   total,
   outstandingCount,
+  onJump,
   onOpen,
 }: {
   captured: number
   total: number
   outstandingCount: number
+  onJump: () => void
   onOpen: () => void
 }) {
-  const pct = total > 0 ? Math.round((captured / total) * 100) : 0
+  const pct = total > 0 ? Math.round((captured / total) * 100) : 100
   const done = outstandingCount === 0
 
-  if (done) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg border border-ok/30 bg-ok/[0.06] p-4 text-sm font-medium text-ok">
-        <CheckCircle2 className="size-4" /> All details captured
-      </div>
-    )
-  }
-
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full rounded-lg border border-brass/30 bg-brass/[0.05] p-4 text-left transition-colors hover:border-brass/50"
-      aria-label={`${outstandingCount} still needed — show which`}
-    >
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">
-          {captured} of {total} details captured
-        </span>
-        <span className="inline-flex items-center gap-1 text-brass-bright">
-          {outstandingCount} still needed — show which
-          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-        </span>
+    <section className={cn("details-meter", done && "is-complete")} aria-label="Details completion">
+      <div className="details-meter-summary">
+        <div
+          className="details-meter-ring"
+          style={{ "--meter-progress": `${pct * 3.6}deg` } as React.CSSProperties}
+          aria-label={`${pct}% complete`}
+        >
+          <span>{pct}%</span>
+        </div>
+        <div>
+          <h2>{done ? "All details captured" : `${captured} of ${total} details`}</h2>
+          <p>{done ? "Your reusable information is ready." : `${outstandingCount} still needed · saves automatically`}</p>
+        </div>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-3">
-        <div className="h-full rounded-full bg-brass transition-all" style={{ width: `${pct}%` }} />
-      </div>
-    </button>
+      {!done && (
+        <>
+          <button type="button" onClick={onJump} className="details-gold-button">
+            Jump to the next one <ArrowRight aria-hidden className="size-4" />
+          </button>
+          <button type="button" onClick={onOpen} className="details-meter-link">
+            See all {outstandingCount} still needed
+          </button>
+        </>
+      )}
+      {done && (
+        <div className="details-meter-done">
+          <CheckCircle2 aria-hidden className="size-4" /> Ready and saved
+        </div>
+      )}
+    </section>
   )
 }

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Link2, Check } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 /**
  * Copy a tokenized self-serve link so the applicant can share it directly. Tries the async
@@ -15,7 +16,7 @@ export function CopyLinkButton({
   token,
   basePath = "/r/",
   silent = false,
-  label = "Copy link",
+  label,
 }: {
   token: string
   basePath?: string
@@ -23,6 +24,8 @@ export function CopyLinkButton({
   label?: string
 }) {
   const [copied, setCopied] = useState(false)
+  const { messages } = usePortalI18n()
+  const displayLabel = label ?? messages.ui.copyLink
 
   async function copy() {
     const url = `${window.location.origin}${basePath}${token}`
@@ -50,14 +53,14 @@ export function CopyLinkButton({
     setCopied(true)
     setTimeout(() => setCopied(false), 1600)
     if (!silent) {
-      if (ok) toast.success("Link copied", { description: url })
+      if (ok) toast.success(messages.ui.linkCopied, { description: url })
       else toast.error("Couldn't copy — long-press the link to copy it manually.")
     }
   }
 
   return (
-    <Button size="sm" variant="ghost" onClick={copy} aria-label={`${label} for this person`}>
-      {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />} {copied ? "Copied" : label}
+    <Button size="sm" variant="ghost" onClick={copy} aria-label={`${displayLabel} for this person`}>
+      {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />} {copied ? messages.ui.linkCopied : displayLabel}
     </Button>
   )
 }

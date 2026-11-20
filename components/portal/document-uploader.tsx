@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Upload, ExternalLink, Loader2, ChevronDown, HelpCircle } from "lucide-react"
+import { Upload, ExternalLink, Loader2, ChevronDown, HelpCircle, Camera } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { recordDocument } from "@/app/portal/actions"
@@ -45,6 +45,7 @@ export function DocumentUploader({
   photoSpec = false,
   smartKinds,
   conciergeVoice = false,
+  separateCamera = false,
   guide = null,
 }: {
   caseId: string
@@ -65,6 +66,9 @@ export function DocumentUploader({
   /** CONCIERGE QA Phase 9 — warm done-for-you voice: a pending upload reads
    *  "Got it — we're checking this", not a raw PENDING chip. */
   conciergeVoice?: boolean
+  /** Concierge cards expose file selection and phone capture as two clear actions.
+   *  Other surfaces retain the existing single capture-enabled upload control. */
+  separateCamera?: boolean
   /** CONCIERGE UX 2.1 — the registry's how-to, shown as a collapsible in the card. */
   guide?: {
     steps: string[]
@@ -76,6 +80,7 @@ export function DocumentUploader({
 }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const hasSmart = !!smartKinds && smartKinds.length > 0
@@ -186,9 +191,15 @@ export function DocumentUploader({
   const style = docStateStyle(docState)
   const recede = conciergeVoice && style.quiet
   const stateClass = conciergeVoice ? cn(style.rail, style.surface) : "border bg-card"
+  let uploadLabel = current ? (needsFix ? "Re-upload" : "Replace") : "Upload"
+  if (sharedProvided) uploadLabel = "Upload a different file"
+  if (separateCamera) {
+    uploadLabel = current ? (needsFix ? "Choose replacement" : "Replace file") : "Choose a file"
+    if (sharedProvided) uploadLabel = "Choose a different file"
+  }
 
   return (
-    <div className={cn("rounded-lg p-4 transition-colors", stateClass)}>
+    <div className={cn("document-uploader rounded-lg p-4 transition-colors", stateClass)} data-document-state={docState}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className={cn("text-sm", recede ? "font-normal text-text-mid" : "font-medium")}>{label}</div>
@@ -259,10 +270,20 @@ export function DocumentUploader({
           ref={inputRef}
           type="file"
           accept="image/*,application/pdf"
-          capture="environment"
+          capture={separateCamera ? undefined : "environment"}
           className="hidden"
           onChange={onFile}
         />
+        {separateCamera ? (
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={onFile}
+          />
+        ) : null}
         <Button
           size="sm"
           variant={style.quiet ? "ghost" : current ? "outline" : "default"}
@@ -274,8 +295,17 @@ export function DocumentUploader({
           ) : (
             <Upload className="size-4" />
           )}
-          {sharedProvided ? "Upload a different file" : current ? (needsFix ? "Re-upload" : "Replace") : "Upload"}
+          {uploadLabel}
         </Button>
+        {separateCamera && !busy ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => cameraRef.current?.click()}
+          >
+            <Camera className="size-4" /> Take a photo
+          </Button>
+        ) : null}
         {current?.signedUrl && (
           <Button asChild size="sm" variant="ghost">
             <a href={current.signedUrl} target="_blank" rel="noreferrer">

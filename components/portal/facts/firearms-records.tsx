@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Trash2, Plus, Loader2 } from "lucide-react"
+import { FileBadge2, Loader2, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { saveFirearmsAndLicenses } from "@/app/portal/facts/actions"
 import { Button } from "@/components/ui/button"
@@ -38,40 +38,44 @@ export function FirearmsRecords({
   }
 
   return (
-    <section id="records" className="scroll-mt-20 space-y-4 rounded-lg border border-hairline bg-card p-4">
-      <div>
-        <h3 className="text-sm font-semibold">Firearms & other licences</h3>
-        <p className="mt-0.5 text-xs text-text-mid">
-          Handguns or long guns you currently own, and any other firearms licences you hold. Leave blank if none.
-        </p>
-      </div>
+    <section id="records" className="details-section-card details-repeatable-card">
+      <header className="details-section-header">
+        <div className="details-section-icon"><FileBadge2 aria-hidden className="size-5" /></div>
+        <div className="min-w-0 flex-1">
+          <h2>Firearms & licences</h2>
+          <p>What you own and other licences. Leave these sections blank if none.</p>
+        </div>
+      </header>
 
       {/* Firearms owned */}
       <div className="space-y-2">
         <Label className="text-xs">Firearms you currently own</Label>
         {guns.map((g, i) => (
-          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+          <div key={i} className="details-repeatable-entry space-y-3">
             <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
               <Input placeholder="Make" value={g.make ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, make: e.target.value } : x)))} />
               <Input placeholder="Model" value={g.model ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, model: e.target.value } : x)))} />
               <Input placeholder="Caliber" value={g.caliber ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, caliber: e.target.value } : x)))} />
               <Input placeholder="Serial number" value={g.serial ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, serial: e.target.value } : x)))} />
-              <Button variant="ghost" size="icon" onClick={() => setGuns((c) => c.filter((_, j) => j !== i))}>
+              <Button aria-label={`Remove firearm ${i + 1}`} variant="ghost" size="icon" onClick={() => setGuns((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            {/* Portal asks this per firearm; the number appears only when "Yes". */}
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-[11px] text-text-low">Is this firearm licensed?</Label>
                 <select
                   value={g.licensed ?? ""}
-                  onChange={(e) =>
-                    setGuns((c) =>
-                      c.map((x, j) =>
-                        j === i
-                          ? { ...x, licensed: (e.target.value || undefined) as FirearmEntry["licensed"], licenseNumber: e.target.value === "Yes" ? x.licenseNumber : "" }
-                          : x
+                  onChange={(event) =>
+                    setGuns((current) =>
+                      current.map((item, index) =>
+                        index === i
+                          ? {
+                              ...item,
+                              licensed: (event.target.value || undefined) as FirearmEntry["licensed"],
+                              licenseNumber: event.target.value === "Yes" ? item.licenseNumber : "",
+                            }
+                          : item
                       )
                     )
                   }
@@ -85,14 +89,14 @@ export function FirearmsRecords({
               {g.licensed === "Yes" && (
                 <div className="space-y-1">
                   <Label className="text-[11px] text-text-low">License / permit number</Label>
-                  <Input value={g.licenseNumber ?? ""} onChange={(e) => setGuns((c) => c.map((x, j) => (j === i ? { ...x, licenseNumber: e.target.value } : x)))} />
+                  <Input value={g.licenseNumber ?? ""} onChange={(event) => setGuns((current) => current.map((item, index) => index === i ? { ...item, licenseNumber: event.target.value } : item))} />
                 </div>
               )}
             </div>
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={() => setGuns((c) => [...c, {}])}>
-          <Plus className="size-4" /> Add firearm
+        <Button className="details-add-another" variant="outline" size="sm" onClick={() => setGuns((c) => [...c, {}])}>
+          <Plus className="size-4" /> Add another firearm
         </Button>
       </div>
 
@@ -100,10 +104,10 @@ export function FirearmsRecords({
       <div className="space-y-2">
         <Label className="text-xs">Other firearms licences you hold</Label>
         {lics.map((l, i) => (
-          <div key={i} className="space-y-2 rounded-md border border-hairline p-3">
+          <div key={i} className="details-repeatable-entry space-y-3">
             <div className="flex items-start justify-between gap-2">
               <Input placeholder="License / permit number" value={l.number ?? ""} onChange={(e) => setLics((c) => c.map((x, j) => (j === i ? { ...x, number: e.target.value } : x)))} />
-              <Button variant="ghost" size="icon" onClick={() => setLics((c) => c.filter((_, j) => j !== i))}>
+              <Button aria-label={`Remove licence ${i + 1}`} variant="ghost" size="icon" onClick={() => setLics((c) => c.filter((_, j) => j !== i))}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -114,21 +118,21 @@ export function FirearmsRecords({
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-[11px] text-text-low">Date issued</Label>
-                <Input type="date" value={l.issuedOn ?? ""} onChange={(e) => setLics((c) => c.map((x, j) => (j === i ? { ...x, issuedOn: e.target.value } : x)))} />
+                <Input aria-label="Licence date issued" type="date" value={l.issuedOn ?? ""} onChange={(e) => setLics((c) => c.map((x, j) => (j === i ? { ...x, issuedOn: e.target.value } : x)))} />
               </div>
               <div className="space-y-1">
                 <Label className="text-[11px] text-text-low">Expiration date</Label>
-                <Input type="date" value={l.expiresOn ?? ""} onChange={(e) => setLics((c) => c.map((x, j) => (j === i ? { ...x, expiresOn: e.target.value } : x)))} />
+                <Input aria-label="Licence expiration date" type="date" value={l.expiresOn ?? ""} onChange={(e) => setLics((c) => c.map((x, j) => (j === i ? { ...x, expiresOn: e.target.value } : x)))} />
               </div>
             </div>
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={() => setLics((c) => [...c, {}])}>
-          <Plus className="size-4" /> Add licence
+        <Button className="details-add-another" variant="outline" size="sm" onClick={() => setLics((c) => [...c, {}])}>
+          <Plus className="size-4" /> Add another licence
         </Button>
       </div>
 
-      <div className="flex justify-end">
+      <div className="details-repeatable-footer flex justify-end">
         <Button onClick={save} disabled={pending}>
           {pending && <Loader2 className="size-4 animate-spin" />} Save records
         </Button>

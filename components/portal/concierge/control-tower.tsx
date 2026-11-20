@@ -1,119 +1,167 @@
-import { Check, Loader2, Landmark, Video } from "lucide-react"
+"use client"
+
+import { Check, Landmark, Video } from "lucide-react"
 import { deriveMilestones, type ConciergeCaseState } from "@/config/concierge-milestones"
-import { formatDateTime } from "@/lib/format"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
+
+function ProgressRing({ value, total, label }: { value: number; total: number; label: string }) {
+  const safeTotal = Math.max(total, 1)
+  const progress = Math.min(100, Math.round((value / safeTotal) * 100))
+
+  return (
+    <div
+      className="concierge-hero-stat"
+      aria-label={`${value} of ${total} ${label.toLowerCase()}`}
+      style={{ "--concierge-progress": `${progress * 3.6}deg` } as React.CSSProperties}
+    >
+      <span className="concierge-hero-ring" aria-hidden>
+        <span className="concierge-hero-ring-number">
+          <span className="concierge-hero-ring-value">{value}</span>
+          <small className="concierge-hero-ring-total">/{total}</small>
+        </span>
+      </span>
+      <span className="concierge-hero-stat-label">{label}</span>
+    </div>
+  )
+}
 
 /**
- * CONCIERGE Phase 4 — the control tower. A live, human-narrated view of what WE
- * are doing, derived ENTIRELY from real case state (no cosmetic progress).
- * NYPD-controlled stages are labelled as the NYPD's clock, never ours. What the
- * applicant still needs to provide lives in the "Your application" tab, not here,
- * so the tower stays a pure progress view (no duplicated ask).
- *
- * A BOOKED intro call folds in here as the first (completed) milestone line — a
- * one-time step shouldn't hold its own dashboard section once it's done.
+ * Real case state, recast as the V2 concierge hero. This remains a view of the
+ * existing milestone model rather than a second progress system.
  */
 export function ControlTower({
   state,
   nypdControlled,
   introCall,
+  firstName,
+  agentFirst,
+  detailsCaptured,
+  detailsTotal,
+  copy = {
+    eyebrow: "Full Concierge",
+    welcome: "Welcome",
+    introCall: "Intro call",
+    join: "Join",
+    documentsIn: "Documents in",
+    detailsCaptured: "Details captured",
+    workInProgress: "What we're doing for you",
+    step: "Step",
+    of: "of",
+  },
 }: {
   state: ConciergeCaseState
   nypdControlled: boolean
   introCall?: IntroCallState | null
+  firstName: string
+  agentFirst: string | null
+  detailsCaptured: number
+  detailsTotal: number
+  copy?: {
+    eyebrow: string
+    welcome: string
+    introCall: string
+    join: string
+    documentsIn: string
+    detailsCaptured: string
+    workInProgress: string
+    step: string
+    of: string
+  }
 }) {
+  const { locale, messages } = usePortalI18n()
+  const t = messages.concierge
   const milestones = deriveMilestones(state)
-  const callBooked = !!introCall?.scheduledAt
+  const milestoneCopy = {
+    documents: [t.milestoneDocuments, t.milestoneDocumentsDetail],
+    worksheet: [t.milestoneWorksheet, t.milestoneWorksheetDetail],
+    references: [t.milestoneReferences, t.milestoneReferencesDetail],
+    packet: [t.milestonePacket, t.milestonePacketDetail],
+    review: [t.milestoneReview, t.milestoneReviewDetail],
+  } as const
+  const localizedMilestones = milestones.map((milestone) => {
+    const localized = milestoneCopy[milestone.key as keyof typeof milestoneCopy]
+    return localized ? { ...milestone, label: localized[0], detail: localized[1] } : milestone
+  })
+  const progressIndex = localizedMilestones.findIndex((milestone) => milestone.status === "in_progress")
+  const currentIndex = progressIndex === -1 ? localizedMilestones.length - 1 : progressIndex
+  const current = localizedMilestones[currentIndex]
 
   return (
-    <section className="space-y-4">
-      <div>
-        <SectionEyebrow>Where things stand</SectionEyebrow>
-        <h2 className="mt-2 text-lg font-semibold tracking-tight">What we&apos;re doing for you</h2>
-      </div>
+    <>
+      <section className="concierge-hero">
+        <div className="concierge-hero-top">
+          <div className="concierge-hero-copy">
+            <p className="concierge-hero-eyebrow">{copy.eyebrow}</p>
+            <h1 className="concierge-hero-title">{copy.welcome}, {firstName}.</h1>
+            <p className="concierge-hero-lede">
+              {t.heroLede}
+              {agentFirst ? <strong> {interpolate(t.conciergeNamed, { name: agentFirst })}</strong> : null}
+            </p>
+            {introCall?.scheduledAt ? (
+              <p className="concierge-hero-call">
+                <Check className="size-4" aria-hidden />
+                {copy.introCall} · {new Date(introCall.scheduledAt).toLocaleString(locale === "es" ? "es-US" : "en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+                {introCall.joinUrl ? (
+                  <a href={introCall.joinUrl} target="_blank" rel="noopener noreferrer">
+                    <Video className="size-3.5" aria-hidden /> {copy.join}
+                  </a>
+                ) : null}
+              </p>
+            ) : null}
+          </div>
 
-      <ol className="rounded-lg border border-hairline bg-card p-5">
-        {callBooked && (
-          <li className="relative flex gap-3 pb-5">
-            <span aria-hidden className="absolute left-[11px] top-6 h-full w-px bg-ok/40" />
-            <span className="relative z-10 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-ok/50 bg-ok/15 text-ok">
-              <Check className="size-3.5" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-foreground">
-                Intro call — {formatDateTime(introCall!.scheduledAt!)}
-                {introCall!.joinUrl && (
-                  <>
-                    {" · "}
-                    <a
-                      href={introCall!.joinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-ok underline underline-offset-2"
-                    >
-                      <Video className="size-3.5" /> Join
-                    </a>
-                  </>
-                )}
-              </div>
+          <div className="concierge-hero-stats">
+            <ProgressRing
+              value={state.requirementsSatisfied}
+              total={state.requirementsTotal}
+              label={copy.documentsIn}
+            />
+            <ProgressRing value={detailsCaptured} total={detailsTotal} label={copy.detailsCaptured} />
+          </div>
+        </div>
+
+        <div className="concierge-milestones">
+          <p className="concierge-milestones-label">{copy.workInProgress}</p>
+          <ol className="concierge-milestone-track">
+            {localizedMilestones.map((milestone, index) => (
+              <li key={milestone.key} data-status={milestone.status}>
+                <span className="concierge-milestone-dot" aria-hidden>
+                  {milestone.status === "done" ? <Check className="size-4" /> : index + 1}
+                </span>
+                <span className="concierge-milestone-copy">
+                  <strong>{milestone.label}</strong>
+                  <small>{milestone.detail}</small>
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <div className="concierge-milestone-mobile" aria-label={`${copy.step} ${currentIndex + 1} ${copy.of} 5`}>
+            <div className="concierge-milestone-segments" aria-hidden>
+              {localizedMilestones.map((milestone) => (
+                <span key={milestone.key} data-status={milestone.status} />
+              ))}
             </div>
-          </li>
-        )}
-        {milestones.map((m, i) => {
-          const last = i === milestones.length - 1
-          return (
-            <li key={m.key} className="relative flex gap-3 pb-5 last:pb-0">
-              {/* connector */}
-              {!last && (
-                <span
-                  aria-hidden
-                  className={`absolute left-[11px] top-6 h-full w-px ${
-                    m.status === "done" ? "bg-ok/40" : "bg-hairline"
-                  }`}
-                />
-              )}
-              <span
-                className={`relative z-10 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border ${
-                  m.status === "done"
-                    ? "border-ok/50 bg-ok/15 text-ok"
-                    : m.status === "in_progress"
-                      ? "border-brass/50 bg-brass/15 text-brass"
-                      : "border-hairline bg-surface-2 text-text-low"
-                }`}
-              >
-                {m.status === "done" ? (
-                  <Check className="size-3.5" />
-                ) : m.status === "in_progress" ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <span className="size-1.5 rounded-full bg-current" />
-                )}
-              </span>
-              <div className="min-w-0">
-                <div
-                  className={`text-sm font-medium ${
-                    m.status === "upcoming" ? "text-text-low" : "text-foreground"
-                  }`}
-                >
-                  {m.label}
-                </div>
-                {m.status === "in_progress" && (
-                  <p className="mt-0.5 text-sm text-text-mid">{m.detail}</p>
-                )}
-              </div>
-            </li>
-          )
-        })}
-      </ol>
+            <p>
+              {copy.step} {currentIndex + 1} {copy.of} {localizedMilestones.length} · <strong>{current.label}</strong>
+            </p>
+            <small>{current.detail}</small>
+          </div>
+        </div>
+      </section>
 
-      {nypdControlled && (
-        <p className="flex items-start gap-2 rounded-lg border border-hairline bg-surface-2/40 p-4 text-sm text-text-mid">
-          <Landmark className="mt-0.5 size-4 shrink-0 text-text-low" />
-          Your application is with the NYPD now. This part runs on the NYPD&apos;s clock, not ours — we
-          can&apos;t speed it up, but we&apos;ll keep watch and tell you the moment anything moves.
+      {nypdControlled ? (
+        <p className="concierge-info-bar">
+          <Landmark className="size-4" aria-hidden />
+          {t.nypdTimeline}
         </p>
-      )}
-    </section>
+      ) : null}
+    </>
   )
 }

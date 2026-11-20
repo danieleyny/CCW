@@ -11,7 +11,7 @@
 
 export type LegalStatus = "enforced" | "enjoined_not_enforced" | "contested" | "repealed"
 
-/** How long an attorney verification stands before we ask for a fresh look. */
+/** How long a team review stands before we ask for a fresh look. */
 export const LEGAL_REVIEW_STALE_DAYS = 90
 
 /**

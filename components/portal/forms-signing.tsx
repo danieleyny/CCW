@@ -1,120 +1,133 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Download, FileText, Check, PenLine } from "lucide-react"
+import { Check, Download, FileText, PenLine, Signature } from "lucide-react"
 import { toast } from "sonner"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SignaturePad } from "@/components/sign/signature-pad"
 import { saveApplicantSignature, fileSignedForm } from "@/app/portal/forms/actions"
+import type { PortalFormDoc } from "@/lib/forms/portal-forms"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
-export type FormDoc = {
-  key: string
-  title: string
-  desc: string
-  /** Wet-ink execution chip: "notarize" (before a notary), "witness" (before a witness), or false (plain signature). */
-  notarize: "notarize" | "witness" | false
-  fileable: boolean
-  filed: boolean
-}
+export type FormDoc = PortalFormDoc
 
-export function FormsSigning({ docs, hasSignature }: { docs: FormDoc[]; hasSignature: boolean }) {
-  const [hasSig, setHasSig] = useState(hasSignature)
-  const [showPad, setShowPad] = useState(!hasSignature)
+export function FormsSigning({
+  docs,
+  signaturePng,
+  applicantName,
+}: {
+  docs: FormDoc[]
+  signaturePng: string | null
+  applicantName: string
+}) {
+  const { messages } = usePortalI18n()
+  const t = messages.ui
+  const [sigPng, setSigPng] = useState(signaturePng)
+  const [hasSig, setHasSig] = useState(!!signaturePng)
+  const [showPad, setShowPad] = useState(false)
   const [saving, startSave] = useTransition()
   const [filing, setFiling] = useState<string | null>(null)
   const [filed, setFiled] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(docs.filter((d) => d.filed).map((d) => [d.key, true]))
+    Object.fromEntries(docs.filter((doc) => doc.filed).map((doc) => [doc.key, true]))
   )
 
-  function save(b64: string) {
+  function save(base64: string) {
     startSave(async () => {
-      const r = await saveApplicantSignature(b64)
-      if (r.error) return void toast.error(r.error)
+      const result = await saveApplicantSignature(base64)
+      if (result.error) return void toast.error(result.error)
+      setSigPng(base64)
       setHasSig(true)
       setShowPad(false)
-      toast.success("Signature saved — your forms now download pre-signed.")
+      toast.success(t.formsSignatureSaved)
     })
   }
 
   function file(key: string) {
     setFiling(key)
-    fileSignedForm(key).then((r) => {
+    fileSignedForm(key).then((result) => {
       setFiling(null)
-      if (r.error) return void toast.error(r.error)
-      setFiled((f) => ({ ...f, [key]: true }))
-      toast.success("Signed and filed — this requirement is complete.")
+      if (result.error) return void toast.error(result.error)
+      setFiled((current) => ({ ...current, [key]: true }))
+      toast.success(t.formsFiledToast)
     })
   }
 
+  const filedCount = docs.filter((doc) => filed[doc.key]).length
+
   return (
     <>
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-                <PenLine className="size-4 text-signal" /> Your signature
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {hasSig
-                  ? "On file — your documents download already signed, and you can file them in one tap."
-                  : "Sign once and every form below comes out pre-signed."}
-              </p>
-            </div>
-            {hasSig && (
-              <span className="inline-flex shrink-0 items-center gap-1 text-xs text-ok">
-                <Check className="size-3.5" /> On file
-              </span>
-            )}
-          </div>
-          {showPad ? (
-            <div className="mt-3 max-w-md">
-              <SignaturePad onSave={save} saving={saving} />
-            </div>
+      <section className="forms-signature-card">
+        <span className="forms-signature-icon" aria-hidden><Signature /></span>
+        <div className="forms-signature-copy">
+          <h2>{t.yourSignature}</h2>
+          <p>{hasSig ? t.signatureOnFileDetail : t.signatureEmptyDetail}</p>
+        </div>
+        <div className={`forms-signature-preview ${hasSig ? "has-signature" : "is-empty"}`} aria-label={hasSig ? t.signaturePreview : t.noSignatureOnFile}>
+          {sigPng ? (
+            <span style={{ backgroundImage: `url(data:image/png;base64,${sigPng})` }} />
+          ) : hasSig ? (
+            <span className="forms-signature-name">{applicantName}</span>
           ) : (
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowPad(true)}>
-              Re-sign
-            </Button>
+            <span>{t.noSignatureYet}</span>
           )}
-        </CardContent>
-      </Card>
+        </div>
+        {hasSig && <span className="forms-signature-status"><Check aria-hidden /> {t.onFile}</span>}
+        <Button type="button" variant={hasSig ? "outline" : "default"} onClick={() => setShowPad((current) => !current)}>
+          <PenLine aria-hidden /> {showPad ? t.cancel : hasSig ? t.resign : t.addSignature}
+        </Button>
+        {showPad && (
+          <div className="forms-signature-pad">
+            <SignaturePad onSave={save} saving={saving} />
+          </div>
+        )}
+      </section>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {docs.map((d) => {
-          const isFiled = filed[d.key]
-          return (
-            <Card key={d.key}>
-              <CardContent className="flex h-full flex-col p-5">
-                <FileText className="size-5 text-signal" />
-                <h3 className="mt-2 text-sm font-semibold">{d.title}</h3>
-                <p className="mt-1 flex-1 text-xs text-muted-foreground">{d.desc}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <a href={`/portal/forms/${d.key}`} target="_blank" rel="noreferrer">
-                      <Download className="size-4" /> Download
-                    </a>
-                  </Button>
-                  {d.fileable &&
-                    (isFiled ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-ok">
-                        <Check className="size-3.5" /> Filed
-                      </span>
-                    ) : (
-                      <Button size="sm" disabled={!hasSig || filing === d.key} onClick={() => file(d.key)}>
-                        {filing === d.key ? "Filing…" : "Sign & file"}
-                      </Button>
-                    ))}
-                  {d.notarize && <span className="text-[10px] uppercase tracking-wide text-brass">{d.notarize}</span>}
+      <section className="forms-list-section">
+        <header className="forms-list-heading">
+          <h2>{t.yourForms}</h2>
+          <span>{interpolate(t.preparedFiled, { prepared: docs.length, filed: filedCount })}</span>
+        </header>
+        <div className="forms-table">
+          <div className="forms-table-head" aria-hidden>
+            <span>{t.form}</span><span>{t.signingMethod}</span><span>{t.status}</span><span>{t.actions}</span>
+          </div>
+          {docs.map((doc) => {
+            const isFiled = filed[doc.key]
+            return (
+              <article className="forms-row" id={`form-${doc.key}`} key={doc.key}>
+                <div className="forms-row-document">
+                  <span className="forms-doc-icon" aria-hidden><FileText /></span>
+                  <div><h3>{doc.title}</h3><p>{doc.desc}</p></div>
                 </div>
-                {d.fileable && !hasSig && !isFiled && (
-                  <p className="mt-2 text-[11px] text-muted-foreground">Add your signature above to file this in one tap.</p>
-                )}
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+                <div className="forms-row-how"><SigningChip doc={doc} /></div>
+                <div className="forms-row-status">
+                  <span className={isFiled ? "is-filed" : ""}>{isFiled ? t.filed : t.notFiled}</span>
+                </div>
+                <div className="forms-row-actions">
+                  {doc.fileable && !isFiled && (
+                    <Button size="sm" disabled={!hasSig || filing === doc.key} onClick={() => file(doc.key)}>
+                      <Signature aria-hidden /> {filing === doc.key ? t.filing : t.signFile}
+                    </Button>
+                  )}
+                  <Button asChild size="sm" variant="outline">
+                    <a href={`/portal/forms/${doc.key}`} target="_blank" rel="noreferrer"><Download aria-hidden /> {t.download}</a>
+                  </Button>
+                </div>
+                {doc.fileable && !hasSig && !isFiled && <p className="forms-row-hint">{t.addSignatureHint}</p>}
+              </article>
+            )
+          })}
+        </div>
+      </section>
     </>
   )
+}
+
+function SigningChip({ doc }: { doc: FormDoc }) {
+  const { messages } = usePortalI18n()
+  const t = messages.ui
+  if (doc.fileable) return <span className="forms-signing-chip is-one-tap">{t.oneTap}</span>
+  if (doc.notarize === "notarize") return <span className="forms-signing-chip is-notary">{t.needsNotary}</span>
+  if (doc.notarize === "witness") return <span className="forms-signing-chip is-witness">{t.needsWitness}</span>
+  return <span className="forms-signing-chip is-download">{t.downloadSignUpload}</span>
 }

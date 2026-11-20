@@ -12,6 +12,8 @@ const buttonVariants = cva(
         // Primary = brass inlay with ink text + soft glow on hover
         default:
           "bg-brass text-brand-foreground font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)] hover:bg-brass-bright hover:shadow-[0_8px_30px_-10px_var(--brass-glow)]",
+        gold:
+          "border-brass/20 bg-[image:var(--portal-gold-button)] text-[color:var(--portal-dark)] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_10px_24px_-14px_rgba(10,18,34,.45)] hover:brightness-[1.035] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.6),0_14px_28px_-14px_rgba(10,18,34,.55)]",
         // Ghost hairline
         outline:
           "border-hairline-strong bg-surface-2/40 text-foreground hover:bg-surface-3 hover:text-foreground aria-expanded:bg-surface-3",

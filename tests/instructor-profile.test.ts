@@ -13,7 +13,9 @@ import {
   isLiveEligible,
   findVirtualCourseClaim,
   findBannedClaim,
+  instructorStatus,
 } from "@/lib/instructors/profile"
+import { qualifyingOffersFor } from "@/lib/marketplace/offers"
 
 const full = {
   bio: "Twelve years teaching new shooters in Brooklyn, with a focus on first-time carriers who have never handled a firearm.",
@@ -123,5 +125,28 @@ describe("compliance guards on instructor-written copy", () => {
     expect(findBannedClaim("I can expedite your application.")).toBeTruthy()
     expect(findBannedClaim("NYPD-endorsed instructor.")).toBeTruthy()
     expect(findBannedClaim("Twelve years teaching new shooters in Queens.")).toBeNull()
+  })
+})
+
+describe("admin instructor operations", () => {
+  it("derives status from the same go-live rules", () => {
+    const timestamps = { created_at: "2026-11-01T00:00:00Z", updated_at: "2026-11-10T00:00:00Z" }
+    expect(instructorStatus({ ...full, ...timestamps }, new Date("2026-11-19T00:00:00Z")).key).toBe("live")
+    const waiting = instructorStatus({ ...full, ...timestamps, verified: false }, new Date("2026-11-19T00:00:00Z"))
+    expect(waiting.key).toBe("needs_verification")
+    expect(waiting.waitingDays).toBe(9)
+    expect(instructorStatus({ ...full, ...timestamps, verified: false, bio: "short" }).key).toBe("setting_up")
+    expect(instructorStatus({ ...full, ...timestamps, active: false }).key).toBe("inactive")
+  })
+
+  it("uses one pure geographic filter for match preview and backfill", () => {
+    const instructor = { jurisdictions: ["nyc" as const], lat: 40.7506, lng: -73.9971, service_radius_mi: 10 }
+    const offers = [
+      { id: "near", jurisdiction: "nyc" as const, lat: 40.7831, lng: -73.9712, radius_mi: 5, expires_at: null },
+      { id: "coarse", jurisdiction: "nyc" as const, lat: null, lng: null, radius_mi: 5, expires_at: null },
+      { id: "wrong", jurisdiction: "nassau" as const, lat: null, lng: null, radius_mi: 25, expires_at: null },
+      { id: "expired", jurisdiction: "nyc" as const, lat: null, lng: null, radius_mi: 25, expires_at: "2026-11-18T00:00:00Z" },
+    ]
+    expect(qualifyingOffersFor(instructor, offers, new Date("2026-11-19T00:00:00Z")).map((offer) => offer.id)).toEqual(["near", "coarse"])
   })
 })

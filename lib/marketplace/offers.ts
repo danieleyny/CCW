@@ -22,6 +22,43 @@ type DB = SupabaseClient<Database>
 type Jurisdiction = Database["public"]["Enums"]["jurisdiction_key"]
 type OfferType = Database["public"]["Enums"]["offer_type"]
 
+export interface QualifyingInstructor {
+  jurisdictions: Jurisdiction[] | null
+  lat: number | null
+  lng: number | null
+  service_radius_mi: number | null
+}
+
+export interface QualifyingOffer {
+  id: string
+  jurisdiction: Jurisdiction
+  lat: number | null
+  lng: number | null
+  radius_mi: number | null
+  expires_at: string | null
+}
+
+/** Pure offer filter shared by the verification preview and the actual backfill. */
+export function qualifyingOffersFor(
+  instructor: QualifyingInstructor,
+  offers: QualifyingOffer[],
+  now: Date | number = new Date()
+): QualifyingOffer[] {
+  const at = typeof now === "number" ? now : now.getTime()
+  const jurisdictions = new Set(instructor.jurisdictions ?? [])
+  return offers.filter((offer) => {
+    if (!jurisdictions.has(offer.jurisdiction)) return false
+    if (offer.expires_at && new Date(offer.expires_at).getTime() <= at) return false
+    if (offer.lat == null || offer.lng == null) return true
+    if (instructor.lat == null || instructor.lng == null) return false
+    const reach = Math.max(offer.radius_mi ?? 25, instructor.service_radius_mi ?? 25)
+    return milesBetween(
+      { lat: instructor.lat, lng: instructor.lng },
+      { lat: offer.lat, lng: offer.lng }
+    ) <= reach
+  })
+}
+
 /** Everything isLiveEligible() reads, plus what auto-offer needs. */
 const ELIGIBILITY_COLUMNS =
   "id, verified, active, onboarding_completed_at, bio, price_18h_cents, class_format, languages, provides_range, separate_range_note, " +
@@ -214,26 +251,17 @@ export async function backfillMatchesForInstructor(
   const [eligible] = await liveEligible(admin, [instructorId])
   if (!eligible) return 0
 
-  const juris = new Set((instr.jurisdictions ?? []) as Jurisdiction[])
-  if (juris.size === 0) return 0
+  if ((instr.jurisdictions ?? []).length === 0) return 0
 
   const { data: offers } = await admin
     .from("case_offers")
     .select("id, jurisdiction, lat, lng, radius_mi, expires_at")
     .eq("status", "open")
-  const now = Date.now()
-
-  const qualifying = (offers ?? []).filter((o) => {
-    if (!juris.has(o.jurisdiction)) return false
-    if (o.expires_at && new Date(o.expires_at).getTime() <= now) return false
-    // Offer has no precise geo (client hasn't set a borough) → jurisdiction-wide.
-    if (o.lat == null || o.lng == null) return true
-    // Both located → match if within EITHER party's radius: the applicant's
-    // requested radius OR the instructor's own "how far I'll travel" radius.
-    if (instr.lat == null || instr.lng == null) return false
-    const reach = Math.max(o.radius_mi ?? 25, instr.service_radius_mi ?? 25)
-    return milesBetween({ lat: instr.lat, lng: instr.lng }, { lat: o.lat, lng: o.lng }) <= reach
-  })
+  const qualifying = qualifyingOffersFor(
+    { ...instr, jurisdictions: (instr.jurisdictions ?? []) as Jurisdiction[] },
+    (offers ?? []) as QualifyingOffer[],
+    new Date()
+  )
   if (qualifying.length === 0) return 0
 
   const rows = qualifying.map((o) => ({

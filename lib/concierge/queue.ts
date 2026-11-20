@@ -99,12 +99,6 @@ export async function loadConciergeQueue(db: DB): Promise<ConciergeQueueRow[]> {
   return rows.sort((a, b) => a.priority - b.priority || a.clientName.localeCompare(b.clientName))
 }
 
-/** How many concierge cases need a hand right now — for the nav badge. */
-export async function conciergeAttentionCount(db: DB): Promise<number> {
-  const rows = await loadConciergeQueue(db)
-  return rows.filter((r) => r.tone === "attention").length
-}
-
 export function deriveSignal(s: {
   stage: CaseStageKey
   paid: boolean

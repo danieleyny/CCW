@@ -8,6 +8,7 @@
     {
       "path": "/api/cron/form-templates",
       "schedule": "0 6 * * 1"
-    }
+    },
+    { "path": "/api/cron/training-cleanup", "schedule": "0 8 * * *" }
   ]
 }

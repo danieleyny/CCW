@@ -1,0 +1,169 @@
+.page { width: min(1440px, calc(100% - 72px)); margin: 0 auto; padding: 88px 0 140px; color: var(--ink); }
+.intro { max-width: 720px; margin: 0 0 96px; }
+.intro > p, .conceptCopy > p, .mockPair figcaption, .boardHeader > span, .realityHero > span { margin: 0; color: var(--electric); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
+.intro h1 { max-width: 620px; margin: 16px 0 20px; font-family: var(--display); font-size: clamp(54px, 7vw, 100px); font-weight: 400; letter-spacing: -.06em; line-height: .94; }
+.intro > span { display: block; max-width: 600px; color: var(--ink-soft); font-size: 18px; line-height: 1.55; }
+.concept { padding: 64px 0 82px; border-top: 1px solid var(--rule); }
+.concept + .concept { margin-top: 24px; }
+.conceptCopy { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 32px; max-width: 910px; margin-bottom: 48px; }
+.conceptCopy h2 { margin: 0; font-family: var(--display); font-size: clamp(38px, 4vw, 60px); font-weight: 400; letter-spacing: -.05em; line-height: 1; }
+.conceptCopy > span { grid-column: 2; max-width: 560px; color: var(--ink-soft); font-size: 16px; line-height: 1.6; }
+.mockPair { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: clamp(32px, 6vw, 92px); align-items: start; }
+.mockPair figure { min-width: 0; margin: 0; }
+.mockPair figcaption { display: block; margin-bottom: 14px; color: var(--ink-muted); }
+
+/* Concept 01 — Planning horizon */
+.horizonBoard { position: relative; min-height: 394px; overflow: hidden; padding: 34px; border: 1px solid #1c3c5d; border-radius: 18px; background: #07111f; color: var(--light); box-shadow: 0 28px 58px rgba(7,17,31,.22); isolation: isolate; }
+.horizonGlow { position: absolute; z-index: -1; top: -34%; left: -14%; width: 68%; height: 168%; background: radial-gradient(ellipse, rgba(91,231,246,.2), transparent 68%); filter: blur(26px); opacity: .72; }
+.boardHeader { display: flex; justify-content: space-between; gap: 22px; align-items: end; padding-bottom: 34px; }
+.boardHeader > span { color: var(--cyan); }
+.boardHeader strong { color: var(--light); font-family: var(--display); font-size: 30px; font-weight: 400; letter-spacing: -.035em; }
+.horizonFacts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); border-top: 1px solid rgba(159,194,219,.28); }
+.horizonFact { position: relative; min-height: 244px; padding: 24px 18px 18px; border-right: 1px solid rgba(159,194,219,.2); transition: background 260ms ease, transform 260ms cubic-bezier(.2,.7,.2,1); }
+.horizonFact:last-child { border-right: 0; }
+.horizonFact:hover { background: rgba(91,231,246,.075); transform: translateY(-5px); }
+.factNumber { color: var(--cyan); font-family: var(--mono); font-size: 10px; }
+.horizonFact p { margin: 36px 0 4px; color: var(--light); font-family: var(--display); font-size: 56px; letter-spacing: -.06em; line-height: .88; }
+.horizonFact strong { display: block; font-size: 14px; }
+.horizonFact small { display: block; margin-top: 12px; color: var(--light-soft); font-size: 12px; line-height: 1.45; }
+
+/* Concept 02 — Case reality board */
+.realityBoard { position: relative; display: grid; grid-template-columns: 1.12fr .88fr; min-height: 394px; overflow: hidden; border: 1px solid var(--rule); border-radius: 18px; background: var(--paper); box-shadow: 0 28px 58px rgba(7,17,31,.1); isolation: isolate; }
+.boardLight { position: absolute; z-index: -1; right: -12%; top: -36%; width: 76%; height: 128%; border-radius: 50%; background: radial-gradient(ellipse, rgba(57,120,246,.13), transparent 66%); filter: blur(24px); }
+.realityHero { display: flex; flex-direction: column; justify-content: end; min-height: 394px; padding: 34px; border-right: 1px solid var(--rule); }
+.realityHero strong { max-width: 400px; margin-top: 22px; color: var(--ink); font-family: var(--display); font-size: 48px; font-weight: 400; letter-spacing: -.05em; line-height: .95; }
+.realityHero p { max-width: 310px; margin: 20px 0 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
+.realityTiles { display: grid; grid-template-columns: 1fr 1fr; }
+.realityTile { min-height: 131px; padding: 20px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); transition: background 260ms ease, transform 260ms cubic-bezier(.2,.7,.2,1); }
+.realityTile:nth-child(2n) { border-right: 0; }
+.realityTile:nth-child(5) { grid-column: span 2; border-bottom: 0; }
+.realityTile:hover { z-index: 1; background: rgba(57,120,246,.065); box-shadow: 0 10px 24px rgba(7,17,31,.09); transform: scale(1.025); }
+.realityTile p { margin: 0 0 5px; color: var(--ink); font-family: var(--display); font-size: 38px; letter-spacing: -.055em; line-height: .9; }
+.realityTile strong { display: block; font-size: 13px; }
+.realityTile small { display: block; margin-top: 9px; color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
+
+.phoneFrame { position: relative; width: min(100%, 350px); min-height: 620px; overflow: hidden; padding: 50px 16px 18px; border: 8px solid #0a1019; border-radius: 38px; background: var(--ivory); box-shadow: 0 18px 42px rgba(7,17,31,.16); }
+.phoneNotch { position: absolute; top: 12px; left: 50%; width: 92px; height: 20px; border-radius: 999px; background: #0a1019; transform: translateX(-50%); }
+.phoneConcept { width: 350px; max-width: 100%; }
+.phoneFrame .horizonBoard { min-height: 550px; padding: 22px 18px; border-radius: 18px; }
+.phoneFrame .boardHeader { display: block; padding-bottom: 22px; }
+.phoneFrame .boardHeader strong { display: block; margin-top: 10px; font-size: 26px; }
+.phoneFrame .horizonFacts { display: flex; gap: 12px; overflow-x: auto; padding: 0 2px 12px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.phoneFrame .horizonFacts::-webkit-scrollbar { display: none; }
+.phoneFrame .horizonFact { flex: 0 0 220px; min-height: 350px; padding: 22px; border: 1px solid rgba(159,194,219,.22); border-radius: 12px; background: rgba(255,255,255,.035); scroll-snap-align: start; }
+.phoneFrame .horizonFact p { margin-top: 76px; font-size: 64px; }
+.phoneFrame .realityBoard { display: block; min-height: 550px; border-radius: 18px; }
+.phoneFrame .realityHero { min-height: 220px; padding: 22px; border-right: 0; border-bottom: 1px solid var(--rule); }
+.phoneFrame .realityHero strong { font-size: 34px; }
+.phoneFrame .realityHero p { margin-top: 14px; font-size: 12px; }
+.phoneFrame .realityTiles { grid-template-columns: 1fr 1fr; }
+.phoneFrame .realityTile { min-height: 104px; padding: 15px; }
+.phoneFrame .realityTile p { font-size: 31px; }
+.phoneFrame .realityTile small { display: none; }
+
+/* Mobile-first studies for the planning-horizon concept. These are complete
+   layouts: the deck uses real scroll snap, while the other two use the page's
+   ordinary vertical scroll. */
+.mobileStudies { margin-top: 86px; padding-top: 48px; border-top: 1px solid var(--rule); }
+.mobileStudyIntro { max-width: 660px; }
+.mobileStudyIntro > p, .mobileStudy h4, .studyLabel, .listPhone > p, .compactLead > span { margin: 0; color: var(--electric); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; }
+.mobileStudyIntro h3 { max-width: 620px; margin: 14px 0; font-family: var(--display); font-size: 42px; font-weight: 400; letter-spacing: -.045em; line-height: 1; }
+.mobileStudyIntro > span { color: var(--ink-soft); font-size: 15px; }
+.mobileStudyGrid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 26px; margin-top: 42px; }
+.mobileStudy { min-width: 0; }
+.mobileStudy h4 { color: var(--ink); }
+.mobileStudy > p { min-height: 50px; margin: 9px 0 20px; color: var(--ink-soft); font-size: 13px; line-height: 1.45; }
+.mobileStudy .phoneFrame { width: 100%; min-height: 530px; padding: 46px 14px 14px; border-width: 7px; border-radius: 32px; }
+.mobileStudy .phoneNotch { top: 10px; width: 76px; height: 17px; }
+.deckPhone, .listPhone, .compactPhone { min-height: 462px; overflow: hidden; border-radius: 14px; }
+.deckPhone { padding: 20px 0 18px 18px; background: #07111f; color: var(--light); }
+.studyLabel { display: flex; justify-content: space-between; padding-right: 18px; color: var(--cyan); }
+.studyLabel span { color: var(--light-soft); }
+.deckScroll { display: flex; gap: 10px; overflow-x: auto; margin-top: 20px; padding: 0 18px 12px 0; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.deckScroll::-webkit-scrollbar { display: none; }
+.deckCard { position: relative; flex: 0 0 calc(100% - 36px); min-height: 312px; overflow: hidden; padding: 21px; border: 1px solid rgba(159,194,219,.3); border-radius: 13px; background: radial-gradient(ellipse at 87% 4%, rgba(91,231,246,.16), transparent 44%), linear-gradient(135deg, #10283f 0%, #0a1727 48%, #0d2035 100%); background-size: 155% 155%; box-shadow: inset 0 1px rgba(255,255,255,.06), 0 14px 28px rgba(0,0,0,.16); scroll-snap-align: start; isolation: isolate; }
+.deckCard::before { position: absolute; z-index: 0; top: 54%; left: -32%; width: 170%; height: 28%; border: 1px solid rgba(91,231,246,.2); border-right: 0; border-left: 0; background: linear-gradient(90deg, transparent 0%, rgba(91,231,246,.03) 22%, rgba(91,231,246,.12) 50%, rgba(91,231,246,.03) 78%, transparent 100%); content: ""; filter: blur(.2px); transform: rotate(-9deg); }
+.deckCard::after { position: absolute; z-index: 0; bottom: 20px; left: 21px; width: 58px; height: 1px; background: linear-gradient(90deg, var(--cyan), rgba(91,231,246,.08)); box-shadow: 14px 0 17px rgba(91,231,246,.38); content: ""; }
+.deckCard:nth-child(2) { background-position: 32% 20%; }
+.deckCard:nth-child(2)::before { top: 31%; transform: rotate(11deg); }
+.deckCard:nth-child(3) { background-position: 68% 42%; }
+.deckCard:nth-child(3)::before { top: 63%; transform: rotate(-4deg); }
+.deckCard:nth-child(4) { background-position: 15% 78%; }
+.deckCard:nth-child(4)::before { top: 40%; transform: rotate(7deg); }
+.deckCard:nth-child(5) { background-position: 86% 68%; }
+.deckCard:nth-child(5)::before { top: 68%; transform: rotate(-12deg); }
+.deckCard > span { position: relative; z-index: 1; color: var(--cyan); font-family: var(--mono); font-size: 10px; }
+.deckCard strong, .deckCard b, .deckCard small { position: relative; z-index: 1; }
+.deckCard strong, .deckCard b, .deckCard small { display: block; }
+.deckCard strong { margin-top: 82px; font-family: var(--display); font-size: 60px; font-weight: 400; letter-spacing: -.065em; line-height: .86; }
+.deckCard b { margin-top: 8px; font-size: 14px; }
+.deckCard small { margin-top: 14px; color: var(--light-soft); font-size: 12px; line-height: 1.45; }
+.deckPhone > p, .compactPhone > p { margin: 0; padding: 0 18px; color: var(--light-soft); font-size: 11px; line-height: 1.4; }
+.listPhone { padding: 22px 18px; background: var(--paper); }
+.listPhone > p { color: var(--electric); }
+.listPhone > strong { display: block; margin-top: 12px; font-family: var(--display); font-size: 31px; font-weight: 400; letter-spacing: -.045em; line-height: .95; }
+.listPhone ol { display: grid; margin: 27px 0 0; padding: 0; border-top: 1px solid var(--rule); list-style: none; }
+.listPhone li { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.listPhone li > span { color: var(--electric); font-family: var(--display); font-size: 28px; letter-spacing: -.05em; line-height: .9; }
+.listPhone b, .listPhone small { display: block; }
+.listPhone b { font-size: 12px; }
+.listPhone small { margin-top: 4px; color: var(--ink-soft); font-size: 10px; line-height: 1.35; }
+.compactPhone { padding: 18px; background: var(--paper); }
+.compactLead { padding: 21px; border-radius: 14px; background: #07111f; color: var(--light); }
+.compactLead > span { color: var(--cyan); }
+.compactLead strong { display: block; margin-top: 44px; font-family: var(--display); font-size: 60px; font-weight: 400; letter-spacing: -.07em; line-height: .82; }
+.compactLead strong small { font-family: var(--sans); font-size: 13px; letter-spacing: 0; }
+.compactLead p { margin: 9px 0 0; color: var(--light-soft); font-size: 11px; }
+.compactGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.compactGrid article { min-height: 84px; padding: 13px; border: 1px solid var(--rule); border-radius: 10px; }
+.compactGrid strong, .compactGrid span { display: block; }
+.compactGrid strong { font-family: var(--display); font-size: 29px; font-weight: 400; letter-spacing: -.055em; line-height: .9; }
+.compactGrid span { margin-top: 6px; color: var(--ink-soft); font-size: 10px; }
+.compactPhone > p { padding: 16px 0 0; color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .horizonGlow { animation: horizonDrift 11s ease-in-out infinite alternate; }
+  .boardLight { animation: boardDrift 12s ease-in-out infinite alternate; }
+  .deckCard { animation: deckGradient 14s ease-in-out infinite alternate; }
+  .deckCard::before { animation: deckCurrent 10s ease-in-out infinite alternate; }
+}
+@keyframes horizonDrift { from { transform: translate3d(-4%,0,0) scale(.96); opacity: .42; } to { transform: translate3d(44%,0,0) scale(1.08); opacity: .82; } }
+@keyframes boardDrift { from { transform: translate3d(-5%,-3%,0) scale(.95); opacity: .5; } to { transform: translate3d(8%,8%,0) scale(1.08); opacity: .95; } }
+@keyframes deckGradient { from { background-position: 0% 22%; } to { background-position: 100% 74%; } }
+@keyframes deckCurrent { from { margin-left: -5%; opacity: .26; } to { margin-left: 13%; opacity: .7; } }
+
+@media (max-width: 900px) {
+  .page { width: min(100% - 40px, 680px); padding-top: 56px; }
+  .intro { margin-bottom: 72px; }
+  .conceptCopy { display: block; margin-bottom: 36px; }
+  .conceptCopy h2 { margin-top: 14px; }
+  .conceptCopy > span { display: block; margin-top: 18px; }
+  .mockPair { grid-template-columns: 1fr; gap: 48px; }
+  .phoneConcept { justify-self: center; }
+  .mobileStudyGrid { grid-template-columns: 1fr; max-width: 350px; margin-inline: auto; }
+}
+@media (max-width: 540px) {
+  .page { width: calc(100% - 40px); padding: 44px 0 88px; }
+  .intro h1 { font-size: 52px; }
+  .intro > span { font-size: 16px; }
+  .concept { padding: 48px 0 56px; }
+  .horizonBoard { min-height: auto; padding: 22px 18px; }
+  .boardHeader { display: block; padding-bottom: 22px; }
+  .boardHeader strong { display: block; margin-top: 10px; font-size: 26px; }
+  .horizonFacts { display: flex; gap: 10px; overflow-x: auto; padding: 0 2px 12px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .horizonFacts::-webkit-scrollbar { display: none; }
+  .horizonFact { flex: 0 0 236px; min-height: 300px; padding: 22px; border: 1px solid rgba(159,194,219,.22); border-radius: 12px; background: rgba(255,255,255,.035); scroll-snap-align: start; }
+  .horizonFact p { margin-top: 58px; font-size: 64px; }
+  .realityBoard { display: block; min-height: 0; }
+  .realityHero { min-height: 250px; padding: 24px; border-right: 0; border-bottom: 1px solid var(--rule); }
+  .realityHero strong { font-size: 38px; }
+  .realityTiles { grid-template-columns: 1fr 1fr; }
+  .realityTile { min-height: 116px; padding: 16px; }
+  .realityTile p { font-size: 34px; }
+  .realityTile small { display: none; }
+  .phoneConcept { display: none; }
+  .mobileStudies { margin-top: 64px; padding-top: 38px; }
+  .mobileStudyIntro h3 { font-size: 34px; }
+  .mobileStudyGrid { gap: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .horizonGlow, .boardLight, .deckCard, .deckCard::before { animation: none !important; } }

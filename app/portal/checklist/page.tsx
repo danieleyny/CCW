@@ -10,12 +10,18 @@ import { pendingConversionReqCodes } from "@/lib/requirements/photo-conversion"
 import { portalTrackForCase } from "@/config/portal-steps"
 import { RequirementsChecklist } from "@/components/portal/requirements-checklist"
 import { ReadinessCard } from "@/components/portal/readiness-card"
+import { DeepLinkHighlight } from "@/components/portal/concierge/deep-link-highlight"
+import { getMessages } from "@/lib/i18n"
+import type { Messages } from "@/lib/i18n/messages"
 
-export const metadata = { title: "Your checklist" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.checklistTitle }
+}
 
 export default async function ChecklistPage() {
-  const myCase = await getMyCase()
-  if (!myCase) return <NoCase />
+  const [myCase, messages] = await Promise.all([getMyCase(), getMessages()])
+  if (!myCase) return <NoCase message={messages.common.noCase} />
 
   // V3-P2.1 — ONE source of truth: the versioned requirements engine, loaded by
   // the same function /portal/documents uses so the two views cannot disagree.
@@ -60,7 +66,8 @@ export default async function ChecklistPage() {
 
   return (
     <div>
-      <Header intakeDone={view.intakeDone} />
+      <DeepLinkHighlight />
+      <Header intakeDone={view.intakeDone} messages={messages} />
       {readiness && <ReadinessCard readiness={readiness} />}
       <RequirementsChecklist
         items={view.items}
@@ -83,38 +90,36 @@ export default async function ChecklistPage() {
   )
 }
 
-function Header({ intakeDone }: { intakeDone: boolean }) {
+function Header({ intakeDone, messages }: { intakeDone: boolean; messages: Messages }) {
   return (
     <div className="mb-5">
       {/* Desktop heading — on mobile the sticky checklist header carries the title. */}
-      <h1 className="hidden text-2xl font-semibold tracking-tight sm:block">Your checklist</h1>
+      <h1 className="hidden text-2xl font-semibold tracking-tight sm:block">{messages.ui.checklistTitle}</h1>
       {intakeDone ? (
         <>
           <div className="mt-3 flex items-center gap-2 rounded-md border border-ok/30 bg-ok/8 px-3 py-2 text-sm text-ok">
             <CheckCircle2 className="size-4 shrink-0" />
             <span>
-              Intake complete — this is your personalized checklist. Each item finishes as you
-              provide its document.
+              {messages.ui.checklistComplete}
             </span>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            This is the journey view: what&apos;s left and what to do next. Documents holds every
-            file, needed and provided.
+            {messages.ui.checklistJourney}
           </p>
         </>
       ) : (
         <p className="mt-1 text-sm text-muted-foreground">
-          The actions we need from you right now. Documents holds every file, needed and provided.
+          {messages.ui.checklistActions}
         </p>
       )}
     </div>
   )
 }
 
-function NoCase() {
+function NoCase({ message }: { message: string }) {
   return (
     <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-      Your case isn&apos;t set up yet.
+      {message}
     </p>
   )
 }

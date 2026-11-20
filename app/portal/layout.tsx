@@ -5,14 +5,17 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { resolveOnboardingRedirect } from "@/lib/portal/intake-gate"
-import { brand } from "@/config/brand"
-import { LogoMark } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { PortalTopNav, PortalBottomNav } from "@/components/portal/portal-nav"
 import { AccountActions } from "@/components/auth/account-actions"
 import { NotificationBell } from "@/components/shared/notification-bell"
-import { DarkBackdrop } from "@/components/theme/dark-backdrop"
 import { LocaleSwitcher } from "@/components/shared/locale-switcher"
 import { getLocale, getMessages } from "@/lib/i18n"
+import { PortalI18nProvider } from "@/components/shared/portal-i18n-provider"
+import { PortalUserAvatarProvider } from "@/components/portal/portal-user-avatar-provider"
+import { UserAvatar } from "@/components/shared/user-avatar"
+import { getProfileAvatarUrl } from "@/lib/profile-avatar"
+import "./portal-v2.css"
 
 export default async function PortalLayout({
   children,
@@ -39,42 +42,61 @@ export default async function PortalLayout({
     .select("id", { count: "exact", head: true })
     .eq("read", false)
 
-  const [locale, t] = await Promise.all([getLocale(), getMessages()])
+  const [locale, t, avatarUrl] = await Promise.all([
+    getLocale(),
+    getMessages(),
+    profile.avatar_kind === "upload" ? getProfileAvatarUrl(profile.avatar_path) : null,
+  ])
   // CONCIERGE QA Phase 4 — the done-for-you path gets its own nav (no checklist).
   const isConcierge = myCase?.service_mode === "concierge"
+  const avatar = {
+    kind: profile.avatar_kind === "animal" || profile.avatar_kind === "upload" ? profile.avatar_kind : null,
+    key: profile.avatar_key,
+    path: profile.avatar_path,
+    url: avatarUrl,
+  } as const
 
   return (
+    <PortalI18nProvider locale={locale} messages={t}>
+    <PortalUserAvatarProvider userId={profile.id} fullName={profile.full_name} initialAvatar={avatar}>
     <div
-      className="dark flex min-h-svh flex-col bg-background text-foreground"
+      lang={locale}
+      className="portal-v2 flex min-h-svh flex-col bg-background text-foreground"
       // The tab bar's height, exposed so pages with their own sticky action bar
       // (intake) can extend their bottom padding past it.
       style={{ "--shell-bottom": "calc(60px + env(safe-area-inset-bottom))" } as React.CSSProperties}
     >
-      <DarkBackdrop />
       <header
-        className="glass-bar sticky top-0 z-20 border-b border-hairline"
+        className="portal-v2-header sticky top-0 z-40 border-b border-hairline"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 md:h-16">
+        <div className="portal-v2-header-inner mx-auto flex w-full max-w-[1120px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           {/* The wordmark never wraps: at 390px the language selector squeezed
               it onto three lines, so the lockup shrinks a step instead. */}
-          <Link href="/portal" className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold tracking-tight text-foreground sm:text-lg">
-            <LogoMark className="size-7 shrink-0 text-brass sm:size-8" />
-            {brand.logo.wordmark}
-          </Link>
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <BrandLogo href="/portal" tone="ink" size="sm" accessibleLabel={null} />
+          <div className="portal-v2-header-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LocaleSwitcher current={locale} label={t.common.language} />
-            <NotificationBell />
+            <NotificationBell locale={locale} messages={t.ui} />
             <Link
               href="/portal/profile"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
+              className="portal-v2-avatar md:hidden"
             >
+              <UserAvatar name={profile.full_name} avatar={avatar} size={32} />
+              <span className="sr-only">{profile.full_name || t.common.account} · {t.common.profile}</span>
+            </Link>
+            <Link
+              href="/portal/profile"
+              className="hidden items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground md:flex"
+            >
+              <UserAvatar name={profile.full_name} avatar={avatar} size={32} />
               {profile.full_name}
             </Link>
-            <AccountActions signOutLabel={t.common.signOut} />
+            <div className="hidden md:block">
+              <AccountActions signOutLabel={t.common.signOut} switchLabel={t.ui.switchAccount} />
+            </div>
           </div>
         </div>
-        <PortalTopNav concierge={isConcierge} />
+            <PortalTopNav concierge={isConcierge} />
       </header>
 
       {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
@@ -82,7 +104,7 @@ export default async function PortalLayout({
           On intake the tab bar is hidden and the wizard's own sticky action bar
           carries the safe area, so we don't reserve tab-bar space there. */}
       <main
-        className={`mx-auto w-full max-w-3xl flex-1 px-4 py-6 md:pb-8 ${
+        className={`mx-auto w-full max-w-[1120px] flex-1 px-4 py-8 sm:px-6 md:pb-10 lg:px-8 lg:py-11 ${
           pathname.startsWith("/portal/intake") ? "pb-0" : "pb-[calc(var(--shell-bottom)+24px)]"
         }`}
       >
@@ -90,9 +112,9 @@ export default async function PortalLayout({
       </main>
 
       {/* Desktop only — on mobile these live in the More sheet (Profile & your data). */}
-      <footer className="mx-auto hidden w-full max-w-3xl gap-4 px-4 pb-6 text-xs text-text-low md:flex">
+      <footer className="mx-auto hidden w-full max-w-[1120px] gap-4 px-6 pb-7 text-xs text-text-low md:flex lg:px-8">
         <Link href="/portal/profile" className="underline hover:text-text-mid">
-          Profile
+          {t.common.profile}
         </Link>
         <Link href="/portal/privacy" className="underline hover:text-text-mid">
           {t.portal.yourData}
@@ -106,5 +128,7 @@ export default async function PortalLayout({
         <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} />
       )}
     </div>
+    </PortalUserAvatarProvider>
+    </PortalI18nProvider>
   )
 }

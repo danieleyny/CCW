@@ -1,6 +1,7 @@
-import { runCanvasLoop, type CanvasLoopHandle } from "./canvasLoop"
+import { runCanvasLoop, type CanvasLoopHandle } from "../shared/canvasLoop"
 import { ILLUSTRATIONS } from "./phaseIllustrations"
 import { LOOP_MS } from "./phasesData"
+import { V0_PALETTE, type Palette } from "@/components/theme/themes"
 
 export type IllustrationHandle = CanvasLoopHandle & { setActive: (on: boolean) => void }
 
@@ -9,7 +10,7 @@ export function startPhaseIllustration(
   canvas: HTMLCanvasElement,
   index: number,
   color: string,
-  opts: { reducedMotion?: boolean; initiallyActive: boolean }
+  opts: { reducedMotion?: boolean; initiallyActive: boolean; palette?: Palette }
 ): IllustrationHandle {
   let active = opts.initiallyActive
   let restart = true
@@ -28,21 +29,19 @@ export function startPhaseIllustration(
       const vis = opts.reducedMotion ? 1 : Math.min(1, lt / 0.5)
       const u = opts.reducedMotion ? 0.92 : (lt % loopS) / loopS
       c.save()
-      ILLUSTRATIONS[index]({ c, w, h, u, vis, col: color, compact: w < 420 })
+      ILLUSTRATIONS[index]({ c, w, h, u, vis, col: color, compact: w < 420, palette: opts.palette ?? V0_PALETTE })
       c.restore()
     },
-    { reducedMotion: opts.reducedMotion, stillTime: 0 }
+    { reducedMotion: opts.reducedMotion, stillTime: 0, enabled: active }
   )
-
-  if (!active) loop.pause()
 
   return {
     ...loop,
     setActive(on: boolean) {
       if (on && !active) restart = true
       active = on
-      if (on) loop.resume()
-      else loop.pause()
+      loop.setEnabled(on)
+      loop.redraw()
     },
   }
 }

@@ -1,0 +1,478 @@
+.hero {
+  --hero-ink: var(--ink, #0b1420);
+  --hero-muted: var(--ink-2, #4f5866);
+  --hero-micro: #6b7480;
+  --hero-focus: var(--phase-2, #3d5bd9);
+  --hero-display: var(--display);
+  --hero-sans: var(--sans);
+  --hero-mono: var(--mono);
+  --hero-gutter: clamp(20px, 5.5vw, 80px);
+  --h1-tracking: -0.02em;
+
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 92px var(--hero-gutter) 0;
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  color: var(--hero-ink);
+  font-family: var(--hero-sans);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--hero-display);
+  font-weight: 500;
+  font-size: clamp(44px, 5.4vw, 80px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.line1 { display: inline; }
+.word { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .14em; margin-bottom: -.14em; }
+.word > span { display: inline-block; }
+
+.inkWrap { position: relative; display: inline-block; margin-top: 0.06em; }
+.line2 { white-space: nowrap; }
+
+.ink {
+  background: var(--ink-grad, linear-gradient(90deg, #2fa8ee 0%, #5b6cff 20%, #a24fd9 40%, #ee5e8c 60%, #f59a4a 80%, #2fa8ee 100%));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: heroInk 9s linear infinite;
+}
+
+:global([data-theme="v2"]) .ink {
+  /* Use a text-shadow glint rather than a background layer: Safari paints an
+     inline clipped background as a rectangular fill during the first pass. */
+  background: none;
+  color: #14254A;
+  -webkit-text-fill-color: #14254A;
+  animation: glint 7s ease-in-out infinite;
+}
+:global([data-theme="v2"]) .inkGlow { display: none; }
+@keyframes glint { 0%,35%,75%,100% { text-shadow: none; } 47%,53% { text-shadow: 0 0 1px #B8923F, 0 0 13px rgba(240,213,140,.84); } 50% { text-shadow: 0 0 2px #F0D58C, 0 0 16px rgba(240,213,140,.95); } }
+
+.inkText { position: relative; }
+.inkGlow { position: absolute; left: 0; top: 0; filter: blur(18px); opacity: 0.3; pointer-events: none; }
+
+.sparkCanvas {
+  position: absolute;
+  left: -56px;
+  top: -34px;
+  width: calc(100% + 112px);
+  height: calc(100% + 56px);
+  display: block;
+  pointer-events: none;
+}
+
+@keyframes heroInk {
+  from { background-position: 0% 50%; }
+  to { background-position: -200% 50%; }
+}
+
+.hero .lede { margin: 42px 0 0; max-width: 520px; font-size: 19px; line-height: 1.6; color: var(--hero-muted); }
+.ctas { margin-top: 38px; display: flex; align-items: center; gap: 22px; }
+
+/* ---------- Obsidian primary button ---------- */
+.hero a.btnChrome {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 28px;
+  border-radius: 14px;
+  border: 1px solid rgba(13, 32, 52, .95);
+  color: #F7FAFC;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  text-shadow: none;
+  background:
+    radial-gradient(ellipse at 58% -72%, rgba(255,255,255,.17), transparent 56%),
+    linear-gradient(180deg, #101D2B 0%, #08111D 54%, #060C14 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.48),
+    0 3px 8px -3px rgba(7,17,31,.28),
+    0 18px 30px -22px rgba(32,87,157,.52);
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .3s ease;
+}
+.hero a.btnChrome:hover {
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  border-color: rgba(91,231,246,.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.48),
+    0 5px 12px -3px rgba(7,17,31,.34),
+    0 22px 38px -18px rgba(91,108,255,.46);
+}
+.hero a.btnChrome:active {
+  transform: scale(0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -1px 0 rgba(0,0,0,.6),
+    0 1px 3px -1px rgba(7,17,31,.25);
+}
+.hero a.btnChrome:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
+.btnLabel, .hero a.btnChrome .arrow { position: relative; z-index: 1; }
+
+:global([data-theme]) .hero a.btnChrome {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 14px 30px -18px var(--accent);
+}
+:global([data-theme]) .hero a.btnChrome:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 18px 30px -18px var(--accent);
+}
+:global([data-theme="v2"]) .hero a.btnChrome .arrow { color: var(--gold-light); }
+:global([data-theme="v2"]) .hero a.btnChrome:hover { box-shadow: inset 0 0 0 1px rgba(217,178,95,.55), inset 0 1px 0 rgba(255,255,255,.16), 0 18px 30px -18px var(--accent); }
+
+/* The eligibility control should feel like a finished object, not an alert.
+   One slow, low-contrast pass gives it life without competing with the headline
+   or the map. Its long resting phase is intentional. */
+.hero a.btnChrome::before {
+  content: "";
+  position: absolute;
+  top: -36%;
+  bottom: -36%;
+  left: -12%;
+  width: 72%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(1.5px);
+  background: linear-gradient(104deg,
+    rgba(161, 194, 222, 0) 0%,
+    rgba(161, 194, 222, .035) 30%,
+    rgba(255, 255, 255, .34) 50%,
+    rgba(174, 205, 234, .07) 70%,
+    rgba(161, 194, 222, 0) 100%);
+  transform: translateX(-170%) skewX(-14deg);
+  animation: chromeSweep 15s cubic-bezier(.42, 0, .18, 1) 1.8s infinite;
+}
+.hero a.btnChrome:hover::before { animation: chromeOnce 1.25s cubic-bezier(.42, 0, .18, 1) forwards; }
+
+/* A stationary, extremely subtle surface reflection replaces the old moving
+   dots. It keeps the button dimensional while leaving the words perfectly calm. */
+.introCta::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.38), transparent);
+  transform: translateX(-140%) skewX(-18deg);
+  opacity: 0;
+}
+
+.arrow { transition: transform .3s cubic-bezier(.2,.7,.2,1); }
+.hero a.btnChrome:hover .arrow,
+.hero a.textLink:hover .arrow { transform: translateX(3px); }
+
+@keyframes chromeSweep {
+  0%, 65% { opacity: 0; transform: translateX(-170%) skewX(-14deg); }
+  68% { opacity: .28; }
+  77% { opacity: .72; transform: translateX(165%) skewX(-14deg); }
+  81%, 100% { opacity: 0; transform: translateX(165%) skewX(-14deg); }
+}
+@keyframes chromeOnce {
+  from { opacity: 0; transform: translateX(-170%) skewX(-14deg); }
+  18% { opacity: .3; }
+  78% { opacity: .72; transform: translateX(165%) skewX(-14deg); }
+  to { opacity: 0; transform: translateX(165%) skewX(-14deg); }
+}
+
+/* ---------- "See the process" text link ---------- */
+.hero a.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 6px;
+  border-radius: 10px;
+  color: #0B1420;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.hero a.textLink:hover { color: #0B1420; }
+.hero a.textLink:focus-visible { outline: 2px solid var(--hero-focus); outline-offset: 3px; }
+.textLinkLabel {
+  padding-bottom: 2px;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0% 1.5px no-repeat;
+  transition: background-size .35s cubic-bezier(.2,.7,.2,1);
+}
+.hero a.textLink:hover .textLinkLabel { background-size: 100% 1.5px; }
+:global([data-theme="v2"]) .hero a.textLink .arrow { color: var(--gold-deep); }
+
+/* ---------- Trust row ---------- */
+.trust {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13.5px;
+  color: var(--hero-muted);
+}
+.trust li { display: inline-flex; align-items: center; gap: 7px; }
+
+.visual { position: relative; min-width: 0; margin-right: -60px; }
+.introSheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.75) 50%, transparent 70%);
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  -webkit-mask-image: var(--map-src);
+  mask-image: var(--map-src);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+.mapFrame { position: relative; width: 100%; perspective: 1400px; }
+.mapTilt { position: relative; isolation: isolate; will-change: transform; transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mapPicture { position: relative; z-index: 0; display: block; }
+
+.mapImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* fade bottom AND left edge so the island never looks sliced */
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%), linear-gradient(to right, transparent 0%, #000 9%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 78%, transparent 100%), linear-gradient(to right, transparent 0%, #000 9%, #000 100%);
+  mask-composite: intersect;
+}
+
+:global([data-theme]) .mapImg { filter: grayscale(var(--map-gray)) contrast(1.02); }
+:global([data-theme]) .mapPicture::after { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: var(--map-tint); mix-blend-mode: color; opacity: var(--map-tint-opacity, .75); -webkit-mask: var(--map-src) center / contain no-repeat; mask: var(--map-src) center / contain no-repeat; }
+/* V2 uses a pre-tinted base bitmap plus a pixel-matched gold bitmap. It must
+   not receive the generic grayscale/tint treatment a second time. */
+:global([data-theme="v2"]) .mapImg { filter: none; -webkit-mask-image: none; mask-image: none; }
+:global([data-theme="v2"]) .mapPicture::after { display: none; }
+
+/* ---------- Map anchor shadow ---------- */
+.mapShadow {
+  z-index: 0;
+  position: absolute;
+  left: 10%;
+  right: 4%;
+  bottom: 3%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(61,91,217,0.16) 0%, rgba(11,20,32,0.08) 45%, rgba(11,20,32,0) 72%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+:global([data-theme]) .mapShadow { background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--phase-2) 20%, transparent) 0%, color-mix(in srgb, var(--ink) 8%, transparent) 45%, transparent 72%); }
+
+.mapCanvas { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+
+.folderLift {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, #000 70%, transparent);
+  transition: transform 1s cubic-bezier(.3,.7,.2,1), opacity .3s ease, filter .6s ease;
+}
+.mapTilt[data-finale="true"] .folderLift {
+  opacity: 1;
+  transform: translateY(-5px);
+  filter: drop-shadow(0 10px 14px var(--finale-shadow, rgba(245,154,74,.35))) brightness(1.03);
+}
+/* V2's sixth stage belongs to its final map ring, not the generic folder-lift
+   finale. The closing CTA retains the separate packet animation. */
+.mapTilt[data-v2] .folderLift { display: none; }
+
+.chip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid rgba(11, 20, 32, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 26px -12px rgba(11, 20, 32, 0.4);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(8px);
+  transition: opacity 0.35s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.chip[data-on="true"] { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
+.chipNum {
+  display: inline-flex;
+  width: auto;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 7px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  font-family: var(--hero-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.chipLabel { color: var(--hero-ink); font-family: var(--hero-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+
+.finaleChip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px 0 6px;
+  border-radius: 999px;
+  background: var(--surface, rgba(255,255,255,.95));
+  box-shadow: 0 12px 28px -12px rgba(11,20,32,.35);
+  color: var(--ink, #0B1420);
+  font: 600 12.5px var(--hero-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(0, -50%) translateY(6px);
+  transition: opacity .6s ease, transform .8s cubic-bezier(.3,.7,.2,1);
+}
+.finaleChip[data-on="true"] { opacity: 1; transform: translate(0, -50%); transition-delay: .35s; }
+.finaleChip[data-side="left"] { transform: translate(-100%, -50%) translateY(6px); }
+.finaleChip[data-side="left"][data-on="true"] { transform: translate(-100%, -50%); }
+/* V2's sixth-stage chip belongs to the final ring. It deliberately differs
+   from the legacy R2 folder chip, which must remain untouched on other pages. */
+.finaleChip[data-v2] { transform: translate(-50%, -140%) translateY(6px); }
+.finaleChip[data-v2][data-on="true"] { transform: translate(-50%, -140%); }
+.finaleChip .chipNum {
+  display: inline-flex;
+  width: auto;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.finaleCheck path { stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset .5s ease .85s; }
+.finaleChip[data-on="true"] .finaleCheck path { stroke-dashoffset: 0; }
+
+:global([data-theme]) .hero { --trust-bg: color-mix(in srgb, var(--phase-1) 14%, var(--surface)); --trust-ink: var(--phase-2); }
+:global([data-theme="v2"]) .hero { --trust-bg: var(--gold-tint); --trust-ink: var(--gold-deep); }
+:global([data-theme]) .hero a.btnChrome { border-color: var(--accent); color: var(--accent-ink); background: var(--accent); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+:global([data-theme]) .hero a.btnChrome::before { background: linear-gradient(104deg, transparent 0%, rgba(255,255,255,.04) 30%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.05) 70%, transparent 100%); animation: none; }
+:global([data-theme]) .hero a.btnChrome:hover { border-color: var(--accent); color: var(--accent-ink); filter: brightness(1.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+:global([data-theme]) .hero a.textLink { color: var(--ink, #0B1420); }
+:global([data-theme="v4"]) .hero a.btnChrome .arrow { color: var(--phase-dark-3); }
+:global([data-theme="v4"]) .hero a.btnChrome:hover { box-shadow: inset 0 0 0 1px rgba(214,176,90,.55), inset 0 1px 0 rgba(255,255,255,.12), 0 14px 30px -18px var(--accent); }
+:global([data-theme="v4"]) .chipNum { color: #0A0A0A; }
+:global([data-theme="v2"]) .chipNum { color: var(--gold-light); }
+
+/* The map holds the lower half of the fold; lift the copy into the first visual
+   beat so the landing view feels intentional rather than vacant below the nav. */
+@media (min-width: 1024px) {
+  .copy { transform: translateY(-44px); }
+}
+
+@media (max-width: 1023px) {
+  .hero { grid-template-columns: minmax(0, 1fr); padding-top: 48px; }
+  .copy { max-width: 640px; }
+  .visual { width: 100%; max-width: 720px; margin: 12px auto 0; }
+}
+
+@media (max-width: 767px) {
+  .hero { padding: 40px 20px 0; gap: 0; }
+  .title { font-size: 44px; }
+  .sparkCanvas { left: -40px; top: -26px; width: calc(100% + 80px); height: calc(100% + 40px); }
+  .hero .lede { margin-top: 30px; font-size: 16.5px; }
+  .ctas { margin-top: 30px; align-items: center; justify-content: flex-start; gap: 18px; }
+  .hero a.btnChrome { width: auto; height: 48px; padding: 0 22px; border-radius: 12px; font-size: 15.5px; }
+  .hero a.textLink { width: auto; height: 48px; padding: 0; font-size: 15px; }
+  .trust { justify-content: flex-start; margin-top: 18px; font-size: 13px; gap: 6px 14px; }
+  .visual { margin: 26px -20px 0; width: calc(100% + 40px); max-width: none; }
+  .chip { gap: 6px; padding: 4px 10px 4px 4px; }
+  .chipNum { width: auto; min-width: 24px; height: 22px; padding: 0 5px; font-size: 10px; }
+  .chipLabel { font-size: 9.5px; }
+  .finaleChip { height: 30px; gap: 6px; padding: 0 10px 0 4px; font-size: 10px; }
+  .finaleChip .chipNum { width: auto; min-width: 24px; height: 22px; padding: 0 5px; font-size: 10px; }
+}
+
+@media (max-width: 359px) {
+  .ctas { flex-wrap: wrap; gap: 12px 18px; }
+  .hero a.textLink { flex-basis: 100%; justify-content: flex-start; }
+}
+
+@media (max-width: 374px) { .title { font-size: 40px; } }
+
+@media (max-width: 479px) {
+  .ctas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .hero a.btnChrome { width: 100%; height: 52px; }
+  .hero a.textLink { justify-self: center; height: auto; }
+}
+
+/* First-load home sequence. Elements remain in their final layout position. */
+.hero[data-intro="play"] .word > span { animation: wordUp .95s cubic-bezier(.16,.84,.24,1) both; animation-delay: calc(.35s + var(--i) * .075s); }
+.hero[data-intro="play"] .line2 { animation: inkIn 1.2s cubic-bezier(.2,.8,.2,1) .8s both; }
+.hero[data-intro="play"] .introSub { animation: rise .8s cubic-bezier(.2,.8,.2,1) 1.1s both; }
+.hero[data-intro="play"] .introCta { animation: pop .7s cubic-bezier(.2,.9,.3,1.25) 1.3s both; }
+.hero[data-intro="play"] .introCta::after { animation: introShine .9s cubic-bezier(.45,0,.2,1) 1.9s both; }
+.hero[data-intro="play"] .introLink { animation: rise .6s ease 1.42s both; }
+.hero[data-intro="play"] .introTrust > * { animation: rise .55s ease both; animation-delay: calc(1.6s + var(--i) * .09s); }
+.hero[data-intro="play"] .introMap { animation: mapIn 1.7s cubic-bezier(.16,.84,.24,1) .45s both; }
+.hero[data-intro="play"] .introSheen { animation: sheen 1.5s cubic-bezier(.45,0,.2,1) 1.5s both; }
+.hero[data-intro="play"] .sparkCanvas { animation: rise .8s ease 1.6s both; }
+.hero[data-intro="play"] a.btnChrome::before { animation-delay: 3.5s; }
+@keyframes wordUp { from { transform: translateY(110%); } to { transform: none; } }
+@keyframes inkIn { from { opacity: 0; filter: blur(12px); transform: translateY(14px); letter-spacing: .05em; } to { opacity: 1; filter: none; transform: none; letter-spacing: var(--h1-tracking, -.02em); } }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(.92) translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes introShine { from { opacity: 1; transform: translateX(-140%) skewX(-18deg); } to { opacity: 1; transform: translateX(260%) skewX(-18deg); } }
+@keyframes mapIn { from { opacity: 0; transform: translateY(46px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes sheen { from { opacity: 1; background-position: 150% 0; } to { opacity: 1; background-position: -60% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ink, .hero a.btnChrome, .hero a.btnChrome::before, .hero a.btnChrome::after, .hero a.btnChrome:hover::before { animation: none; }
+  .mapTilt, .chip, .arrow, .textLinkLabel, .hero a.btnChrome { transition: none; }
+  .folderLift, .finaleChip, .finaleCheck path { transition: none; }
+  .hero[data-intro="play"] *, .hero[data-intro="play"] *::after { animation: none !important; }
+  .introSheen { display: none; }
+  :global([data-theme="v2"]) .ink { animation: none; background: #14254A; }
+}

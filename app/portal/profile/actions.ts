@@ -6,11 +6,31 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
+import { ANIMAL_AVATAR_KEYS } from "@/components/portal/avatars/registry"
 
 export interface ProfileState {
   error?: string
   ok?: boolean
 }
+
+export interface AvatarUpdateState {
+  error?: string
+  ok?: boolean
+}
+
+const avatarSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("animal"),
+    key: z.enum(ANIMAL_AVATAR_KEYS),
+  }),
+  z.object({
+    kind: z.literal("upload"),
+    path: z.string().min(1).max(500),
+  }),
+  z.object({
+    kind: z.null(),
+  }),
+])
 
 const profileSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
@@ -64,5 +84,48 @@ export async function changePassword(_prev: ProfileState, formData: FormData): P
   const supabase = await createClient()
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (error) return { error: error.message }
+  return { ok: true }
+}
+
+/**
+ * Save the signed-in client's avatar selection. Profiles remain staff-write
+ * under ordinary RLS; an owner-scoped SECURITY DEFINER RPC validates the same
+ * key/path invariants again and can update only auth.uid()'s profile row.
+ */
+export async function updateProfileAvatar(input: unknown): Promise<AvatarUpdateState> {
+  const { userId, profile } = await requireRole(["client"])
+  const parsed = avatarSchema.safeParse(input)
+  if (!parsed.success) return { error: "We couldn't save your photo. Please try again." }
+
+  if (parsed.data.kind === "upload" && !parsed.data.path.startsWith(`${userId}/`)) {
+    return { error: "We couldn't save your photo. Please try again." }
+  }
+
+  const next = parsed.data.kind === "animal"
+    ? { avatar_kind: "animal", avatar_key: parsed.data.key, avatar_path: null }
+    : parsed.data.kind === "upload"
+      ? { avatar_kind: "upload", avatar_key: null, avatar_path: parsed.data.path }
+      : { avatar_kind: null, avatar_key: null, avatar_path: null }
+
+  const db = await createClient()
+  const { data: oldPath, error } = await db.rpc("update_own_profile_avatar", {
+    p_kind: next.avatar_kind,
+    p_key: next.avatar_key,
+    p_path: next.avatar_path,
+  })
+  if (error) return { error: "We couldn't save your photo. Please try again." }
+
+  if (oldPath && oldPath !== next.avatar_path) {
+    // The authenticated client can delete only inside their own folder by RLS.
+    await db.storage.from("avatars").remove([oldPath])
+  }
+
+  await logActivity({
+    action: "client.profile_avatar_updated",
+    entity: "profile",
+    detail: { by: profile.full_name, kind: parsed.data.kind ?? "removed" },
+  })
+  revalidatePath("/portal", "layout")
+  revalidatePath("/portal/profile")
   return { ok: true }
 }

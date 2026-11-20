@@ -42,7 +42,7 @@ export const CONCIERGE_MILESTONES: MilestoneDef[] = [
   {
     key: "references",
     label: "Collecting your references",
-    detail: "We invite and chase your references so their notarized letters come back complete — you don't lift a finger.",
+    detail: "We invite them and follow up until their notarized letters are back.",
   },
   {
     key: "packet",
@@ -51,8 +51,8 @@ export const CONCIERGE_MILESTONES: MilestoneDef[] = [
   },
   {
     key: "review",
-    label: "Ready for your review & filing",
-    detail: "Everything's prepared. You review it, sign what's yours, and file your own application — we walk you through every step.",
+    label: "Ready for your review and filing",
+    detail: "You approve the packet, then submit your own application — we walk you through every step.",
   },
 ]
 

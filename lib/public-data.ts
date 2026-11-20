@@ -1,8 +1,10 @@
 import "server-only"
 
 import { unstable_cache } from "next/cache"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { getActivePackages } from "@/lib/packages"
+import type { Database } from "@/lib/supabase/types"
+import { getActivePackages, PUBLIC_PACKAGE_FALLBACK } from "@/lib/packages"
 import { getFees, getFeeTable } from "@/lib/fees"
 import { getPreviewRegistry } from "@/lib/requirements/preview"
 
@@ -42,29 +44,70 @@ export interface PublicInstructor {
 
 const ONE_HOUR = 3600
 
+/**
+ * The standalone visual-preview project intentionally has no service-role key.
+ * When its explicitly configured preview mode is on, public marketing data is
+ * read through the anonymous client and remains subject to RLS. Production keeps
+ * the service-role-backed, cached path above.
+ */
+function marketingDataClient() {
+  if (process.env.MARKETING_PREVIEW_MODE) {
+    return createSupabaseClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    )
+  }
+  return createAdminClient()
+}
+
 export const getPublicPackages = unstable_cache(
-  async () => getActivePackages(createAdminClient()),
+  async () => {
+    try {
+      const packages = await getActivePackages(marketingDataClient())
+      return packages.length >= 2 ? packages : PUBLIC_PACKAGE_FALLBACK
+    } catch {
+      return PUBLIC_PACKAGE_FALLBACK
+    }
+  },
   ["public-packages"],
   { tags: [CACHE_TAGS.packages], revalidate: ONE_HOUR }
 )
 
 export const getPublicFees = unstable_cache(
-  async () => getFees(createAdminClient()),
+  async () => getFees(marketingDataClient()),
   ["public-fees"],
   { tags: [CACHE_TAGS.fees], revalidate: ONE_HOUR }
 )
 
 export const getPublicFeeTable = unstable_cache(
-  async () => getFeeTable(createAdminClient()),
+  async () => getFeeTable(marketingDataClient()),
   ["public-fee-table"],
   { tags: [CACHE_TAGS.fees], revalidate: ONE_HOUR }
 )
 
 export const getPublicRegistry = unstable_cache(
-  async () => getPreviewRegistry(createAdminClient()),
+  async () => {
+    try {
+      const registry = await getPreviewRegistry(marketingDataClient())
+      return registry.length ? registry : PREVIEW_REGISTRY_FALLBACK
+    } catch {
+      return PREVIEW_REGISTRY_FALLBACK
+    }
+  },
   ["public-registry"],
   { tags: [CACHE_TAGS.registry], revalidate: ONE_HOUR }
 )
+
+/** Base items only, used only if the public registry cannot be read. */
+const PREVIEW_REGISTRY_FALLBACK = [
+  { reqCode: "ID-01", title: "Government-issued identification", authority: null, sourceUrl: null, severity: "critical", blocking: true, triggerCond: "always", jurisdiction: "nyc" },
+  { reqCode: "RES-01", title: "Proof of residence", authority: null, sourceUrl: null, severity: "high", blocking: true, triggerCond: "always", jurisdiction: "nyc" },
+  { reqCode: "TRAIN-01", title: "Required training certificate", authority: null, sourceUrl: null, severity: "long_lead", blocking: true, triggerCond: "carry_not_renewal", jurisdiction: "nyc" },
+  { reqCode: "SC-ID-01", title: "Government-issued identification", authority: null, sourceUrl: null, severity: "critical", blocking: true, triggerCond: "always", jurisdiction: "special_carry" },
+  { reqCode: "SC-BIZ-01", title: "Business or residency documentation", authority: null, sourceUrl: null, severity: "high", blocking: true, triggerCond: "always", jurisdiction: "special_carry" },
+  { reqCode: "SC-TRAIN-01", title: "Required training certificate", authority: null, sourceUrl: null, severity: "long_lead", blocking: true, triggerCond: "carry_not_renewal", jurisdiction: "special_carry" },
+]
 
 /**
  * The opt-in public instructor directory. Reads the `public_instructor_directory`
@@ -74,7 +117,7 @@ export const getPublicRegistry = unstable_cache(
  */
 export const getPublicInstructors = unstable_cache(
   async (): Promise<PublicInstructor[]> => {
-    const { data } = await createAdminClient()
+    const { data } = await marketingDataClient()
       .from("public_instructor_directory")
       .select("slug, name, boroughs, languages, class_format, bio")
       .order("name")

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { referenceComposition } from "@/lib/references/composition"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 
 export interface ReferenceRow {
   id: string
@@ -35,6 +36,7 @@ export interface CohabitantRow {
 
 function DeleteButton({ onDelete }: { onDelete: () => void }) {
   const [pending, start] = useTransition()
+  const { messages } = usePortalI18n()
   return (
     <Button
       size="icon"
@@ -42,7 +44,7 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
       className="size-8 text-muted-foreground hover:text-destructive"
       disabled={pending}
       onClick={() => start(onDelete)}
-      aria-label="Remove"
+      aria-label={messages.ui.remove}
     >
       <Trash2 className="size-4" />
     </Button>
@@ -60,6 +62,10 @@ const FAMILY_WORDS = [
   "in-law", "inlaw", "mother-in-law", "father-in-law", "brother-in-law", "sister-in-law",
   "stepfather", "stepmother", "stepdad", "stepmom", "stepson", "stepdaughter",
   "stepsister", "stepbrother", "half-brother", "half-sister", "relative", "family",
+  "padre", "madre", "papá", "papa", "mamá", "mama", "hermana", "hermano", "hijo", "hija",
+  "esposa", "esposo", "cónyuge", "conyuge", "tío", "tio", "tía", "tia", "primo", "prima",
+  "sobrino", "sobrina", "abuela", "abuelo", "suegra", "suegro", "cuñado", "cunado", "cuñada", "cunada",
+  "pariente", "familiar", "familia",
 ]
 function isFamilyRelationship(v: string): boolean {
   const s = v.toLowerCase()
@@ -79,6 +85,8 @@ export function ReferenceCollector({
   const formRef = useRef<HTMLFormElement>(null)
   const [state, action, pending] = useActionState<CollectorState, FormData>(addReference, {})
   const [isFamily, setIsFamily] = useState(false)
+  const { locale, messages } = usePortalI18n()
+  const t = messages.ui
 
   useEffect(() => {
     if (state.ok) {
@@ -87,9 +95,9 @@ export function ReferenceCollector({
       // async action result, not derivable during render.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsFamily(false)
-      toast.success("Reference added")
+      toast.success(t.referenceAdded)
     }
-  }, [state])
+  }, [state, t.referenceAdded])
 
   const atMax = references.length >= required
   // The ONE composition rule (38 RCNY §5-05(b)(8)) drives the family control, the
@@ -119,6 +127,7 @@ export function ReferenceCollector({
           </>
         )}
       </p>
+      {locale === "es" ? <p className="text-xs text-text-low">{messages.common.legalEnglishNotice}</p> : null}
 
       <ul className="space-y-2">
         {references.map((r) => (
@@ -126,15 +135,15 @@ export function ReferenceCollector({
             <div className="min-w-0">
               <div className="text-sm font-medium">{r.name}</div>
               <div className="text-xs text-muted-foreground">
-                {r.relationship ?? "—"} · {r.is_family ? "Family" : "Unrelated"}
-                {r.notarized ? " · notarized" : ""}
+                {r.relationship ?? "—"} · {r.is_family ? t.family : t.unrelated}
+                {r.notarized ? ` · ${t.notarized}` : ""}
               </div>
             </div>
             <DeleteButton onDelete={() => deleteReference(r.id, caseId)} />
           </li>
         ))}
         {references.length === 0 && (
-          <li className="text-sm text-muted-foreground">No references yet.</li>
+          <li className="text-sm text-muted-foreground">{t.noReferences}</li>
         )}
       </ul>
 
@@ -142,7 +151,7 @@ export function ReferenceCollector({
         // Success is gated on COMPOSITION, not just count — an invalid set (too many
         // family) never shows the "all done" banner.
         <p className="rounded-md border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
-          All {required} references added. Remember to get each one notarized.
+          {interpolate(t.referencesAdded, { count: required })}
         </p>
       ) : atMax && comp.problem ? (
         // Count is met but the composition is invalid — tell them exactly why and let
@@ -151,18 +160,18 @@ export function ReferenceCollector({
       ) : (
         <form ref={formRef} action={action} className="space-y-3 rounded-lg border bg-card p-4">
           <input type="hidden" name="caseId" value={caseId} />
-          <div className="text-sm font-medium">Add a reference ({references.length}/{required})</div>
+          <div className="text-sm font-medium">{interpolate(t.addReferenceCount, { current: references.length, required })}</div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="ref-name">Name</Label>
+              <Label htmlFor="ref-name">{t.name}</Label>
               <Input id="ref-name" name="name" required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ref-rel">Relationship</Label>
+              <Label htmlFor="ref-rel">{t.relationship}</Label>
               <Input
                 id="ref-rel"
                 name="relationship"
-                placeholder="e.g. Friend, Sibling"
+                placeholder={t.relationshipExample}
                 onChange={(e) => {
                   // Typing a family word (Dad, Mother, Sister…) auto-marks family.
                   if (isFamilyRelationship(e.target.value)) setIsFamily(true)
@@ -170,12 +179,12 @@ export function ReferenceCollector({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ref-email">Email</Label>
-              <Input id="ref-email" name="contactEmail" type="email" placeholder="optional" />
+              <Label htmlFor="ref-email">{t.email}</Label>
+              <Input id="ref-email" name="contactEmail" type="email" placeholder={t.optional} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ref-phone">Phone</Label>
-              <Input id="ref-phone" name="contactPhone" placeholder="optional" />
+              <Label htmlFor="ref-phone">{t.phone}</Label>
+              <Input id="ref-phone" name="contactPhone" placeholder={t.optional} />
             </div>
           </div>
           {/* How long they've known the applicant — captured here, pre-filled into the
@@ -215,7 +224,7 @@ export function ReferenceCollector({
               />
               <span className="min-w-0">
                 <span className={`flex items-center gap-1.5 text-sm font-medium ${isFamily ? "text-brass-bright" : "text-foreground"}`}>
-                  <Users className="size-3.5" /> This person is a family member
+                  <Users className="size-3.5" /> {t.familyMember}
                 </span>
                 <span className="mt-0.5 block text-xs text-text-low">
                   {comp.familyCapReached
@@ -231,7 +240,7 @@ export function ReferenceCollector({
           )}
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           <Button type="submit" size="sm" disabled={pending}>
-            <Plus className="size-4" /> Add reference
+            <Plus className="size-4" /> {t.addReference}
           </Button>
         </form>
       )}
@@ -248,13 +257,15 @@ export function CohabitantCollector({
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const [state, action, pending] = useActionState<CollectorState, FormData>(addCohabitant, {})
+  const { locale, messages } = usePortalI18n()
+  const t = messages.ui
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset()
-      toast.success("Cohabitant added")
+      toast.success(t.cohabitantAdded)
     }
-  }, [state])
+  }, [state, t.cohabitantAdded])
 
   return (
     <div className="space-y-4">
@@ -262,6 +273,7 @@ export function CohabitantCollector({
         List every person <strong>18 or older</strong> living in your home. Each needs a notarized
         affidavit.
       </p>
+      {locale === "es" ? <p className="text-xs text-text-low">{messages.common.legalEnglishNotice}</p> : null}
 
       <ul className="space-y-2">
         {cohabitants.map((c) => (
@@ -274,30 +286,30 @@ export function CohabitantCollector({
           </li>
         ))}
         {cohabitants.length === 0 && (
-          <li className="text-sm text-muted-foreground">No cohabitants listed.</li>
+          <li className="text-sm text-muted-foreground">{t.noCohabitants}</li>
         )}
       </ul>
 
       <form ref={formRef} action={action} className="space-y-3 rounded-lg border bg-card p-4">
         <input type="hidden" name="caseId" value={caseId} />
-        <div className="text-sm font-medium">Add a cohabitant</div>
+        <div className="text-sm font-medium">{t.addCohabitant}</div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="cohab-name">Name</Label>
+            <Label htmlFor="cohab-name">{t.name}</Label>
             <Input id="cohab-name" name="name" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cohab-rel">Relationship</Label>
-            <Input id="cohab-rel" name="relationship" placeholder="e.g. Spouse, Roommate" />
+            <Label htmlFor="cohab-rel">{t.relationship}</Label>
+            <Input id="cohab-rel" name="relationship" placeholder={t.cohabitantExample} />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="cohab-email">Email (we&apos;ll send the affidavit link)</Label>
-            <Input id="cohab-email" name="contactEmail" type="email" placeholder="optional — enables self-serve" />
+            <Label htmlFor="cohab-email">{t.cohabitantEmail}</Label>
+            <Input id="cohab-email" name="contactEmail" type="email" placeholder={t.cohabitantEmailPlaceholder} />
           </div>
         </div>
         {state.error && <p className="text-sm text-destructive">{state.error}</p>}
         <Button type="submit" size="sm" disabled={pending}>
-          <Plus className="size-4" /> Add cohabitant
+          <Plus className="size-4" /> {t.addCohabitant}
         </Button>
       </form>
     </div>

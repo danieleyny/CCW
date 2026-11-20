@@ -4,9 +4,8 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
-import { brand } from "@/config/brand"
 import { cn } from "@/lib/utils"
-import { LogoMark } from "@/components/brand/logo"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -45,13 +44,7 @@ export function MarketingNav() {
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link
-          href="/"
-          className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground"
-        >
-          <LogoMark className="size-8 text-brass" />
-          {brand.logo.wordmark}
-        </Link>
+        <BrandLogo tone="light" size="sm" />
 
         <nav className="hidden items-center gap-7 md:flex">
           {LINKS.map((l) => (
@@ -87,6 +80,7 @@ export function MarketingNav() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <SheetTitle className="sr-only">Menu</SheetTitle>
+              <BrandLogo tone="ink" size="sm" className="mt-2" />
               <nav className="mt-8 flex flex-col gap-1">
                 {LINKS.map((l) => (
                   <Link

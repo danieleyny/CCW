@@ -110,7 +110,7 @@ export function evaluateProfile(instructor: InstructorProfileInput): ProfileComp
   }
 }
 
-type LiveInput = InstructorProfileInput & Pick<InstructorRow, "verified" | "active" | "onboarding_completed_at">
+export type LiveInput = InstructorProfileInput & Pick<InstructorRow, "verified" | "active" | "onboarding_completed_at">
 
 /** Can this instructor be shown to applicants / send offers right now? */
 export function isLiveEligible(instructor: LiveInput): boolean {
@@ -174,6 +174,65 @@ export function goLiveSteps(instructor: LiveInput): { steps: GoLiveStep[]; live:
   }
   const remaining = steps.filter((s) => !s.done).length
   return { steps, live: isLiveEligible(instructor), remaining }
+}
+
+export type InstructorStatusKey = "live" | "needs_verification" | "setting_up" | "inactive"
+
+export interface InstructorStatus {
+  key: InstructorStatusKey
+  label: "Live" | "Needs verification" | "Setting up" | "Inactive"
+  subline: string | null
+  waitingDays: number
+  remaining: number
+  total: number
+  verified: boolean
+}
+
+/**
+ * Admin-facing status derived from the exact same checklist instructors see.
+ * Do not duplicate live/profile rules in the admin workspace: this helper is the
+ * single translation from goLiveSteps() to a human operational status.
+ */
+export function instructorStatus(
+  instructor: LiveInput & Pick<InstructorRow, "created_at" | "updated_at">,
+  now = new Date()
+): InstructorStatus {
+  const result = goLiveSteps(instructor)
+  const total = result.steps.length
+  if (!instructor.active) {
+    return { key: "inactive", label: "Inactive", subline: null, waitingDays: 0, remaining: result.remaining, total, verified: instructor.verified }
+  }
+  if (result.live) {
+    return { key: "live", label: "Live", subline: null, waitingDays: 0, remaining: 0, total, verified: instructor.verified }
+  }
+
+  const instructorOpen = result.steps.filter((step) => !step.done && !step.waiting)
+  if (instructorOpen.length > 0) {
+    return {
+      key: "setting_up",
+      label: "Setting up",
+      subline: `${result.remaining} of ${total} steps left`,
+      waitingDays: 0,
+      remaining: result.remaining,
+      total,
+      verified: instructor.verified,
+    }
+  }
+
+  const waitingSince = [instructor.created_at, instructor.updated_at, instructor.onboarding_completed_at]
+    .filter((value): value is string => !!value)
+    .sort()
+    .at(-1) ?? instructor.created_at
+  const waitingDays = Math.max(0, Math.floor((now.getTime() - new Date(waitingSince).getTime()) / 86_400_000))
+  return {
+    key: "needs_verification",
+    label: "Needs verification",
+    subline: `Waiting on us ${waitingDays} day${waitingDays === 1 ? "" : "s"}`,
+    waitingDays,
+    remaining: result.remaining,
+    total,
+    verified: instructor.verified,
+  }
 }
 
 /**

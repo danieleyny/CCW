@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { ExternalLink } from "lucide-react"
 import { notFound, redirect } from "next/navigation"
 import type { Metadata } from "next"
 import { brand } from "@/config/brand"
@@ -131,7 +132,10 @@ function ConsultationPageBody({ partner }: { partner: Partner }) {
                       className={`rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brass/40 ${h.stackInSummary ? "basis-full" : ""}`}
                     >
                       <CredentialBadge primary={h.tier === "primary"} className={h.stackInSummary ? "w-fit" : undefined}>
-                        {h.label} ↗
+                        <span className="inline-flex items-center gap-1">
+                          {h.label}
+                          <ExternalLink className="size-3 shrink-0" aria-hidden />
+                        </span>
                       </CredentialBadge>
                     </a>
                   ) : (

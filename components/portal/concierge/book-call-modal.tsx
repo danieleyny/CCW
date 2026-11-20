@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import type { BookCallCopy } from "@/components/portal/concierge/book-call"
 
 /**
  * The real intro-call length, in ONE place — the card copy, the modal title and
@@ -30,7 +31,7 @@ export const INTRO_CALL_MINUTES = 30
  * one place those params live. We add only `embed_domain` here, client-side,
  * because it must match the live host (and can't be known on the server).
  */
-export function BookCallModal({ url }: { url: string }) {
+export function BookCallModal({ url, copy }: { url: string; copy: BookCallCopy }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [src, setSrc] = useState<string | null>(null)
@@ -66,26 +67,26 @@ export function BookCallModal({ url }: { url: string }) {
       if (data?.event === "calendly.event_scheduled" && !scheduled.current) {
         scheduled.current = true
         setOpen(false)
-        toast.success("Your intro call is booked — we'll confirm the details shortly.")
+        toast.success(copy.scheduledToast)
         router.refresh()
       }
     }
     window.addEventListener("message", onMessage)
     return () => window.removeEventListener("message", onMessage)
-  }, [open, router])
+  }, [copy.scheduledToast, open, router])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="min-h-[44px]">
-          <CalendarClock className="size-4" /> Choose a time
+          <CalendarClock className="size-4" /> {copy.chooseTime}
         </Button>
       </DialogTrigger>
       <DialogContent className="grid h-[min(760px,85vh)] w-full max-w-[440px] grid-rows-[auto_1fr_auto] gap-0 overflow-hidden p-0">
         <div className="border-b px-4 py-3 pr-10">
-          <DialogTitle>Book your intro call</DialogTitle>
+          <DialogTitle>{copy.modalTitle}</DialogTitle>
           <DialogDescription className="sr-only">
-            Pick a time for your {INTRO_CALL_MINUTES}-minute concierge intro call.
+            {copy.modalDescription}
           </DialogDescription>
         </div>
 
@@ -97,7 +98,7 @@ export function BookCallModal({ url }: { url: string }) {
           )}
           {src && (
             <iframe
-              title="Schedule your concierge intro call"
+              title={copy.frameTitle}
               src={src}
               className="relative h-full w-full border-0"
               onLoad={() => setLoaded(true)}
@@ -106,14 +107,14 @@ export function BookCallModal({ url }: { url: string }) {
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t bg-muted/50 px-4 py-2.5 text-xs text-text-mid">
-          <span>Having trouble?</span>
+          <span>{copy.trouble}</span>
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 font-medium text-signal underline underline-offset-2"
           >
-            Open in a new tab <ExternalLink className="size-3" />
+            {copy.openNewTab} <ExternalLink className="size-3" />
           </a>
         </div>
       </DialogContent>
