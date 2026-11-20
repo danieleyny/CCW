@@ -16,20 +16,30 @@ import { cn } from "@/lib/utils"
  * — is framed as TYPICAL and explicitly attributed to NYPD. We never imply we
  * can speed up their clock, because we can't.
  */
-export function CaseTimeline({ currentStage }: { currentStage: CaseStageKey }) {
+export function CaseTimeline({
+  currentStage,
+  stageKeys,
+}: {
+  currentStage: CaseStageKey
+  /** Optional phase slice used by the portal-home journey drawer. */
+  stageKeys?: readonly CaseStageKey[]
+}) {
   const here = stageIndex(currentStage)
   const filedIdx = stageIndex("filed")
   const afterFiling = here >= filedIdx
+  const stages = stageKeys
+    ? CASE_STAGES.filter((stage) => stageKeys.includes(stage.key))
+    : CASE_STAGES
 
   return (
-    <div className="space-y-4">
+    <div className="portal-case-timeline space-y-4">
       <ol className="relative space-y-0">
-        {CASE_STAGES.map((s, i) => {
+        {stages.map((s, i) => {
           const idx = stageIndex(s.key)
           const done = idx < here
           const current = idx === here
           const nypd = isNypdControlled(s.key)
-          const last = i === CASE_STAGES.length - 1
+          const last = i === stages.length - 1
           return (
             <li key={s.key} className="flex gap-3">
               {/* rail */}

@@ -161,6 +161,47 @@ export function isNypdControlled(key: CaseStageKey): boolean {
   return NYPD_CONTROLLED_STAGES.includes(key)
 }
 
+/**
+ * The client-facing journey groups the thirteen operational case stages into
+ * five understandable phases. Operational stage keys remain unchanged; this is
+ * presentation metadata only, so admin pipeline and transition logic continue
+ * to use CASE_STAGES directly.
+ */
+export const CLIENT_PHASES = [
+  {
+    key: "get_started",
+    stages: ["lead", "eligibility_screened", "signed_up_paid"],
+  },
+  {
+    key: "training",
+    stages: ["training_scheduled", "training_complete"],
+  },
+  {
+    key: "documents",
+    stages: ["document_collection", "notarization", "application_assembled"],
+  },
+  {
+    key: "nypd_review",
+    stages: ["filed", "fingerprinting_booked", "under_investigation"],
+  },
+  {
+    key: "decision",
+    stages: ["decision", "licensed"],
+  },
+] as const satisfies ReadonlyArray<{
+  key: string
+  stages: readonly CaseStageKey[]
+}>
+
+export type ClientPhaseKey = (typeof CLIENT_PHASES)[number]["key"]
+
+export function clientPhaseIndex(stage: CaseStageKey): number {
+  const index = CLIENT_PHASES.findIndex((phase) =>
+    (phase.stages as readonly CaseStageKey[]).includes(stage)
+  )
+  return index === -1 ? 0 : index
+}
+
 /** NYC boroughs + the non-resident business track destinations. */
 export const BOROUGHS = [
   "Manhattan",

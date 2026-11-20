@@ -1,133 +1,195 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight, ClipboardList, CalendarDays, CreditCard, CheckCircle2, Compass, Users } from "lucide-react"
+import {
+  ChevronRight,
+  Clock3,
+  CreditCard,
+  Files,
+  GraduationCap,
+  MessageSquare,
+} from "lucide-react"
 import { SponsorBanner } from "@/components/portal/sponsor/sponsor-banner"
 import { ReferralConsentCard } from "@/components/portal/referral-consent-card"
-import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
-import { getMyCase, getTrainingState } from "@/lib/portal"
-import {
-  stageMeta,
-  stageIndex,
-  nextStage,
-  type CaseStageKey,
-} from "@/config/stages"
-import { money, formatDate } from "@/lib/format"
-import { Card, CardContent } from "@/components/ui/card"
-import { StatusBadge } from "@/components/shared/status-badge"
-import { ReticleProgress } from "@/components/ui/reticle-progress"
-import { CaseTimeline } from "@/components/portal/case-timeline"
-import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import { WelcomeCard } from "@/components/portal/welcome-card"
+import {
+  PortalHomeHero,
+  type PortalHomeHeroProps,
+} from "@/components/portal/portal-home-hero"
+import { PortalHomeJourney } from "@/components/portal/portal-home-journey"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { getMyCase, getTrainingState, type TrainingState } from "@/lib/portal"
+import {
+  CLIENT_PHASES,
+  clientPhaseIndex,
+  stageIndex,
+  type CaseStageKey,
+  type ClientPhaseKey,
+} from "@/config/stages"
+import { DISPLAY_TIME_ZONE, initials } from "@/lib/format"
 import { loadRequirementView } from "@/lib/portal/requirement-view"
 import { hasPaidPackage } from "@/lib/packages"
 import { computeNextStep } from "@/lib/portal/next-step"
 import { decideConciergeRouting } from "@/lib/portal/concierge-routing"
-import { getMessages } from "@/lib/i18n"
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
+import { isSystemVerified } from "@/lib/requirements/system-checks"
+import { isUnenforced } from "@/lib/legal-status"
+import { buildPortalForms } from "@/lib/forms/portal-forms"
+import type { WizardAnswers } from "@/lib/intake/answers"
+import { MESSAGE_REPLY_BUSINESS_DAYS } from "@/config/service-targets"
 import {
   APPLICATION_TYPE_LABELS,
   applicationTypeNeedsCarryTraining,
-  isPremisesApplication,
   type ApplicationType,
 } from "@/lib/application-types"
+import type { Locale } from "@/config/i18n"
 
-export const metadata = { title: "Your application" }
+export async function generateMetadata() {
+  const t = await getMessages()
+  return { title: t.ui.yourApplication }
+}
+
+type StaffMessage = {
+  body: string
+  senderName: string | null
+  senderRole: string | null
+}
+
+function localizedApplicationType(
+  applicationType: ApplicationType | null,
+  t: Awaited<ReturnType<typeof getMessages>>
+) {
+  if (!applicationType) return null
+  if (applicationType === "premise_residence") return t.licensePath.premiseResidence
+  if (applicationType === "concealed_carry") return t.licensePath.concealedCarry
+  if (applicationType === "special_carry") return t.licensePath.specialCarry
+  return APPLICATION_TYPE_LABELS[applicationType]
+}
+
+function formatPortalDate(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: DISPLAY_TIME_ZONE,
+  }).format(new Date(value))
+}
+
+function nyHour() {
+  return Number(
+    new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      hourCycle: "h23",
+      timeZone: DISPLAY_TIME_ZONE,
+    }).format(new Date())
+  )
+}
 
 export default async function PortalHome() {
-  const myCase = await getMyCase()
+  const [myCase, t, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])
 
   if (!myCase) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <h2 className="text-lg font-semibold">Welcome.</h2>
-          <p className="mt-2 text-sm text-text-mid">
-            Your case isn&apos;t set up yet. Your Gun License NYC concierge will reach out shortly to get you
-            started.
-          </p>
-        </CardContent>
-      </Card>
+      <section className="portal-home-empty">
+        <h1>{t.ui.welcome}</h1>
+        <p>{t.ui.conciergeWillReach}</p>
+      </section>
     )
   }
 
   const supabase = await createClient()
   const stage = myCase.stage as CaseStageKey
-  const next = nextStage(stage)
   const applicationType = myCase.application_type as ApplicationType | null
-  const premisesApplication = isPremisesApplication(applicationType)
   const trainingRequired = applicationTypeNeedsCarryTraining(applicationType)
+  const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
 
-  const [{ data: reqs }, { data: training }, { data: payments }, { data: intake }] =
-    await Promise.all([
-      supabase.from("case_requirements").select("status").eq("case_id", myCase.id),
-      supabase
-        .from("training_sessions")
-        .select("class_date")
-        .eq("case_id", myCase.id)
-        .order("class_date", { ascending: true }),
-      supabase.from("payments").select("amount_cents, status, package_key").eq("case_id", myCase.id),
-      supabase.from("intake_sessions").select("completed_at").eq("case_id", myCase.id).maybeSingle(),
-    ])
+  const [
+    view,
+    trainingState,
+    paidConcierge,
+    { data: payments },
+    { data: intake },
+    { data: recentMessages },
+    { count: unreadMessages },
+    { data: sponsorship },
+    { data: refCase },
+  ] = await Promise.all([
+    loadRequirementView(supabase, myCase),
+    trainingRequired
+      ? getTrainingState(myCase.id)
+      : Promise.resolve<TrainingState>({
+          status: "none",
+          interestedCount: 0,
+          instructorName: null,
+          bookingAt: null,
+        }),
+    hasPaidPackage(supabase, myCase.id, "full_concierge"),
+    supabase
+      .from("payments")
+      .select("amount_cents, status, package_key")
+      .eq("case_id", myCase.id),
+    supabase
+      .from("intake_sessions")
+      .select("completed_at, answers")
+      .eq("case_id", myCase.id)
+      .maybeSingle(),
+    supabase
+      .from("messages")
+      .select("body, created_at, profiles:sender_id(full_name, role)")
+      .eq("case_id", myCase.id)
+      .is("engagement_id", null)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("read", false),
+    supabase
+      .from("case_sponsorships")
+      .select("id")
+      .eq("case_id", myCase.id)
+      .is("revoked_at", null)
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("cases")
+      .select("referred_by_sponsor_id")
+      .eq("id", myCase.id)
+      .maybeSingle(),
+  ])
+
   const intakeDone = !!intake?.completed_at
-  const trainingState = !trainingRequired
-    ? { status: "none" as const, interestedCount: 0, instructorName: null, bookingAt: null }
-    : await getTrainingState(myCase.id)
-
-  // Phase 10 — the single most important outstanding action, computed from the
-  // same requirement view the checklist and documents pages read.
-  const view = await loadRequirementView(supabase, myCase)
   const nextStep = computeNextStep({ items: view.items, intakeDone, stage })
-  const t = await getMessages()
-  // Track-aware subtitle: never call a Carry Guard case "concealed carry".
-  const licenseTrack = (myCase.license_track as string | null) ?? null
-  const licenseWord =
-    premisesApplication
-      ? t.portal.licenseWord.premises
-      : licenseTrack === "carry_guard" || licenseTrack === "special_carry_guard"
-      ? t.portal.licenseWord.armedGuard
-      : licenseTrack?.includes("premises")
-        ? t.portal.licenseWord.premises
-        : t.portal.licenseWord.concealedCarry
-  const portalTagline = t.portal.tagline.replace("{license}", licenseWord)
+  const localizedNextStep =
+    locale === "es"
+      ? {
+          ...nextStep,
+          title:
+            nextStep.title === "Finish your intake"
+              ? t.portal.finishIntake
+              : nextStep.title === "Nothing needed from you right now"
+                ? t.ui.nothingNeededNow
+                : nextStep.title,
+          detail: nextStep.detail.startsWith("It's what builds your personalized")
+            ? t.ui.finishIntakeDetail
+            : nextStep.detail,
+          cta:
+            ({
+              "Continue intake": t.portal.continueIntake,
+              "See everything you've provided": t.ui.seeProvided,
+              "See how to get it": t.ui.seeHow,
+              "Start it now": t.ui.startNow,
+              "Invite them now": t.ui.inviteNow,
+              "Take a look": t.ui.takeLook,
+            } as Record<string, string>)[nextStep.cta] ?? nextStep.cta,
+        }
+      : nextStep
 
-  // V3-P3 — which lifecycle cards to show.
-  const hasPackage = (payments ?? []).some((p) => p.package_key)
+  const isSponsored = !!sponsorship
   const isLicensed = stage === "licensed"
   const isDenied = myCase.status === "denied"
-
-  // CONCIERGE Phase 1 — a paid concierge applicant lives on the concierge
-  // control tower, not this self-guided home. The fork records service_mode;
-  // once the concierge package is paid, this is where the two experiences part.
-  const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
-  const paidConcierge = await hasPaidPackage(supabase, myCase.id, "full_concierge")
-  // A SPONSORED concierge case is unlocked by the sponsorship itself, not a Stripe
-  // purchase — so it must never see a payment card. Detect it exactly as the concierge
-  // page does (any non-revoked sponsorship) and route it to the concierge tower.
-  const { data: sponsorship } = await supabase
-    .from("case_sponsorships")
-    .select("id")
-    .eq("case_id", myCase.id)
-    .is("revoked_at", null)
-    .limit(1)
-    .maybeSingle()
-  const isSponsored = !!sponsorship
-
-  // Referral channel: a company introduced this applicant (attribution only). If so, offer
-  // the applicant control over sharing their STAGE with that company (default: private).
-  const { data: refCase } = await supabase.from("cases").select("referred_by_sponsor_id").eq("id", myCase.id).maybeSingle()
-  let referral: { company: string; sharing: boolean } | null = null
-  if (refCase?.referred_by_sponsor_id) {
-    // Applicants can't read the sponsors table (RLS) — fetch just the referrer's company
-    // name (a public display value) with the service role. The consent row is theirs to read.
-    const admin = createAdminClient()
-    const [{ data: sp }, { data: rc }] = await Promise.all([
-      admin.from("sponsors").select("legal_name").eq("id", refCase.referred_by_sponsor_id).maybeSingle(),
-      supabase.from("referral_consent").select("consented_at, revoked_at").eq("case_id", myCase.id).maybeSingle(),
-    ])
-    referral = { company: sp?.legal_name ?? "the company that introduced you", sharing: !!rc?.consented_at && !rc?.revoked_at }
-  }
-
   const routing = decideConciergeRouting({
     intakeDone,
     serviceMode,
@@ -137,337 +199,533 @@ export default async function PortalHome() {
     isDenied,
   })
   if (routing.redirectToConcierge) redirect("/portal/concierge")
-  // Not yet forked: the one decision that comes first is HOW we work together.
-  // (The onboarding gate already carries brand-new cases to the fork; this covers
-  // anyone who lands on /portal without a path set.)
-  const needsPathChoice = !serviceMode && !isLicensed && !isDenied
-  // CONCIERGE QA Phase 2 — payment limbo: chose concierge, abandoned checkout. A
-  // sponsored applicant never owes a service fee, so never shows a payment card or a
-  // price (P0-2) — the routing helper encodes and tests that invariant.
-  const needsConciergePayment = routing.needsConciergePayment
-  // P1-5 — a concierge case has no self-guided checklist: /portal/checklist just
-  // redirects them onward (to the concierge tower, or the enrollment fork if not yet
-  // unlocked). Never link them into that silent bounce — point at their real home so
-  // the destination matches the label instead of an unexplained gate.
-  const checklistHref = serviceMode === "concierge" ? "/portal/concierge" : "/portal/checklist"
 
-  // V3-P2.1 — to-dos come from the requirements engine (the one checklist).
-  const outstanding = (reqs ?? []).filter((r) => r.status === "pending").length
-  const nextTraining = (training ?? []).find((t) => t.class_date)
-  const paidCents = (payments ?? [])
-    .filter((p) => p.status === "paid")
-    .reduce((s, p) => s + p.amount_cents, 0)
-  const premiseMilestones = [
-    { label: "Intake", complete: intakeDone },
-    { label: "Documents", complete: stageIndex(stage) >= stageIndex("application_assembled") },
-    { label: "Submit", complete: stageIndex(stage) >= stageIndex("filed") },
-    { label: "Decision", complete: stageIndex(stage) >= stageIndex("decision") },
-  ]
-  const premiseReferences = view.referenceProgress
-  const premiseReferenceValue = premiseReferences
-    ? `${premiseReferences.notarizedCount} / ${premiseReferences.required}`
-    : "0 / 2"
+  const needsPathChoice = !serviceMode && !isLicensed && !isDenied
+  const needsConciergePayment = routing.needsConciergePayment
+  const hasPackage = (payments ?? []).some((payment) => !!payment.package_key)
+  const needsSelfGuidedPackage =
+    !hasPackage && serviceMode === "self_guided" && !isLicensed && !isDenied
+
+  const customerItems = view.items.filter(
+    (item) =>
+      item.status !== "na" &&
+      !isSystemVerified(item.reqCode) &&
+      !isUnenforced(item.legalStatus)
+  )
+  const documentsDone = customerItems.filter((item) => item.status === "satisfied").length
+  const documentsTotal = customerItems.length
+  const documentsLeft = Math.max(0, documentsTotal - documentsDone)
+  const trainingCertificateReady = customerItems.some(
+    (item) => item.documentType === "training_cert" && item.status === "satisfied"
+  )
+  const trainingComplete =
+    trainingRequired && stageIndex(stage) >= stageIndex("training_complete")
+  const statusByRequirement = new Map(view.items.map((item) => [item.reqCode, item.status]))
+  const hasPreparedForms =
+    intakeDone &&
+    buildPortalForms(
+      (intake?.answers ?? {}) as unknown as WizardAnswers,
+      statusByRequirement
+    ).length > 0
+
+  const latestStaffMessage: StaffMessage | null =
+    (recentMessages ?? [])
+      .map((message) => {
+        const sender = message.profiles as unknown as {
+          full_name: string
+          role: string
+        } | null
+        return {
+          body: message.body,
+          senderName: sender?.full_name ?? null,
+          senderRole: sender?.role ?? null,
+        }
+      })
+      .find((message) => message.senderRole !== "client") ?? null
+
+  let referral: { company: string; sharing: boolean } | null = null
+  if (refCase?.referred_by_sponsor_id) {
+    // Applicants cannot read sponsor records. The service role resolves only the
+    // referrer's public display name; the applicant still controls consent via RLS.
+    const admin = createAdminClient()
+    const [{ data: sponsor }, { data: consent }] = await Promise.all([
+      admin
+        .from("sponsors")
+        .select("legal_name")
+        .eq("id", refCase.referred_by_sponsor_id)
+        .maybeSingle(),
+      supabase
+        .from("referral_consent")
+        .select("consented_at, revoked_at")
+        .eq("case_id", myCase.id)
+        .maybeSingle(),
+    ])
+    referral = {
+      company: sponsor?.legal_name ?? t.portal.home.referralCompanyFallback,
+      sharing: !!consent?.consented_at && !consent.revoked_at,
+    }
+  }
+
+  const firstName = myCase.client.full_name.trim().split(/\s+/)[0]
+  const planLabel =
+    serviceMode === "concierge"
+      ? t.portal.home.fullConcierge
+      : serviceMode === "self_guided"
+        ? t.portal.home.selfGuided
+        : null
+  const applicationLabel = localizedApplicationType(applicationType, t)
+  const hour = nyHour()
+  const greeting = interpolate(
+    hour < 12
+      ? t.portal.home.goodMorning
+      : hour < 17
+        ? t.portal.home.goodAfternoon
+        : t.portal.home.goodEvening,
+    { name: firstName }
+  )
+  const mobileGreeting = interpolate(t.portal.home.mobileGreeting, { name: firstName })
+  const phaseIndex = clientPhaseIndex(stage)
+  const phaseKey = CLIENT_PHASES[phaseIndex].key
+  const phaseSubline: Record<ClientPhaseKey, string> = {
+    get_started: t.portal.home.getStartedSubline,
+    training: t.portal.home.trainingSubline,
+    documents: interpolate(t.portal.home.documentsSubline, { count: documentsLeft }),
+    nypd_review: t.portal.home.nypdSubline,
+    decision: t.portal.home.decisionSubline,
+  }
+  const phases = {
+    get_started: {
+      label: t.portal.home.phaseGetStarted,
+      subline: t.portal.home.phaseGetStartedDetail,
+    },
+    training: {
+      label: t.portal.home.phaseTraining,
+      subline: t.portal.home.phaseTrainingDetail,
+    },
+    documents: {
+      label: t.portal.home.phaseDocuments,
+      subline: t.portal.home.phaseDocumentsDetail,
+    },
+    nypd_review: {
+      label: t.portal.home.phaseNypd,
+      subline: t.portal.home.phaseNypdDetail,
+    },
+    decision: {
+      label: t.portal.home.phaseDecision,
+      subline: t.portal.home.phaseDecisionDetail,
+    },
+  }
+
+  let hero: PortalHomeHeroProps
+  if (isDenied) {
+    hero = {
+      eyebrow: t.portal.home.deniedEyebrow,
+      title: t.portal.home.deniedTitle,
+      detail: t.portal.home.deniedDetail,
+      variant: "denied",
+      action: { label: t.portal.home.startAppeal, href: "/portal/appeal" },
+    }
+  } else if (isLicensed) {
+    hero = {
+      eyebrow: t.portal.home.licensedEyebrow,
+      title: interpolate(t.portal.home.licensedTitle, { name: firstName }),
+      detail: t.portal.home.licensedDetail,
+      variant: "licensed",
+      action: { label: t.portal.home.openLicenseHub, href: "/portal/license" },
+    }
+  } else if (needsPathChoice) {
+    hero = {
+      eyebrow: t.portal.home.firstDecision,
+      title: t.portal.home.chooseWorkTitle,
+      detail: t.portal.home.chooseWorkDetail,
+      action: { label: t.portal.home.comparePlans, href: "/portal/choose-path" },
+      choices: [
+        {
+          title: t.portal.home.selfChoiceTitle,
+          detail: t.portal.home.selfChoiceDetail,
+        },
+        {
+          title: t.portal.home.conciergeChoiceTitle,
+          detail: t.portal.home.conciergeChoiceDetail,
+        },
+      ],
+    }
+  } else if (needsConciergePayment) {
+    hero = {
+      eyebrow: t.ui.almostThere,
+      title: t.ui.paymentUnlockTitle,
+      detail: t.ui.paymentUnlockDescription,
+      action: { label: t.ui.finishEnrolling, href: "/portal/choose-path" },
+    }
+  } else if (needsSelfGuidedPackage) {
+    hero = {
+      eyebrow: t.ui.almostThere,
+      title: t.portal.home.choosePackageTitle,
+      detail: t.portal.home.choosePackageDetail,
+      action: { label: t.portal.home.choosePackage, href: "/portal/enroll" },
+    }
+  } else {
+    const remaining = Math.max(0, localizedNextStep.total - localizedNextStep.done)
+    hero = {
+      eyebrow: localizedNextStep.waiting
+        ? t.portal.home.whereYouAre
+        : t.portal.home.nextStep,
+      title: localizedNextStep.title,
+      detail: localizedNextStep.detail,
+      variant: localizedNextStep.waiting ? "waiting" : "default",
+      action: { label: localizedNextStep.cta, href: localizedNextStep.href },
+      secondary: {
+        label: interpolate(t.portal.home.seeEverythingLeft, { count: remaining }),
+        href: "/portal/checklist",
+      },
+      progress: {
+        done: localizedNextStep.done,
+        total: localizedNextStep.total,
+        label: interpolate(t.portal.home.todoAria, {
+          done: localizedNextStep.done,
+          total: localizedNextStep.total,
+        }),
+        caption: t.portal.home.todoDone,
+      },
+    }
+  }
+
+  const heroIsIntake = hero.action?.href === "/portal/intake"
+  const trainingTile = getTrainingTile({
+    trainingRequired,
+    trainingComplete,
+    trainingCertificateReady,
+    trainingState,
+    locale,
+    t,
+  })
+  const unread = unreadMessages ?? 0
+  const paidSelectedPackage = (payments ?? []).some(
+    (payment) =>
+      payment.status === "paid" &&
+      (!serviceMode ||
+        payment.package_key ===
+          (serviceMode === "concierge" ? "full_concierge" : "self_guided"))
+  )
+  const paymentStatus = paidSelectedPackage
+    ? t.portal.home.paidInFull
+    : interpolate(t.portal.home.paymentDue, {
+        package: planLabel ?? t.portal.home.selfGuided,
+      })
+  const showTiles = !isLicensed && !isDenied
 
   return (
-    <div className="space-y-6">
+    <div className="portal-home-page">
       <ScrollToTop />
-      <div>
-        <SectionEyebrow>Your Application</SectionEyebrow>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          {myCase.client.full_name.split(" ")[0]}
-        </h1>
-        <p className="mt-1 text-sm text-text-mid">{portalTagline}</p>
-        {applicationType && (
-          <p className="engraved mt-2 text-brass">{APPLICATION_TYPE_LABELS[applicationType]}</p>
-        )}
-      </div>
+
+      <header className="portal-home-header">
+        <div>
+          <p className="portal-t-eyebrow portal-home-header-eyebrow">
+            {t.portal.home.applicationEyebrow}
+            {planLabel ? <><span aria-hidden> · </span>{planLabel}</> : null}
+          </p>
+          <h1>
+            <span className="portal-home-greeting-desktop">{greeting}</span>
+            <span className="portal-home-greeting-mobile">{mobileGreeting}</span>
+          </h1>
+          <p className="portal-home-header-subline">{phaseSubline[phaseKey]}</p>
+          {applicationLabel ? (
+            <span className="portal-home-license-type">{applicationLabel}</span>
+          ) : null}
+        </div>
+        <aside className="portal-home-team">
+          <span>{t.portal.home.teamLabel}</span>
+          <strong>{t.portal.home.supportName}</strong>
+          <small>
+            {interpolate(t.portal.home.repliesWithin, {
+              days: MESSAGE_REPLY_BUSINESS_DAYS,
+            })}
+          </small>
+        </aside>
+      </header>
 
       <SponsorBanner caseId={myCase.id} />
 
-      {referral && <ReferralConsentCard caseId={myCase.id} company={referral.company} sharing={referral.sharing} />}
+      <PortalHomeHero {...hero} />
 
-      {/* CONCIERGE QA Phase 2 — chose Full Concierge, hasn't paid: a warm,
-          recoverable card, ABOVE the fold, instead of the silent self-guided
-          fallthrough. It replaces the next-step card for this state. */}
-      {needsConciergePayment && (
-        <Card className="brass-edge">
-          <CardContent className="p-5">
-            <SectionEyebrow>Almost there</SectionEyebrow>
-            <h2 className="mt-2 text-lg font-semibold tracking-tight">
-              You chose Full Concierge — finish your payment to unlock it
-            </h2>
-            <p className="mt-1 text-sm text-text-mid">
-              Once your payment is in, your done-for-you dashboard opens and we take it from there. You
-              can still switch to Self-Guided before you pay.
-            </p>
-            <Link
-              href="/portal/choose-path"
-              className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
-            >
-              Finish enrolling <ArrowRight className="size-4" />
-            </Link>
-          </CardContent>
-        </Card>
-      )}
+      <PortalHomeJourney
+        currentStage={stage}
+        title={t.portal.home.journey}
+        phaseOf={t.portal.home.phaseOf}
+        fullTimeline={t.portal.home.fullTimeline}
+        youAreHere={t.portal.home.youAreHere}
+        nypdClock={t.portal.home.nypdClock}
+        phases={phases}
+      />
 
-      {/* Phase 10 — WHAT TO DO NEXT, first thing, above the fold on a phone.
-          A returning applicant shouldn't have to hunt three screens down for
-          their own to-do list. */}
-      {!isLicensed && !isDenied && !needsConciergePayment && (
-        <Card className={nextStep.waiting ? "" : "brass-edge"}>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-3">
-              <SectionEyebrow>{nextStep.waiting ? "Where you are" : "Your next step"}</SectionEyebrow>
-              <span className="font-mono text-[11px] tabular-nums text-text-low">
-                {nextStep.done} of {nextStep.total} done
-              </span>
-            </div>
+      {showTiles ? (
+        <>
+          <section className="portal-home-tiles" aria-label={t.portal.home.applicationEyebrow}>
+            <PortalTile
+              icon={<GraduationCap aria-hidden />}
+              title={t.portal.home.training}
+              status={trainingTile.status}
+              body={trainingTile.body}
+              avatar={trainingTile.avatar}
+              link={trainingTile.link}
+            />
+            <PortalTile
+              icon={<Files aria-hidden />}
+              title={t.portal.home.documents}
+              status={interpolate(t.portal.home.documentsStatus, {
+                done: documentsDone,
+                total: documentsTotal,
+              })}
+              body={interpolate(t.portal.home.itemsLeft, { count: documentsLeft })}
+              progress={documentsTotal ? (documentsDone / documentsTotal) * 100 : 0}
+              link={{ label: t.portal.home.openDocuments, href: "/portal/documents" }}
+              extra={
+                <>
+                  {!heroIsIntake ? (
+                    <span className={intakeDone ? "is-complete" : undefined}>
+                      {intakeDone
+                        ? t.portal.home.intakeComplete
+                        : t.portal.home.finishIntakeFirst}
+                    </span>
+                  ) : null}
+                  {hasPreparedForms ? (
+                    <Link href="/portal/forms">{t.portal.home.preparedForms}</Link>
+                  ) : null}
+                </>
+              }
+            />
+            <PortalTile
+              icon={<MessageSquare aria-hidden />}
+              title={t.portal.home.messages}
+              status={
+                unread
+                  ? interpolate(t.portal.home.newMessages, { count: unread })
+                  : t.portal.home.upToDate
+              }
+              body={latestStaffMessage?.body ?? t.portal.home.noMessages}
+              sender={
+                latestStaffMessage
+                  ? latestStaffMessage.senderRole === "instructor"
+                    ? latestStaffMessage.senderName ?? t.portal.home.teamSender
+                    : t.portal.home.teamSender
+                  : undefined
+              }
+              link={{ label: t.portal.home.reply, href: "/portal/messages" }}
+            />
+          </section>
 
-            <h2 className="mt-2 text-lg font-semibold tracking-tight">{nextStep.title}</h2>
-            {nextStep.detail && <p className="mt-1 text-sm text-text-mid">{nextStep.detail}</p>}
+          <section className="portal-home-mobile-rows" aria-label={t.portal.home.applicationEyebrow}>
+            <MobilePortalRow
+              icon={<GraduationCap aria-hidden />}
+              title={t.portal.home.training}
+              status={trainingTile.body}
+              href={trainingTile.link?.href}
+            />
+            <MobilePortalRow
+              icon={<Files aria-hidden />}
+              title={t.portal.home.documents}
+              status={interpolate(t.portal.home.itemsLeft, { count: documentsLeft })}
+              href="/portal/documents"
+            />
+            <MobilePortalRow
+              icon={<MessageSquare aria-hidden />}
+              title={t.portal.home.messages}
+              status={
+                unread
+                  ? interpolate(t.portal.home.newMessages, { count: unread })
+                  : t.portal.home.upToDate
+              }
+              href="/portal/messages"
+            />
+            <MobilePortalRow
+              icon={<CreditCard aria-hidden />}
+              title={t.portal.home.payments}
+              status={paymentStatus}
+              href="/portal/payments"
+            />
+          </section>
+        </>
+      ) : null}
 
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
-              <div
-                className="h-full rounded-full bg-brass transition-[width]"
-                style={{ width: `${nextStep.total ? (nextStep.done / nextStep.total) * 100 : 0}%` }}
-              />
-            </div>
+      {referral ? (
+        <ReferralConsentCard
+          caseId={myCase.id}
+          company={referral.company}
+          sharing={referral.sharing}
+        />
+      ) : null}
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Link
-                href={nextStep.href}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brass-bright"
-              >
-                {nextStep.cta} <ArrowRight className="size-4" />
-              </Link>
-              <Link href={checklistHref} className="text-sm text-signal underline">
-                View everything left to do
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* V3-P4.4 — first-visit orientation (dismissible, early stages only) */}
-      {!isLicensed && !isDenied && ["lead", "eligibility_screened", "signed_up_paid"].includes(stage) && (
+      {showTiles &&
+      !needsPathChoice &&
+      !needsConciergePayment &&
+      !needsSelfGuidedPackage &&
+      ["lead", "eligibility_screened", "signed_up_paid"].includes(stage) ? (
         <WelcomeCard
-          firstName={myCase.client.full_name.split(" ")[0]}
-          trainingHandled={trainingState.status === "engaged" || trainingState.status === "booked"}
+          firstName={firstName}
+          trainingHandled={
+            trainingState.status === "engaged" || trainingState.status === "booked"
+          }
           intakeDone={intakeDone}
           applicationType={applicationType}
         />
-      )}
+      ) : null}
 
-      {/* V3-P3.3 — denial: the appeal window is the only thing that matters */}
-      {isDenied && (
-        <Link
-          href="/portal/appeal"
-          className="flex items-center justify-between rounded-md border border-danger/40 bg-danger/10 px-4 py-3.5 text-danger transition-colors hover:border-danger/60"
-        >
-          <span className="text-sm font-medium">
-            Your appeal window is open — 90 days, strict rules. Start here.
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
-      )}
-
-      {/* V3-P3.2 — licensed: the 3-year lifecycle hub */}
-      {isLicensed && (
-        <Link
-          href="/portal/license"
-          className="flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
-        >
-          <span className="text-sm font-medium">
-            Your license — purchase authorizations, inspections, reporting duties &amp; renewal
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
-      )}
-
-      {/* CONCIERGE Phase 1 — the fork, surfaced on home until they pick a path */}
-      {needsPathChoice && (
-        <Link
-          href="/portal/choose-path"
-          className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
-        >
-          <span className="flex items-center gap-2 text-sm font-medium">
-            <Compass className="size-4" />
-            Choose how we&apos;ll work together — Self-Guided or Full Concierge
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
-      )}
-
-      {/* Self-Guided chosen but not paid → close the enrollment loop at checkout.
-          (Concierge-unpaid is handled by the payment card above; null path by the
-          fork nudge above.) */}
-      {!hasPackage && serviceMode === "self_guided" && !isLicensed && !isDenied && (
-        <Link
-          href="/portal/enroll"
-          className="flex items-center justify-between rounded-md border border-brass/40 bg-brass/10 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/60"
-        >
-          <span className="text-sm font-medium">Choose your package — start your engagement</span>
-          <ArrowRight className="size-4" />
-        </Link>
-      )}
-
-      {/* Guided intake entry — flips to a completed state once submitted, so
-          finishing the wizard visibly registers as progress. */}
-      {intakeDone ? (
-        <Link
-          href={checklistHref}
-          className="flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
-        >
-          <span className="flex items-center gap-2 text-sm font-medium">
-            <CheckCircle2 className="size-4" />
-            Intake complete — view your personalized checklist
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
-      ) : (
-        <Link
-          href="/portal/intake"
-          className="flex items-center justify-between rounded-md border border-signal/30 bg-signal-dim px-4 py-3.5 text-signal transition-colors hover:border-signal/50"
-        >
-          <span className="text-sm font-medium">
-            Application intake — build your personalized document set
-          </span>
-          <ArrowRight className="size-4" />
-        </Link>
-      )}
-
-      {/* Marketplace entry — reflects where the applicant is in getting trained,
-          so "find an instructor" disappears once they're engaged/booked. */}
-      {trainingRequired && <Link
-        href="/portal/marketplace"
-        className={
-          trainingState.status === "engaged" || trainingState.status === "booked"
-            ? "flex items-center justify-between rounded-md border border-ok/30 bg-ok/8 px-4 py-3.5 text-ok transition-colors hover:border-ok/50"
-            : "flex items-center justify-between rounded-md border border-brass/30 bg-brass/8 px-4 py-3.5 text-brass-bright transition-colors hover:border-brass/50"
-        }
-      >
-        <span className="text-sm font-medium">
-          {trainingState.status === "booked" && trainingState.bookingAt
-            ? `Training booked — ${formatDate(trainingState.bookingAt)}`
-            : trainingState.status === "engaged"
-              ? `Your instructor: ${trainingState.instructorName} — schedule your session`
-              : trainingState.status === "pending"
-                ? trainingState.interestedCount > 0
-                  ? `${trainingState.interestedCount} instructor${trainingState.interestedCount === 1 ? "" : "s"} interested — choose yours`
-                  : "Training request sent — awaiting interested instructors"
-                : "Find a verified local instructor"}
-        </span>
-        <ArrowRight className="size-4" />
-      </Link>}
-
-      {/* Prepared documents entry */}
-      <Link
-        href="/portal/forms"
-        className="flex items-center justify-between rounded-md border border-hairline bg-surface-2/40 px-4 py-3.5 text-text-mid transition-colors hover:text-foreground"
-      >
-        <span className="text-sm font-medium">Documents we prepared for you — download &amp; sign</span>
-        <ArrowRight className="size-4" />
-      </Link>
-
-      {/* Reticle progress — centerpiece */}
-      <Card className="brass-edge">
-        <CardContent className="p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <div className="engraved">{premisesApplication ? "Application readiness" : "Current Stage"}</div>
-              <div className="mt-1 font-display text-xl font-semibold">
-                {premisesApplication ? `${nextStep.done} of ${nextStep.total} requirements complete` : stageMeta(stage).label}
-              </div>
-            </div>
-            <StatusBadge status={myCase.status} />
-          </div>
-          {premisesApplication ? (
-            <div className="mt-5">
-              <div className="h-2 overflow-hidden rounded-full bg-surface-3">
-                <div
-                  className="h-full rounded-full bg-brass transition-[width]"
-                  style={{ width: `${nextStep.total ? (nextStep.done / nextStep.total) * 100 : 0}%` }}
-                />
-              </div>
-              <div className="mt-4 grid grid-cols-4 gap-2 text-center text-[10px] uppercase tracking-wider text-text-low">
-                {premiseMilestones.map((milestone) => (
-                  <div key={milestone.label} className="space-y-1.5">
-                    <span className={`mx-auto block size-2 rounded-full ${milestone.complete ? 'bg-brass' : 'bg-hairline'}`} />
-                    {milestone.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <ReticleProgress currentStage={stage} />
-          )}
-          <p className="mt-5 rounded-md border border-brass/25 bg-brass/8 p-3 text-sm text-brass-bright">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-brass">Next //</span>{" "}
-            {premisesApplication ? nextStep.detail || nextStep.title : next ? stageMeta(next).clientHint : stageMeta(stage).clientHint}
+      <section className="portal-home-timing-note">
+        <Clock3 aria-hidden />
+        <div>
+          <h2>{t.portal.home.timingTitle}</h2>
+          <p>
+            {stageIndex(stage) >= stageIndex("filed")
+              ? t.portal.home.timingAfter
+              : t.portal.home.timingBefore}
           </p>
-        </CardContent>
-      </Card>
-
-      {/* Full application timeline — plain language + honest ETAs */}
-      {!premisesApplication && <details className="rounded-lg border bg-card">
-        <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">
-          Your full application timeline
-        </summary>
-        <div className="border-t border-hairline p-5">
-          <CaseTimeline currentStage={stage} />
+          {stageIndex(stage) >= stageIndex("filed") ? (
+            <Link href="/portal/interview">{t.portal.home.prepareInterview}</Link>
+          ) : null}
         </div>
-      </details>}
-
-      {/* HUD quick cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <HudCard
-          href={checklistHref}
-          icon={ClipboardList}
-          value={String(outstanding)}
-          label="To-dos"
-        />
-        {premisesApplication ? (
-          <HudCard href="/portal/people" icon={Users} value={premiseReferenceValue} label="References" />
-        ) : (
-          <HudCard
-            icon={CalendarDays}
-            value={nextTraining?.class_date ? formatDate(nextTraining.class_date) : "—"}
-            label="Training"
-            small
-          />
-        )}
-        <HudCard href="/portal/payments" icon={CreditCard} value={money(paidCents)} label="Paid" small />
-      </div>
-
+      </section>
     </div>
   )
 }
 
-function HudCard({
-  href,
-  icon: Icon,
-  value,
-  label,
-  small,
+function getTrainingTile({
+  trainingRequired,
+  trainingComplete,
+  trainingCertificateReady,
+  trainingState,
+  locale,
+  t,
 }: {
-  href?: string
-  icon: React.ComponentType<{ className?: string }>
-  value: string
-  label: string
-  small?: boolean
+  trainingRequired: boolean
+  trainingComplete: boolean
+  trainingCertificateReady: boolean
+  trainingState: TrainingState
+  locale: Locale
+  t: Awaited<ReturnType<typeof getMessages>>
 }) {
-  const inner = (
-    <Card className="h-full transition-colors hover:border-hairline-strong">
-      <CardContent className="p-4">
-        <Icon className="size-4 text-signal" />
-        <div
-          className={`mt-2 font-display font-semibold tabular-nums ${small ? "text-sm" : "text-2xl"}`}
-        >
-          {value}
+  if (!trainingRequired) {
+    return {
+      status: t.portal.home.notRequired,
+      body: t.portal.home.noTrainingRequired,
+      link: undefined,
+      avatar: undefined,
+    }
+  }
+  if (trainingComplete) {
+    return {
+      status: t.portal.home.done,
+      body: t.portal.home.trainingComplete,
+      link: trainingCertificateReady
+        ? { label: t.portal.home.viewCertificate, href: "/portal/documents" }
+        : undefined,
+      avatar: undefined,
+    }
+  }
+  if (trainingState.status === "booked" && trainingState.bookingAt) {
+    return {
+      status: t.portal.home.upToDate,
+      body: interpolate(t.portal.home.classBooked, {
+        date: formatPortalDate(trainingState.bookingAt, locale),
+      }),
+      link: { label: t.portal.home.training, href: "/portal/marketplace" },
+      avatar: undefined,
+    }
+  }
+  if (trainingState.status === "engaged") {
+    return {
+      status: t.portal.home.yourInstructor,
+      body: trainingState.instructorName ?? t.portal.home.yourInstructor,
+      link: { label: t.portal.home.yourInstructor, href: "/portal/marketplace" },
+      avatar: initials(trainingState.instructorName),
+    }
+  }
+  if (trainingState.status === "pending") {
+    return {
+      status: t.portal.home.upToDate,
+      body:
+        trainingState.interestedCount > 0
+          ? interpolate(t.portal.home.instructorsInterested, {
+              count: trainingState.interestedCount,
+            })
+          : t.portal.home.findingInstructors,
+      link: { label: t.portal.home.findInstructor, href: "/portal/marketplace" },
+      avatar: undefined,
+    }
+  }
+  return {
+    status: t.portal.home.findInstructor,
+    body: t.portal.home.findInstructor,
+    link: { label: t.portal.home.findInstructor, href: "/portal/marketplace" },
+    avatar: undefined,
+  }
+}
+
+function PortalTile({
+  icon,
+  title,
+  status,
+  body,
+  sender,
+  avatar,
+  progress,
+  link,
+  extra,
+}: {
+  icon: React.ReactNode
+  title: string
+  status: string
+  body: string
+  sender?: string
+  avatar?: string
+  progress?: number
+  link?: { label: string; href: string }
+  extra?: React.ReactNode
+}) {
+  return (
+    <article className="portal-home-tile">
+      <div className="portal-home-tile-heading">
+        <span className="portal-home-icon-chip">{icon}</span>
+        <h2>{title}</h2>
+        <strong>{status}</strong>
+      </div>
+      <div className="portal-home-tile-body">
+        {avatar ? <span className="portal-home-instructor-avatar">{avatar}</span> : null}
+        <div>
+          {sender ? <small>{sender}</small> : null}
+          <p>{body}</p>
         </div>
-        <div className="engraved mt-1">{label}</div>
-      </CardContent>
-    </Card>
+      </div>
+      {typeof progress === "number" ? (
+        <div className="portal-home-tile-progress" aria-hidden="true">
+          <i style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+        </div>
+      ) : null}
+      {extra ? <div className="portal-home-tile-extra">{extra}</div> : null}
+      {link ? <Link href={link.href}>{link.label}</Link> : <span className="portal-home-tile-spacer" />}
+    </article>
   )
-  return href ? <Link href={href}>{inner}</Link> : inner
+}
+
+function MobilePortalRow({
+  icon,
+  title,
+  status,
+  href,
+}: {
+  icon: React.ReactNode
+  title: string
+  status: string
+  href?: string
+}) {
+  const content = (
+    <>
+      <span className="portal-home-icon-chip">{icon}</span>
+      <span>
+        <strong>{title}</strong>
+        <small>{status}</small>
+      </span>
+      {href ? <ChevronRight aria-hidden /> : null}
+    </>
+  )
+  return href ? <Link href={href}>{content}</Link> : <div>{content}</div>
 }

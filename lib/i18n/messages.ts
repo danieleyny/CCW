@@ -27,6 +27,95 @@ export interface Messages {
     finishIntake: string
     continueIntake: string
     viewEverything: string
+    home: {
+      applicationEyebrow: string
+      selfGuided: string
+      fullConcierge: string
+      goodMorning: string
+      goodAfternoon: string
+      goodEvening: string
+      mobileGreeting: string
+      teamLabel: string
+      supportName: string
+      repliesWithin: string
+      getStartedSubline: string
+      trainingSubline: string
+      documentsSubline: string
+      nypdSubline: string
+      decisionSubline: string
+      nextStep: string
+      whereYouAre: string
+      todoDone: string
+      todoAria: string
+      seeEverythingLeft: string
+      firstDecision: string
+      chooseWorkTitle: string
+      chooseWorkDetail: string
+      selfChoiceTitle: string
+      selfChoiceDetail: string
+      conciergeChoiceTitle: string
+      conciergeChoiceDetail: string
+      comparePlans: string
+      choosePackageTitle: string
+      choosePackageDetail: string
+      choosePackage: string
+      licensedEyebrow: string
+      licensedTitle: string
+      licensedDetail: string
+      openLicenseHub: string
+      deniedEyebrow: string
+      deniedTitle: string
+      deniedDetail: string
+      startAppeal: string
+      journey: string
+      phaseOf: string
+      fullTimeline: string
+      youAreHere: string
+      nypdClock: string
+      phaseGetStarted: string
+      phaseGetStartedDetail: string
+      phaseTraining: string
+      phaseTrainingDetail: string
+      phaseDocuments: string
+      phaseDocumentsDetail: string
+      phaseNypd: string
+      phaseNypdDetail: string
+      phaseDecision: string
+      phaseDecisionDetail: string
+      training: string
+      documents: string
+      messages: string
+      payments: string
+      done: string
+      notRequired: string
+      noTrainingRequired: string
+      trainingComplete: string
+      findInstructor: string
+      findingInstructors: string
+      instructorsInterested: string
+      yourInstructor: string
+      classBooked: string
+      viewCertificate: string
+      documentsStatus: string
+      itemsLeft: string
+      intakeComplete: string
+      finishIntakeFirst: string
+      openDocuments: string
+      preparedForms: string
+      upToDate: string
+      newMessages: string
+      noMessages: string
+      reply: string
+      teamSender: string
+      paidInFull: string
+      paymentDue: string
+      openPayments: string
+      timingTitle: string
+      timingBefore: string
+      timingAfter: string
+      prepareInterview: string
+      referralCompanyFallback: string
+    }
   }
   common: {
     signOut: string
@@ -526,6 +615,95 @@ const en: Messages = {
     finishIntake: "Finish your intake",
     continueIntake: "Continue intake",
     viewEverything: "View everything left to do",
+    home: {
+      applicationEyebrow: "Your application",
+      selfGuided: "Self-guided",
+      fullConcierge: "Full Concierge",
+      goodMorning: "Good morning, {name}",
+      goodAfternoon: "Good afternoon, {name}",
+      goodEvening: "Good evening, {name}",
+      mobileGreeting: "Hi, {name}",
+      teamLabel: "Your team",
+      supportName: "Gun License NYC support",
+      repliesWithin: "Replies within {days} business day",
+      getStartedSubline: "Your setup is underway. Complete the next step below.",
+      trainingSubline: "Your training is underway. Keep your course and certificate together.",
+      documentsSubline: "You're in the documents stretch. {count} left before your packet is ready.",
+      nypdSubline: "Your application is with the NYPD.",
+      decisionSubline: "The NYPD has issued a decision on your application.",
+      nextStep: "Your next step",
+      whereYouAre: "Where you are",
+      todoDone: "to-dos done",
+      todoAria: "{done} of {total} to-dos done",
+      seeEverythingLeft: "See everything left ({count})",
+      firstDecision: "First, one decision",
+      chooseWorkTitle: "Choose how we'll work together",
+      chooseWorkDetail: "This sets everything else. You can read both before you pay.",
+      selfChoiceTitle: "Self-Guided",
+      selfChoiceDetail: "You file; we guide.",
+      conciergeChoiceTitle: "Full Concierge",
+      conciergeChoiceDetail: "We prepare and quality-check; you review and file.",
+      comparePlans: "Compare plans",
+      choosePackageTitle: "Choose your package",
+      choosePackageDetail: "Select the support level that fits you to unlock the rest of your workspace.",
+      choosePackage: "Choose a package",
+      licensedEyebrow: "You're licensed",
+      licensedTitle: "Congratulations, {name}",
+      licensedDetail: "Your license hub keeps your purchase windows, inspections, reporting duties and renewal in one place.",
+      openLicenseHub: "Open your license hub",
+      deniedEyebrow: "Your appeal window is open",
+      deniedTitle: "You can appeal this decision",
+      deniedDetail: "There's a deadline. Start now and we'll walk you through the process.",
+      startAppeal: "Start your appeal",
+      journey: "Your journey",
+      phaseOf: "Phase {current} of {total}",
+      fullTimeline: "Full timeline",
+      youAreHere: "You are here",
+      nypdClock: "NYPD's clock",
+      phaseGetStarted: "Get started",
+      phaseGetStartedDetail: "Account, eligibility, plan",
+      phaseTraining: "Training",
+      phaseTrainingDetail: "16-hour class + range",
+      phaseDocuments: "Documents",
+      phaseDocumentsDetail: "Upload, notarize, review",
+      phaseNypd: "NYPD review",
+      phaseNypdDetail: "Filed · fingerprints · interview",
+      phaseDecision: "Decision",
+      phaseDecisionDetail: "License issued",
+      training: "Training",
+      documents: "Documents",
+      messages: "Messages",
+      payments: "Payments",
+      done: "Done",
+      notRequired: "Not required",
+      noTrainingRequired: "This license path does not require the concealed-carry course.",
+      trainingComplete: "Your required training is complete.",
+      findInstructor: "Find an instructor",
+      findingInstructors: "We're finding instructors near you.",
+      instructorsInterested: "{count} instructor(s) interested",
+      yourInstructor: "Your instructor",
+      classBooked: "Class booked {date}",
+      viewCertificate: "View certificate",
+      documentsStatus: "{done} of {total}",
+      itemsLeft: "{count} items left",
+      intakeComplete: "Intake complete",
+      finishIntakeFirst: "Finish your intake first",
+      openDocuments: "Open documents",
+      preparedForms: "Forms we filled out for you",
+      upToDate: "Up to date",
+      newMessages: "{count} new",
+      noMessages: "Your case team messages will appear here.",
+      reply: "Reply",
+      teamSender: "Gun License NYC",
+      paidInFull: "Paid in full",
+      paymentDue: "{package} · payment due",
+      openPayments: "Open payments",
+      timingTitle: "How long does this take?",
+      timingBefore: "The pace up to filing depends mostly on how quickly your documents and training come together. After you file, the NYPD review typically takes about six months, and that clock is theirs, not ours.",
+      timingAfter: "Once an application is filed, the License Division's review typically takes about six months - sometimes more. That timeline is set by the NYPD, not by us, and no one can speed up their investigation. We'll keep you posted at every step we can see.",
+      prepareInterview: "Prepare for your interview",
+      referralCompanyFallback: "the company that introduced you",
+    },
   },
   common: {
     signOut: "Sign out",
@@ -1244,6 +1422,95 @@ const es: DeepPartial<Messages> = {
     finishIntake: "Complete su cuestionario",
     continueIntake: "Continuar el cuestionario",
     viewEverything: "Ver todo lo que falta por hacer",
+    home: {
+      applicationEyebrow: "Su solicitud",
+      selfGuided: "Autoguiado",
+      fullConcierge: "Conserjería completa",
+      goodMorning: "Buenos días, {name}",
+      goodAfternoon: "Buenas tardes, {name}",
+      goodEvening: "Buenas noches, {name}",
+      mobileGreeting: "Hola, {name}",
+      teamLabel: "Su equipo",
+      supportName: "Equipo de Gun License NYC",
+      repliesWithin: "Responde en {days} día hábil",
+      getStartedSubline: "La configuración está en marcha. Complete el siguiente paso a continuación.",
+      trainingSubline: "Su capacitación está en marcha. Conserve juntos el curso y el certificado.",
+      documentsSubline: "Está en la etapa de documentos. Faltan {count} para que su expediente esté listo.",
+      nypdSubline: "Su solicitud está en manos del NYPD.",
+      decisionSubline: "El NYPD ha emitido una decisión sobre su solicitud.",
+      nextStep: "Su siguiente paso",
+      whereYouAre: "Dónde está ahora",
+      todoDone: "tareas completadas",
+      todoAria: "{done} de {total} tareas completadas",
+      seeEverythingLeft: "Ver todo lo pendiente ({count})",
+      firstDecision: "Primero, una decisión",
+      chooseWorkTitle: "Elija cómo trabajaremos juntos",
+      chooseWorkDetail: "Esto determina todo lo demás. Puede leer ambas opciones antes de pagar.",
+      selfChoiceTitle: "Autoguiado",
+      selfChoiceDetail: "Usted presenta; nosotros le guiamos.",
+      conciergeChoiceTitle: "Conserjería completa",
+      conciergeChoiceDetail: "Preparamos y revisamos; usted revisa y presenta.",
+      comparePlans: "Comparar planes",
+      choosePackageTitle: "Elija su paquete",
+      choosePackageDetail: "Seleccione el nivel de apoyo adecuado para habilitar el resto de su espacio de trabajo.",
+      choosePackage: "Elegir un paquete",
+      licensedEyebrow: "Ya tiene licencia",
+      licensedTitle: "Felicitaciones, {name}",
+      licensedDetail: "Su centro de licencia reúne los plazos de compra, inspecciones, deberes de información y renovación.",
+      openLicenseHub: "Abrir el centro de licencia",
+      deniedEyebrow: "Su plazo de apelación está abierto",
+      deniedTitle: "Puede apelar esta decisión",
+      deniedDetail: "Hay una fecha límite. Comience ahora y le guiaremos durante el proceso.",
+      startAppeal: "Iniciar su apelación",
+      journey: "Su recorrido",
+      phaseOf: "Fase {current} de {total}",
+      fullTimeline: "Cronología completa",
+      youAreHere: "Está aquí",
+      nypdClock: "Plazo del NYPD",
+      phaseGetStarted: "Comenzar",
+      phaseGetStartedDetail: "Cuenta, elegibilidad y plan",
+      phaseTraining: "Capacitación",
+      phaseTrainingDetail: "Clase de 16 horas + campo de tiro",
+      phaseDocuments: "Documentos",
+      phaseDocumentsDetail: "Cargar, notarizar y revisar",
+      phaseNypd: "Revisión del NYPD",
+      phaseNypdDetail: "Presentación · huellas · entrevista",
+      phaseDecision: "Decisión",
+      phaseDecisionDetail: "Licencia emitida",
+      training: "Capacitación",
+      documents: "Documentos",
+      messages: "Mensajes",
+      payments: "Pagos",
+      done: "Listo",
+      notRequired: "No se requiere",
+      noTrainingRequired: "Este tipo de licencia no requiere el curso de porte oculto.",
+      trainingComplete: "Ha completado la capacitación requerida.",
+      findInstructor: "Buscar un instructor",
+      findingInstructors: "Estamos buscando instructores cerca de usted.",
+      instructorsInterested: "{count} instructor(es) interesado(s)",
+      yourInstructor: "Su instructor",
+      classBooked: "Clase reservada para {date}",
+      viewCertificate: "Ver certificado",
+      documentsStatus: "{done} de {total}",
+      itemsLeft: "Faltan {count} elementos",
+      intakeComplete: "Cuestionario completo",
+      finishIntakeFirst: "Complete primero su cuestionario",
+      openDocuments: "Abrir documentos",
+      preparedForms: "Formularios que completamos para usted",
+      upToDate: "Al día",
+      newMessages: "{count} nuevos",
+      noMessages: "Los mensajes de su equipo aparecerán aquí.",
+      reply: "Responder",
+      teamSender: "Gun License NYC",
+      paidInFull: "Pagado en su totalidad",
+      paymentDue: "{package} · pago pendiente",
+      openPayments: "Abrir pagos",
+      timingTitle: "¿Cuánto tarda este proceso?",
+      timingBefore: "El ritmo antes de presentar depende principalmente de la rapidez con que reúna sus documentos y capacitación. Después de presentar, la revisión del NYPD suele tardar unos seis meses, y ese plazo depende del NYPD, no de nosotros.",
+      timingAfter: "Una vez presentada la solicitud, la revisión de la División de Licencias suele tardar unos seis meses, y a veces más. Ese plazo lo fija el NYPD, no nosotros, y nadie puede acelerar su investigación. Le mantendremos informado de cada paso que podamos ver.",
+      prepareInterview: "Prepararse para la entrevista",
+      referralCompanyFallback: "la empresa que le presentó",
+    },
   },
   common: {
     signOut: "Cerrar sesión",
