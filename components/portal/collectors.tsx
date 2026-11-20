@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react"
-import { Trash2, Plus, Users } from "lucide-react"
+import { Plus, Trash2, UserPlus, Users } from "lucide-react"
 import { toast } from "sonner"
 import {
   addReference,
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { referenceComposition } from "@/lib/references/composition"
 import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import { cn } from "@/lib/utils"
 
 export interface ReferenceRow {
   id: string
@@ -34,25 +35,33 @@ export interface CohabitantRow {
   affidavit_status: string
 }
 
-function DeleteButton({ onDelete }: { onDelete: () => void }) {
+export function RemovePersonButton({
+  caseId,
+  id,
+  kind,
+  name,
+}: {
+  caseId: string
+  id: string
+  kind: "reference" | "cohabitant"
+  name: string
+}) {
   const [pending, start] = useTransition()
   const { messages } = usePortalI18n()
+
   return (
-    <Button
-      size="icon"
-      variant="ghost"
-      className="size-8 text-muted-foreground hover:text-destructive"
+    <button
+      type="button"
       disabled={pending}
-      onClick={() => start(onDelete)}
-      aria-label={messages.ui.remove}
+      onClick={() => start(() => kind === "reference" ? deleteReference(id, caseId) : deleteCohabitant(id, caseId))}
+      aria-label={`${messages.ui.remove} ${name}`}
+      className="grid size-9 shrink-0 place-items-center rounded-full text-text-low transition hover:bg-danger/[0.07] hover:text-danger disabled:opacity-50"
     >
-      <Trash2 className="size-4" />
-    </Button>
+      <Trash2 className="size-4" aria-hidden />
+    </button>
   )
 }
 
-/** Relationship words that make someone a family member — typing one auto-marks
- *  the family box so the applicant doesn't have to remember the rule. */
 const FAMILY_WORDS = [
   "father", "mother", "dad", "mom", "mum", "mommy", "daddy", "papa", "mama", "parent",
   "sister", "brother", "sibling", "son", "daughter", "child", "kid",
@@ -67,101 +76,138 @@ const FAMILY_WORDS = [
   "sobrino", "sobrina", "abuela", "abuelo", "suegra", "suegro", "cuñado", "cunado", "cuñada", "cunada",
   "pariente", "familiar", "familia",
 ]
-function isFamilyRelationship(v: string): boolean {
-  const s = v.toLowerCase()
-  return FAMILY_WORDS.some((w) => new RegExp(`(^|[^a-z])${w}([^a-z]|$)`).test(s))
+
+function isFamilyRelationship(value: string): boolean {
+  const normalized = value.toLowerCase()
+  return FAMILY_WORDS.some((word) => new RegExp(`(^|[^a-z])${word}([^a-z]|$)`).test(normalized))
+}
+
+function ordinalFor(index: number, t: Record<string, string>) {
+  return [t.peopleOrdinalFirst, t.peopleOrdinalSecond, t.peopleOrdinalThird, t.peopleOrdinalFourth][index]
+    ?? String(index + 1)
 }
 
 export function ReferenceCollector({
   caseId,
   references,
   required = 4,
+  hideRule = false,
+  hideAdd = false,
 }: {
   caseId: string
   references: ReferenceRow[]
-  /** How many references this track needs (2 for carry_guard, else 4). */
   required?: number
+  hideRule?: boolean
+  hideAdd?: boolean
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const [state, action, pending] = useActionState<CollectorState, FormData>(addReference, {})
   const [isFamily, setIsFamily] = useState(false)
+  const [open, setOpen] = useState(false)
   const { locale, messages } = usePortalI18n()
   const t = messages.ui
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset()
-      // Reset the form after a successful server add — a legitimate response to an
-      // async action result, not derivable during render.
+      // Reset local form controls only after the server confirms the add.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsFamily(false)
+      setOpen(false)
       toast.success(t.referenceAdded)
     }
   }, [state, t.referenceAdded])
 
   const atMax = references.length >= required
-  // The ONE composition rule (38 RCNY §5-05(b)(8)) drives the family control, the
-  // success banner, and the send-back message — same rule the server enforces.
-  const comp = referenceComposition(references, required)
-  const showFamilyOption = comp.maxFamily > 0
-  const familyAllowed = showFamilyOption && !comp.familyCapReached
+  // One composition rule drives this view and the server boundary.
+  const composition = referenceComposition(references, required)
+  const showFamilyOption = composition.maxFamily > 0
+  const familyAllowed = showFamilyOption && !composition.familyCapReached
+  const remaining = Math.max(0, required - references.length)
 
-  // Never leave a disallowed "family" selection armed (e.g. after the cap fills).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!familyAllowed && isFamily) setIsFamily(false)
   }, [familyAllowed, isFamily])
 
+  const ruleCopy = required <= 2
+    ? interpolate(t.peopleFamilyRuleTwo, { required })
+    : interpolate(t.peopleFamilyRuleFour, { required, family: composition.maxFamily, unrelated: composition.minNonFamily })
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {required <= 2 ? (
-          <>
-            You need <strong>{required}</strong> character references — neither may be family, and
-            neither may be in law enforcement. All must be lawful US residents.
-          </>
-        ) : (
-          <>
-            You need <strong>{required}</strong> character references — 2 may be family; 2 must be
-            unrelated and not in law enforcement. All must be lawful US residents.
-          </>
-        )}
-      </p>
-      {locale === "es" ? <p className="text-xs text-text-low">{messages.common.legalEnglishNotice}</p> : null}
+      {!hideRule ? <section className="rounded-2xl border border-hairline bg-white p-4 shadow-[0_10px_30px_rgba(10,18,34,.04)] sm:p-5">
+        <div className="flex flex-wrap items-center gap-2" aria-label={ruleCopy}>
+          {Array.from({ length: required }, (_, index) => {
+            const reference = references[index]
+            const family = !!reference?.is_family
+            return (
+              <span
+                key={reference?.id ?? `empty-${index}`}
+                title={reference?.name}
+                className={cn(
+                  "grid size-11 place-items-center rounded-xl border font-mono text-[11px] font-bold tracking-[.08em]",
+                  !reference && "border-dashed border-text-low/35 bg-surface-2 text-text-low",
+                  reference && !family && "border-[var(--portal-navy)]/15 bg-[var(--portal-profile-blue)] text-[var(--portal-navy)]",
+                  reference && family && "border-[var(--portal-gold)]/35 bg-[var(--portal-gold)]/12 text-[var(--portal-gold-deep)]"
+                )}
+              >
+                {reference ? (family ? t.peopleFamilySlot : t.peopleUnrelatedSlot) : "+"}
+              </span>
+            )
+          })}
+        </div>
+        <p className="mt-3 text-[14px] leading-6 text-text-mid">{ruleCopy}</p>
+        {remaining > 0 && composition.familyCapReached ? (
+          <p className="mt-2 rounded-xl border border-warn/20 bg-warn/[0.06] px-3 py-2 text-[13px] font-medium text-warn">
+            {interpolate(t.peopleMoreUnrelated, { count: remaining })}
+          </p>
+        ) : null}
+      </section> : null}
 
-      <ul className="space-y-2">
-        {references.map((r) => (
-          <li key={r.id} className="flex items-center justify-between rounded-lg border bg-card p-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{r.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {r.relationship ?? "—"} · {r.is_family ? t.family : t.unrelated}
-                {r.notarized ? ` · ${t.notarized}` : ""}
-              </div>
-            </div>
-            <DeleteButton onDelete={() => deleteReference(r.id, caseId)} />
-          </li>
-        ))}
-        {references.length === 0 && (
-          <li className="text-sm text-muted-foreground">{t.noReferences}</li>
-        )}
-      </ul>
-
-      {comp.complete ? (
-        // Success is gated on COMPOSITION, not just count — an invalid set (too many
-        // family) never shows the "all done" banner.
-        <p className="rounded-md border border-ok/30 bg-ok/10 p-3 text-sm text-ok">
+      {!hideAdd ? composition.complete ? (
+        <p className="rounded-2xl border border-ok/25 bg-ok/[0.07] p-4 text-[14px] font-medium text-ok">
           {interpolate(t.referencesAdded, { count: required })}
         </p>
-      ) : atMax && comp.problem ? (
-        // Count is met but the composition is invalid — tell them exactly why and let
-        // them delete a family reference above.
-        <p className="rounded-md border border-warn/30 bg-warn/10 p-3 text-sm text-warn">{comp.problem}</p>
+      ) : atMax && composition.problem ? (
+        <p className="rounded-2xl border border-warn/30 bg-warn/10 p-4 text-[14px] text-warn">
+          {locale === "es"
+            ? interpolate(t.peopleFamilyProblem, { family: composition.familyCount, unrelated: composition.minNonFamily, required })
+            : composition.problem}
+        </p>
+      ) : !open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group flex min-h-28 w-full items-center justify-between gap-4 rounded-2xl border border-dashed border-[var(--portal-gold)]/65 bg-[var(--portal-gold)]/[0.045] p-5 text-left transition hover:bg-[var(--portal-gold)]/[0.08]"
+        >
+          <span>
+            <span className="portal-title-font block text-[22px] font-medium text-foreground">
+              {interpolate(t.peopleAddOrdinalReference, { ordinal: ordinalFor(references.length, t) })}
+            </span>
+            <span className="mt-1 block text-[13px] leading-5 text-text-mid">{t.peopleAddReferenceHint}</span>
+          </span>
+          <span className="grid size-11 shrink-0 place-items-center rounded-full [background:var(--portal-gold-button)] text-[var(--portal-navy)]">
+            <Plus className="size-5" aria-hidden />
+          </span>
+        </button>
       ) : (
-        <form ref={formRef} action={action} className="space-y-3 rounded-lg border bg-card p-4">
+        <form ref={formRef} action={action} className="space-y-4 rounded-2xl border border-[var(--portal-gold)]/35 bg-white p-5 shadow-[0_14px_34px_rgba(10,18,34,.06)]">
           <input type="hidden" name="caseId" value={caseId} />
-          <div className="text-sm font-medium">{interpolate(t.addReferenceCount, { current: references.length, required })}</div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[.15em] text-[var(--portal-gold-deep)]">
+                {interpolate(t.peopleReferenceCount, { current: references.length + 1, required })}
+              </p>
+              <h3 className="portal-title-font mt-1 text-[24px] font-medium">{t.peopleReferenceDetails}</h3>
+            </div>
+            {references.length > 0 ? (
+              <button type="button" onClick={() => setOpen(false)} className="text-[13px] font-semibold text-text-mid underline">
+                {t.cancel}
+              </button>
+            ) : null}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="ref-name">{t.name}</Label>
               <Input id="ref-name" name="name" required />
@@ -172,9 +218,8 @@ export function ReferenceCollector({
                 id="ref-rel"
                 name="relationship"
                 placeholder={t.relationshipExample}
-                onChange={(e) => {
-                  // Typing a family word (Dad, Mother, Sister…) auto-marks family.
-                  if (isFamilyRelationship(e.target.value)) setIsFamily(true)
+                onChange={(event) => {
+                  if (isFamilyRelationship(event.target.value)) setIsFamily(true)
                 }}
               />
             </div>
@@ -186,132 +231,129 @@ export function ReferenceCollector({
               <Label htmlFor="ref-phone">{t.phone}</Label>
               <Input id="ref-phone" name="contactPhone" placeholder={t.optional} />
             </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="ref-known">{t.peopleKnownDuration}</Label>
+              <Input id="ref-known" name="knownDuration" placeholder={t.peopleKnownDurationExample} />
+              {/* Compliance guardrail: Any length is fine; this field informs the invitation and never blocks a reference. */}
+              <p className="text-[12px] leading-5 text-text-low">{t.peopleKnownDurationHint}</p>
+            </div>
           </div>
-          {/* How long they've known the applicant — captured here, pre-filled into the
-              reference's own invitation, and makes for a stronger letter. NEVER a block:
-              38 RCNY §5-03 sets no minimum acquaintance period (finding 9). */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ref-known">How long have you known them?</Label>
-            <Input id="ref-known" name="knownDuration" placeholder="e.g. 8 years, since college" />
-            <p className="text-[11px] text-text-low">
-              Any length is fine. Investigators do weigh how well a reference knows you, so a longer
-              acquaintance makes for a stronger letter — we&apos;ll add this to their invitation.
-            </p>
-          </div>
-          {/* The family control appears ONLY on a track that allows a family
-              reference (Carry Guard / Premises allow none, so it isn't offered at
-              all). Once the family cap is full, it's disabled with the reason. */}
+
           {showFamilyOption ? (
             <button
               type="button"
-              onClick={() => familyAllowed && setIsFamily((v) => !v)}
+              onClick={() => familyAllowed && setIsFamily((value) => !value)}
               aria-pressed={isFamily}
               disabled={!familyAllowed}
-              className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                isFamily
-                  ? "border-brass/60 bg-brass/10 ring-1 ring-brass/25"
-                  : "border-hairline bg-surface-2/40 hover:bg-surface-2"
-              } ${!familyAllowed ? "cursor-not-allowed opacity-60" : ""}`}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                isFamily ? "border-[var(--portal-gold)]/60 bg-[var(--portal-gold)]/10" : "border-hairline bg-surface-2/45 hover:bg-surface-2",
+                !familyAllowed && "cursor-not-allowed opacity-60"
+              )}
             >
               <Checkbox
                 id="ref-family"
                 name="isFamily"
                 checked={isFamily}
                 disabled={!familyAllowed}
-                onCheckedChange={(v) => setIsFamily(!!v)}
-                onClick={(e) => e.stopPropagation()}
+                onCheckedChange={(value) => setIsFamily(!!value)}
+                onClick={(event) => event.stopPropagation()}
                 className="size-5"
               />
               <span className="min-w-0">
-                <span className={`flex items-center gap-1.5 text-sm font-medium ${isFamily ? "text-brass-bright" : "text-foreground"}`}>
-                  <Users className="size-3.5" /> {t.familyMember}
+                <span className="flex items-center gap-1.5 text-[14px] font-semibold">
+                  <Users className="size-4" aria-hidden /> {t.familyMember}
                 </span>
-                <span className="mt-0.5 block text-xs text-text-low">
-                  {comp.familyCapReached
-                    ? `You already have ${comp.maxFamily} family reference${comp.maxFamily === 1 ? "" : "s"} — this one must be unrelated.`
-                    : `Up to ${comp.maxFamily} of your references may be family; at least 2 must be unrelated.`}
+                <span className="mt-0.5 block text-[12px] leading-5 text-text-low">
+                  {composition.familyCapReached
+                    ? interpolate(t.peopleFamilyCapReached, { count: composition.maxFamily })
+                    : interpolate(t.peopleFamilyAllowed, { family: composition.maxFamily, unrelated: composition.minNonFamily })}
                 </span>
               </span>
             </button>
           ) : (
-            <p className="rounded-lg border border-hairline bg-surface-2/40 p-3 text-xs text-text-low">
-              For this licence, none of your references may be family — each must be someone unrelated to you.
+            <p className="rounded-xl border border-hairline bg-surface-2/45 p-3 text-[12px] leading-5 text-text-low">
+              {t.peopleNoFamilyAllowed}
             </p>
           )}
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-          <Button type="submit" size="sm" disabled={pending}>
-            <Plus className="size-4" /> {t.addReference}
+
+          {locale === "es" ? <p className="text-[12px] text-text-low">{messages.common.legalEnglishNotice}</p> : null}
+          {state.error ? <p className="text-[14px] text-danger">{state.error}</p> : null}
+          <Button type="submit" disabled={pending} className="min-h-11 [background:var(--portal-gold-button)] px-5 text-[var(--portal-navy)]">
+            <UserPlus className="size-4" aria-hidden /> {t.addReference}
           </Button>
         </form>
-      )}
+      ) : null}
     </div>
   )
 }
 
-export function CohabitantCollector({
-  caseId,
-  cohabitants,
-}: {
-  caseId: string
-  cohabitants: CohabitantRow[]
-}) {
+export function CohabitantCollector({ caseId, count }: { caseId: string; count: number }) {
   const formRef = useRef<HTMLFormElement>(null)
   const [state, action, pending] = useActionState<CollectorState, FormData>(addCohabitant, {})
+  const [open, setOpen] = useState(false)
   const { locale, messages } = usePortalI18n()
   const t = messages.ui
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpen(false)
       toast.success(t.cohabitantAdded)
     }
   }, [state, t.cohabitantAdded])
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex min-h-24 w-full items-center justify-between gap-4 rounded-2xl border border-dashed border-[var(--portal-gold)]/60 bg-[var(--portal-gold)]/[0.04] p-5 text-left transition hover:bg-[var(--portal-gold)]/[0.08]"
+      >
+        <span>
+          <span className="portal-title-font block text-[22px] font-medium">{t.addCohabitant}</span>
+          <span className="mt-1 block text-[13px] text-text-mid">{t.peopleHouseholdAddHint}</span>
+        </span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full [background:var(--portal-gold-button)] text-[var(--portal-navy)]">
+          <Plus className="size-5" aria-hidden />
+        </span>
+      </button>
+    )
+  }
+
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        List every person <strong>18 or older</strong> living in your home. Each needs a notarized
-        affidavit.
-      </p>
-      {locale === "es" ? <p className="text-xs text-text-low">{messages.common.legalEnglishNotice}</p> : null}
-
-      <ul className="space-y-2">
-        {cohabitants.map((c) => (
-          <li key={c.id} className="flex items-center justify-between rounded-lg border bg-card p-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{c.name}</div>
-              <div className="text-xs text-muted-foreground">{c.relationship ?? "—"}</div>
-            </div>
-            <DeleteButton onDelete={() => deleteCohabitant(c.id, caseId)} />
-          </li>
-        ))}
-        {cohabitants.length === 0 && (
-          <li className="text-sm text-muted-foreground">{t.noCohabitants}</li>
-        )}
-      </ul>
-
-      <form ref={formRef} action={action} className="space-y-3 rounded-lg border bg-card p-4">
-        <input type="hidden" name="caseId" value={caseId} />
-        <div className="text-sm font-medium">{t.addCohabitant}</div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="cohab-name">{t.name}</Label>
-            <Input id="cohab-name" name="name" required />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cohab-rel">{t.relationship}</Label>
-            <Input id="cohab-rel" name="relationship" placeholder={t.cohabitantExample} />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="cohab-email">{t.cohabitantEmail}</Label>
-            <Input id="cohab-email" name="contactEmail" type="email" placeholder={t.cohabitantEmailPlaceholder} />
-          </div>
+    <form ref={formRef} action={action} className="space-y-4 rounded-2xl border border-[var(--portal-gold)]/35 bg-white p-5 shadow-[0_14px_34px_rgba(10,18,34,.06)]">
+      <input type="hidden" name="caseId" value={caseId} />
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[.15em] text-[var(--portal-gold-deep)]">{t.peopleHouseholdFormEyebrow}</p>
+          <h3 className="portal-title-font mt-1 text-[24px] font-medium">{t.addCohabitant}</h3>
         </div>
-        {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-        <Button type="submit" size="sm" disabled={pending}>
-          <Plus className="size-4" /> {t.addCohabitant}
-        </Button>
-      </form>
-    </div>
+        {count > 0 ? (
+          <button type="button" onClick={() => setOpen(false)} className="text-[13px] font-semibold text-text-mid underline">{t.cancel}</button>
+        ) : null}
+      </div>
+      <p className="text-[13px] leading-5 text-text-mid">{t.peopleHouseholdRule}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="cohab-name">{t.name}</Label>
+          <Input id="cohab-name" name="name" required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="cohab-rel">{t.relationship}</Label>
+          <Input id="cohab-rel" name="relationship" placeholder={t.cohabitantExample} />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="cohab-email">{t.cohabitantEmail}</Label>
+          <Input id="cohab-email" name="contactEmail" type="email" placeholder={t.cohabitantEmailPlaceholder} />
+        </div>
+      </div>
+      {locale === "es" ? <p className="text-[12px] text-text-low">{messages.common.legalEnglishNotice}</p> : null}
+      {state.error ? <p className="text-[14px] text-danger">{state.error}</p> : null}
+      <Button type="submit" disabled={pending} className="min-h-11 [background:var(--portal-gold-button)] px-5 text-[var(--portal-navy)]">
+        <UserPlus className="size-4" aria-hidden /> {t.addCohabitant}
+      </Button>
+    </form>
   )
 }

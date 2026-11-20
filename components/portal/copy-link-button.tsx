@@ -17,11 +17,13 @@ export function CopyLinkButton({
   basePath = "/r/",
   silent = false,
   label,
+  personName,
 }: {
   token: string
   basePath?: string
   silent?: boolean
   label?: string
+  personName?: string
 }) {
   const [copied, setCopied] = useState(false)
   const { messages } = usePortalI18n()
@@ -59,7 +61,13 @@ export function CopyLinkButton({
   }
 
   return (
-    <Button size="sm" variant="ghost" onClick={copy} aria-label={`${displayLabel} for this person`}>
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={copy}
+      aria-label={personName ? `${displayLabel} — ${personName}` : `${displayLabel} for this person`}
+      className="min-h-9"
+    >
       {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />} {copied ? messages.ui.linkCopied : displayLabel}
     </Button>
   )
