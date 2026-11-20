@@ -2962,7 +2962,7 @@ html:has(.portal-v2) body {
     top: calc(3.5rem + env(safe-area-inset-top));
     display: block;
     border-block: 1px solid var(--hairline);
-    margin-inline: -16px;
+    margin-inline: 0;
     background: rgba(251, 250, 247, 0.96);
     padding: 10px 16px;
     backdrop-filter: blur(12px);
@@ -2986,7 +2986,7 @@ html:has(.portal-v2) body {
     bottom: 0;
     display: block;
     border-top: 1px solid var(--hairline);
-    margin-inline: -16px;
+    margin-inline: 0;
     background: rgba(251, 250, 247, 0.97);
     padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
     backdrop-filter: blur(12px);
@@ -2998,8 +2998,9 @@ html:has(.portal-v2) body {
   .portal-intake-mobile-actions .portal-intake-action-row > span { display: none; }
   .portal-intake-mobile-actions .portal-intake-next,
   .portal-intake-mobile-actions .portal-intake-generate { min-width: 0; width: 100%; }
-  .portal-intake-question-section-heading { align-items: end; }
-  .portal-intake-question-section-heading > button { max-width: 120px; text-align: right; }
+  .portal-intake-question-section-heading { align-items: end; flex-wrap: wrap; gap: 6px 10px; }
+  .portal-intake-question-section-heading > div { flex: 1 0 100%; min-width: 0; }
+  .portal-intake-question-section-heading > button { max-width: 120px; margin-left: auto; text-align: right; }
   .portal-intake-question-card { padding: 13px; }
   .portal-intake-focused-question h3 { font-size: 1.625rem; }
   .portal-intake-focused-answers button { min-height: 64px; }

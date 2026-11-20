@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Plus, Trash2, ShieldAlert, CheckCircle2, ArrowLeft, Sparkles, Pencil, Check as CheckIcon, ChevronDown, LogOut, Info, LockKeyhole, Scale, Clock3 } from "lucide-react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   INTAKE_STEPS,
   SOCIAL_PLATFORMS,
@@ -818,6 +818,7 @@ function StepHeader({
         <SheetContent side="bottom" className="portal-intake-steps-sheet gap-0 rounded-t-2xl border-hairline bg-surface-1 pb-[env(safe-area-inset-bottom)]">
           <SheetHeader>
             <SheetTitle className="text-left">{copy.allSteps}</SheetTitle>
+            <SheetDescription className="sr-only">{copy.pageSubline}</SheetDescription>
           </SheetHeader>
           <div className="portal-intake-sheet-save">
             <SaveStatus state={saveState} label={saveLabel} onRetry={onRetry} />
