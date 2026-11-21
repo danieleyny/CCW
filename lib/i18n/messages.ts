@@ -470,6 +470,118 @@ export interface Messages {
     allPacked: string
     earlyStage: string
   }
+  marketplace: {
+    eyebrow: string
+    titleFind: string
+    titleWith: string
+    subline: string
+    stepRequest: string
+    stepRequestDetail: string
+    stepCompare: string
+    stepCompareDetail: string
+    stepChoose: string
+    stepChooseDetail: string
+    stepBook: string
+    stepBookDetail: string
+    stepOf: string
+    booked: string
+    locationTitle: string
+    locationBody: string
+    setLocation: string
+    yourArea: string
+    changeArea: string
+    zipLabel: string
+    save: string
+    saving: string
+    cancel: string
+    locationSaved: string
+    needTitle: string
+    needBody: string
+    trainingTitle: string
+    trainingBody: string
+    requestTraining: string
+    helpTitle: string
+    helpBody: string
+    requestHelp: string
+    sending: string
+    openGuard: string
+    sentMatched: string
+    sentBroadcast: string
+    requestError: string
+    interestedTitle: string
+    sortedDistance: string
+    compareSideBySide: string
+    verified: string
+    coursePrice: string
+    theirNote: string
+    rangeIncluded: string
+    bringAmmo: string
+    ammoIncluded: string
+    smallGroup: string
+    privateOne: string
+    privateOrGroup: string
+    languages: string
+    nextOpening: string
+    nextOpeningLabel: string
+    freeIntro: string
+    area: string
+    viewProfile: string
+    chooseName: string
+    choosing: string
+    chooseConfirm: string
+    chosenToast: string
+    compareTitle: string
+    price: string
+    distance: string
+    rating: string
+    range: string
+    ammo: string
+    format: string
+    introCall: string
+    notIncluded: string
+    requestCardTitle: string
+    trainingNear: string
+    sentOpenInterested: string
+    cancelRequest: string
+    privacyTitle: string
+    privacyBody: string
+    noInterestTitle: string
+    noInterestBody: string
+    bookTitle: string
+    bookBody: string
+    noSlots: string
+    sessionsTitle: string
+    instructorTitle: string
+    messageName: string
+    bookedNote: string
+    bookDate: string
+    selectDate: string
+    bookingToast: string
+    typeCombined: string
+    typeClassroom: string
+    typeRange: string
+    typeConsult: string
+    profileBackground: string
+    profileExperience: string
+    profileCourse: string
+    profileIncluded: string
+    profileWhere: string
+    profileBring: string
+    profileScheduling: string
+    profileFind: string
+    profileWebsite: string
+    yearsTeaching: string
+    priceOnRequest: string
+    courseRequirement: string
+    rangeFeeIncluded: string
+    rangeFeeSeparate: string
+    materialsIncluded: string
+    materialsNotIncluded: string
+    locationsAfterConnect: string
+    errorTitle: string
+    errorBody: string
+    tryAgain: string
+  }
   concierge: {
     fullConcierge: string
     welcome: string
@@ -1178,6 +1290,118 @@ const en: Messages = {
     reviewIntake: "Review your intake answers",
     allPacked: "All packed. The License Division's letter for your appointment always comes first.",
     earlyStage: "Looking ahead: the interview comes after you file. Read this now so nothing surprises you later.",
+  },
+  marketplace: {
+    eyebrow: "Training · {applicationType}",
+    titleFind: "Find your instructor",
+    titleWith: "Training with {name}",
+    subline: "The 16-hour class and 2-hour live-fire session, with a verified instructor near you. Every instructor here is checked by our team.",
+    stepRequest: "Request",
+    stepRequestDetail: "Tell us you need training",
+    stepCompare: "Compare",
+    stepCompareDetail: "Instructors who are interested",
+    stepChoose: "Choose",
+    stepChooseDetail: "Pick one and say hello",
+    stepBook: "Book",
+    stepBookDetail: "Pick your class dates",
+    stepOf: "Step {current} of 4 · {label}",
+    booked: "Booked",
+    locationTitle: "Where are you?",
+    locationBody: "Add your ZIP code so we can find instructors near you.",
+    setLocation: "Set your location",
+    yourArea: "Your area",
+    changeArea: "Change area",
+    zipLabel: "ZIP code",
+    save: "Save",
+    saving: "Saving…",
+    cancel: "Cancel",
+    locationSaved: "Location saved — instructors are ranked by distance from here.",
+    needTitle: "What do you need?",
+    needBody: "We'll send your request to verified instructors near you. They tell you if they're interested.",
+    trainingTitle: "Schedule training",
+    trainingBody: "The 16-hour class and 2-hour live fire.",
+    requestTraining: "Request training",
+    helpTitle: "Hire help with my application",
+    helpBody: "A local professional helps assemble and review your full packet.",
+    requestHelp: "Request help",
+    sending: "Sending…",
+    openGuard: "You have an open request. Cancel it before creating another.",
+    sentMatched: "Sent to {count} local instructor{suffix}.",
+    sentBroadcast: "Your request is out — we'll match you as verified instructors come online.",
+    requestError: "We couldn't create the request. Try again.",
+    interestedTitle: "{count} instructor{suffix} interested",
+    sortedDistance: "Sorted by distance",
+    compareSideBySide: "Compare side by side",
+    verified: "Verified",
+    coursePrice: "18-hour course",
+    theirNote: "Their note to you",
+    rangeIncluded: "Range included",
+    bringAmmo: "Bring your own ammo",
+    ammoIncluded: "Ammo included",
+    smallGroup: "Small group (≤{count})",
+    privateOne: "Private 1-on-1",
+    privateOrGroup: "Private or small group",
+    languages: "Languages",
+    nextOpening: "Next opening {date}",
+    nextOpeningLabel: "Next opening",
+    freeIntro: "Free intro call",
+    area: "Area",
+    viewProfile: "View profile",
+    chooseName: "Choose {name}",
+    choosing: "Choosing…",
+    chooseConfirm: "Choose {name} for your training? Other interested instructors will be released.",
+    chosenToast: "You chose {name}. Say hello and pick your class dates.",
+    compareTitle: "Compare instructors",
+    price: "Price",
+    distance: "Distance",
+    rating: "Rating",
+    range: "Range",
+    ammo: "Ammo",
+    format: "Format",
+    introCall: "Intro call",
+    notIncluded: "Not included",
+    requestCardTitle: "Your request",
+    trainingNear: "Training near {area}",
+    sentOpenInterested: "Sent {date} · open · {count} interested",
+    cancelRequest: "Cancel request",
+    privacyTitle: "What instructors see",
+    privacyBody: "They see only what they need to answer your request, never your documents or disclosure answers.",
+    noInterestTitle: "Your request is out.",
+    noInterestBody: "Verified instructors near you can see it. We'll tell you when one is interested.",
+    bookTitle: "Book your class",
+    bookBody: "Open dates from {name}. Pick one to book.",
+    noSlots: "{name} hasn't posted open dates yet. Message them to ask.",
+    sessionsTitle: "Your sessions",
+    instructorTitle: "{name} · Your instructor",
+    messageName: "Message {name}",
+    bookedNote: "Booked · {date}",
+    bookDate: "Book {date}",
+    selectDate: "Select a class date to continue.",
+    bookingToast: "Requested — your instructor will confirm and send a calendar invite.",
+    typeCombined: "18-hour course",
+    typeClassroom: "16-hour classroom",
+    typeRange: "2-hour range",
+    typeConsult: "Consultation",
+    profileBackground: "Background",
+    profileExperience: "Experience",
+    profileCourse: "The course",
+    profileIncluded: "What's included",
+    profileWhere: "Where you'd train",
+    profileBring: "What to bring",
+    profileScheduling: "Scheduling",
+    profileFind: "Find them",
+    profileWebsite: "Website",
+    yearsTeaching: "{count} years teaching",
+    priceOnRequest: "Price on request",
+    courseRequirement: "16 classroom hours + 2 hours live fire, in person — that's what New York requires.",
+    rangeFeeIncluded: "Range fee included",
+    rangeFeeSeparate: "Range fee paid separately",
+    materialsIncluded: "Course materials included",
+    materialsNotIncluded: "Materials not included",
+    locationsAfterConnect: "Locations shared once you connect.",
+    errorTitle: "We couldn't load the training marketplace.",
+    errorBody: "Nothing was changed. Try loading it again.",
+    tryAgain: "Try again",
   },
   concierge: {
     fullConcierge: "Full Concierge",
@@ -2346,6 +2570,118 @@ const es: DeepPartial<Messages> = {
     reviewIntake: "Revisar sus respuestas",
     allPacked: "Todo listo. La carta de la División de Licencias para su cita siempre tiene prioridad.",
     earlyStage: "Para que sepa lo que viene: la entrevista ocurre después de presentar la solicitud. Lea esto ahora para que nada le tome por sorpresa.",
+  },
+  marketplace: {
+    eyebrow: "Capacitación · {applicationType}",
+    titleFind: "Encuentre a su instructor",
+    titleWith: "Capacitación con {name}",
+    subline: "La clase de 16 horas y la sesión de tiro de 2 horas, con un instructor verificado cerca de usted. Nuestro equipo revisa a cada instructor.",
+    stepRequest: "Solicitar",
+    stepRequestDetail: "Díganos que necesita capacitación",
+    stepCompare: "Comparar",
+    stepCompareDetail: "Instructores interesados",
+    stepChoose: "Elegir",
+    stepChooseDetail: "Elija uno y salude",
+    stepBook: "Reservar",
+    stepBookDetail: "Elija las fechas de su clase",
+    stepOf: "Paso {current} de 4 · {label}",
+    booked: "Reservado",
+    locationTitle: "¿Dónde está?",
+    locationBody: "Agregue su código postal para encontrar instructores cerca de usted.",
+    setLocation: "Indique su ubicación",
+    yourArea: "Su zona",
+    changeArea: "Cambiar zona",
+    zipLabel: "Código postal",
+    save: "Guardar",
+    saving: "Guardando…",
+    cancel: "Cancelar",
+    locationSaved: "Ubicación guardada — los instructores se ordenan por distancia.",
+    needTitle: "¿Qué necesita?",
+    needBody: "Enviaremos su solicitud a instructores verificados cerca de usted. Ellos indicarán si están interesados.",
+    trainingTitle: "Programar capacitación",
+    trainingBody: "La clase de 16 horas y 2 horas de tiro.",
+    requestTraining: "Solicitar capacitación",
+    helpTitle: "Contratar ayuda con mi solicitud",
+    helpBody: "Un profesional local ayuda a organizar y revisar su expediente completo.",
+    requestHelp: "Solicitar ayuda",
+    sending: "Enviando…",
+    openGuard: "Ya tiene una solicitud abierta. Cancélela antes de crear otra.",
+    sentMatched: "Enviado a {count} instructor{suffix} local{suffix}.",
+    sentBroadcast: "Su solicitud está publicada — le encontraremos instructores verificados a medida que estén disponibles.",
+    requestError: "No pudimos crear la solicitud. Inténtelo de nuevo.",
+    interestedTitle: "{count} instructor{suffix} interesado{suffix}",
+    sortedDistance: "Ordenados por distancia",
+    compareSideBySide: "Comparar lado a lado",
+    verified: "Verificado",
+    coursePrice: "Curso de 18 horas",
+    theirNote: "Su nota para usted",
+    rangeIncluded: "Campo de tiro incluido",
+    bringAmmo: "Lleve su propia munición",
+    ammoIncluded: "Munición incluida",
+    smallGroup: "Grupo pequeño (≤{count})",
+    privateOne: "Privada individual",
+    privateOrGroup: "Privada o grupo pequeño",
+    languages: "Idiomas",
+    nextOpening: "Próxima fecha {date}",
+    nextOpeningLabel: "Próxima fecha",
+    freeIntro: "Llamada inicial gratuita",
+    area: "Zona",
+    viewProfile: "Ver perfil",
+    chooseName: "Elegir a {name}",
+    choosing: "Eligiendo…",
+    chooseConfirm: "¿Elegir a {name} para su capacitación? Los demás instructores interesados serán liberados.",
+    chosenToast: "Eligió a {name}. Salude y elija las fechas de su clase.",
+    compareTitle: "Comparar instructores",
+    price: "Precio",
+    distance: "Distancia",
+    rating: "Calificación",
+    range: "Campo de tiro",
+    ammo: "Munición",
+    format: "Formato",
+    introCall: "Llamada inicial",
+    notIncluded: "No incluido",
+    requestCardTitle: "Su solicitud",
+    trainingNear: "Capacitación cerca de {area}",
+    sentOpenInterested: "Enviada {date} · abierta · {count} interesados",
+    cancelRequest: "Cancelar solicitud",
+    privacyTitle: "Lo que ven los instructores",
+    privacyBody: "Solo ven lo necesario para responder a su solicitud, nunca sus documentos ni respuestas sobre revelaciones.",
+    noInterestTitle: "Su solicitud está publicada.",
+    noInterestBody: "Los instructores verificados cercanos pueden verla. Le avisaremos cuando alguno se interese.",
+    bookTitle: "Reserve su clase",
+    bookBody: "Fechas disponibles de {name}. Elija una para reservar.",
+    noSlots: "{name} todavía no ha publicado fechas. Envíele un mensaje para preguntar.",
+    sessionsTitle: "Sus sesiones",
+    instructorTitle: "{name} · Su instructor",
+    messageName: "Enviar mensaje a {name}",
+    bookedNote: "Reservado · {date}",
+    bookDate: "Reservar {date}",
+    selectDate: "Seleccione una fecha para continuar.",
+    bookingToast: "Solicitado — su instructor confirmará y enviará una invitación de calendario.",
+    typeCombined: "Curso de 18 horas",
+    typeClassroom: "Clase de 16 horas",
+    typeRange: "2 horas de tiro",
+    typeConsult: "Consulta",
+    profileBackground: "Experiencia",
+    profileExperience: "Trayectoria",
+    profileCourse: "El curso",
+    profileIncluded: "Qué incluye",
+    profileWhere: "Dónde se capacitará",
+    profileBring: "Qué llevar",
+    profileScheduling: "Programación",
+    profileFind: "Dónde encontrarlo",
+    profileWebsite: "Sitio web",
+    yearsTeaching: "{count} años enseñando",
+    priceOnRequest: "Precio a solicitud",
+    courseRequirement: "16 horas en aula + 2 horas de tiro, en persona — eso es lo que exige Nueva York.",
+    rangeFeeIncluded: "Tarifa del campo de tiro incluida",
+    rangeFeeSeparate: "Tarifa del campo de tiro por separado",
+    materialsIncluded: "Materiales del curso incluidos",
+    materialsNotIncluded: "Materiales no incluidos",
+    locationsAfterConnect: "Las ubicaciones se comparten cuando se conecten.",
+    errorTitle: "No pudimos cargar el mercado de capacitación.",
+    errorBody: "No se cambió nada. Intente cargarlo de nuevo.",
+    tryAgain: "Intentar de nuevo",
   },
   concierge: {
     fullConcierge: "Servicio de conserjería",

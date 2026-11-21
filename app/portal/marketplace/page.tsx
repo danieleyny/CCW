@@ -1,31 +1,42 @@
-import { Star } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
-import { getMyCase } from "@/lib/portal"
-import { money } from "@/lib/format"
-import { StatusBadge } from "@/components/shared/status-badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { MarketplacePanel } from "@/components/portal/marketplace-panel"
-import { LocationPrompt } from "@/components/portal/location-prompt"
-import { InstructorCard } from "@/components/portal/instructor-card"
-import { ChooseButton } from "@/components/portal/choose-instructor"
-import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
-import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
+import { redirect } from "next/navigation"
+import { CalendarDays, EyeOff, ShieldCheck } from "lucide-react"
 import { cancelOffer } from "./actions"
 import { sendEngagementMessage, markEngagementMessagesRead } from "@/app/portal/actions"
-import { redirect } from "next/navigation"
-import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
+import { ChooseButton } from "@/components/portal/choose-instructor"
+import { InstructorCard, type InstructorCardData } from "@/components/portal/instructor-card"
+import { LocationPrompt } from "@/components/portal/location-prompt"
+import { deriveMarketplaceStep } from "@/components/portal/marketplace-journey"
+import {
+  MarketplaceCompare,
+  MarketplaceHubTabs,
+  MarketplacePanel,
+  MarketplaceStepBar,
+  type CompareInstructor,
+} from "@/components/portal/marketplace-panel"
+import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
+import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { Button } from "@/components/ui/button"
+import {
+  APPLICATION_TYPE_LABELS,
+  isApplicationType,
+  isPremiseResidence,
+  type ApplicationType,
+} from "@/lib/application-types"
+import { formatDateTime, formatTime, formatWeekdayDate } from "@/lib/format"
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
+import type { Messages } from "@/lib/i18n/messages"
+import { getMyCase } from "@/lib/portal"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata = { title: "Find an instructor" }
 
 export default async function MarketplacePage() {
-  const myCase = await getMyCase()
+  const [myCase, messages, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])
+  const copy = messages.marketplace
   if (!myCase) {
-    return (
-      <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
-      </p>
-    )
+    return <p className="marketplace-v2-inline-error">{copy.errorTitle}</p>
   }
   if (isPremiseResidence(myCase.application_type as ApplicationType | null)) redirect("/portal")
 
@@ -43,20 +54,16 @@ export default async function MarketplacePage() {
       .eq("status", "active"),
   ])
 
-  const hasOpenOffer = (offers ?? []).some((o) => o.status === "open")
+  const openOffer = (offers ?? []).find((offer) => offer.status === "open") ?? null
+  const hasOpenOffer = Boolean(openOffer)
 
-  // Messages for the applicant↔instructor engagement thread(s). Cross-role
-  // profile reads are RLS-blocked, so resolve sender names from what the client
-  // already knows: their own name vs the chosen instructor's (public) name.
-  const {
-    data: { user: me },
-  } = await supabase.auth.getUser()
+  const { data: { user: me } } = await supabase.auth.getUser()
   const engInstrName = new Map<string, string>()
-  for (const e of engagements ?? []) {
-    const inst = e.instructors as unknown as { name: string } | null
-    engInstrName.set(e.id, inst?.name ?? "Instructor")
+  for (const engagement of engagements ?? []) {
+    const instructor = engagement.instructors as unknown as { name: string } | null
+    engInstrName.set(engagement.id, instructor?.name ?? "Instructor")
   }
-  const engIds = (engagements ?? []).map((e) => e.id)
+  const engIds = (engagements ?? []).map((engagement) => engagement.id)
   const msgByEng = new Map<string, MessageRow[]>()
   if (engIds.length) {
     const { data: msgs } = await supabase
@@ -64,30 +71,32 @@ export default async function MarketplacePage() {
       .select("id, body, created_at, engagement_id, sender_id")
       .in("engagement_id", engIds)
       .order("created_at")
-    for (const m of msgs ?? []) {
-      const engId = m.engagement_id as string
-      const mine = m.sender_id === me?.id
-      const arr = msgByEng.get(engId) ?? []
-      arr.push({
-        id: m.id,
-        body: m.body,
-        created_at: m.created_at,
-        senderName: mine ? myCase.client.full_name : engInstrName.get(engId) ?? "Instructor",
+    for (const message of msgs ?? []) {
+      const engagementId = message.engagement_id as string
+      const mine = message.sender_id === me?.id
+      const rows = msgByEng.get(engagementId) ?? []
+      rows.push({
+        id: message.id,
+        body: message.body,
+        created_at: message.created_at,
+        senderName: mine ? myCase.client.full_name : engInstrName.get(engagementId) ?? "Instructor",
         senderRole: mine ? "client" : "instructor",
       })
-      msgByEng.set(engId, arr)
+      msgByEng.set(engagementId, rows)
     }
   }
 
-  // Instructors who expressed interest in my open offers (redacted view scoped
-  // to my case). Enrich with each instructor's locations + next opening.
   const { data: interestedRows } = await supabase
     .from("applicant_interest_feed")
     .select(
       "offer_id, type, instructor_id, distance_mi, note, quoted_price_cents, name, bio, dcjs_id, verified, price_18h_cents, rating_avg, rating_count, service_radius_mi, years_experience, background, languages, website_url, instagram_handle, class_format, typical_class_size, provides_range, separate_range_note, range_fee_included, ammo_included, materials_included, whats_to_bring, scheduling_notes, response_time_note, offers_intro_call, intro_call_note"
     )
-  const interested = interestedRows ?? []
-  const interestedIds = [...new Set(interested.map((r) => r.instructor_id).filter(Boolean) as string[])]
+  const interested = [...(interestedRows ?? [])].sort((a, b) => {
+    if (a.distance_mi == null) return 1
+    if (b.distance_mi == null) return -1
+    return Number(a.distance_mi) - Number(b.distance_mi)
+  })
+  const interestedIds = [...new Set(interested.map((row) => row.instructor_id).filter(Boolean) as string[])]
 
   const locByInstr = new Map<string, { label: string; isRange: boolean; address: string | null }[]>()
   const nextByInstr = new Map<string, string>()
@@ -96,10 +105,10 @@ export default async function MarketplacePage() {
       .from("training_locations")
       .select("instructor_id, label, is_range, address")
       .in("instructor_id", interestedIds)
-    for (const l of locs ?? []) {
-      const arr = locByInstr.get(l.instructor_id) ?? []
-      arr.push({ label: l.label, isRange: l.is_range, address: l.address })
-      locByInstr.set(l.instructor_id, arr)
+    for (const location of locs ?? []) {
+      const rows = locByInstr.get(location.instructor_id) ?? []
+      rows.push({ label: location.label, isRange: location.is_range, address: location.address })
+      locByInstr.set(location.instructor_id, rows)
     }
     const { data: slots } = await supabase
       .from("availability_slots")
@@ -107,21 +116,19 @@ export default async function MarketplacePage() {
       .in("instructor_id", interestedIds)
       .gt("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true })
-    for (const s of slots ?? []) {
-      if (s.booked_count < s.capacity && !nextByInstr.has(s.instructor_id)) {
-        nextByInstr.set(s.instructor_id, s.starts_at)
+    for (const slot of slots ?? []) {
+      if (slot.booked_count < slot.capacity && !nextByInstr.has(slot.instructor_id)) {
+        nextByInstr.set(slot.instructor_id, slot.starts_at)
       }
     }
   }
 
-  // Bookable slots from instructors the client is engaged with (flat selects +
-  // lookups to avoid supabase-js embedded-select type friction).
   const { data: activeEng } = await supabase
     .from("engagements")
     .select("instructor_id")
     .eq("case_id", myCase.id)
     .eq("status", "active")
-  const engInstructorIds = [...new Set((activeEng ?? []).map((e) => e.instructor_id))]
+  const engInstructorIds = [...new Set((activeEng ?? []).map((engagement) => engagement.instructor_id))]
 
   let bookable: BookableSlot[] = []
   if (engInstructorIds.length) {
@@ -131,25 +138,27 @@ export default async function MarketplacePage() {
       .in("instructor_id", engInstructorIds)
       .gt("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true })
-    const open = (slots ?? []).filter((s) => s.booked_count < s.capacity)
+    const open = (slots ?? []).filter((slot) => slot.booked_count < slot.capacity)
 
     const instrName = new Map<string, string>()
     const { data: instrs } = await supabase.from("instructors").select("id, name").in("id", engInstructorIds)
-    for (const i of instrs ?? []) instrName.set(i.id, i.name)
+    for (const instructor of instrs ?? []) instrName.set(instructor.id, instructor.name)
 
-    const locIds = [...new Set(open.map((s) => s.location_id).filter(Boolean) as string[])]
+    const locIds = [...new Set(open.map((slot) => slot.location_id).filter(Boolean) as string[])]
     const locName = new Map<string, string>()
     if (locIds.length) {
       const { data: locs } = await supabase.from("training_locations").select("id, label").in("id", locIds)
-      for (const l of locs ?? []) locName.set(l.id, l.label)
+      for (const location of locs ?? []) locName.set(location.id, location.label)
     }
 
-    bookable = open.map((s) => ({
-      id: s.id,
-      type: s.type,
-      starts_at: s.starts_at,
-      instructorName: instrName.get(s.instructor_id) ?? "Instructor",
-      locationLabel: s.location_id ? locName.get(s.location_id) ?? null : null,
+    bookable = open.map((slot) => ({
+      id: slot.id,
+      type: slot.type,
+      starts_at: slot.starts_at,
+      instructorName: instrName.get(slot.instructor_id) ?? "Instructor",
+      locationLabel: slot.location_id ? locName.get(slot.location_id) ?? null : null,
+      dateLabel: formatWeekdayDate(slot.starts_at, locale),
+      timeLabel: formatTime(slot.starts_at, locale),
     }))
   }
 
@@ -159,167 +168,164 @@ export default async function MarketplacePage() {
     .eq("case_id", myCase.id)
     .order("starts_at", { ascending: true })
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Find an instructor</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tell verified local instructors what you need. They see only your borough
-          and the request — never your identity. Interested instructors show up
-          here, and you choose who to work with.
-        </p>
-      </div>
+  const activeBookings = (bookings ?? []).filter((booking) => booking.status !== "cancelled")
+  const hasActiveEngagement = (engagements ?? []).length > 0
+  const currentStep = deriveMarketplaceStep({
+    hasActiveEngagement,
+    hasBooking: activeBookings.length > 0,
+    hasOpenOffer,
+  })
+  const booked = currentStep === 4 && activeBookings.length > 0
+  const chosenName = hasActiveEngagement ? engInstrName.get((engagements ?? [])[0]?.id ?? "") ?? "Instructor" : null
+  const applicationType = isApplicationType(myCase.application_type)
+    ? APPLICATION_TYPE_LABELS[myCase.application_type]
+    : "Concealed Carry"
+  const area = myCase.client.borough ?? myCase.client.zip ?? applicationType
 
-      <LocationPrompt zip={myCase.client.zip} borough={myCase.client.borough} />
+  const cards: CompareInstructor[] = interested.map((row) => {
+    const instructorId = row.instructor_id ?? ""
+    const next = nextByInstr.get(instructorId)
+    const data: InstructorCardData = {
+      name: row.name ?? "Instructor",
+      bio: row.bio,
+      verified: row.verified,
+      priceCents: row.price_18h_cents,
+      quotedPriceCents: row.quoted_price_cents,
+      ratingAvg: row.rating_avg,
+      ratingCount: row.rating_count,
+      distanceMi: row.distance_mi,
+      serviceRadiusMi: row.service_radius_mi,
+      note: row.note,
+      locations: locByInstr.get(instructorId) ?? [],
+      nextAvailableLabel: next ? formatWeekdayDate(next, locale) : null,
+      yearsExperience: row.years_experience,
+      background: row.background,
+      languages: row.languages,
+      websiteUrl: row.website_url,
+      instagramHandle: row.instagram_handle,
+      classFormat: row.class_format,
+      typicalClassSize: row.typical_class_size,
+      providesRange: row.provides_range,
+      separateRangeNote: row.separate_range_note,
+      rangeFeeIncluded: row.range_fee_included,
+      ammoIncluded: row.ammo_included,
+      materialsIncluded: row.materials_included,
+      whatsToBring: row.whats_to_bring,
+      schedulingNotes: row.scheduling_notes,
+      responseTimeNote: row.response_time_note,
+      offersIntroCall: row.offers_intro_call,
+      introCallNote: row.intro_call_note,
+    }
+    return { offerId: row.offer_id ?? "", instructorId, data }
+  })
 
-      <MarketplacePanel hasOpenOffer={hasOpenOffer} />
-
-      {interested.length > 0 && (
-        <div>
-          <h2 className="engraved mb-1 text-text-low">Instructors interested in you</h2>
-          <p className="mb-3 text-sm text-text-mid">
-            {interested.length} verified instructor{interested.length === 1 ? " wants" : "s want"} to
-            help. Pick one — the rest are released.
-          </p>
-          <div className="space-y-3">
-            {interested.map((r) => (
-              <InstructorCard
-                key={`${r.offer_id}-${r.instructor_id}`}
-                data={{
-                  name: r.name ?? "Instructor",
-                  bio: r.bio,
-                  // Badge on VERIFIED, not on "typed a DCJS number".
-                  verified: r.verified,
-                  priceCents: r.price_18h_cents,
-                  quotedPriceCents: r.quoted_price_cents,
-                  ratingAvg: r.rating_avg,
-                  ratingCount: r.rating_count,
-                  distanceMi: r.distance_mi,
-                  serviceRadiusMi: r.service_radius_mi,
-                  note: r.note,
-                  locations: locByInstr.get(r.instructor_id ?? "") ?? [],
-                  nextAvailable: nextByInstr.get(r.instructor_id ?? "") ?? null,
-                  yearsExperience: r.years_experience,
-                  background: r.background,
-                  languages: r.languages,
-                  websiteUrl: r.website_url,
-                  instagramHandle: r.instagram_handle,
-                  classFormat: r.class_format,
-                  typicalClassSize: r.typical_class_size,
-                  providesRange: r.provides_range,
-                  separateRangeNote: r.separate_range_note,
-                  rangeFeeIncluded: r.range_fee_included,
-                  ammoIncluded: r.ammo_included,
-                  materialsIncluded: r.materials_included,
-                  whatsToBring: r.whats_to_bring,
-                  schedulingNotes: r.scheduling_notes,
-                  responseTimeNote: r.response_time_note,
-                  offersIntroCall: r.offers_intro_call,
-                  introCallNote: r.intro_call_note,
-                }}
-                action={
-                  <ChooseButton
-                    offerId={r.offer_id ?? ""}
-                    instructorId={r.instructor_id ?? ""}
-                    instructorName={r.name ?? "Instructor"}
-                  />
-                }
-              />
-            ))}
+  const bookedLabel = activeBookings[0] ? formatDateTime(activeBookings[0].starts_at, locale) : null
+  const hubItems = (engagements ?? []).map((engagement) => {
+    const instructor = engagement.instructors as unknown as { name: string } | null
+    const name = instructor?.name ?? "Instructor"
+    const firstName = name.split(/\s+/)[0] || name
+    const slots = bookable.filter((slot) => slot.instructorName === name)
+    return {
+      id: engagement.id,
+      name,
+      content: (
+        <div className="marketplace-v2-hub-grid">
+          <div className="marketplace-v2-hub-main">
+            <section className="marketplace-v2-book-card" aria-labelledby={`book-${engagement.id}`}>
+              <p className="portal-t-eyebrow">{copy.stepBook}</p>
+              <h2 id={`book-${engagement.id}`}>{copy.bookTitle}</h2>
+              <p>{interpolate(copy.bookBody, { name: firstName })}</p>
+              <SlotBooker slots={slots} instructorName={name} />
+            </section>
+            <section className="marketplace-v2-sessions" aria-labelledby={`sessions-${engagement.id}`}>
+              <h2 id={`sessions-${engagement.id}`}>{copy.sessionsTitle}</h2>
+              {activeBookings.length ? (
+                <ul>{activeBookings.map((booking) => (
+                  <li key={booking.id}>
+                    <span><CalendarDays aria-hidden="true" /><span><strong>{formatDateTime(booking.starts_at, locale)}</strong><small>{slotTypeLabel(booking.type, copy)}</small></span></span>
+                    <StatusBadge status={booking.status} />
+                  </li>
+                ))}</ul>
+              ) : <p>—</p>}
+            </section>
           </div>
+          <aside className="marketplace-v2-chat-card" id={`marketplace-chat-${engagement.id}`}>
+            <header><span className="marketplace-v2-avatar" aria-hidden="true">{initials(name)}</span><div><h2>{interpolate(copy.instructorTitle, { name })}</h2><p><ShieldCheck aria-hidden="true" />{copy.verified}</p></div></header>
+            <MessageThread
+              caseId={engagement.id}
+              messages={msgByEng.get(engagement.id) ?? []}
+              send={sendEngagementMessage}
+              markRead={markEngagementMessagesRead.bind(null, engagement.id)}
+              placeholder={`${copy.messageName.replace("{name}", firstName)}…`}
+            />
+          </aside>
         </div>
-      )}
+      ),
+    }
+  })
 
-      {(engagements ?? []).length > 0 && (
-        <div>
-          <h2 className="engraved mb-2 text-text-low">Your instructor</h2>
-          {(engagements ?? []).map((e) => {
-            const inst = e.instructors as unknown as {
-              name: string
-              price_18h_cents: number | null
-              rating_avg: number | null
-              rating_count: number
-            } | null
-            return (
-              <Card key={e.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium">{inst?.name ?? "Instructor"}</div>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-text-mid">
-                        <span>{e.type === "full_assist" ? "Full application help" : "Training"}</span>
-                        {inst?.price_18h_cents != null && <span>· {money(inst.price_18h_cents)}</span>}
-                        {inst?.rating_count ? (
-                          <span className="flex items-center gap-0.5">
-                            <Star className="size-3 text-brass" />
-                            {inst.rating_avg}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <StatusBadge status="active" />
-                  </div>
-                  <div className="mt-4 border-t border-hairline pt-4">
-                    <div className="engraved mb-2 text-text-low">Message your instructor</div>
-                    <MessageThread
-                      caseId={e.id}
-                      messages={msgByEng.get(e.id) ?? []}
-                      send={sendEngagementMessage}
-                      markRead={markEngagementMessagesRead.bind(null, e.id)}
-                      placeholder={`Message ${inst?.name ?? "your instructor"}…`}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+  return (
+    <div className="marketplace-v2-page">
+      <header className="marketplace-v2-header">
+        <p className="portal-t-eyebrow">{interpolate(copy.eyebrow, { applicationType })}</p>
+        <h1>{chosenName ? interpolate(copy.titleWith, { name: chosenName }) : copy.titleFind}</h1>
+        <p>{copy.subline}</p>
+      </header>
+
+      <MarketplaceStepBar current={currentStep} booked={booked} />
+
+      {currentStep === 1 ? (
+        <div className="marketplace-v2-step-one">
+          <LocationPrompt zip={myCase.client.zip} borough={myCase.client.borough} />
+          <MarketplacePanel hasOpenOffer={hasOpenOffer} hasLocation={Boolean(myCase.client.zip && myCase.client.borough)} />
         </div>
-      )}
+      ) : null}
 
-      {engInstructorIds.length > 0 && (
-        <div>
-          <h2 className="engraved mb-2 text-text-low">Book a session</h2>
-          <SlotBooker slots={bookable} />
-        </div>
-      )}
-
-      {(bookings ?? []).length > 0 && (
-        <div>
-          <h2 className="engraved mb-2 text-text-low">Your sessions</h2>
-          <ul className="space-y-2">
-            {(bookings ?? []).map((bk) => (
-              <li key={bk.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm">
-                <span>{new Date(bk.starts_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
-                <StatusBadge status={bk.status} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {(offers ?? []).length > 0 && (
-        <div>
-          <h2 className="engraved mb-2 text-text-low">Your requests</h2>
-          <ul className="space-y-2">
-            {(offers ?? []).map((o) => (
-              <li key={o.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm">
-                <span>{o.type === "full_assist" ? "Full application help" : "Training"}</span>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={o.status} />
-                  {o.status === "open" && (
-                    <form action={cancelOffer}>
-                      <input type="hidden" name="offerId" value={o.id} />
-                      <Button type="submit" size="sm" variant="ghost">
-                        Cancel
-                      </Button>
-                    </form>
-                  )}
+      {currentStep === 2 ? (
+        <div className="marketplace-v2-compare-layout">
+          <main className="marketplace-v2-compare-main">
+            {cards.length ? (
+              <>
+                <div className="marketplace-v2-compare-heading">
+                  <div><h2>{interpolate(copy.interestedTitle, { count: cards.length, suffix: cards.length === 1 ? "" : "s" })}</h2><p>{copy.sortedDistance}</p></div>
+                  <MarketplaceCompare instructors={cards} />
                 </div>
-              </li>
-            ))}
-          </ul>
+                <div className="marketplace-v2-instructor-grid">
+                  {cards.map((item) => (
+                    <InstructorCard key={`${item.offerId}-${item.instructorId}`} data={item.data} action={<ChooseButton offerId={item.offerId} instructorId={item.instructorId} instructorName={item.data.name} />} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <section className="marketplace-v2-no-interest"><span><ShieldCheck aria-hidden="true" /></span><div><h2>{copy.noInterestTitle}</h2><p>{copy.noInterestBody}</p></div></section>
+            )}
+          </main>
+          <aside className="marketplace-v2-sidebar">
+            {openOffer ? <section><p className="portal-t-label">{copy.requestCardTitle}</p><h2>{interpolate(copy.trainingNear, { area })}</h2><p>{interpolate(copy.sentOpenInterested, { date: formatWeekdayDate(openOffer.created_at, locale), count: cards.length })}</p><form action={cancelOffer}><input type="hidden" name="offerId" value={openOffer.id} /><Button type="submit" variant="outline">{copy.cancelRequest}</Button></form></section> : null}
+            <LocationPrompt zip={myCase.client.zip} borough={myCase.client.borough} />
+            <section className="marketplace-v2-privacy-card"><EyeOff aria-hidden="true" /><div><h2>{copy.privacyTitle}</h2><p>{copy.privacyBody}</p></div></section>
+          </aside>
         </div>
-      )}
+      ) : null}
+
+      {currentStep === 4 ? (
+        <div className="marketplace-v2-hub">
+          {bookedLabel ? <p className="marketplace-v2-booked-note"><ShieldCheck aria-hidden="true" />{interpolate(copy.bookedNote, { date: bookedLabel })}</p> : null}
+          <MarketplaceHubTabs items={hubItems} />
+        </div>
+      ) : null}
     </div>
   )
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("")
+}
+
+function slotTypeLabel(type: string, copy: Messages["marketplace"]) {
+  if (type === "combined_18h") return copy.typeCombined
+  if (type === "classroom_16h") return copy.typeClassroom
+  if (type === "live_fire_2h") return copy.typeRange
+  if (type === "consult") return copy.typeConsult
+  return type
 }

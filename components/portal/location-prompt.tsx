@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { MapPin, Check } from "lucide-react"
 import { toast } from "sonner"
 import { saveClientLocation } from "@/app/portal/marketplace/actions"
+import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -13,6 +15,9 @@ import { Input } from "@/components/ui/input"
  * prompts for one. The ZIP never reaches instructors — only borough + distance.
  */
 export function LocationPrompt({ zip, borough }: { zip: string | null; borough: string | null }) {
+  const router = useRouter()
+  const { messages } = usePortalI18n()
+  const copy = messages.marketplace
   const [editing, setEditing] = useState(!zip)
   const [pending, startTransition] = useTransition()
 
@@ -21,57 +26,48 @@ export function LocationPrompt({ zip, borough }: { zip: string | null; borough: 
       const res = await saveClientLocation(formData)
       if (res.error) toast.error(res.error)
       else {
-        toast.success("Location saved — instructors are ranked by distance from here.")
+        toast.success(copy.locationSaved)
         setEditing(false)
+        router.refresh()
       }
     })
   }
 
   if (!editing) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-hairline bg-surface-2/40 p-4">
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="size-4 text-brass" />
-          <span className="text-text-mid">
-            Your area: <span className="font-medium text-foreground">{borough ?? "NYC"}</span>
-            {zip && <span className="text-text-low"> · {zip}</span>}
-          </span>
+      <div className="marketplace-v2-location-card is-set">
+        <div className="marketplace-v2-location-heading">
+          <span><MapPin aria-hidden="true" /></span>
+          <div><p className="portal-t-label">{copy.yourArea}</p><strong>{borough ?? "NYC"}{zip ? ` · ${zip}` : ""}</strong></div>
         </div>
-        <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-          Update
+        <Button variant="ghost" onClick={() => setEditing(true)}>
+          {copy.changeArea}
         </Button>
       </div>
     )
   }
 
   return (
-    <form
-      action={onSubmit}
-      className="rounded-lg border border-brass/30 bg-brass/8 p-4"
-    >
-      <div className="flex items-center gap-2 text-sm font-medium text-brass-bright">
-        <MapPin className="size-4" /> Set your location
+    <form action={onSubmit} className="marketplace-v2-location-card">
+      <div className="marketplace-v2-location-heading">
+        <span><MapPin aria-hidden="true" /></span>
+        <div><p className="portal-t-label">{copy.setLocation}</p><h2>{copy.locationTitle}</h2><p>{copy.locationBody}</p></div>
       </div>
-      <p className="mt-1 text-xs text-text-mid">
-        Your ZIP code lets us rank instructors by how close they are. It stays private —
-        instructors only ever see your borough and the distance.
-      </p>
-      <div className="mt-3 flex items-center gap-2">
+      <div className="marketplace-v2-location-form">
         <Input
           name="zip"
           inputMode="numeric"
           maxLength={5}
-          placeholder="e.g. 11215"
+          placeholder="11215"
           defaultValue={zip ?? ""}
-          className="max-w-[9rem]"
-          aria-label="ZIP code"
+          aria-label={copy.zipLabel}
         />
-        <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Saving…" : <><Check className="mr-1 size-3.5" /> Save</>}
+        <Button type="submit" disabled={pending}>
+          {pending ? copy.saving : <><Check aria-hidden="true" /> {copy.save}</>}
         </Button>
         {zip && (
-          <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
-            Cancel
+          <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+            {copy.cancel}
           </Button>
         )}
       </div>

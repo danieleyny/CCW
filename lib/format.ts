@@ -51,6 +51,16 @@ export function formatTime(value: string | Date, locale = "en-US"): string {
   })
 }
 
+export function formatWeekdayDate(value: string | Date, locale = "en-US"): string {
+  const d = typeof value === "string" ? new Date(value) : value
+  return d.toLocaleDateString(locale, {
+    timeZone: DISPLAY_TIME_ZONE,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+}
+
 function displayDateParts(value: string | Date) {
   const d = typeof value === "string" ? new Date(value) : value
   const parts = new Intl.DateTimeFormat("en-US", {

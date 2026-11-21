@@ -1,18 +1,12 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarClock } from "lucide-react"
+import { CalendarClock, Check } from "lucide-react"
 import { toast } from "sonner"
 import { createBooking } from "@/app/portal/marketplace/actions"
+import { interpolate, usePortalI18n } from "@/components/shared/portal-i18n-provider"
 import { Button } from "@/components/ui/button"
-
-const TYPE_LABEL: Record<string, string> = {
-  combined_18h: "18-hour course",
-  classroom_16h: "16-hour classroom",
-  live_fire_2h: "2-hour range",
-  consult: "Consultation",
-}
 
 export interface BookableSlot {
   id: string
@@ -20,42 +14,62 @@ export interface BookableSlot {
   starts_at: string
   instructorName: string
   locationLabel: string | null
+  dateLabel: string
+  timeLabel: string
 }
 
-export function SlotBooker({ slots }: { slots: BookableSlot[] }) {
+export function SlotBooker({ slots, instructorName }: { slots: BookableSlot[]; instructorName: string }) {
   const router = useRouter()
+  const { messages } = usePortalI18n()
+  const copy = messages.marketplace
+  const [selected, setSelected] = useState(slots[0]?.id ?? "")
   const [pending, startTransition] = useTransition()
+  const firstName = instructorName.trim().split(/\s+/)[0] || instructorName
+  const selectedSlot = slots.find((slot) => slot.id === selected) ?? null
+  const typeLabel: Record<string, string> = {
+    combined_18h: copy.typeCombined,
+    classroom_16h: copy.typeClassroom,
+    live_fire_2h: copy.typeRange,
+    consult: copy.typeConsult,
+  }
 
-  function book(slotId: string) {
+  function book() {
+    if (!selectedSlot) return
     startTransition(async () => {
-      const res = await createBooking(slotId)
-      if (res.error) toast.error(res.error)
+      const result = await createBooking(selectedSlot.id)
+      if (result.error) toast.error(result.error)
       else {
-        toast.success("Requested — your instructor will confirm and send a calendar invite.")
+        toast.success(copy.bookingToast)
         router.refresh()
       }
     })
   }
 
   if (slots.length === 0) {
-    return <p className="text-sm text-text-mid">No open sessions right now. Check back soon.</p>
+    return <p className="marketplace-v2-empty-slots">{interpolate(copy.noSlots, { name: firstName })}</p>
   }
 
   return (
-    <ul className="space-y-2">
-      {slots.map((s) => (
-        <li key={s.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm">
-          <span className="flex items-center gap-2">
-            <CalendarClock className="size-4 text-signal" />
-            <span>{new Date(s.starts_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
-            <span className="text-text-low">· {TYPE_LABEL[s.type] ?? s.type}</span>
-            {s.locationLabel && <span className="text-text-low">· {s.locationLabel}</span>}
-          </span>
-          <Button size="sm" disabled={pending} onClick={() => book(s.id)}>
-            Book
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <div className="marketplace-v2-slots" role="radiogroup" aria-label={copy.bookTitle}>
+        {slots.map((slot) => {
+          const checked = selected === slot.id
+          return (
+            <button key={slot.id} type="button" role="radio" aria-checked={checked} data-selected={checked} onClick={() => setSelected(slot.id)}>
+              <span className="marketplace-v2-slot-type">{typeLabel[slot.type] ?? slot.type}</span>
+              <strong>{slot.dateLabel}</strong>
+              <span><CalendarClock aria-hidden="true" />{slot.timeLabel}{slot.locationLabel ? ` · ${slot.locationLabel}` : ""}</span>
+              {checked ? <Check className="marketplace-v2-slot-check" aria-hidden="true" /> : null}
+            </button>
+          )
+        })}
+      </div>
+      <div className="marketplace-v2-book-action">
+        <span>{selectedSlot ? "" : copy.selectDate}</span>
+        <Button disabled={pending || !selectedSlot} onClick={book}>
+          {pending ? copy.sending : interpolate(copy.bookDate, { date: selectedSlot?.dateLabel ?? "" })}
+        </Button>
+      </div>
+    </div>
   )
 }
