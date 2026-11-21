@@ -447,6 +447,29 @@ export interface Messages {
     peopleNoteLink: string
     peopleNoteSuffix: string
   }
+  interview: {
+    eyebrow: string
+    readMore: string
+    ruleTitle: string
+    ruleSentence: string
+    ruleOne: string
+    ruleTwo: string
+    ruleThree: string
+    briefingTabsLabel: string
+    packHint: string
+    practiceIntro: string
+    questionCount: string
+    howToApproach: string
+    showQuestion: string
+    recordTitle: string
+    recordBody: string
+    messageTeam: string
+    fileTitle: string
+    fileBody: string
+    reviewIntake: string
+    allPacked: string
+    earlyStage: string
+  }
   concierge: {
     fullConcierge: string
     welcome: string
@@ -1132,6 +1155,29 @@ const en: Messages = {
     peopleNotePrefix: "Character references and household affidavits are on the",
     peopleNoteLink: "People",
     peopleNoteSuffix: "page — each person gets a private link, so you don't prepare those forms.",
+  },
+  interview: {
+    eyebrow: "Interview preparation",
+    readMore: "Read more",
+    ruleTitle: "The one rule",
+    ruleSentence: "Know your own file, and answer truthfully and completely.",
+    ruleOne: "Re-read everything you submitted",
+    ruleTwo: "Speak to each disclosure plainly",
+    ruleThree: "Say \"I don't know\" rather than guess",
+    briefingTabsLabel: "Interview briefing steps",
+    packHint: "Tick things off as you pack. This list is just for you.",
+    practiceIntro: "Tap a card to see how to approach it. These aren't scripts; they're here so nothing surprises you.",
+    questionCount: "Question {current} of {total}",
+    howToApproach: "How to approach it",
+    showQuestion: "Show the question",
+    recordTitle: "A question about your record?",
+    recordBody: "What a specific record means legally is a question for a licensed attorney. Ask us and we'll connect you.",
+    messageTeam: "Message your team",
+    fileTitle: "Re-read your file",
+    fileBody: "Your answers and statements, in one place.",
+    reviewIntake: "Review your intake answers",
+    allPacked: "All packed. The License Division's letter for your appointment always comes first.",
+    earlyStage: "Looking ahead: the interview comes after you file. Read this now so nothing surprises you later.",
   },
   concierge: {
     fullConcierge: "Full Concierge",
@@ -2277,6 +2323,29 @@ const es: DeepPartial<Messages> = {
     peopleNotePrefix: "Las referencias personales y declaraciones juradas del hogar están en la página",
     peopleNoteLink: "Personas",
     peopleNoteSuffix: "— cada persona recibe un enlace privado, por lo que usted no prepara esos formularios.",
+  },
+  interview: {
+    eyebrow: "Preparación para la entrevista",
+    readMore: "Leer más",
+    ruleTitle: "La única regla",
+    ruleSentence: "Conozca su propio expediente y responda con veracidad y de forma completa.",
+    ruleOne: "Vuelva a leer todo lo que presentó",
+    ruleTwo: "Explique cada revelación claramente",
+    ruleThree: "Diga \"No lo sé\" en vez de adivinar",
+    briefingTabsLabel: "Pasos para prepararse para la entrevista",
+    packHint: "Marque cada cosa mientras prepara sus documentos. Esta lista es solo para usted.",
+    practiceIntro: "Toque una tarjeta para ver cómo abordar la pregunta. No son guiones; están aquí para que nada le tome por sorpresa.",
+    questionCount: "Pregunta {current} de {total}",
+    howToApproach: "Cómo abordarla",
+    showQuestion: "Mostrar la pregunta",
+    recordTitle: "¿Tiene una pregunta sobre sus antecedentes?",
+    recordBody: "El significado legal de un antecedente específico es una pregunta para un abogado con licencia. Pregúntenos y le pondremos en contacto.",
+    messageTeam: "Enviar un mensaje a su equipo",
+    fileTitle: "Vuelva a leer su expediente",
+    fileBody: "Sus respuestas y declaraciones, en un solo lugar.",
+    reviewIntake: "Revisar sus respuestas",
+    allPacked: "Todo listo. La carta de la División de Licencias para su cita siempre tiene prioridad.",
+    earlyStage: "Para que sepa lo que viene: la entrevista ocurre después de presentar la solicitud. Lea esto ahora para que nada le tome por sorpresa.",
   },
   concierge: {
     fullConcierge: "Servicio de conserjería",

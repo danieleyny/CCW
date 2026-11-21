@@ -2541,6 +2541,704 @@ html:has(.portal-v2) body {
   }
 }
 
+/* ── Interview preparation ──────────────────────────────────────────────── */
+.interview-page {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+}
+
+.interview-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--portal-navy);
+  padding: 30px 32px;
+  color: var(--portal-paper);
+  box-shadow: 0 24px 54px -36px rgba(10, 18, 34, 0.72);
+}
+
+.interview-hero[data-rule-card="false"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.interview-hero-copy,
+.interview-rule-card {
+  position: relative;
+  z-index: 1;
+}
+
+.interview-hero-eyebrow {
+  color: var(--portal-gold-light);
+}
+
+.interview-hero h1 {
+  max-width: 620px;
+  margin-top: 8px;
+  font-family: var(--font-title), Georgia, serif;
+  font-size: clamp(2.25rem, 4.2vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+
+.interview-overview {
+  max-width: 690px;
+  margin-top: 16px;
+  color: var(--portal-featured-muted);
+  font-size: 0.90625rem;
+  line-height: 1.6;
+}
+
+.interview-read-more {
+  display: none;
+  margin-top: 9px;
+  color: var(--portal-gold-light);
+  font-size: 0.875rem;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.interview-rule-card {
+  align-self: stretch;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.interview-rule-card > .portal-t-label {
+  color: var(--portal-gold-light);
+}
+
+.interview-rule-summary {
+  margin-top: 9px;
+  color: var(--portal-paper);
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.interview-rule-card ul {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.interview-rule-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--portal-featured-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.interview-rule-card li svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--portal-gold);
+  stroke-width: 2.5;
+}
+
+.interview-hero-glow {
+  position: absolute;
+  top: -110px;
+  right: -80px;
+  width: 330px;
+  height: 330px;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--portal-featured-glow), transparent 68%);
+  pointer-events: none;
+}
+
+.interview-early-note {
+  margin-top: 12px;
+  border-left: 3px solid var(--portal-gold);
+  border-radius: 0 10px 10px 0;
+  background: var(--portal-profile-cream-start);
+  padding: 10px 14px;
+  color: var(--portal-ink-2);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.interview-layout {
+  display: grid;
+  grid-template-areas:
+    "main attorney"
+    "main file"
+    "main disclaimer";
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px 20px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+.interview-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.interview-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.interview-tabs button {
+  display: flex;
+  min-width: 0;
+  min-height: 54px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--hairline);
+  border-radius: 13px;
+  background: var(--surface-2);
+  padding: 8px 10px;
+  color: var(--portal-ink-2);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.interview-tabs button > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--portal-paper);
+  color: var(--portal-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+}
+
+.interview-tabs button[aria-selected="true"] {
+  border-color: var(--portal-navy);
+  background: var(--portal-navy);
+  color: var(--portal-paper);
+}
+
+.interview-tabs button[aria-selected="true"] > span {
+  background: var(--portal-gold);
+  color: var(--portal-dark);
+}
+
+.interview-tabs button:focus-visible,
+.interview-flip-card:focus-visible,
+.interview-read-more:focus-visible,
+.interview-pack-list input:focus-visible + .interview-checkbox {
+  outline: 3px solid color-mix(in srgb, var(--portal-gold) 58%, transparent);
+  outline-offset: 3px;
+}
+
+.interview-panels,
+.interview-practice {
+  margin-top: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: var(--portal-paper);
+  box-shadow: var(--shadow-card);
+}
+
+.interview-panel {
+  padding: 26px;
+}
+
+.interview-panel[hidden] {
+  display: none;
+}
+
+.interview-panel h2,
+.interview-practice h2,
+.interview-attorney-card h2,
+.interview-file-card h2 {
+  font-family: var(--font-title), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.interview-panel h2 {
+  font-size: 1.625rem;
+  line-height: 1.1;
+}
+
+.interview-panel-intro {
+  max-width: 660px;
+  margin-top: 7px;
+  color: var(--portal-ink-2);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.interview-pack-list,
+.interview-point-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.interview-pack-list li,
+.interview-point-list li {
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.interview-pack-list label,
+.interview-point-list li {
+  display: flex;
+  min-height: 52px;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  color: var(--portal-ink);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.interview-pack-list label {
+  cursor: pointer;
+}
+
+.interview-pack-list input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.interview-checkbox,
+.interview-point-list li > svg {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  border-radius: 6px;
+}
+
+.interview-checkbox {
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--portal-paper);
+}
+
+.interview-checkbox svg {
+  width: 14px;
+  height: 14px;
+}
+
+.interview-pack-list li[data-checked="true"] {
+  border-color: color-mix(in srgb, var(--portal-navy) 22%, transparent);
+  background: var(--signal-dim);
+}
+
+.interview-pack-list li[data-checked="true"] .interview-checkbox {
+  border-color: var(--portal-navy);
+  background: var(--portal-navy);
+  color: var(--portal-paper);
+}
+
+.interview-pack-list li[data-checked="true"] label > span:last-child {
+  color: var(--portal-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.interview-point-list li > svg {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  color: var(--portal-gold-deep);
+  stroke-width: 2.5;
+}
+
+.interview-pack-hint {
+  margin-top: 14px;
+  color: var(--portal-muted);
+  font-size: 0.75rem;
+}
+
+.interview-packed-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ok) 10%, var(--portal-paper));
+  padding: 11px 12px;
+  color: var(--ok);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.interview-packed-note svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.interview-practice {
+  padding: 26px;
+}
+
+.interview-practice-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.interview-practice-heading > svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin-top: 3px;
+  color: var(--portal-gold-deep);
+}
+
+.interview-practice h2 {
+  font-size: 1.625rem;
+  line-height: 1.1;
+}
+
+.interview-practice-heading p {
+  max-width: 640px;
+  margin-top: 7px;
+  color: var(--portal-ink-2);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.interview-question-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.interview-flip-card {
+  min-width: 0;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  perspective: 1100px;
+}
+
+.interview-flip-inner {
+  display: grid;
+  min-height: 238px;
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.2, 0.72, 0.26, 1);
+}
+
+.interview-flip-card[aria-pressed="true"] .interview-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.interview-flip-face {
+  display: flex;
+  grid-area: 1 / 1;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--hairline);
+  border-radius: 15px;
+  padding: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.interview-flip-front {
+  background: var(--surface-2);
+}
+
+.interview-flip-back {
+  border-color: color-mix(in srgb, var(--portal-gold) 70%, var(--hairline));
+  background: var(--portal-profile-cream-start);
+  transform: rotateY(180deg);
+}
+
+.interview-flip-face > .portal-t-label {
+  color: var(--portal-gold-deep);
+}
+
+.interview-flip-face strong {
+  margin-top: 15px;
+  color: var(--portal-ink);
+  font-family: var(--font-title), Georgia, serif;
+  font-size: 1.1875rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.interview-approach {
+  margin-top: 11px;
+  color: var(--portal-ink-2);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.interview-flip-control {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 18px;
+  color: var(--portal-navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.interview-flip-control svg {
+  width: 14px;
+  height: 14px;
+}
+
+.interview-attorney-card,
+.interview-file-card,
+.interview-disclaimer {
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--portal-paper);
+  padding: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.interview-attorney-card {
+  grid-area: attorney;
+}
+
+.interview-attorney-card > svg,
+.interview-file-card > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--portal-gold-deep);
+}
+
+.interview-attorney-card h2,
+.interview-file-card h2 {
+  margin-top: 13px;
+  color: var(--portal-ink);
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+
+.interview-attorney-card p,
+.interview-file-card p {
+  margin-top: 8px;
+  color: var(--portal-ink-2);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.interview-attorney-card a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  border: 1px solid var(--portal-navy);
+  border-radius: 10px;
+  padding: 9px 13px;
+  color: var(--portal-navy);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.interview-file-card {
+  grid-area: file;
+}
+
+.interview-file-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 13px;
+  color: var(--portal-navy);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.interview-file-card a svg {
+  width: 15px;
+  height: 15px;
+}
+
+.interview-disclaimer {
+  grid-area: disclaimer;
+  background: var(--surface-2);
+  box-shadow: none;
+  color: var(--portal-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 1023px) {
+  .interview-layout {
+    grid-template-areas:
+      "file"
+      "main"
+      "attorney"
+      "disclaimer";
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .interview-file-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 12px;
+    padding: 13px 15px;
+  }
+
+  .interview-file-card > svg {
+    flex: none;
+  }
+
+  .interview-file-card > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .interview-file-card h2 {
+    margin-top: 0;
+    font-size: 1.0625rem;
+  }
+
+  .interview-file-card p {
+    display: none;
+  }
+
+  .interview-file-card a {
+    flex: none;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .interview-hero {
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 20px;
+    padding: 26px;
+  }
+
+  .interview-tabs {
+    display: flex;
+    width: calc(100% + 2px);
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .interview-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .interview-tabs button {
+    min-width: max-content;
+    min-height: 46px;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 639px) {
+  .interview-hero {
+    display: block;
+    border-radius: 18px;
+    padding: 23px 20px;
+  }
+
+  .interview-hero h1 {
+    font-size: 2.25rem;
+  }
+
+  .interview-overview:not([data-expanded="true"]) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .interview-read-more {
+    display: inline-flex;
+  }
+
+  .interview-rule-card {
+    display: none;
+  }
+
+  .interview-early-note {
+    font-size: 0.75rem;
+  }
+
+  .interview-layout {
+    margin-top: 16px;
+  }
+
+  .interview-file-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .interview-file-card a {
+    width: 100%;
+    padding-left: 34px;
+  }
+
+  .interview-panel,
+  .interview-practice {
+    padding: 20px 17px;
+  }
+
+  .interview-pack-list label,
+  .interview-point-list li {
+    min-height: 56px;
+    padding: 13px 12px;
+  }
+
+  .interview-question-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .interview-flip-inner {
+    min-height: 220px;
+  }
+
+  .interview-attorney-card,
+  .interview-file-card,
+  .interview-disclaimer {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interview-flip-inner,
+  .interview-tabs button {
+    transition: none;
+  }
+}
+
 /* ── V2 guided intake ────────────────────────────────────────────────────── */
 .portal-intake-page,
 .portal-intake-wizard,
