@@ -3092,7 +3092,7 @@ html:has(.portal-v2) body {
   line-height: 1.55;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1099px) {
   .interview-layout {
     grid-template-areas:
       "file"
