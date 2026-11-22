@@ -9,7 +9,7 @@ const innerRoutes = [
   "/gun-license/manhattan", "/gun-license/queens", "/gun-license/staten-island",
   "/how-it-works", "/instructors", "/non-resident-business", "/partners",
   "/premises-vs-carry", "/pricing", "/privacy", "/reciprocity", "/renewal",
-  "/requirements", "/resources", "/retired-leo", "/timeline", "/yarivbenari",
+  "/requirements", "/resources", "/retired-leo", "/timeline",
   "/auth/login",
 ]
 const viewports = [

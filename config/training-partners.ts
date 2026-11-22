@@ -57,7 +57,10 @@ export const TRAINING_SIGNUP_PATH = "/V2#training"
 export const TRAINING_PARTNERS: TrainingPartner[] = [
   {
     slug: "yarivbenari",
-    visibility: "coming_soon",
+    // Not approved for public release yet. Keep the record available for a
+    // future owner-approved launch, but make the vanity route resolve to 404
+    // and exclude it from every public registry today.
+    visibility: "hidden",
     name: "Yariv Ben-Ari",
     firm: "50B EDC Training & Consulting LLC",
     role: "Managing Member · Firearms Instructor",

@@ -44,7 +44,9 @@ the index page, detail route, static parameters, JSON-LD, and sitemap.
   - default: dry-run with matched and would-change counts;
   - `--apply`: change only the exact row from public to private;
   - `--rollback`: restore that row's prior public flag.
-- The operation was prepared but not applied to production.
+- The owner approved the cleanup on November 22, 2026. The production dry run matched
+  exactly one row and reported one expected change; the apply run then changed exactly
+  that row to `public_profile=false`. No account or historical record was deleted.
 
 ### Rollback
 
@@ -108,12 +110,35 @@ route.
 
 Revert the template/indexing commit. No database or customer-state rollback is needed.
 
+## Change group 4 — partner approval, brand icon, and metadata audit
+
+### After owner approval
+
+- The approved attorney profile remains public, indexable, password-free, and linked
+  from the partner directory and relevant public pages.
+- The unapproved training-partner record is now `hidden`; its vanity route returns a
+  genuine `404` and it is absent from every public and preview registry.
+- The new square navy-and-gold mark is the primary 512 px favicon, PWA icon, Apple icon
+  family, and Organization JSON-LD logo. All fallbacks use the same artwork.
+- Icon URLs no longer carry the old `frame1` cache label. The primary 512 px URL is
+  stable and exceeds Google's 48 px recommendation.
+- `scripts/verify-public-metadata.mjs` crawls every sitemap URL and fails on missing or
+  duplicate titles/descriptions, bad canonicals, `noindex`, incomplete Open Graph or
+  Twitter metadata, missing H1s, or an absent primary favicon.
+- The crawl found and corrected one overlong guide title; every public sitemap route
+  now passes the metadata contract.
+
+### Rollback
+
+Revert the partner visibility, icon metadata, and structured-data changes. If the public
+instructor flag must be restored, run the exact cleanup script with `--rollback`.
+
 ## Production-candidate verification
 
 | Check | Result |
 | --- | --- |
 | ESLint | pass |
-| Unit tests | `622 passed`, `1 skipped` |
+| Unit tests | `623 passed`, `1 skipped` |
 | Focused public-accuracy tests | included in unit result; all pass |
 | Next.js production build | pass; `146/146` static pages generated |
 | Raw representative routes | `200`, correct canonicals, one H1 each |
@@ -121,7 +146,9 @@ Revert the template/indexing commit. No database or customer-state rollback is n
 | Former instructor route | genuine `404`, no profile payload |
 | Unknown route | genuine `404` |
 | Sitemap | `45` intentional URLs; partner added, retired listing absent |
-| JSON-LD | stable company ID; attorney `Person` works for distinct firm node |
+| Public metadata crawl | pass on all `45` canonical sitemap URLs |
+| JSON-LD | stable company ID; attorney `Person` works for distinct firm node; organization uses the square 512 px brand mark |
+| Partner visibility | approved attorney `200`; unapproved training profile `404` |
 | Home H1 | one phrase in raw HTML and one accessible heading after hydration |
 | Responsive checks | no horizontal overflow at 390 px or 1440 px on Home, Pricing, Contact, or attorney page |
 | Footer contacts | visible, clickable, and inside viewport at both tested widths |
@@ -141,13 +168,12 @@ pnpm test
 
 ## Owner-only release actions
 
-1. Review the three commits and this report.
-2. Run the instructor cleanup script in dry-run mode against production; confirm exactly
-   one matched row and the expected would-change count.
-3. Apply the operation only after that review, then merge and deploy through the normal
-   production pipeline.
-4. Re-run direct URL, sitemap, robots, raw HTML, and rendered-browser checks immediately
+1. Merge and deploy the approved release through the normal production pipeline.
+2. Re-run direct URL, sitemap, robots, raw HTML, and rendered-browser checks immediately
    after deployment.
-5. Inspect added and removed URLs in verified Search Console/Bing properties. External
+3. Use Google Search Console URL Inspection to request a recrawl of the home page after
+   the new favicon is live. Google may still take several days or weeks to refresh a
+   cached search-result icon.
+4. Inspect added and removed URLs in verified Search Console/Bing properties. External
    indexing and cached results are measurements, not engineering pass/fail claims.
-6. Confirm the registered business name before reintroducing any JSON-LD `legalName`.
+5. Confirm the registered business name before reintroducing any JSON-LD `legalName`.

@@ -9,6 +9,11 @@ import {
   publishedPartners,
 } from "@/config/partners"
 import {
+  previewableTrainingPartners,
+  publishedTrainingPartners,
+  trainingPartnerBySlug,
+} from "@/config/training-partners"
+import {
   filterEligiblePublicInstructors,
   isPublicInstructorSlugEligible,
   retiredPublicInstructorExclusionCount,
@@ -29,6 +34,12 @@ describe("confirmed public partnership", () => {
     expect(MARKETING_ROUTES.some((route) => route.path === "/partners")).toBe(true)
   })
 
+  it("keeps the unapproved training profile out of every public and preview registry", () => {
+    expect(trainingPartnerBySlug("yarivbenari")).toBeNull()
+    expect(publishedTrainingPartners()).toHaveLength(0)
+    expect(previewableTrainingPartners()).toHaveLength(0)
+  })
+
   it("keeps the attorney and firm distinct from the Gun License NYC organization", () => {
     const partner = partnerBySlug("ethanbrecher")!
     const graph = attorneyProfileSchema(partner)["@graph"]
@@ -45,6 +56,12 @@ describe("machine-readable identity", () => {
   it("preserves the stable organization ID without an unconfirmed legal name", () => {
     expect(organizationSchema["@id"]).toBe("https://gunlicensenyc.com/#organization")
     expect(organizationSchema).not.toHaveProperty("legalName")
+    expect(organizationSchema.logo).toEqual({
+      "@type": "ImageObject",
+      url: "https://gunlicensenyc.com/icon-512.png",
+      width: 512,
+      height: 512,
+    })
   })
 
   it("keeps current search and user-directed crawler roles on the public policy", () => {

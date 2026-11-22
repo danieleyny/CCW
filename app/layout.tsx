@@ -55,6 +55,7 @@ const verification: Metadata["verification"] = {
 };
 
 export const metadata: Metadata = {
+  applicationName: brand.name,
   title: {
     default: `${brand.name} — ${brand.tagline}`,
     template: `%s · ${brand.name}`,
@@ -66,13 +67,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.svg?v=frame1", type: "image/svg+xml" },
-      { url: "/favicon-32.png?v=frame1", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16.png?v=frame1", sizes: "16x16", type: "image/png" },
+      // Google recommends a stable, square favicon larger than 48x48. Lead
+      // with the new navy/gold 512px mark; the ICO/SVG fallbacks use the same
+      // artwork so browsers and crawlers never receive conflicting logos.
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/favicon.svg", sizes: "any", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.ico?v=frame1",
-    apple: "/apple-touch-icon.png?v=frame1",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  creator: brand.name,
+  publisher: brand.name,
+  category: "NYC gun licensing assistance",
   ...(Object.keys(verification).length ? { verification } : {}),
 };
 

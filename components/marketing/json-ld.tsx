@@ -26,7 +26,11 @@ export const ID = {
   service: `${CANONICAL_ORIGIN}/#service`,
 } as const
 
-const LOGO = ogImage(brand.name)
+// A logo must be an actual square brand mark, not a 1200x630 social preview.
+// The public 512px asset is also the primary favicon and PWA icon, giving
+// search engines one consistent visual identity everywhere.
+const LOGO = canonical("/icon-512.png")
+const SHARE_IMAGE = ogImage(brand.name)
 const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"]
 
 /**
@@ -65,8 +69,8 @@ export const organizationSchema = {
   description: brand.description,
   slogan: brand.tagline,
   url: CANONICAL_ORIGIN,
-  logo: { "@type": "ImageObject", url: LOGO, width: 1200, height: 630 },
-  image: LOGO,
+  logo: { "@type": "ImageObject", url: LOGO, width: 512, height: 512 },
+  image: SHARE_IMAGE,
   email: brand.contact.email,
   telephone: brand.contact.phone,
   priceRange: "$$",
