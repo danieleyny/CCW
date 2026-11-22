@@ -7,6 +7,7 @@ import type { Database } from "@/lib/supabase/types"
 import { getActivePackages, PUBLIC_PACKAGE_FALLBACK } from "@/lib/packages"
 import { getFees, getFeeTable } from "@/lib/fees"
 import { getPreviewRegistry } from "@/lib/requirements/preview"
+import { filterEligiblePublicInstructors } from "@/lib/instructors/public"
 
 /**
  * SEO/CWV — cached, COOKIELESS public data for the marketing pages.
@@ -121,14 +122,16 @@ export const getPublicInstructors = unstable_cache(
       .from("public_instructor_directory")
       .select("slug, name, boroughs, languages, class_format, bio")
       .order("name")
-    return (data ?? []).map((r) => ({
-      slug: r.slug ?? "",
-      name: r.name ?? "",
-      boroughs: r.boroughs ?? [],
-      languages: r.languages ?? [],
-      classFormat: r.class_format ?? null,
-      bio: r.bio ?? null,
-    }))
+    return filterEligiblePublicInstructors(
+      (data ?? []).map((r) => ({
+        slug: r.slug ?? "",
+        name: r.name ?? "",
+        boroughs: r.boroughs ?? [],
+        languages: r.languages ?? [],
+        classFormat: r.class_format ?? null,
+        bio: r.bio ?? null,
+      }))
+    )
   },
   ["public-instructors"],
   { tags: [CACHE_TAGS.instructors], revalidate: ONE_HOUR }
