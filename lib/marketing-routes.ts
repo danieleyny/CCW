@@ -10,9 +10,9 @@
  * coming-soon partner must stay out of nav, footer, sitemap and llms.txt (it's derived
  * from `publishedPartners()`, a build-time config constant).
  *
- * `lastReviewed` is an HONEST hand-maintained date — the day the page's CONTENT
- * was last checked, NOT build time. Update it when a page actually changes; the
- * sitemap must never claim every page changed on every deploy.
+ * `lastReviewed` is the honest date a human checked the page's factual claims.
+ * `contentUpdated` is the separate date of a meaningful public edit and is the
+ * only field used for sitemap lastmod. Neither is build or deployment time.
  */
 
 import { publishedPartners } from "@/config/partners"
@@ -28,6 +28,8 @@ export interface MarketingRoute {
   priority: number
   changeFrequency: ChangeFreq
   lastReviewed: string
+  /** Meaningful public content edit; omit when no trustworthy date is known. */
+  contentUpdated?: string
   /** Footer column placement (order within a group follows array order). */
   footerGroup?: FooterGroup
   /** Show in the top nav. */
@@ -46,6 +48,7 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
     priority: 1.0,
     changeFrequency: "weekly",
     lastReviewed: U,
+    contentUpdated: "2026-11-22",
     llmsDescription: "What the NYC gun-license process involves and how we run it as one tracked case.",
   },
   // ── Answers / money pages ────────────────────────────────────────────────
@@ -53,11 +56,11 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: "/cost", label: "What it costs", priority: 0.8, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Answers" },
   { path: "/fees", label: "Government fees", priority: 0.7, changeFrequency: "monthly", lastReviewed: "2026-08-03", footerGroup: "Answers", llmsDescription: "The current NYPD and NYS government fees, each with the agency that sets it and the date last verified — read live from our records." },
   { path: "/timeline", label: "How long it takes", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Answers" },
-  { path: "/requirements", label: "What's required", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Answers" },
+  { path: "/requirements", label: "What's required", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, contentUpdated: "2026-11-22", footerGroup: "Answers" },
   { path: "/premises-vs-carry", label: "Premises vs carry", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Answers" },
   { path: "/disqualifiers", label: "What disqualifies you", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Answers" },
   { path: "/checklist", label: "Free checklist", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Answers", nav: true, llmsDescription: "A free, no-account checklist of the documents required, personalized to your situation." },
-  { path: "/do-i-need-a-lawyer", label: "Do I need a lawyer?", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Answers" },
+  { path: "/do-i-need-a-lawyer", label: "Do I need a lawyer?", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, contentUpdated: "2026-11-22", footerGroup: "Answers" },
   // ── Situations ───────────────────────────────────────────────────────────
   { path: "/non-resident-business", label: "Non-residents & business", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Situations" },
   { path: "/reciprocity", label: "Reciprocity", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Situations" },
@@ -66,13 +69,13 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: "/denied-appeal", label: "If you're denied", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Situations" },
   { path: "/resources", label: "Official sources", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Situations", nav: true, llmsDescription: "Links to the primary sources — NYPD License Division, fees, DCJS, CCIA training, recertification, safe storage. Each link is dated with the day we last verified it." },
   // ── Service / conversion ─────────────────────────────────────────────────
-  { path: "/pricing", label: "Pricing", priority: 0.8, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Service", nav: true, llmsDescription: "Our membership tiers and what each includes." },
+  { path: "/pricing", label: "Pricing", priority: 0.8, changeFrequency: "monthly", lastReviewed: U, contentUpdated: "2026-11-22", footerGroup: "Service", nav: true, llmsDescription: "Our membership tiers and what each includes." },
   { path: "/eligibility", label: "Eligibility quiz", priority: 0.8, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Service", llmsDescription: "A two-minute check of whether you likely qualify." },
   { path: "/book", label: "Book a consult", priority: 0.6, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Service" },
-  { path: "/about", label: "About us", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, footerGroup: "Service" },
+  { path: "/about", label: "About us", priority: 0.7, changeFrequency: "monthly", lastReviewed: R, contentUpdated: "2026-11-22", footerGroup: "Service" },
   // Surfaced only when a partner is public — a coming-soon partner stays hidden.
   ...(publishedPartners().length > 0
-    ? [{ path: "/partners", label: "Our Partners", priority: 0.6, changeFrequency: "monthly" as const, lastReviewed: "2026-09-06", footerGroup: "Service" as const, nav: true, llmsDescription: "Independent New York-licensed attorneys we refer applicants to when a case needs legal judgment we can't give — retaining one creates an attorney–client relationship with their firm alone, and we take no share of their fees." }]
+    ? [{ path: "/partners", label: "Our Partners", priority: 0.6, changeFrequency: "monthly" as const, lastReviewed: "2026-09-06", contentUpdated: "2026-11-22", footerGroup: "Service" as const, nav: true, llmsDescription: "Independent New York-licensed attorneys we refer applicants to when a case needs legal judgment we can't give — retaining one creates an attorney–client relationship with their firm alone, and we take no share of their fees." }]
     : []),
   // ── Boroughs (hub + spokes) ──────────────────────────────────────────────
   { path: "/gun-license", label: "By borough — overview", priority: 0.7, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
@@ -83,10 +86,10 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: "/gun-license/staten-island", label: "Staten Island", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Boroughs" },
   // ── Learn / supporting ───────────────────────────────────────────────────
   { path: "/blog", label: "Guides", priority: 0.6, changeFrequency: "weekly", lastReviewed: U, footerGroup: "Learn", llmsDescription: "In-depth guides to the NYC gun-license process." },
-  { path: "/instructors", label: "Find an instructor", priority: 0.6, changeFrequency: "weekly", lastReviewed: "2026-08-03", footerGroup: "Learn", llmsDescription: "A directory of DCJS-approved NYC firearms instructors who teach the required 18-hour concealed-carry course — opt-in, verified, listing the boroughs and languages they teach in." },
+  { path: "/instructors", label: "Find an instructor", priority: 0.6, changeFrequency: "weekly", lastReviewed: "2026-08-03", contentUpdated: "2026-11-22", footerGroup: "Learn", llmsDescription: "A directory of DCJS-approved NYC firearms instructors who teach the required 18-hour concealed-carry course — opt-in, verified, listing the boroughs and languages they teach in." },
   { path: "/glossary", label: "Glossary", priority: 0.5, changeFrequency: "monthly", lastReviewed: "2026-08-03", footerGroup: "Learn", llmsDescription: "Plain-language definitions of the NYC gun-license terms, each linked to the page that explains it in full." },
   { path: "/faq", label: "FAQ", priority: 0.6, changeFrequency: "monthly", lastReviewed: U, footerGroup: "Learn", nav: true, llmsDescription: "Common questions about the NYC gun-license process." },
-  { path: "/contact", label: "Contact", priority: 0.6, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Learn", llmsDescription: "Reach the team." },
+  { path: "/contact", label: "Contact", priority: 0.6, changeFrequency: "yearly", lastReviewed: R, contentUpdated: "2026-11-22", footerGroup: "Learn", llmsDescription: "Reach the team." },
   { path: "/privacy", label: "Privacy", priority: 0.3, changeFrequency: "yearly", lastReviewed: R, footerGroup: "Learn" },
 ]
 

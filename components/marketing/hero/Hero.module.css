@@ -58,6 +58,7 @@
 
 .inkText { position: relative; }
 .inkGlow { position: absolute; left: 0; top: 0; filter: blur(18px); opacity: 0.3; pointer-events: none; }
+.inkGlow::before { content: attr(data-text); }
 
 .sparkCanvas {
   position: absolute;

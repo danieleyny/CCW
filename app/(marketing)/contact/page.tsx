@@ -20,8 +20,15 @@ export default function Contact() {
       />
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="mb-8 flex flex-col gap-1 font-mono text-sm text-text-mid">
-          <span>{brand.contact.email}</span>
-          <span>{brand.contact.phone}</span>
+          <a href={`mailto:${brand.contact.email}`} className="w-fit text-signal hover:underline">
+            {brand.contact.email}
+          </a>
+          <a
+            href={`tel:${brand.contact.phone.replace(/\D/g, "")}`}
+            className="w-fit text-signal hover:underline"
+          >
+            {brand.contact.phone}
+          </a>
         </div>
         <div className="rounded-lg border border-hairline bg-card p-6">
           <LeadForm source="contact" submitLabel="Send message" />

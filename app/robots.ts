@@ -13,6 +13,7 @@ const PRIVATE = [
   "/api",
   "/dashboard",
   "/style-guide",
+  "/g/",
   "/c/",
   "/r/",
   // The unlisted two-party sponsor surfaces — render a real applicant's name to
@@ -36,6 +37,8 @@ const AI_BOTS = [
   "ClaudeBot",
   "Claude-Web",
   "anthropic-ai",
+  "Claude-User",
+  "Claude-SearchBot",
   "Google-Extended",
   "Applebot-Extended",
   "Amazonbot",

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import BrandLogo from "@/components/brand/BrandLogo"
+import { brand } from "@/config/brand"
 import brandStyles from "@/components/brand/BrandLogo.module.css"
 import styles from "./site-footer.module.css"
 
@@ -23,6 +24,10 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
       <div className={styles.grid}>
         <div className={styles.brandCol}>
           <BrandLogo tone="light" size="sm" className={`${styles.brand} ${brandStyles.footerMark} onDark`} />
+          <address className={styles.contact}>
+            <a href={`mailto:${brand.contact.email}`}>{brand.contact.email}</a>
+            <a href={`tel:${brand.contact.phone.replace(/\D/g, "")}`}>{brand.contact.phone}</a>
+          </address>
           <p className={styles.disclaimer}>{FOOTER_DISCLAIMER}</p>
         </div>
         <nav aria-label="Footer" className={styles.columns}>

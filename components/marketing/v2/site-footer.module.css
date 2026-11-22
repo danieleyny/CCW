@@ -3,6 +3,10 @@
 .grid { max-width: 1248px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 3fr; gap: 48px; }
 .columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
 .brand { color: #F4F7F9; }
+.contact { display: grid; gap: 6px; margin-top: 16px; font-size: 14px; font-style: normal; }
+.contact a { width: fit-content; color: #AEBBD4; text-decoration: none; transition: color .2s ease; }
+.contact a:hover { color: #F4F7F9; }
+.contact a:focus-visible { border-radius: 4px; outline: 2px solid #5FD4E0; outline-offset: 3px; }
 .disclaimer { max-width: 300px; margin: 16px 0 0; color: #8A99A6; font-size: 14px; line-height: 1.6; }
 .columnTitle { margin: 0 0 14px; color: #5E6B78; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
 .link { display: block; margin-top: 10px; color: #8A99A6; font-size: 15px; text-decoration: none; transition: color .2s ease; }
@@ -18,4 +22,4 @@
 :global([data-theme="v2"]) .bottom,
 :global([data-theme="v2"]) .bottom .link { color: #AEBBD4; }
 :global([data-theme="v2"]) .link:hover { color: var(--gold-on-dark); }
-@media (max-width: 899px) { .footer { padding: 36px 20px 28px; } .grid { display: flex; flex-direction: column; gap: 26px; } .brandCol { display: contents; } .brand { order: 1; font-size: 16px; } .columns { order: 2; grid-template-columns: 1fr 1fr; gap: 24px; } .column[data-column='Account'] { display: none; } .disclaimer { order: 3; max-width: none; margin-top: 0; font-size: 13px; } .link { margin-top: 9px; font-size: 14.5px; } .columnTitle { margin-bottom: 8px; font-size: 10.5px; } .bottom { margin-top: 20px; padding-top: 16px; font-size: 12.5px; } .legal .link { font-size: 12.5px; } .mobileOnly { display: inline !important; } }
+@media (max-width: 899px) { .footer { padding: 36px 20px 28px; } .grid { display: flex; flex-direction: column; gap: 26px; } .brandCol { display: contents; } .brand { order: 1; font-size: 16px; } .contact { order: 2; margin-top: -12px; } .columns { order: 3; grid-template-columns: 1fr 1fr; gap: 24px; } .column[data-column='Account'] { display: none; } .disclaimer { order: 4; max-width: none; margin-top: 0; font-size: 13px; } .link { margin-top: 9px; font-size: 14.5px; } .columnTitle { margin-bottom: 8px; font-size: 10.5px; } .bottom { margin-top: 20px; padding-top: 16px; font-size: 12.5px; } .legal .link { font-size: 12.5px; } .mobileOnly { display: inline !important; } }

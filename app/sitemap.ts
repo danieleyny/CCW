@@ -10,8 +10,8 @@ import { I18N_ES_ENABLED, TRANSLATED_PATHS } from "@/config/i18n"
  * Sitemap. Always emitted against the CANONICAL origin (never the deploy host),
  * and derived entirely from the route registry (lib/marketing-routes) plus the
  * blog directory and the opt-in instructor profiles — so a page can't ship
- * without appearing here. `lastModified` is the honest per-route review date,
- * never build time.
+ * without appearing here. `lastModified` is emitted only for a trustworthy
+ * meaningful-content edit, never a generic review or build time.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // hreflang alternates for a translated English path ("" = home). Only emitted
@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const alt = altFor(r.path)
     return {
       url: `${CANONICAL_ORIGIN}${r.path}`,
-      lastModified: new Date(r.lastReviewed),
+      ...(r.contentUpdated ? { lastModified: new Date(r.contentUpdated) } : {}),
       changeFrequency: r.changeFrequency,
       priority: r.priority,
       ...(alt ? { alternates: alt } : {}),
@@ -66,6 +66,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // partner is published). /partners/{slug} is not listed — it 308s to /{slug}.
   const partners = publishedPartners().map((p) => ({
     url: `${CANONICAL_ORIGIN}/${p.slug}`,
+    lastModified: new Date(p.contentUpdated),
     changeFrequency: "monthly" as const,
     priority: 0.4,
   }))

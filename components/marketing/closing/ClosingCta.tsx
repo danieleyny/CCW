@@ -52,8 +52,7 @@ export default function ClosingCta() {
           <p className={styles.eyebrow}>Start with clarity</p>
           <h2 id="closing-title" className={styles.title}>See where<br />you stand.</h2>
           <p className={styles.lede} data-closing-lede>
-            <span className={styles.desktopOnly}>Answer a short set of questions and see whether our document-preparation and case-management service fits your situation.</span>
-            <span className={styles.mobileOnly}>Answer a short set of questions and see whether our service fits your situation.</span>
+            Answer a short set of questions and see whether our service fits your situation.
           </p>
         </div>
         <div className={styles.ctaBlock}>

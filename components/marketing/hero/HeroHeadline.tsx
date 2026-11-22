@@ -49,9 +49,11 @@ export default function HeroHeadline({ intro = false }: { intro?: boolean }) {
       <br />
       <span className={`${styles.inkWrap} ${styles.line2}`}>
         <canvas ref={canvasRef} className={styles.sparkCanvas} aria-hidden="true" />
-        <span className={`${styles.ink} ${styles.inkGlow}`} aria-hidden="true">
-          Clear by ours.
-        </span>
+        <span
+          className={`${styles.ink} ${styles.inkGlow}`}
+          aria-hidden="true"
+          data-text="Clear by ours."
+        />
         <span className={`${styles.ink} ${styles.inkText}`}>Clear by ours.</span>
       </span>
     </h1>
