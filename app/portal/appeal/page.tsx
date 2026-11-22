@@ -1,15 +1,24 @@
 import Link from "next/link"
-import { Download, Scale, Clock } from "lucide-react"
+import { ArrowRight, Check, Download, FileX2, Scale, Stamp, X } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
 import { AppealReferralButton } from "@/components/portal/appeal-referral"
 import { formatDate, daysSince } from "@/lib/format"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-
-export const metadata = { title: "Appeal" }
+import { getLocale, getMessages } from "@/lib/i18n"
+import { interpolate } from "@/lib/i18n/interpolate"
+import type { Messages } from "@/lib/i18n/messages"
 
 const APPEAL_WINDOW_DAYS = 90
+const DIAL_RADIUS = 66
+const DIAL_CIRCUMFERENCE = 2 * Math.PI * DIAL_RADIUS
+
+type AppealCopy = Messages["ui"]
+
+export async function generateMetadata() {
+  const t = (await getMessages()).ui
+  return { title: t.appealPageTitle }
+}
 
 /**
  * V3-P3.3 — the appeal seam, stated honestly: only the applicant or a
@@ -17,13 +26,11 @@ const APPEAL_WINDOW_DAYS = 90
  * We assemble the record and make the attorney hand-off.
  */
 export default async function AppealPage() {
-  const myCase = await getMyCase()
+  const [myCase, messages, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])
+  const t = messages.ui
+
   if (!myCase) {
-    return (
-      <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-        Your case isn&apos;t set up yet.
-      </p>
-    )
+    return <p className="appeal-v2-no-case">{t.appealNoCase}</p>
   }
 
   const supabase = await createClient()
@@ -34,94 +41,195 @@ export default async function AppealPage() {
     .single()
 
   const denied = kase?.status === "denied"
+  return (
+    <AppealExperience
+      denied={denied}
+      stageEnteredAt={kase?.stage_entered_at ?? null}
+      locale={locale === "es" ? "es-US" : "en-US"}
+      t={t}
+    />
+  )
+}
+
+function AppealExperience({
+  denied,
+  stageEnteredAt,
+  locale,
+  t,
+}: {
+  denied: boolean
+  stageEnteredAt: string | null
+  locale: string
+  t: AppealCopy
+}) {
+  const rules = appealRules(t)
+
   if (!denied) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Appeals</h1>
-        <p className="rounded-lg border bg-card p-6 text-sm text-text-mid">
-          This page becomes active only if an application is denied. If that happens: there is a strict
-          <b> 90-day window</b> to appeal, the appeal must be sworn and notarized, no new documents are
-          considered, and — by NYPD rule — <b>only you or a New York–licensed attorney</b>{" "}may submit it.
-          We can&apos;t file it for you, but we assemble your complete record and connect you with a
-          partner attorney immediately.
-        </p>
-        <p className="text-xs text-text-low">
-          You can download your complete file any time from your{" "}
-          <Link href="/portal/forms" className="text-signal underline">
-            documents
+      <div className="appeal-v2-page appeal-v2-inactive-page">
+        <section className="appeal-v2-inactive-hero" aria-labelledby="appeal-inactive-title">
+          <p className="portal-t-eyebrow">{t.appealEyebrow}</p>
+          <h1 id="appeal-inactive-title">{t.appealInactiveTitle}</h1>
+          <p className="appeal-v2-inactive-copy">
+            {t.appealInactiveLead} <strong>{t.appealWindowPhrase}</strong> {t.appealInactiveMiddle}{" "}
+            <strong>{t.appealOnlyApplicantAttorney}</strong> {t.appealInactiveTail}
+          </p>
+        </section>
+
+        <RuleCards rules={rules} label={t.appealRulesLabel} />
+
+        <section className="appeal-v2-file-card" aria-labelledby="appeal-file-title">
+          <span className="appeal-v2-file-icon"><Download aria-hidden="true" /></span>
+          <div>
+            <h2 id="appeal-file-title">{t.appealCompleteFileTitle}</h2>
+            <p>{t.appealCompleteFileBody}</p>
+          </div>
+          <Link href="/portal/forms" className="appeal-v2-file-link">
+            {t.appealOpenDocuments} <ArrowRight aria-hidden="true" />
           </Link>
-          .
-        </p>
+        </section>
       </div>
     )
   }
 
-  const deniedSince = daysSince(kase?.stage_entered_at ?? null) ?? 0
+  const deniedSince = daysSince(stageEnteredAt) ?? 0
   const daysLeft = Math.max(0, APPEAL_WINDOW_DAYS - deniedSince)
+  const passed = daysLeft === 0
+  const urgent = daysLeft > 0 && daysLeft < 15
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Your appeal window</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A denial is not the end — but the clock is strict and the rules are narrow.
-        </p>
-      </div>
+    <div className="appeal-v2-page appeal-v2-denied-page" data-urgent={urgent || undefined} data-passed={passed || undefined}>
+      <section className="appeal-v2-denied-hero" aria-labelledby="appeal-denied-title">
+        <AppealDial
+          daysLeft={daysLeft}
+          passed={passed}
+          label={interpolate(t.appealDialAria, { daysLeft })}
+          caption={t.appealDialCaption}
+        />
+        <div className="appeal-v2-denied-copy">
+          <p className="portal-t-eyebrow">{urgent ? t.appealTimeShort : t.appealDeniedEyebrow}</p>
+          <div className="appeal-v2-title-row">
+            <h1 id="appeal-denied-title">{passed ? t.appealPassedTitle : t.appealWindowOpenTitle}</h1>
+            {urgent ? <span className="appeal-v2-urgent-pill">{interpolate(t.appealDaysLeftPill, { daysLeft })}</span> : null}
+          </div>
+          {passed ? (
+            <p className="appeal-v2-passed-copy">{t.appealPassedBody}</p>
+          ) : (
+            <>
+              <p className="appeal-v2-denied-lede">{t.appealDeniedLede}</p>
+              <p className="appeal-v2-days-line">
+                <strong>{interpolate(t.appealDaysRemain, { daysLeft })}</strong> {t.appealWindowRemainder}
+                {stageEnteredAt ? ` (${interpolate(t.appealDenialRecorded, { date: formatDate(stageEnteredAt, locale) })})` : ""}.
+              </p>
+              <p className="appeal-v2-letter-note">{t.appealLetterDateNote}</p>
+            </>
+          )}
+        </div>
+      </section>
 
-      <Card className="brass-edge">
-        <CardContent className="p-5">
-          <p className="flex items-center gap-2 text-sm font-semibold">
-            <Clock className="size-4 text-warn" />
-            {daysLeft > 0 ? (
-              <>
-                About <b>{daysLeft} days remain</b> in the 90-day appeal window
-                {kase?.stage_entered_at && <> (denial recorded {formatDate(kase.stage_entered_at)})</>}.
-              </>
-            ) : (
-              <>The standard 90-day window has likely passed — an attorney can advise on any remaining options.</>
-            )}
-          </p>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-text-mid">
-            <li>The appeal must be <b>sworn and notarized</b>.</li>
-            <li><b>No new documents</b> are considered — the appeal argues the existing record.</li>
-            <li>
-              By NYPD rule, <b>only you or a New York–licensed attorney</b> may submit it. We cannot file it
-              for you — and anyone who says otherwise is wrong.
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="appeal-v2-denied-flow">
+        <RuleCards rules={rules} label={t.appealRulesLabel} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Card>
-          <CardContent className="flex h-full flex-col p-5">
-            <Scale className="size-5 text-signal" />
-            <h3 className="mt-2 text-sm font-semibold">Attorney hand-off</h3>
-            <p className="mt-1 flex-1 text-xs text-muted-foreground">
-              We connect you with a NY-licensed firearms attorney and transfer your complete, organized
-              record — the strongest starting position an appeal can have.
-            </p>
-            <div className="mt-3">
-              <AppealReferralButton />
+        <ol className="appeal-v2-steps">
+          <li className="appeal-v2-step">
+            <span className="appeal-v2-step-number">01</span>
+            <div className="appeal-v2-step-body">
+              <Scale aria-hidden="true" />
+              <h2>{t.appealAttorneyTitle}</h2>
+              <p>{t.appealAttorneyBody}</p>
+              <AppealReferralButton
+                label={t.appealReferralButton}
+                pendingLabel={t.appealReferralPending}
+                successMessage={t.appealReferralSuccess}
+                urgent={urgent}
+              />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex h-full flex-col p-5">
-            <Download className="size-5 text-signal" />
-            <h3 className="mt-2 text-sm font-semibold">Export your file for an attorney</h3>
-            <p className="mt-1 flex-1 text-xs text-muted-foreground">
-              One PDF with your complete record — every document you filed, merged in order with a
-              cover sheet and index, plus the answers as they went in. Hand it to counsel on day one.
-            </p>
-            <Button asChild size="sm" variant="outline" className="mt-3 w-fit">
-              <a href="/portal/filing-pack" target="_blank" rel="noreferrer">
-                <Download className="size-4" /> Export for my attorney
+          </li>
+          <li className="appeal-v2-step">
+            <span className="appeal-v2-step-number">02</span>
+            <div className="appeal-v2-step-body">
+              <Download aria-hidden="true" />
+              <h2>{t.appealExportTitle}</h2>
+              <p>{t.appealExportBody}</p>
+              <a className="appeal-v2-export-button" href="/portal/filing-pack" target="_blank" rel="noreferrer">
+                <Download aria-hidden="true" /> {t.appealExportButton}
+                <span className="sr-only"> ({t.appealNewTab})</span>
               </a>
-            </Button>
-          </CardContent>
-        </Card>
+            </div>
+          </li>
+        </ol>
+
+        <div className="appeal-v2-boundaries">
+          <article className="appeal-v2-can">
+            <span><Check aria-hidden="true" /></span>
+            <div><h2>{t.appealWhatWeDo}</h2><p>{t.appealDoAssemble}</p><p>{t.appealDoConnect}</p></div>
+          </article>
+          <article className="appeal-v2-cannot">
+            <span><X aria-hidden="true" /></span>
+            <div><h2>{t.appealWhatWeCannotDo}</h2><p>{t.appealCannotFile}</p><p>{t.appealCannotAdvise}</p></div>
+          </article>
+        </div>
       </div>
     </div>
   )
+}
+
+function AppealDial({
+  daysLeft,
+  passed,
+  label,
+  caption,
+}: {
+  daysLeft: number
+  passed: boolean
+  label: string
+  caption: string
+}) {
+  const ratio = passed ? 0 : Math.min(1, Math.max(0, daysLeft / APPEAL_WINDOW_DAYS))
+  const offset = DIAL_CIRCUMFERENCE * (1 - ratio)
+
+  return (
+    <div className="appeal-v2-dial" role="img" aria-label={label}>
+      <svg viewBox="0 0 176 176" aria-hidden="true">
+        <circle className="appeal-v2-dial-track" cx="88" cy="88" r={DIAL_RADIUS} />
+        <circle
+          className="appeal-v2-dial-progress"
+          cx="88"
+          cy="88"
+          r={DIAL_RADIUS}
+          strokeDasharray={DIAL_CIRCUMFERENCE}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <span className="appeal-v2-dial-value">{passed ? "—" : daysLeft}</span>
+      <span className="appeal-v2-dial-label">{passed ? "" : caption}</span>
+    </div>
+  )
+}
+
+function RuleCards({
+  rules,
+  label,
+}: {
+  rules: { title: string; body: string; icon: LucideIcon }[]
+  label: string
+}) {
+  return (
+    <section className="appeal-v2-rules" aria-label={label}>
+      {rules.map(({ title, body, icon: Icon }) => (
+        <article key={title} className="appeal-v2-rule-card">
+          <span><Icon aria-hidden="true" /></span>
+          <div><h2>{title}</h2><p>{body}</p></div>
+        </article>
+      ))}
+    </section>
+  )
+}
+
+function appealRules(t: AppealCopy) {
+  return [
+    { title: t.appealRuleSwornTitle, body: t.appealRuleSwornBody, icon: Stamp },
+    { title: t.appealRuleDocumentsTitle, body: t.appealRuleDocumentsBody, icon: FileX2 },
+    { title: t.appealRuleSubmitTitle, body: t.appealRuleSubmitBody, icon: Scale },
+  ]
 }

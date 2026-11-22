@@ -2,24 +2,36 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Scale, CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Scale } from "lucide-react"
 import { requestAttorneyReferral } from "@/app/portal/appeal/actions"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-export function AppealReferralButton() {
+export function AppealReferralButton({
+  label,
+  pendingLabel,
+  successMessage,
+  urgent = false,
+}: {
+  label: string
+  pendingLabel: string
+  successMessage: string
+  urgent?: boolean
+}) {
   const [done, setDone] = useState(false)
   const [pending, start] = useTransition()
 
   if (done) {
     return (
-      <p className="flex items-center gap-1.5 rounded-md border border-ok/30 bg-ok/8 p-3 text-sm text-ok">
-        <CheckCircle2 className="size-4" /> Referral requested — we&apos;ll connect you with a NY-licensed
-        firearms attorney and hand over your complete record.
+      <p className="appeal-v2-referral-success" role="status">
+        <CheckCircle2 aria-hidden="true" /> {successMessage}
       </p>
     )
   }
+
   return (
     <Button
+      className={cn("appeal-v2-referral-button", urgent && "appeal-v2-referral-urgent")}
       disabled={pending}
       onClick={() =>
         start(async () => {
@@ -29,7 +41,7 @@ export function AppealReferralButton() {
         })
       }
     >
-      <Scale className="size-4" /> Request an attorney referral
+      <Scale aria-hidden="true" /> {pending ? pendingLabel : label}
     </Button>
   )
 }
