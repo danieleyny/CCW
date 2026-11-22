@@ -36,7 +36,7 @@ export default function Hero() {
           We turn NYC’s concealed-carry process into one clear next step at a time, while you stay in control of your own application.
         </p>
         <div className={styles.ctas}>
-          <a href="/eligibility" className={`${styles.btnChrome} ${styles.introCta}`}>
+          <a href="/eligibility" className={`${styles.btnChrome} ${styles.introCta}`} data-eligibility-cta>
             <span className={styles.btnLabel}>Check eligibility</span>
             <Arrow />
           </a>

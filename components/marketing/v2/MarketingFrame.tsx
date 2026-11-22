@@ -1,5 +1,6 @@
 import { SiteHeader } from "./site-header"
 import { SiteFooter } from "./site-footer"
+import { EligibilityNudge } from "./EligibilityNudge"
 
 export function MarketingFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export function MarketingFrame({ children }: { children: React.ReactNode }) {
       <SiteHeader />
       <main id="top">{children}</main>
       <SiteFooter />
+      <EligibilityNudge />
     </div>
   )
 }

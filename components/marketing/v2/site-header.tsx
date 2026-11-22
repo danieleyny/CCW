@@ -19,6 +19,7 @@ export function SiteHeader() {
   const links = NAV_ROUTES // [{ href, label }] — nav:true routes
   const playIntro = usePlayOncePerLoad("header")
   const headerRef = useRef<HTMLElement>(null)
+  const menuRef = useRef<HTMLDetailsElement>(null)
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -37,6 +38,15 @@ export function SiteHeader() {
     sections.forEach((section) => observer.observe(section))
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => () => {
+    if (document.body.dataset.overlayOpen === "mobile-menu") delete document.body.dataset.overlayOpen
+  }, [])
+
+  function syncMenuOverlay(open: boolean) {
+    if (open) document.body.dataset.overlayOpen = "mobile-menu"
+    else if (document.body.dataset.overlayOpen === "mobile-menu") delete document.body.dataset.overlayOpen
+  }
 
   return (
     <header ref={headerRef} className="site-header" data-tone={isDark ? "dark" : "light"}>
@@ -58,7 +68,14 @@ export function SiteHeader() {
           </Link>
         </div>
 
-        <details className="mobile-menu">
+        <details
+          ref={menuRef}
+          className="mobile-menu"
+          onToggle={(event) => syncMenuOverlay(event.currentTarget.open)}
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest("a")) menuRef.current?.removeAttribute("open")
+          }}
+        >
           <summary className="navItem" style={{ "--i": 0 } as CSSProperties} aria-label="Open navigation menu">
             <span className="menu-glyph" aria-hidden="true">
               <i />

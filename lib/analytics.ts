@@ -11,6 +11,10 @@
 export type ConversionEvent =
   | "eligibility_start" // first answer on the /eligibility quiz
   | "eligibility_complete" // reached the quiz result
+  | "elig_nudge_shown" // follow-along eligibility nudge became visible
+  | "elig_nudge_opened" // desktop eligibility nudge card opened
+  | "elig_nudge_clicked" // eligibility nudge sent a visitor to the quiz
+  | "elig_nudge_dismissed" // desktop eligibility nudge was dismissed for the session
   | "checklist_generated" // a personalized /checklist was produced
   | "contact_submitted" // a lead form was submitted (contact or checklist capture)
   | "pricing_viewed" // the /pricing page was viewed

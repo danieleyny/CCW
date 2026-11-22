@@ -58,7 +58,7 @@ export default function ClosingCta() {
         <div className={styles.ctaBlock}>
           <p className={styles.ctaLabel}>Your path starts here</p>
           <span ref={anchorRef} className={styles.ctaAnchor}>
-            <Link href="/eligibility" className={styles.btnChrome}>
+            <Link href="/eligibility" className={styles.btnChrome} data-eligibility-cta>
               Check eligibility
               <svg className={styles.arrow} width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15M11 1l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </Link>
