@@ -48,5 +48,8 @@ next-env.d.ts
 # dev-only rendered email previews
 public/email-preview/
 
+# Locally generated review artifacts (PDFs, rendered previews)
+/output/
+
 # Scratch tarballs — never track
 _to_delete/
