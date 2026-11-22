@@ -56,6 +56,7 @@ export function getPost(slug: string): { meta: PostMeta; content: string } | nul
       title: data.title as string,
       description: data.description as string,
       date: data.date as string,
+      updated: (data.updated as string) || undefined,
       tag: (data.tag as string) ?? "Guide",
       readingMinutes: readingMinutes(content),
     },

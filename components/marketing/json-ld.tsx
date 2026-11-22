@@ -62,7 +62,6 @@ export const organizationSchema = {
   "@type": ["Organization", "ProfessionalService"],
   "@id": ID.organization,
   name: brand.name,
-  legalName: brand.legalName,
   description: brand.description,
   slogan: brand.tagline,
   url: CANONICAL_ORIGIN,

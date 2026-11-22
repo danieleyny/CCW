@@ -3,6 +3,7 @@ import { FACTS } from "@/content/facts"
 import { buildMetadata } from "@/lib/seo"
 import { DirectAnswer, FactList } from "@/components/marketing/page-blocks"
 import { ArticleTemplate } from "@/components/marketing/v2/article-template"
+import { partnerPath, partnershipStatement, publishedPartners } from "@/config/partners"
 
 export const metadata = buildMetadata({
   title: "Do I Need a Lawyer for a NYC Gun License?",
@@ -20,6 +21,7 @@ export const metadata = buildMetadata({
  */
 
 const linkStyle = { color: "var(--electric-deep)", textDecoration: "none" as const }
+const confirmedLegalPartner = publishedPartners().find((partner) => partner.slug === "ethanbrecher")
 
 const ROWS: { label: string; diy: string; us: string; attorney: string }[] = [
   {
@@ -221,12 +223,22 @@ export default function DoINeedALawyerPage() {
                 </li>
               </ul>
               <p style={{ marginTop: 18 }}>
-                If that&apos;s you, tell us and we&apos;ll point you to{" "}
-                <Link href="/partners" style={linkStyle}>
-                  a New York-licensed attorney
-                </Link>
-                . We can still handle the paperwork beside them — but the legal judgment has to come from
-                someone licensed to give it.
+                {confirmedLegalPartner ? (
+                  <>
+                    {partnershipStatement(confirmedLegalPartner)}{" "}
+                    <Link href={partnerPath(confirmedLegalPartner)} style={linkStyle}>
+                      Read about his independent legal practice and role
+                    </Link>
+                    . We can still handle the paperwork beside his firm, but legal judgment and any
+                    representation must come from the attorney through a separate engagement.
+                  </>
+                ) : (
+                  <>
+                    If that&apos;s you, tell us and we&apos;ll point you to a New York-licensed attorney.
+                    We can still handle the paperwork beside them, but legal judgment has to come from
+                    someone licensed to give it.
+                  </>
+                )}
               </p>
             </>
           ),

@@ -2,6 +2,7 @@ import { brand } from "@/config/brand"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { getAllPosts } from "@/lib/blog"
 import { LLMS_KEY_PAGES } from "@/lib/marketing-routes"
+import { partnerPath, partnershipStatement, publishedPartners } from "@/config/partners"
 
 /**
  * /llms.txt — a plain-text map of the site for language models, following the
@@ -15,7 +16,20 @@ export const dynamic = "force-static"
 
 export async function GET() {
   const posts = getAllPosts()
+  const partners = publishedPartners()
   const u = (p: string) => `${CANONICAL_ORIGIN}${p}`
+  const partnerSection = partners.length
+    ? `## Confirmed legal partner
+
+${partners
+  .map(
+    (partner) =>
+      `- [${partner.name}](${u(partnerPath(partner))}): ${partnershipStatement(partner)} Gun License NYC remains the document-preparation and case-management service; legal advice or representation requires a separate engagement with the attorney's independent firm.`
+  )
+  .join("\n")}
+
+`
+    : ""
 
   const body = `# ${brand.name}
 
@@ -34,7 +48,7 @@ export async function GET() {
 - Phone: ${brand.contact.phone}
 - Area served: New York City — Manhattan, Brooklyn, Queens, The Bronx, Staten Island
 
-## Key pages
+${partnerSection}## Key pages
 
 ${LLMS_KEY_PAGES.map((k) => `- [${k.label}](${u(k.path)}): ${k.description}`).join("\n")}
 

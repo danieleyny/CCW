@@ -8,7 +8,7 @@ import { ArticleTemplate } from "@/components/marketing/v2/article-template"
 export const metadata = buildMetadata({
   title: "NYC Gun License Requirements",
   description:
-    "What a NYC gun license actually requires — be 21, 18 hours of training, about 24 documents, filed by you or by us. In plain English, with sources.",
+    "NYC gun license requirements: age 21, 18 hours of training, about 24 documents, and applicant-controlled filing — in plain English, with sources.",
   path: "/requirements",
   hreflang: "/requirements",
 })

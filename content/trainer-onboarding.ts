@@ -25,7 +25,7 @@ export const ONBOARDING_ACKNOWLEDGEMENTS: Acknowledgement[] = [
   {
     key: "applicant_files",
     label:
-      "I understand that, as the instructor, I never file, submit, or represent anyone before the NYPD License Division, and I won't imply that I can. Filing is handled by the applicant (Self-Guided) or by Gun License NYC (Full Concierge) — never by me.",
+      "I understand that, as the instructor, I never file, submit, or represent anyone before the NYPD License Division, and I won't imply that I can. The applicant controls the NYPD portal and submits their own application on every plan; Gun License NYC prepares, reviews, organizes, and guides — it does not submit for them.",
   },
   {
     key: "candor",

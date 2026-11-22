@@ -2,7 +2,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 import { brand } from "@/config/brand"
-import { type Partner, partnerPath, partnerFullName, partnerConsultationPath } from "@/config/partners"
+import {
+  type Partner,
+  partnerPath,
+  partnerFullName,
+  partnerConsultationPath,
+  partnershipStatement,
+} from "@/config/partners"
 import { Button } from "@/components/ui/button"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
@@ -48,6 +54,9 @@ export function PartnerProfile({ partner }: { partner: Partner }) {
             </h1>
             <p className="mt-2 text-brass">
               {partner.firm} · {partner.role}
+            </p>
+            <p className="mt-4 max-w-xl font-medium text-text-hi">
+              {partnershipStatement(partner)}
             </p>
             <p className="mt-4 max-w-xl text-lg text-text-mid">{partner.headline}</p>
 

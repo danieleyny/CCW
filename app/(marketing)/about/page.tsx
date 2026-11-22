@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
 import { DirectAnswer, FactList, FaqBlock, RelatedLinks } from "@/components/marketing/page-blocks"
+import { partnerPath, partnershipStatement, publishedPartners } from "@/config/partners"
 
 export const metadata = buildMetadata({
   title: "About Gun License NYC",
@@ -51,6 +52,8 @@ const FAQS = [
     a: "Every legal claim on this site is rendered from a single fact base, and each one names the agency that sets the rule, links its primary source, and shows the date we last checked it. If we can't source something, we don't say it. You'll see that on every rule we publish.",
   },
 ]
+
+const confirmedLegalPartner = publishedPartners().find((partner) => partner.slug === "ethanbrecher")
 
 export default function AboutPage() {
   return (
@@ -140,6 +143,28 @@ export default function AboutPage() {
           ))}
         </ol>
       </section>
+
+      {confirmedLegalPartner && (
+        <section className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
+          <div className="rounded-xl border border-hairline bg-card p-6">
+            <p className="engraved text-brass">Independent legal counsel</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight">
+              A clear handoff when a case needs legal judgment
+            </h2>
+            <p className="mt-3 text-text-mid">
+              {partnershipStatement(confirmedLegalPartner)} Gun License NYC continues to handle
+              document preparation and case management. Legal advice or representation comes from
+              the attorney through a separate relationship with his firm.
+            </p>
+            <Link
+              href={partnerPath(confirmedLegalPartner)}
+              className="mt-4 inline-flex text-signal hover:underline"
+            >
+              Meet our legal partner
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
         <h2 className="font-display text-2xl font-semibold tracking-tight">

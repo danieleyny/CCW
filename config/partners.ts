@@ -11,9 +11,9 @@
  *   coming_soon  The route renders a coming-soon screen (or the real profile behind a
  *                preview cookie). noindex, out of sitemap/nav/footer/llms.
  *   public       Live and indexed, in the sitemap and nav.
- * Nothing goes `public` until the attorney confirms his credentials, rate, bio and
- * booking URL IN WRITING. `coming_soon` is for showing him and the team — not
- * publication. Do not invent a value to fill a field — leave it out (several are optional).
+ * Nothing goes `public` until the owner confirms the relationship and the published
+ * material is supported by approved information. `coming_soon` is for showing the
+ * attorney and team — not publication. Do not invent a value to fill a field.
  */
 
 export type PartnerVisibility = "hidden" | "coming_soon" | "public"
@@ -66,6 +66,8 @@ export interface Partner {
   /** URL segment AND the vanity route: /{slug}. */
   slug: string
   visibility: PartnerVisibility
+  /** Honest date of the latest meaningful public profile edit. */
+  contentUpdated: string
   name: string
   /** e.g. "Esq." */
   credentialsSuffix: string
@@ -122,9 +124,10 @@ export interface Partner {
 export const PARTNERS: Partner[] = [
   {
     slug: "ethanbrecher",
-    // Coming-soon preview only. Flip to "public" solely after Ethan confirms every
-    // field below in writing and a real bookingUrl is supplied.
-    visibility: "coming_soon",
+    // The owner confirmed and authorized public disclosure of this partnership
+    // on November 22, 2026. Preview-only behavior still applies to future entries.
+    visibility: "public",
+    contentUpdated: "2026-11-22",
     name: "Ethan A. Brecher",
     credentialsSuffix: "Esq.",
     firm: "Law Office of Ethan A. Brecher, LLC",
@@ -276,3 +279,7 @@ export const partnerConsultationPath = (p: Partner): string => `/${p.slug}/consu
 /** Full name with suffix, e.g. "Ethan A. Brecher, Esq." */
 export const partnerFullName = (p: Partner): string =>
   p.credentialsSuffix ? `${p.name}, ${p.credentialsSuffix}` : p.name
+
+/** Owner-approved factual relationship sentence; shared by every public surface. */
+export const partnershipStatement = (p: Partner): string =>
+  `Gun License NYC partners with ${p.name} of the ${p.firm}.`

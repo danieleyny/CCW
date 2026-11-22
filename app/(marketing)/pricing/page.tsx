@@ -23,7 +23,7 @@ const FEATURES: Record<string, string[]> = {
     "Everything in Self-Guided",
     "Training coordination",
     "Document prep + notarization help",
-    "Application assembly + filing",
+    "Application assembly + filing guidance",
     "Interview preparation",
     "Priority concierge support",
   ],
