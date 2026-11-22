@@ -53,3 +53,6 @@ public/email-preview/
 
 # Scratch tarballs — never track
 _to_delete/
+
+# Local deployment credentials and environment values
+.env*.local
