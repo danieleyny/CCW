@@ -10,9 +10,9 @@ import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 /**
  * ACCESS CODES · Phase 1 — a quiet "Have an access code?" link under a payment
  * CTA. Deliberately modest (a prominent bypass control invites probing; a small
- * promo-code field reads as normal retail). All validation is server-side in
- * redeemAccessCode — this component never sees the valid codes. On success the
- * action redirects to the destination the purchase would have reached.
+ * promo-code field reads as normal retail). All validation and pricing are
+ * server-side in redeemAccessCode — this component never sees valid codes or a
+ * price. On success the action redirects to the appropriate destination.
  */
 export function AccessCodeField({
   packageKey,

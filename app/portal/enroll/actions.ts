@@ -11,10 +11,12 @@ import { findOrCreateCustomer } from "@/lib/stripe/invoicing"
 import { getPackage } from "@/lib/packages"
 import { getSiteUrl } from "@/lib/site-url"
 import { logActivity } from "@/lib/activity"
+import { matchAccessCode } from "@/lib/access-codes"
 
 const startSchema = z.object({
   packageKey: z.string().min(1).max(60),
   mode: z.enum(["full", "deposit"]),
+  code: z.string().min(1).max(64).optional(),
 })
 
 export type EnrollResult = { error?: string; requested?: boolean }
@@ -31,9 +33,10 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   const parsed = startSchema.safeParse({
     packageKey: formData.get("packageKey"),
     mode: formData.get("mode") ?? "full",
+    code: formData.get("code") || undefined,
   })
   if (!parsed.success) return { error: "Invalid selection." }
-  const { packageKey, mode } = parsed.data
+  const { packageKey, mode, code } = parsed.data
 
   const myCase = await getMyCase()
   if (!myCase) return { error: "Your case isn't set up yet." }
@@ -57,16 +60,54 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   const pkg = await getPackage(supabase, packageKey)
   if (!pkg) return { error: "That package isn't available." }
 
+  // Never accept a price from the browser. Re-match the submitted code on the
+  // server and use only its configured fixed price.
+  const discount = code ? matchAccessCode(code, pkg.key) : null
+  if (code && (!discount || discount.kind !== "discount")) {
+    return { error: "That code isn't valid." }
+  }
+  if (
+    discount &&
+    (
+      mode !== "full" ||
+      !discount.priceCents ||
+      !discount.maxUses ||
+      discount.priceCents >= pkg.priceCents
+    )
+  ) {
+    return { error: "That code can't be used with this payment option." }
+  }
+
   // Custom-priced packages always go through a human.
   if (pkg.priceCents <= 0) return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, pkg.name, 0)
 
-  const amount = mode === "deposit" && pkg.depositCents > 0 ? pkg.depositCents : pkg.priceCents
+  const amount = discount?.priceCents ?? (mode === "deposit" && pkg.depositCents > 0 ? pkg.depositCents : pkg.priceCents)
   const description =
-    mode === "deposit" && pkg.depositCents > 0
+    discount
+      ? `${pkg.name} — discounted full payment (${discount.label})`
+      : mode === "deposit" && pkg.depositCents > 0
       ? `${pkg.name} — deposit (balance due on filing)`
       : `${pkg.name} — full payment`
 
   const stripe = getStripe()
+  if (discount && (!STRIPE_ENABLED || !stripe)) {
+    return { error: "That one-time code isn't available right now. Please contact us." }
+  }
+
+  // Service-role justified: payment and promotion-claim tables are staff-only.
+  // The claim stores only a SHA-256 fingerprint, never the customer-facing code.
+  const admin = createAdminClient()
+  if (discount) {
+    const { data: claimState, error: claimError } = await admin.rpc("claim_promo_code", {
+      p_code_fingerprint: discount.fingerprint,
+      p_code_label: discount.label,
+      p_case_id: myCase.id,
+      p_client_id: myCase.client_id,
+      p_max_uses: discount.maxUses!,
+    })
+    if (claimError || !claimState) return { error: "Couldn't apply that code. Try again." }
+    if (claimState === "exhausted") return { error: "This code has already been used." }
+  }
   if (!STRIPE_ENABLED || !stripe) {
     return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, description, amount)
   }
@@ -75,7 +116,6 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   // Service-role justified: payments RLS is staff-write-only by design; the
   // amount comes from the DB package table (never client input) after
   // requireRole + case-ownership checks above.
-  const admin = createAdminClient()
   const { data: payment, error } = await admin
     .from("payments")
     .insert({
@@ -119,7 +159,13 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
         },
       },
     ],
-    metadata: { payment_id: payment.id, package_key: pkg.key, case_id: myCase.id },
+    integration_identifier: "ccw_checkout_kqmwztar",
+    metadata: {
+      payment_id: payment.id,
+      package_key: pkg.key,
+      case_id: myCase.id,
+      ...(discount ? { discount_code_label: discount.label } : {}),
+    },
     success_url: `${base}/portal?enrolled=1`,
     cancel_url: `${base}/portal/enroll?canceled=1`,
   })
@@ -131,7 +177,12 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
     clientId: myCase.client_id,
     entity: "payment",
     entityId: payment.id,
-    detail: { package: pkg.key, mode, amount_cents: amount },
+    detail: {
+      package: pkg.key,
+      mode,
+      amount_cents: amount,
+      ...(discount ? { discount_code_label: discount.label } : {}),
+    },
   })
 
   if (!session.url) return { error: "Checkout could not be created." }

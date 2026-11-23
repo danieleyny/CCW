@@ -71,22 +71,19 @@ export async function choosePath(_prev: EnrollResult, formData: FormData): Promi
   return startCheckout(_prev, formData)
 }
 
-// ── ACCESS CODES · Phase 1 — comp-code redemption ────────────────────────────
+// ── ACCESS CODES · comp-code redemption and fixed-price checkout ─────────────
 const redeemSchema = z.object({
   packageKey: z.enum(["self_guided", "full_concierge"]),
   code: z.string().min(1).max(64),
 })
 
-export type RedeemResult = { error?: string; ok?: boolean }
+export type RedeemResult = { error?: string; ok?: boolean; requested?: boolean }
 
 /**
- * Redeem a comp/access code: unlock a package without payment by writing a paid
- * $0 payments row (mirrors recordOfflinePayment), so every hasPaidPackage()
- * surface unlocks by itself. Security lives HERE, server-side: the codes never
- * reach the browser, the check is timing-safe, every attempt is rate-limited and
- * logged, and failure is ONE generic message (never an oracle). It substitutes
- * for PAYMENT and nothing else — the agreements/QA gates and every requirement
- * still apply.
+ * Redeem a comp or fixed-price access code. Comp codes write a paid $0 row;
+ * discount codes enter the normal checkout with a server-derived price. Security
+ * lives here: the codes never reach the browser, matching is timing-safe, every
+ * attempt is rate-limited and failure is one generic message.
  */
 export async function redeemAccessCode(_prev: RedeemResult, formData: FormData): Promise<RedeemResult> {
   await requireRole(["client"])
@@ -133,6 +130,25 @@ export async function redeemAccessCode(_prev: RedeemResult, formData: FormData):
   }
 
   const serviceMode = packageKey === "full_concierge" ? "concierge" : "self_guided"
+
+  if (matched.kind === "discount") {
+    // Service-role justified: the client may change only their own case to the
+    // server-derived mode associated with the selected package. Payment remains
+    // pending until the signed Stripe webhook confirms it.
+    await admin.from("cases").update({ service_mode: serviceMode }).eq("id", myCase.id)
+    await logActivity({
+      action: "access_code.checkout_started",
+      caseId: myCase.id,
+      clientId: myCase.client_id,
+      entity: "case",
+      entityId: myCase.id,
+      detail: { code_label: matched.label, package: packageKey, price_cents: matched.priceCents, ip },
+    })
+
+    // startCheckout validates the code again and is the single writer for the
+    // pending payment and Stripe Checkout Session.
+    return startCheckout(_prev, formData)
+  }
 
   // The paid $0 row — same shape as recordOfflinePayment. $0 + the explicit
   // description means a comp can never be mistaken for revenue.

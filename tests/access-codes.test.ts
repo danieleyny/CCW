@@ -15,6 +15,8 @@ describe("access codes", () => {
   })
   afterEach(() => {
     delete process.env.ACCESS_CODES
+    delete process.env.DISCOUNT_CODES
+    delete process.env.DISCOUNT_CODES_EXTRA
   })
 
   it("is enabled only when configured", () => {
@@ -51,5 +53,16 @@ describe("access codes", () => {
   it("returns null for everything when unset", () => {
     delete process.env.ACCESS_CODES
     expect(matchAccessCode("GLNYC-DEMO-AAAA-BBBB", "full_concierge")).toBeNull()
+  })
+
+  it("merges additive personalized discounts without replacing existing codes", () => {
+    process.env.DISCOUNT_CODES = "GLNYC-EXISTING-AAAA-BBBB:full_concierge:90000:1"
+    process.env.DISCOUNT_CODES_EXTRA = "GLNYC-AVA-CCCC-DDDD:full_concierge:75000:1"
+
+    expect(matchAccessCode("GLNYC-EXISTING-AAAA-BBBB", "full_concierge")?.priceCents).toBe(90000)
+    const ava = matchAccessCode("GLNYC-AVA-CCCC-DDDD", "full_concierge")
+    expect(ava?.priceCents).toBe(75000)
+    expect(ava?.maxUses).toBe(1)
+    expect(matchAccessCode("GLNYC-AVA-CCCC-DDDD", "self_guided")).toBeNull()
   })
 })
