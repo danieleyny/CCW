@@ -179,21 +179,27 @@
     border-radius: 999px;
     padding: 0 8px 0 18px;
     background: #14254a;
-    box-shadow: 0 18px 40px -16px rgba(10,18,34,.65);
+    box-shadow:
+      0 10px 24px -18px rgba(10,18,34,.15),
+      0 0 0 0 rgba(211,179,107,0);
     color: #fff;
     text-decoration: none;
     white-space: nowrap;
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(12px);
+    filter: blur(3px);
+    transform: translateY(22px) scale(.955);
+    will-change: width, right, opacity, transform, filter;
     transition:
       width 320ms cubic-bezier(.22,.8,.2,1),
       right 320ms cubic-bezier(.22,.8,.2,1),
       padding 260ms cubic-bezier(.22,.8,.2,1),
-      opacity 220ms cubic-bezier(.2,.75,.2,1),
-      transform 220ms cubic-bezier(.2,.75,.2,1),
-      visibility 0s linear 220ms;
+      opacity 360ms cubic-bezier(.16,1,.3,1),
+      transform 520ms cubic-bezier(.16,1,.3,1),
+      filter 340ms cubic-bezier(.16,1,.3,1),
+      box-shadow 520ms cubic-bezier(.16,1,.3,1),
+      visibility 0s linear 520ms;
   }
 
   :global(.mkt2) .phonePill { color: #fff; }
@@ -202,8 +208,16 @@
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 18px 40px -16px rgba(10,18,34,.65),
+      0 0 0 1px rgba(211,179,107,.08);
     transition-delay: 0s;
+  }
+
+  .phonePill[data-visible="true"] .phoneIcon {
+    animation: phoneStarArrival 620ms cubic-bezier(.16,1,.3,1) 110ms both;
   }
 
   .phoneIcon {
@@ -262,11 +276,11 @@
     gap: 0;
     justify-content: center;
     padding: 0;
-    transform: translate(0,12px);
+    transform: translateY(18px) scale(.92);
   }
 
   .phonePill[data-visible="true"][data-compact="true"] {
-    transform: translate(0,0);
+    transform: translateY(0) scale(1);
   }
 
   .phonePill[data-compact="true"] .phoneLabel,
@@ -279,6 +293,12 @@
 
 }
 
+@keyframes phoneStarArrival {
+  0% { opacity: 0; transform: rotate(-18deg) scale(.55); }
+  62% { opacity: 1; transform: rotate(4deg) scale(1.12); }
+  100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+
 @media (max-width: 339px) {
   .duration { display: none; }
 }
@@ -286,7 +306,8 @@
 @media (prefers-reduced-motion: reduce) {
   .desktopWrap,
   .card,
-  .phonePill { animation: none; transition: none; }
+  .phonePill,
+  .phoneIcon { animation: none; transition: none; }
   .phoneLabel,
   .duration,
   .phoneAction,

@@ -11,6 +11,8 @@ const DISMISS_KEY = "gln_elig_nudge_dismissed"
 const PHONE_QUERY = "(max-width: 767px)"
 const HOVER_QUERY = "(hover: hover) and (pointer: fine)"
 const PHONE_EXPANDED_DWELL_MS = 5500
+const PHONE_ENTRY_MIN_SCROLL = 88
+const PHONE_ENTRY_MAX_SCROLL = 140
 
 const COPY = {
   en: {
@@ -67,6 +69,7 @@ export function EligibilityNudge() {
   const phoneExpandedUntil = useRef(0)
   const compactRef = useRef(false)
   const [passedState, setPassedState] = useState({ path: "", value: false })
+  const [phoneEntryState, setPhoneEntryState] = useState({ path: "", value: false })
   const [ctaState, setCtaState] = useState({ path: "", value: false })
   const [footerState, setFooterState] = useState({ path: "", value: false })
   const [overlayOpen, setOverlayOpen] = useState(false)
@@ -85,6 +88,7 @@ export function EligibilityNudge() {
 
   const allowed = isMarketingPath(pathname)
   const passedPrimaryCta = passedState.path === pathname && passedState.value
+  const phoneEntryReady = phoneEntryState.path === pathname && phoneEntryState.value
   const ctaVisible = ctaState.path === pathname && ctaState.value
   const footerVisible = footerState.path === pathname && footerState.value
   const blockedByControl = blockedState.path === pathname && blockedState.value
@@ -110,6 +114,29 @@ export function EligibilityNudge() {
       return pathname
     })
   }, [clearTimers, pathname])
+
+  useEffect(() => {
+    if (!allowed) return
+
+    const syncPhoneEntry = () => {
+      const threshold = Math.min(
+        PHONE_ENTRY_MAX_SCROLL,
+        Math.max(PHONE_ENTRY_MIN_SCROLL, window.innerHeight * 0.14),
+      )
+      const value = window.matchMedia(PHONE_QUERY).matches && window.scrollY >= threshold
+      setPhoneEntryState((current) => current.path === pathname && current.value === value
+        ? current
+        : { path: pathname, value })
+    }
+
+    syncPhoneEntry()
+    window.addEventListener("scroll", syncPhoneEntry, { passive: true })
+    window.addEventListener("resize", syncPhoneEntry)
+    return () => {
+      window.removeEventListener("scroll", syncPhoneEntry)
+      window.removeEventListener("resize", syncPhoneEntry)
+    }
+  }, [allowed, pathname])
 
   useEffect(() => {
     if (!allowed) return
@@ -241,7 +268,13 @@ export function EligibilityNudge() {
     }
   }, [allowed, compact, pathname])
 
-  const visible = allowed && passedPrimaryCta && !ctaVisible && !footerVisible && !overlayOpen && !typing && !blockedByControl && !dismissed
+  // On phones the nudge should introduce itself shortly after the visitor starts
+  // exploring the page. The hero CTA may still be on screen then, but it is far
+  // above the bottom dock; waiting for it to fully leave caused the abrupt, late
+  // entrance the user saw. Desktop retains the original post-CTA behavior.
+  const entryReady = phoneEntryReady || passedPrimaryCta
+  const ctaBlocksNudge = !phoneEntryReady && ctaVisible
+  const visible = allowed && entryReady && !ctaBlocksNudge && !footerVisible && !overlayOpen && !typing && !blockedByControl && !dismissed
 
   useEffect(() => {
     if (!visible) return

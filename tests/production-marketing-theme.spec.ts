@@ -24,10 +24,16 @@ test.describe("production marketing theme", () => {
     const nudge = page.locator('a[aria-label="Check if you\'re eligible. Takes about 2 minutes."]')
     await expect(nudge).toHaveAttribute("data-visible", "false")
 
-    await page.evaluate(() => window.scrollTo(0, 1300))
+    // Introduce the full, readable control soon after the visitor starts
+    // scrolling instead of waiting for the hero CTA to leave the viewport.
+    await page.evaluate(() => window.scrollTo(0, 150))
     await expect(nudge).toHaveAttribute("data-visible", "true")
     await expect(nudge).toHaveAttribute("data-compact", "false")
     await expect(nudge.locator('svg[data-symbol="star"]')).toHaveCount(1)
+    await expect.poll(async () => nudge.evaluate((node) => {
+      const style = getComputedStyle(node)
+      return { opacity: Number(style.opacity), filter: style.filter, transform: style.transform }
+    })).toEqual({ opacity: 1, filter: "blur(0px)", transform: "matrix(1, 0, 0, 1, 0, 0)" })
     const firstVisibleBox = await nudge.boundingBox()
     expect(firstVisibleBox).not.toBeNull()
     expect(firstVisibleBox!.width).toBeGreaterThan(280)
