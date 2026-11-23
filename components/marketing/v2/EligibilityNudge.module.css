@@ -3,8 +3,22 @@
   z-index: 28;
   top: 50%;
   right: 0;
-  animation: nudgeInDesktop 300ms cubic-bezier(.2,.75,.2,1) both;
-  transform: translateY(-50%);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(16px,-50%);
+  transition:
+    opacity 220ms cubic-bezier(.2,.75,.2,1),
+    transform 220ms cubic-bezier(.2,.75,.2,1),
+    visibility 0s linear 220ms;
+}
+
+.desktopWrap[data-visible="true"] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0,-50%);
+  transition-delay: 0s;
 }
 
 .edgeTab {
@@ -142,11 +156,6 @@
 
 .phonePill { display: none; }
 
-@keyframes nudgeInDesktop {
-  from { opacity: 0; transform: translate(16px,-50%); }
-  to { opacity: 1; transform: translate(0,-50%); }
-}
-
 @keyframes cardIn {
   from { opacity: 0; transform: translate(8px,-50%); }
   to { opacity: 1; transform: translate(0,-50%); }
@@ -174,15 +183,26 @@
     color: #fff;
     text-decoration: none;
     white-space: nowrap;
-    animation: nudgeInPhone 300ms cubic-bezier(.2,.75,.2,1) both;
-    transform: translateX(-50%);
-    transition: width 200ms ease, padding 200ms ease;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%,12px);
+    transition:
+      width 200ms ease,
+      padding 200ms ease,
+      opacity 220ms cubic-bezier(.2,.75,.2,1),
+      transform 220ms cubic-bezier(.2,.75,.2,1),
+      visibility 0s linear 220ms;
   }
 
   :global(.mkt2) .phonePill { color: #fff; }
 
-  .phonePill.withColorwaySwitcher {
-    bottom: calc(68px + env(safe-area-inset-bottom));
+  .phonePill[data-visible="true"] {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%,0);
+    transition-delay: 0s;
   }
 
   .phoneIcon {
@@ -194,6 +214,7 @@
   }
 
   .phoneLabel {
+    max-width: 116px;
     min-width: 0;
     overflow: hidden;
     font-family: var(--sans), sans-serif;
@@ -204,6 +225,8 @@
   }
 
   .duration {
+    max-width: 38px;
+    overflow: hidden;
     flex: none;
     color: #9fb0cf;
     font-family: var(--sans), sans-serif;
@@ -218,6 +241,8 @@
     flex: none;
     align-items: center;
     justify-content: center;
+    max-width: 112px;
+    overflow: hidden;
     border-radius: 999px;
     padding: 0 14px;
     background: #d3b36b;
@@ -244,10 +269,6 @@
     opacity: 0;
   }
 
-  @keyframes nudgeInPhone {
-    from { opacity: 0; transform: translate(-50%,12px); }
-    to { opacity: 1; transform: translate(-50%,0); }
-  }
 }
 
 @media (max-width: 339px) {

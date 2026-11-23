@@ -114,10 +114,21 @@ export function EligibilityNudge() {
     const primary = document.querySelector<HTMLElement>("main [data-eligibility-cta]")
     const ctaNodes = Array.from(new Set(document.querySelectorAll<HTMLElement>("main [data-eligibility-cta], main a[href='/eligibility']")))
     const visibility = new Map<HTMLElement, boolean>(ctaNodes.map((node) => [node, false]))
+    let ctaReleaseTimer: ReturnType<typeof setTimeout> | null = null
     const ctaObserver = new IntersectionObserver((entries) => {
       for (const entry of entries) visibility.set(entry.target as HTMLElement, entry.isIntersecting)
       const value = Array.from(visibility.values()).some(Boolean)
-      setCtaState((current) => current.path === pathname && current.value === value ? current : { path: pathname, value })
+      if (ctaReleaseTimer) clearTimeout(ctaReleaseTimer)
+      if (value) {
+        setCtaState((current) => current.path === pathname && current.value ? current : { path: pathname, value: true })
+      } else {
+        // Mobile Safari can alternate intersection results while its browser chrome
+        // collapses. Keep the nudge hidden until the CTA has been clear long enough
+        // to avoid a show/hide loop at the edge of the viewport.
+        ctaReleaseTimer = setTimeout(() => {
+          setCtaState((current) => current.path === pathname && !current.value ? current : { path: pathname, value: false })
+        }, 260)
+      }
     }, { threshold: 0.08 })
     ctaNodes.forEach((node) => ctaObserver.observe(node))
 
@@ -149,6 +160,7 @@ export function EligibilityNudge() {
     footers.forEach((footer) => footerObserver.observe(footer))
 
     return () => {
+      if (ctaReleaseTimer) clearTimeout(ctaReleaseTimer)
       ctaObserver.disconnect()
       primaryObserver?.disconnect()
       footerObserver.disconnect()
@@ -188,6 +200,7 @@ export function EligibilityNudge() {
   useEffect(() => {
     if (!allowed) return
     let frame = 0
+    let releaseTimer: ReturnType<typeof setTimeout> | null = null
     const checkControls = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
@@ -202,7 +215,14 @@ export function EligibilityNudge() {
           if (rect.width === 0 || rect.height === 0) return false
           return rect.left < zone.right && rect.right > zone.left && rect.top < zone.bottom && rect.bottom > zone.top
         })
-        setBlockedState((current) => current.path === pathname && current.value === value ? current : { path: pathname, value })
+        if (releaseTimer) clearTimeout(releaseTimer)
+        if (value) {
+          setBlockedState((current) => current.path === pathname && current.value ? current : { path: pathname, value: true })
+        } else {
+          releaseTimer = setTimeout(() => {
+            setBlockedState((current) => current.path === pathname && !current.value ? current : { path: pathname, value: false })
+          }, 260)
+        }
       })
     }
     checkControls()
@@ -210,6 +230,7 @@ export function EligibilityNudge() {
     window.addEventListener("resize", checkControls)
     return () => {
       cancelAnimationFrame(frame)
+      if (releaseTimer) clearTimeout(releaseTimer)
       window.removeEventListener("scroll", checkControls)
       window.removeEventListener("resize", checkControls)
     }
@@ -217,23 +238,30 @@ export function EligibilityNudge() {
 
   useEffect(() => {
     if (!allowed) return
-    let lastY = window.scrollY
-    let idle: ReturnType<typeof setTimeout> | null = null
+    let lastY = Math.max(0, window.scrollY)
+    let downwardTravel = 0
+    let upwardTravel = 0
     const onScroll = () => {
       if (!window.matchMedia(PHONE_QUERY).matches) return
-      const nextY = window.scrollY
+      const nextY = Math.max(0, window.scrollY)
       const delta = nextY - lastY
-      if (delta > 5) setCompact(true)
-      if (delta < -5) setCompact(false)
       lastY = nextY
-      if (idle) clearTimeout(idle)
-      idle = setTimeout(() => setCompact(false), 600)
+
+      // Use accumulated travel instead of reacting to every scroll event. iOS
+      // sends tiny opposing deltas while the address bar settles; treating those
+      // as direction changes made the pill repeatedly open and close.
+      if (delta > 2) {
+        downwardTravel += delta
+        upwardTravel = 0
+        if (downwardTravel >= 24) setCompact(true)
+      } else if (delta < -2) {
+        upwardTravel += Math.abs(delta)
+        downwardTravel = 0
+        if (upwardTravel >= 12) setCompact(false)
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => {
-      window.removeEventListener("scroll", onScroll)
-      if (idle) clearTimeout(idle)
-    }
+    return () => window.removeEventListener("scroll", onScroll)
   }, [allowed])
 
   const visible = allowed && passedPrimaryCta && !ctaVisible && !footerVisible && !overlayOpen && !typing && !blockedByControl && !dismissed
@@ -242,6 +270,7 @@ export function EligibilityNudge() {
     if (!visible) return
     if (shownTrackedPath.current !== pathname) {
       shownTrackedPath.current = pathname
+      setCompact(false)
       trackEvent("elig_nudge_shown", { device: device(), path: pathname })
     }
   }, [pathname, visible])
@@ -270,7 +299,11 @@ export function EligibilityNudge() {
 
   useEffect(() => clearTimers, [clearTimers])
 
-  if (!visible) return null
+  // Keep the temporarily hidden nudge mounted. Repeatedly unmounting it at CTA
+  // and footer boundaries replayed the entrance animation and looked like a
+  // mobile glitch. Disallowed routes and a deliberate session dismissal still
+  // remove it entirely.
+  if (!allowed || dismissed) return null
 
   const dismiss = () => {
     try {
@@ -291,6 +324,8 @@ export function EligibilityNudge() {
       <div
         ref={containerRef}
         className={styles.desktopWrap}
+        data-visible={visible ? "true" : "false"}
+        aria-hidden={!visible}
         onPointerEnter={() => {
           if (!window.matchMedia(HOVER_QUERY).matches) return
           clearTimers()
@@ -308,6 +343,7 @@ export function EligibilityNudge() {
           className={styles.edgeTab}
           aria-expanded={open}
           aria-controls="eligibility-nudge-dialog"
+          tabIndex={visible ? 0 : -1}
           onClick={() => open ? closeCard(false) : openCard()}
         >
           <span className={styles.edgeStrip} aria-hidden="true" />
@@ -332,9 +368,12 @@ export function EligibilityNudge() {
 
       <Link
         href="/eligibility"
-        className={`${styles.phonePill} ${pathname === "/V2" ? styles.withColorwaySwitcher : ""}`}
+        className={styles.phonePill}
+        data-visible={visible ? "true" : "false"}
         data-compact={compact ? "true" : "false"}
+        aria-hidden={!visible}
         aria-label={copy.phoneAria}
+        tabIndex={visible ? 0 : -1}
         onClick={() => trackClick("phone")}
       >
         <ShieldCheck className={styles.phoneIcon} aria-hidden="true" />
