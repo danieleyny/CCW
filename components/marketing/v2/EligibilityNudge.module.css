@@ -168,7 +168,7 @@
     position: fixed;
     z-index: 28;
     bottom: calc(18px + env(safe-area-inset-bottom));
-    right: 50%;
+    right: max(12px, calc((100vw - 336px) / 2));
     display: flex;
     width: min(336px, calc(100vw - 24px));
     height: 52px;
@@ -186,11 +186,11 @@
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translate(50%,12px);
+    transform: translateY(12px);
     transition:
-      width 200ms ease,
-      right 200ms ease,
-      padding 200ms ease,
+      width 320ms cubic-bezier(.22,.8,.2,1),
+      right 320ms cubic-bezier(.22,.8,.2,1),
+      padding 260ms cubic-bezier(.22,.8,.2,1),
       opacity 220ms cubic-bezier(.2,.75,.2,1),
       transform 220ms cubic-bezier(.2,.75,.2,1),
       visibility 0s linear 220ms;
@@ -202,7 +202,7 @@
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
-    transform: translate(50%,0);
+    transform: translateY(0);
     transition-delay: 0s;
   }
 
@@ -211,6 +211,7 @@
     height: 22px;
     flex: 0 0 22px;
     color: #d3b36b;
+    fill: currentColor;
     stroke-width: 1.8;
   }
 
@@ -222,7 +223,7 @@
     font-size: 14px;
     font-weight: 600;
     opacity: 1;
-    transition: max-width 200ms ease, opacity 150ms ease;
+    transition: max-width 260ms cubic-bezier(.22,.8,.2,1), opacity 160ms ease;
   }
 
   .duration {
@@ -233,7 +234,7 @@
     font-family: var(--sans), sans-serif;
     font-size: 12px;
     opacity: 1;
-    transition: max-width 200ms ease, opacity 150ms ease;
+    transition: max-width 260ms cubic-bezier(.22,.8,.2,1), opacity 160ms ease;
   }
 
   .phoneAction {
@@ -252,7 +253,7 @@
     font-size: 13px;
     font-weight: 700;
     opacity: 1;
-    transition: max-width 200ms ease, padding 200ms ease, opacity 150ms ease;
+    transition: max-width 260ms cubic-bezier(.22,.8,.2,1), padding 260ms cubic-bezier(.22,.8,.2,1), opacity 160ms ease;
   }
 
   .phonePill[data-compact="true"] {
@@ -266,10 +267,6 @@
 
   .phonePill[data-visible="true"][data-compact="true"] {
     transform: translate(0,0);
-  }
-
-  .phonePill[data-compact="true"] .phoneIcon {
-    fill: currentColor;
   }
 
   .phonePill[data-compact="true"] .phoneLabel,
