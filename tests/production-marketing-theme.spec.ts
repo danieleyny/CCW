@@ -36,10 +36,13 @@ test.describe("production marketing theme", () => {
       const box = await nudge.boundingBox()
       return box ? Math.abs((box.x + box.width / 2) - 195) : 999
     }).toBeLessThanOrEqual(2)
+    await expect.poll(async () => {
+      const box = await nudge.boundingBox()
+      return box ? box.y + box.height : 999
+    }).toBeLessThanOrEqual(830)
     const expandedBox = await nudge.boundingBox()
     expect(expandedBox).not.toBeNull()
     expect(expandedBox!.y + expandedBox!.height).toBeGreaterThan(750)
-    expect(expandedBox!.y + expandedBox!.height).toBeLessThanOrEqual(830)
 
     await page.mouse.wheel(0, 360)
     await page.waitForTimeout(1000)
