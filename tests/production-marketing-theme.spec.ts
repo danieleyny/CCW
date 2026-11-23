@@ -27,6 +27,7 @@ test.describe("production marketing theme", () => {
     await page.evaluate(() => window.scrollTo(0, 1300))
     await expect(nudge).toHaveAttribute("data-visible", "true")
     await expect(nudge).toHaveAttribute("data-compact", "false")
+    await expect(nudge.locator('svg[data-symbol="shield-check"]')).toHaveCount(1)
     await expect.poll(async () => (await nudge.boundingBox())?.width ?? 0).toBeGreaterThan(280)
 
     await expect.poll(async () => {
@@ -39,7 +40,13 @@ test.describe("production marketing theme", () => {
     expect(expandedBox!.y + expandedBox!.height).toBeLessThanOrEqual(830)
 
     await page.mouse.wheel(0, 360)
+    await page.waitForTimeout(500)
+    await expect(nudge).toHaveAttribute("data-compact", "false")
+
+    await page.waitForTimeout(2100)
+    await page.mouse.wheel(0, 120)
     await expect(nudge).toHaveAttribute("data-compact", "true")
+    await expect(nudge.locator('svg[data-symbol="star"]')).toHaveCount(1)
     await page.waitForTimeout(900)
     await expect(nudge).toHaveAttribute("data-compact", "true")
 

@@ -268,6 +268,10 @@
     transform: translate(0,0);
   }
 
+  .phonePill[data-compact="true"] .phoneIcon {
+    fill: currentColor;
+  }
+
   .phonePill[data-compact="true"] .phoneLabel,
   .phonePill[data-compact="true"] .duration,
   .phonePill[data-compact="true"] .phoneAction {

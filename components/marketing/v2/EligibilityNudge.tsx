@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ShieldCheck, X } from "lucide-react"
+import { ShieldCheck, Star, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { trackEvent } from "@/lib/analytics"
 import styles from "./EligibilityNudge.module.css"
@@ -10,6 +10,7 @@ import styles from "./EligibilityNudge.module.css"
 const DISMISS_KEY = "gln_elig_nudge_dismissed"
 const PHONE_QUERY = "(max-width: 767px)"
 const HOVER_QUERY = "(hover: hover) and (pointer: fine)"
+const PHONE_EXPANDED_DWELL_MS = 2400
 
 const COPY = {
   en: {
@@ -63,6 +64,8 @@ export function EligibilityNudge() {
   const hoverOpenTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const shownTrackedPath = useRef<string | null>(null)
+  const phoneExpandedUntil = useRef(0)
+  const compactRef = useRef(false)
   const [passedState, setPassedState] = useState({ path: "", value: false })
   const [ctaState, setCtaState] = useState({ path: "", value: false })
   const [footerState, setFooterState] = useState({ path: "", value: false })
@@ -255,11 +258,20 @@ export function EligibilityNudge() {
       if (delta > 2) {
         downwardTravel += delta
         upwardTravel = 0
-        if (downwardTravel >= 24) setCompact(true)
+        if (downwardTravel >= 48 && performance.now() >= phoneExpandedUntil.current) {
+          compactRef.current = true
+          setCompact(true)
+          downwardTravel = 0
+        }
       } else if (delta < -2) {
         upwardTravel += Math.abs(delta)
         downwardTravel = 0
-        if (upwardTravel >= 12) setCompact(false)
+        if (compactRef.current && upwardTravel >= 12) {
+          compactRef.current = false
+          phoneExpandedUntil.current = performance.now() + PHONE_EXPANDED_DWELL_MS
+          setCompact(false)
+          upwardTravel = 0
+        }
       }
     }
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -272,6 +284,8 @@ export function EligibilityNudge() {
     if (!visible) return
     if (shownTrackedPath.current !== pathname) {
       shownTrackedPath.current = pathname
+      compactRef.current = false
+      phoneExpandedUntil.current = performance.now() + PHONE_EXPANDED_DWELL_MS
       setCompact(false)
       trackEvent("elig_nudge_shown", { device: device(), path: pathname })
     }
@@ -378,7 +392,11 @@ export function EligibilityNudge() {
         tabIndex={visible ? 0 : -1}
         onClick={() => trackClick("phone")}
       >
-        <ShieldCheck className={styles.phoneIcon} aria-hidden="true" />
+        {compact ? (
+          <Star className={styles.phoneIcon} data-symbol="star" aria-hidden="true" />
+        ) : (
+          <ShieldCheck className={styles.phoneIcon} data-symbol="shield-check" aria-hidden="true" />
+        )}
         <span className={styles.phoneLabel}>{copy.phoneLabel}</span>
         <span className={styles.duration}>{copy.duration}</span>
         <span className={styles.phoneAction}>{copy.phoneAction}</span>
