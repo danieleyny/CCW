@@ -29,6 +29,10 @@ test.describe("production marketing theme", () => {
     await expect(nudge).toHaveAttribute("data-compact", "false")
     await expect.poll(async () => (await nudge.boundingBox())?.width ?? 0).toBeGreaterThan(280)
 
+    await expect.poll(async () => {
+      const box = await nudge.boundingBox()
+      return box ? Math.abs((box.x + box.width / 2) - 195) : 999
+    }).toBeLessThanOrEqual(2)
     const expandedBox = await nudge.boundingBox()
     expect(expandedBox).not.toBeNull()
     expect(expandedBox!.y + expandedBox!.height).toBeGreaterThan(750)
@@ -43,10 +47,16 @@ test.describe("production marketing theme", () => {
     expect(compactBox).not.toBeNull()
     expect(compactBox!.width).toBeGreaterThanOrEqual(50)
     expect(compactBox!.width).toBeLessThanOrEqual(54)
+    expect(compactBox!.x + compactBox!.width).toBeGreaterThanOrEqual(376)
+    expect(compactBox!.x + compactBox!.width).toBeLessThanOrEqual(378)
     expect(compactBox!.y + compactBox!.height).toBeGreaterThan(750)
 
     await page.mouse.wheel(0, -180)
     await expect(nudge).toHaveAttribute("data-compact", "false")
+    await expect.poll(async () => {
+      const box = await nudge.boundingBox()
+      return box ? Math.abs((box.x + box.width / 2) - 195) : 999
+    }).toBeLessThanOrEqual(2)
   })
 
   test("desktop eligibility nudge opens from the right edge on the main site", async ({ page }) => {

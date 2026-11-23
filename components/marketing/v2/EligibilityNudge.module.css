@@ -168,7 +168,7 @@
     position: fixed;
     z-index: 28;
     bottom: calc(18px + env(safe-area-inset-bottom));
-    left: 50%;
+    right: 50%;
     display: flex;
     width: min(336px, calc(100vw - 24px));
     height: 52px;
@@ -186,9 +186,10 @@
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%,12px);
+    transform: translate(50%,12px);
     transition:
       width 200ms ease,
+      right 200ms ease,
       padding 200ms ease,
       opacity 220ms cubic-bezier(.2,.75,.2,1),
       transform 220ms cubic-bezier(.2,.75,.2,1),
@@ -201,7 +202,7 @@
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
-    transform: translate(-50%,0);
+    transform: translate(50%,0);
     transition-delay: 0s;
   }
 
@@ -255,10 +256,16 @@
   }
 
   .phonePill[data-compact="true"] {
+    right: 12px;
     width: 52px;
     gap: 0;
     justify-content: center;
     padding: 0;
+    transform: translate(0,12px);
+  }
+
+  .phonePill[data-visible="true"][data-compact="true"] {
+    transform: translate(0,0);
   }
 
   .phonePill[data-compact="true"] .phoneLabel,

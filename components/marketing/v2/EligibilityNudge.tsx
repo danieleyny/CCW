@@ -205,9 +205,11 @@ export function EligibilityNudge() {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
         const phone = window.matchMedia(PHONE_QUERY).matches
-        const width = phone ? Math.min(336, window.innerWidth - 24) : 58
+        const width = phone ? (compact ? 52 : Math.min(336, window.innerWidth - 24)) : 58
         const zone = phone
-          ? { left: (window.innerWidth - width) / 2, right: (window.innerWidth + width) / 2, top: window.innerHeight - 90, bottom: window.innerHeight }
+          ? compact
+            ? { left: window.innerWidth - width - 12, right: window.innerWidth - 12, top: window.innerHeight - 90, bottom: window.innerHeight }
+            : { left: (window.innerWidth - width) / 2, right: (window.innerWidth + width) / 2, top: window.innerHeight - 90, bottom: window.innerHeight }
           : { left: window.innerWidth - width, right: window.innerWidth, top: window.innerHeight / 2 - 112, bottom: window.innerHeight / 2 + 112 }
         const controls = document.querySelectorAll<HTMLElement>("main input, main textarea, main select, main button[type='submit'], main input[type='submit'], [data-chat-widget]")
         const value = Array.from(controls).some((control) => {
@@ -234,7 +236,7 @@ export function EligibilityNudge() {
       window.removeEventListener("scroll", checkControls)
       window.removeEventListener("resize", checkControls)
     }
-  }, [allowed, pathname])
+  }, [allowed, compact, pathname])
 
   useEffect(() => {
     if (!allowed) return
