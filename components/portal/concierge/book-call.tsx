@@ -1,6 +1,7 @@
 import { RequestCallButton } from "@/components/portal/concierge/request-call-button"
-import { BookCallModal } from "@/components/portal/concierge/book-call-modal"
+import { BookCallLink } from "@/components/portal/concierge/book-call-link"
 import type { IntroCallState } from "@/lib/concierge/onboarding"
+import { buildCalendlyBookingUrl } from "@/lib/calendly"
 
 export interface BookCallCopy {
   title: string
@@ -32,19 +33,12 @@ const DEFAULT_COPY: BookCallCopy = {
   requestReceived: "Request received — we'll reach out to lock in a time.",
 }
 
-/** Build the embed URL: opaque token (must survive for the webhook to match),
- *  no duplicate Calendly header, no GDPR banner. The single place these are built. */
-function embedUrl(base: string, token: string): string {
-  const sep = base.includes("?") ? "&" : "?"
-  return `${base}${sep}utm_content=${encodeURIComponent(token)}&hide_event_type_details=1&hide_gdpr_banner=1`
-}
-
 /**
- * CONCIERGE Phase 2 — book the intro call. A COMPACT card: nothing loads until the
- * applicant clicks "Choose a time", which opens the scheduler in a modal (see
- * BookCallModal). Provider is behind an env var so a native scheduler can replace
- * Calendly later without touching this surface:
- *  • CALENDLY_CONCIERGE_URL set → the modal scheduler (the webhook fills the booking).
+ * CONCIERGE Phase 2 — book the intro call. Calendly opens as a top-level page so
+ * its booking security is not constrained by a third-party iframe. Provider is
+ * behind an env var so a native scheduler can replace Calendly later without
+ * touching this surface:
+ *  • CALENDLY_CONCIERGE_URL set → direct scheduler link (the webhook fills the booking).
  *  • unset (default) → the "request a call" fallback, which always works.
  *
  * A BOOKED call is NOT rendered here — it folds into the control tower as a
@@ -75,7 +69,7 @@ export function BookCall({
 
       <div className="concierge-book-call-control mt-4">
         {calendlyUrl ? (
-          <BookCallModal url={embedUrl(calendlyUrl, introToken)} copy={copy} />
+          <BookCallLink url={buildCalendlyBookingUrl(calendlyUrl, introToken)} copy={copy} />
         ) : (
           <RequestCallButton alreadyRequested={introCall?.status === "requested"} copy={copy} />
         )}
