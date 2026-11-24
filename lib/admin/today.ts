@@ -23,6 +23,7 @@ import {
   INSTRUCTOR_VERIFY_DAYS,
 } from "@/config/service-targets"
 import { instructorCounts } from "@/lib/admin/instructors"
+import type { BrandKey } from "@/config/brands"
 
 type DB = SupabaseClient<Database>
 
@@ -56,6 +57,8 @@ export interface TodayItem {
   dueAt: string
   href: string
   action: string
+  brand: BrandKey | null
+  brandOrigin: BrandKey | null
 }
 
 export interface TodayScheduleItem {
@@ -65,6 +68,8 @@ export interface TodayScheduleItem {
   title: string
   detail: string
   owner: "You" | "NYPD milestone" | "Instructor"
+  brand: BrandKey | null
+  brandOrigin: BrandKey | null
 }
 
 export interface TodayWaiting {
@@ -102,6 +107,8 @@ interface CaseContext {
   clientName: string
   track: string
   assignedStaff: string | null
+  brand: BrandKey
+  brandOrigin: BrandKey
 }
 
 const DAY = 86_400_000
@@ -157,8 +164,8 @@ function ownerFor(c: CaseContext, userId: string): TodayOwner {
   return c.assignedStaff === userId ? "You" : "Team"
 }
 
-function caseItem(input: Omit<TodayItem, "clientName" | "track" | "assignedStaff" | "unassigned">, c: CaseContext): TodayItem {
-  return { ...input, clientName: c.clientName, track: c.track, assignedStaff: c.assignedStaff, unassigned: !c.assignedStaff }
+function caseItem(input: Omit<TodayItem, "clientName" | "track" | "assignedStaff" | "unassigned" | "brand" | "brandOrigin">, c: CaseContext): TodayItem {
+  return { ...input, clientName: c.clientName, track: c.track, assignedStaff: c.assignedStaff, unassigned: !c.assignedStaff, brand: c.brand, brandOrigin: c.brandOrigin }
 }
 
 function sortItems(items: TodayItem[]) {
@@ -173,7 +180,7 @@ export async function loadToday(
 ): Promise<TodayData> {
   const casesResult = await db
     .from("cases")
-    .select("id, client_id, stage, status, stage_entered_at, updated_at, license_track, clients!inner(full_name, assigned_staff, track)")
+    .select("id, client_id, stage, status, stage_entered_at, updated_at, license_track, brand, brand_origin, clients!inner(full_name, assigned_staff, track)")
 
   if (casesResult.error) throw casesResult.error
 
@@ -190,6 +197,8 @@ export async function loadToday(
       clientName: client.full_name,
       track: trackLabel(raw.license_track ?? client.track),
       assignedStaff: client.assigned_staff,
+      brand: raw.brand,
+      brandOrigin: raw.brand_origin,
     })
   }
 
@@ -327,6 +336,7 @@ export async function loadToday(
       id: `task-${task.id}`, caseId: task.case_id, type: "task", section,
       title: task.title, reason: task.description ?? "Open staff task.", clientName: c?.clientName ?? "General",
       track: c?.track ?? "OPERATIONS", owner: assignedStaff === userId ? "You" : "Team", unassigned: !assignedStaff,
+      brand: c?.brand ?? null, brandOrigin: c?.brandOrigin ?? null,
       assignedStaff, age: task.due_date ? (section === "overdue" ? `${daysBetween(due, now)} days overdue` : section === "today" ? "Due today" : "Due this week") : "This week",
       ageDays: daysBetween(task.created_at, now), triggerAt: task.created_at, dueAt: due.toISOString(),
       href: task.case_id ? `/admin/cases/${task.case_id}?tab=tasks` : "/admin", action: "Open task",
@@ -375,6 +385,7 @@ export async function loadToday(
       id: `instructor-${instructor.id}`, caseId: null, type: "people", section,
       title: `Verify ${instructor.name}`, reason: "Their profile is complete and the credential check is waiting on an admin.",
       clientName: instructor.name, track: "INSTRUCTOR", owner: "You", unassigned: false, assignedStaff: userId,
+      brand: null, brandOrigin: null,
       age: `${instructor.status.waitingDays} day${instructor.status.waitingDays === 1 ? "" : "s"} waiting`,
       ageDays: instructor.status.waitingDays, triggerAt, dueAt: due.toISOString(),
       href: `/admin/instructors/verify?i=${instructor.id}`, action: "Verify",
@@ -406,6 +417,7 @@ export async function loadToday(
       id: `privacy-${request.id}`, caseId: request.caseId, type: "privacy", section,
       title: `Open privacy request${c ? ` — ${c.clientName}` : ""}`, reason: request.kind.replaceAll("_", " "),
       clientName: c?.clientName ?? "Privacy request", track: c?.track ?? "PRIVACY", owner: "You", unassigned: false,
+      brand: c?.brand ?? null, brandOrigin: c?.brandOrigin ?? null,
       assignedStaff: userId, age: timing.label, ageDays: timing.days, triggerAt: request.requestedAt,
       dueAt: timing.dueAt, href: `/admin/privacy?r=${request.id}`, action: "Open request",
     })
@@ -425,6 +437,8 @@ export async function loadToday(
       title: event.clientName,
       detail: event.type,
       owner: event.owner === "NYPD" ? "NYPD milestone" : event.owner === "Instructor" ? "Instructor" : "You",
+      brand: event.brand,
+      brandOrigin: event.brandOrigin,
     }))
 
   const staffCaseIds = new Set(scoped.filter((item) => item.owner === "You" || item.owner === "Team").map((item) => item.caseId).filter(Boolean))

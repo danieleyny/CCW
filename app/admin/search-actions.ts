@@ -4,6 +4,7 @@ import { z } from "zod"
 import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { adminSearchPatterns } from "@/lib/admin/search"
+import type { BrandKey } from "@/config/brands"
 
 const querySchema = z.string().trim().min(2).max(80)
 
@@ -14,6 +15,8 @@ export interface AdminSearchResult {
   phone: string | null
   track: string
   stage: string
+  brand: BrandKey
+  brandOrigin: BrandKey
 }
 /** Read-only staff search. RLS remains the final visibility boundary. */
 export async function searchAdminCases(input: string): Promise<AdminSearchResult[]> {
@@ -32,13 +35,13 @@ export async function searchAdminCases(input: string): Promise<AdminSearchResult
   for (const row of [...(names.data ?? []), ...(emails.data ?? []), ...(phones.data ?? [])]) clients.set(row.id, row)
   const clientIds = [...clients.keys()].slice(0, 8)
   if (!clientIds.length) return []
-  const { data: cases } = await db.from("cases").select("id, client_id, stage, license_track, status").in("client_id", clientIds).order("updated_at", { ascending: false })
+  const { data: cases } = await db.from("cases").select("id, client_id, stage, license_track, status, brand, brand_origin").in("client_id", clientIds).order("updated_at", { ascending: false })
   const firstCase = new Map<string, (typeof cases extends Array<infer T> | null ? T : never)>()
   for (const row of cases ?? []) if (!firstCase.has(row.client_id) || row.status === "active") firstCase.set(row.client_id, row)
   return clientIds.flatMap((id) => {
     const client = clients.get(id)
     const caseRow = firstCase.get(id)
     if (!client || !caseRow) return []
-    return [{ caseId: caseRow.id, name: client.full_name, email: client.email, phone: client.phone, track: (caseRow.license_track ?? client.track).replaceAll("_", " "), stage: caseRow.stage.replaceAll("_", " ") }]
+    return [{ caseId: caseRow.id, name: client.full_name, email: client.email, phone: client.phone, track: (caseRow.license_track ?? client.track).replaceAll("_", " "), stage: caseRow.stage.replaceAll("_", " "), brand: caseRow.brand, brandOrigin: caseRow.brand_origin }]
   }).slice(0, 8)
 }

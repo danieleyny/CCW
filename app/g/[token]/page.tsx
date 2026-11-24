@@ -2,8 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import BrandLogo from "@/components/brand/BrandLogo"
 import { safeguardTokenActive, findSafeguardInviteByToken } from "@/lib/safeguard/invite"
 import { SafeguardFlow } from "@/components/public/safeguard-flow"
+import { BrandProvider } from "@/components/brand/brand-provider"
+import type { BrandKey } from "@/config/brands"
 
-export const metadata = { title: "Safeguarding acknowledgement — Gun License NYC", robots: { index: false, follow: false } }
+export const metadata = { title: "Safeguarding acknowledgement", robots: { index: false, follow: false } }
 
 export default async function SafeguardPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -30,7 +32,7 @@ export default async function SafeguardPage({ params }: { params: Promise<{ toke
     )
   }
 
-  const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", invite.case_id).single()
+  const { data: kase } = await admin.from("cases").select("brand, clients(full_name)").eq("id", invite.case_id).single()
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
 
   if (!invite.opened_at) {
@@ -38,7 +40,7 @@ export default async function SafeguardPage({ params }: { params: Promise<{ toke
   }
 
   return (
-    <Shell>
+    <Shell brandKey={kase?.brand}>
       <h1 className="text-xl font-semibold tracking-tight">Safeguarding acknowledgement</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {applicant}{" "}designated you to safeguard and surrender their firearm(s) if they die or become
@@ -50,13 +52,18 @@ export default async function SafeguardPage({ params }: { params: Promise<{ toke
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
+function Shell({ children, brandKey }: { children: React.ReactNode; brandKey?: BrandKey }) {
+  const content = (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
-      {/* Shown to a THIRD PARTY from an emailed link — kept branded so it doesn't read
-          as phishing. The acknowledgement PDF they sign is the official NYPD form. */}
-      <BrandLogo href={null} className="mb-6" accessibleLabel="Gun License NYC" />
+      <BrandLogo href={null} className="mb-6" />
       {children}
     </div>
+  )
+  return (
+    <>
+      {/* Shown to a THIRD PARTY from an emailed link — kept branded so it doesn't read
+          as phishing. The acknowledgement PDF they sign is the official NYPD form. */}
+      {brandKey ? <BrandProvider brandKey={brandKey}>{content}</BrandProvider> : content}
+    </>
   )
 }

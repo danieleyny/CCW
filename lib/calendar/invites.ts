@@ -48,6 +48,7 @@ export async function sendBookingInvites(bookingId: string) {
 
   const when = new Date(b.starts_at).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" })
   const { html, text } = renderEmail({
+    brand: "gln",
     preheader: `Your ${typeLabel} is confirmed for ${when}.`,
     eyebrow: "Confirmed",
     heading: `Your ${typeLabel} is confirmed`,
@@ -63,11 +64,11 @@ export async function sendBookingInvites(bookingId: string) {
 
   let sent = 0
   if (client?.email) {
-    await sendEmail({ to: client.email, subject: "Your Gun License NYC training is confirmed", html, text, attachments })
+    await sendEmail({ brand: "gln", to: client.email, subject: "Your Gun License NYC training is confirmed", html, text, attachments })
     sent++
   }
   if (instr?.email) {
-    await sendEmail({ to: instr.email, subject: "Training session confirmed", html, text, attachments })
+    await sendEmail({ brand: "gln", to: instr.email, subject: "Training session confirmed", html, text, attachments })
     sent++
   }
   return { sent, ics }

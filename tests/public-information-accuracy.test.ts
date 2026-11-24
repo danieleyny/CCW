@@ -47,8 +47,10 @@ describe("confirmed public partnership", () => {
     const firm = graph.find((node) => node["@type"] === "LegalService")!
 
     expect(person["@id"]).not.toBe(firm["@id"])
-    expect(person.worksFor).toEqual({ "@id": firm["@id"] })
-    expect(person.worksFor).not.toEqual({ "@id": ID.organization })
+    expect("worksFor" in person ? person.worksFor : undefined).toEqual({ "@id": firm["@id"] })
+    expect("worksFor" in person ? person.worksFor : undefined).not.toEqual({
+      "@id": ID.organization,
+    })
   })
 })
 

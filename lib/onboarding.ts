@@ -1,5 +1,6 @@
 import "server-only"
 import type { createAdminClient } from "@/lib/supabase/admin"
+import type { BrandKey } from "@/config/brands"
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -12,9 +13,10 @@ type Admin = ReturnType<typeof createAdminClient>
  */
 export async function ensureClientCaseForProfile(
   admin: Admin,
-  opts: { profileId: string; email: string; fullName: string; referredBySponsorId?: string | null }
+  opts: { profileId: string; email: string; fullName: string; brand?: BrandKey; referredBySponsorId?: string | null }
 ): Promise<{ caseId: string; clientId: string }> {
   const email = opts.email.trim()
+  const signupBrand = opts.brand ?? "gln"
 
   // 1. Already linked to a client? (Ordered limit(1), not maybeSingle: a unique
   // index enforces one row per profile, but ordering keeps this deterministic
@@ -33,13 +35,13 @@ export async function ensureClientCaseForProfile(
   if (!clientId) {
     const { data: lead } = await admin
       .from("clients")
-      .select("id")
+      .select("id, signup_brand")
       .ilike("email", email)
       .is("profile_id", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
-    if (lead?.id) {
+    if (lead?.id && lead.signup_brand === signupBrand) {
       await admin
         .from("clients")
         .update({ profile_id: opts.profileId, full_name: opts.fullName })
@@ -62,6 +64,7 @@ export async function ensureClientCaseForProfile(
         current_stage: "lead",
         lead_source: "self_signup",
         profile_id: opts.profileId,
+        signup_brand: signupBrand,
       })
       .select("id")
       .single()
@@ -95,7 +98,7 @@ export async function ensureClientCaseForProfile(
     .from("cases")
     // referred_by_sponsor_id is ATTRIBUTION only — it grants the referrer no read access
     // to this case (see the referral channel migration); it only tags who introduced them.
-    .insert({ client_id: clientId, stage: "lead", status: "active", referred_by_sponsor_id: opts.referredBySponsorId ?? null })
+    .insert({ client_id: clientId, stage: "lead", status: "active", brand: signupBrand, referred_by_sponsor_id: opts.referredBySponsorId ?? null })
     .select("id")
     .single()
   if (caseErr || !kase) throw new Error(caseErr?.message ?? "Could not open case")

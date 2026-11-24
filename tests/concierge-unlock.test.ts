@@ -43,6 +43,7 @@ describe.skipIf(!reachable)("hasPaidPackage / paidPackageCaseIds", () => {
       status: status as never,
       package_key: packageKey,
       paid_at: status === "paid" ? new Date().toISOString() : null,
+      brand: "gln",
     })
   }
 

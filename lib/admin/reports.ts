@@ -1,6 +1,7 @@
 import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import type { BrandKey } from "@/config/brands"
 import { CASE_STAGES, isNypdControlled, stageIndex, type CaseStageKey } from "@/config/stages"
 import {
   DOCUMENT_REVIEW_BUSINESS_DAYS,
@@ -28,11 +29,13 @@ type DB = SupabaseClient<Database>
 export type ReportTab = "overview" | "bottlenecks" | "service"
 export type ReportServiceFilter = "all" | "concierge" | "self_guided"
 export type ReportTrackFilter = "all" | "resident" | "business" | "non_resident"
+export type ReportBrandFilter = "all" | BrandKey
 
 export interface ReportFilters {
   range: ReportRangeKey
   service: ReportServiceFilter
   track: ReportTrackFilter
+  brand: ReportBrandFilter
   compare: boolean
   showHidden: boolean
   isAdmin: boolean
@@ -80,6 +83,8 @@ export interface OverviewReportData extends ReportContext {
   metrics: MetricValue[]
   funnel: FunnelRow[]
   services: Array<{ key: "concierge" | "self_guided"; label: string; clients: number; bookedCents: number; comps: number }>
+  brands: Array<{ key: BrandKey; label: string; leads: number; paid: number; collectedCents: number; stageCounts: number }>
+  upgrades: { count: number; collectedCents: number }
   leadSources: Array<{ label: string; count: number }>
   rawLeadSources: Array<{ value: string; count: number }>
   stages: StageMetric[]
@@ -134,6 +139,8 @@ interface RawCase {
   assignedStaff: string | null
   stage: CaseStageKey
   serviceMode: "concierge" | "self_guided" | null
+  brand: BrandKey
+  brandOrigin: BrandKey
   createdAt: string
   updatedAt: string
   isDemo: boolean
@@ -149,6 +156,13 @@ interface RawPayment {
   paidAt: string | null
   createdAt: string
   updatedAt: string
+  brand: BrandKey
+}
+
+interface RawBrandTransfer {
+  caseId: string
+  paymentId: string | null
+  createdAt: string
 }
 
 interface RawActivity {
@@ -167,6 +181,7 @@ interface BaseData extends ReportContext {
   activities: RawActivity[]
   paidIds: Set<string>
   visits: StageVisit[]
+  transfers: RawBrandTransfer[]
   range: ReturnType<typeof reportRange>
 }
 
@@ -181,6 +196,8 @@ function mapCases(rows: unknown[]): RawCase[] {
       client_id: string
       stage: CaseStageKey
       service_mode: "concierge" | "self_guided" | null
+      brand: BrandKey
+      brand_origin: BrandKey
       created_at: string
       updated_at: string
       is_demo: boolean
@@ -198,6 +215,8 @@ function mapCases(rows: unknown[]): RawCase[] {
       assignedStaff: row.clients.assigned_staff,
       stage: row.stage,
       serviceMode: row.service_mode,
+      brand: row.brand,
+      brandOrigin: row.brand_origin,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       isDemo: row.is_demo,
@@ -210,6 +229,7 @@ function mapCases(rows: unknown[]): RawCase[] {
 function matchesFilters(kase: RawCase, filters: ReportFilters) {
   if (filters.service !== "all" && kase.serviceMode !== filters.service) return false
   if (filters.track !== "all" && kase.track !== filters.track) return false
+  if (filters.brand !== "all" && kase.brand !== filters.brand) return false
   return true
 }
 
@@ -217,7 +237,7 @@ async function loadBase(db: DB, filters: ReportFilters, now = new Date()): Promi
   const range = reportRange(filters.range, now)
   const caseResult = await db
     .from("cases")
-    .select("id, client_id, stage, service_mode, created_at, updated_at, is_demo, license_issued_on, license_expires_on, clients!inner(full_name, email, track, lead_source, assigned_staff)")
+    .select("id, client_id, stage, service_mode, brand, brand_origin, created_at, updated_at, is_demo, license_issued_on, license_expires_on, clients!inner(full_name, email, track, lead_source, assigned_staff)")
     .order("created_at", { ascending: true })
   if (caseResult.error) throw new Error(`Cases: ${caseResult.error.message}`)
 
@@ -250,18 +270,21 @@ async function loadBase(db: DB, filters: ReportFilters, now = new Date()): Promi
       activities: [],
       paidIds: new Set(),
       visits: [],
+      transfers: [],
       range,
     }
   }
 
-  const [paymentResult, activityResult, paidResult] = await Promise.all([
-    db.from("payments").select("id, case_id, amount_cents, status, paid_at, created_at, updated_at").in("case_id", caseIds).order("created_at", { ascending: true }),
+  const [paymentResult, activityResult, paidResult, transferResult] = await Promise.all([
+    db.from("payments").select("id, case_id, amount_cents, status, paid_at, created_at, updated_at, brand").in("case_id", caseIds).order("created_at", { ascending: true }),
     db.from("activity_log").select("id, case_id, action, created_at, actor, entity_id, detail").in("case_id", caseIds).in("action", ["case.stage_advanced", "case.stage_auto_advanced", "case.license_issued", "case.qa_signed_off", "document.reviewed"]).order("created_at", { ascending: true }),
     paidCaseIds(db, caseIds).catch(() => null),
+    db.from("brand_transfers").select("case_id, payment_id, created_at").in("case_id", caseIds).eq("reason", "upgrade_to_concierge"),
   ])
   if (paymentResult.error) errors.push("payments")
   if (activityResult.error) errors.push("activity history")
   if (!paidResult) errors.push("paid status")
+  if (transferResult.error) errors.push("brand upgrades")
 
   const payments: RawPayment[] = (paymentResult.data ?? []).map((row) => ({
     id: row.id,
@@ -271,6 +294,12 @@ async function loadBase(db: DB, filters: ReportFilters, now = new Date()): Promi
     paidAt: row.paid_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    brand: row.brand,
+  }))
+  const transfers: RawBrandTransfer[] = (transferResult.data ?? []).map((row) => ({
+    caseId: row.case_id,
+    paymentId: row.payment_id,
+    createdAt: row.created_at,
   }))
   const activities: RawActivity[] = (activityResult.data ?? []).map((row) => ({
     id: row.id,
@@ -303,6 +332,7 @@ async function loadBase(db: DB, filters: ReportFilters, now = new Date()): Promi
     activities,
     paidIds: paidResult ?? new Set(),
     visits,
+    transfers,
     range,
   }
 }
@@ -448,6 +478,30 @@ export async function loadOverviewReport(db: DB, filters: ReportFilters, now = n
     const money = collectedFor(base.payments, base.range.start, base.range.end, ids)
     return { key, label: key === "concierge" ? "Full Concierge" : "Self-guided", clients: ids.size, bookedCents: money.collected, comps: money.comps }
   })
+  const brands = (["gln", "fl"] as const).map((key) => {
+    const brandCases = base.cases.filter((kase) => kase.brandOrigin === key)
+    const brandCaseIds = new Set(brandCases.map((kase) => kase.id))
+    const leads = brandCases.filter((kase) => inRange(kase.createdAt, base.range.start, base.range.end)).length
+    const paid = [...firstPaid.values()].filter((payment) => payment.brand === key && inRange(payment.paidAt, base.range.start, base.range.end)).length
+    const collectedCents = collectedFor(base.payments.filter((payment) => payment.brand === key), base.range.start, base.range.end).collected
+    return {
+      key,
+      label: key === "gln" ? "Gun License NYC" : "Firearm License NYC",
+      leads,
+      paid,
+      collectedCents,
+      stageCounts: brandCaseIds.size,
+    }
+  })
+  const paymentById = new Map(base.payments.map((payment) => [payment.id, payment]))
+  const periodUpgrades = base.transfers.filter((transfer) => inRange(transfer.createdAt, base.range.start, base.range.end))
+  const upgrades = {
+    count: periodUpgrades.length,
+    collectedCents: periodUpgrades.reduce((sum, transfer) => {
+      const payment = transfer.paymentId ? paymentById.get(transfer.paymentId) : null
+      return sum + (payment?.status === "paid" ? payment.amountCents : 0)
+    }, 0),
+  }
   const leads = base.cases.filter((kase) => inRange(kase.createdAt, base.range.start, base.range.end))
   const sourceCounts = new Map<string, number>()
   for (const kase of leads) {
@@ -466,12 +520,22 @@ export async function loadOverviewReport(db: DB, filters: ReportFilters, now = n
     metrics,
     funnel: funnelFor(base),
     services,
+    brands,
+    upgrades,
     leadSources,
     rawLeadSources: rawSources(leads),
     stages,
     tooLittleData: current.leads < 5,
     exportRows: [
       ...metrics.map((metric) => [metric.label, metric.kind === "money" ? metric.value / 100 : metric.value] as [string, string | number]),
+      ...brands.flatMap((brand) => [
+        [`${brand.label} new leads`, brand.leads] as [string, string | number],
+        [`${brand.label} became paid`, brand.paid] as [string, string | number],
+        [`${brand.label} collected`, brand.collectedCents / 100] as [string, string | number],
+        [`${brand.label} active cases`, brand.stageCounts] as [string, string | number],
+      ]),
+      ["FL → GLN upgrades", upgrades.count],
+      ["FL → GLN upgrade revenue", upgrades.collectedCents / 100],
       ...stages.map((stage) => [`${stage.label} median days`, stage.median ?? "Not enough data"] as [string, string | number]),
     ],
   }

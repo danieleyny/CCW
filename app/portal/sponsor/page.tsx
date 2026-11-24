@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { getMyCase } from "@/lib/portal"
 import { createClient } from "@/lib/supabase/server"
 import { SectionEyebrow } from "@/components/shared/section-eyebrow"
@@ -15,6 +15,7 @@ export const metadata = { title: "Who can see your file", robots: { index: false
  */
 export default async function PortalSponsorPage() {
   const myCase = await getMyCase()
+  if (myCase?.brand === "fl") notFound()
   if (!myCase) redirect("/portal")
 
   const db = await createClient()

@@ -93,12 +93,9 @@ const nextConfig: NextConfig = {
    *    "Deployment". Brand aliases preserve the path; exact-match keyword domains
    *    send all their traffic to the single best-matching page.
    *
-   * ⚠️ NEVER list a SATELLITE domain here. firearmlicensenyc.com and
-   * nycgunlaws.com are independent deployments with their own Vercel projects;
-   * they must not be attached to this project and must not appear in either list
-   * below. They were briefly in BRAND_ALIAS_HOSTS, which 301'd them here — an
-   * easy mistake to repeat, because Next runs redirects() before Proxy so the
-   * 301 wins silently.
+   * ⚠️ NEVER list a SATELLITE apex here. firearmlicensenyc.com and
+   * nycgunlaws.com remain independent deployments. app.firearmlicensenyc.com IS
+   * intentionally attached to this project and proxy.ts resolves it to FL.
    */
   async redirects() {
     const CANONICAL = "gunlicensenyc.com"
@@ -108,7 +105,7 @@ const nextConfig: NextConfig = {
     // Owned brand-variant domains → canonical, path-preserving. (concealedknowledge.*
     // is intentionally omitted — it's reserved to become a real content property,
     // not a redirect. See DOMAIN_STRATEGY.md.)
-    const BRAND_ALIAS_HOSTS = ["gunlicenseny.com", "firearmlicenseny.com"]
+    const BRAND_ALIAS_HOSTS = ["gunlicenseny.com"]
 
     // Exact-match keyword domains → the matching page. Add a host here as you buy +
     // attach it in Vercel; unattached hosts simply never match. Mapping mirrors the

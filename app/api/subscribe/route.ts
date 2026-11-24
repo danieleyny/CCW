@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { createAdminClient } from "@/lib/supabase/admin"
-import type { Json } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
-import { getSiteUrl } from "@/lib/site-url"
 import { notifyFormspree } from "@/lib/formspree"
+import { getRequestBrandKey } from "@/lib/brand/server"
+import { brandUrl } from "@/lib/brand/origin"
 import {
   SUBSCRIBE_OFFERS,
   allowedOrigins,
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     )
   }
   const v = parsed.data
+  const requestBrand = await getRequestBrandKey()
 
   // Honeypot: pretend success, write nothing (same as captureLead).
   if ((v.company ?? "").trim() !== "") return NextResponse.json({ ok: true }, { headers })
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await admin
     .from("subscribers")
     .upsert(
-      { email: v.email, offer: v.offer, source: v.from, payload: (v.payload ?? {}) as unknown as Json, jurisdiction: v.jurisdiction ?? null },
+      { email: v.email, offer: v.offer, source: v.from, payload: (v.payload ?? {}) as never, jurisdiction: v.jurisdiction ?? null },
       { onConflict: "email,offer" }
     )
     .select("id")
@@ -95,9 +96,9 @@ export async function POST(req: NextRequest) {
   await notifyFormspree(`subscribe:${v.offer}`, { email: v.email, offer: v.offer, from: v.from, jurisdiction: v.jurisdiction })
 
   // Confirmation email — no-ops safely without RESEND_API_KEY (ships dark).
-  const unsubUrl = `${getSiteUrl()}/api/unsubscribe?token=${encodeURIComponent(unsubToken(data.id))}`
-  const { html, text } = offerEmail(v.offer, unsubUrl)
-  await sendEmail({ to: v.email, subject: offerSubject(v.offer), html, text })
+  const unsubUrl = brandUrl(requestBrand, `/api/unsubscribe?token=${encodeURIComponent(unsubToken(data.id))}`)
+  const { html, text } = offerEmail(v.offer, unsubUrl, requestBrand)
+  await sendEmail({ brand: requestBrand, to: v.email, subject: offerSubject(v.offer, requestBrand), html, text })
 
   return NextResponse.json({ ok: true }, { headers })
 }

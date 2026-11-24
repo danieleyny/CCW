@@ -36,6 +36,20 @@ export function NewClientForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="brand">Brand</Label>
+            <select
+              id="brand"
+              name="brand"
+              required
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+              defaultValue="gln"
+            >
+              <option value="gln">Gun License NYC</option>
+              <option value="fl">Firearm License NYC</option>
+            </select>
+            <p className="text-xs text-muted-foreground">Choose the storefront this applicant belongs to. This cannot be changed directly after creation.</p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="fullName">Full name</Label>
             <Input id="fullName" name="fullName" required />
           </div>

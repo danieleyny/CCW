@@ -14,7 +14,6 @@ import {
   applicationTypeToLegacyLicenseType,
   type ApplicantSelectableApplicationType,
 } from "@/lib/application-types"
-import type { Json } from "@/lib/supabase/types"
 
 const schema = z.object({
   applicationType: z.enum(APPLICANT_SELECTABLE_APPLICATION_TYPES),
@@ -153,7 +152,7 @@ export async function selectApplicationType(
     }
     await admin
       .from("intake_sessions")
-      .update({ answers: normalized as Json })
+      .update({ answers: normalized as never })
       .eq("case_id", myCase.id)
   }
 

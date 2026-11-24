@@ -1,15 +1,11 @@
 import "server-only"
 
 import { Resend } from "resend"
-import { brand } from "@/config/brand"
+import { BRANDS, type BrandKey } from "@/config/brands"
 import { renderEmail } from "./template"
 
 /** Email is live only when a Resend key is configured; otherwise we no-op + log. */
 export const EMAIL_ENABLED = Boolean(process.env.RESEND_API_KEY)
-
-const FROM = process.env.EMAIL_FROM ?? `${brand.name} <onboarding@resend.dev>`
-// Replies to any transactional email reach a human at the brand contact inbox.
-const REPLY_TO = brand.contact.email
 
 export interface EmailAttachment {
   filename: string
@@ -19,6 +15,7 @@ export interface EmailAttachment {
 }
 
 export interface SendEmailInput {
+  brand: BrandKey
   to: string
   subject: string
   html: string
@@ -35,6 +32,7 @@ function maskEmail(addr: string): string {
 }
 
 export async function sendEmail(input: SendEmailInput) {
+  const brand = BRANDS[input.brand]
   if (!EMAIL_ENABLED) {
     console.log(
       `[email:noop] to=${maskEmail(input.to)} subject="${input.subject}"` +
@@ -43,11 +41,12 @@ export async function sendEmail(input: SendEmailInput) {
     )
     return { skipped: true as const }
   }
+  const from = process.env[brand.email.fromEnv] || `${brand.name} <onboarding@resend.dev>`
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { data, error } = await resend.emails.send({
-    from: FROM,
+    from,
     to: input.to,
-    replyTo: input.replyTo ?? REPLY_TO,
+    replyTo: input.replyTo ?? brand.email.replyTo,
     subject: input.subject,
     html: input.html,
     text: input.text,
@@ -66,6 +65,7 @@ export async function sendEmail(input: SendEmailInput) {
 
 /** Convenience: notify a client about a case status change, branded (no-op until keys). */
 export async function notifyClient(opts: {
+  brand: BrandKey
   to: string | null | undefined
   subject: string
   body: string
@@ -73,6 +73,11 @@ export async function notifyClient(opts: {
   cta?: { label: string; url: string }
 }) {
   if (!opts.to) return { skipped: true as const }
-  const { html, text } = renderEmail({ heading: opts.subject, paragraphs: [opts.body], cta: opts.cta })
-  return sendEmail({ to: opts.to, subject: opts.subject, html, text })
+  const { html, text } = renderEmail({
+    brand: opts.brand,
+    heading: opts.subject,
+    paragraphs: [opts.body],
+    cta: opts.cta,
+  })
+  return sendEmail({ brand: opts.brand, to: opts.to, subject: opts.subject, html, text })
 }

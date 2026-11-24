@@ -5,6 +5,7 @@ import {
   loadOverviewReport,
   loadServiceLevelsReport,
   type ReportFilters,
+  type ReportBrandFilter,
   type ReportServiceFilter,
   type ReportTab,
   type ReportTrackFilter,
@@ -12,6 +13,7 @@ import {
 import type { ReportRangeKey } from "@/lib/admin/reports-model"
 import { requireStaff } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { resolveAdminBrandFilter } from "@/lib/admin/brand-filter"
 
 export const metadata = { title: { absolute: "Reports · Staff" } }
 
@@ -25,7 +27,6 @@ const TABS = new Set<ReportTab>(["overview", "bottlenecks", "service"])
 const RANGES = new Set<ReportRangeKey>(["month", "90", "year", "all"])
 const SERVICES = new Set<ReportServiceFilter>(["all", "concierge", "self_guided"])
 const TRACKS = new Set<ReportTrackFilter>(["all", "resident", "business", "non_resident"])
-
 export default async function AdminReports({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { profile } = await requireStaff()
   const params = await searchParams
@@ -33,6 +34,7 @@ export default async function AdminReports({ searchParams }: { searchParams: Pro
   const requestedRange = first(params.range) as ReportRangeKey
   const requestedService = first(params.service) as ReportServiceFilter
   const requestedTrack = first(params.track) as ReportTrackFilter
+  const requestedBrand = await resolveAdminBrandFilter(first(params.brand))
   const tab = TABS.has(requestedTab) ? requestedTab : "overview"
   const range = RANGES.has(requestedRange) ? requestedRange : "90"
   const isAdmin = profile.role === "admin"
@@ -40,6 +42,7 @@ export default async function AdminReports({ searchParams }: { searchParams: Pro
     range,
     service: SERVICES.has(requestedService) ? requestedService : "all",
     track: TRACKS.has(requestedTrack) ? requestedTrack : "all",
+    brand: requestedBrand as ReportBrandFilter,
     compare: range !== "all" && first(params.compare) !== "0",
     showHidden: isAdmin && first(params.showHidden) === "1",
     isAdmin,
@@ -58,7 +61,7 @@ export default async function AdminReports({ searchParams }: { searchParams: Pro
     detail: {
       tab,
       range,
-      filters: { service: filters.service, track: filters.track, compare: filters.compare },
+      filters: { service: filters.service, track: filters.track, brand: filters.brand, compare: filters.compare },
       showHidden: filters.showHidden,
     },
   })

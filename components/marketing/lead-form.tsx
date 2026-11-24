@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { useActionState, useEffect, useRef, useState } from "react"
-import Link from "next/link"
-import { CheckCircle2, ArrowRight } from "lucide-react"
-import { captureLead, type LeadState } from "@/app/(marketing)/actions"
-import { trackEvent } from "@/lib/analytics"
-import { BOROUGHS } from "@/config/stages"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { HoneypotField } from "@/components/shared/honeypot-field"
+import { useActionState, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { CheckCircle2, ArrowRight } from "lucide-react";
+import { captureLead, type LeadState } from "@/app/(marketing)/actions";
+import { trackEvent } from "@/lib/analytics";
+import { BOROUGHS } from "@/config/stages";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { HoneypotField } from "@/components/shared/honeypot-field";
 
 /** sessionStorage key the sign-up form reads to pre-fill name + email. */
-export const SIGNUP_PREFILL_KEY = "carry_signup_prefill"
+export const SIGNUP_PREFILL_KEY = "carry_signup_prefill";
 
 export function LeadForm({
   source,
@@ -27,53 +27,55 @@ export function LeadForm({
   hidden,
   variant = "default",
   onSuccess,
+  accountHref = "/auth/sign-up",
 }: {
-  source: string
-  showMessage?: boolean
-  showBorough?: boolean
-  datetime?: boolean
-  submitLabel?: string
-  successTitle?: string
-  successBody?: string
+  source: string;
+  showMessage?: boolean;
+  showBorough?: boolean;
+  datetime?: boolean;
+  submitLabel?: string;
+  successTitle?: string;
+  successBody?: string;
   /** When true, the success state pushes the visitor straight into account creation. */
-  accountCta?: boolean
-  hidden?: Record<string, string>
+  accountCta?: boolean;
+  hidden?: Record<string, string>;
   /** Light presentation used inside pale marketing panels. */
-  variant?: "default" | "light"
+  variant?: "default" | "light";
   /** Optional visual callback after the server confirms a successful lead. */
-  onSuccess?: () => void
+  onSuccess?: () => void;
+  accountHref?: string;
 }) {
-  const [state, action, pending] = useActionState<LeadState, FormData>(captureLead, {})
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const announcedSuccess = useRef(false)
+  const [state, action, pending] = useActionState<LeadState, FormData>(captureLead, {});
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const announcedSuccess = useRef(false);
 
   // On success, stash name + email so /auth/sign-up comes pre-filled and the new
   // account adopts the lead just captured (no PII in the URL).
   useEffect(() => {
     if (state.ok && accountCta && typeof window !== "undefined") {
       try {
-        window.sessionStorage.setItem(SIGNUP_PREFILL_KEY, JSON.stringify({ name, email }))
+        window.sessionStorage.setItem(SIGNUP_PREFILL_KEY, JSON.stringify({ name, email }));
       } catch {
         // sessionStorage unavailable — sign-up just starts blank
       }
     }
-  }, [state.ok, accountCta, name, email])
+  }, [state.ok, accountCta, name, email]);
 
   // Conversion event on a successful lead capture (contact page + checklist
   // capture both flow through here). `source` distinguishes them in GA4.
   useEffect(() => {
     if (state.ok) {
-      trackEvent("contact_submitted", { source })
-      trackEvent("generate_lead", { source })
+      trackEvent("contact_submitted", { source });
+      trackEvent("generate_lead", { source });
     }
-  }, [state.ok, source])
+  }, [state.ok, source]);
 
   useEffect(() => {
-    if (!state.ok || announcedSuccess.current) return
-    announcedSuccess.current = true
-    onSuccess?.()
-  }, [state.ok, onSuccess])
+    if (!state.ok || announcedSuccess.current) return;
+    announcedSuccess.current = true;
+    onSuccess?.();
+  }, [state.ok, onSuccess]);
 
   if (state.ok) {
     if (accountCta) {
@@ -91,16 +93,14 @@ export function LeadForm({
           </p>
           <div className="mt-6 flex flex-col items-center gap-3">
             <Button asChild size="lg">
-              <Link href="/auth/sign-up">
+              <Link href={accountHref}>
                 Create your account &amp; get started <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <p className="text-xs text-text-low">
-              Prefer to talk first? {successBody}
-            </p>
+            <p className="text-xs text-text-low">Prefer to talk first? {successBody}</p>
           </div>
         </div>
-      )
+      );
     }
     return (
       <div
@@ -112,32 +112,47 @@ export function LeadForm({
         <h3 className="mt-3 font-display text-lg font-semibold">{successTitle}</h3>
         <p className="mt-1 text-sm text-text-mid">{successBody}</p>
       </div>
-    )
+    );
   }
 
   return (
     <form action={action} className="space-y-4" data-lead-form="form" data-variant={variant}>
       <input type="hidden" name="source" value={source} />
       {hidden &&
-        Object.entries(hidden).map(([k, v]) => (
-          <input key={k} type="hidden" name={k} value={v} />
-        ))}
+        Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
       {/* Honeypot — humans never see this; bots that fill it are dropped server-side. */}
       <HoneypotField />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="lead-name">Full name</Label>
-          <Input id="lead-name" name="name" required value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            id="lead-name"
+            name="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lead-email">Email</Label>
-          <Input id="lead-email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="lead-email"
+            name="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lead-phone">
             Phone {variant === "light" ? <span className="font-normal">(optional)</span> : null}
           </Label>
-          <Input id="lead-phone" name="phone" placeholder={variant === "light" ? undefined : "optional"} />
+          <Input
+            id="lead-phone"
+            name="phone"
+            placeholder={variant === "light" ? undefined : "optional"}
+          />
         </div>
         {showBorough && (
           <div className="space-y-1.5">
@@ -168,7 +183,8 @@ export function LeadForm({
       {showMessage && (
         <div className="space-y-1.5">
           <Label htmlFor="lead-message">
-            Anything we should know? {variant === "light" ? <span className="font-normal">(optional)</span> : null}
+            Anything we should know?{" "}
+            {variant === "light" ? <span className="font-normal">(optional)</span> : null}
           </Label>
           <Textarea
             id="lead-message"
@@ -183,5 +199,5 @@ export function LeadForm({
         {pending ? "Sending…" : submitLabel}
       </Button>
     </form>
-  )
+  );
 }

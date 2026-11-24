@@ -19,12 +19,14 @@ import {
   ConciergeBell,
   FolderOpen,
   IdCard,
+  ArrowUpRight,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
 import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 import type { Messages } from "@/lib/i18n/messages"
+import type { BrandKey } from "@/config/brands"
 
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean }
 
@@ -123,6 +125,13 @@ const DESKTOP_CONCIERGE: Item[] = [
   { href: "/portal/appeal", label: "Appeal", icon: Scale },
 ]
 
+const UPGRADE_ITEM: MoreItem = {
+  href: "/portal/upgrade",
+  label: "Upgrade to Concierge",
+  icon: ArrowUpRight,
+  status: "Move your case to Gun License NYC",
+}
+
 function useActive() {
   const pathname = usePathname()
   return (href: string, exact?: boolean) =>
@@ -130,14 +139,14 @@ function useActive() {
 }
 
 /** Desktop: a horizontal tab row under the header. */
-export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
+export function PortalTopNav({ concierge = false, brand = "gln" }: { concierge?: boolean; brand?: BrandKey }) {
   const isActive = useActive()
   const { messages } = usePortalI18n()
   const shell = messages.shell
   return (
     <nav aria-label={shell.primary} className="portal-v2-top-nav hidden border-t border-hairline md:block">
       <div className="portal-v2-top-nav-wrap mx-auto flex max-w-[1120px] flex-nowrap gap-1 overflow-x-auto px-6 lg:px-8">
-        {(concierge ? DESKTOP_CONCIERGE : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
+        {(concierge ? DESKTOP_CONCIERGE : brand === "fl" ? [...DESKTOP, UPGRADE_ITEM] : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           return (
             <Link
@@ -162,13 +171,13 @@ export function PortalTopNav({ concierge = false }: { concierge?: boolean }) {
  * tab that opens a bottom sheet with everything else. Brass is the "you are here"
  * color (signal is reserved for "needs your attention"). Safe-area aware.
  */
-export function PortalBottomNav({ unread = 0, concierge = false }: { unread?: number; concierge?: boolean }) {
+export function PortalBottomNav({ unread = 0, concierge = false, brand = "gln" }: { unread?: number; concierge?: boolean; brand?: BrandKey }) {
   const isActive = useActive()
   const [moreOpen, setMoreOpen] = useState(false)
   const { messages } = usePortalI18n()
   const shell = messages.shell
   const primary = concierge ? PRIMARY_CONCIERGE : PRIMARY
-  const more = concierge ? MORE_CONCIERGE : MORE
+  const more = concierge ? MORE_CONCIERGE : brand === "fl" ? [...MORE, UPGRADE_ITEM] : MORE
   const moreActive = more.some((m) => isActive(m.href, m.exact))
 
   return (

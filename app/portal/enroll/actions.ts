@@ -8,8 +8,10 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getStripe, STRIPE_ENABLED } from "@/lib/stripe"
 import { findOrCreateCustomer } from "@/lib/stripe/invoicing"
-import { getPackage } from "@/lib/packages"
-import { getSiteUrl } from "@/lib/site-url"
+import { getPackageForBrand } from "@/lib/packages"
+import { brandUrl } from "@/lib/brand/origin"
+import { getRequestBrandKey } from "@/lib/brand/server"
+import { BRANDS, type BrandKey } from "@/config/brands"
 import { logActivity } from "@/lib/activity"
 import { matchAccessCode } from "@/lib/access-codes"
 
@@ -41,6 +43,14 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   const myCase = await getMyCase()
   if (!myCase) return { error: "Your case isn't set up yet." }
   if (!myCase.application_type) redirect("/portal/license-path")
+  const requestBrand = await getRequestBrandKey()
+  const caseBrand = myCase.brand as BrandKey
+  if (requestBrand !== caseBrand) {
+    return { error: `This case belongs to ${BRANDS[caseBrand].displayName}. Continue there to pay.` }
+  }
+  if (BRANDS[caseBrand].payInFull && mode === "deposit") {
+    return { error: "This package is paid in full." }
+  }
 
   const supabase = await createClient()
 
@@ -57,7 +67,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
     return { error: "We can't take payment while your eligibility is under attorney review. Your consultant will reach out about the right next step." }
   }
 
-  const pkg = await getPackage(supabase, packageKey)
+  const pkg = await getPackageForBrand(supabase, packageKey, caseBrand)
   if (!pkg) return { error: "That package isn't available." }
 
   // Never accept a price from the browser. Re-match the submitted code on the
@@ -79,7 +89,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
   }
 
   // Custom-priced packages always go through a human.
-  if (pkg.priceCents <= 0) return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, pkg.name, 0)
+  if (pkg.priceCents <= 0) return requestInvoice(supabase, myCase.id, myCase.client_id, caseBrand, pkg.key, pkg.name, 0)
 
   const amount = discount?.priceCents ?? (mode === "deposit" && pkg.depositCents > 0 ? pkg.depositCents : pkg.priceCents)
   const description =
@@ -109,27 +119,43 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
     if (claimState === "exhausted") return { error: "This code has already been used." }
   }
   if (!STRIPE_ENABLED || !stripe) {
-    return requestInvoice(supabase, myCase.id, myCase.client_id, pkg.key, description, amount)
+    return requestInvoice(supabase, myCase.id, myCase.client_id, caseBrand, pkg.key, description, amount)
   }
 
   // Pending payment first, so the webhook has something to reconcile.
   // Service-role justified: payments RLS is staff-write-only by design; the
   // amount comes from the DB package table (never client input) after
   // requireRole + case-ownership checks above.
-  const { data: payment, error } = await admin
+  const paymentType = mode === "deposit" ? "deposit" : "full"
+  const { data: pending } = await admin
     .from("payments")
-    .insert({
-      case_id: myCase.id,
-      client_id: myCase.client_id,
-      amount_cents: amount,
-      type: mode === "deposit" ? "deposit" : "full",
-      status: "pending",
-      description,
-      package_key: pkg.key,
-    })
     .select("id")
-    .single()
-  if (error || !payment) return { error: "Couldn't start checkout. Try again." }
+    .eq("case_id", myCase.id)
+    .eq("package_key", pkg.key)
+    .eq("amount_cents", amount)
+    .eq("type", paymentType)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const payment = pending ?? (
+    await admin
+      .from("payments")
+      .insert({
+        case_id: myCase.id,
+        client_id: myCase.client_id,
+        amount_cents: amount,
+        type: paymentType,
+        status: "pending",
+        description,
+        package_key: pkg.key,
+        brand: caseBrand,
+      })
+      .select("id")
+      .single()
+  ).data
+  if (!payment) return { error: "Couldn't start checkout. Try again." }
 
   // Attach a reusable Stripe Customer so receipts + saved details work. Best
   // effort: never block a purchase on customer creation.
@@ -145,7 +171,15 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
     console.error("[stripe] customer attach (checkout) failed:", e)
   }
 
-  const base = getSiteUrl()
+  const brandConfig = BRANDS[caseBrand]
+  const metadata = {
+    brand: caseBrand,
+    payment_id: payment.id,
+    package_key: pkg.key,
+    case_id: myCase.id,
+    client_id: myCase.client_id,
+    ...(discount ? { discount_code_label: discount.label } : {}),
+  }
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     ...(customerId ? { customer: customerId } : {}),
@@ -155,19 +189,20 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
         price_data: {
           currency: "usd",
           unit_amount: amount,
-          product_data: { name: `Gun License NYC — ${description}` },
+          product_data: { name: `${brandConfig.displayName} — ${description}` },
         },
       },
     ],
     integration_identifier: "ccw_checkout_kqmwztar",
-    metadata: {
-      payment_id: payment.id,
-      package_key: pkg.key,
-      case_id: myCase.id,
-      ...(discount ? { discount_code_label: discount.label } : {}),
+    metadata,
+    payment_intent_data: {
+      metadata,
+      ...(brandConfig.stripeDescriptorSuffix
+        ? { statement_descriptor_suffix: brandConfig.stripeDescriptorSuffix }
+        : {}),
     },
-    success_url: `${base}/portal?enrolled=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/portal/enroll?canceled=1`,
+    success_url: brandUrl(caseBrand, "/portal?enrolled=1&session_id={CHECKOUT_SESSION_ID}"),
+    cancel_url: brandUrl(caseBrand, "/portal/enroll?canceled=1"),
   })
   await admin.from("payments").update({ stripe_session_id: session.id }).eq("id", payment.id)
 
@@ -194,6 +229,7 @@ async function requestInvoice(
   _supabase: Awaited<ReturnType<typeof createClient>>,
   caseId: string,
   clientId: string,
+  brand: BrandKey,
   packageKey: string,
   description: string,
   amountCents: number
@@ -218,6 +254,7 @@ async function requestInvoice(
       status: "pending",
       description: `${description} — invoice requested`,
       package_key: packageKey,
+      brand,
     })
     await admin.from("tasks").insert({
       case_id: caseId,

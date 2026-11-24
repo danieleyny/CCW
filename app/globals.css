@@ -102,6 +102,40 @@
   color-scheme: dark;
 }
 
+/* Firearm License NYC uses the same component system with its own semantic
+   identity. The selector is set server-side from the exact request host, so
+   there is no theme flash and no client-controlled brand decision. */
+html[data-brand="fl"] {
+  --brass: #2E4BFF;
+  --brass-bright: #D4FF3F;
+  --brass-deep: #2438B8;
+  --brass-glow: rgba(46, 75, 255, 0.24);
+  --signal: #D4FF3F;
+  --signal-dim: rgba(212, 255, 63, 0.15);
+  --primary: #2E4BFF;
+  --primary-foreground: #FFFFFF;
+  --brand: #2E4BFF;
+  --brand-foreground: #FFFFFF;
+  --ring: #2E4BFF;
+}
+html[data-brand="fl"] .dark {
+  --bg: #0E0F13;
+  --background: #0E0F13;
+  --surface-1: #15171E;
+  --surface-2: #1B1E27;
+  --surface-3: #252936;
+  --card: #15171E;
+  --popover: #1B1E27;
+  --secondary: #1B1E27;
+  --muted: #1B1E27;
+  --accent: #252936;
+  --sidebar: #12141A;
+  --sidebar-primary: #2E4BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring: #D4FF3F;
+  --app-bg-dark: #0E0F13;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

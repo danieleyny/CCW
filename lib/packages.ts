@@ -5,6 +5,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
+import { BRANDS, type BrandKey } from "@/config/brands"
 
 type DB = SupabaseClient<Database>
 
@@ -17,6 +18,7 @@ export interface ServicePackage {
   priceLabel: string
   featured: boolean
   refilePromise: boolean
+  soldBy: BrandKey[]
 }
 
 /**
@@ -25,14 +27,14 @@ export interface ServicePackage {
  * connection from rendering an empty pricing page during a preview.
  */
 export const PUBLIC_PACKAGE_FALLBACK: ServicePackage[] = [
-  { key: "self_guided", name: "Self-Guided", blurb: "The complete playbook, in your hands.", priceCents: 49900, depositCents: 19900, priceLabel: "$499", featured: false, refilePromise: false },
-  { key: "full_concierge", name: "Full Concierge", blurb: "Hands-on preparation and case management.", priceCents: 100000, depositCents: 50000, priceLabel: "$1,000", featured: true, refilePromise: true },
+  { key: "self_guided", name: "Self-Guided", blurb: "The complete playbook, in your hands.", priceCents: 49900, depositCents: 19900, priceLabel: "$499", featured: false, refilePromise: false, soldBy: ["fl"] },
+  { key: "full_concierge", name: "Full Concierge", blurb: "Hands-on preparation and case management.", priceCents: 100000, depositCents: 50000, priceLabel: "$1,000", featured: true, refilePromise: true, soldBy: ["gln"] },
 ]
 
 export async function getActivePackages(db: DB): Promise<ServicePackage[]> {
   const { data } = await db
     .from("service_packages")
-    .select("key, name, blurb, price_cents, deposit_cents, price_label, featured, refile_promise")
+    .select("key, name, blurb, price_cents, deposit_cents, price_label, featured, refile_promise, sold_by")
     .eq("active", true)
     .order("sort", { ascending: true })
   return (data ?? []).map((p) => ({
@@ -44,7 +46,26 @@ export async function getActivePackages(db: DB): Promise<ServicePackage[]> {
     priceLabel: p.price_label ?? `$${(p.price_cents / 100).toLocaleString("en-US")}`,
     featured: p.featured,
     refilePromise: p.refile_promise,
+    soldBy: p.sold_by,
   }))
+}
+
+export function packagesForBrand(packages: ServicePackage[], brand: BrandKey): ServicePackage[] {
+  const configured = new Set<string>(BRANDS[brand].packages)
+  return packages.filter((pkg) => pkg.soldBy.includes(brand) && configured.has(pkg.key))
+}
+
+export async function getActivePackagesForBrand(db: DB, brand: BrandKey): Promise<ServicePackage[]> {
+  return packagesForBrand(await getActivePackages(db), brand)
+}
+
+export async function getPackageForBrand(
+  db: DB,
+  key: string,
+  brand: BrandKey
+): Promise<ServicePackage | null> {
+  const packages = await getActivePackagesForBrand(db, brand)
+  return packages.find((pkg) => pkg.key === key) ?? null
 }
 
 export async function getPackage(db: DB, key: string): Promise<ServicePackage | null> {

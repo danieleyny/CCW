@@ -1,84 +1,740 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Clock3, LayoutGrid, LockKeyhole, Users } from "lucide-react"
-import { CASE_STAGES } from "@/config/stages"
-import type { PipelineCard, PipelineClientData, PipelineColumn } from "@/lib/admin/pipeline"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Clock3, LayoutGrid, LockKeyhole, Users } from "lucide-react";
+import { CASE_STAGES } from "@/config/stages";
+import type { PipelineCard, PipelineClientData, PipelineColumn } from "@/lib/admin/pipeline";
+import { cn } from "@/lib/utils";
+import { BrandChip } from "@/components/admin/brand-chip";
+import { persistAdminBrandFilter } from "@/lib/admin/brand-filter-client";
 
-const PROGRESS_STAGES = CASE_STAGES.slice(2)
+const PROGRESS_STAGES = CASE_STAGES.slice(2);
 
 function moveColor(owner: PipelineCard["whoseMove"]) {
-  if (owner === "Staff") return "bg-[#D9B25F]"
-  if (owner === "NYPD") return "bg-[#667085]"
-  if (owner === "Third party") return "bg-[#7F56D9]"
-  if (owner === "Licensed") return "bg-[#21845A]"
-  return "bg-[#2E90FA]"
+  if (owner === "Staff") return "bg-[#D9B25F]";
+  if (owner === "NYPD") return "bg-[#667085]";
+  if (owner === "Third party") return "bg-[#7F56D9]";
+  if (owner === "Licensed") return "bg-[#21845A]";
+  return "bg-[#2E90FA]";
 }
 
 function toneClass(tone: PipelineColumn["tone"]) {
-  if (tone === "agency") return "pipeline-agency-column bg-[#E9ECF0]"
-  if (tone === "licensed") return "bg-[#EAF5EF]"
-  if (tone === "warm") return "bg-[#FBF6EA]"
-  if (tone === "muted") return "bg-[#F1F2F4]"
-  return "bg-[#EDF0F4]"
+  if (tone === "agency") return "pipeline-agency-column bg-[#E9ECF0]";
+  if (tone === "licensed") return "bg-[#EAF5EF]";
+  if (tone === "warm") return "bg-[#FBF6EA]";
+  if (tone === "muted") return "bg-[#F1F2F4]";
+  return "bg-[#EDF0F4]";
 }
 
-function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: Array<{ value: string; label: string }>; onChange: (value: string) => void }) {
-  return <label className="flex items-center gap-2 text-xs font-semibold text-[#475467]"><span>{label}</span><select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} className="h-8 rounded-lg border border-black/10 bg-white px-2.5 text-xs font-medium text-[#1D2939] shadow-sm">{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+function FilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-xs font-semibold text-[#475467]">
+      <span>{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 rounded-lg border border-black/10 bg-white px-2.5 text-xs font-medium text-[#1D2939] shadow-sm"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 function Tag({ children, tone = "slate" }: { children: React.ReactNode; tone?: "slate" | "gold" }) {
-  return <span className={cn("rounded-full px-1.5 py-0.5 font-mono text-[8px] font-semibold uppercase tracking-[.08em]", tone === "gold" ? "bg-[#FFF3D6] text-[#805B00]" : "bg-[#EAECF0] text-[#475467]")}>{children}</span>
+  return (
+    <span
+      className={cn(
+        "rounded-full px-1.5 py-0.5 font-mono text-[8px] font-semibold uppercase tracking-[.08em]",
+        tone === "gold" ? "bg-[#FFF3D6] text-[#805B00]" : "bg-[#EAECF0] text-[#475467]",
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 function Owner({ card }: { card: PipelineCard }) {
-  return <span title={card.ownerName ?? "Unassigned"} aria-label={card.ownerName ? `Assigned to ${card.ownerName}` : "Unassigned"} className={cn("inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold", card.ownerName ? "border-[#D9B25F]/60 bg-[#FFF8E7] text-[#14254A]" : "border-dashed border-[#98A2B3] text-[#667085]")}>{card.ownerInitials}</span>
+  return (
+    <span
+      title={card.ownerName ?? "Unassigned"}
+      aria-label={card.ownerName ? `Assigned to ${card.ownerName}` : "Unassigned"}
+      className={cn(
+        "inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold",
+        card.ownerName
+          ? "border-[#D9B25F]/60 bg-[#FFF8E7] text-[#14254A]"
+          : "border-dashed border-[#98A2B3] text-[#667085]",
+      )}
+    >
+      {card.ownerInitials}
+    </span>
+  );
 }
 
-function CardLink({ card, multiStage, lead = false }: { card: PipelineCard; multiStage: boolean; lead?: boolean }) {
-  const accessible = lead ? `${card.clientName}, ${card.trackLabel}, ${card.serviceLabel}, ${card.lastStep}, ${card.days} days ago` : `${card.clientName}, ${card.trackLabel}, ${card.serviceLabel}, stage ${card.stageLabel}, ${card.whoseMove}: ${card.nextStep}, ${card.days} days in stage${card.stalled ? ", stalled" : ""}`
+function CardLink({
+  card,
+  multiStage,
+  lead = false,
+}: {
+  card: PipelineCard;
+  multiStage: boolean;
+  lead?: boolean;
+}) {
+  const accessible = lead
+    ? `${card.clientName}, ${card.trackLabel}, ${card.serviceLabel}, ${card.lastStep}, ${card.days} days ago`
+    : `${card.clientName}, ${card.trackLabel}, ${card.serviceLabel}, stage ${card.stageLabel}, ${card.whoseMove}: ${card.nextStep}, ${card.days} days in stage${card.stalled ? ", stalled" : ""}`;
   return (
-    <Link href={`/admin/cases/${card.id}`} aria-label={accessible} className={cn("group block min-h-11 rounded-[11px] border border-black/[.07] bg-white px-[11px] py-2.5 shadow-[0_1px_2px_rgba(16,24,40,.04)] transition-[transform,box-shadow,border-color] hover:-translate-y-px hover:border-[#14254A]/20 hover:shadow-[0_6px_18px_rgba(16,24,40,.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14254A] motion-reduce:transform-none motion-reduce:transition-none", !lead && card.stalled && "border-l-[3px] border-l-[#B42318]")}>
-      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><strong title={card.clientName} className="line-clamp-2 text-[13.5px] font-semibold leading-[1.2] text-[#101828]">{card.clientName}</strong>{(card.isDemo || card.isDuplicate) && <div className="mt-1 flex flex-wrap gap-1">{card.isDemo && <Tag tone="gold">Demo</Tag>}{card.isDuplicate && <Tag>Duplicate</Tag>}</div>}</div><Owner card={card} /></div>
-      <p className="mt-2 flex min-w-0 items-center gap-1.5 font-mono text-[9.5px] font-medium uppercase tracking-[.09em] text-[#667085]"><span className="truncate">{card.trackLabel} · {card.serviceLabel}</span>{card.compLabel ? <span className="shrink-0 rounded-full border border-[var(--comp-border)] bg-[var(--comp-tint)] px-1.5 py-0.5 text-[8px] font-semibold tracking-normal text-[var(--comp)]">Comped</span> : null}</p>
-      {lead ? <><p className="mt-2 truncate text-[11.5px] font-medium text-[#344054]">{card.lastStep}</p>{card.duplicateLabel && <p className="mt-1 truncate text-[9px] text-[#667085]">{card.duplicateLabel}</p>}<div className="mt-2 flex items-center justify-between gap-2 text-[10px]"><span className="font-semibold text-[#805B00]">{card.pendingAmount ?? (card.serviceKey ? card.serviceLabel : "No package")}</span><span className={cn("tabular-nums text-[#667085]", card.days >= 30 && "font-semibold text-[#B42318]")}>{card.days}d ago</span></div></> : <><p title={card.nextStep} className="mt-2 truncate text-[11.5px] font-medium text-[#344054]">{card.nextStep}</p>{card.duplicateLabel && <p className="mt-1 truncate text-[9px] text-[#667085]">{card.duplicateLabel}</p>}<div className="mt-2.5 flex min-w-0 items-center gap-1.5 text-[9.5px] text-[#667085]">{multiStage && <span className="shrink-0 rounded-full bg-[#F2F4F7] px-1.5 py-0.5 font-medium text-[#344054]">{card.stageLabel}</span>}<span className={cn("size-1.5 shrink-0 rounded-full", moveColor(card.whoseMove))} aria-hidden /><span className="min-w-0 truncate">{card.whoseMove}</span><span className={cn("ml-auto shrink-0 tabular-nums", card.stalled && "font-semibold text-[#B42318]")}>{card.days}d{card.nypdControlled ? " · their clock" : card.stalled ? " · stalled" : ""}</span></div></>}
+    <Link
+      href={`/admin/cases/${card.id}`}
+      aria-label={accessible}
+      className={cn(
+        "group block min-h-11 rounded-[11px] border border-black/[.07] bg-white px-[11px] py-2.5 shadow-[0_1px_2px_rgba(16,24,40,.04)] transition-[transform,box-shadow,border-color] hover:-translate-y-px hover:border-[#14254A]/20 hover:shadow-[0_6px_18px_rgba(16,24,40,.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14254A] motion-reduce:transform-none motion-reduce:transition-none",
+        !lead && card.stalled && "border-l-[3px] border-l-[#B42318]",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <strong
+            title={card.clientName}
+            className="line-clamp-2 text-[13.5px] font-semibold leading-[1.2] text-[#101828]"
+          >
+            {card.clientName}
+          </strong>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <BrandChip
+              brand={card.brand}
+              origin={card.brandOrigin}
+              className="px-1.5 py-0.5 text-[8px]"
+            />
+            {card.isDemo && <Tag tone="gold">Demo</Tag>}
+            {card.isDuplicate && <Tag>Duplicate</Tag>}
+          </div>
+        </div>
+        <Owner card={card} />
+      </div>
+      <p className="mt-2 flex min-w-0 items-center gap-1.5 font-mono text-[9.5px] font-medium uppercase tracking-[.09em] text-[#667085]">
+        <span className="truncate">
+          {card.trackLabel} · {card.serviceLabel}
+        </span>
+        {card.compLabel ? (
+          <span className="shrink-0 rounded-full border border-[var(--comp-border)] bg-[var(--comp-tint)] px-1.5 py-0.5 text-[8px] font-semibold tracking-normal text-[var(--comp)]">
+            Comped
+          </span>
+        ) : null}
+      </p>
+      {lead ? (
+        <>
+          <p className="mt-2 truncate text-[11.5px] font-medium text-[#344054]">{card.lastStep}</p>
+          {card.duplicateLabel && (
+            <p className="mt-1 truncate text-[9px] text-[#667085]">{card.duplicateLabel}</p>
+          )}
+          <div className="mt-2 flex items-center justify-between gap-2 text-[10px]">
+            <span className="font-semibold text-[#805B00]">
+              {card.pendingAmount ?? (card.serviceKey ? card.serviceLabel : "No package")}
+            </span>
+            <span
+              className={cn(
+                "tabular-nums text-[#667085]",
+                card.days >= 30 && "font-semibold text-[#B42318]",
+              )}
+            >
+              {card.days}d ago
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          <p
+            title={card.nextStep}
+            className="mt-2 truncate text-[11.5px] font-medium text-[#344054]"
+          >
+            {card.nextStep}
+          </p>
+          {card.duplicateLabel && (
+            <p className="mt-1 truncate text-[9px] text-[#667085]">{card.duplicateLabel}</p>
+          )}
+          <div className="mt-2.5 flex min-w-0 items-center gap-1.5 text-[9.5px] text-[#667085]">
+            {multiStage && (
+              <span className="shrink-0 rounded-full bg-[#F2F4F7] px-1.5 py-0.5 font-medium text-[#344054]">
+                {card.stageLabel}
+              </span>
+            )}
+            <span
+              className={cn("size-1.5 shrink-0 rounded-full", moveColor(card.whoseMove))}
+              aria-hidden
+            />
+            <span className="min-w-0 truncate">{card.whoseMove}</span>
+            <span
+              className={cn(
+                "ml-auto shrink-0 tabular-nums",
+                card.stalled && "font-semibold text-[#B42318]",
+              )}
+            >
+              {card.days}d
+              {card.nypdControlled ? " · their clock" : card.stalled ? " · stalled" : ""}
+            </span>
+          </div>
+        </>
+      )}
     </Link>
-  )
+  );
 }
 
 function ColumnSection({ column, lead }: { column: PipelineColumn; lead: boolean }) {
-  const [expanded, setExpanded] = useState(false)
-  const visible = expanded ? column.cards : column.cards.slice(0, 8)
-  return <section aria-labelledby={`pipeline-column-${column.key}`} className={cn("pipeline-column flex min-w-0 flex-col rounded-[14px] p-2.5", toneClass(column.tone))}><header className="pipeline-column-header z-[1] mb-2.5 bg-inherit pb-1"><div className="flex items-start justify-between gap-2"><h2 id={`pipeline-column-${column.key}`} className="whitespace-nowrap font-[family-name:var(--font-title)] text-[18px] font-semibold leading-tight text-[#101828]">{column.label}</h2><span className="inline-flex min-w-6 justify-center rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#344054] shadow-sm">{column.cards.length}</span></div>{column.subtitle && <p className="mt-1 truncate text-[9.5px] leading-tight text-[#667085]">{column.subtitle}</p>}{column.multiStage && <div className="mt-2 flex flex-wrap gap-1">{column.stageCounts.map((stage) => <span key={stage.key} className="rounded-md bg-white px-1.5 py-1 text-[8.5px] font-medium text-[#475467] shadow-sm">{stage.label} {stage.count}</span>)}</div>}{column.stalledCount > 0 && <p className="mt-2 text-[9.5px] font-semibold text-[#B42318]">{column.stalledCount} stalled 14+ days</p>}{column.tone === "agency" && <p className="mt-2 text-[9.5px] font-semibold text-[#667085]">Agency time — never “stalled”</p>}</header><ul className="pipeline-card-list min-h-[92px] space-y-2 overflow-y-auto" aria-label={`${column.label} cases`}>{visible.map((card) => <li key={card.id}><CardLink card={card} multiStage={column.multiStage} lead={lead} /></li>)}{column.cards.length === 0 && <li className="flex min-h-[82px] items-center justify-center rounded-[11px] border border-dashed border-black/15 text-[11px] text-[#98A2B3]">No cases</li>}</ul>{column.cards.length > 8 && <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-2 min-h-8 rounded-lg text-[10px] font-semibold text-[#14254A] hover:bg-white/50">{expanded ? "Show less" : `+ ${column.cards.length - 8} more`}</button>}</section>
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? column.cards : column.cards.slice(0, 8);
+  return (
+    <section
+      aria-labelledby={`pipeline-column-${column.key}`}
+      className={cn(
+        "pipeline-column flex min-w-0 flex-col rounded-[14px] p-2.5",
+        toneClass(column.tone),
+      )}
+    >
+      <header className="pipeline-column-header z-[1] mb-2.5 bg-inherit pb-1">
+        <div className="flex items-start justify-between gap-2">
+          <h2
+            id={`pipeline-column-${column.key}`}
+            className="whitespace-nowrap font-[family-name:var(--font-title)] text-[18px] font-semibold leading-tight text-[#101828]"
+          >
+            {column.label}
+          </h2>
+          <span className="inline-flex min-w-6 justify-center rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#344054] shadow-sm">
+            {column.cards.length}
+          </span>
+        </div>
+        {column.subtitle && (
+          <p className="mt-1 truncate text-[9.5px] leading-tight text-[#667085]">
+            {column.subtitle}
+          </p>
+        )}
+        {column.multiStage && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {column.stageCounts.map((stage) => (
+              <span
+                key={stage.key}
+                className="rounded-md bg-white px-1.5 py-1 text-[8.5px] font-medium text-[#475467] shadow-sm"
+              >
+                {stage.label} {stage.count}
+              </span>
+            ))}
+          </div>
+        )}
+        {column.stalledCount > 0 && (
+          <p className="mt-2 text-[9.5px] font-semibold text-[#B42318]">
+            {column.stalledCount} stalled 14+ days
+          </p>
+        )}
+        {column.tone === "agency" && (
+          <p className="mt-2 text-[9.5px] font-semibold text-[#667085]">
+            Agency time — never “stalled”
+          </p>
+        )}
+      </header>
+      <ul
+        className="pipeline-card-list min-h-[92px] space-y-2 overflow-y-auto"
+        aria-label={`${column.label} cases`}
+      >
+        {visible.map((card) => (
+          <li key={card.id}>
+            <CardLink card={card} multiStage={column.multiStage} lead={lead} />
+          </li>
+        ))}
+        {column.cards.length === 0 && (
+          <li className="flex min-h-[82px] items-center justify-center rounded-[11px] border border-dashed border-black/15 text-[11px] text-[#98A2B3]">
+            No cases
+          </li>
+        )}
+      </ul>
+      {column.cards.length > 8 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 min-h-8 rounded-lg text-[10px] font-semibold text-[#14254A] hover:bg-white/50"
+        >
+          {expanded ? "Show less" : `+ ${column.cards.length - 8} more`}
+        </button>
+      )}
+    </section>
+  );
 }
 
 function ProgressTrack({ card }: { card: PipelineCard }) {
-  return <div role="img" aria-label={`Step ${card.progressStep} of 11: ${card.stageLabel}`} className="mt-2.5 grid grid-cols-11 items-center gap-1">{PROGRESS_STAGES.map((stage, index) => { const step = index + 1; const current = step === card.progressStep; const done = step < card.progressStep; const agency = ["filed", "fingerprinting_booked", "under_investigation", "decision"].includes(stage.key); const licensed = current && stage.key === "licensed"; return <span key={stage.key} className={cn("h-1 rounded-full bg-[#D0D5DD]", done && (agency ? "bg-[#667085]" : "bg-[#14254A]"), current && "h-2 ring-2 ring-white ring-offset-1", current && !agency && !licensed && "bg-[#D9B25F]", current && agency && "bg-[#667085]", licensed && "bg-[#21845A]")} /> })}</div>
+  return (
+    <div
+      role="img"
+      aria-label={`Step ${card.progressStep} of 11: ${card.stageLabel}`}
+      className="mt-2.5 grid grid-cols-11 items-center gap-1"
+    >
+      {PROGRESS_STAGES.map((stage, index) => {
+        const step = index + 1;
+        const current = step === card.progressStep;
+        const done = step < card.progressStep;
+        const agency = [
+          "filed",
+          "fingerprinting_booked",
+          "under_investigation",
+          "decision",
+        ].includes(stage.key);
+        const licensed = current && stage.key === "licensed";
+        return (
+          <span
+            key={stage.key}
+            className={cn(
+              "h-1 rounded-full bg-[#D0D5DD]",
+              done && (agency ? "bg-[#667085]" : "bg-[#14254A]"),
+              current && "h-2 ring-2 ring-white ring-offset-1",
+              current && !agency && !licensed && "bg-[#D9B25F]",
+              current && agency && "bg-[#667085]",
+              licensed && "bg-[#21845A]",
+            )}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 function MobileRow({ card, lead }: { card: PipelineCard; lead: boolean }) {
-  const accessible = lead ? `${card.clientName}, ${card.trackLabel}, ${card.lastStep}, ${card.days} days ago` : `${card.clientName}, ${card.trackLabel}, ${card.serviceLabel}, stage ${card.stageLabel}, ${card.whoseMove}: ${card.nextStep}, ${card.days} days in stage${card.stalled ? ", stalled" : ""}`
-  return <Link href={`/admin/cases/${card.id}`} aria-label={accessible} className={cn("block min-h-11 border-b border-black/[.07] bg-white px-3 py-3 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#14254A]", !lead && card.stalled && "border-l-[3px] border-l-[#B42318]", card.compLabel && "border-l-[3px] border-l-[var(--comp)] bg-gradient-to-r from-[var(--comp-tint)] to-white")}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><strong title={card.clientName} className="line-clamp-2 text-[14px] leading-tight text-[#101828]">{card.clientName}</strong><p className="mt-1 truncate font-mono text-[9.5px] uppercase tracking-[.09em] text-[#667085]">{card.trackLabel} · {card.serviceLabel}</p>{card.compLabel ? <span className="mt-1 inline-flex rounded-full border border-[var(--comp-border)] bg-[var(--comp-tint)] px-1.5 py-0.5 text-[8px] font-semibold text-[var(--comp)]">Comped · {card.compLabel}</span> : null}</div><Owner card={card} /></div>{(card.isDemo || card.isDuplicate) && <div className="mt-1.5 flex gap-1">{card.isDemo && <Tag tone="gold">Demo</Tag>}{card.isDuplicate && <Tag>Duplicate</Tag>}</div>}{!lead && <ProgressTrack card={card} />}<div className="mt-2.5 flex min-w-0 items-center gap-1.5 text-[10.5px] text-[#667085]">{!lead && <><span className={cn("size-1.5 shrink-0 rounded-full", moveColor(card.whoseMove))} /><span className="shrink-0">{card.whoseMove}</span><span aria-hidden>·</span></>}<span title={lead ? card.lastStep ?? undefined : card.nextStep} className="min-w-0 truncate text-[#344054]">{lead ? card.lastStep : card.nextStep}</span>{lead && card.pendingAmount && <span className="shrink-0 font-semibold text-[#805B00]">· {card.pendingAmount}</span>}<span className={cn("ml-auto shrink-0 tabular-nums", (lead ? card.days >= 30 : card.stalled) && "font-semibold text-[#B42318]")}>{card.days}d{card.nypdControlled ? " · their clock" : lead ? " ago" : card.stalled ? " · stalled" : ""}</span></div></Link>
+  const accessible = lead
+    ? `${card.clientName}, ${card.trackLabel}, ${card.lastStep}, ${card.days} days ago`
+    : `${card.clientName}, ${card.trackLabel}, ${card.serviceLabel}, stage ${card.stageLabel}, ${card.whoseMove}: ${card.nextStep}, ${card.days} days in stage${card.stalled ? ", stalled" : ""}`;
+  return (
+    <Link
+      href={`/admin/cases/${card.id}`}
+      aria-label={accessible}
+      className={cn(
+        "block min-h-11 border-b border-black/[.07] bg-white px-3 py-3 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#14254A]",
+        !lead && card.stalled && "border-l-[3px] border-l-[#B42318]",
+        card.compLabel &&
+          "border-l-[3px] border-l-[var(--comp)] bg-gradient-to-r from-[var(--comp-tint)] to-white",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <strong
+            title={card.clientName}
+            className="line-clamp-2 text-[14px] leading-tight text-[#101828]"
+          >
+            {card.clientName}
+          </strong>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <BrandChip
+              brand={card.brand}
+              origin={card.brandOrigin}
+              className="px-1.5 py-0.5 text-[8px]"
+            />
+            <span className="truncate font-mono text-[9.5px] uppercase tracking-[.09em] text-[#667085]">
+              {card.trackLabel} · {card.serviceLabel}
+            </span>
+          </div>
+          {card.compLabel ? (
+            <span className="mt-1 inline-flex rounded-full border border-[var(--comp-border)] bg-[var(--comp-tint)] px-1.5 py-0.5 text-[8px] font-semibold text-[var(--comp)]">
+              Comped · {card.compLabel}
+            </span>
+          ) : null}
+        </div>
+        <Owner card={card} />
+      </div>
+      {(card.isDemo || card.isDuplicate) && (
+        <div className="mt-1.5 flex gap-1">
+          {card.isDemo && <Tag tone="gold">Demo</Tag>}
+          {card.isDuplicate && <Tag>Duplicate</Tag>}
+        </div>
+      )}
+      {!lead && <ProgressTrack card={card} />}
+      <div className="mt-2.5 flex min-w-0 items-center gap-1.5 text-[10.5px] text-[#667085]">
+        {!lead && (
+          <>
+            <span className={cn("size-1.5 shrink-0 rounded-full", moveColor(card.whoseMove))} />
+            <span className="shrink-0">{card.whoseMove}</span>
+            <span aria-hidden>·</span>
+          </>
+        )}
+        <span
+          title={lead ? (card.lastStep ?? undefined) : card.nextStep}
+          className="min-w-0 truncate text-[#344054]"
+        >
+          {lead ? card.lastStep : card.nextStep}
+        </span>
+        {lead && card.pendingAmount && (
+          <span className="shrink-0 font-semibold text-[#805B00]">· {card.pendingAmount}</span>
+        )}
+        <span
+          className={cn(
+            "ml-auto shrink-0 tabular-nums",
+            (lead ? card.days >= 30 : card.stalled) && "font-semibold text-[#B42318]",
+          )}
+        >
+          {card.days}d
+          {card.nypdControlled
+            ? " · their clock"
+            : lead
+              ? " ago"
+              : card.stalled
+                ? " · stalled"
+                : ""}
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 export function PipelineBoard({ data }: { data: PipelineClientData }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  function href(updates: Record<string, string | null>) { const params = new URLSearchParams(searchParams.toString()); for (const [key, value] of Object.entries(updates)) { if (!value || value === "all" || value === "0") params.delete(key); else params.set(key, value) } const query = params.toString(); return `${pathname}${query ? `?${query}` : ""}` }
-  function update(key: string, value: string) { router.push(href({ [key]: value })) }
-  const lead = data.view === "leads"
-  const hiddenTotal = data.hidden.test + data.hidden.duplicate
-  const clearHref = href({ track: null, service: null, assigned: null, stalled: null })
-  const serviceOptions = lead ? [{ value: "all", label: "Any" }, { value: "concierge", label: "Full Concierge" }, { value: "self_guided", label: "Self-Guided" }, { value: "none", label: "None" }] : [{ value: "all", label: "All" }, { value: "concierge", label: "Concierge" }, { value: "self_guided", label: "Self-guided" }]
-  return <div className="mx-auto max-w-[1520px]">
-    <header className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between"><div><h1 className="font-[family-name:var(--font-title)] text-[34px] font-semibold leading-none tracking-[-.02em] text-[#101828]">{lead ? "Leads" : "Pipeline"}</h1><p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-[#667085]">{lead ? `${data.leadCount} people who haven't paid yet. They move to Active cases automatically once payment is recorded.` : `${data.activeCount} paid cases. A case joins the pipeline when payment is recorded; before that it's a lead.`}</p></div><div role="tablist" aria-label="Pipeline view" className="grid w-full grid-cols-2 rounded-xl bg-[#E4E7EC] p-1 xl:w-auto"><Link role="tab" aria-selected={!lead} href={href({ view: null })} className={cn("flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold", !lead ? "bg-[#14254A] text-white shadow-sm" : "text-[#475467]")}><LayoutGrid className="size-4" />Active cases <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", !lead ? "bg-[#D9B25F] text-[#14254A]" : "bg-white/70")}>{data.activeCount}</span></Link><Link role="tab" aria-selected={lead} href={href({ view: "leads" })} className={cn("flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold", lead ? "bg-[#14254A] text-white shadow-sm" : "text-[#475467]")}><Users className="size-4" />Leads <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", lead ? "bg-[#D9B25F] text-[#14254A]" : "bg-white/70")}>{data.leadCount}</span></Link></div></header>
-    <div className="admin-filter-scroll mb-4 hidden items-center gap-3 overflow-x-auto rounded-xl border border-black/[.08] bg-white px-3 py-2 md:flex"><FilterSelect label={lead ? "Interest" : "Track"} value={data.filters.track} onChange={(value) => update("track", value)} options={[{ value: "all", label: "All" }, { value: "premise", label: "Premise" }, { value: "concealed", label: "Concealed" }, { value: "special", label: "Special" }]} /><FilterSelect label={lead ? "Package" : "Service"} value={data.filters.service} onChange={(value) => update("service", value)} options={serviceOptions} /><FilterSelect label="Assigned" value={data.filters.assigned} onChange={(value) => update("assigned", value)} options={[{ value: "all", label: "Anyone" }, { value: "me", label: "Me" }, ...data.staff.map((person) => ({ value: person.id, label: person.name })), { value: "unassigned", label: "Unassigned" }]} />{!lead && <button type="button" aria-pressed={data.filters.stalled} onClick={() => update("stalled", data.filters.stalled ? "0" : "1")} className={cn("min-h-8 shrink-0 rounded-full border px-3 text-xs font-semibold", data.filters.stalled ? "border-[#B42318] bg-[#FEF3F2] text-[#B42318]" : "border-black/10 text-[#475467]")}>Stalled only {data.stalledCount}</button>}<span className="flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-[#98A2B3] px-3 text-[10.5px] text-[#667085]"><LockKeyhole className="size-3.5" />Overview only — stages change on the case page</span><span className="ml-auto shrink-0 whitespace-nowrap text-[10.5px] text-[#667085]"><LockKeyhole className="mr-1 inline size-3" />{data.hidden.test} test &amp; {data.hidden.duplicate} duplicate cases hidden · <Link className="font-semibold text-[#14254A] underline underline-offset-2" href={href({ hidden: data.showHidden ? null : "1" })}>{data.showHidden ? "Hide" : "Show"}</Link></span></div>
-    <div className="admin-filter-scroll -mx-3 mb-4 flex gap-2 overflow-x-auto px-3 pb-1 md:hidden"><Link href={href({ stalled: null, assigned: null })} aria-current={!data.filters.stalled && data.filters.assigned !== "me" ? "page" : undefined} className={cn("shrink-0 rounded-full border px-3 py-2 text-xs font-semibold", !data.filters.stalled && data.filters.assigned !== "me" ? "border-[#14254A] bg-[#14254A] text-white" : "border-black/10 bg-white text-[#475467]")}>All</Link>{!lead && <Link href={href({ stalled: data.filters.stalled ? null : "1" })} aria-pressed={data.filters.stalled} className={cn("shrink-0 rounded-full border px-3 py-2 text-xs font-semibold", data.filters.stalled ? "border-[#B42318] bg-[#FEF3F2] text-[#B42318]" : "border-black/10 bg-white text-[#475467]")}><Clock3 className="mr-1 inline size-3.5" />Stalled {data.stalledCount}</Link>}<Link href={href({ assigned: data.filters.assigned === "me" ? null : "me" })} aria-pressed={data.filters.assigned === "me"} className={cn("shrink-0 rounded-full border px-3 py-2 text-xs font-semibold", data.filters.assigned === "me" ? "border-[#14254A] bg-[#14254A] text-white" : "border-black/10 bg-white text-[#475467]")}>Mine</Link>{hiddenTotal > 0 && <Link href={href({ hidden: data.showHidden ? null : "1" })} className="shrink-0 rounded-full border border-dashed border-[#98A2B3] bg-white px-3 py-2 text-xs font-semibold text-[#475467]">{data.showHidden ? "Hide" : "Show"} hidden {hiddenTotal}</Link>}</div>
-    {data.currentCount === 0 ? <div className="rounded-2xl border border-dashed border-black/15 bg-white px-5 py-14 text-center"><h2 className="font-[family-name:var(--font-title)] text-2xl font-semibold text-[#101828]">{data.unfilteredVisibleCount === 0 && !lead ? "No paid cases yet" : data.unfilteredVisibleCount === 0 ? "No leads yet" : "No cases match these filters"}</h2><p className="mx-auto mt-2 max-w-lg text-sm text-[#667085]">{data.unfilteredVisibleCount === 0 && !lead ? "New clients appear here once payment is recorded." : data.unfilteredVisibleCount === 0 ? "Unpaid signups and screened prospects will appear here." : "Adjust or clear the filters to return to the full overview."}</p><div className="mt-5 flex flex-wrap justify-center gap-3">{data.unfilteredVisibleCount === 0 && !lead ? <Link href={href({ view: "leads" })} className="rounded-lg bg-[#14254A] px-4 py-2 text-sm font-semibold text-white">View Leads</Link> : data.isFiltered ? <Link href={clearHref} className="rounded-lg bg-[#14254A] px-4 py-2 text-sm font-semibold text-white">Clear filters</Link> : null}</div>{hiddenTotal > 0 && <p className="mt-4 text-xs text-[#667085]">{data.hidden.test} test and {data.hidden.duplicate} duplicate cases are hidden. <Link href={href({ hidden: "1" })} className="font-semibold underline">Show them</Link></p>}</div> : <><div className={cn("pipeline-desktop hidden md:flex md:gap-3 md:overflow-x-auto md:pb-3 lg:grid lg:overflow-visible", lead ? "lg:grid-cols-4" : "lg:grid-cols-6")}>{data.columns.map((column) => <ColumnSection key={column.key} column={column} lead={lead} />)}</div><div className="space-y-4 md:hidden">{data.columns.map((column) => <section key={column.key} aria-labelledby={`mobile-pipeline-${column.key}`} className="overflow-hidden rounded-xl border border-black/[.08] bg-white shadow-sm"><header className={cn("flex items-start justify-between gap-3 px-3 py-2.5", toneClass(column.tone))}><div><h2 id={`mobile-pipeline-${column.key}`} className="font-[family-name:var(--font-title)] text-[19px] font-semibold text-[#101828]">{column.label}</h2>{column.subtitle && <p className="mt-0.5 text-[10px] text-[#667085]">{column.subtitle}</p>}</div><span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#344054]">{column.cards.length}</span></header><ul>{column.cards.map((card) => <li key={card.id}><MobileRow card={card} lead={lead} /></li>)}{column.cards.length === 0 && <li className="px-3 py-8 text-center text-xs text-[#98A2B3]">No cases</li>}</ul></section>)}</div></>}
-    <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[10.5px] text-[#667085] md:hidden"><LockKeyhole className="size-3.5" />Overview only · open a case to move its stage</p>
-  </div>
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  function href(updates: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value || value === "all" || value === "0") params.delete(key);
+      else params.set(key, value);
+    }
+    const query = params.toString();
+    return `${pathname}${query ? `?${query}` : ""}`;
+  }
+  function update(key: string, value: string) {
+    if (key === "brand" && (value === "all" || value === "gln" || value === "fl")) {
+      persistAdminBrandFilter(value);
+    }
+    router.push(href({ [key]: value }));
+  }
+  const lead = data.view === "leads";
+  const hiddenTotal = data.hidden.test + data.hidden.duplicate;
+  const clearHref = href({
+    brand: null,
+    track: null,
+    service: null,
+    assigned: null,
+    stalled: null,
+  });
+  const serviceOptions = lead
+    ? [
+        { value: "all", label: "Any" },
+        { value: "concierge", label: "Full Concierge" },
+        { value: "self_guided", label: "Self-Guided" },
+        { value: "none", label: "None" },
+      ]
+    : [
+        { value: "all", label: "All" },
+        { value: "concierge", label: "Concierge" },
+        { value: "self_guided", label: "Self-guided" },
+      ];
+  return (
+    <div className="mx-auto max-w-[1520px]">
+      <header className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <h1 className="font-[family-name:var(--font-title)] text-[34px] font-semibold leading-none tracking-[-.02em] text-[#101828]">
+            {lead ? "Leads" : "Pipeline"}
+          </h1>
+          <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-[#667085]">
+            {lead
+              ? `${data.leadCount} people who haven't paid yet. They move to Active cases automatically once payment is recorded.`
+              : `${data.activeCount} paid cases. A case joins the pipeline when payment is recorded; before that it's a lead.`}
+          </p>
+        </div>
+        <div
+          role="tablist"
+          aria-label="Pipeline view"
+          className="grid w-full grid-cols-2 rounded-xl bg-[#E4E7EC] p-1 xl:w-auto"
+        >
+          <Link
+            role="tab"
+            aria-selected={!lead}
+            href={href({ view: null })}
+            className={cn(
+              "flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold",
+              !lead ? "bg-[#14254A] text-white shadow-sm" : "text-[#475467]",
+            )}
+          >
+            <LayoutGrid className="size-4" />
+            Active cases{" "}
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px]",
+                !lead ? "bg-[#D9B25F] text-[#14254A]" : "bg-white/70",
+              )}
+            >
+              {data.activeCount}
+            </span>
+          </Link>
+          <Link
+            role="tab"
+            aria-selected={lead}
+            href={href({ view: "leads" })}
+            className={cn(
+              "flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold",
+              lead ? "bg-[#14254A] text-white shadow-sm" : "text-[#475467]",
+            )}
+          >
+            <Users className="size-4" />
+            Leads{" "}
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px]",
+                lead ? "bg-[#D9B25F] text-[#14254A]" : "bg-white/70",
+              )}
+            >
+              {data.leadCount}
+            </span>
+          </Link>
+        </div>
+      </header>
+      <div className="admin-filter-scroll mb-4 hidden items-center gap-3 overflow-x-auto rounded-xl border border-black/[.08] bg-white px-3 py-2 md:flex">
+        <FilterSelect
+          label="Brand"
+          value={data.filters.brand}
+          onChange={(value) => update("brand", value)}
+          options={[
+            { value: "all", label: "All" },
+            { value: "gln", label: "GLN" },
+            { value: "fl", label: "FL" },
+          ]}
+        />
+        <FilterSelect
+          label={lead ? "Interest" : "Track"}
+          value={data.filters.track}
+          onChange={(value) => update("track", value)}
+          options={[
+            { value: "all", label: "All" },
+            { value: "premise", label: "Premise" },
+            { value: "concealed", label: "Concealed" },
+            { value: "special", label: "Special" },
+          ]}
+        />
+        <FilterSelect
+          label={lead ? "Package" : "Service"}
+          value={data.filters.service}
+          onChange={(value) => update("service", value)}
+          options={serviceOptions}
+        />
+        <FilterSelect
+          label="Assigned"
+          value={data.filters.assigned}
+          onChange={(value) => update("assigned", value)}
+          options={[
+            { value: "all", label: "Anyone" },
+            { value: "me", label: "Me" },
+            ...data.staff.map((person) => ({ value: person.id, label: person.name })),
+            { value: "unassigned", label: "Unassigned" },
+          ]}
+        />
+        {!lead && (
+          <button
+            type="button"
+            aria-pressed={data.filters.stalled}
+            onClick={() => update("stalled", data.filters.stalled ? "0" : "1")}
+            className={cn(
+              "min-h-8 shrink-0 rounded-full border px-3 text-xs font-semibold",
+              data.filters.stalled
+                ? "border-[#B42318] bg-[#FEF3F2] text-[#B42318]"
+                : "border-black/10 text-[#475467]",
+            )}
+          >
+            Stalled only {data.stalledCount}
+          </button>
+        )}
+        <span className="flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-[#98A2B3] px-3 text-[10.5px] text-[#667085]">
+          <LockKeyhole className="size-3.5" />
+          Overview only — stages change on the case page
+        </span>
+        <span className="ml-auto shrink-0 whitespace-nowrap text-[10.5px] text-[#667085]">
+          <LockKeyhole className="mr-1 inline size-3" />
+          {data.hidden.test} test &amp; {data.hidden.duplicate} duplicate cases hidden ·{" "}
+          <Link
+            className="font-semibold text-[#14254A] underline underline-offset-2"
+            href={href({ hidden: data.showHidden ? null : "1" })}
+          >
+            {data.showHidden ? "Hide" : "Show"}
+          </Link>
+        </span>
+      </div>
+      <div className="admin-filter-scroll -mx-3 mb-4 flex gap-2 overflow-x-auto px-3 pb-1 md:hidden">
+        {(["all", "gln", "fl"] as const).map((brand) => (
+          <Link
+            key={brand}
+            href={href({ brand })}
+            onClick={() => persistAdminBrandFilter(brand)}
+            aria-current={data.filters.brand === brand ? "page" : undefined}
+            className={cn(
+              "shrink-0 rounded-full border px-3 py-2 text-xs font-semibold",
+              data.filters.brand === brand
+                ? "border-[#14254A] bg-[#14254A] text-white"
+                : "border-black/10 bg-white text-[#475467]",
+            )}
+          >
+            {brand === "all" ? "All brands" : brand.toUpperCase()}
+          </Link>
+        ))}
+        <Link
+          href={href({ stalled: null, assigned: null })}
+          aria-current={
+            !data.filters.stalled && data.filters.assigned !== "me" ? "page" : undefined
+          }
+          className={cn(
+            "shrink-0 rounded-full border px-3 py-2 text-xs font-semibold",
+            !data.filters.stalled && data.filters.assigned !== "me"
+              ? "border-[#14254A] bg-[#14254A] text-white"
+              : "border-black/10 bg-white text-[#475467]",
+          )}
+        >
+          All
+        </Link>
+        {!lead && (
+          <Link
+            href={href({ stalled: data.filters.stalled ? null : "1" })}
+            aria-pressed={data.filters.stalled}
+            className={cn(
+              "shrink-0 rounded-full border px-3 py-2 text-xs font-semibold",
+              data.filters.stalled
+                ? "border-[#B42318] bg-[#FEF3F2] text-[#B42318]"
+                : "border-black/10 bg-white text-[#475467]",
+            )}
+          >
+            <Clock3 className="mr-1 inline size-3.5" />
+            Stalled {data.stalledCount}
+          </Link>
+        )}
+        <Link
+          href={href({ assigned: data.filters.assigned === "me" ? null : "me" })}
+          aria-pressed={data.filters.assigned === "me"}
+          className={cn(
+            "shrink-0 rounded-full border px-3 py-2 text-xs font-semibold",
+            data.filters.assigned === "me"
+              ? "border-[#14254A] bg-[#14254A] text-white"
+              : "border-black/10 bg-white text-[#475467]",
+          )}
+        >
+          Mine
+        </Link>
+        {hiddenTotal > 0 && (
+          <Link
+            href={href({ hidden: data.showHidden ? null : "1" })}
+            className="shrink-0 rounded-full border border-dashed border-[#98A2B3] bg-white px-3 py-2 text-xs font-semibold text-[#475467]"
+          >
+            {data.showHidden ? "Hide" : "Show"} hidden {hiddenTotal}
+          </Link>
+        )}
+      </div>
+      {data.currentCount === 0 ? (
+        <div className="rounded-2xl border border-dashed border-black/15 bg-white px-5 py-14 text-center">
+          <h2 className="font-[family-name:var(--font-title)] text-2xl font-semibold text-[#101828]">
+            {data.unfilteredVisibleCount === 0 && !lead
+              ? "No paid cases yet"
+              : data.unfilteredVisibleCount === 0
+                ? "No leads yet"
+                : "No cases match these filters"}
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-[#667085]">
+            {data.unfilteredVisibleCount === 0 && !lead
+              ? "New clients appear here once payment is recorded."
+              : data.unfilteredVisibleCount === 0
+                ? "Unpaid signups and screened prospects will appear here."
+                : "Adjust or clear the filters to return to the full overview."}
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            {data.unfilteredVisibleCount === 0 && !lead ? (
+              <Link
+                href={href({ view: "leads" })}
+                className="rounded-lg bg-[#14254A] px-4 py-2 text-sm font-semibold text-white"
+              >
+                View Leads
+              </Link>
+            ) : data.isFiltered ? (
+              <Link
+                href={clearHref}
+                onClick={() => persistAdminBrandFilter("all")}
+                className="rounded-lg bg-[#14254A] px-4 py-2 text-sm font-semibold text-white"
+              >
+                Clear filters
+              </Link>
+            ) : null}
+          </div>
+          {hiddenTotal > 0 && (
+            <p className="mt-4 text-xs text-[#667085]">
+              {data.hidden.test} test and {data.hidden.duplicate} duplicate cases are hidden.{" "}
+              <Link href={href({ hidden: "1" })} className="font-semibold underline">
+                Show them
+              </Link>
+            </p>
+          )}
+        </div>
+      ) : (
+        <>
+          <div
+            className={cn(
+              "pipeline-desktop hidden md:flex md:gap-3 md:overflow-x-auto md:pb-3 lg:grid lg:overflow-visible",
+              lead ? "lg:grid-cols-4" : "lg:grid-cols-6",
+            )}
+          >
+            {data.columns.map((column) => (
+              <ColumnSection key={column.key} column={column} lead={lead} />
+            ))}
+          </div>
+          <div className="space-y-4 md:hidden">
+            {data.columns.map((column) => (
+              <section
+                key={column.key}
+                aria-labelledby={`mobile-pipeline-${column.key}`}
+                className="overflow-hidden rounded-xl border border-black/[.08] bg-white shadow-sm"
+              >
+                <header
+                  className={cn(
+                    "flex items-start justify-between gap-3 px-3 py-2.5",
+                    toneClass(column.tone),
+                  )}
+                >
+                  <div>
+                    <h2
+                      id={`mobile-pipeline-${column.key}`}
+                      className="font-[family-name:var(--font-title)] text-[19px] font-semibold text-[#101828]"
+                    >
+                      {column.label}
+                    </h2>
+                    {column.subtitle && (
+                      <p className="mt-0.5 text-[10px] text-[#667085]">{column.subtitle}</p>
+                    )}
+                  </div>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#344054]">
+                    {column.cards.length}
+                  </span>
+                </header>
+                <ul>
+                  {column.cards.map((card) => (
+                    <li key={card.id}>
+                      <MobileRow card={card} lead={lead} />
+                    </li>
+                  ))}
+                  {column.cards.length === 0 && (
+                    <li className="px-3 py-8 text-center text-xs text-[#98A2B3]">No cases</li>
+                  )}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </>
+      )}
+      <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[10.5px] text-[#667085] md:hidden">
+        <LockKeyhole className="size-3.5" />
+        Overview only · open a case to move its stage
+      </p>
+    </div>
+  );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { FileCheck2, Lock, MessageCircle, Users } from "lucide-react"
 import { getMyCase } from "@/lib/portal"
 import { hasPaidPackage } from "@/lib/packages"
@@ -41,6 +41,7 @@ export async function generateMetadata() {
 
 export default async function ConciergeHome() {
   const [myCase, t, locale] = await Promise.all([getMyCase(), getMessages(), getLocale()])
+  if (myCase?.brand === "fl") notFound()
   if (!myCase) redirect("/portal")
 
   const serviceMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null

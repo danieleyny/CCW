@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { flBrandEnabled } from "@/config/brands"
+import { resolveBrandFromHost } from "@/lib/brand/resolve"
 
 /**
  * Proxy (Next 16's renamed Middleware). Two jobs:
@@ -9,27 +11,52 @@ import { NextResponse, type NextRequest } from "next/server"
  *      actions (see lib/auth.ts requireRole), per Next's guidance that Proxy
  *      must not be the sole authorization layer.
  *
- * NOTE ON SATELLITE SITES. This file briefly carried a host-rewrite table that
- * served firearmlicensenyc.com and nycgunlaws.com from this deployment. Both are
- * now their own repos and Vercel projects, so the rewrite is gone and no
- * satellite domain should ever be attached to this project. They read pricing
- * from the public feed at /api/public/pricing, which is the only coupling left.
+ * NOTE ON SATELLITE SITES. The FL apex (firearmlicensenyc.com) and
+ * nycgunlaws.com remain separate deployments and must never be attached here.
+ * app.firearmlicensenyc.com IS intentionally attached and resolves to the FL
+ * application brand below. The satellites still read the public pricing feed.
  */
 export async function proxy(request: NextRequest) {
+  const isProduction = process.env.VERCEL_ENV === "production"
+  const requestedOverride = request.nextUrl.searchParams.get("brand")
+  const cookieOverride = request.cookies.get("ccw_brand_preview")?.value ?? null
+  const override = isProduction
+    ? null
+    : requestedOverride === "fl"
+      ? "fl"
+      : requestedOverride === "gln"
+        ? null
+        : cookieOverride
+  const requestBrand = resolveBrandFromHost(request.nextUrl.hostname, {
+    enabled: flBrandEnabled(),
+    vercelEnv: process.env.VERCEL_ENV,
+    override,
+  })
+
+  const applyPreviewCookie = <T extends NextResponse>(res: T): T => {
+    if (!isProduction && requestedOverride === "fl") {
+      res.cookies.set("ccw_brand_preview", "fl", { httpOnly: true, sameSite: "lax", path: "/" })
+    } else if (!isProduction && requestedOverride === "gln") {
+      res.cookies.delete("ccw_brand_preview")
+    }
+    return res
+  }
+
   // Route matching is case-insensitive in Next redirects. Keep the comparison
   // URLs canonical without making `/V1` redirect to itself.
   const colorway = request.nextUrl.pathname.match(/^\/v([1-4])$/)
   if (colorway) {
     const url = request.nextUrl.clone()
     url.pathname = `/V${colorway[1]}`
-    return NextResponse.redirect(url)
+    return applyPreviewCookie(NextResponse.redirect(url))
   }
 
   // Forward the pathname to server components (layouts can't read it otherwise).
   // The portal intake soft-gate reads this to exempt /portal/intake itself.
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
-  let response = NextResponse.next({ request: { headers: requestHeaders } })
+  requestHeaders.set("x-brand", requestBrand)
+  let response = applyPreviewCookie(NextResponse.next({ request: { headers: requestHeaders } }))
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,7 +70,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          response = NextResponse.next({ request: { headers: requestHeaders } })
+          response = applyPreviewCookie(NextResponse.next({ request: { headers: requestHeaders } }))
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           )
@@ -58,6 +85,28 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
+
+  if (requestBrand === "fl") {
+    const glnOnly =
+      path === "/admin" || path.startsWith("/admin/") ||
+      path === "/instructor" || path.startsWith("/instructor/") ||
+      path === "/sponsor" || path.startsWith("/sponsor/") ||
+      path === "/dashboard"
+    if (glnOnly) {
+      return applyPreviewCookie(NextResponse.redirect(new URL(path + request.nextUrl.search, "https://gunlicensenyc.com"), 308))
+    }
+
+    const allowed =
+      path === "/" || path === "/eligibility" ||
+      path.startsWith("/auth/") || path.startsWith("/portal") ||
+      path.startsWith("/api/") || path.startsWith("/r/") ||
+      path.startsWith("/g/") || path.startsWith("/c/") ||
+      path.startsWith("/legal/")
+    if (!allowed) {
+      return applyPreviewCookie(NextResponse.redirect(new URL(path + request.nextUrl.search, "https://firearmlicensenyc.com"), 308))
+    }
+  }
+
   const isGated =
     path.startsWith("/admin") ||
     path.startsWith("/portal") ||
@@ -74,7 +123,15 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     url.searchParams.set("redirect", path)
-    return NextResponse.redirect(url)
+    return applyPreviewCookie(NextResponse.redirect(url))
+  }
+
+  if (requestBrand === "fl" && path === "/") {
+    return applyPreviewCookie(
+      user
+        ? NextResponse.redirect(new URL("/portal", request.url), 308)
+        : NextResponse.redirect(new URL("https://firearmlicensenyc.com/"), 308)
+    )
   }
 
   // INTENTIONAL: a genuinely signed-in user who lands on the login/sign-up
@@ -87,8 +144,8 @@ export async function proxy(request: NextRequest) {
   // bounced while carrying a recovery session).
   if (user && (path === "/auth/login" || path === "/auth/sign-up")) {
     const url = request.nextUrl.clone()
-    url.pathname = "/dashboard"
-    return NextResponse.redirect(url)
+    url.pathname = requestBrand === "fl" ? "/portal" : "/dashboard"
+    return applyPreviewCookie(NextResponse.redirect(url))
   }
 
   return response

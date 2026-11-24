@@ -1,4 +1,4 @@
-import { brand } from "@/config/brand"
+import { BRANDS, type BrandKey } from "@/config/brands"
 
 /**
  * The ONE branded, email-client-safe template every transactional email uses.
@@ -13,6 +13,7 @@ import { brand } from "@/config/brand"
  */
 
 export interface RenderEmailOpts {
+  brand: BrandKey
   /** Hidden inbox-preview line. */
   preheader?: string
   /** Small mono label above the heading, e.g. "Action needed". */
@@ -31,7 +32,24 @@ export interface RenderEmailOpts {
 
 // Literal hex — email clients need real values, not CSS vars. Pulled from the
 // brand palette where they match (brass family), plus a few email-tuned neutrals.
-const C = {
+type EmailColors = {
+  obsidian: string
+  brass: string
+  brassBright: string
+  brassDeep: string
+  ink: string
+  page: string
+  card: string
+  heading: string
+  body: string
+  faint: string
+  footerBg: string
+  link: string
+  hairline: string
+  headerText: string
+}
+
+const GLN_COLORS: EmailColors = {
   obsidian: "#0B0C0F", // header band
   brass: "#C9A24B", // paletteDark.brass
   brassBright: "#E7C77A",
@@ -46,7 +64,24 @@ const C = {
   link: "#0E7490",
   hairline: "#E7E3DB",
   headerText: "#F2F3F5",
-} as const
+}
+
+const FL_COLORS: EmailColors = {
+  obsidian: "#102A56",
+  brass: "#B8D94C",
+  brassBright: "#D7EF82",
+  brassDeep: "#6E9220",
+  ink: "#102A56",
+  page: "#EDF3FA",
+  card: "#FFFFFF",
+  heading: "#102A56",
+  body: "#334A68",
+  faint: "#667A93",
+  footerBg: "#F1F6FB",
+  link: "#174E9B",
+  hairline: "#D8E2EE",
+  headerText: "#FFFFFF",
+}
 
 const FONT = "-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
 
@@ -55,7 +90,8 @@ const esc = (s: string) =>
 const escAttr = (s: string) => esc(s).replace(/"/g, "&quot;")
 
 /** Bulletproof, Outlook-safe CTA button (bgcolor on the <td>, real <a>). */
-function button(label: string, url: string): string {
+function button(label: string, url: string, colors: EmailColors): string {
+  const C = colors
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 4px;">
     <tr>
       <td align="center" bgcolor="${C.brass}" style="border-radius:9px;">
@@ -67,6 +103,8 @@ function button(label: string, url: string): string {
 
 export function renderEmail(opts: RenderEmailOpts): { html: string; text: string } {
   const { preheader, eyebrow, heading, paragraphs, cta, footnote, recipientReason, unsubscribeUrl } = opts
+  const brand = BRANDS[opts.brand]
+  const C = opts.brand === "fl" ? FL_COLORS : GLN_COLORS
 
   const eyebrowHtml = eyebrow
     ? `<tr><td style="padding:0 0 10px;"><span style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:${C.brassDeep};">${esc(eyebrow)}</span></td></tr>`
@@ -80,7 +118,7 @@ export function renderEmail(opts: RenderEmailOpts): { html: string; text: string
     .join("")
 
   const ctaHtml = cta
-    ? `<tr><td style="padding:6px 0 4px;">${button(cta.label, cta.url)}</td></tr>
+    ? `<tr><td style="padding:6px 0 4px;">${button(cta.label, cta.url, C)}</td></tr>
        <tr><td style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.faint};padding:2px 0 8px;">
          Or paste this link into your browser:<br>
          <a href="${escAttr(cta.url)}" style="color:${C.link};word-break:break-all;text-decoration:underline;">${esc(cta.url)}</a>
@@ -108,6 +146,16 @@ export function renderEmail(opts: RenderEmailOpts): { html: string; text: string
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${esc(preheader)}${"&nbsp;&zwnj;".repeat(100)}</div>`
     : ""
 
+  const headerMark =
+    opts.brand === "gln"
+      ? `<img src="${brand.url}/brand/logo-mark-light-512.png?v=frame1" width="36" height="36" alt="${escAttr(brand.name)}" style="vertical-align:middle;display:inline-block;border:0;" />`
+      : `<span role="img" aria-label="" style="display:inline-block;font-family:${FONT};font-size:27px;line-height:36px;color:${C.brass};vertical-align:middle;">&#10022;</span>`
+  const footerMark =
+    opts.brand === "gln"
+      ? `<img src="${brand.url}/brand/logo-mark-ink-512.png?v=frame1" width="18" height="18" alt="${escAttr(brand.name)}" style="vertical-align:middle;display:inline-block;border:0;" />`
+      : `<span aria-hidden="true" style="color:${C.brassDeep};">&#10022;</span>`
+  const legalLinks = `<a href="${escAttr(brand.legalLinks.privacy)}" style="color:${C.link};text-decoration:underline;">Privacy</a> &nbsp;·&nbsp; <a href="${escAttr(brand.legalLinks.terms)}" style="color:${C.link};text-decoration:underline;">Terms</a>`
+
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>
 <body style="margin:0;padding:0;background-color:${C.page};">
 ${preheaderHtml}
@@ -117,7 +165,7 @@ ${preheaderHtml}
 
       <!-- Header -->
       <tr><td style="background-color:${C.obsidian};padding:20px 32px;">
-        <img src="${brand.url}/brand/logo-mark-light-512.png?v=frame1" width="36" height="36" alt="Gun License NYC" style="vertical-align:middle;display:inline-block;border:0;" />
+        ${headerMark}
         <span style="font-family:${FONT};font-size:17px;font-weight:600;letter-spacing:0.2px;color:${C.headerText};vertical-align:middle;padding-left:8px;">${esc(brand.name)}</span>
       </td></tr>
       <!-- Brass rule -->
@@ -137,9 +185,10 @@ ${preheaderHtml}
       <!-- Footer -->
       <tr><td style="background-color:${C.footerBg};padding:22px 32px;border-top:1px solid ${C.hairline};">
         <p style="font-family:${FONT};font-size:13px;font-weight:600;color:${C.heading};margin:0 0 8px;">
-          <img src="${brand.url}/brand/logo-mark-ink-512.png?v=frame1" width="18" height="18" alt="Gun License NYC" style="vertical-align:middle;display:inline-block;border:0;" /> ${esc(brand.name)}
+          ${footerMark} ${esc(brand.name)} · ${esc(brand.legalName)}
         </p>
         ${reasonHtml}
+        <p style="font-family:${FONT};font-size:11px;line-height:1.55;color:${C.faint};margin:0 0 8px;">${legalLinks}</p>
         <p style="font-family:${FONT};font-size:11px;line-height:1.55;color:${C.faint};margin:0;">${esc(brand.disclaimer)}</p>
       </td></tr>
 

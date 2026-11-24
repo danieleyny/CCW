@@ -2,8 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import BrandLogo from "@/components/brand/BrandLogo"
 import { tokenActive } from "@/lib/references/process"
 import { CohabitantFlow } from "@/components/public/cohabitant-flow"
+import { BrandProvider } from "@/components/brand/brand-provider"
+import type { BrandKey } from "@/config/brands"
 
-export const metadata = { title: "Cohabitant affidavit — Gun License NYC", robots: { index: false, follow: false } }
+export const metadata = { title: "Cohabitant affidavit", robots: { index: false, follow: false } }
 
 export default async function CohabitantPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -26,7 +28,7 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
     )
   }
 
-  const { data: kase } = await admin.from("cases").select("clients(full_name)").eq("id", cohab.case_id).single()
+  const { data: kase } = await admin.from("cases").select("brand, clients(full_name)").eq("id", cohab.case_id).single()
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
 
   // First open leaves a trace — same journey tracking the reference flow has,
@@ -36,7 +38,7 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
   }
 
   return (
-    <Shell>
+    <Shell brandKey={kase?.brand}>
       <h1 className="text-xl font-semibold tracking-tight">Cohabitant affidavit</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         A quick, guided confirmation for {applicant}&apos;s NYC carry-license application — no account needed.
@@ -54,14 +56,19 @@ export default async function CohabitantPage({ params }: { params: Promise<{ tok
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
+function Shell({ children, brandKey }: { children: React.ReactNode; brandKey?: BrandKey }) {
+  const content = (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
-      {/* UNBRAND DECISION: shown to a THIRD PARTY (an adult cohabitant) from an
-          emailed link — kept branded on purpose so it doesn't read as phishing.
-          The affidavit PDF they sign is unbranded (lib/pdf/builder); this page is not. */}
       <BrandLogo tone="ink" size="sm" className="mb-6" />
       {children}
     </div>
+  )
+  return (
+    <>
+      {/* UNBRAND DECISION: shown to a THIRD PARTY (an adult cohabitant) from an
+          emailed link — kept branded on purpose so it doesn't read as phishing.
+          The affidavit PDF they sign is unbranded (lib/pdf/builder); this page is not. */}
+      {brandKey ? <BrandProvider brandKey={brandKey}>{content}</BrandProvider> : content}
+    </>
   )
 }

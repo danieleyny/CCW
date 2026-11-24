@@ -5,10 +5,11 @@ import { headers } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
-import { brand } from "@/config/brand"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { honeypotTripped } from "@/lib/honeypot"
 import { notifyFormspree } from "@/lib/formspree"
+import { BRANDS } from "@/config/brands"
+import { getRequestBrandKey } from "@/lib/brand/server"
 
 export type LeadState = { ok?: boolean; error?: string }
 
@@ -60,6 +61,8 @@ export async function captureLead(
   }
   const v = parsed.data
   const admin = createAdminClient()
+  const requestBrand = await getRequestBrandKey()
+  const leadSource = requestBrand === "fl" ? `fl:${v.source}` : v.source
 
   let eligibility: Record<string, unknown> = {}
   if (v.eligibility) {
@@ -76,6 +79,7 @@ export async function captureLead(
     .from("clients")
     .select("id")
     .ilike("email", v.email)
+    .eq("signup_brand", requestBrand)
     .is("profile_id", null)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -102,7 +106,8 @@ export async function captureLead(
     borough: v.borough || null,
     track: v.track,
     current_stage: "lead" as const,
-    lead_source: v.source,
+    lead_source: leadSource,
+    signup_brand: requestBrand,
     eligibility: eligibility as never,
   }
 
@@ -134,7 +139,13 @@ export async function captureLead(
     existingCase ??
     (claimed
       ? null
-      : (await admin.from("cases").insert({ client_id: client.id, stage: "lead", status: "active" }).select("id").single())
+      : (
+          await admin
+            .from("cases")
+            .insert({ client_id: client.id, stage: "lead", status: "active", brand: requestBrand })
+            .select("id")
+            .single()
+        )
           .data)
 
   // Do not guess the licence category from a marketing inquiry. If this lead
@@ -144,7 +155,7 @@ export async function captureLead(
   await admin.from("tasks").insert({
     case_id: kase?.id ?? null,
     title: `New lead: ${v.name}`,
-    description: v.message || `Source: ${v.source}`,
+    description: v.message || `Source: ${leadSource}`,
     priority: 1,
     status: "open",
   })
@@ -166,12 +177,12 @@ export async function captureLead(
     action: "lead.captured",
     entity: "client",
     entity_id: client.id,
-    detail: { source: v.source },
+    detail: { source: leadSource, brand: requestBrand } as never,
   })
 
   // Email the submission to the business inbox. Formspree works today (no key);
   // sendEmail stays as a second channel that lights up when RESEND_API_KEY is set.
-  await notifyFormspree(v.source, {
+  await notifyFormspree(leadSource, {
     name: v.name,
     email: v.email,
     phone: v.phone,
@@ -181,18 +192,20 @@ export async function captureLead(
     consult_time: v.consultAt,
   })
   const { html, text } = renderEmail({
+    brand: requestBrand,
     eyebrow: "New lead",
     heading: v.name,
     paragraphs: [
       `${v.email}${v.phone ? ` · ${v.phone}` : ""}`,
-      `Source: ${v.source}`,
+      `Source: ${leadSource}`,
       ...(v.message ? [v.message] : []),
     ],
-    recipientReason: "Internal lead notification from the Gun License NYC site.",
+    recipientReason: `Internal lead notification from the ${BRANDS[requestBrand].name} site.`,
   })
   await sendEmail({
-    to: brand.contact.email,
-    subject: `New lead: ${v.name} (${v.source})`,
+    brand: requestBrand,
+    to: BRANDS[requestBrand].supportEmail,
+    subject: `New ${BRANDS[requestBrand].name} lead: ${v.name} (${v.source})`,
     html,
     text,
   })

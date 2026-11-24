@@ -13,13 +13,14 @@ import { SlotBooker, type BookableSlot } from "@/components/portal/slot-booker"
 import { MessageThread, type MessageRow } from "@/components/shared/message-thread"
 import { cancelOffer } from "./actions"
 import { sendEngagementMessage, markEngagementMessagesRead } from "@/app/portal/actions"
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
 
 export const metadata = { title: "Find an instructor" }
 
 export default async function MarketplacePage() {
   const myCase = await getMyCase()
+  if (myCase?.brand === "fl") notFound()
   if (!myCase) {
     return (
       <p className="rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">

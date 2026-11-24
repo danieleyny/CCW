@@ -32,11 +32,13 @@ export async function sendTrainingPaidEmails(input: {
   const name = [input.registration.first_name, input.registration.middle_name, input.registration.last_name].filter(Boolean).join(" ")
   const dates = sessionLine(input.course.sessions)
   const customer = renderEmail({
+    brand: "gln",
     eyebrow: "Training registration", heading: `You're registered: NYS CCW class, ${dates}`,
     paragraphs: [`Receipt: ${formatTrainingPrice(input.registration.amount_cents)} paid for ${input.course.title}.`, `Sessions: ${dates}. We're registering you with the instructor now. You'll get the exact address ${TRAINING_CONFIG.CONFIRMATION_SLA_COPY}.`, "Bring a government-issued photo ID to session 1."],
     cta: { label: "View refund policy", url: `${brand.url}${TRAINING_CONFIG.REFUND_POLICY_URL}` },
   })
   const team = renderEmail({
+    brand: "gln",
     eyebrow: "New training registration", heading: `New training registration: ${name}, ${input.course.title}`,
     paragraphs: [
       `Email: ${input.registration.email} · Mobile: ${input.registration.mobile_phone} · Home: ${input.registration.home_phone || "—"}`,
@@ -50,15 +52,16 @@ export async function sendTrainingPaidEmails(input: {
     cta: { label: "Open training admin", url: `${brand.url}/admin/training` },
   })
   await Promise.all([
-    sendEmail({ to: input.registration.email, subject: `You're registered: NYS CCW class, ${dates}`, html: customer.html, text: customer.text, attachments: [{ filename: "nys-ccw-class.ics", content: trainingIcs(input.registration.id, input.course.sessions), contentType: "text/calendar" }] }),
-    sendEmail({ to: brand.contact.email, subject: `New training registration: ${name}, ${input.course.title}`, html: team.html, text: team.text }),
+    sendEmail({ brand: "gln", to: input.registration.email, subject: `You're registered: NYS CCW class, ${dates}`, html: customer.html, text: customer.text, attachments: [{ filename: "nys-ccw-class.ics", content: trainingIcs(input.registration.id, input.course.sessions), contentType: "text/calendar" }] }),
+    sendEmail({ brand: "gln", to: brand.contact.email, subject: `New training registration: ${name}, ${input.course.title}`, html: team.html, text: team.text }),
   ])
 }
 
 export async function sendTrainingConfirmedEmail(input: { email: string; name: string; title: string; locationPrivate: string | null }) {
   const email = renderEmail({
+    brand: "gln",
     eyebrow: "Class details confirmed", heading: "Your NYS CCW class details are confirmed",
     paragraphs: [`Hi ${input.name}, your registration for ${input.title} is confirmed.`, input.locationPrivate ? `Exact class address: ${input.locationPrivate}` : "The exact class address will be sent separately.", "Please bring a government-issued photo ID."],
   })
-  return sendEmail({ to: input.email, subject: "Your NYS CCW class details are confirmed", html: email.html, text: email.text })
+  return sendEmail({ brand: "gln", to: input.email, subject: "Your NYS CCW class details are confirmed", html: email.html, text: email.text })
 }

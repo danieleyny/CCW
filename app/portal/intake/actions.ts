@@ -9,7 +9,6 @@ import { logActivity } from "@/lib/activity"
 import { eligibilityGate, type WizardAnswers } from "@/lib/intake/answers"
 import { wizardAnswersSchema, completionIssues } from "@/lib/intake/schema"
 import { processIntake, evaluateSubmissionGuard, type SubmissionGuard } from "@/lib/intake/process"
-import type { Json } from "@/lib/supabase/types"
 import {
   applicationTypeToLegacyLicenseType,
   isPremisesApplication,
@@ -108,7 +107,7 @@ export async function saveIntakeStep(
   const { error } = await supabase
     .from("intake_sessions")
     .upsert(
-      { case_id: caseId, current_step: step, answers: canonical as unknown as Json },
+      { case_id: caseId, current_step: step, answers: canonical as never },
       { onConflict: "case_id" }
     )
   if (error) {
@@ -149,7 +148,7 @@ export async function completeIntake(
     await supabase
       .from("intake_sessions")
       .upsert(
-        { case_id: caseId, current_step: 6, answers: answers as unknown as Json },
+        { case_id: caseId, current_step: 6, answers: answers as never },
         { onConflict: "case_id" }
       )
     await logActivity({
@@ -177,7 +176,7 @@ export async function completeIntake(
     await supabase
       .from("intake_sessions")
       .upsert(
-        { case_id: caseId, current_step: 6, answers: answers as unknown as Json },
+        { case_id: caseId, current_step: 6, answers: answers as never },
         { onConflict: "case_id" }
       )
     return {
@@ -194,7 +193,7 @@ export async function completeIntake(
       {
         case_id: caseId,
         current_step: 6,
-        answers: answers as unknown as Json,
+        answers: answers as never,
         completed_at: new Date().toISOString(),
       },
       { onConflict: "case_id" }

@@ -7,7 +7,7 @@ import type { TrainingActionResult, TrainingClassInput, TrainingRegistrationStat
 import { requireAdmin } from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import type { Database, Json } from "@/lib/supabase/types"
+import type { Database } from "@/lib/supabase/types"
 import { sendTrainingConfirmedEmail } from "@/lib/training/email"
 import { getTrainingStripe, TRAINING_BUCKET } from "@/lib/training/server"
 import { SESSION_SCHEMA } from "@/lib/training/types"
@@ -58,7 +58,7 @@ function rowFor(input: z.infer<typeof classInputSchema>, slug: string): Training
   return {
     slug,
     title: input.title,
-    sessions: input.sessions as unknown as Json,
+    sessions: input.sessions as never,
     location_public: input.locationPublic,
     location_private: input.locationPrivate || null,
     price_cents: Math.round(input.priceDollars * 100),

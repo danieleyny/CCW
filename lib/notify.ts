@@ -4,16 +4,17 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
+import { brandUrl } from "@/lib/brand/origin"
+import { caseBrandFor } from "@/lib/brand/case"
 
 type DB = SupabaseClient<Database>
-
-const portalUrl = () => `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/portal`
 
 /**
  * Notify the applicant (in-app + email) and the engaged instructor (in-app only,
  * no PII). Used by the public reference/cohabitant flows after a status change.
  */
 export async function notifyCaseParties(admin: DB, caseId: string, opts: { title: string; body: string }) {
+  const brandKey = await caseBrandFor(admin, caseId)
   const { data: kase } = await admin.from("cases").select("client_id").eq("id", caseId).single()
   if (kase?.client_id) {
     const { data: client } = await admin.from("clients").select("profile_id, email").eq("id", kase.client_id).single()
@@ -24,13 +25,14 @@ export async function notifyCaseParties(admin: DB, caseId: string, opts: { title
     }
     if (client?.email) {
       const { html, text } = renderEmail({
+        brand: brandKey,
         preheader: opts.body,
         heading: opts.title,
         paragraphs: [opts.body],
-        cta: { label: "View your case →", url: portalUrl() },
+        cta: { label: "View your case →", url: brandUrl(brandKey, "/portal") },
         recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
       })
-      await sendEmail({ to: client.email, subject: opts.title, html, text })
+      await sendEmail({ brand: brandKey, to: client.email, subject: opts.title, html, text })
     }
   }
   const { data: eng } = await admin

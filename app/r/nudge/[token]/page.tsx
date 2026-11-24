@@ -1,9 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import BrandLogo from "@/components/brand/BrandLogo"
 import { ReferenceNudge } from "@/components/public/reference-nudge"
+import { BrandProvider } from "@/components/brand/brand-provider"
+import type { BrandKey } from "@/config/brands"
 
 export const metadata = {
-  title: "Remind a reference — Gun License NYC",
+  title: "Remind a reference",
   // Tokenized, applicant-facing — never index (matches /r and /c).
   robots: { index: false, follow: false },
 }
@@ -23,7 +25,7 @@ export default async function ReferenceNudgePage({
 
   const { data: req } = await admin
     .from("reference_requests")
-    .select("status, character_references(name)")
+    .select("status, case_id, character_references(name)")
     .eq("nudge_token", token)
     .maybeSingle()
 
@@ -41,9 +43,10 @@ export default async function ReferenceNudgePage({
 
   const referenceName = (req.character_references as unknown as { name: string } | null)?.name ?? "your reference"
   const alreadyDone = req.status === "notarized" || req.status === "submitted"
+  const { data: kase } = await admin.from("cases").select("brand").eq("id", req.case_id).single()
 
   return (
-    <Shell>
+    <Shell brandKey={kase?.brand}>
       <h1 className="text-xl font-semibold tracking-tight">Remind {referenceName}</h1>
       {alreadyDone ? (
         <p className="mt-2 text-sm text-muted-foreground">
@@ -63,13 +66,18 @@ export default async function ReferenceNudgePage({
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
+function Shell({ children, brandKey }: { children: React.ReactNode; brandKey?: BrandKey }) {
+  const content = (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
-      {/* UNBRAND DECISION: third-party reference-chase page from an emailed link —
-          kept branded so it doesn't read as phishing; the signed PDF is unbranded. */}
       <BrandLogo tone="ink" size="sm" className="mb-6" />
       {children}
     </div>
+  )
+  return (
+    <>
+      {/* UNBRAND DECISION: third-party reference-chase page from an emailed link —
+          kept branded so it doesn't read as phishing; the signed PDF is unbranded. */}
+      {brandKey ? <BrandProvider brandKey={brandKey}>{content}</BrandProvider> : content}
+    </>
   )
 }

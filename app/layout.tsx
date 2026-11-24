@@ -3,8 +3,10 @@ import { Bodoni_Moda, Hanken_Grotesk, IBM_Plex_Mono, Newsreader } from "next/fon
 import { Suspense } from "react";
 import "./globals.css";
 import "../styles/themes.css";
-import { brand } from "@/config/brand";
+import { BRANDS } from "@/config/brands";
 import { BrandStyle } from "@/config/brand-style";
+import { BrandProvider } from "@/components/brand/brand-provider";
+import { getRequestBrandKey } from "@/lib/brand/server";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { WebVitals } from "@/components/analytics/web-vitals";
@@ -56,17 +58,19 @@ const verification: Metadata["verification"] = {
     : {}),
 };
 
-export const metadata: Metadata = {
-  applicationName: brand.name,
+export async function generateMetadata(): Promise<Metadata> {
+  const requestBrand = BRANDS[await getRequestBrandKey()]
+  return {
+  applicationName: requestBrand.name,
   title: {
-    default: `${brand.name} — ${brand.tagline}`,
-    template: `%s · ${brand.name}`,
+    default: `${requestBrand.name} — ${requestBrand.tagline}`,
+    template: `%s · ${requestBrand.name}`,
   },
-  description: brand.description,
-  metadataBase: new URL(brand.url),
-  alternates: {
-    types: { "application/rss+xml": [{ url: "/feed.xml", title: `${brand.name} — Guides` }] },
-  },
+  description: requestBrand.description,
+  metadataBase: new URL(requestBrand.appOrigin),
+  alternates: requestBrand.key === "gln" ? {
+    types: { "application/rss+xml": [{ url: "/feed.xml", title: `${requestBrand.name} — Guides` }] },
+  } : undefined,
   icons: {
     icon: [
       // Google recommends a stable, square favicon larger than 48x48. Lead
@@ -78,28 +82,33 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  creator: brand.name,
-  publisher: brand.name,
+  creator: requestBrand.name,
+  publisher: requestBrand.name,
   category: "NYC gun licensing assistance",
-  ...(Object.keys(verification).length ? { verification } : {}),
-};
+  robots: requestBrand.key === "fl" ? { index: false, follow: false } : undefined,
+  ...(verification && Object.keys(verification).length ? { verification } : {}),
+  }
+}
 
 export const viewport: Viewport = { themeColor: "#0A1520" };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const brandKey = await getRequestBrandKey()
   return (
     <html
       lang="en"
+      data-brand={brandKey}
       className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} ${fontTitle.variable} h-full antialiased`}
     >
       <head>
         <BrandStyle />
       </head>
       <body className="relative min-h-full flex flex-col">
+        <BrandProvider brandKey={brandKey}>
         {/* V3-P4.5 — keyboard users skip straight to content */}
         <a
           href="#main"
@@ -116,7 +125,7 @@ export default function RootLayout({
         <Toaster richColors closeButton theme="dark" />
         {/* GA4 — only on the real production deployment, so localhost + preview
             traffic never pollutes the analytics. */}
-        {process.env.VERCEL_ENV === "production" && (
+        {brandKey === "gln" && process.env.VERCEL_ENV === "production" && (
           <>
             <GoogleAnalytics />
             <WebVitals />
@@ -125,6 +134,7 @@ export default function RootLayout({
             </Suspense>
           </>
         )}
+        </BrandProvider>
       </body>
     </html>
   );

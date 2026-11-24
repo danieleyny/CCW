@@ -1,47 +1,59 @@
-import Link from "next/link"
-import { TrackView } from "@/components/analytics/track-view"
-import { getPublicPackages, getPublicFees } from "@/lib/public-data"
-import { getTrustStats } from "@/lib/stats"
-import { buildMetadata } from "@/lib/seo"
-import { RefilePromise } from "@/components/marketing/refile-promise"
-import { TrustStats } from "@/components/marketing/trust-stats"
-import { PageHero } from "@/components/marketing/page-hero"
-import { Breadcrumbs } from "@/components/marketing/breadcrumbs"
-import { RelatedLinks } from "@/components/marketing/page-blocks"
-import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld"
+import Link from "next/link";
+import { TrackView } from "@/components/analytics/track-view";
+import { getPublicPackages, getPublicFees } from "@/lib/public-data";
+import { getTrustStats } from "@/lib/stats";
+import { buildMetadata } from "@/lib/seo";
+import { RefilePromise } from "@/components/marketing/refile-promise";
+import { TrustStats } from "@/components/marketing/trust-stats";
+import { PageHero } from "@/components/marketing/page-hero";
+import { Breadcrumbs } from "@/components/marketing/breadcrumbs";
+import { RelatedLinks } from "@/components/marketing/page-blocks";
+import { JsonLd, serviceSchemaWithOffers } from "@/components/marketing/json-ld";
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Service Pricing",
   description:
-    "What our NYC gun license help costs — Self-Guided, Full Concierge, Non-Resident, and Renewal tiers. Government fees are paid directly, never marked up.",
+    "What our NYC gun license concierge service costs. Government fees are paid directly and are never marked up.",
   path: "/pricing",
-})
+});
 
 const FEATURES: Record<string, string[]> = {
-  self_guided: ["Client portal access", "Full document checklist", "Filing guidance", "Email support"],
   full_concierge: [
-    "Everything in Self-Guided",
+    "Personalized client portal and document checklist",
     "Training coordination",
     "Document prep + notarization help",
     "Application assembly + filing guidance",
     "Interview preparation",
     "Priority concierge support",
   ],
-  non_resident: ["Dedicated Special Carry track", "Out-of-area logistics", "Document preparation + filing guide"],
+  non_resident: [
+    "Dedicated Special Carry track",
+    "Out-of-area logistics",
+    "Document preparation + filing guide",
+  ],
   renewal: ["Discounted 3-year renewal", "Document refresh", "Re-filing support"],
-}
+};
 
 export default async function Pricing() {
   // V3-P3.1 — pricing comes from the DB; a price change is a data edit.
   // Cookieless + cached → static render (see lib/public-data).
-  const [packages, fees, stats] = await Promise.all([getPublicPackages(), getPublicFees(), getTrustStats()])
+  const [packages, fees, stats] = await Promise.all([
+    getPublicPackages(),
+    getPublicFees(),
+    getTrustStats(),
+  ]);
   return (
     <div className="guide-page">
       <TrackView event="pricing_viewed" />
       {/* The Service + live Offers belong on the canonical pricing page too, not
           only the home page — every Offer's url already points here. */}
       <JsonLd data={serviceSchemaWithOffers(packages)} />
-      <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Pricing", path: "/pricing" }]} />
+      <Breadcrumbs
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Pricing", path: "/pricing" },
+        ]}
+      />
       <PageHero
         eyebrow="Membership"
         title="Pick how much you want us to handle"
@@ -58,7 +70,7 @@ export default async function Pricing() {
             }}
           >
             {packages.map((p) => {
-              const featured = p.featured
+              const featured = p.featured;
               return (
                 <div
                   key={p.key}
@@ -86,7 +98,14 @@ export default async function Pricing() {
                       Most chosen
                     </div>
                   )}
-                  <h3 style={{ margin: 0, fontFamily: "var(--display)", fontSize: 20, fontWeight: 600 }}>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--display)",
+                      fontSize: 20,
+                      fontWeight: 600,
+                    }}
+                  >
                     {p.name}
                   </h3>
                   <div
@@ -101,10 +120,24 @@ export default async function Pricing() {
                   >
                     {p.priceLabel}
                   </div>
-                  <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--ink-soft)" }}>{p.blurb}</p>
-                  <ul style={{ listStyle: "none", margin: "20px 0 0", padding: 0, flex: 1, display: "grid", gap: 10 }}>
+                  <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--ink-soft)" }}>
+                    {p.blurb}
+                  </p>
+                  <ul
+                    style={{
+                      listStyle: "none",
+                      margin: "20px 0 0",
+                      padding: 0,
+                      flex: 1,
+                      display: "grid",
+                      gap: 10,
+                    }}
+                  >
                     {(FEATURES[p.key] ?? []).map((f) => (
-                      <li key={f} style={{ display: "flex", gap: 8, fontSize: 14, color: "var(--ink-soft)" }}>
+                      <li
+                        key={f}
+                        style={{ display: "flex", gap: 8, fontSize: 14, color: "var(--ink-soft)" }}
+                      >
                         <span aria-hidden="true" style={{ color: "var(--success)", flexShrink: 0 }}>
                           ✓
                         </span>
@@ -120,7 +153,7 @@ export default async function Pricing() {
                     {p.priceCents > 0 ? "Buy now" : "Talk to us"}
                   </Link>
                 </div>
-              )
+              );
             })}
           </div>
 
@@ -155,5 +188,5 @@ export default async function Pricing() {
         ]}
       />
     </div>
-  )
+  );
 }

@@ -2,8 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import BrandLogo from "@/components/brand/BrandLogo"
 import { tokenActive } from "@/lib/references/process"
 import { ReferenceFlow } from "@/components/public/reference-flow"
+import { BrandProvider } from "@/components/brand/brand-provider"
+import type { BrandKey } from "@/config/brands"
 
-export const metadata = { title: "Character reference — Gun License NYC", robots: { index: false, follow: false } }
+export const metadata = { title: "Character reference", robots: { index: false, follow: false } }
 
 export default async function ReferencePage({
   params,
@@ -32,7 +34,7 @@ export default async function ReferencePage({
 
   const [{ data: ref }, { data: kase }] = await Promise.all([
     admin.from("character_references").select("name, relationship, contact_email, known_duration").eq("id", req.reference_id).single(),
-    admin.from("cases").select("clients(full_name)").eq("id", req.case_id).single(),
+    admin.from("cases").select("brand, clients(full_name)").eq("id", req.case_id).single(),
   ])
   const applicant = (kase?.clients as unknown as { full_name: string } | null)?.full_name ?? "the applicant"
 
@@ -41,7 +43,7 @@ export default async function ReferencePage({
   }
 
   return (
-    <Shell>
+    <Shell brandKey={kase?.brand}>
       <h1 className="text-xl font-semibold tracking-tight">Character reference</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         A quick, guided confirmation for {applicant}&apos;s NYC carry-license application — no account
@@ -60,16 +62,21 @@ export default async function ReferencePage({
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
+function Shell({ children, brandKey }: { children: React.ReactNode; brandKey?: BrandKey }) {
+  const content = (
     <div className="mx-auto min-h-svh w-full max-w-xl px-4 py-10">
+      <BrandLogo tone="ink" size="sm" className="mb-6" />
+      {children}
+    </div>
+  )
+  return (
+    <>
       {/* UNBRAND DECISION: this page is shown to a THIRD PARTY (a character
           reference) who arrived from an emailed link. We KEEP a clear identity
           here on purpose — an anonymous page asking a stranger for personal details
           and a notarised signature reads as phishing. The PDF they sign is
           unbranded (lib/pdf/builder); the page + invitation email are not. */}
-      <BrandLogo tone="ink" size="sm" className="mb-6" />
-      {children}
-    </div>
+      {brandKey ? <BrandProvider brandKey={brandKey}>{content}</BrandProvider> : content}
+    </>
   )
 }

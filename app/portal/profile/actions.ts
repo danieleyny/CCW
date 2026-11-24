@@ -109,9 +109,9 @@ export async function updateProfileAvatar(input: unknown): Promise<AvatarUpdateS
 
   const db = await createClient()
   const { data: oldPath, error } = await db.rpc("update_own_profile_avatar", {
-    p_kind: next.avatar_kind,
-    p_key: next.avatar_key,
-    p_path: next.avatar_path,
+    p_kind: next.avatar_kind as never,
+    p_key: next.avatar_key as never,
+    p_path: next.avatar_path as never,
   })
   if (error) return { error: "We couldn't save your photo. Please try again." }
 

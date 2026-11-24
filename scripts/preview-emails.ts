@@ -19,6 +19,7 @@ const applicant = "Jordan Rivera"
 
 const emails: Record<string, ReturnType<typeof renderEmail>> = {
   reference: renderEmail({
+    brand: "gln",
     preheader: `${applicant} asked you to be a character reference — confirm in about a minute.`,
     eyebrow: "Action needed",
     heading: `${applicant} listed you as a character reference`,
@@ -31,6 +32,7 @@ const emails: Record<string, ReturnType<typeof renderEmail>> = {
     recipientReason: "You received this because an applicant listed you as a character reference.",
   }),
   cohabitant: renderEmail({
+    brand: "gln",
     preheader: `${applicant} listed you as a household member — complete a short affidavit.`,
     eyebrow: "Action needed",
     heading: `${applicant} listed you as a household member`,
@@ -43,6 +45,7 @@ const emails: Record<string, ReturnType<typeof renderEmail>> = {
     recipientReason: "You received this because an applicant listed you as a member of their household.",
   }),
   notification: renderEmail({
+    brand: "gln",
     preheader: "A character reference completed their statement.",
     heading: "A character reference responded",
     paragraphs: [
@@ -54,6 +57,7 @@ const emails: Record<string, ReturnType<typeof renderEmail>> = {
   // Password reset — mirrors app/auth/actions.ts requestPasswordReset. Branded
   // from-us so it never reads like phishing. Update both together.
   passwordReset: renderEmail({
+    brand: "gln",
     preheader: `Reset your ${brand.name} password — this link expires in 60 minutes.`,
     eyebrow: "Account security",
     heading: "Reset your password",
@@ -68,6 +72,7 @@ const emails: Record<string, ReturnType<typeof renderEmail>> = {
   // The reference-unfilled reminder (to the applicant) — names the reference and
   // carries a one-click resend button. Mirrors lib/reminders/engine.ts.
   referenceReminder: renderEmail({
+    brand: "gln",
     heading: "A character reference is still pending",
     paragraphs: [
       "Pat Rivera hasn't completed their character reference yet (3d). Send them a reminder — it takes one click.",

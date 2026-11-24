@@ -82,6 +82,7 @@ describe.skipIf(!reachable || !STRIPE_ENABLED || !stripe)("stripe invoicing (tes
         status: "pending",
         description: "Invoice webhook test",
         stripe_invoice_id: `in_test_${crypto.randomUUID()}`,
+        brand: "gln",
       })
       .select("id")
       .single()

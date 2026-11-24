@@ -10,6 +10,8 @@ import { recomputeReferenceRequirement, tokenActive } from "@/lib/references/pro
 import { rateLimit } from "@/lib/rate-limit"
 import { REFERENCE_QUESTIONS, type ReferenceAnswers } from "@/lib/references/questions"
 import { isReasonableSignature } from "@/lib/signatures"
+import { brandUrl } from "@/lib/brand/origin"
+import { caseBrandFor } from "@/lib/brand/case"
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -39,6 +41,7 @@ async function notifyParties(
   caseId: string,
   opts: { title: string; body: string }
 ) {
+  const brandKey = await caseBrandFor(admin, caseId)
   const { data: kase } = await admin.from("cases").select("client_id").eq("id", caseId).single()
   if (kase?.client_id) {
     const { data: client } = await admin.from("clients").select("profile_id, email").eq("id", kase.client_id).single()
@@ -49,15 +52,15 @@ async function notifyParties(
       })
     }
     if (client?.email) {
-      const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/portal/people`
       const { html, text } = renderEmail({
+        brand: brandKey,
         preheader: opts.body,
         heading: opts.title,
         paragraphs: [opts.body],
-        cta: { label: "View your references →", url: portalUrl },
+        cta: { label: "View your references →", url: brandUrl(brandKey, "/portal/people") },
         recipientReason: "You're receiving this because it concerns your NYC carry-license application.",
       })
-      await sendEmail({ to: client.email, subject: opts.title, html, text })
+      await sendEmail({ brand: brandKey, to: client.email, subject: opts.title, html, text })
     }
   }
   const { data: eng } = await admin

@@ -1,16 +1,17 @@
-import "server-only"
+import "server-only";
 
-import type Stripe from "stripe"
-import type { SupabaseClient } from "@supabase/supabase-js"
-import type { Database } from "@/lib/supabase/types"
+import type Stripe from "stripe";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
+import type { BrandKey } from "@/config/brands";
 
-type DB = SupabaseClient<Database>
+type DB = SupabaseClient<Database>;
 
 export interface ClientForCustomer {
-  id: string
-  email: string | null
-  full_name: string | null
-  stripe_customer_id: string | null
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  stripe_customer_id: string | null;
 }
 
 /**
@@ -25,19 +26,19 @@ export interface ClientForCustomer {
 export async function findOrCreateCustomer(
   db: DB,
   stripe: Stripe,
-  client: ClientForCustomer
+  client: ClientForCustomer,
 ): Promise<string> {
   if (client.stripe_customer_id) {
     try {
-      const existing = await stripe.customers.retrieve(client.stripe_customer_id)
+      const existing = await stripe.customers.retrieve(client.stripe_customer_id);
       // A retrieved-but-deleted customer comes back as { deleted: true }.
       if (existing && !("deleted" in existing && existing.deleted)) {
-        return client.stripe_customer_id
+        return client.stripe_customer_id;
       }
     } catch (err) {
       // "No such customer" (wrong account/mode) → fall through and recreate.
       // Anything else is a real error we shouldn't swallow.
-      if (!(err instanceof Error && /no such customer/i.test(err.message))) throw err
+      if (!(err instanceof Error && /no such customer/i.test(err.message))) throw err;
     }
   }
 
@@ -45,24 +46,26 @@ export async function findOrCreateCustomer(
     email: client.email ?? undefined,
     name: client.full_name ?? undefined,
     metadata: { client_id: client.id },
-  })
-  await db.from("clients").update({ stripe_customer_id: customer.id }).eq("id", client.id)
-  return customer.id
+  });
+  await db.from("clients").update({ stripe_customer_id: customer.id }).eq("id", client.id);
+  return customer.id;
 }
 
 export interface CreateInvoiceInput {
-  customerId: string
-  paymentId: string
-  caseId: string
-  amountCents: number
-  description: string
+  customerId: string;
+  paymentId: string;
+  caseId: string;
+  amountCents: number;
+  description: string;
+  brand?: BrandKey;
+  packageKey?: string | null;
   /** Days the client has to pay before the invoice is past due. */
-  daysUntilDue?: number
+  daysUntilDue?: number;
 }
 
 export interface CreatedInvoice {
-  id: string
-  hostedInvoiceUrl: string | null
+  id: string;
+  hostedInvoiceUrl: string | null;
 }
 
 /**
@@ -73,9 +76,18 @@ export interface CreatedInvoice {
  */
 export async function createAndSendInvoice(
   stripe: Stripe,
-  input: CreateInvoiceInput
+  input: CreateInvoiceInput,
 ): Promise<CreatedInvoice> {
-  const { customerId, paymentId, caseId, amountCents, description, daysUntilDue = 7 } = input
+  const {
+    customerId,
+    paymentId,
+    caseId,
+    amountCents,
+    description,
+    brand,
+    packageKey,
+    daysUntilDue = 7,
+  } = input;
 
   // The item must exist before the invoice so it's swept in on create.
   await stripe.invoiceItems.create({
@@ -83,19 +95,24 @@ export async function createAndSendInvoice(
     amount: amountCents,
     currency: "usd",
     description,
-  })
+  });
 
   const invoice = await stripe.invoices.create({
     customer: customerId,
     collection_method: "send_invoice",
     days_until_due: daysUntilDue,
     description,
-    metadata: { payment_id: paymentId, case_id: caseId },
+    metadata: {
+      payment_id: paymentId,
+      case_id: caseId,
+      ...(brand ? { brand } : {}),
+      ...(packageKey ? { package_key: packageKey } : {}),
+    },
     pending_invoice_items_behavior: "include",
-  })
+  });
 
-  const finalized = await stripe.invoices.finalizeInvoice(invoice.id!)
-  await stripe.invoices.sendInvoice(finalized.id!)
+  const finalized = await stripe.invoices.finalizeInvoice(invoice.id!);
+  await stripe.invoices.sendInvoice(finalized.id!);
 
-  return { id: finalized.id!, hostedInvoiceUrl: finalized.hosted_invoice_url ?? null }
+  return { id: finalized.id!, hostedInvoiceUrl: finalized.hosted_invoice_url ?? null };
 }

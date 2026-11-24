@@ -12,6 +12,7 @@ import { hasPaidPackage } from "@/lib/packages"
 import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
 import { matchAccessCode } from "@/lib/access-codes"
 import { startCheckout, type EnrollResult } from "@/app/portal/enroll/actions"
+import { BRANDS, type BrandKey } from "@/config/brands"
 
 const schema = z.object({
   packageKey: z.enum(["self_guided", "full_concierge"]),
@@ -39,6 +40,10 @@ export async function choosePath(_prev: EnrollResult, formData: FormData): Promi
   const myCase = await getMyCase()
   if (!myCase) return { error: "Your case isn't set up yet." }
   if (!myCase.application_type) redirect("/portal/license-path")
+  const caseBrand = myCase.brand as BrandKey
+  if (!BRANDS[caseBrand].packages.includes(packageKey)) {
+    return { error: "That path isn't available for this account." }
+  }
 
   const serviceMode = packageKey === "full_concierge" ? "concierge" : "self_guided"
 
@@ -107,6 +112,10 @@ export async function redeemAccessCode(_prev: RedeemResult, formData: FormData):
   })
   if (!parsed.success) return { error: "That code isn't valid." }
   const { packageKey, code } = parsed.data
+  const caseBrand = myCase.brand as BrandKey
+  if (!BRANDS[caseBrand].packages.includes(packageKey)) {
+    return { error: "That code is for a different service." }
+  }
 
   const matched = matchAccessCode(code, packageKey)
   if (!matched) {
@@ -160,6 +169,7 @@ export async function redeemAccessCode(_prev: RedeemResult, formData: FormData):
     status: "paid",
     paid_at: new Date().toISOString(),
     package_key: packageKey,
+    brand: caseBrand,
     description: `Access code redeemed (${matched.label}) — comped, no payment collected`,
   })
   if (payErr) return { error: "Couldn't apply that code. Try again." }

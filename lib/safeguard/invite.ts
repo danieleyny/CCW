@@ -6,11 +6,11 @@ import { newReferenceToken, tokenExpiry, tokenActive } from "@/lib/references/pr
 import { resolveFacts } from "@/lib/facts/resolve"
 import { renderEmail } from "@/lib/email/template"
 import { sendEmail } from "@/lib/email"
-import { brand } from "@/config/brand"
+import { BRANDS } from "@/config/brands"
+import { caseBrandFor } from "@/lib/brand/case"
+import { brandUrl } from "@/lib/brand/origin"
 
 type DB = SupabaseClient<Database>
-
-const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
 /** Is a safeguard invite's token still usable? */
 export const safeguardTokenActive = (i: { token_expires_at?: string | null; token_revoked_at?: string | null }) =>
@@ -108,9 +108,11 @@ export async function inviteSafeguard(admin: DB, caseId: string, email: string):
       .insert({ case_id: caseId, email: clean, token, token_expires_at: tokenExpiry(), sent_at: new Date().toISOString() })
   }
 
-  const link = `${siteBase()}/g/${token}`
+  const brandKey = await caseBrandFor(admin, caseId)
+  const link = brandUrl(brandKey, `/g/${token}`)
   const applicant = await applicantNameFor(admin, caseId)
   const { html, text } = renderEmail({
+    brand: brandKey,
     preheader: applicant
       ? `${applicant} designated you to safeguard their firearm(s) — sign a short acknowledgement.`
       : "Complete a short safeguarding acknowledgement — no account needed.",
@@ -126,6 +128,12 @@ export async function inviteSafeguard(admin: DB, caseId: string, email: string):
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
     recipientReason: "You received this because an applicant designated you to safeguard their firearm(s).",
   })
-  const res = await sendEmail({ to: clean, subject: `Please complete a safeguarding acknowledgement — ${brand.name}`, html, text })
+  const res = await sendEmail({
+    brand: brandKey,
+    to: clean,
+    subject: `Please complete a safeguarding acknowledgement — ${BRANDS[brandKey].name}`,
+    html,
+    text,
+  })
   return { link, emailed: res.skipped === false && !("error" in res), hadEmail: true }
 }

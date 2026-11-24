@@ -5,7 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireRole } from "@/lib/auth"
 import { getStripe } from "@/lib/stripe"
 import { findOrCreateCustomer } from "@/lib/stripe/invoicing"
-import { getSiteUrl } from "@/lib/site-url"
+import { brandUrl } from "@/lib/brand/origin"
+import { BRANDS, type BrandKey } from "@/config/brands"
 
 export type CheckoutResult = { url?: string; disabled?: boolean; error?: string }
 
@@ -20,7 +21,7 @@ export async function payPending(paymentId: string): Promise<CheckoutResult> {
 
   const { data: payment } = await supabase
     .from("payments")
-    .select("id, case_id, client_id, amount_cents, type, description, status")
+    .select("id, case_id, client_id, amount_cents, type, description, status, brand, package_key")
     .eq("id", paymentId)
     .maybeSingle() // RLS → only the client's own payment
   if (!payment) return { error: "Payment not found" }
@@ -46,7 +47,14 @@ export async function payPending(paymentId: string): Promise<CheckoutResult> {
     }
   }
 
-  const base = getSiteUrl()
+  const paymentBrand = payment.brand as BrandKey
+  const brandConfig = BRANDS[paymentBrand]
+  const metadata = {
+    brand: paymentBrand,
+    payment_id: payment.id,
+    case_id: payment.case_id ?? "",
+    package_key: payment.package_key ?? "",
+  }
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     ...(customerId ? { customer: customerId } : {}),
@@ -54,16 +62,22 @@ export async function payPending(paymentId: string): Promise<CheckoutResult> {
       {
         price_data: {
           currency: "usd",
-          product_data: { name: payment.description ?? `Gun License NYC ${payment.type}` },
+          product_data: { name: payment.description ?? `${brandConfig.displayName} ${payment.type}` },
           unit_amount: payment.amount_cents,
         },
         quantity: 1,
       },
     ],
     integration_identifier: "ccw_pending_hzrtpvwn",
-    success_url: `${base}/portal?enrolled=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/portal/payments?status=canceled`,
-    metadata: { payment_id: payment.id, case_id: payment.case_id ?? "" },
+    success_url: brandUrl(paymentBrand, "/portal?enrolled=1&session_id={CHECKOUT_SESSION_ID}"),
+    cancel_url: brandUrl(paymentBrand, "/portal/payments?status=canceled"),
+    metadata,
+    payment_intent_data: {
+      metadata,
+      ...(brandConfig.stripeDescriptorSuffix
+        ? { statement_descriptor_suffix: brandConfig.stripeDescriptorSuffix }
+        : {}),
+    },
   })
 
   // The session id belongs in stripe_session_id — NOT stripe_payment_intent

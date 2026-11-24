@@ -71,6 +71,7 @@ export default async function PortalHome() {
     ])
   const intakeDone = !!intake?.completed_at
   const trainingState = !trainingRequired
+    || myCase.brand === "fl"
     ? { status: "none" as const, interestedCount: 0, instructorName: null, bookingAt: null }
     : await getTrainingState(myCase.id)
 
@@ -93,6 +94,9 @@ export default async function PortalHome() {
 
   // V3-P3 — which lifecycle cards to show.
   const hasPackage = (payments ?? []).some((p) => p.package_key)
+  const canUpgrade =
+    myCase.brand === "fl" &&
+    (payments ?? []).some((p) => p.status === "paid" && p.package_key === "self_guided")
   const isLicensed = stage === "licensed"
   const isDenied = myCase.status === "denied"
 
@@ -104,18 +108,22 @@ export default async function PortalHome() {
   // A SPONSORED concierge case is unlocked by the sponsorship itself, not a Stripe
   // purchase — so it must never see a payment card. Detect it exactly as the concierge
   // page does (any non-revoked sponsorship) and route it to the concierge tower.
-  const { data: sponsorship } = await supabase
-    .from("case_sponsorships")
-    .select("id")
-    .eq("case_id", myCase.id)
-    .is("revoked_at", null)
-    .limit(1)
-    .maybeSingle()
+  const { data: sponsorship } = myCase.brand === "gln"
+    ? await supabase
+        .from("case_sponsorships")
+        .select("id")
+        .eq("case_id", myCase.id)
+        .is("revoked_at", null)
+        .limit(1)
+        .maybeSingle()
+    : { data: null }
   const isSponsored = !!sponsorship
 
   // Referral channel: a company introduced this applicant (attribution only). If so, offer
   // the applicant control over sharing their STAGE with that company (default: private).
-  const { data: refCase } = await supabase.from("cases").select("referred_by_sponsor_id").eq("id", myCase.id).maybeSingle()
+  const { data: refCase } = myCase.brand === "gln"
+    ? await supabase.from("cases").select("referred_by_sponsor_id").eq("id", myCase.id).maybeSingle()
+    : { data: null }
   let referral: { company: string; sharing: boolean } | null = null
   if (refCase?.referred_by_sponsor_id) {
     // Applicants can't read the sponsors table (RLS) — fetch just the referrer's company
@@ -182,9 +190,29 @@ export default async function PortalHome() {
         )}
       </div>
 
-      <SponsorBanner caseId={myCase.id} />
+      {myCase.brand === "gln" ? <SponsorBanner caseId={myCase.id} /> : null}
 
       {referral && <ReferralConsentCard caseId={myCase.id} company={referral.company} sharing={referral.sharing} />}
+
+      {canUpgrade ? (
+        <Card className="border-signal/30 bg-signal-dim">
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <SectionEyebrow>More support</SectionEyebrow>
+              <h2 className="mt-2 text-lg font-semibold">Rather have it done with you?</h2>
+              <p className="mt-1 text-sm text-text-mid">
+                Credit your Self-Guided payment toward Gun License NYC Full Concierge.
+              </p>
+            </div>
+            <Link
+              href="/portal/upgrade"
+              className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-md bg-brass px-4 text-sm font-semibold text-brand-foreground hover:bg-brass-bright"
+            >
+              See upgrade <ArrowRight className="size-4" />
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* CONCIERGE QA Phase 2 — chose Full Concierge, hasn't paid: a warm,
           recoverable card, ABOVE the fold, instead of the silent self-guided
@@ -338,7 +366,7 @@ export default async function PortalHome() {
 
       {/* Marketplace entry — reflects where the applicant is in getting trained,
           so "find an instructor" disappears once they're engaged/booked. */}
-      {trainingRequired && <Link
+      {trainingRequired && myCase.brand === "gln" && <Link
         href="/portal/marketplace"
         className={
           trainingState.status === "engaged" || trainingState.status === "booked"

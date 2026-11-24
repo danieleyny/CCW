@@ -16,6 +16,9 @@ import { PortalUserAvatarProvider } from "@/components/portal/portal-user-avatar
 import { UserAvatar } from "@/components/shared/user-avatar"
 import { getProfileAvatarUrl } from "@/lib/profile-avatar"
 import "./portal-v2.css"
+import { getRequestBrandKey } from "@/lib/brand/server"
+import { OtherBrandGate } from "@/components/portal/other-brand-gate"
+import type { BrandKey } from "@/config/brands"
 
 export default async function PortalLayout({
   children,
@@ -28,7 +31,10 @@ export default async function PortalLayout({
   // wander a half-empty portal. Gentle: only early-stage + intake-incomplete
   // cases, and intake/profile/privacy + attorney-review cases are exempt.
   const pathname = (await headers()).get("x-pathname") ?? ""
-  const myCase = await getMyCase()
+  const [myCase, requestBrand] = await Promise.all([getMyCase(), getRequestBrandKey()])
+  if (myCase && (myCase.brand as BrandKey) !== requestBrand) {
+    return <OtherBrandGate caseBrand={myCase.brand as BrandKey} />
+  }
   if (myCase) {
     const onboardingRedirect = await resolveOnboardingRedirect(pathname, myCase)
     if (onboardingRedirect) redirect(onboardingRedirect)
@@ -96,7 +102,7 @@ export default async function PortalLayout({
             </div>
           </div>
         </div>
-            <PortalTopNav concierge={isConcierge} />
+            <PortalTopNav concierge={isConcierge} brand={(myCase?.brand as BrandKey | undefined) ?? requestBrand} />
       </header>
 
       {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
@@ -125,7 +131,7 @@ export default async function PortalLayout({
           stacked bottom bars is one too many. The soft intake gate already keeps
           a new applicant here, and the wizard has a "Save & exit" out. */}
       {!pathname.startsWith("/portal/intake") && (
-        <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} />
+        <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} brand={(myCase?.brand as BrandKey | undefined) ?? requestBrand} />
       )}
     </div>
     </PortalUserAvatarProvider>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getPublicFees, getPublicPackages } from "@/lib/public-data"
+import { getPublicFees, getPublicPackageCatalog } from "@/lib/public-data"
 
 /**
  * Public, cacheable pricing feed for the independently deployed acquisition
@@ -19,12 +19,14 @@ import { getPublicFees, getPublicPackages } from "@/lib/public-data"
 const ALLOWED_ORIGINS = new Set([
   "https://firearmlicensenyc.com",
   "https://www.firearmlicensenyc.com",
+  "https://app.firearmlicensenyc.com",
   "https://nycgunlaws.com",
   "https://www.nycgunlaws.com",
 ])
 
 export async function GET(request: Request) {
-  const [packages, fees] = await Promise.all([getPublicPackages(), getPublicFees()])
+  const [catalog, fees] = await Promise.all([getPublicPackageCatalog(), getPublicFees()])
+  const packages = catalog.map((pkg) => ({ ...pkg, brands: pkg.soldBy }))
 
   const origin = request.headers.get("origin")
   const headers: Record<string, string> = {

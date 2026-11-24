@@ -7,13 +7,14 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { ensureClientCaseForProfile } from "@/lib/onboarding"
-import { getSiteUrl } from "@/lib/site-url"
+import { brandUrl } from "@/lib/brand/origin"
+import { getRequestBrandKey } from "@/lib/brand/server"
+import { BRANDS } from "@/config/brands"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 import { honeypotTripped } from "@/lib/honeypot"
 import { safeInternalPath } from "@/lib/safe-redirect"
 import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
-import { brand } from "@/config/brand"
 
 /** Best-effort caller IP for throttling unauthenticated auth attempts. */
 async function callerIp(): Promise<string> {
@@ -93,6 +94,7 @@ export async function signUp(
     return { error: "Too many sign-ups from this network. Please wait a minute and try again." }
   }
 
+  const requestBrandKey = await getRequestBrandKey()
   const supabase = await createClient()
   // Role is NOT set here: user_metadata (options.data) is client-controlled, and
   // handle_new_user deliberately ignores it for role — self-serve signups always
@@ -106,7 +108,7 @@ export async function signUp(
       // Only used if email confirmation is ever re-enabled at the project level;
       // with "Confirm email" OFF (see docs/AUTH_EMAIL_CONFIRMATION.md), signUp
       // returns a session directly and this round-trip never happens.
-      emailRedirectTo: `${getSiteUrl()}/auth/callback?next=/dashboard`,
+      emailRedirectTo: brandUrl(requestBrandKey, "/auth/callback?next=/dashboard"),
     },
   })
   // SEC-12 — don't echo the raw provider error. Neutral wording also avoids
@@ -123,6 +125,7 @@ export async function signUp(
         profileId: data.user.id,
         email: parsed.data.email,
         fullName: parsed.data.fullName,
+        brand: requestBrandKey,
       })
     } catch (e) {
       console.error("signup auto-provision failed", e)
@@ -191,9 +194,11 @@ export async function requestPasswordReset(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Enter a valid email" }
   }
+  const requestBrandKey = await getRequestBrandKey()
+  const requestBrand = BRANDS[requestBrandKey]
   const supabase = await createClient()
   const email = parsed.data.email
-  const redirectTo = `${getSiteUrl()}/auth/callback?next=/auth/reset-password`
+  const redirectTo = brandUrl(requestBrandKey, "/auth/callback?next=/auth/reset-password")
 
   // Prefer a from-us BRANDED email: a stock, Supabase-signed reset reads like
   // phishing for a gun-licensing account. We mint the recovery link with the
@@ -213,18 +218,25 @@ export async function requestPasswordReset(
       const actionLink = data?.properties?.action_link
       if (!error && actionLink) {
         const { html, text } = renderEmail({
-          preheader: `Reset your ${brand.name} password — this link expires in 60 minutes.`,
+          brand: requestBrandKey,
+          preheader: `Reset your ${requestBrand.name} password — this link expires in 60 minutes.`,
           eyebrow: "Account security",
           heading: "Reset your password",
           paragraphs: [
-            `We received a request to reset the password for your ${brand.name} account. Choose a new password with the button below.`,
+            `We received a request to reset the password for your ${requestBrand.name} account. Choose a new password with the button below.`,
           ],
           cta: { label: "Choose a new password", url: actionLink },
           footnote:
             `This link expires in 60 minutes. If you didn't request a reset, you can ignore this email — ` +
-            `your password won't change. Questions? Contact ${brand.contact.email}.`,
+            `your password won't change. Questions? Contact ${requestBrand.supportEmail}.`,
         })
-        const res = await sendEmail({ to: email, subject: `Reset your ${brand.name} password`, html, text })
+        const res = await sendEmail({
+          brand: requestBrandKey,
+          to: email,
+          subject: `Reset your ${requestBrand.name} password`,
+          html,
+          text,
+        })
         // Delivered (or console-logged in a non-Resend env) → done. Only a hard
         // send error drops us to the Supabase fallback below.
         if (!("error" in res)) return { sent: true }
@@ -237,6 +249,9 @@ export async function requestPasswordReset(
   // Fallback: Supabase generates + sends its own recovery email. Kept as the
   // default until Resend is verified. Ignore the result: surfacing an error
   // here would reveal account existence.
+  if (requestBrandKey === "fl") {
+    console.warn("[auth.reset_fallback_native] brand=fl")
+  }
   await supabase.auth.resetPasswordForEmail(email, { redirectTo })
   return { sent: true }
 }

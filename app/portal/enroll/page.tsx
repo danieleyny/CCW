@@ -1,13 +1,14 @@
 import { CheckCircle2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
-import { getActivePackages } from "@/lib/packages"
+import { getActivePackagesForBrand } from "@/lib/packages"
 import { getFees } from "@/lib/fees"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { EnrollButtons } from "@/components/portal/enroll-buttons"
 import { AccessCodeField } from "@/components/portal/access-code-field"
 import { accessCodesEnabled } from "@/lib/access-codes"
 import { Card, CardContent } from "@/components/ui/card"
+import type { BrandKey } from "@/config/brands"
 
 export const metadata = { title: "Choose your package" }
 
@@ -24,7 +25,9 @@ export default async function EnrollPage({
   const sp = await searchParams
   const myCase = await getMyCase()
   const supabase = await createClient()
-  const packages = await getActivePackages(supabase)
+  const packages = myCase
+    ? await getActivePackagesForBrand(supabase, myCase.brand as BrandKey)
+    : []
   const fees = await getFees(supabase)
   const codesEnabled = accessCodesEnabled()
 
@@ -77,6 +80,7 @@ export default async function EnrollPage({
                 depositCents={p.depositCents}
                 stripeOn={STRIPE_ENABLED}
                 featured={p.featured}
+                payInFull={myCase?.brand === "fl"}
               />
               {codesEnabled && (p.key === "self_guided" || p.key === "full_concierge") && (
                 <AccessCodeField packageKey={p.key} />

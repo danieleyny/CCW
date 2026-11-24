@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getMyCase } from "@/lib/portal"
-import { getActivePackages, hasPaidPackage } from "@/lib/packages"
+import { getActivePackagesForBrand, hasPaidPackage } from "@/lib/packages"
 import { accessCodesEnabled } from "@/lib/access-codes"
 import { STRIPE_ENABLED } from "@/lib/stripe"
 import { ChoosePathCards } from "@/components/portal/choose-path-cards"
@@ -10,6 +10,7 @@ import { SetupStepper } from "@/components/portal/ui/setup-stepper"
 import { ScrollToTop } from "@/components/shared/scroll-to-top"
 import type { ApplicationType } from "@/lib/application-types"
 import { getMessages } from "@/lib/i18n"
+import type { BrandKey } from "@/config/brands"
 
 export async function generateMetadata() {
   const t = await getMessages()
@@ -46,7 +47,8 @@ export default async function ChoosePathPage() {
   if (paidConcierge) redirect("/portal/concierge")
   if (paidSelf) redirect("/portal")
 
-  const packages = await getActivePackages(supabase)
+  const packages = await getActivePackagesForBrand(supabase, myCase.brand as BrandKey)
+  if (packages.length === 1) redirect(`/portal/enroll?package=${packages[0].key}`)
   const alreadyMode = (myCase.service_mode as "self_guided" | "concierge" | null) ?? null
   const codesEnabled = accessCodesEnabled()
   // QA Phase 9 — don't attribute a STAFF-set path to the applicant.

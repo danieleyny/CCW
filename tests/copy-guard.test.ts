@@ -1,8 +1,8 @@
 /**
  * V5b Workstream E.1 — the copy guard as a TEST, not a habit. Walks every
  * .tsx/.ts/.mdx under app/, components/, content/, config/ and fails on any
- * banned marketing word (AGENTS.md rule 4). Exactly one file is allowlisted:
- * config/brand.ts, whose disclaimer legitimately uses the words to NEGATE them.
+ * banned marketing word (AGENTS.md rule 4). The narrow allowlist covers only
+ * policy/training files whose disclaimers use those words to NEGATE them.
  */
 import { describe, expect, it } from "vitest"
 import { readdirSync, readFileSync } from "node:fs"
@@ -17,7 +17,7 @@ const EXT = /\.(tsx?|mdx)$/
 // consultant can expedite the NYPD's review") — the same negating use as the
 // disclaimer.
 const ALLOW = new Set([
-  "config/brand.ts",
+  "config/gln-brand.ts",
   "content/trainer-onboarding.ts",
   "config/agreements.ts",
 ])
@@ -28,6 +28,9 @@ const PHRASE_ALLOW: Record<string, RegExp[]> = {
   // Partner config: the AAA's proper-noun panel name (no claim about NYPD speed), and an
   // attorney's advertising disclaimer that NEGATES a guarantee (same use as brand.ts).
   "config/partners.ts": [/Expedited Panels?/g, /Prior results do not guarantee a similar outcome\./g],
+  // The FL standing disclaimer is a second brand-specific negation of
+  // government affiliation; keep the exemption to this exact phrase.
+  "config/brands.ts": [/not affiliated with or endorsed by the NYPD/g],
 }
 const BANNED: [string, RegExp][] = [
   ["guarantee", /guarantee/i],

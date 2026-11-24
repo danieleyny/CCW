@@ -1,9 +1,9 @@
-import Link from "next/link"
-import { getPublicFees } from "@/lib/public-data"
-import { FACTS } from "@/content/facts"
-import { buildMetadata } from "@/lib/seo"
-import { DirectAnswer, FactList } from "@/components/marketing/page-blocks"
-import { ArticleTemplate } from "@/components/marketing/v2/article-template"
+import Link from "next/link";
+import { getPublicFees } from "@/lib/public-data";
+import { FACTS } from "@/content/facts";
+import { buildMetadata } from "@/lib/seo";
+import { DirectAnswer, FactList } from "@/components/marketing/page-blocks";
+import { ArticleTemplate } from "@/components/marketing/v2/article-template";
 
 export const metadata = buildMetadata({
   title: "NYC Gun License Requirements",
@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
     "NYC gun license requirements: age 21, 18 hours of training, about 24 documents, and applicant-controlled filing — in plain English, with sources.",
   path: "/requirements",
   hreflang: "/requirements",
-})
+});
 
 /**
  * The requirements OVERVIEW. Deliberately not the citation wall — the full
@@ -21,7 +21,7 @@ export const metadata = buildMetadata({
  * content/facts.ts. Rendered through the v2 interior article template.
  */
 
-const linkStyle = { color: "var(--electric-deep)", textDecoration: "none" as const }
+const linkStyle = { color: "var(--electric-deep)", textDecoration: "none" as const };
 
 const DOCS = [
   {
@@ -48,7 +48,7 @@ const DOCS = [
     title: "The ordinary paperwork",
     body: "Proof of who you are and where you live, your training certificate, passport photos, the application itself, and the fees. Tedious, not hard.",
   },
-]
+];
 
 function DocCards() {
   return (
@@ -56,18 +56,24 @@ function DocCards() {
       {DOCS.map((d) => (
         <div
           key={d.title}
-          style={{ border: "1px solid var(--rule)", background: "var(--ivory)", padding: "18px 20px" }}
+          style={{
+            border: "1px solid var(--rule)",
+            background: "var(--ivory)",
+            padding: "18px 20px",
+          }}
         >
           <strong style={{ display: "block", fontSize: 17, marginBottom: 6 }}>{d.title}</strong>
-          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.55 }}>{d.body}</p>
+          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.55 }}>
+            {d.body}
+          </p>
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export default async function RequirementsPage() {
-  const fees = await getPublicFees()
+  const fees = await getPublicFees();
 
   const FAQS = [
     {
@@ -94,7 +100,7 @@ export default async function RequirementsPage() {
       q: "What does all of this cost?",
       a: `The two government fees are the ${fees.applicationFee} NYPD application fee and the ${fees.fingerprintFee} State fingerprint fee, both paid directly to the government. Training and notarization are billed by those providers. The full breakdown is on our cost page.`,
     },
-  ]
+  ];
 
   return (
     <ArticleTemplate
@@ -114,13 +120,13 @@ export default async function RequirementsPage() {
           navLabel: "Overview",
           body: (
             <DirectAnswer>
-              A NYC gun license comes down to four things: you must be <strong>at least 21</strong>, you
-              must complete <strong>18 hours of state-approved training</strong>, you must assemble{" "}
-              <strong>about 24 documents</strong> — including four notarized character references, a
-              notarized statement from every adult in your home, a three-year social media list, and
-              photos of your safe — and you must <strong>file the application yourself</strong> with the
-              NYPD License Division. None of it is hard on its own. All of it together is why people
-              stall.
+              A NYC gun license comes down to four things: you must be <strong>at least 21</strong>,
+              you must complete <strong>18 hours of state-approved training</strong>, you must
+              assemble <strong>about 24 documents</strong> — including four notarized character
+              references, a notarized statement from every adult in your home, a three-year social
+              media list, and photos of your safe — and you must{" "}
+              <strong>file the application yourself</strong> with the NYPD License Division. None of
+              it is hard on its own. All of it together is why people stall.
             </DirectAnswer>
           ),
         },
@@ -131,15 +137,15 @@ export default async function RequirementsPage() {
           body: (
             <>
               <p>
-                Before you spend a dollar on training, find out whether you can apply at all. The age rule
-                is absolute. Everything else — your history, your household, your address — is worth
-                understanding early, because it changes what your file looks like.
+                Before you spend a dollar on training, find out whether you can apply at all. The
+                age rule is absolute. Everything else — your history, your household, your address —
+                is worth understanding early, because it changes what your file looks like.
               </p>
               <FactList facts={[FACTS.age, FACTS.disclosure]} />
               <p style={{ marginTop: 18, color: "var(--ink-muted)", fontSize: 14 }}>
-                We can explain a rule. We can&apos;t tell you what your specific arrest means for your
-                specific application — that&apos;s legal advice, and it takes a lawyer. If your history is
-                complicated, we&apos;ll say so and point you to one.
+                We can explain a rule. We can&apos;t tell you what your specific arrest means for
+                your specific application — that&apos;s legal advice, and it takes a lawyer. If your
+                history is complicated, we&apos;ll say so and point you to one.
               </p>
             </>
           ),
@@ -151,8 +157,8 @@ export default async function RequirementsPage() {
           body: (
             <>
               <p>
-                18 hours, a state-approved instructor, and a test. The part people miss is the clock on
-                it: your certificate goes stale. Take the course too early and you take it twice.
+                18 hours, a state-approved instructor, and a test. The part people miss is the clock
+                on it: your certificate goes stale. Take the course too early and you take it twice.
               </p>
               <FactList facts={[FACTS.training, FACTS.trainingClock]} />
             </>
@@ -164,7 +170,10 @@ export default async function RequirementsPage() {
           navLabel: "Documents",
           body: (
             <>
-              <p>Roughly two dozen of them. Here&apos;s what they actually are, without the form numbers:</p>
+              <p>
+                Roughly two dozen of them. Here&apos;s what they actually are, without the form
+                numbers:
+              </p>
               <DocCards />
               <p>
                 Not every item applies to everyone — the list changes depending on your track, your
@@ -178,7 +187,9 @@ export default async function RequirementsPage() {
                 </Link>{" "}
                 for the full document list with citations.
               </p>
-              <FactList facts={[FACTS.references, FACTS.cohabitants, FACTS.socialMedia, FACTS.safe]} />
+              <FactList
+                facts={[FACTS.references, FACTS.cohabitants, FACTS.socialMedia, FACTS.safe]}
+              />
             </>
           ),
         },
@@ -189,10 +200,10 @@ export default async function RequirementsPage() {
           body: (
             <>
               <p>
-                The application is always yours, and you always sign and submit it. Full Concierge adds
-                hands-on preparation and case management, while Self-Guided gives you the same organized
-                filing path. Only a New York-licensed attorney can represent you at the License Division;
-                our role is to prepare and organize the file before you submit it.
+                The application is always yours, and you always sign and submit it. Full Concierge
+                adds hands-on preparation and case management while keeping you in control of the
+                application. Only a New York-licensed attorney can represent you at the License
+                Division; our role is to prepare and organize the file before you submit it.
               </p>
               <FactList facts={[FACTS.youFile]} />
             </>
@@ -212,5 +223,5 @@ export default async function RequirementsPage() {
         { label: "Glossary of gun-license terms", href: "/glossary" },
       ]}
     />
-  )
+  );
 }

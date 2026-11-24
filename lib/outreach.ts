@@ -18,11 +18,11 @@ import type { Database } from "@/lib/supabase/types"
 import { sendEmail } from "@/lib/email"
 import { renderEmail } from "@/lib/email/template"
 import { newReferenceToken, tokenExpiry } from "@/lib/references/process"
-import { brand } from "@/config/brand"
+import { BRANDS } from "@/config/brands"
+import { brandUrl } from "@/lib/brand/origin"
+import { caseBrandFor } from "@/lib/brand/case"
 
 type DB = SupabaseClient<Database>
-
-const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
 /**
  * The applicant's name, for the invite email — a recipient who instantly sees
@@ -96,11 +96,13 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
     })
   }
 
-  const link = `${siteBase()}/r/${token}`
+  const brandKey = await caseBrandFor(admin, ref.case_id)
+  const link = brandUrl(brandKey, `/r/${token}`)
   if (!ref.contact_email) return { link, emailed: false, hadEmail: false }
 
   const applicant = await applicantNameFor(admin, ref.case_id)
   const { html, text } = renderEmail({
+    brand: brandKey,
     // Lead with WHO asked — that's the line the inbox preview shows.
     preheader: applicant
       ? `${applicant} asked you to be a character reference — confirm in about a minute.`
@@ -115,7 +117,13 @@ export async function inviteReference(admin: DB, referenceId: string): Promise<I
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
     recipientReason: "You received this because an applicant listed you as a character reference.",
   })
-  const res = await sendEmail({ to: ref.contact_email, subject: `Character reference request — ${brand.name}`, html, text })
+  const res = await sendEmail({
+    brand: brandKey,
+    to: ref.contact_email,
+    subject: `Character reference request — ${BRANDS[brandKey].name}`,
+    html,
+    text,
+  })
   // emailed reflects ACTUAL delivery, not "an address exists": if the send was a
   // no-op (no key) or errored, the applicant is told to copy the link instead. Persist it
   // so the card/progress can be honest on reload (the row already says status:'sent').
@@ -144,11 +152,13 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
     .update({ token, token_expires_at: tokenExpiry(), token_revoked_at: null, sent_at: new Date().toISOString() })
     .eq("id", cohab.id)
 
-  const link = `${siteBase()}/c/${token}`
+  const brandKey = await caseBrandFor(admin, cohab.case_id)
+  const link = brandUrl(brandKey, `/c/${token}`)
   if (!cohab.contact_email) return { link, emailed: false, hadEmail: false }
 
   const applicant = await applicantNameFor(admin, cohab.case_id)
   const { html, text } = renderEmail({
+    brand: brandKey,
     // Lead with WHO listed them — that's the line the inbox preview shows.
     preheader: applicant
       ? `${applicant} listed you as a household member — complete a short affidavit.`
@@ -165,7 +175,13 @@ export async function inviteCohabitant(admin: DB, cohabitantId: string): Promise
     footnote: "This secure link expires in 30 days. If you weren't expecting this, you can ignore this email.",
     recipientReason: "You received this because an applicant listed you as a member of their household.",
   })
-  const res = await sendEmail({ to: cohab.contact_email, subject: `Please complete a cohabitant affidavit — ${brand.name}`, html, text })
+  const res = await sendEmail({
+    brand: brandKey,
+    to: cohab.contact_email,
+    subject: `Please complete a cohabitant affidavit — ${BRANDS[brandKey].name}`,
+    html,
+    text,
+  })
   // emailed reflects ACTUAL delivery (see inviteReference).
   const emailed = res.skipped === false && !("error" in res)
   const reason = emailed ? undefined : res.skipped ? ("not_configured" as const) : ("rejected" as const)

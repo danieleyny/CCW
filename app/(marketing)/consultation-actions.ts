@@ -66,6 +66,7 @@ export async function requestConsultation(
   const represented = v.represented === "yes" ? "Yes" : "No"
 
   const { html, text } = renderEmail({
+    brand: "gln",
     eyebrow: "Attorney consultation request",
     heading: v.name,
     paragraphs: [
@@ -84,6 +85,7 @@ export async function requestConsultation(
       "A consultation request submitted through the Gun License NYC site and sent directly to you. Gun License NYC does not receive or keep a copy.",
   })
   const result = await sendEmail({
+    brand: "gln",
     // The ONE recipient — the attorney's own inbox. No brand cc/bcc.
     to: partner.email,
     // No person's name in the subject — even the [email:noop] log line stays PII-free.

@@ -76,6 +76,7 @@ describe.skipIf(!reachable)("concierge reminder rules", () => {
         type: "full",
         status: "paid",
         package_key: "full_concierge",
+        brand: "gln",
       })
     }
     if (opts.completeAgreements) {

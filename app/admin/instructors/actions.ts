@@ -76,8 +76,8 @@ export async function requestInstructorChanges(input: unknown): Promise<Instruct
     if (error) return { ok: false, error: error.message }
   }
   if (instructor.email) {
-    const { html, text } = renderEmail({ eyebrow: "Instructor profile", heading: "One change before we verify you", paragraphs: [parsed.data.note], cta: { label: "Open your profile", url: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://gunlicensenyc.com"}/instructor/profile` }, recipientReason: "You received this because you created an instructor profile with Gun License NYC." })
-    await sendEmail({ to: instructor.email, subject: "One change before we verify you", html, text })
+    const { html, text } = renderEmail({ brand: "gln", eyebrow: "Instructor profile", heading: "One change before we verify you", paragraphs: [parsed.data.note], cta: { label: "Open your profile", url: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://gunlicensenyc.com"}/instructor/profile` }, recipientReason: "You received this because you created an instructor profile with Gun License NYC." })
+    await sendEmail({ brand: "gln", to: instructor.email, subject: "One change before we verify you", html, text })
   }
   await logActivity({ action: "instructor.changes_requested", entity: "instructor", entityId: instructor.id, detail: { note: parsed.data.note } })
   revalidatePath("/admin/instructors")

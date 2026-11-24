@@ -1,5 +1,6 @@
 import crypto from "node:crypto"
 import { renderEmail } from "@/lib/email/template"
+import { BRANDS, type BrandKey } from "@/config/brands"
 
 /**
  * V5b Workstream A — shared subscribe helpers. No `server-only` so the verify
@@ -59,17 +60,18 @@ const OFFER_COPY: Record<SubscribeOffer, { subject: string; line: string }> = {
   checklist: { subject: "Your NYC carry checklist", line: "Here's your personalized document checklist." },
 }
 
-export function offerSubject(offer: SubscribeOffer): string {
-  return OFFER_COPY[offer].subject
+export function offerSubject(offer: SubscribeOffer, brand: BrandKey): string {
+  return OFFER_COPY[offer].subject.replace("Gun License NYC", BRANDS[brand].name)
 }
 
-export function offerEmail(offer: SubscribeOffer, unsubUrl: string): { html: string; text: string } {
+export function offerEmail(offer: SubscribeOffer, unsubUrl: string, brand: BrandKey): { html: string; text: string } {
   const { subject, line } = OFFER_COPY[offer]
   return renderEmail({
+    brand,
     preheader: line,
-    heading: subject,
+    heading: subject.replace("Gun License NYC", BRANDS[brand].name),
     paragraphs: [line],
-    recipientReason: "You received this because you requested it from Gun License NYC.",
+    recipientReason: `You received this because you requested it from ${BRANDS[brand].name}.`,
     unsubscribeUrl: unsubUrl,
   })
 }

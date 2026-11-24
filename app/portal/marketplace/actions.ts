@@ -291,6 +291,7 @@ export async function payBookingDeposit(
     stripe_connect_account: instr.stripe_connect_account_id,
     application_fee_cents: platformFeeCents(deposit),
     description: "Training deposit",
+    brand: "gln",
   })
 
   return { url: checkout.url ?? undefined }

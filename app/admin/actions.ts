@@ -1,71 +1,79 @@
-"use server"
+"use server";
 
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
-import { z } from "zod"
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
-import { requireStaff, requireAdmin } from "@/lib/auth"
-import { logActivity } from "@/lib/activity"
-import { withOnBehalf } from "@/lib/concierge/on-behalf"
-import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
-import { resolveReviewTargets } from "@/lib/requirements/review-targets"
-import { closePhotoConversionTask } from "@/lib/requirements/photo-conversion"
-import { EMAIL_ENABLED, sendEmail } from "@/lib/email"
-import { renderEmail } from "@/lib/email/template"
-import { getSiteUrl } from "@/lib/site-url"
-import { brand } from "@/config/brand"
-import { rateLimit } from "@/lib/rate-limit"
-import { notifyClient } from "@/lib/email"
-import { notifyCaseParties } from "@/lib/notify"
-import { reviewUrl } from "@/lib/review"
-import { maybeAdvanceStage } from "@/lib/cases/advance"
-import { sendBookingInvites } from "@/lib/calendar/invites"
-import { isArmedTrack, openDosUpgrade, grantDosArmedStatus } from "@/lib/dos"
-import { getStripe } from "@/lib/stripe"
-import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing"
-import { STAGE_KEYS, isNypdControlled, stageMeta, stageIndex, type CaseStageKey } from "@/config/stages"
-import { materializeCaseRequirements } from "@/lib/requirements/materialize"
-import { actionFor } from "@/lib/requirements/actions"
-import { evaluatePreFilingGate } from "@/lib/qa-gate"
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireStaff, requireAdmin } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
+import { withOnBehalf } from "@/lib/concierge/on-behalf";
+import { autoAssignConciergeAgent } from "@/lib/concierge/assign";
+import { resolveReviewTargets } from "@/lib/requirements/review-targets";
+import { closePhotoConversionTask } from "@/lib/requirements/photo-conversion";
+import { EMAIL_ENABLED, sendEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/email/template";
+import { BRANDS } from "@/config/brands";
+import { brandUrl } from "@/lib/brand/origin";
+import { caseBrandFor } from "@/lib/brand/case";
+import { rateLimit } from "@/lib/rate-limit";
+import { notifyClient } from "@/lib/email";
+import { notifyCaseParties } from "@/lib/notify";
+import { reviewUrl } from "@/lib/review";
+import { maybeAdvanceStage } from "@/lib/cases/advance";
+import { sendBookingInvites } from "@/lib/calendar/invites";
+import { isArmedTrack, openDosUpgrade, grantDosArmedStatus } from "@/lib/dos";
+import { getStripe } from "@/lib/stripe";
+import { findOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoicing";
+import { getPackageForBrand } from "@/lib/packages";
 import {
-  BOROUGHS,
-  CLIENT_TRACKS,
-} from "@/config/stages"
+  STAGE_KEYS,
+  isNypdControlled,
+  stageMeta,
+  stageIndex,
+  type CaseStageKey,
+} from "@/config/stages";
+import { materializeCaseRequirements } from "@/lib/requirements/materialize";
+import { actionFor } from "@/lib/requirements/actions";
+import { evaluatePreFilingGate } from "@/lib/qa-gate";
+import { BOROUGHS, CLIENT_TRACKS } from "@/config/stages";
 
 // ── stage changes (pipeline drag + case file) ────────────────────────────────
-export type StageChangeResult = { ok: true } | { ok: false; blockers: string[] }
+export type StageChangeResult = { ok: true } | { ok: false; blockers: string[] };
 
 export type StagePreviewResult = {
-  gated: boolean
-  ok: boolean
-  blockers: string[]
-  signedOffBy: string | null
-  signedOffAt: string | null
-}
+  gated: boolean;
+  ok: boolean;
+  blockers: string[];
+  signedOffBy: string | null;
+  signedOffAt: string | null;
+};
 
 const caseStageChangeSchema = z.object({
   caseId: z.string().uuid(),
   stage: z.enum(STAGE_KEYS as [CaseStageKey, ...CaseStageKey[]]),
   note: z.string().trim().max(2000).optional(),
-})
+});
 
 const caseStatusChangeSchema = z.object({
   caseId: z.string().uuid(),
   status: z.enum(["active", "blocked", "on_hold", "closed", "approved", "denied"]),
   note: z.string().trim().min(1, "Add a reason for the status change.").max(2000),
-})
+});
 
 /** Read-only mirror of the server-side CP-5 enforcement used by setCaseStage. */
-export async function previewStageChange(caseIdInput: string, stageInput: CaseStageKey): Promise<StagePreviewResult> {
-  await requireStaff()
-  const { caseId, stage } = caseStageChangeSchema.parse({ caseId: caseIdInput, stage: stageInput })
-  const gated = stageIndex(stage) >= stageIndex("application_assembled")
+export async function previewStageChange(
+  caseIdInput: string,
+  stageInput: CaseStageKey,
+): Promise<StagePreviewResult> {
+  await requireStaff();
+  const { caseId, stage } = caseStageChangeSchema.parse({ caseId: caseIdInput, stage: stageInput });
+  const gated = stageIndex(stage) >= stageIndex("application_assembled");
   if (!gated) {
-    return { gated: false, ok: true, blockers: [], signedOffBy: null, signedOffAt: null }
+    return { gated: false, ok: true, blockers: [], signedOffBy: null, signedOffAt: null };
   }
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const [gate, signoff] = await Promise.all([
     evaluatePreFilingGate(supabase, caseId),
     supabase
@@ -73,16 +81,16 @@ export async function previewStageChange(caseIdInput: string, stageInput: CaseSt
       .select("qa_signed_off_at, profiles:qa_signed_off_by(full_name)")
       .eq("id", caseId)
       .single(),
-  ])
-  if (signoff.error) throw signoff.error
-  const signer = signoff.data?.profiles as unknown as { full_name: string | null } | null
+  ]);
+  if (signoff.error) throw signoff.error;
+  const signer = signoff.data?.profiles as unknown as { full_name: string | null } | null;
   return {
     gated: true,
     ok: gate.ok,
     blockers: gate.blockers.map((blocker) => blocker.detail),
     signedOffBy: signer?.full_name ?? null,
     signedOffAt: signoff.data?.qa_signed_off_at ?? null,
-  }
+  };
 }
 
 /**
@@ -93,28 +101,36 @@ export async function previewStageChange(caseIdInput: string, stageInput: CaseSt
  * staff member has signed off. Failing returns the specific blocker list,
  * never a generic error.
  */
-export async function setCaseStage(caseIdInput: string, stageInput: CaseStageKey, noteInput?: string): Promise<StageChangeResult> {
-  await requireStaff()
-  const { caseId, stage, note } = caseStageChangeSchema.parse({ caseId: caseIdInput, stage: stageInput, note: noteInput })
+export async function setCaseStage(
+  caseIdInput: string,
+  stageInput: CaseStageKey,
+  noteInput?: string,
+): Promise<StageChangeResult> {
+  await requireStaff();
+  const { caseId, stage, note } = caseStageChangeSchema.parse({
+    caseId: caseIdInput,
+    stage: stageInput,
+    note: noteInput,
+  });
 
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const { data: current, error: currentError } = await supabase
     .from("cases")
     .select("stage")
     .eq("id", caseId)
-    .single()
-  if (currentError) throw currentError
-  const movingBack = stageIndex(stage) < stageIndex(current.stage as CaseStageKey)
+    .single();
+  if (currentError) throw currentError;
+  const movingBack = stageIndex(stage) < stageIndex(current.stage as CaseStageKey);
   if ((movingBack || isNypdControlled(stage)) && !note) {
-    throw new Error("Add a reason for this stage change.")
+    throw new Error("Add a reason for this stage change.");
   }
 
   // Gate every stage AT OR PAST application_assembled (index 7) — not just the
   // two named stages. Stages after `filed` (fingerprinting, decision, licensed)
   // must not be a back door around the CP-5 checks.
   if (stageIndex(stage) >= stageIndex("application_assembled")) {
-    const gate = await evaluatePreFilingGate(supabase, caseId)
+    const gate = await evaluatePreFilingGate(supabase, caseId);
     if (!gate.ok) {
       await logActivity({
         action: "case.stage_blocked",
@@ -122,8 +138,8 @@ export async function setCaseStage(caseIdInput: string, stageInput: CaseStageKey
         entity: "case",
         entityId: caseId,
         detail: { to: stage, blockers: gate.blockers.map((b) => b.kind) },
-      })
-      return { ok: false, blockers: gate.blockers.map((b) => b.detail) }
+      });
+      return { ok: false, blockers: gate.blockers.map((b) => b.detail) };
     }
   }
 
@@ -132,8 +148,8 @@ export async function setCaseStage(caseIdInput: string, stageInput: CaseStageKey
     .update({ stage, stage_entered_at: new Date().toISOString() })
     .eq("id", caseId)
     .select("id, client_id, clients(full_name, email)")
-    .single()
-  if (error) throw error
+    .single();
+  if (error) throw error;
 
   await logActivity({
     action: "case.stage_advanced",
@@ -142,20 +158,21 @@ export async function setCaseStage(caseIdInput: string, stageInput: CaseStageKey
     entity: "case",
     entityId: caseId,
     detail: await withOnBehalf(supabase, caseId, { to: stage, note: note || null }),
-  })
+  });
 
   // Notify the client (stubbed until email keys are set).
-  const client = kase.clients as unknown as { full_name: string; email: string | null }
+  const client = kase.clients as unknown as { full_name: string; email: string | null };
   await notifyClient({
+    brand: await caseBrandFor(supabase, caseId),
     to: client?.email,
     subject: `Your Gun License NYC application moved to: ${stageMeta(stage).label}`,
     body: `Hi ${client?.full_name ?? ""}, your application is now at the "${stageMeta(stage).label}" stage. ${stageMeta(stage).clientHint}`,
-  })
+  });
 
-  revalidatePath("/admin/pipeline")
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/admin")
-  return { ok: true }
+  revalidatePath("/admin/pipeline");
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 /**
@@ -163,19 +180,22 @@ export async function setCaseStage(caseIdInput: string, stageInput: CaseStageKey
  * the gate already passes; recorded on the case and in the activity log.
  */
 export async function signPreFilingQa(caseId: string): Promise<StageChangeResult> {
-  const { userId, profile } = await requireStaff()
-  const supabase = await createClient()
+  const { userId, profile } = await requireStaff();
+  const supabase = await createClient();
 
-  const gate = await evaluatePreFilingGate(supabase, caseId)
+  const gate = await evaluatePreFilingGate(supabase, caseId);
   if (!gate.readyForSignOff) {
-    return { ok: false, blockers: gate.blockers.filter((b) => b.kind !== "sign_off_missing").map((b) => b.detail) }
+    return {
+      ok: false,
+      blockers: gate.blockers.filter((b) => b.kind !== "sign_off_missing").map((b) => b.detail),
+    };
   }
 
   const { error } = await supabase
     .from("cases")
     .update({ qa_signed_off_by: userId, qa_signed_off_at: new Date().toISOString() })
-    .eq("id", caseId)
-  if (error) throw error
+    .eq("id", caseId);
+  if (error) throw error;
 
   await logActivity({
     action: "case.qa_signed_off",
@@ -183,9 +203,9 @@ export async function signPreFilingQa(caseId: string): Promise<StageChangeResult
     entity: "case",
     entityId: caseId,
     detail: { by: profile.full_name },
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  return { ok: true }
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  return { ok: true };
 }
 
 /**
@@ -209,25 +229,28 @@ const recordLicenseSchema = z
   .refine((v) => v.expiresOn > v.issuedOn, {
     message: "Expiry must be after the issue date.",
     path: ["expiresOn"],
-  })
+  });
 
 export async function recordLicenseIssued(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  await requireStaff()
+  await requireStaff();
   const parsed = recordLicenseSchema.safeParse({
     caseId: formData.get("caseId"),
     licenseType: formData.get("licenseType"),
     issuedOn: formData.get("issuedOn"),
     expiresOn: formData.get("expiresOn"),
     countyLicenseExpiresOn: formData.get("countyLicenseExpiresOn") ?? "",
-  })
+  });
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the license details." }
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Please check the license details.",
+    };
   }
-  const { caseId, licenseType, issuedOn, expiresOn, countyLicenseExpiresOn } = parsed.data
+  const { caseId, licenseType, issuedOn, expiresOn, countyLicenseExpiresOn } = parsed.data;
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: kase, error } = await supabase
     .from("cases")
     .update({
@@ -240,17 +263,17 @@ export async function recordLicenseIssued(
     })
     .eq("id", caseId)
     .select("id, client_id, license_track, clients(full_name, email)")
-    .single()
-  if (error) throw error
+    .single();
+  if (error) throw error;
 
   // license_type lives on the client record (the applicant, not the case).
-  await supabase.from("clients").update({ license_type: licenseType }).eq("id", kase.client_id)
+  await supabase.from("clients").update({ license_type: licenseType }).eq("id", kase.client_id);
 
   // Armed-guard cases get their DOS armed-status upgrade opened as a parallel
   // post-issuance sub-lifecycle (never a CP-5 blocker). Service role: a system
   // write of the applicant's own follow-on obligations.
   if (isArmedTrack(kase.license_track)) {
-    await openDosUpgrade(createAdminClient(), caseId)
+    await openDosUpgrade(createAdminClient(), caseId);
   }
 
   await logActivity({
@@ -259,26 +282,34 @@ export async function recordLicenseIssued(
     clientId: kase.client_id,
     entity: "case",
     entityId: caseId,
-    detail: { licenseType, issuedOn, expiresOn, countyLicenseExpiresOn: countyLicenseExpiresOn || null },
-  })
+    detail: {
+      licenseType,
+      issuedOn,
+      expiresOn,
+      countyLicenseExpiresOn: countyLicenseExpiresOn || null,
+    },
+  });
 
-  const client = kase.clients as unknown as { full_name: string; email: string | null }
+  const client = kase.clients as unknown as { full_name: string; email: string | null };
   // The one honest moment to ask for a review: the case is licensed. Only when a
   // real review URL is configured (NEXT_PUBLIC_REVIEW_URL) — silent otherwise.
-  const review = reviewUrl()
+  const review = reviewUrl();
   await notifyClient({
+    brand: await caseBrandFor(supabase, caseId),
     to: client?.email,
     subject: "Your carry license has been issued",
     body:
       `Hi ${client?.full_name ?? ""}, your ${licenseType} license is recorded as issued ${issuedOn} and valid through ${expiresOn}. Your portal now shows your license details, purchase-authorization clock, and renewal runway.` +
-      (review ? `\n\nIf the process went well for you, a short review would mean a lot and helps other New Yorkers find us.` : ""),
+      (review
+        ? `\n\nIf the process went well for you, a short review would mean a lot and helps other New Yorkers find us.`
+        : ""),
     cta: review ? { label: "Leave a review", url: review } : undefined,
-  })
+  });
 
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/portal/license")
-  revalidatePath("/portal")
-  return { ok: true }
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/portal/license");
+  revalidatePath("/portal");
+  return { ok: true };
 }
 
 /**
@@ -286,49 +317,54 @@ export async function recordLicenseIssued(
  * Same idempotent primitive the cron uses; staff can start it without waiting
  * for the 90-day auto-open.
  */
-export async function openRenewalNow(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
-  await requireStaff()
-  const caseId = String(formData.get("caseId") ?? "")
-  if (!caseId) return { error: "No case." }
+export async function openRenewalNow(
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string }> {
+  await requireStaff();
+  const caseId = String(formData.get("caseId") ?? "");
+  if (!caseId) return { error: "No case." };
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: kase } = await supabase
     .from("cases")
     .select("client_id, stage, license_expires_on, clients(full_name)")
     .eq("id", caseId)
-    .single()
-  if (!kase) return { error: "Case not found." }
-  if (kase.stage !== "licensed") return { error: "Renewals open from a licensed case." }
+    .single();
+  if (!kase) return { error: "Case not found." };
+  if (kase.stage !== "licensed") return { error: "Renewals open from a licensed case." };
 
-  const { openRenewalForClient } = await import("@/lib/renewals")
+  const { openRenewalForClient } = await import("@/lib/renewals");
   const res = await openRenewalForClient(createAdminClient(), {
     clientId: kase.client_id,
     fullName: (kase.clients as unknown as { full_name: string } | null)?.full_name,
     expiresOn: kase.license_expires_on,
     source: "admin",
-  })
+  });
 
   await logActivity({
     action: "renewal.opened_by_staff",
     caseId,
     clientId: kase.client_id,
     detail: { renewal_case: res.renewalCaseId, already_open: res.alreadyOpen },
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  if (res.renewalCaseId) redirect(`/admin/cases/${res.renewalCaseId}`)
-  return { ok: true }
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  if (res.renewalCaseId) redirect(`/admin/cases/${res.renewalCaseId}`);
+  return { ok: true };
 }
 
 /** V3-P2.2 — assign/reassign a case's consultant (there was no UI for this at all). */
 export async function reassignCase(formData: FormData) {
-  const { profile } = await requireStaff()
-  const clientId = String(formData.get("clientId") ?? "")
-  const caseId = String(formData.get("caseId") ?? "")
-  const staffId = String(formData.get("staffId") ?? "") || null
+  const { profile } = await requireStaff();
+  const clientId = String(formData.get("clientId") ?? "");
+  const caseId = String(formData.get("caseId") ?? "");
+  const staffId = String(formData.get("staffId") ?? "") || null;
 
-  const supabase = await createClient()
-  const { error } = await supabase.from("clients").update({ assigned_staff: staffId }).eq("id", clientId)
-  if (error) throw error
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("clients")
+    .update({ assigned_staff: staffId })
+    .eq("id", clientId);
+  if (error) throw error;
 
   await logActivity({
     action: "case.reassigned",
@@ -337,41 +373,46 @@ export async function reassignCase(formData: FormData) {
     entity: "client",
     entityId: clientId,
     detail: { to: staffId, by: profile.full_name },
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/admin/cases")
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/admin/cases");
 }
 
 export async function setCaseStatus(caseIdInput: string, statusInput: string, noteInput?: string) {
-  await requireStaff()
+  await requireStaff();
   const { caseId, status, note } = caseStatusChangeSchema.parse({
     caseId: caseIdInput,
     status: statusInput,
     note: noteInput,
-  })
-  const supabase = await createClient()
+  });
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("cases")
     .update({ status: status as never })
     .eq("id", caseId)
-    .select("client_id")
-    .single()
-  if (error) throw error
-  await logActivity({ action: "case.status_changed", caseId, clientId: data.client_id, detail: { status, note } })
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/admin/pipeline")
+    .select("client_id, brand")
+    .single();
+  if (error) throw error;
+  await logActivity({
+    action: "case.status_changed",
+    caseId,
+    clientId: data.client_id,
+    detail: { status, note },
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/admin/pipeline");
 }
 
 // ── document review ──────────────────────────────────────────────────────────
 export async function reviewDocument(input: {
-  documentId: string
-  caseId: string
-  clientId: string
-  status: "approved" | "rejected"
-  notes?: string
+  documentId: string;
+  caseId: string;
+  clientId: string;
+  status: "approved" | "rejected";
+  notes?: string;
 }) {
-  const { profile, userId } = await requireStaff()
-  const supabase = await createClient()
+  const { profile, userId } = await requireStaff();
+  const supabase = await createClient();
 
   // A PDF photo still awaiting manual conversion cannot be APPROVED into "satisfied" — that
   // would file a photo the portal rejects (SPC-01 shape). Convert it first (upload the
@@ -381,12 +422,17 @@ export async function reviewDocument(input: {
       .from("documents")
       .select("conversion_pending, file_path")
       .eq("id", input.documentId)
-      .maybeSingle()
+      .maybeSingle();
     if (pending?.conversion_pending) {
-      return { error: "This photo is still a PDF awaiting conversion. Convert it and upload the image first — then approve." }
+      return {
+        error:
+          "This photo is still a PDF awaiting conversion. Convert it and upload the image first — then approve.",
+      };
     }
     if (!pending?.file_path?.trim()) {
-      return { error: "This record has no uploaded file. Upload the actual document before approving it." }
+      return {
+        error: "This record has no uploaded file. Upload the actual document before approving it.",
+      };
     }
   }
 
@@ -399,8 +445,8 @@ export async function reviewDocument(input: {
     })
     .eq("id", input.documentId)
     .select("type, req_code, client_id, clients(full_name, email)")
-    .single()
-  if (error) throw error
+    .single();
+  if (error) throw error;
 
   // V3-P2.1 — the review decision drives the requirement (one checklist):
   // approve → matching requirement satisfied + evidence bound; reject → back to
@@ -428,15 +474,16 @@ export async function reviewDocument(input: {
     .from("case_requirements")
     .select("id, status, req_code")
     .eq("case_id", input.caseId)
-    .eq("document_id", input.documentId)
+    .eq("document_id", input.documentId);
 
-  let targetReqCode: string | null = doc.req_code ?? null
+  let targetReqCode: string | null = doc.req_code ?? null;
   if (!targetReqCode) {
     const { data: crs } = await supabase
       .from("case_requirements")
       .select("req_code")
-      .eq("case_id", input.caseId)
-    targetReqCode = (crs ?? []).find((r) => actionFor(r.req_code)?.documentType === doc.type)?.req_code ?? null
+      .eq("case_id", input.caseId);
+    targetReqCode =
+      (crs ?? []).find((r) => actionFor(r.req_code)?.documentType === doc.type)?.req_code ?? null;
   }
   const { data: targetReqs } = targetReqCode
     ? await supabase
@@ -444,10 +491,10 @@ export async function reviewDocument(input: {
         .select("id, status, req_code")
         .eq("case_id", input.caseId)
         .eq("req_code", targetReqCode)
-    : { data: [] as Array<{ id: string; status: string; req_code: string }> }
+    : { data: [] as Array<{ id: string; status: string; req_code: string }> };
 
   // UNION by id; never widen beyond what the upload bound + the target code.
-  const resolved = resolveReviewTargets(boundReqs ?? [], targetReqs ?? [])
+  const resolved = resolveReviewTargets(boundReqs ?? [], targetReqs ?? []);
 
   for (const r of resolved) {
     await supabase
@@ -463,11 +510,11 @@ export async function reviewDocument(input: {
               // and is what the applicant sees on their upload.
               status: "pending",
               notes: "Document rejected — awaiting re-upload.",
-            }
+            },
       )
-      .eq("id", r.id)
+      .eq("id", r.id);
   }
-  const resolvedReqCodes = resolved.map((r) => r.req_code)
+  const resolvedReqCodes = resolved.map((r) => r.req_code);
 
   await logActivity({
     action: input.status === "approved" ? "document.approved" : "document.rejected",
@@ -481,7 +528,7 @@ export async function reviewDocument(input: {
       by: profile.full_name,
       reqCodes: resolvedReqCodes,
     }),
-  })
+  });
   await logActivity({
     action: "document.reviewed",
     caseId: input.caseId,
@@ -489,10 +536,11 @@ export async function reviewDocument(input: {
     entity: "document",
     entityId: input.documentId,
     detail: { status: input.status },
-  })
+  });
 
-  const client = doc.clients as unknown as { full_name: string; email: string | null }
+  const client = doc.clients as unknown as { full_name: string; email: string | null };
   await notifyClient({
+    brand: await caseBrandFor(supabase, input.caseId),
     to: client?.email,
     subject:
       input.status === "approved"
@@ -502,26 +550,26 @@ export async function reviewDocument(input: {
       input.status === "approved"
         ? `Good news — your ${doc.type.replace(/_/g, " ")} was approved.`
         : `Your ${doc.type.replace(/_/g, " ")} needs a fix: ${input.notes ?? "please re-upload."}`,
-  })
+  });
 
-  revalidatePath(`/admin/cases/${input.caseId}`)
+  revalidatePath(`/admin/cases/${input.caseId}`);
 }
 
 // ── messages ─────────────────────────────────────────────────────────────────
 export async function postMessage(caseId: string, body: string) {
-  const { userId } = await requireStaff()
-  const trimmed = body.trim()
-  if (!trimmed) return
-  const supabase = await createClient()
+  const { userId } = await requireStaff();
+  const trimmed = body.trim();
+  if (!trimmed) return;
+  const supabase = await createClient();
   const { error } = await supabase
     .from("messages")
-    .insert({ case_id: caseId, sender_id: userId, body: trimmed })
-  if (error) throw error
-  await logActivity({ action: "message.sent", caseId, entity: "message" })
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/admin/inbox")
-  revalidatePath("/admin")
-  revalidatePath("/admin", "layout")
+    .insert({ case_id: caseId, sender_id: userId, body: trimmed });
+  if (error) throw error;
+  await logActivity({ action: "message.sent", caseId, entity: "message" });
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/admin/inbox");
+  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 /**
@@ -529,21 +577,25 @@ export async function postMessage(caseId: string, body: string) {
  * engagement). RLS keeps this hidden from the client. Carries coordination
  * only — never applicant disclosures/PII.
  */
-export async function sendStaffInstructorMessage(caseId: string, engagementId: string, body: string) {
-  const { userId } = await requireStaff()
-  const trimmed = body.trim()
-  if (!trimmed) return
-  const supabase = await createClient()
+export async function sendStaffInstructorMessage(
+  caseId: string,
+  engagementId: string,
+  body: string,
+) {
+  const { userId } = await requireStaff();
+  const trimmed = body.trim();
+  if (!trimmed) return;
+  const supabase = await createClient();
   const { error } = await supabase.from("messages").insert({
     case_id: caseId,
     engagement_id: engagementId,
     sender_id: userId,
     body: trimmed,
     staff_only: true,
-  })
-  if (error) throw error
-  await logActivity({ action: "message.staff_instructor_sent", caseId, entity: "message" })
-  revalidatePath(`/admin/cases/${caseId}`)
+  });
+  if (error) throw error;
+  await logActivity({ action: "message.staff_instructor_sent", caseId, entity: "message" });
+  revalidatePath(`/admin/cases/${caseId}`);
 }
 
 // ── B3A: admin instructor assignment (full assignment power) ───────────────────
@@ -555,15 +607,15 @@ export async function sendStaffInstructorMessage(caseId: string, engagementId: s
  * server-derived from a staff-gated action.
  */
 export async function adminAssignInstructor(caseId: string, instructorId: string) {
-  const { profile } = await requireStaff()
-  const admin = createAdminClient()
+  const { profile } = await requireStaff();
+  const admin = createAdminClient();
 
   const { data: instr } = await admin
     .from("instructors")
     .select("id, name, verified")
     .eq("id", instructorId)
-    .maybeSingle()
-  if (!instr) throw new Error("Instructor not found")
+    .maybeSingle();
+  if (!instr) throw new Error("Instructor not found");
   // Full assignment power: admin may assign an as-yet-unverified instructor
   // (the dropdown labels them "pending"). Verification gates marketplace
   // visibility, not an admin's deliberate override.
@@ -576,7 +628,7 @@ export async function adminAssignInstructor(caseId: string, instructorId: string
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
     .eq("case_id", caseId)
     .eq("status", "active")
-    .neq("instructor_id", instructorId)
+    .neq("instructor_id", instructorId);
 
   const { error } = await admin.from("engagements").upsert(
     {
@@ -586,59 +638,80 @@ export async function adminAssignInstructor(caseId: string, instructorId: string
       status: "active",
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "case_id,instructor_id" }
-  )
-  if (error) throw error
+    { onConflict: "case_id,instructor_id" },
+  );
+  if (error) throw error;
 
   await logActivity({
     action: "case.admin_assigned_instructor",
     caseId,
     entity: "engagement",
     detail: { instructor_id: instructorId, instructor: instr.name, by: profile.full_name },
-  })
+  });
   await notifyCaseParties(admin, caseId, {
     title: "An instructor was assigned to your case",
     body: `${instr.name} will handle your training — you can message them from your portal.`,
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
 }
 
 /** Staff confirm a booking (mirror of the instructor action, staff-authorized). */
 export async function adminConfirmBooking(formData: FormData) {
-  await requireStaff()
-  const bookingId = String(formData.get("bookingId") ?? "")
-  const admin = createAdminClient()
-  const { data: b } = await admin.from("bookings").select("id, case_id, ics_uid").eq("id", bookingId).maybeSingle()
-  if (!b) throw new Error("Booking not found")
-  const uid = b.ics_uid ?? `${bookingId}@carry.app`
-  const { error } = await admin.from("bookings").update({ status: "confirmed", ics_uid: uid }).eq("id", bookingId)
-  if (error) throw error
-  await sendBookingInvites(bookingId)
-  await maybeAdvanceStage(admin, b.case_id, "training_scheduled", "booking.confirmed_by_staff")
-  await logActivity({ action: "booking.confirmed_by_staff", caseId: b.case_id, entity: "booking", entityId: bookingId })
-  revalidatePath(`/admin/cases/${b.case_id}`)
+  await requireStaff();
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const admin = createAdminClient();
+  const { data: b } = await admin
+    .from("bookings")
+    .select("id, case_id, ics_uid")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!b) throw new Error("Booking not found");
+  const uid = b.ics_uid ?? `${bookingId}@carry.app`;
+  const { error } = await admin
+    .from("bookings")
+    .update({ status: "confirmed", ics_uid: uid })
+    .eq("id", bookingId);
+  if (error) throw error;
+  await sendBookingInvites(bookingId);
+  await maybeAdvanceStage(admin, b.case_id, "training_scheduled", "booking.confirmed_by_staff");
+  await logActivity({
+    action: "booking.confirmed_by_staff",
+    caseId: b.case_id,
+    entity: "booking",
+    entityId: bookingId,
+  });
+  revalidatePath(`/admin/cases/${b.case_id}`);
 }
 
 /** Staff cancel a booking (logs + revalidates — the instructor path did neither). */
 export async function adminCancelBooking(formData: FormData) {
-  await requireStaff()
-  const bookingId = String(formData.get("bookingId") ?? "")
-  const admin = createAdminClient()
-  const { data: b } = await admin.from("bookings").select("case_id").eq("id", bookingId).maybeSingle()
-  if (!b) throw new Error("Booking not found")
-  await admin.from("bookings").update({ status: "cancelled" }).eq("id", bookingId)
-  await logActivity({ action: "booking.cancelled_by_staff", caseId: b.case_id, entity: "booking", entityId: bookingId })
-  revalidatePath(`/admin/cases/${b.case_id}`)
+  await requireStaff();
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const admin = createAdminClient();
+  const { data: b } = await admin
+    .from("bookings")
+    .select("case_id")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!b) throw new Error("Booking not found");
+  await admin.from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
+  await logActivity({
+    action: "booking.cancelled_by_staff",
+    caseId: b.case_id,
+    entity: "booking",
+    entityId: bookingId,
+  });
+  revalidatePath(`/admin/cases/${b.case_id}`);
 }
 
 // ── payments ─────────────────────────────────────────────────────────────────
 export interface RequestPaymentResult {
-  ok: boolean
+  ok: boolean;
   /** Present when a real Stripe invoice was issued — the hosted pay page. */
-  hostedInvoiceUrl?: string | null
+  hostedInvoiceUrl?: string | null;
   /** True when Stripe was off and we fell back to the manual invoice task. */
-  fallback?: boolean
-  error?: string
+  fallback?: boolean;
+  error?: string;
 }
 
 const requestPaymentSchema = z.object({
@@ -647,7 +720,8 @@ const requestPaymentSchema = z.object({
   type: z.enum(["deposit", "full", "installment"]),
   description: z.string().trim().max(500),
   packageKey: z.enum(["self_guided", "full_concierge"]).optional(),
-})
+  allowOtherBrandPackage: z.boolean().optional().default(false),
+});
 
 /**
  * Staff-requested payment. With Stripe on, issue a REAL hosted invoice that
@@ -655,27 +729,42 @@ const requestPaymentSchema = z.object({
  * fall back to a pending row + a staff "send invoice" task so nothing dead-ends.
  */
 export async function requestPayment(input: {
-  caseId: string
-  amountCents: number
-  type: "deposit" | "full" | "installment"
-  description: string
+  caseId: string;
+  amountCents: number;
+  type: "deposit" | "full" | "installment";
+  description: string;
   /** CONCIERGE QA Phase 3 — persist so a staff-issued invoice, once paid, unlocks
    *  the matching package (concierge) exactly like self-serve checkout does. */
-  packageKey?: string
+  packageKey?: string;
+  allowOtherBrandPackage?: boolean;
 }): Promise<RequestPaymentResult> {
-  await requireStaff()
-  const parsed = requestPaymentSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the payment details" }
-  const value = parsed.data
+  const { profile } = await requireStaff();
+  const parsed = requestPaymentSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the payment details" };
+  const value = parsed.data;
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: kase } = await supabase
     .from("cases")
-    .select("client_id")
+    .select("client_id, brand")
     .eq("id", value.caseId)
-    .single()
-  const clientId = kase?.client_id ?? null
-  const description = value.description || `${value.type} payment`
+    .single();
+  const clientId = kase?.client_id ?? null;
+  if (!kase) return { ok: false, error: "Case not found." };
+  if (value.allowOtherBrandPackage && profile.role !== "admin") {
+    return { ok: false, error: "Only an administrator can override a brand's package rules." };
+  }
+  const packageAllowed = value.packageKey
+    ? !!(await getPackageForBrand(supabase, value.packageKey, kase.brand))
+    : true;
+  if (!packageAllowed && !value.allowOtherBrandPackage) {
+    return {
+      ok: false,
+      error: `That package is not sold by ${BRANDS[kase.brand].displayName}.`,
+    };
+  }
+  const description = value.description || `${value.type} payment`;
 
   // The pending row first — it's the record of truth either path shares, and its
   // id is the invoice's reconciliation key.
@@ -689,47 +778,59 @@ export async function requestPayment(input: {
       status: "pending",
       description,
       package_key: value.packageKey || null,
+      brand: kase?.brand ?? "gln",
     })
     .select("id")
-    .single()
-  if (error || !payment) return { ok: false, error: error?.message ?? "Could not create the payment" }
+    .single();
+  if (error || !payment)
+    return { ok: false, error: error?.message ?? "Could not create the payment" };
 
-  const stripe = getStripe()
+  const stripe = getStripe();
   if (stripe && clientId) {
     try {
       const { data: client } = await supabase
         .from("clients")
         .select("id, email, full_name, stripe_customer_id")
         .eq("id", clientId)
-        .single()
+        .single();
       if (client?.email) {
-        const customerId = await findOrCreateCustomer(supabase, stripe, client)
+        const customerId = await findOrCreateCustomer(supabase, stripe, client);
         const invoice = await createAndSendInvoice(stripe, {
           customerId,
           paymentId: payment.id,
           caseId: value.caseId,
           amountCents: value.amountCents,
           description,
-        })
+          brand: kase.brand,
+          packageKey: value.packageKey ?? null,
+        });
         await supabase
           .from("payments")
           .update({ stripe_invoice_id: invoice.id, hosted_invoice_url: invoice.hostedInvoiceUrl })
-          .eq("id", payment.id)
+          .eq("id", payment.id);
         await logActivity({
           action: "payment.invoiced",
           caseId: value.caseId,
           clientId,
           entity: "payment",
           entityId: payment.id,
-          detail: { amount: value.amountCents, type: value.type, stripe_invoice_id: invoice.id },
-        })
-        revalidatePath("/admin/payments")
-        return { ok: true, hostedInvoiceUrl: invoice.hostedInvoiceUrl }
+          detail: {
+            amount: value.amountCents,
+            type: value.type,
+            stripe_invoice_id: invoice.id,
+            brand: kase.brand,
+            package: value.packageKey ?? null,
+            package_brand_override: !packageAllowed,
+            override_by: !packageAllowed ? profile.full_name : null,
+          },
+        });
+        revalidatePath("/admin/payments");
+        return { ok: true, hostedInvoiceUrl: invoice.hostedInvoiceUrl };
       }
     } catch (e) {
       // A Stripe failure shouldn't lose the requested payment — the row stands,
       // and staff can send it manually via the fallback task below.
-      console.error("[stripe] invoice creation failed:", e)
+      console.error("[stripe] invoice creation failed:", e);
     }
   }
 
@@ -741,26 +842,33 @@ export async function requestPayment(input: {
     description: "Payment requested from the admin console. Send the invoice / payment link.",
     priority: 1,
     status: "open",
-  })
+  });
   await logActivity({
     action: "payment.requested",
     caseId: value.caseId,
     clientId,
     entity: "payment",
     entityId: payment.id,
-    detail: { amount: value.amountCents, type: value.type },
-  })
-  revalidatePath("/admin/payments")
-  return { ok: true, fallback: true }
+    detail: {
+      amount: value.amountCents,
+      type: value.type,
+      brand: kase.brand,
+      package: value.packageKey ?? null,
+      package_brand_override: !packageAllowed,
+      override_by: !packageAllowed ? profile.full_name : null,
+    },
+  });
+  revalidatePath("/admin/payments");
+  return { ok: true, fallback: true };
 }
 
 // ── tasks ────────────────────────────────────────────────────────────────────
 export async function setTaskStatus(taskId: string, status: "open" | "done") {
-  await requireStaff()
-  const supabase = await createClient()
-  const { error } = await supabase.from("tasks").update({ status }).eq("id", taskId)
-  if (error) throw error
-  revalidatePath("/admin")
+  await requireStaff();
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").update({ status }).eq("id", taskId);
+  if (error) throw error;
+  revalidatePath("/admin");
 }
 
 const createTaskSchema = z.object({
@@ -768,13 +876,17 @@ const createTaskSchema = z.object({
   description: z.string().max(2000).optional().or(z.literal("")),
   caseId: z.string().uuid().optional().or(z.literal("")),
   assignee: z.string().uuid().optional().or(z.literal("")),
-  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .or(z.literal("")),
   priority: z.coerce.number().int().min(1).max(3).default(2),
-})
+});
 
 /** V3-P2.3 — consultants can finally CREATE tasks ("call client re: safe photos, due Friday"). */
 export async function createTask(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
-  const { userId } = await requireStaff()
+  const { userId } = await requireStaff();
   const parsed = createTaskSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description") ?? "",
@@ -782,11 +894,11 @@ export async function createTask(formData: FormData): Promise<{ ok?: boolean; er
     assignee: formData.get("assignee") ?? "",
     dueDate: formData.get("dueDate") ?? "",
     priority: formData.get("priority") ?? 2,
-  })
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
-  const v = parsed.data
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const v = parsed.data;
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: task, error } = await supabase
     .from("tasks")
     .insert({
@@ -799,8 +911,8 @@ export async function createTask(formData: FormData): Promise<{ ok?: boolean; er
       status: "open",
     })
     .select("id")
-    .single()
-  if (error) return { error: error.message }
+    .single();
+  if (error) return { error: error.message };
 
   await logActivity({
     action: "task.created",
@@ -808,37 +920,39 @@ export async function createTask(formData: FormData): Promise<{ ok?: boolean; er
     entity: "task",
     entityId: task.id,
     detail: { title: v.title, assignee: v.assignee || userId },
-  })
-  revalidatePath("/admin")
-  if (v.caseId) revalidatePath(`/admin/cases/${v.caseId}`)
-  return { ok: true }
+  });
+  revalidatePath("/admin");
+  if (v.caseId) revalidatePath(`/admin/cases/${v.caseId}`);
+  return { ok: true };
 }
 
 // ── case notes (V3-P2.2 — internal work product, staff/admin RLS only) ───────
 export async function addCaseNote(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
-  const { userId } = await requireStaff()
-  const caseId = String(formData.get("caseId") ?? "")
-  const body = String(formData.get("body") ?? "").trim()
-  if (!body || body.length > 8000) return { error: "Write a note (max 8000 chars)." }
+  const { userId } = await requireStaff();
+  const caseId = String(formData.get("caseId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body || body.length > 8000) return { error: "Write a note (max 8000 chars)." };
 
-  const supabase = await createClient()
-  const { error } = await supabase.from("case_notes").insert({ case_id: caseId, author: userId, body })
-  if (error) return { error: error.message }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("case_notes")
+    .insert({ case_id: caseId, author: userId, body });
+  if (error) return { error: error.message };
 
-  await logActivity({ action: "note.added", caseId, entity: "case_note" })
-  revalidatePath(`/admin/cases/${caseId}`)
-  return { ok: true }
+  await logActivity({ action: "note.added", caseId, entity: "case_note" });
+  revalidatePath(`/admin/cases/${caseId}`);
+  return { ok: true };
 }
 
 export async function toggleNotePin(formData: FormData) {
-  await requireStaff()
-  const noteId = String(formData.get("noteId") ?? "")
-  const caseId = String(formData.get("caseId") ?? "")
-  const pinned = formData.get("pinned") === "true"
-  const supabase = await createClient()
-  const { error } = await supabase.from("case_notes").update({ pinned }).eq("id", noteId)
-  if (error) throw error
-  revalidatePath(`/admin/cases/${caseId}`)
+  await requireStaff();
+  const noteId = String(formData.get("noteId") ?? "");
+  const caseId = String(formData.get("caseId") ?? "");
+  const pinned = formData.get("pinned") === "true";
+  const supabase = await createClient();
+  const { error } = await supabase.from("case_notes").update({ pinned }).eq("id", noteId);
+  if (error) throw error;
+  revalidatePath(`/admin/cases/${caseId}`);
 }
 
 // ── requirements review (V3-P2.2 — the one checklist, staff side) ────────────
@@ -848,10 +962,10 @@ export async function setCaseRequirementStatus(
   status: "pending" | "satisfied" | "na" | "rejected",
   /** Deliberate staff override when satisfying a document-backed requirement
    *  with no evidence bound. Recorded on the row and in the activity log. */
-  overrideReason?: string
+  overrideReason?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { userId } = await requireStaff()
-  const supabase = await createClient()
+  const { userId } = await requireStaff();
+  const supabase = await createClient();
 
   // A blocking requirement is a legal must-have — a staffer can never mark one
   // N/A to skip it past the CP-5 gate. (The DB trigger enforces this too; this
@@ -861,13 +975,13 @@ export async function setCaseRequirementStatus(
       .from("case_requirements")
       .select("req_code, requirements!inner(blocking)")
       .eq("id", caseReqId)
-      .single()
-    const blocking = (row?.requirements as unknown as { blocking: boolean } | null)?.blocking
+      .single();
+    const blocking = (row?.requirements as unknown as { blocking: boolean } | null)?.blocking;
     if (blocking) {
       return {
         ok: false,
         error: `${row?.req_code ?? "This requirement"} is legally required — it can't be marked N/A.`,
-      }
+      };
     }
   }
 
@@ -876,72 +990,78 @@ export async function setCaseRequirementStatus(
   // something is bound to it — otherwise the checklist claims a document exists
   // that nobody has. Staff keep an escape hatch, but it must be deliberate and
   // it gets recorded. (A DB trigger enforces the same rule.)
-  let overrideNote: string | undefined
+  let overrideNote: string | undefined;
   if (status === "satisfied") {
     const { data: row } = await supabase
       .from("case_requirements")
-      .select("req_code, document_id, reference_id, cohabitant_id, disclosure_id, requirements!inner(document_type)")
+      .select(
+        "req_code, document_id, reference_id, cohabitant_id, disclosure_id, requirements!inner(document_type)",
+      )
       .eq("id", caseReqId)
-      .single()
-    const documentBacked = !!(row?.requirements as unknown as { document_type: string | null } | null)?.document_type
+      .single();
+    const documentBacked = !!(
+      row?.requirements as unknown as { document_type: string | null } | null
+    )?.document_type;
     const hasEvidence =
-      !!row?.document_id || !!row?.reference_id || !!row?.cohabitant_id || !!row?.disclosure_id
+      !!row?.document_id || !!row?.reference_id || !!row?.cohabitant_id || !!row?.disclosure_id;
 
     if (documentBacked && !hasEvidence) {
       if (!overrideReason?.trim()) {
         return {
           ok: false,
           error: `${row?.req_code ?? "This requirement"} has no document bound to it. Approve the uploaded document, or record an override reason.`,
-        }
+        };
       }
-      overrideNote = `OVERRIDE: ${overrideReason.trim()}`
+      overrideNote = `OVERRIDE: ${overrideReason.trim()}`;
       await logActivity({
         action: "requirement.satisfied_override",
         caseId,
         entity: "case_requirement",
         entityId: caseReqId,
         detail: { req_code: row?.req_code, reason: overrideReason.trim(), by: userId },
-      })
+      });
     }
   }
 
   const { error } = await supabase
     .from("case_requirements")
     .update({ status, reviewer: userId, ...(overrideNote ? { notes: overrideNote } : {}) })
-    .eq("id", caseReqId)
-  if (error) throw error
+    .eq("id", caseReqId);
+  if (error) throw error;
   await logActivity({
     action: "requirement.status_set",
     caseId,
     entity: "case_requirement",
     entityId: caseReqId,
     detail: await withOnBehalf(supabase, caseId, { status }),
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/portal/checklist")
-  return { ok: true }
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/portal/checklist");
+  return { ok: true };
 }
 
 /** Bulk-approve every pending requirement that already has evidence bound. */
-export async function approveRequirementsWithEvidence(caseId: string): Promise<{ approved: number }> {
-  const { userId } = await requireStaff()
-  const supabase = await createClient()
+export async function approveRequirementsWithEvidence(
+  caseId: string,
+): Promise<{ approved: number }> {
+  const { userId } = await requireStaff();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("case_requirements")
     .update({ status: "satisfied", reviewer: userId })
     .eq("case_id", caseId)
     .eq("status", "pending")
     .not("document_id", "is", null)
-    .select("id")
+    .select("id");
   await logActivity({
     action: "requirement.bulk_approved",
     caseId,
     entity: "case_requirement",
     detail: { count: data?.length ?? 0 },
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  revalidatePath("/portal/checklist")
-  return { approved: data?.length ?? 0 }
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  revalidatePath("/portal/checklist");
+  return { approved: data?.length ?? 0 };
 }
 
 // ── disclosure review (V3-P2.2 — candor-maximizing, never coaching content) ──
@@ -949,32 +1069,41 @@ export async function approveRequirementsWithEvidence(caseId: string): Promise<{
  * Ask the client for a fuller written explanation. Prompts for COMPLETENESS
  * only — the consultant may never suggest what to include or omit.
  */
-export async function requestBetterNarrative(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
-  const { userId } = await requireStaff()
-  const caseId = String(formData.get("caseId") ?? "")
-  const disclosureId = String(formData.get("disclosureId") ?? "")
+export async function requestBetterNarrative(
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string }> {
+  const { userId } = await requireStaff();
+  const caseId = String(formData.get("caseId") ?? "");
+  const disclosureId = String(formData.get("disclosureId") ?? "");
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: disc } = await supabase
     .from("disclosures")
     .select("id, type, occurred_on")
     .eq("id", disclosureId)
     .eq("case_id", caseId)
-    .maybeSingle()
-  if (!disc) return { error: "Disclosure not found" }
+    .maybeSingle();
+  if (!disc) return { error: "Disclosure not found" };
 
-  const label = disc.type.replace(/_/g, " ") + (disc.occurred_on ? ` (${disc.occurred_on})` : "")
+  const label = disc.type.replace(/_/g, " ") + (disc.occurred_on ? ` (${disc.occurred_on})` : "");
   const body =
     `Your written explanation for the ${label} disclosure needs more detail before we can assemble your application. ` +
     `Please describe, in your own words: what happened, when and where, how it was resolved, and anything the reviewer ` +
     `should understand about the circumstances. Complete, candid explanations are what the License Division looks for — ` +
-    `you can edit it under Application intake → written explanations.`
+    `you can edit it under Application intake → written explanations.`;
 
-  await supabase.from("messages").insert({ case_id: caseId, sender_id: userId, body })
+  await supabase.from("messages").insert({ case_id: caseId, sender_id: userId, body });
 
   // In-app nudge for the client too.
-  const { data: kase } = await supabase.from("cases").select("client_id, clients(profile_id, email)").eq("id", caseId).single()
-  const client = kase?.clients as unknown as { profile_id: string | null; email: string | null } | null
+  const { data: kase } = await supabase
+    .from("cases")
+    .select("client_id, clients(profile_id, email)")
+    .eq("id", caseId)
+    .single();
+  const client = kase?.clients as unknown as {
+    profile_id: string | null;
+    email: string | null;
+  } | null;
   if (client?.profile_id) {
     await supabase.from("notifications").insert({
       recipient: client.profile_id,
@@ -983,13 +1112,14 @@ export async function requestBetterNarrative(formData: FormData): Promise<{ ok?:
       title: "A written explanation needs more detail",
       body: `Please expand your explanation for the ${label} disclosure.`,
       link: "/portal/intake",
-    })
+    });
   }
   await notifyClient({
+    brand: await caseBrandFor(supabase, caseId),
     to: client?.email ?? null,
     subject: "A written explanation needs more detail",
     body,
-  })
+  });
 
   await logActivity({
     action: "disclosure.narrative_requested",
@@ -997,9 +1127,9 @@ export async function requestBetterNarrative(formData: FormData): Promise<{ ok?:
     entity: "disclosure",
     entityId: disclosureId,
     detail: { type: disc.type },
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  return { ok: true }
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  return { ok: true };
 }
 
 /** V3-P2.5 — opening a case file marks the client's messages read (inbox unread state).
@@ -1007,42 +1137,47 @@ export async function requestBetterNarrative(formData: FormData): Promise<{ ok?:
  *  must NOT mark the applicant↔instructor lane read, or it would suppress the
  *  "unopened for an hour" nudge for messages the actual recipient never saw. */
 export async function markCaseMessagesRead(caseId: string) {
-  const { userId } = await requireStaff()
-  const supabase = await createClient()
+  const { userId } = await requireStaff();
+  const supabase = await createClient();
   await supabase
     .from("messages")
     .update({ read: true })
     .eq("case_id", caseId)
     .is("engagement_id", null)
     .eq("read", false)
-    .neq("sender_id", userId)
-  revalidatePath("/admin/inbox")
-  revalidatePath("/admin", "layout")
+    .neq("sender_id", userId);
+  revalidatePath("/admin/inbox");
+  revalidatePath("/admin", "layout");
 }
 
 // ── manual client creation ───────────────────────────────────────────────────
 const createClientSchema = z.object({
+  brand: z.enum(["gln", "fl"]).default("gln"),
   fullName: z.string().min(2, "Enter a full name"),
   email: z.string().email("Enter a valid email").or(z.literal("")).optional(),
   phone: z.string().optional(),
-  borough: z.enum(BOROUGHS as unknown as [string, ...string[]]).optional().or(z.literal("")),
+  borough: z
+    .enum(BOROUGHS as unknown as [string, ...string[]])
+    .optional()
+    .or(z.literal("")),
   track: z.enum(CLIENT_TRACKS.map((t) => t.key) as unknown as [string, ...string[]]),
   createAccount: z.string().optional(),
   // CONCIERGE Phase 5 — pre-stage a done-for-you case. Leave the account OFF and
   // the applicant CLAIMS this exact client+case on signup (email match in
   // ensureClientCaseForProfile), so the concierge case is already set up for them.
   serviceMode: z.enum(["self_guided", "concierge"]).optional().or(z.literal("")),
-})
+});
 
-export type CreateClientState = { error?: string }
+export type CreateClientState = { error?: string };
 
 export async function createClientWithCase(
   _prev: CreateClientState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateClientState> {
-  const { userId } = await requireStaff()
+  const { userId } = await requireStaff();
 
   const parsed = createClientSchema.safeParse({
+    brand: formData.get("brand") ?? "gln",
     fullName: formData.get("fullName"),
     email: formData.get("email") ?? "",
     phone: formData.get("phone") ?? "",
@@ -1050,17 +1185,28 @@ export async function createClientWithCase(
     track: formData.get("track"),
     createAccount: formData.get("createAccount") ?? undefined,
     serviceMode: formData.get("serviceMode") ?? "",
-  })
+  });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const input = parsed.data
-  const supabase = await createClient()
+  const input = parsed.data;
+  if (input.brand === "fl" && input.serviceMode === "concierge") {
+    return {
+      error: "Firearm License NYC sells Self-Guided only. Use Gun License NYC for Full Concierge.",
+    };
+  }
+  if (input.brand === "gln" && input.serviceMode === "self_guided") {
+    return {
+      error:
+        "Self-Guided is sold through Firearm License NYC. Select that brand or leave the path unchosen.",
+    };
+  }
+  const supabase = await createClient();
 
   // Optionally provision a portal account (service role).
-  let profileId: string | null = null
+  let profileId: string | null = null;
   if (input.createAccount === "on" && input.email) {
-    const admin = createAdminClient()
+    const admin = createAdminClient();
     const { data, error } = await admin.auth.admin.createUser({
       email: input.email,
       email_confirm: true,
@@ -1068,9 +1214,9 @@ export async function createClientWithCase(
       user_metadata: { full_name: input.fullName },
       // Role is not set here — handle_new_user creates 'client' by default,
       // which is exactly what this flow provisions.
-    })
-    if (error) return { error: `Account: ${error.message}` }
-    profileId = data.user?.id ?? null
+    });
+    if (error) return { error: `Account: ${error.message}` };
+    profileId = data.user?.id ?? null;
     // (An invite/password-reset email would be sent here once email is enabled.)
   }
 
@@ -1086,10 +1232,11 @@ export async function createClientWithCase(
       profile_id: profileId,
       current_stage: "lead",
       lead_source: "admin_manual",
+      signup_brand: input.brand,
     })
     .select("id")
-    .single()
-  if (clientErr) return { error: clientErr.message }
+    .single();
+  if (clientErr) return { error: clientErr.message };
 
   const { data: kase, error: caseErr } = await supabase
     .from("cases")
@@ -1098,10 +1245,11 @@ export async function createClientWithCase(
       stage: "lead",
       status: "active",
       service_mode: input.serviceMode || null,
+      brand: input.brand,
     })
     .select("id")
-    .single()
-  if (caseErr) return { error: caseErr.message }
+    .single();
+  if (caseErr) return { error: caseErr.message };
 
   // V3-P2.1 — materialize the baseline requirement set from the versioned
   // registry (conditional rules refine after the client's intake). Service-role
@@ -1110,8 +1258,8 @@ export async function createClientWithCase(
     createAdminClient(),
     kase.id,
     input.track === "non_resident" ? "special_carry" : "nyc",
-    { isCarry: true }
-  )
+    { isCarry: true },
+  );
 
   await logActivity({
     action: "case.created",
@@ -1119,19 +1267,19 @@ export async function createClientWithCase(
     clientId: client.id,
     entity: "client",
     entityId: client.id,
-    detail: { manual: true, service_mode: input.serviceMode || null },
-  })
+    detail: { manual: true, brand: input.brand, service_mode: input.serviceMode || null },
+  });
 
   // CONCIERGE QA Phase 5 — if we provisioned an account, send them a way in.
   // Best-effort: never block case creation on the invite (staff can resend from
   // the case header).
   if (profileId) {
-    await sendClientInvite(kase.id).catch(() => {})
+    await sendClientInvite(kase.id).catch(() => {});
   }
 
-  revalidatePath("/admin/pipeline")
-  revalidatePath("/admin/cases")
-  redirect(`/admin/cases/${kase.id}`)
+  revalidatePath("/admin/pipeline");
+  revalidatePath("/admin/cases");
+  redirect(`/admin/cases/${kase.id}`);
 }
 
 // ── CONCIERGE Phase 8 — concierge-agent marker ───────────────────────────────
@@ -1142,23 +1290,23 @@ export async function createClientWithCase(
  */
 export async function setConciergeAgent(
   profileId: string,
-  on: boolean
+  on: boolean,
 ): Promise<{ error?: string; ok?: boolean }> {
-  await requireAdmin()
-  const supabase = await createClient()
+  await requireAdmin();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("profiles")
     .update({ is_concierge_agent: on })
-    .eq("id", profileId)
-  if (error) return { error: error.message }
+    .eq("id", profileId);
+  if (error) return { error: error.message };
   await logActivity({
     action: "concierge.agent_set",
     entity: "profile",
     entityId: profileId,
     detail: { is_concierge_agent: on },
-  })
-  revalidatePath("/admin/concierge")
-  return { ok: true }
+  });
+  revalidatePath("/admin/concierge");
+  return { ok: true };
 }
 
 // ── ACCESS CODES — one-click demo cleanup ────────────────────────────────────
@@ -1166,78 +1314,101 @@ export async function setConciergeAgent(
  * Hard-delete every demo case (and its children, via FK cascade) so cleanup after
  * a presentation is one click. Admin-only, logged.
  */
-const caseIdListSchema = z.array(z.string().uuid()).max(500)
+const caseIdListSchema = z.array(z.string().uuid()).max(500);
 
-export async function markCasesAsTest(caseIdsInput: string[]): Promise<{ ok?: boolean; marked?: number; error?: string }> {
-  const { profile } = await requireAdmin()
-  const parsed = caseIdListSchema.safeParse(caseIdsInput)
-  if (!parsed.success || parsed.data.length === 0) return { error: "Choose at least one test client." }
-  const ids = [...new Set(parsed.data)]
-  const supabase = await createClient()
-  const { data: existing, error: readError } = await supabase.from("cases").select("id").in("id", ids)
-  if (readError) return { error: readError.message }
-  const visibleIds = (existing ?? []).map((row) => row.id)
-  if (visibleIds.length === 0) return { error: "No matching cases were found." }
-  const { error } = await supabase.from("cases").update({ is_demo: true }).in("id", visibleIds)
-  if (error) return { error: error.message }
+export async function markCasesAsTest(
+  caseIdsInput: string[],
+): Promise<{ ok?: boolean; marked?: number; error?: string }> {
+  const { profile } = await requireAdmin();
+  const parsed = caseIdListSchema.safeParse(caseIdsInput);
+  if (!parsed.success || parsed.data.length === 0)
+    return { error: "Choose at least one test client." };
+  const ids = [...new Set(parsed.data)];
+  const supabase = await createClient();
+  const { data: existing, error: readError } = await supabase
+    .from("cases")
+    .select("id")
+    .in("id", ids);
+  if (readError) return { error: readError.message };
+  const visibleIds = (existing ?? []).map((row) => row.id);
+  if (visibleIds.length === 0) return { error: "No matching cases were found." };
+  const { error } = await supabase.from("cases").update({ is_demo: true }).in("id", visibleIds);
+  if (error) return { error: error.message };
   await logActivity({
     action: "demo.cases_marked",
     entity: "case",
     detail: { count: visibleIds.length, by: profile.full_name },
-  })
-  revalidatePath("/admin/payments")
-  revalidatePath("/admin/pipeline")
-  revalidatePath("/admin/cases")
-  return { ok: true, marked: visibleIds.length }
+  });
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin/pipeline");
+  revalidatePath("/admin/cases");
+  return { ok: true, marked: visibleIds.length };
 }
 
-export async function deleteDemoCases(caseIdsInput?: string[]): Promise<{ ok?: boolean; deleted?: number; deletedClients?: number; excluded?: number; error?: string }> {
-  const { profile } = await requireAdmin()
-  const parsed = caseIdsInput === undefined ? null : caseIdListSchema.safeParse(caseIdsInput)
-  if (parsed && !parsed.success) return { error: "The selected test cases were invalid." }
-  const admin = createAdminClient()
-  let query = admin.from("cases").select("id, client_id").eq("is_demo", true)
-  const requested = parsed?.data ? [...new Set(parsed.data)] : null
-  if (requested?.length) query = query.in("id", requested)
-  const { data: demos, error: demoError } = await query
-  if (demoError) return { error: demoError.message }
-  const ids = (demos ?? []).map((c) => c.id)
-  if (ids.length === 0) return { ok: true, deleted: 0, deletedClients: 0, excluded: 0 }
+export async function deleteDemoCases(
+  caseIdsInput?: string[],
+): Promise<{
+  ok?: boolean;
+  deleted?: number;
+  deletedClients?: number;
+  excluded?: number;
+  error?: string;
+}> {
+  const { profile } = await requireAdmin();
+  const parsed = caseIdsInput === undefined ? null : caseIdListSchema.safeParse(caseIdsInput);
+  if (parsed && !parsed.success) return { error: "The selected test cases were invalid." };
+  const admin = createAdminClient();
+  let query = admin.from("cases").select("id, client_id").eq("is_demo", true);
+  const requested = parsed?.data ? [...new Set(parsed.data)] : null;
+  if (requested?.length) query = query.in("id", requested);
+  const { data: demos, error: demoError } = await query;
+  if (demoError) return { error: demoError.message };
+  const ids = (demos ?? []).map((c) => c.id);
+  if (ids.length === 0) return { ok: true, deleted: 0, deletedClients: 0, excluded: 0 };
 
   // Service-role use is justified here because this admin-only cleanup spans
   // cascading staff/client records. Never delete a case tied to real Stripe money.
   const { data: paidRows, error: paidError } = await admin
     .from("payments")
-    .select("case_id, amount_cents, status, stripe_payment_intent, stripe_invoice_id, stripe_session_id")
+    .select(
+      "case_id, amount_cents, status, stripe_payment_intent, stripe_invoice_id, stripe_session_id",
+    )
     .in("case_id", ids)
     .eq("status", "paid")
-    .gt("amount_cents", 0)
-  if (paidError) return { error: paidError.message }
-  const protectedIds = new Set((paidRows ?? [])
-    .filter((row) => row.stripe_payment_intent || row.stripe_invoice_id || row.stripe_session_id)
-    .map((row) => row.case_id)
-    .filter((id): id is string => !!id))
-  const deletable = (demos ?? []).filter((row) => !protectedIds.has(row.id))
-  const deletableIds = deletable.map((row) => row.id)
+    .gt("amount_cents", 0);
+  if (paidError) return { error: paidError.message };
+  const protectedIds = new Set(
+    (paidRows ?? [])
+      .filter((row) => row.stripe_payment_intent || row.stripe_invoice_id || row.stripe_session_id)
+      .map((row) => row.case_id)
+      .filter((id): id is string => !!id),
+  );
+  const deletable = (demos ?? []).filter((row) => !protectedIds.has(row.id));
+  const deletableIds = deletable.map((row) => row.id);
   if (deletableIds.length === 0) {
-    return { ok: true, deleted: 0, deletedClients: 0, excluded: protectedIds.size }
+    return { ok: true, deleted: 0, deletedClients: 0, excluded: protectedIds.size };
   }
 
-  const { error } = await admin.from("cases").delete().in("id", deletableIds)
-  if (error) return { error: error.message }
+  const { error } = await admin.from("cases").delete().in("id", deletableIds);
+  if (error) return { error: error.message };
 
-  const deletedClients = new Set(deletable.map((row) => row.client_id)).size
+  const deletedClients = new Set(deletable.map((row) => row.client_id)).size;
 
   await logActivity({
     action: "demo.cases_deleted",
     entity: "case",
-    detail: { count: deletableIds.length, clients: deletedClients, excluded: protectedIds.size, by: profile.full_name },
-  })
-  revalidatePath("/admin/concierge")
-  revalidatePath("/admin/pipeline")
-  revalidatePath("/admin/cases")
-  revalidatePath("/admin/payments")
-  return { ok: true, deleted: deletableIds.length, deletedClients, excluded: protectedIds.size }
+    detail: {
+      count: deletableIds.length,
+      clients: deletedClients,
+      excluded: protectedIds.size,
+      by: profile.full_name,
+    },
+  });
+  revalidatePath("/admin/concierge");
+  revalidatePath("/admin/pipeline");
+  revalidatePath("/admin/cases");
+  revalidatePath("/admin/payments");
+  return { ok: true, deleted: deletableIds.length, deletedClients, excluded: protectedIds.size };
 }
 
 // ── CONCIERGE QA Phase 3 — record an offline payment ─────────────────────────
@@ -1248,7 +1419,7 @@ export async function deleteDemoCases(caseIdsInput?: string[]): Promise<{ ok?: b
  * everywhere. Admin-only and fully logged — it's a money record, it must be
  * attributable. Amount is caller-entered here (offline), unlike Stripe flows.
  */
-export type OfflinePaymentResult = { ok?: boolean; error?: string }
+export type OfflinePaymentResult = { ok?: boolean; error?: string };
 
 const offlinePaymentSchema = z.object({
   caseId: z.string().uuid(),
@@ -1256,28 +1427,41 @@ const offlinePaymentSchema = z.object({
   packageKey: z.enum(["self_guided", "full_concierge"]),
   method: z.enum(["check", "transfer", "cash", "other"]),
   reference: z.string().trim().max(300).optional(),
-})
+  allowOtherBrandPackage: z.boolean().optional().default(false),
+});
 
 export async function recordOfflinePayment(input: {
-  caseId: string
-  amountCents: number
-  packageKey: string
-  method: "check" | "transfer" | "cash" | "other"
-  reference?: string
+  caseId: string;
+  amountCents: number;
+  packageKey: string;
+  method: "check" | "transfer" | "cash" | "other";
+  reference?: string;
+  allowOtherBrandPackage?: boolean;
 }): Promise<OfflinePaymentResult> {
-  const { profile } = await requireAdmin()
-  const parsed = offlinePaymentSchema.safeParse(input)
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the payment details" }
-  const value = parsed.data
+  const { profile } = await requireAdmin();
+  const parsed = offlinePaymentSchema.safeParse(input);
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "Check the payment details" };
+  const value = parsed.data;
 
-  const supabase = await createClient()
-  const { data: kase } = await supabase.from("cases").select("client_id").eq("id", value.caseId).single()
-  const clientId = kase?.client_id ?? null
+  const supabase = await createClient();
+  const { data: kase } = await supabase
+    .from("cases")
+    .select("client_id, brand")
+    .eq("id", value.caseId)
+    .single();
+  const clientId = kase?.client_id ?? null;
+  if (!kase) return { error: "Case not found." };
+  const packageAllowed = !!(await getPackageForBrand(supabase, value.packageKey, kase.brand));
+  if (!packageAllowed && !value.allowOtherBrandPackage) {
+    return { error: `That package is not sold by ${BRANDS[kase.brand].displayName}.` };
+  }
   const methodLabel =
-    { check: "check", transfer: "bank transfer", cash: "cash", other: "other" }[value.method] ?? value.method
+    { check: "check", transfer: "bank transfer", cash: "cash", other: "other" }[value.method] ??
+    value.method;
   const description = `Offline payment recorded (${methodLabel}${
     value.reference ? ` · ref ${value.reference}` : ""
-  }) by ${profile.full_name}`
+  }) by ${profile.full_name}`;
 
   const { data: payment, error } = await supabase
     .from("payments")
@@ -1290,13 +1474,14 @@ export async function recordOfflinePayment(input: {
       paid_at: new Date().toISOString(),
       package_key: value.packageKey,
       description,
+      brand: kase?.brand ?? "gln",
     })
     .select("id")
-    .single()
-  if (error || !payment) return { error: error?.message ?? "Could not record the payment" }
+    .single();
+  if (error || !payment) return { error: error?.message ?? "Could not record the payment" };
 
   if (value.packageKey === "full_concierge") {
-    await autoAssignConciergeAgent(supabase, value.caseId)
+    await autoAssignConciergeAgent(supabase, value.caseId);
   }
 
   await logActivity({
@@ -1311,11 +1496,13 @@ export async function recordOfflinePayment(input: {
       method: value.method,
       reference: value.reference ?? null,
       by: profile.full_name,
+      brand: kase.brand,
+      package_brand_override: !packageAllowed,
     },
-  })
-  revalidatePath("/admin/payments")
-  revalidatePath(`/admin/cases/${value.caseId}`)
-  return { ok: true }
+  });
+  revalidatePath("/admin/payments");
+  revalidatePath(`/admin/cases/${value.caseId}`);
+  return { ok: true };
 }
 
 // ── CONCIERGE QA Phase 5 — invite / set-password link for a provisioned account ─
@@ -1325,56 +1512,65 @@ export async function recordOfflinePayment(input: {
  * ALWAYS returns the link so staff can copy-paste it otherwise — no provisioned
  * account is ever left with no route in. Rate-limited + logged.
  */
-export type InviteResult = { ok?: boolean; link?: string; sent?: boolean; error?: string }
+export type InviteResult = { ok?: boolean; link?: string; sent?: boolean; error?: string };
 
 export async function sendClientInvite(caseId: string): Promise<InviteResult> {
-  await requireStaff()
+  await requireStaff();
   if (!rateLimit(`client-invite:${caseId}`, 3, 60_000)) {
-    return { error: "Too many invites just now — give it a minute." }
+    return { error: "Too many invites just now — give it a minute." };
   }
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: kase } = await supabase
     .from("cases")
-    .select("client_id, service_mode, clients(email, full_name, profile_id)")
+    .select("client_id, service_mode, brand, clients(email, full_name, profile_id)")
     .eq("id", caseId)
-    .single()
+    .single();
+  if (!kase) return { error: "Case not found." };
   const client = kase?.clients as unknown as {
-    email: string | null
-    full_name: string
-    profile_id: string | null
-  } | null
-  if (!client?.email) return { error: "This client has no email on file." }
-  if (!client.profile_id) return { error: "This client doesn't have a portal account yet." }
+    email: string | null;
+    full_name: string;
+    profile_id: string | null;
+  } | null;
+  if (!client?.email) return { error: "This client has no email on file." };
+  if (!client.profile_id) return { error: "This client doesn't have a portal account yet." };
+  const caseBrand = BRANDS[kase.brand];
 
-  const admin = createAdminClient()
-  const redirectTo = `${getSiteUrl()}/auth/callback?next=/auth/reset-password`
+  const admin = createAdminClient();
+  const redirectTo = brandUrl(kase.brand, "/auth/callback?next=/auth/reset-password");
   const { data, error } = await admin.auth.admin.generateLink({
     type: "recovery",
     email: client.email,
     options: { redirectTo },
-  })
-  const link = data?.properties?.action_link
-  if (error || !link) return { error: "Couldn't create the invite link." }
+  });
+  const link = data?.properties?.action_link;
+  if (error || !link) return { error: "Couldn't create the invite link." };
 
-  let sent = false
+  let sent = false;
   if (EMAIL_ENABLED) {
-    const concierge = kase?.service_mode === "concierge"
+    const concierge = kase?.service_mode === "concierge";
     const { html, text } = renderEmail({
-      preheader: `Set up your ${brand.name} account`,
+      brand: kase.brand,
+      preheader: `Set up your ${caseBrand.name} account`,
       eyebrow: concierge ? "Full Concierge" : "Your application",
       heading: "Set up your account",
       paragraphs: concierge
         ? [
-            `Your ${brand.name} concierge is ready. Set your password below — then you'll sign a few short agreements, book your intro call, and send us your documents. We take it from there.`,
+            `Your ${caseBrand.name} concierge is ready. Set your password below — then you'll sign a few short agreements, book your intro call, and send us your documents. We take it from there.`,
           ]
         : [
-            `Your ${brand.name} account is ready. Choose a password below to sign in and pick up your application.`,
+            `Your ${caseBrand.name} account is ready. Choose a password below to sign in and pick up your application.`,
           ],
       cta: { label: "Set your password", url: link },
-      footnote: `This link expires in 60 minutes. Questions? Contact ${brand.contact.email}.`,
-    })
-    const res = await sendEmail({ to: client.email, subject: `Set up your ${brand.name} account`, html, text })
-    sent = !("error" in res)
+      footnote: `This link expires in 60 minutes. Questions? Contact ${caseBrand.supportEmail}.`,
+    });
+    const res = await sendEmail({
+      brand: kase.brand,
+      to: client.email,
+      subject: `Set up your ${caseBrand.name} account`,
+      html,
+      text,
+    });
+    sent = !("error" in res);
   }
 
   await logActivity({
@@ -1383,8 +1579,8 @@ export async function sendClientInvite(caseId: string): Promise<InviteResult> {
     clientId: kase?.client_id ?? null,
     entity: "client",
     detail: { sent, method: EMAIL_ENABLED ? "email" : "copy_link" },
-  })
-  return { ok: true, link, sent }
+  });
+  return { ok: true, link, sent };
 }
 
 /**
@@ -1394,23 +1590,23 @@ export async function sendClientInvite(caseId: string): Promise<InviteResult> {
  * never a CP-5 concern.
  */
 export async function recordDosArmedStatusGranted(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  await requireStaff()
-  const caseId = String(formData.get("caseId") ?? "")
-  const grantedOn = String(formData.get("grantedOn") ?? "")
-  if (!caseId || !grantedOn) return { ok: false, error: "Provide the case and the grant date." }
-  const admin = createAdminClient()
-  await grantDosArmedStatus(admin, caseId, grantedOn, null)
+  await requireStaff();
+  const caseId = String(formData.get("caseId") ?? "");
+  const grantedOn = String(formData.get("grantedOn") ?? "");
+  if (!caseId || !grantedOn) return { ok: false, error: "Provide the case and the grant date." };
+  const admin = createAdminClient();
+  await grantDosArmedStatus(admin, caseId, grantedOn, null);
   await logActivity({
     action: "case.dos_armed_status_granted",
     caseId,
     entity: "case",
     entityId: caseId,
     detail: { grantedOn },
-  })
-  revalidatePath(`/admin/cases/${caseId}`)
-  return { ok: true }
+  });
+  revalidatePath(`/admin/cases/${caseId}`);
+  return { ok: true };
 }
 
 /**
@@ -1420,19 +1616,25 @@ export async function recordDosArmedStatusGranted(
  * one-shot backfill after a requirements migration uses the same rematerializeCase.
  */
 export async function rematerializeCaseRequirements(
-  caseId: string
+  caseId: string,
 ): Promise<{ ok?: true; error?: string; inserted?: number; updated?: number }> {
-  await requireStaff()
-  const { rematerializeCase } = await import("@/lib/requirements/rematerialize")
-  const admin = createAdminClient()
+  await requireStaff();
+  const { rematerializeCase } = await import("@/lib/requirements/rematerialize");
+  const admin = createAdminClient();
   try {
-    const r = await rematerializeCase(admin, caseId)
-    if (!r) return { error: "This case has no completed intake yet — nothing to re-materialize." }
-    await logActivity({ action: "case.rematerialized", caseId, entity: "case", entityId: caseId, detail: { inserted: r.inserted, updated: r.updated } })
-    revalidatePath(`/admin/cases/${caseId}`)
-    return { ok: true, inserted: r.inserted, updated: r.updated }
+    const r = await rematerializeCase(admin, caseId);
+    if (!r) return { error: "This case has no completed intake yet — nothing to re-materialize." };
+    await logActivity({
+      action: "case.rematerialized",
+      caseId,
+      entity: "case",
+      entityId: caseId,
+      detail: { inserted: r.inserted, updated: r.updated },
+    });
+    revalidatePath(`/admin/cases/${caseId}`);
+    return { ok: true, inserted: r.inserted, updated: r.updated };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Re-materialize failed." }
+    return { error: e instanceof Error ? e.message : "Re-materialize failed." };
   }
 }
 
@@ -1443,18 +1645,27 @@ export async function rematerializeCaseRequirements(
  * review — approval then satisfies it. Closes the loop opened when the applicant's PDF was
  * accepted-but-not-satisfied.
  */
-export async function recordConvertedPhoto(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
-  const { userId } = await requireStaff()
-  const caseId = String(formData.get("caseId") ?? "")
-  const reqCode = String(formData.get("reqCode") || "PHO-01")
-  const file = formData.get("file")
-  if (!caseId || !(file instanceof File) || file.size === 0) return { error: "Choose a converted image to upload." }
-  if (!/^image\/(jpeg|jpg|png|gif|bmp|tiff|webp)$/i.test(file.type)) return { error: "Upload an image (JPG or PNG) — the converted photo, not a PDF." }
-  if (file.size > 6 * 1024 * 1024) return { error: "That image is over 6 MB — compress it and try again." }
+export async function recordConvertedPhoto(
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string }> {
+  const { userId } = await requireStaff();
+  const caseId = String(formData.get("caseId") ?? "");
+  const reqCode = String(formData.get("reqCode") || "PHO-01");
+  const file = formData.get("file");
+  if (!caseId || !(file instanceof File) || file.size === 0)
+    return { error: "Choose a converted image to upload." };
+  if (!/^image\/(jpeg|jpg|png|gif|bmp|tiff|webp)$/i.test(file.type))
+    return { error: "Upload an image (JPG or PNG) — the converted photo, not a PDF." };
+  if (file.size > 6 * 1024 * 1024)
+    return { error: "That image is over 6 MB — compress it and try again." };
 
-  const admin = createAdminClient()
-  const { data: kase } = await admin.from("cases").select("client_id").eq("id", caseId).maybeSingle()
-  if (!kase) return { error: "Case not found." }
+  const admin = createAdminClient();
+  const { data: kase } = await admin
+    .from("cases")
+    .select("client_id")
+    .eq("id", caseId)
+    .maybeSingle();
+  if (!kase) return { error: "Case not found." };
 
   // The applicant's original (the PDF) to keep attached to the converted document.
   const { data: pendingDoc } = await admin
@@ -1465,15 +1676,21 @@ export async function recordConvertedPhoto(formData: FormData): Promise<{ ok?: b
     .eq("conversion_pending", true)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle();
 
-  const docId = crypto.randomUUID()
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "")
-  const path = `clients/${kase.client_id}/${docId}/converted-photo.${ext}`
-  const up = await admin.storage.from("documents").upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true })
-  if (up.error) return { error: "Upload failed — try again." }
+  const docId = crypto.randomUUID();
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `clients/${kase.client_id}/${docId}/converted-photo.${ext}`;
+  const up = await admin.storage
+    .from("documents")
+    .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true });
+  if (up.error) return { error: "Upload failed — try again." };
 
-  const { count } = await admin.from("documents").select("id", { count: "exact", head: true }).eq("case_id", caseId).eq("type", "applicant_photo")
+  const { count } = await admin
+    .from("documents")
+    .select("id", { count: "exact", head: true })
+    .eq("case_id", caseId)
+    .eq("type", "applicant_photo");
   await admin.from("documents").insert({
     id: docId,
     case_id: caseId,
@@ -1488,14 +1705,19 @@ export async function recordConvertedPhoto(formData: FormData): Promise<{ ok?: b
     req_code: reqCode,
     version: (count ?? 0) + 1,
     reviewer: userId,
-  })
+  });
   // Point the requirement at the converted document, and retire the old pending row so
   // nothing still reads it as awaiting conversion.
-  await admin.from("case_requirements").update({ document_id: docId }).eq("case_id", caseId).eq("req_code", reqCode)
-  if (pendingDoc) await admin.from("documents").update({ conversion_pending: false }).eq("id", pendingDoc.id)
+  await admin
+    .from("case_requirements")
+    .update({ document_id: docId })
+    .eq("case_id", caseId)
+    .eq("req_code", reqCode);
+  if (pendingDoc)
+    await admin.from("documents").update({ conversion_pending: false }).eq("id", pendingDoc.id);
 
-  await closePhotoConversionTask(admin, caseId)
-  await logActivity({ action: "photo.converted_by_staff", caseId })
-  revalidatePath(`/admin/cases/${caseId}`)
-  return { ok: true }
+  await closePhotoConversionTask(admin, caseId);
+  await logActivity({ action: "photo.converted_by_staff", caseId });
+  revalidatePath(`/admin/cases/${caseId}`);
+  return { ok: true };
 }

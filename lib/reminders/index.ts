@@ -3,6 +3,8 @@ import "server-only"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { notifyClient } from "@/lib/email"
 import { runReminderEngine } from "@/lib/reminders/engine"
+import { caseBrandFor } from "@/lib/brand/case"
+import { brandUrl } from "@/lib/brand/origin"
 
 /**
  * Daily cron entry point. The engine does the idempotent work (reminder_log gate
@@ -16,7 +18,14 @@ export async function runReminders() {
   let emailed = 0
   for (const f of fired) {
     if (f.email) {
-      await notifyClient({ to: f.email, subject: f.title, body: f.body, cta: f.cta })
+      const brand = f.caseId ? await caseBrandFor(admin, f.caseId) : "gln"
+      const cta = f.cta
+        ? {
+            ...f.cta,
+            url: brandUrl(brand, new URL(f.cta.url).pathname + new URL(f.cta.url).search),
+          }
+        : undefined
+      await notifyClient({ brand, to: f.email, subject: f.title, body: f.body, cta })
       emailed++
     }
   }

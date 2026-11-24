@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/lib/supabase/types"
-import { getActivePackages, PUBLIC_PACKAGE_FALLBACK } from "@/lib/packages"
+import { getActivePackages, packagesForBrand, PUBLIC_PACKAGE_FALLBACK } from "@/lib/packages"
 import { getFees, getFeeTable } from "@/lib/fees"
 import { getPreviewRegistry } from "@/lib/requirements/preview"
 import { filterEligiblePublicInstructors } from "@/lib/instructors/public"
@@ -62,7 +62,7 @@ function marketingDataClient() {
   return createAdminClient()
 }
 
-export const getPublicPackages = unstable_cache(
+const getPublicPackageCatalogCached = unstable_cache(
   async () => {
     try {
       const packages = await getActivePackages(marketingDataClient())
@@ -74,6 +74,16 @@ export const getPublicPackages = unstable_cache(
   ["public-packages"],
   { tags: [CACHE_TAGS.packages], revalidate: ONE_HOUR }
 )
+
+/** Complete cross-brand catalog for the public pricing API only. */
+export async function getPublicPackageCatalog() {
+  return getPublicPackageCatalogCached()
+}
+
+/** The application marketing surface is GLN; never advertise FL packages here. */
+export async function getPublicPackages() {
+  return packagesForBrand(await getPublicPackageCatalogCached(), "gln")
+}
 
 export const getPublicFees = unstable_cache(
   async () => getFees(marketingDataClient()),

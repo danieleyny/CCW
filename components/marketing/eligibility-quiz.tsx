@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
@@ -9,39 +9,38 @@ import {
   ExternalLink,
   Info,
   ShieldCheck,
-} from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { LeadForm } from "@/components/marketing/lead-form"
-import { FACTS } from "@/content/facts"
-import { trackEvent } from "@/lib/analytics"
-import { ELIGIBILITY_ART, type EligibilityArt } from "./eligibility/art"
-import {
-  EligibilityStage,
-  useEligibilityParticles,
-} from "./eligibility/stage"
-import styles from "./eligibility/eligibility.module.css"
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LeadForm } from "@/components/marketing/lead-form";
+import { FACTS } from "@/content/facts";
+import { trackEvent } from "@/lib/analytics";
+import { useBrand } from "@/components/brand/brand-provider";
+import type { BrandKey } from "@/config/brands";
+import { ELIGIBILITY_ART, type EligibilityArt } from "./eligibility/art";
+import { EligibilityStage, useEligibilityParticles } from "./eligibility/stage";
+import styles from "./eligibility/eligibility.module.css";
 
-type Explain = { headline: string; body: string; factKey: keyof typeof FACTS }
+type Explain = { headline: string; body: string; factKey: keyof typeof FACTS };
 type Answer = {
-  value: string
-  label: string
-  desc: string
-  flag?: "ineligible" | "review"
-  track?: string
-  explain?: Explain
-}
+  value: string;
+  label: string;
+  desc: string;
+  flag?: "ineligible" | "review";
+  track?: string;
+  explain?: Explain;
+};
 type Question = {
-  key: string
-  rail: string
-  prompt: string
-  help: string
-  hue: string
-  whyTitle: string
-  why: string
-  art: EligibilityArt
-  options: Answer[]
-}
-type QuizStatus = "likely" | "review" | "ineligible"
+  key: string;
+  rail: string;
+  prompt: string;
+  help: string;
+  hue: string;
+  whyTitle: string;
+  why: string;
+  art: EligibilityArt;
+  options: Answer[];
+};
+type QuizStatus = "likely" | "review" | "ineligible";
 
 const QUESTIONS: Question[] = [
   {
@@ -108,8 +107,16 @@ const QUESTIONS: Question[] = [
     why: "Your training certificate must be dated within 6 months of when you file.",
     art: "training",
     options: [
-      { value: "done", label: "Yes, I’ve completed it", desc: "Keep your certificate handy for the file." },
-      { value: "planning", label: "I’m planning to", desc: "You already know where you’ll take it." },
+      {
+        value: "done",
+        label: "Yes, I’ve completed it",
+        desc: "Keep your certificate handy for the file.",
+      },
+      {
+        value: "planning",
+        label: "I’m planning to",
+        desc: "You already know where you’ll take it.",
+      },
       {
         value: "not_yet",
         label: "Not yet, I’ll need a class",
@@ -183,207 +190,218 @@ const QUESTIONS: Question[] = [
       { value: "will", label: "Not yet, I’ll get one", desc: "You’ll need it before you file." },
     ],
   },
-]
+];
 
-const STORAGE_KEY = "carry_eligibility_quiz"
+const STORAGE_KEY = "carry_eligibility_quiz";
 
 function normalizeAnswers(saved: Record<string, { value?: string }>): Record<string, Answer> {
-  const normalized: Record<string, Answer> = {}
+  const normalized: Record<string, Answer> = {};
   for (const question of QUESTIONS) {
-    const value = saved[question.key]?.value
-    const answer = question.options.find((option) => option.value === value)
-    if (answer) normalized[question.key] = answer
+    const value = saved[question.key]?.value;
+    const answer = question.options.find((option) => option.value === value);
+    if (answer) normalized[question.key] = answer;
   }
-  return normalized
+  return normalized;
 }
 
 function getStatus(answers: Record<string, Answer>): QuizStatus {
-  return Object.values(answers).find((answer) => answer.flag)?.flag ?? "likely"
+  return Object.values(answers).find((answer) => answer.flag)?.flag ?? "likely";
 }
 
 export function EligibilityExperience() {
-  const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, Answer>>({})
-  const [done, setDone] = useState(false)
-  const [selectedValue, setSelectedValue] = useState<string | null>(null)
-  const [exiting, setExiting] = useState(false)
-  const [reducedMotion, setReducedMotion] = useState(false)
-  const busyRef = useRef(false)
-  const timersRef = useRef<number[]>([])
+  const { key: brandKey } = useBrand();
+  const storageKey = `${STORAGE_KEY}_${brandKey}`;
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  const [done, setDone] = useState(false);
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+  const [exiting, setExiting] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const busyRef = useRef(false);
+  const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const update = () => setReducedMotion(media.matches)
-    update()
-    media.addEventListener("change", update)
-    return () => media.removeEventListener("change", update)
-  }, [])
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
       const saved = JSON.parse(raw) as {
-        step?: number
-        answers?: Record<string, { value?: string }>
-        done?: boolean
-      }
+        step?: number;
+        answers?: Record<string, { value?: string }>;
+        done?: boolean;
+      };
       const restoredStep =
-        typeof saved.step === "number" ? Math.min(Math.max(saved.step, 0), QUESTIONS.length - 1) : 0
-      const restoredAnswers = saved.answers ? normalizeAnswers(saved.answers) : {}
+        typeof saved.step === "number"
+          ? Math.min(Math.max(saved.step, 0), QUESTIONS.length - 1)
+          : 0;
+      const restoredAnswers = saved.answers ? normalizeAnswers(saved.answers) : {};
       /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from localStorage */
-      setStep(restoredStep)
-      setAnswers(restoredAnswers)
-      setDone(Boolean(saved.done))
-      setSelectedValue(restoredAnswers[QUESTIONS[restoredStep].key]?.value ?? null)
+      setStep(restoredStep);
+      setAnswers(restoredAnswers);
+      setDone(Boolean(saved.done));
+      setSelectedValue(restoredAnswers[QUESTIONS[restoredStep].key]?.value ?? null);
       /* eslint-enable react-hooks/set-state-in-effect */
     } catch {
       // Persistence is best-effort; malformed or blocked storage starts fresh.
     }
-  }, [])
+  }, [storageKey]);
 
   useEffect(
     () => () => {
-      for (const timer of timersRef.current) window.clearTimeout(timer)
+      for (const timer of timersRef.current) window.clearTimeout(timer);
     },
-    []
-  )
+    [],
+  );
 
   function schedule(callback: () => void, delay: number) {
-    const timer = window.setTimeout(callback, delay)
-    timersRef.current.push(timer)
+    const timer = window.setTimeout(callback, delay);
+    timersRef.current.push(timer);
   }
 
   function persist(next: { step: number; answers: Record<string, Answer>; done: boolean }) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {
       // localStorage may be unavailable in a private browsing session.
     }
   }
 
-  const question = QUESTIONS[step]
-  const status = done ? getStatus(answers) : null
+  const question = QUESTIONS[step];
+  const status = done ? getStatus(answers) : null;
   const hue = status
     ? status === "likely"
       ? "#D9E8DF"
       : status === "review"
         ? "#F3E3C2"
         : "#E1E5EC"
-    : question.hue
+    : question.hue;
 
   function finishTransition(callback: () => void, selectionDelay = 0) {
     const leave = () => {
       if (reducedMotion) {
-        callback()
-        setExiting(false)
-        busyRef.current = false
-        return
+        callback();
+        setExiting(false);
+        busyRef.current = false;
+        return;
       }
-      setExiting(true)
+      setExiting(true);
       schedule(() => {
-        callback()
-        setExiting(false)
-        busyRef.current = false
-      }, 220)
-    }
-    if (selectionDelay > 0 && !reducedMotion) schedule(leave, selectionDelay)
-    else leave()
+        callback();
+        setExiting(false);
+        busyRef.current = false;
+      }, 220);
+    };
+    if (selectionDelay > 0 && !reducedMotion) schedule(leave, selectionDelay);
+    else leave();
   }
 
   function commitChoice(option: Answer) {
-    if (Object.keys(answers).length === 0) trackEvent("eligibility_start")
-    const nextAnswers = { ...answers, [question.key]: option }
+    if (Object.keys(answers).length === 0) trackEvent("eligibility_start");
+    const nextAnswers = { ...answers, [question.key]: option };
 
     if (option.flag) {
-      setAnswers(nextAnswers)
-      setDone(true)
-      trackEvent("eligibility_complete")
-      persist({ step, answers: nextAnswers, done: true })
-      return
+      setAnswers(nextAnswers);
+      setDone(true);
+      trackEvent("eligibility_complete");
+      persist({ step, answers: nextAnswers, done: true });
+      return;
     }
 
-    const last = step >= QUESTIONS.length - 1
-    const nextStep = last ? step : step + 1
-    setAnswers(nextAnswers)
-    setDone(last)
-    if (last) trackEvent("eligibility_complete")
+    const last = step >= QUESTIONS.length - 1;
+    const nextStep = last ? step : step + 1;
+    setAnswers(nextAnswers);
+    setDone(last);
+    if (last) trackEvent("eligibility_complete");
     else {
-      setStep(nextStep)
-      setSelectedValue(nextAnswers[QUESTIONS[nextStep].key]?.value ?? null)
+      setStep(nextStep);
+      setSelectedValue(nextAnswers[QUESTIONS[nextStep].key]?.value ?? null);
     }
-    persist({ step: nextStep, answers: nextAnswers, done: last })
+    persist({ step: nextStep, answers: nextAnswers, done: last });
   }
 
-  function selectOption(index: number, element?: Element | null, burst?: (el: Element | null, n?: number) => void) {
-    if (busyRef.current) return
-    const option = question.options[index]
-    if (!option) return
-    busyRef.current = true
-    setSelectedValue(option.value)
-    burst?.(element ?? null, 22)
-    finishTransition(() => commitChoice(option), 420)
+  function selectOption(
+    index: number,
+    element?: Element | null,
+    burst?: (el: Element | null, n?: number) => void,
+  ) {
+    if (busyRef.current) return;
+    const option = question.options[index];
+    if (!option) return;
+    busyRef.current = true;
+    setSelectedValue(option.value);
+    burst?.(element ?? null, 22);
+    finishTransition(() => commitChoice(option), 420);
   }
 
   function goToStep(nextStep: number) {
-    if (busyRef.current || (nextStep === step && !done)) return
-    busyRef.current = true
+    if (busyRef.current || (nextStep === step && !done)) return;
+    busyRef.current = true;
     finishTransition(() => {
-      setStep(nextStep)
-      setDone(false)
-      setSelectedValue(answers[QUESTIONS[nextStep].key]?.value ?? null)
-      persist({ step: nextStep, answers, done: false })
-    })
+      setStep(nextStep);
+      setDone(false);
+      setSelectedValue(answers[QUESTIONS[nextStep].key]?.value ?? null);
+      persist({ step: nextStep, answers, done: false });
+    });
   }
 
   function goBack() {
-    if (step > 0) goToStep(step - 1)
+    if (step > 0) goToStep(step - 1);
   }
 
   function reset() {
     try {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(storageKey);
     } catch {
       // Ignore blocked storage.
     }
-    setAnswers({})
-    setStep(0)
-    setDone(false)
-    setSelectedValue(null)
-    busyRef.current = false
-    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" })
+    setAnswers({});
+    setStep(0);
+    setDone(false);
+    setSelectedValue(null);
+    busyRef.current = false;
+    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
   }
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target
+      const target = event.target;
       if (
         done ||
-        (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true']")) ||
+        (target instanceof Element &&
+          target.closest("input, textarea, select, [contenteditable='true']")) ||
         event.metaKey ||
         event.ctrlKey ||
         event.altKey
       ) {
-        return
+        return;
       }
 
-      const key = event.key.toLowerCase()
-      const letterIndex = "abc".indexOf(key)
-      const numberIndex = "123".indexOf(key)
-      const index = letterIndex >= 0 ? letterIndex : numberIndex
+      const key = event.key.toLowerCase();
+      const letterIndex = "abc".indexOf(key);
+      const numberIndex = "123".indexOf(key);
+      const index = letterIndex >= 0 ? letterIndex : numberIndex;
       if (index >= 0 && index < question.options.length) {
-        event.preventDefault()
-        const option = document.querySelectorAll<HTMLButtonElement>("[data-eligibility-option]")[index]
-        option?.click()
+        event.preventDefault();
+        const option = document.querySelectorAll<HTMLButtonElement>("[data-eligibility-option]")[
+          index
+        ];
+        option?.click();
       } else if (event.key === "Backspace" && step > 0) {
-        event.preventDefault()
-        goBack()
+        event.preventDefault();
+        goBack();
       }
-    }
+    };
 
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  })
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   return (
     <EligibilityStage hue={hue}>
@@ -398,6 +416,7 @@ export function EligibilityExperience() {
               exiting={exiting}
               onChange={goToStep}
               onReset={reset}
+              brandKey={brandKey}
             />
           ) : (
             <QuestionView
@@ -408,17 +427,18 @@ export function EligibilityExperience() {
               exiting={exiting}
               onBack={goBack}
               onSelect={selectOption}
+              brandKey={brandKey}
             />
           )}
         </section>
         <TrustRow />
       </div>
     </EligibilityStage>
-  )
+  );
 }
 
 /** Kept as an alias for existing imports while the route adopts the new name. */
-export const EligibilityQuiz = EligibilityExperience
+export const EligibilityQuiz = EligibilityExperience;
 
 function Intro({ result }: { result: boolean }) {
   return (
@@ -431,19 +451,17 @@ function Intro({ result }: { result: boolean }) {
           : "Six quick questions. A clear read on where you stand."}
       </p>
       <div className={styles.chips} aria-label="Quiz details">
-        {[
-          "About 2 minutes",
-          "No card, no account",
-          "Your answers stay on this device",
-        ].map((label) => (
-          <span key={label}>
-            <Check aria-hidden="true" />
-            {label}
-          </span>
-        ))}
+        {["About 2 minutes", "No card, no account", "Your answers stay on this device"].map(
+          (label) => (
+            <span key={label}>
+              <Check aria-hidden="true" />
+              {label}
+            </span>
+          ),
+        )}
       </div>
     </header>
-  )
+  );
 }
 
 function ProgressPath({
@@ -452,15 +470,15 @@ function ProgressPath({
   done,
   onChange,
 }: {
-  step: number
-  answers: Record<string, Answer>
-  done: boolean
-  onChange: (step: number) => void
+  step: number;
+  answers: Record<string, Answer>;
+  done: boolean;
+  onChange: (step: number) => void;
 }) {
   const lastAnswered = QUESTIONS.reduce(
     (last, question, index) => (answers[question.key] ? index : last),
-    0
-  )
+    0,
+  );
 
   return (
     <ol className={styles.path} aria-label="Eligibility progress">
@@ -468,8 +486,8 @@ function ProgressPath({
         <i style={{ width: `${(lastAnswered / (QUESTIONS.length - 1)) * 100}%` }} />
       </span>
       {QUESTIONS.map((question, index) => {
-        const answered = Boolean(answers[question.key]) && (done || index !== step)
-        const current = !done && index === step
+        const answered = Boolean(answers[question.key]) && (done || index !== step);
+        const current = !done && index === step;
         return (
           <li
             key={question.key}
@@ -491,10 +509,10 @@ function ProgressPath({
             )}
             <span className={styles.pathLabel}>{question.rail}</span>
           </li>
-        )
+        );
       })}
     </ol>
-  )
+  );
 }
 
 function QuestionView({
@@ -504,20 +522,22 @@ function QuestionView({
   exiting,
   onBack,
   onSelect,
+  brandKey,
 }: {
-  question: Question
-  step: number
-  selectedValue: string | null
-  exiting: boolean
-  onBack: () => void
+  question: Question;
+  step: number;
+  selectedValue: string | null;
+  exiting: boolean;
+  onBack: () => void;
   onSelect: (
     index: number,
     element?: Element | null,
-    burst?: (element: Element | null, count?: number) => void
-  ) => void
+    burst?: (element: Element | null, count?: number) => void,
+  ) => void;
+  brandKey: BrandKey;
 }) {
-  const { burst } = useEligibilityParticles()
-  const percent = Math.round((step / QUESTIONS.length) * 100)
+  const { burst } = useEligibilityParticles();
+  const percent = Math.round((step / QUESTIONS.length) * 100);
 
   return (
     <div className={`${styles.view} ${exiting ? styles.exiting : ""}`}>
@@ -540,7 +560,7 @@ function QuestionView({
           <p className={styles.help}>{question.help}</p>
           <div className={styles.options} role="group" aria-labelledby="eligibility-question">
             {question.options.map((option, index) => {
-              const selected = selectedValue === option.value
+              const selected = selectedValue === option.value;
               return (
                 <button
                   key={option.value}
@@ -555,13 +575,21 @@ function QuestionView({
                   </span>
                   <span className={styles.optionCopy}>
                     <strong>{option.label}</strong>
-                    <small>{option.desc}</small>
+                    <small>
+                      {brandKey === "fl" &&
+                      question.key === "training" &&
+                      option.value === "not_yet"
+                        ? "You can book with any DCJS-approved instructor."
+                        : brandKey === "fl" && option.flag === "review"
+                          ? "Speak with an independent New York-licensed attorney before proceeding."
+                          : option.desc}
+                    </small>
                   </span>
                   <span className={styles.optionTick} aria-hidden="true">
                     <Check />
                   </span>
                 </button>
-              )
+              );
             })}
           </div>
           <div className={styles.questionFooter}>
@@ -604,7 +632,7 @@ function QuestionView({
         </aside>
       </div>
     </div>
-  )
+  );
 }
 
 function Result({
@@ -612,35 +640,39 @@ function Result({
   exiting,
   onChange,
   onReset,
+  brandKey,
 }: {
-  answers: Record<string, Answer>
-  exiting: boolean
-  onChange: (step: number) => void
-  onReset: () => void
+  answers: Record<string, Answer>;
+  exiting: boolean;
+  onChange: (step: number) => void;
+  onReset: () => void;
+  brandKey: BrandKey;
 }) {
-  const { burst } = useEligibilityParticles()
-  const sealRef = useRef<HTMLDivElement>(null)
-  const status = getStatus(answers)
-  const flagged = Object.values(answers).find((answer) => answer.flag)
-  const explain = flagged?.explain
-  const fact = explain ? FACTS[explain.factKey] : null
-  const track = answers.location?.track ?? "resident"
+  const { burst } = useEligibilityParticles();
+  const sealRef = useRef<HTMLDivElement>(null);
+  const status = getStatus(answers);
+  const flagged = Object.values(answers).find((answer) => answer.flag);
+  const explain = flagged?.explain;
+  const fact = explain ? FACTS[explain.factKey] : null;
+  const track = answers.location?.track ?? "resident";
   const eligibilityJson = JSON.stringify(
-    Object.fromEntries(Object.entries(answers).map(([key, answer]) => [key, answer.value]))
-  )
+    Object.fromEntries(Object.entries(answers).map(([key, answer]) => [key, answer.value])),
+  );
 
   useEffect(() => {
-    if (status === "likely") burst(sealRef.current, 70)
-  }, [burst, status])
+    if (status === "likely") burst(sealRef.current, 70);
+  }, [burst, status]);
 
   const handleLeadSuccess = useCallback(() => {
-    burst(sealRef.current, 60)
-  }, [burst])
+    burst(sealRef.current, 60);
+  }, [burst]);
 
-  const headline = explain?.headline ?? "You likely qualify"
+  const headline = explain?.headline ?? "You likely qualify";
   const body =
-    explain?.body ??
-    "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline."
+    brandKey === "fl" && status === "review"
+      ? "This answer may affect eligibility. Only a New York-licensed attorney can advise you about your situation. Speak with one independently before you spend money or continue."
+      : (explain?.body ??
+        "Based on your answers, you're in good shape to apply. Tell us where to reach you and we'll map out your timeline.");
 
   return (
     <div className={`${styles.view} ${exiting ? styles.exiting : ""}`}>
@@ -683,11 +715,16 @@ function Result({
             </div>
           ) : null}
 
-          {status === "review" ? (
+          {status === "review" && brandKey === "gln" ? (
             <p className={styles.lawyerNote}>
               Want to understand how this is treated in general? Read{" "}
-              <Link href="/do-i-need-a-lawyer">Do I need a lawyer?</Link> When you’re ready,
-              request a confidential review.
+              <Link href="/do-i-need-a-lawyer">Do I need a lawyer?</Link> When you’re ready, request
+              a confidential review.
+            </p>
+          ) : status === "review" ? (
+            <p className={styles.lawyerNote}>
+              This software cannot give legal advice or evaluate your individual history. Consult an
+              independent New York-licensed attorney before proceeding.
             </p>
           ) : null}
 
@@ -710,13 +747,28 @@ function Result({
                 Start over
               </button>
             </>
+          ) : status === "review" && brandKey === "fl" ? (
+            <>
+              <h3>Speak with an attorney first</h3>
+              <p>
+                Consult an independent New York-licensed attorney about your specific history before
+                starting an application.
+              </p>
+              <button type="button" className={styles.reset} onClick={onReset}>
+                Start over
+              </button>
+            </>
           ) : (
             <>
-              <h3>{status === "review" ? "Request a confidential review" : "Start your application"}</h3>
+              <h3>
+                {status === "review" ? "Request a confidential review" : "Start your application"}
+              </h3>
               <p>
                 {status === "review"
                   ? "We'll connect you with a New York-licensed attorney. It's confidential."
-                  : "Free to start. We reach out within one business day."}
+                  : brandKey === "fl"
+                    ? "Create your account to continue with the self-guided application system."
+                    : "Free to start. We reach out within one business day."}
               </p>
               <div className={styles.leadForm}>
                 <LeadForm
@@ -726,13 +778,22 @@ function Result({
                     status === "review" ? "Request a confidential review" : "Start my application"
                   }
                   successTitle={status === "review" ? "Let's get started." : "You're all set."}
-                  successBody="we can reach out within one business day."
+                  successBody={
+                    brandKey === "fl"
+                      ? "Continue in your account whenever you're ready."
+                      : "we can reach out within one business day."
+                  }
                   accountCta
+                  accountHref={
+                    brandKey === "fl" ? "/auth/sign-up?plan=self_guided" : "/auth/sign-up"
+                  }
                   hidden={{ track, eligibility: eligibilityJson }}
                   variant="light"
                   onSuccess={handleLeadSuccess}
                 />
-                <p className={styles.finePrint}>No card needed. You can create your account next.</p>
+                <p className={styles.finePrint}>
+                  No card needed. You can create your account next.
+                </p>
               </div>
               <button type="button" className={styles.reset} onClick={onReset}>
                 Start over
@@ -745,15 +806,21 @@ function Result({
         This is a service-fit result, not legal advice or a prediction of any NYPD decision.
       </p>
     </div>
-  )
+  );
 }
 
 function NextSteps() {
   const steps = [
-    ["We map the requirements.", "Your checklist is generated around your license track and answers."],
-    ["We organize the file.", "Documents, references, training and disclosures stay in one case system."],
+    [
+      "We map the requirements.",
+      "Your checklist is generated around your license track and answers.",
+    ],
+    [
+      "We organize the file.",
+      "Documents, references, training and disclosures stay in one case system.",
+    ],
     ["You stay in control.", "You review and submit your own application."],
-  ]
+  ];
   return (
     <ol className={styles.nextSteps}>
       {steps.map(([title, copy], index) => (
@@ -766,17 +833,17 @@ function NextSteps() {
         </li>
       ))}
     </ol>
-  )
+  );
 }
 
 function AnswersTable({
   answers,
   onChange,
 }: {
-  answers: Record<string, Answer>
-  onChange: (step: number) => void
+  answers: Record<string, Answer>;
+  onChange: (step: number) => void;
 }) {
-  const answered = QUESTIONS.filter((question) => answers[question.key])
+  const answered = QUESTIONS.filter((question) => answers[question.key]);
   return (
     <div className={styles.answers}>
       <header>
@@ -799,7 +866,7 @@ function AnswersTable({
         ))}
       </dl>
     </div>
-  )
+  );
 }
 
 function ResultSeal({ status }: { status: QuizStatus }) {
@@ -809,9 +876,12 @@ function ResultSeal({ status }: { status: QuizStatus }) {
         <circle cx="42" cy="42" r="40" fill="#FBF0DC" />
         <circle className={styles.sealRing} cx="42" cy="42" r="40" />
         <circle cx="42" cy="42" r="31" fill="#14254A" />
-        <path d="M42 27c-8 0-14 6-14 13v1h6v-1c0-4 3-7 8-7s8 3 8 6c0 5-9 6-9 13v2h6v-1c0-6 9-7 9-14 0-7-6-12-14-12zM39 59h6v6h-6z" fill="#D9B25A" />
+        <path
+          d="M42 27c-8 0-14 6-14 13v1h6v-1c0-4 3-7 8-7s8 3 8 6c0 5-9 6-9 13v2h6v-1c0-6 9-7 9-14 0-7-6-12-14-12zM39 59h6v6h-6z"
+          fill="#D9B25A"
+        />
       </svg>
-    )
+    );
   }
   if (status === "ineligible") {
     return (
@@ -822,7 +892,7 @@ function ResultSeal({ status }: { status: QuizStatus }) {
         <circle cx="42" cy="42" r="13" fill="none" stroke="#D9B25A" strokeWidth="3" />
         <path d="M42 35v8l5 3" fill="none" stroke="#D9B25A" strokeWidth="3" strokeLinecap="round" />
       </svg>
-    )
+    );
   }
   return (
     <svg viewBox="0 0 84 84" aria-hidden="true">
@@ -831,7 +901,7 @@ function ResultSeal({ status }: { status: QuizStatus }) {
       <circle cx="42" cy="42" r="31" fill="#14254A" />
       <path className={styles.sealCheck} d="M29 43l9 9 18-20" />
     </svg>
-  )
+  );
 }
 
 function TrustRow() {
@@ -847,5 +917,5 @@ function TrustRow() {
         <Info aria-hidden="true" /> Not legal advice
       </span>
     </div>
-  )
+  );
 }

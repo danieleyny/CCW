@@ -1,3 +1,5 @@
+import type { BrandKey } from "@/config/brands"
+
 export const NEW_YORK_TIME_ZONE = "America/New_York"
 export const CALENDAR_EVENT_TYPES = [
   "Intro call",
@@ -18,6 +20,8 @@ export interface CalendarEvent {
   source: "intro_call" | "appointment" | "booking" | "class_session"
   caseId: string | null
   clientName: string
+  brand: BrandKey | null
+  brandOrigin: BrandKey | null
   type: CalendarEventType | string
   rawType: string
   startsAt: string
@@ -36,6 +40,8 @@ export interface CalendarNeed {
   id: string
   caseId: string
   clientName: string
+  brand: BrandKey
+  brandOrigin: BrandKey
   label: string
   detail: string
   owner: "Staff" | "Instructor" | "Client"

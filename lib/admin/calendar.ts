@@ -2,6 +2,7 @@ import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database, Json } from "@/lib/supabase/types"
+import type { BrandKey } from "@/config/brands"
 import { stageIndex, type CaseStageKey } from "@/config/stages"
 import {
   calendarEventType,
@@ -30,6 +31,8 @@ interface CalendarCase {
   createdAt: string
   status: string
   serviceMode: "concierge" | "self_guided" | null
+  brand: BrandKey
+  brandOrigin: BrandKey
 }
 interface TrainingClassRow {
   id: string
@@ -73,6 +76,10 @@ function hasQueryError(value: unknown): value is { error: unknown } {
   return !!value && typeof value === "object" && "error" in value && !!(value as { error?: unknown }).error
 }
 
+function brandIdentity(calendarCase: CalendarCase) {
+  return { brand: calendarCase.brand, brandOrigin: calendarCase.brandOrigin }
+}
+
 function isUnavailableOptionalTrainingSource(error: unknown) {
   if (!error || typeof error !== "object") return false
   const value = error as { code?: string; message?: string }
@@ -103,7 +110,7 @@ export async function loadCalendar(
 ): Promise<CalendarData> {
   const casesResult = await db
     .from("cases")
-    .select("id, stage, status, stage_entered_at, created_at, is_demo, service_mode, clients!inner(full_name, assigned_staff, profiles:assigned_staff(full_name))")
+    .select("id, stage, status, stage_entered_at, created_at, is_demo, service_mode, brand, brand_origin, clients!inner(full_name, assigned_staff, profiles:assigned_staff(full_name))")
     .neq("status", "closed")
 
   if (casesResult.error) throw casesResult.error
@@ -126,6 +133,8 @@ export async function loadCalendar(
       createdAt: row.created_at,
       status: row.status,
       serviceMode: row.service_mode,
+      brand: row.brand,
+      brandOrigin: row.brand_origin,
     })
   }
 
@@ -205,6 +214,7 @@ export async function loadCalendar(
         id: `intro-${row.id}`,
         caseId: row.case_id,
         clientName: calendarCase.clientName,
+        ...brandIdentity(calendarCase),
         label: "Intro call requested",
         detail: daysAgo(row.created_at, now),
         owner: "Staff",
@@ -219,6 +229,7 @@ export async function loadCalendar(
       source: "intro_call",
       caseId: row.case_id,
       clientName: calendarCase.clientName,
+      ...brandIdentity(calendarCase),
       type: "Intro call",
       rawType: "intro_call",
       startsAt: row.scheduled_at,
@@ -252,6 +263,7 @@ export async function loadCalendar(
       source: "appointment",
       caseId: row.case_id,
       clientName: calendarCase.clientName,
+      ...brandIdentity(calendarCase),
       type,
       rawType: row.type,
       startsAt: row.scheduled_at,
@@ -287,6 +299,7 @@ export async function loadCalendar(
         id: `booking-${row.id}`,
         caseId: row.case_id,
         clientName: calendarCase.clientName,
+        ...brandIdentity(calendarCase),
         label: "Booking awaiting confirmation",
         detail: `${calendarEventType(row.type)} · instructor confirmation needed`,
         owner: "Instructor",
@@ -304,6 +317,7 @@ export async function loadCalendar(
       source: "booking",
       caseId: row.case_id,
       clientName: calendarCase.clientName,
+      ...brandIdentity(calendarCase),
       type,
       rawType: row.type,
       startsAt: row.starts_at,
@@ -347,6 +361,8 @@ export async function loadCalendar(
         source: "class_session",
         caseId: null,
         clientName: `${type} day ${index + 1} · ${studentCount} student${studentCount === 1 ? "" : "s"}`,
+        brand: null,
+        brandOrigin: null,
         type,
         rawType: type.toLowerCase(),
         startsAt: newYorkDateTime(date, start).toISOString(),
@@ -374,6 +390,7 @@ export async function loadCalendar(
       id: `training-${calendarCase.id}`,
       caseId: calendarCase.id,
       clientName: calendarCase.clientName,
+      ...brandIdentity(calendarCase),
       label: "Training not scheduled",
       detail: calendarCase.stage === "signed_up_paid" ? `${ageDays} days since enrollment` : "No upcoming booking",
       owner: concierge ? "Staff" : "Client",

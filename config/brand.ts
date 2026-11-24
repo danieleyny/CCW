@@ -1,44 +1,10 @@
 /**
- * Gun License NYC brand configuration — THE single source of truth for brand identity and
- * the full color system. Aesthetic: dark-first "obsidian / brass / signal-cyan"
- * — luxury personal-protection concierge meets precision instrument / HUD.
- *
- * Colors are injected as CSS variables by <BrandStyle /> (config/brand-style.tsx)
- * and consumed via semantic Tailwind tokens (bg-card, text-foreground) plus the
- * brand utilities (bg-brass, text-signal, border-hairline, bg-surface-2, …).
- * Components must never hardcode colors — rebrand by editing this file only.
+ * Compatibility surface for legacy GLN imports. Identity now comes from the
+ * multi-brand registry; palettes and CSS generation remain here.
  */
+import { BRANDS } from "@/config/brands"
 
-export const brand = {
-  name: "Gun License NYC",
-  // NOTE: default entity name — replace with the real registered LLC if different.
-  legalName: "Gun License NYC",
-  tagline: "NYC gun licensing, handled with precision.",
-  description:
-    "Gun License NYC is a private licensing concierge that helps applicants organize the NYC handgun-license process — from the right application path through documents, review, and applicant-controlled submission.",
-  domain: "gunlicensenyc.com",
-  url: "https://gunlicensenyc.com",
-  contact: {
-    email: "gunlicensenyc@gmail.com",
-    phone: "(929) 352-5961",
-    address: "New York, NY",
-  },
-  logo: {
-    // The reusable R1 Medallion Scope and wordmark live in components/brand/.
-    wordmark: "Gun License NYC",
-    mark: "◎",
-  },
-  // V3-P0.7 — the standing legal disclaimer. NYPD's published position: consulting
-  // firms cannot represent applicants, cannot expedite, and are not endorsed; only
-  // a NY-licensed attorney may represent an applicant before the License Division.
-  disclaimer:
-    "Gun License NYC is a private document-preparation and case-management service. We are not attorneys and do not represent you before the NYPD License Division; only a New York-licensed attorney may. We cannot expedite or guarantee any outcome, and we are not affiliated with or endorsed by the NYPD or any government agency. You review and submit your own application; we prepare and organize your filing materials. The NYPD retains full investigative discretion.",
-  fonts: {
-    display: "var(--font-display)",
-    sans: "var(--font-sans)",
-    mono: "var(--font-mono)",
-  },
-} as const
+export const brand = BRANDS.gln
 
 /**
  * Raw palettes — exposed as Tailwind utilities (via globals @theme) and as the

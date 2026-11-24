@@ -13,12 +13,14 @@ export function EnrollButtons({
   depositCents,
   stripeOn,
   featured,
+  payInFull = false,
 }: {
   packageKey: string
   priceCents: number
   depositCents: number
   stripeOn: boolean
   featured: boolean
+  payInFull?: boolean
 }) {
   const [state, action, pending] = useActionState<EnrollResult, FormData>(startCheckout, {})
 
@@ -62,7 +64,7 @@ export function EnrollButtons({
           {pending ? "Starting…" : primaryLabel}
         </Button>
       </form>
-      {!custom && depositCents > 0 && stripeOn && (
+      {!payInFull && !custom && depositCents > 0 && stripeOn && (
         <form
           action={action}
           onSubmit={() =>

@@ -1,8 +1,10 @@
-import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketing/json-ld"
-import { MarketingFrame } from "@/components/marketing/v2/MarketingFrame"
-import ThemeScope from "@/components/theme/ThemeScope"
-import "./marketing-v2.css"
-import "./hero-guided-path.css"
+import { JsonLd, organizationSchema, websiteSchema } from "@/components/marketing/json-ld";
+import { MarketingFrame } from "@/components/marketing/v2/MarketingFrame";
+import ThemeScope from "@/components/theme/ThemeScope";
+import { FlPublicFrame } from "@/components/brand/fl-public-frame";
+import { getRequestBrandKey } from "@/lib/brand/server";
+import "./marketing-v2.css";
+import "./hero-guided-path.css";
 
 /**
  * MARKETING v2 frame (redesign/v2). The whole marketing surface runs the new
@@ -14,7 +16,17 @@ import "./hero-guided-path.css"
  * Fonts are the spec's three families, loaded via next/font (no render-blocking
  * external stylesheet) and mapped onto --display/--sans/--mono inside the scope.
  */
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+  const requestBrand = await getRequestBrandKey();
+
+  if (requestBrand === "fl") {
+    return (
+      <ThemeScope theme="v2">
+        <FlPublicFrame>{children}</FlPublicFrame>
+      </ThemeScope>
+    );
+  }
+
   return (
     <>
       {/* One @graph across the marketing surface: Organization + WebSite by @id. */}
@@ -28,5 +40,5 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <MarketingFrame>{children}</MarketingFrame>
       </ThemeScope>
     </>
-  )
+  );
 }

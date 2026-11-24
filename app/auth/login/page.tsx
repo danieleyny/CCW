@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { PasswordField } from "@/components/auth/password-field"
+import { useBrand } from "@/components/brand/brand-provider"
 
 export default function LoginPage() {
   return (
@@ -26,6 +27,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const { brand } = useBrand()
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
     login,
     {}
@@ -39,7 +41,7 @@ function LoginForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">Sign in</CardTitle>
-        <CardDescription>Access your Gun License NYC dashboard.</CardDescription>
+        <CardDescription>Access your {brand.name} dashboard.</CardDescription>
       </CardHeader>
       <form action={formAction}>
         <CardContent className="space-y-4">

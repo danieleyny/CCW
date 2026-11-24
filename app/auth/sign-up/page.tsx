@@ -5,7 +5,7 @@ import { useActionState, useEffect, useRef } from "react"
 import { Lock } from "lucide-react"
 import { signUp, type AuthFormState } from "@/app/auth/actions"
 import { SIGNUP_PREFILL_KEY } from "@/components/marketing/lead-form"
-import { brand } from "@/config/brand"
+import { useBrand } from "@/components/brand/brand-provider"
 import { cn } from "@/lib/utils"
 import {
   Card,
@@ -24,6 +24,7 @@ import { HoneypotField } from "@/components/shared/honeypot-field"
 const JOURNEY = ["Account", "Intake", "Checklist"]
 
 export default function SignUpPage() {
+  const { brand } = useBrand()
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
     signUp,
     {}

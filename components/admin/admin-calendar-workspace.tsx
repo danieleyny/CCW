@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { BrandChip } from "@/components/admin/brand-chip"
 
 const TYPE_META: Record<CalendarEventType, { rail: string; tint: string; text: string; icon: typeof PhoneCall }> = {
   "Intro call": { rail: "#D9B25F", tint: "#FBF4E4", text: "#76510E", icon: PhoneCall },
@@ -161,7 +162,7 @@ function NeedsScheduling({ needs, compact = false }: { needs: CalendarNeed[]; co
         {needs.map((item) => (
           <li key={item.id} className={cn("grid items-center gap-3 px-4 py-3", compact ? "grid-cols-[1fr_auto] px-3" : "sm:grid-cols-[minmax(0,1fr)_170px_110px]")}>
             <div className="min-w-0">
-              <strong title={item.clientName} className="block truncate text-sm text-[#101828]">{item.clientName}</strong>
+              <span className="flex items-center gap-2"><strong title={item.clientName} className="block truncate text-sm text-[#101828]">{item.clientName}</strong><BrandChip brand={item.brand} origin={item.brandOrigin} /></span>
               <span className="mt-0.5 block truncate text-xs text-[#667085]">{item.label} · {item.detail}</span>
             </div>
             {!compact && <OwnerChip owner={item.owner} />}
@@ -201,7 +202,7 @@ function EventRow({ event, next, now }: { event: CalendarEvent; next: boolean; n
         </time>
         <span className="h-full min-h-12 rounded-full" style={{ backgroundColor: meta.rail }} aria-hidden />
         <span className="min-w-0">
-          <strong title={event.clientName} className="block truncate text-sm font-semibold text-[#101828]">{event.clientName}</strong>
+          <span className="flex items-center gap-2"><strong title={event.clientName} className="block truncate text-sm font-semibold text-[#101828]">{event.clientName}</strong>{event.brand ? <BrandChip brand={event.brand} origin={event.brandOrigin ?? event.brand} /> : null}</span>
           <span className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5"><TypeChip type={event.type} /><span title={event.place} className="flex min-w-0 items-center gap-1 truncate text-xs text-[#667085]"><MapPin className="size-3 shrink-0" aria-hidden /><span className="truncate">{event.place}</span></span></span>
           <span className="mt-1.5 hidden items-center gap-2 text-xs text-[#667085] lg:flex xl:hidden"><OwnerChip owner={event.owner} />{event.hostLine}</span>
         </span>
@@ -220,7 +221,7 @@ function MobileEventRow({ event }: { event: CalendarEvent }) {
     <li>
       <Link href={eventLink(event)} data-calendar-join={external ? "true" : undefined} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined} aria-label={`${TIME_FORMAT.format(new Date(event.startsAt))} ${event.type} with ${event.clientName} at ${event.place}, ${event.hostLine}`} className="grid min-h-[88px] grid-cols-[58px_1fr] gap-3 border-b border-black/[.07] bg-white px-3 py-3 last:border-b-0">
         <time className="font-mono text-xs font-semibold text-[#14254A]">{TIME_FORMAT.format(new Date(event.startsAt))}</time>
-        <span className="min-w-0"><strong className="block truncate text-sm text-[#101828]">{event.clientName}</strong><span className="mt-1.5 block"><TypeChip type={event.type} /></span><span className="mt-1.5 flex min-w-0 items-center gap-1 truncate text-xs text-[#667085]"><MapPin className="size-3 shrink-0" /><span className="truncate">{event.place}</span></span></span>
+        <span className="min-w-0"><span className="flex items-center gap-2"><strong className="block truncate text-sm text-[#101828]">{event.clientName}</strong>{event.brand ? <BrandChip brand={event.brand} origin={event.brandOrigin ?? event.brand} /> : null}</span><span className="mt-1.5 block"><TypeChip type={event.type} /></span><span className="mt-1.5 flex min-w-0 items-center gap-1 truncate text-xs text-[#667085]"><MapPin className="size-3 shrink-0" /><span className="truncate">{event.place}</span></span></span>
       </Link>
     </li>
   )
@@ -323,7 +324,7 @@ function WeekGrid({ data, now }: { data: CalendarData; now: Date }) {
                 const blockHeight = Math.max(24, ((Math.max(end, start + 15) - start) / 60) * 52)
                 const meta = typeMeta(event.type)
                 const external = event.canJoin && !!event.joinUrl
-                return <Link key={event.id} href={eventLink(event)} data-calendar-join={external ? "true" : undefined} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined} title={`${event.clientName} · ${event.type} · ${TIME_FORMAT.format(new Date(event.startsAt))}–${TIME_FORMAT.format(new Date(event.endsAt))} · ${event.place} · ${event.hostLine}`} aria-label={`${LONG_DAY_FORMAT.format(new Date(event.startsAt))}, ${TIME_FORMAT.format(new Date(event.startsAt))} to ${TIME_FORMAT.format(new Date(event.endsAt))}, ${event.type} with ${event.clientName}`} className="absolute z-[1] overflow-hidden rounded-r-md border-l-[3px] px-1.5 py-1 text-[10px] shadow-sm focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14254A]" style={{ top, height: blockHeight, left: `${(lane / total) * 100}%`, width: `calc(${100 / total}% - 2px)`, backgroundColor: meta.tint, borderLeftColor: meta.rail, color: meta.text }}><strong className="block truncate">{event.clientName}</strong><span className="block truncate">{event.type} · {TIME_FORMAT.format(new Date(event.startsAt))}</span></Link>
+                return <Link key={event.id} href={eventLink(event)} data-calendar-join={external ? "true" : undefined} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined} title={`${event.clientName} · ${event.type} · ${TIME_FORMAT.format(new Date(event.startsAt))}–${TIME_FORMAT.format(new Date(event.endsAt))} · ${event.place} · ${event.hostLine}`} aria-label={`${LONG_DAY_FORMAT.format(new Date(event.startsAt))}, ${TIME_FORMAT.format(new Date(event.startsAt))} to ${TIME_FORMAT.format(new Date(event.endsAt))}, ${event.type} with ${event.clientName}`} className="absolute z-[1] overflow-hidden rounded-r-md border-l-[3px] px-1.5 py-1 text-[10px] shadow-sm focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14254A]" style={{ top, height: blockHeight, left: `${(lane / total) * 100}%`, width: `calc(${100 / total}% - 2px)`, backgroundColor: meta.tint, borderLeftColor: meta.rail, color: meta.text }}><span className="flex items-center gap-1"><strong className="block truncate">{event.clientName}</strong>{event.brand ? <BrandChip brand={event.brand} origin={event.brandOrigin ?? event.brand} /> : null}</span><span className="block truncate">{event.type} · {TIME_FORMAT.format(new Date(event.startsAt))}</span></Link>
               })}
               {key === today && nowMinutes >= startHour * 60 && nowMinutes <= endHour * 60 && <span aria-label="Current time" className="pointer-events-none absolute inset-x-0 z-[2] border-t border-[#D92D20]" style={{ top: ((nowMinutes - startHour * 60) / 60) * 52 }}><i className="absolute -left-1 -top-1 size-2 rounded-full bg-[#D92D20]" /></span>}
             </div>

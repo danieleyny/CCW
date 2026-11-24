@@ -49,7 +49,7 @@ async function main() {
   const { error: rpcError } = await owner.db.rpc("update_own_profile_avatar", {
     p_kind: "animal",
     p_key: "tiger",
-    p_path: null,
+    p_path: null as never,
   })
   const { data: rpcResult } = await owner.db
     .from("profiles")
@@ -59,9 +59,9 @@ async function main() {
   check(!rpcError && rpcResult?.avatar_kind === "animal" && rpcResult.avatar_key === "tiger", "owner-scoped avatar RPC updates the signed-in profile")
 
   await owner.db.rpc("update_own_profile_avatar", {
-    p_kind: originalAvatar.avatar_kind,
-    p_key: originalAvatar.avatar_key,
-    p_path: originalAvatar.avatar_path,
+    p_kind: originalAvatar.avatar_kind as never,
+    p_key: originalAvatar.avatar_key as never,
+    p_path: originalAvatar.avatar_path as never,
   })
 
   const { error: ownInsert } = await owner.db.storage

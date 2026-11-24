@@ -6,7 +6,9 @@ import { Search } from "lucide-react"
 import { ADMIN_NAV } from "@/config/admin-nav"
 import { searchAdminCases, type AdminSearchResult } from "@/app/admin/search-actions"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
+import { BrandChip } from "@/components/admin/brand-chip"
 import { cn } from "@/lib/utils"
+import type { BrandKey } from "@/config/brands"
 
 export function CommandPalette({ open, onOpenChange, role }: { open: boolean; onOpenChange: (open: boolean) => void; role: string }) {
   const router = useRouter()
@@ -18,7 +20,10 @@ export function CommandPalette({ open, onOpenChange, role }: { open: boolean; on
     () => ADMIN_NAV.filter((item) => (!item.adminOnly || role === "admin") && (!query || item.label.toLowerCase().includes(query.toLowerCase()))),
     [query, role]
   )
-  const rows = [...nav.map((item) => ({ id: `nav-${item.key}`, href: item.href, title: item.label, sub: item.group })), ...results.map((item) => ({ id: `case-${item.caseId}`, href: `/admin/cases/${item.caseId}`, title: item.name, sub: `${item.track} · ${item.stage}` }))]
+  const rows: Array<{ id: string; href: string; title: string; sub: string; brand: BrandKey | null; brandOrigin: BrandKey | null }> = [
+    ...nav.map((item) => ({ id: `nav-${item.key}`, href: item.href, title: item.label, sub: item.group, brand: null, brandOrigin: null })),
+    ...results.map((item) => ({ id: `case-${item.caseId}`, href: `/admin/cases/${item.caseId}`, title: item.name, sub: `${item.track} · ${item.stage}`, brand: item.brand, brandOrigin: item.brandOrigin })),
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -61,7 +66,7 @@ export function CommandPalette({ open, onOpenChange, role }: { open: boolean; on
           {query.trim().length >= 2 && <p className="px-3 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[.18em] text-[#667085]">Pages, clients & cases</p>}
           {rows.map((row, index) => (
             <button key={row.id} type="button" onMouseEnter={() => setSelected(index)} onClick={() => go(row.href)} className={cn("flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left", selected === index && "bg-[#F0F3F8]") }>
-              <span className="min-w-0"><span className="block truncate font-medium text-[#101828]">{row.title}</span><span className="block truncate text-xs capitalize text-[#667085]">{row.sub}</span></span>
+              <span className="min-w-0"><span className="flex items-center gap-2 truncate font-medium text-[#101828]">{row.title}{row.brand ? <BrandChip brand={row.brand} origin={row.brandOrigin ?? row.brand} /> : null}</span><span className="block truncate text-xs capitalize text-[#667085]">{row.sub}</span></span>
               <span aria-hidden className="text-[#98A2B3]">↵</span>
             </button>
           ))}

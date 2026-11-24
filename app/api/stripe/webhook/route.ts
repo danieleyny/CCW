@@ -7,6 +7,10 @@ import { maybeAdvanceStage } from "@/lib/cases/advance"
 import { autoAssignConciergeAgent } from "@/lib/concierge/assign"
 import { getTrainingStripe, trainingStripeEnabled } from "@/lib/training/server"
 import { sendTrainingPaidEmails } from "@/lib/training/email"
+import { sendEmail } from "@/lib/email"
+import { renderEmail } from "@/lib/email/template"
+import { BRANDS } from "@/config/brands"
+import { brandUrl } from "@/lib/brand/origin"
 
 /**
  * Stripe webhook handler — scaffolded behind the STRIPE_ENABLED flag. When
@@ -87,6 +91,26 @@ export async function POST(request: NextRequest) {
     const paymentId = session.metadata?.payment_id
     if (paymentId) {
       const amountOk = await amountMatches(paymentId, session.amount_total)
+      const { data: payment } = await supabase
+        .from("payments")
+        .select("id, case_id, client_id, package_key, brand")
+        .eq("id", paymentId)
+        .maybeSingle()
+      const metadataBrand = session.metadata?.brand ?? "gln"
+      const brandOk = Boolean(payment && metadataBrand === payment.brand)
+      if (payment && !brandOk) {
+        console.error(
+          `[stripe] BRAND MISMATCH payment=${paymentId} expected=${payment.brand} session=${metadataBrand}`
+        )
+        await supabase.from("activity_log").insert({
+          case_id: payment.case_id,
+          client_id: payment.client_id,
+          action: "payment.brand_mismatch",
+          entity: "payment",
+          entity_id: payment.id,
+          detail: { expected: payment.brand, received: metadataBrand, stripe_session_id: session.id },
+        })
+      }
       const { data: paid } = await supabase
         .from("payments")
         .update({
@@ -99,9 +123,122 @@ export async function POST(request: NextRequest) {
         .eq("id", paymentId)
         .select("case_id")
         .maybeSingle()
-      if (paid?.case_id && amountOk) {
+      if (paid?.case_id && amountOk && brandOk && payment) {
+        if (session.metadata?.kind === "brand_upgrade") {
+          const consentText = session.metadata.consent_text
+          const consentedAt = session.metadata.consent_at
+          const actor = session.metadata.actor_profile_id
+          const caseMatches = session.metadata.case_id === payment.case_id
+          if (
+            payment.brand !== "gln" ||
+            payment.package_key !== "full_concierge" ||
+            !consentText ||
+            !consentedAt ||
+            !actor ||
+            !payment.case_id ||
+            !payment.client_id ||
+            !caseMatches
+          ) {
+            console.error(`[stripe] invalid brand-upgrade metadata payment=${payment.id}`)
+            await supabase.from("tasks").insert({
+              case_id: payment.case_id,
+              title: "URGENT: reconcile paid brand upgrade",
+              description: `Stripe payment ${payment.id} succeeded, but its transfer metadata was incomplete or mismatched. Do not move the case until payment and consent are verified.`,
+              priority: 3,
+              status: "open",
+            })
+            return
+          }
+
+          const { data: client } = await supabase
+            .from("clients")
+            .select("profile_id, email, full_name")
+            .eq("id", payment.client_id)
+            .maybeSingle()
+          const { data: transferId, error: transferError } = await supabase.rpc(
+            "transfer_case_brand",
+            {
+              p_actor: actor,
+              p_case_id: payment.case_id,
+              p_consent_text: consentText,
+              p_consented_at: consentedAt,
+              p_payment_id: payment.id,
+              p_reason: "upgrade_to_concierge",
+              p_to: "gln",
+            }
+          )
+          if (transferError) {
+            console.error(`[stripe] brand transfer failed payment=${payment.id}:`, transferError.message)
+            await supabase.from("tasks").insert({
+              case_id: payment.case_id,
+              title: "URGENT: reconcile paid brand upgrade",
+              description: `Stripe payment ${payment.id} succeeded, but the case transfer failed. Error: ${transferError.message}`,
+              priority: 3,
+              status: "open",
+            })
+            return
+          }
+
+          await supabase.from("cases").update({ service_mode: "concierge" }).eq("id", payment.case_id)
+          await autoAssignConciergeAgent(supabase, payment.case_id)
+          await supabase.from("activity_log").insert({
+            actor,
+            case_id: payment.case_id,
+            client_id: payment.client_id,
+            action: "brand.upgraded",
+            entity: "brand_transfer",
+            entity_id: transferId,
+            detail: { from: "fl", to: "gln", payment_id: payment.id },
+          })
+          if (client?.profile_id) {
+            await supabase.from("notifications").insert({
+              recipient: client.profile_id,
+              case_id: payment.case_id,
+              kind: "info",
+              title: "Upgraded from Firearm License NYC",
+              body: "Your case now continues with Gun License NYC and the Full Concierge team.",
+              link: "/portal/concierge",
+            })
+          }
+          if (client?.email) {
+            const flConfirmation = renderEmail({
+              brand: "fl",
+              heading: "Your upgrade is confirmed",
+              paragraphs: [
+                "Your case, documents and messages now continue with Gun License NYC for Full Concierge support.",
+                "Use the same email and password. You will sign in once on the Gun License NYC site.",
+              ],
+              cta: { label: "Continue to Gun License NYC", url: brandUrl("gln", "/auth/login") },
+              recipientReason: "You received this because you upgraded your Firearm License NYC case.",
+            })
+            const glnWelcome = renderEmail({
+              brand: "gln",
+              heading: "Welcome to Full Concierge",
+              paragraphs: [
+                `Hi ${client.full_name || "there"}, your transferred case is ready with Gun License NYC.`,
+                "Sign in with the same email and password. You still review and submit your own NYPD application; our team prepares and organizes the materials with you.",
+              ],
+              cta: { label: "Sign in to Gun License NYC", url: brandUrl("gln", "/auth/login") },
+              recipientReason: "You received this because you requested an upgrade to Gun License NYC.",
+            })
+            await Promise.all([
+              sendEmail({ brand: "fl", to: client.email, subject: "Your upgrade is confirmed", ...flConfirmation }),
+              sendEmail({ brand: "gln", to: client.email, subject: `Welcome to ${BRANDS.gln.name} Full Concierge`, ...glnWelcome }),
+            ])
+          }
+          return
+        }
+        if (payment.brand === "fl" && payment.package_key === "self_guided") {
+          await supabase
+            .from("cases")
+            .update({ service_mode: "self_guided" })
+            .eq("id", paid.case_id)
+            .is("service_mode", null)
+        }
         await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "payment.paid")
-        await autoAssignConciergeAgent(supabase, paid.case_id)
+        if (payment.brand === "gln" && payment.package_key === "full_concierge") {
+          await autoAssignConciergeAgent(supabase, paid.case_id)
+        }
       }
     }
 
@@ -146,6 +283,28 @@ export async function POST(request: NextRequest) {
           .update({ status: "failed" })
           .eq("booking_id", bookingId)
           .eq("status", "pending")
+      }
+      break
+    }
+    case "checkout.session.expired": {
+      const session = event.data.object
+      const paymentId = session.metadata?.payment_id
+      if (paymentId) {
+        const { data: payment } = await supabase
+          .from("payments")
+          .select("id, case_id, client_id")
+          .eq("id", paymentId)
+          .maybeSingle()
+        if (payment) {
+          await supabase.from("activity_log").insert({
+            case_id: payment.case_id,
+            client_id: payment.client_id,
+            action: "payment.checkout_expired",
+            entity: "payment",
+            entity_id: payment.id,
+            detail: { stripe_session_id: session.id },
+          })
+        }
       }
       break
     }
@@ -219,13 +378,15 @@ export async function POST(request: NextRequest) {
       const query = supabase
         .from("payments")
         .update({ status: "paid", paid_at: new Date().toISOString() })
-        .select("case_id")
+        .select("case_id, brand, package_key")
       const { data: paid } = paymentId
         ? await query.eq("id", paymentId).maybeSingle()
         : await query.eq("stripe_invoice_id", invoice.id).maybeSingle()
       if (paid?.case_id && amountOk) {
         await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "invoice.paid")
-        await autoAssignConciergeAgent(supabase, paid.case_id)
+        if (paid.brand === "gln" && paid.package_key === "full_concierge") {
+          await autoAssignConciergeAgent(supabase, paid.case_id)
+        }
       }
       break
     }

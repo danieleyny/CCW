@@ -24,6 +24,7 @@ import type {
 } from "@/lib/admin/reports"
 import { formatDuration } from "@/lib/admin/reports-model"
 import { cn } from "@/lib/utils"
+import { persistAdminBrandFilter } from "@/lib/admin/brand-filter-client"
 
 type ReportsData = OverviewReportData | BottlenecksReportData | ServiceLevelsReportData
 
@@ -46,6 +47,7 @@ function queryHref(tab: ReportTab, filters: ReportFilters, updates: Record<strin
   if (filters.range !== "90") params.set("range", filters.range)
   if (filters.service !== "all") params.set("service", filters.service)
   if (filters.track !== "all") params.set("track", filters.track)
+  if (filters.brand !== "all") params.set("brand", filters.brand)
   if (!filters.compare) params.set("compare", "0")
   if (filters.showHidden) params.set("showHidden", "1")
   for (const [key, value] of Object.entries(updates)) {
@@ -66,6 +68,7 @@ function csvHref(data: ReportsData) {
     ["Range", data.rangeLabel],
     ["Service", data.filters.service],
     ["Track", data.filters.track],
+    ["Brand", data.filters.brand],
     ...data.exportRows,
   ]
   const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n")
@@ -94,11 +97,22 @@ function FilterBar({ data }: { data: ReportsData }) {
               </Link>
             ))}
           </div>
-          <form className="hidden items-center gap-2 md:flex" action="/admin/reports">
+          <form
+            className="hidden items-center gap-2 md:flex"
+            action="/admin/reports"
+            onSubmit={(event) => {
+              const value = new FormData(event.currentTarget).get("brand")
+              persistAdminBrandFilter(value === "gln" || value === "fl" ? value : "all")
+            }}
+          >
             {data.tab !== "overview" ? <input type="hidden" name="tab" value={data.tab} /> : null}
             {data.filters.range !== "90" ? <input type="hidden" name="range" value={data.filters.range} /> : null}
             {!data.filters.compare ? <input type="hidden" name="compare" value="0" /> : null}
             {data.filters.showHidden ? <input type="hidden" name="showHidden" value="1" /> : null}
+            <label className="sr-only" htmlFor="reports-brand">Brand</label>
+            <select id="reports-brand" name="brand" defaultValue={data.filters.brand} className="h-9 rounded-lg border border-[var(--hairline)] bg-[var(--surface-1)] px-3 text-xs text-[var(--text-hi)]">
+              <option value="all">All brands</option><option value="gln">Gun License NYC</option><option value="fl">Firearm License NYC</option>
+            </select>
             <label className="sr-only" htmlFor="reports-service">Service</label>
             <select id="reports-service" name="service" defaultValue={data.filters.service} className="h-9 rounded-lg border border-[var(--hairline)] bg-[var(--surface-1)] px-3 text-xs text-[var(--text-hi)]">
               <option value="all">All services</option><option value="concierge">Full Concierge</option><option value="self_guided">Self-guided</option>
@@ -133,6 +147,22 @@ function FilterBar({ data }: { data: ReportsData }) {
           <Button asChild variant="outline" size="sm"><a href={csvHref(data)} download={`reports-${data.tab}-${data.filters.range}.csv`}><Download className="size-4" />Export</a></Button>
         </div>
       </div>
+      <nav aria-label="Report brand" className="mt-3 grid grid-cols-3 rounded-xl bg-[var(--surface-2)] p-1 md:hidden">
+        {(["all", "gln", "fl"] as const).map((brand) => (
+          <Link
+            key={brand}
+            href={queryHref(data.tab, data.filters, { brand: brand === "all" ? null : brand })}
+            onClick={() => persistAdminBrandFilter(brand)}
+            aria-current={data.filters.brand === brand ? "page" : undefined}
+            className={cn(
+              "rounded-lg px-3 py-2 text-center text-[11px] font-semibold text-[var(--text-mid)]",
+              data.filters.brand === brand && "bg-[var(--surface-1)] text-[var(--text-hi)] shadow-sm",
+            )}
+          >
+            {brand === "all" ? "All brands" : brand.toUpperCase()}
+          </Link>
+        ))}
+      </nav>
       {data.includingHidden ? <div className="mt-3 inline-flex rounded-full border border-[var(--warn)]/30 bg-[var(--warn)]/8 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--warn)]">Including test data</div> : null}
     </div>
   )
@@ -214,6 +244,10 @@ function PartialErrors({ errors }: { errors: string[] }) {
 function Overview({ data }: { data: OverviewReportData }) {
   return <>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">{data.metrics.map((metric, index) => <MetricCard key={metric.label} metric={metric} index={index} />)}</div>
+    <section className="mt-5 grid gap-3 md:grid-cols-3" aria-label="Brand performance">
+      {data.brands.map((brand) => <article key={brand.key} className="rounded-2xl border border-[var(--hairline)] bg-[var(--surface-1)] p-5 shadow-sm"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-[var(--text-low)]">{brand.key.toUpperCase()}</p><h2 className="mt-1 text-base font-semibold text-[var(--text-hi)]">{brand.label}</h2><dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-[var(--text-low)]">New leads</dt><dd className="mt-1 font-mono text-lg font-semibold">{brand.leads}</dd></div><div><dt className="text-[var(--text-low)]">Became paid</dt><dd className="mt-1 font-mono text-lg font-semibold">{brand.paid}</dd></div><div><dt className="text-[var(--text-low)]">Collected</dt><dd className="mt-1 font-mono text-lg font-semibold">{money(brand.collectedCents)}</dd></div><div><dt className="text-[var(--text-low)]">Cases in view</dt><dd className="mt-1 font-mono text-lg font-semibold">{brand.stageCounts}</dd></div></dl></article>)}
+      <article className="rounded-2xl border border-[var(--hairline)] bg-[var(--surface-1)] p-5 shadow-sm"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-[var(--text-low)]">Cross-brand</p><h2 className="mt-1 text-base font-semibold text-[var(--text-hi)]">FL → GLN upgrades</h2><p className="mt-4 font-[family-name:var(--font-title)] text-3xl font-semibold">{data.upgrades.count}</p><p className="mt-1 text-xs text-[var(--text-mid)]">{money(data.upgrades.collectedCents)} upgrade revenue</p></article>
+    </section>
     <div className="mt-5 grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
       {data.tooLittleData ? <NotEnough tab="overview" filters={data.filters} /> : <Funnel rows={data.funnel} rangeLabel={data.rangeLabel} />}
       <div className="hidden space-y-5 md:block">

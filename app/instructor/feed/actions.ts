@@ -51,6 +51,7 @@ export async function expressInterest(formData: FormData) {
       })
     }
     await notifyClient({
+        brand: "gln",
       to: client?.email,
       subject: "A verified instructor is interested in your Gun License NYC request",
       body: `Hi ${client?.full_name ?? ""}, a verified instructor is interested. Open your portal to review who's interested and choose.`,

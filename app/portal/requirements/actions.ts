@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logActivity } from "@/lib/activity"
 import { sendEmail } from "@/lib/email"
-import { brand } from "@/config/brand"
+import { BRANDS } from "@/config/brands"
 import { getMyCase } from "@/lib/portal"
 import { getSignaturePng, isReasonableSignature } from "@/lib/signatures"
 import { actionFor, isSignable } from "@/lib/requirements/actions"
@@ -1048,7 +1048,8 @@ export async function requestTrainingInstructor(): Promise<{ ok?: true; error?: 
     `Requested: ${new Date().toISOString()}`,
   ]
   await sendEmail({
-    to: brand.contact.email,
+    brand: myCase.brand,
+    to: BRANDS[myCase.brand].supportEmail,
     subject: `Training request — ${myCase.client.full_name}`,
     text: trainingLines.join("\n"),
     html: trainingLines.map((l) => `<p>${l}</p>`).join(""),
@@ -1074,7 +1075,8 @@ export async function requestDmvHelp(): Promise<{ ok?: true; error?: string }> {
     `Requested help with the lifetime driving abstract on ${new Date().toISOString()}`,
   ]
   await sendEmail({
-    to: brand.contact.email,
+    brand: myCase.brand,
+    to: BRANDS[myCase.brand].supportEmail,
     subject: `DMV abstract help — ${myCase.client.full_name}`,
     text: dmvLines.join("\n"),
     html: dmvLines.map((l) => `<p>${l}</p>`).join(""),
