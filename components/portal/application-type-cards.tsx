@@ -25,6 +25,7 @@ import {
 import { StickyActionBar } from "@/components/portal/ui/sticky-action-bar"
 import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
 import type { Messages } from "@/lib/i18n/messages"
+import { trackEvent } from "@/lib/analytics"
 
 type Card = {
   id: ApplicantSelectableApplicationType
@@ -110,7 +111,18 @@ export function ApplicationTypeCards({
   const showAction = Boolean(selectedCard && (context === "setup" || switching || !savedCard))
 
   return (
-    <form action={action} className={context === "license" ? "license-v2-path-form" : undefined}>
+    <form
+      action={action}
+      className={context === "license" ? "license-v2-path-form" : undefined}
+      onSubmit={() => {
+        if (!selected) return
+        trackEvent("license_path_selected", {
+          application_type: selected,
+          selection_context: context,
+          switching_existing_path: switching,
+        })
+      }}
+    >
       <input type="hidden" name="returnTo" value={context === "license" ? "license" : "choose-path"} />
       <div className="portal-choice-grid" role="radiogroup" aria-label={t.radioLabel}>
         {cards.map((card) => (
