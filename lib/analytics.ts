@@ -42,6 +42,18 @@ export type ConversionEvent =
   | "admin_test_data_deleted" // admin completed typed test-data deletion
   | "admin_training_viewed" // admin opened the class-and-registration workspace
   | "admin_training_class_created" // admin created a class or duplicated one
+  | "training_interest_view"
+  | "training_interest_submit"
+  | "training_interest_success"
+  | "sign_up"
+  | "service_path_selected"
+  | "license_path_selected"
+  | "intake_complete"
+  | "begin_checkout"
+  | "generate_lead"
+  | "purchase"
+  | "intro_call_opened"
+  | "intro_call_booked"
 
 export function trackEvent(event: ConversionEvent, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return

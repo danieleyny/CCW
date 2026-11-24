@@ -137,7 +137,7 @@ export async function signUp(
   // send them to sign in (they'll confirm via the email link first).
   // The first thing a new applicant sees is the licence-category decision.
   // Service level comes next, after the system knows which checklist is truthful.
-  if (data.session) redirect("/portal/license-path")
+  if (data.session) redirect("/portal/license-path?new=1")
   redirect("/auth/login")
 }
 

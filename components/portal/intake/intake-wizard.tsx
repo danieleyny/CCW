@@ -56,6 +56,7 @@ import {
   isPremisesApplication,
   type ApplicationType,
 } from "@/lib/application-types"
+import { trackEvent } from "@/lib/analytics"
 
 interface Disclosure {
   id: string
@@ -228,6 +229,16 @@ export function IntakeWizard({
       }
       setStepErrors([])
       setGuardOverride(res.guard)
+      trackEvent("intake_complete", {
+        license_path:
+          a.residence === "non_resident"
+            ? a.nycCarryIntent === "armed_assignment"
+              ? "special_carry_guard"
+              : "special_carry"
+            : a.licenseType === "premises"
+              ? "premises"
+              : "concealed_carry",
+      })
       toast.success("Your personalized requirements were generated.")
       router.refresh()
     } catch {

@@ -10,6 +10,7 @@ import { StickyActionBar } from "@/components/portal/ui/sticky-action-bar"
 import { isPremiseResidence, type ApplicationType } from "@/lib/application-types"
 import type { ServicePackage } from "@/lib/packages"
 import { usePortalI18n } from "@/components/shared/portal-i18n-provider"
+import { trackEvent } from "@/lib/analytics"
 
 type PathId = "self_guided" | "full_concierge"
 
@@ -86,7 +87,20 @@ export function ChoosePathCards({
 
   return (
     <div className="portal-plan-picker">
-      <form action={action}>
+      <form
+        action={action}
+        onSubmit={() => {
+          if (!selectedPackage) return
+          trackEvent("service_path_selected", { package_key: selectedPackage.key })
+          if (selectedPackage.key === "full_concierge" && stripeEnabled) {
+            trackEvent("begin_checkout", {
+              package_key: selectedPackage.key,
+              payment_mode: "full",
+              transport_type: "beacon",
+            })
+          }
+        }}
+      >
         <input type="hidden" name="mode" value="full" />
         <div className="portal-plan-grid" role="radiogroup" aria-label={t.servicePlan}>
           {cards.map((pkg) => {

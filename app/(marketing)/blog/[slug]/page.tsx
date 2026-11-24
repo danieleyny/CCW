@@ -110,12 +110,20 @@ export default async function Article({
           <div className="flex items-center gap-3">
             <Badge variant="outline">{post.meta.tag}</Badge>
             <span className="font-mono text-xs text-text-low">
-              {formatDate(post.meta.date)} · {post.meta.readingMinutes} min read
+              {post.meta.updated ? `Updated ${formatDate(post.meta.updated)}` : formatDate(post.meta.date)} · {post.meta.readingMinutes} min read
             </span>
           </div>
           <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
             {post.meta.title}
           </h1>
+          <p className="mt-4 text-sm text-text-mid">
+            By {post.meta.author} · Reviewed against cited primary sources before publication
+          </p>
+          {post.meta.automationAssisted && (
+            <p className="mt-2 text-xs text-text-low">
+              Automation assisted with research organization; a person reviewed the facts, sources and final wording.
+            </p>
+          )}
         </div>
       </section>
 

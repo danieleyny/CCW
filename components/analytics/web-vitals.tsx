@@ -1,6 +1,7 @@
 "use client"
 
 import { useReportWebVitals } from "next/web-vitals"
+import { isCanonicalAnalyticsHost, shouldTrackPath } from "@/lib/analytics-config"
 
 /**
  * SEO/CWV monitoring — reports Core Web Vitals (LCP, CLS, INP, FCP, TTFB) to
@@ -10,6 +11,7 @@ import { useReportWebVitals } from "next/web-vitals"
  */
 export function WebVitals() {
   useReportWebVitals((metric) => {
+    if (!isCanonicalAnalyticsHost(window.location.hostname) || !shouldTrackPath(window.location.pathname)) return
     const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
     if (typeof gtag !== "function") return
     gtag("event", metric.name, {

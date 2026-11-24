@@ -4,6 +4,7 @@ import { useActionState } from "react"
 import { CheckCircle2, Loader2 } from "lucide-react"
 import { startCheckout, type EnrollResult } from "@/app/portal/enroll/actions"
 import { Button } from "@/components/ui/button"
+import { trackEvent } from "@/lib/analytics"
 
 /** V3-P3.1 — buy buttons: Checkout when Stripe is on, invoice request when dark. */
 export function EnrollButtons({
@@ -38,7 +39,16 @@ export function EnrollButtons({
       : "Request invoice"
   return (
     <div className="mt-4 space-y-2">
-      <form action={action}>
+      <form
+        action={action}
+        onSubmit={() =>
+          trackEvent("begin_checkout", {
+            package_key: packageKey,
+            payment_mode: "full",
+            transport_type: "beacon",
+          })
+        }
+      >
         <input type="hidden" name="packageKey" value={packageKey} />
         <input type="hidden" name="mode" value="full" />
         <Button
@@ -53,7 +63,16 @@ export function EnrollButtons({
         </Button>
       </form>
       {!custom && depositCents > 0 && stripeOn && (
-        <form action={action}>
+        <form
+          action={action}
+          onSubmit={() =>
+            trackEvent("begin_checkout", {
+              package_key: packageKey,
+              payment_mode: "deposit",
+              transport_type: "beacon",
+            })
+          }
+        >
           <input type="hidden" name="packageKey" value={packageKey} />
           <input type="hidden" name="mode" value="deposit" />
           <Button type="submit" disabled={pending} variant="ghost" size="sm" className="w-full text-text-mid">

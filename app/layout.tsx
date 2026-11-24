@@ -7,6 +7,7 @@ import { BrandStyle } from "@/config/brand-style";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { WebVitals } from "@/components/analytics/web-vitals";
+import { FunnelSignals } from "@/components/analytics/funnel-signals";
 
 // The marketing and app surfaces share one deliberately small type system.
 // next/font self-hosts these files in the deployment, avoiding browser requests
@@ -118,6 +119,7 @@ export default function RootLayout({
           <>
             <GoogleAnalytics />
             <WebVitals />
+            <FunnelSignals />
           </>
         )}
       </body>

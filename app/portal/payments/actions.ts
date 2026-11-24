@@ -60,7 +60,8 @@ export async function payPending(paymentId: string): Promise<CheckoutResult> {
         quantity: 1,
       },
     ],
-    success_url: `${base}/portal/payments?status=success`,
+    integration_identifier: "ccw_pending_hzrtpvwn",
+    success_url: `${base}/portal?enrolled=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/portal/payments?status=canceled`,
     metadata: { payment_id: payment.id, case_id: payment.case_id ?? "" },
   })

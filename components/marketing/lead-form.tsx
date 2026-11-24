@@ -63,7 +63,10 @@ export function LeadForm({
   // Conversion event on a successful lead capture (contact page + checklist
   // capture both flow through here). `source` distinguishes them in GA4.
   useEffect(() => {
-    if (state.ok) trackEvent("contact_submitted", { source })
+    if (state.ok) {
+      trackEvent("contact_submitted", { source })
+      trackEvent("generate_lead", { source })
+    }
   }, [state.ok, source])
 
   useEffect(() => {

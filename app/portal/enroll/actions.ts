@@ -166,7 +166,7 @@ export async function startCheckout(_prev: EnrollResult, formData: FormData): Pr
       case_id: myCase.id,
       ...(discount ? { discount_code_label: discount.label } : {}),
     },
-    success_url: `${base}/portal?enrolled=1`,
+    success_url: `${base}/portal?enrolled=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/portal/enroll?canceled=1`,
   })
   await admin.from("payments").update({ stripe_session_id: session.id }).eq("id", payment.id)

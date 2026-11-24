@@ -78,47 +78,74 @@ export async function POST(request: NextRequest) {
     return true
   }
 
+  async function reconcileCheckout(session: Stripe.Checkout.Session): Promise<void> {
+    // Delayed methods emit checkout.session.completed while still unpaid. Never
+    // grant access until Stripe says money actually succeeded; the later
+    // async_payment_succeeded event re-enters this same idempotent function.
+    if (session.payment_status === "unpaid") return
+
+    const paymentId = session.metadata?.payment_id
+    if (paymentId) {
+      const amountOk = await amountMatches(paymentId, session.amount_total)
+      const { data: paid } = await supabase
+        .from("payments")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          invoice_url: session.url ?? null,
+          stripe_payment_intent:
+            typeof session.payment_intent === "string" ? session.payment_intent : null,
+        })
+        .eq("id", paymentId)
+        .select("case_id")
+        .maybeSingle()
+      if (paid?.case_id && amountOk) {
+        await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "payment.paid")
+        await autoAssignConciergeAgent(supabase, paid.case_id)
+      }
+    }
+
+    // Marketplace booking deposit (Connect) — reconcile by booking_id.
+    const bookingId = session.metadata?.booking_id
+    if (bookingId) {
+      const { data: deposit } = await supabase
+        .from("payments")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          stripe_payment_intent:
+            typeof session.payment_intent === "string" ? session.payment_intent : null,
+        })
+        .eq("booking_id", bookingId)
+        .eq("status", "pending")
+        .select("case_id")
+        .maybeSingle()
+      if (deposit?.case_id) {
+        await maybeAdvanceStage(supabase, deposit.case_id, "training_scheduled", "booking.deposit_paid")
+      }
+    }
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
+      await reconcileCheckout(event.data.object)
+      break
+    }
+    case "checkout.session.async_payment_succeeded": {
+      await reconcileCheckout(event.data.object)
+      break
+    }
+    case "checkout.session.async_payment_failed": {
       const session = event.data.object
       const paymentId = session.metadata?.payment_id
-      if (paymentId) {
-        const amountOk = await amountMatches(paymentId, session.amount_total)
-        const { data: paid } = await supabase
-          .from("payments")
-          .update({
-            status: "paid",
-            paid_at: new Date().toISOString(),
-            invoice_url: session.url ?? null,
-          })
-          .eq("id", paymentId)
-          .select("case_id")
-          .maybeSingle()
-        // Paying is a milestone the customer can feel; the stage should reflect
-        // it without waiting for a staffer. Idempotent, so webhook retries are
-        // harmless. Never advance on a short payment (SEC-23).
-        if (paid?.case_id && amountOk) {
-          await maybeAdvanceStage(supabase, paid.case_id, "signed_up_paid", "payment.paid")
-          await autoAssignConciergeAgent(supabase, paid.case_id)
-        }
-      }
-      // Marketplace booking deposit (Connect) — reconcile by booking_id.
+      if (paymentId) await supabase.from("payments").update({ status: "failed" }).eq("id", paymentId)
       const bookingId = session.metadata?.booking_id
       if (bookingId) {
-        const { data: deposit } = await supabase
+        await supabase
           .from("payments")
-          .update({
-            status: "paid",
-            paid_at: new Date().toISOString(),
-            stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
-          })
+          .update({ status: "failed" })
           .eq("booking_id", bookingId)
           .eq("status", "pending")
-          .select("case_id")
-          .maybeSingle()
-        if (deposit?.case_id) {
-          await maybeAdvanceStage(supabase, deposit.case_id, "training_scheduled", "booking.deposit_paid")
-        }
       }
       break
     }
