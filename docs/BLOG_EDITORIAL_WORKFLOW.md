@@ -4,7 +4,7 @@ The blog may publish frequently, but it must never become an automated copy mach
 
 ## Safe daily workflow
 
-1. Select one news report, official rule update, or recurring applicant question.
+1. Open `/admin/seo` and select the highest-priority useful question, verified official update, or refresh item. Add new opportunities there as they arise.
 2. Create a private scaffold with `pnpm blog:draft -- --slug … --title … --source https://…`.
 3. Write an original explanation. Link the original report; never copy its text, headline structure, photos, or distinctive framing.
 4. Add primary authority for every licensing or legal rule. A news report is not the authority for what the law requires.
@@ -12,6 +12,7 @@ The blog may publish frequently, but it must never become an automated copy mach
 6. Run a human fact-check and legal-boundary review. Case-specific legal judgment is routed to a New York-licensed attorney.
 7. Move the approved file from `content/blog-drafts/` to `content/blog/`, change `status` to `published`, and add an honest `updated` date only when the substance is re-reviewed.
 8. Build and inspect the article before deployment. Publication automatically adds it to `/blog`, the sitemap, RSS, Article structured data and the guide collection schema.
+9. Return to `/admin/seo`, record the live URL, and mark the queue item published. The desk will not allow a review-required item to be marked published until its legal-boundary review has been recorded.
 
 ## Never publish
 
@@ -25,3 +26,5 @@ The blog may publish frequently, but it must never become an automated copy mach
 ## Recommended cadence
 
 Quality beats daily volume. Aim for two or three reviewed pieces per week: one official-process update, one answer to a real applicant question, and—only when it has genuine relevance—one original analysis of a reported event.
+
+The operating rhythm is Monday to choose/create and Thursday to review/publish. A recurring reminder email goes to `gunlicensenyc@gmail.com` on both mornings and links directly to the SEO desk.

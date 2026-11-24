@@ -4235,6 +4235,91 @@ export type Database = {
           },
         ]
       }
+      seo_content_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_on: string | null
+          id: string
+          kind: string
+          legal_reviewed_at: string | null
+          legal_reviewed_by: string | null
+          needs_legal_review: boolean
+          priority: number
+          published_url: string | null
+          slug: string
+          source_urls: Json
+          status: string
+          summary: string | null
+          target_query: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_on?: string | null
+          id?: string
+          kind?: string
+          legal_reviewed_at?: string | null
+          legal_reviewed_by?: string | null
+          needs_legal_review?: boolean
+          priority?: number
+          published_url?: string | null
+          slug: string
+          source_urls?: Json
+          status?: string
+          summary?: string | null
+          target_query?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_on?: string | null
+          id?: string
+          kind?: string
+          legal_reviewed_at?: string | null
+          legal_reviewed_by?: string | null
+          needs_legal_review?: boolean
+          priority?: number
+          published_url?: string | null
+          slug?: string
+          source_urls?: Json
+          status?: string
+          summary?: string | null
+          target_query?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_content_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_content_items_legal_reviewed_by_fkey"
+            columns: ["legal_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_content_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_packages: {
         Row: {
           active: boolean

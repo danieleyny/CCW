@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookOpenText,
   CalendarDays,
   ConciergeBell,
   CreditCard,
@@ -22,6 +23,7 @@ export type AdminNavKey =
   | "today" | "inbox" | "calendar" | "cases" | "pipeline" | "queue"
   | "concierge" | "payments" | "training" | "instructors" | "requirements"
   | "legal" | "privacy" | "reports"
+  | "seo"
 
 export interface AdminNavItem {
   key: AdminNavKey
@@ -49,6 +51,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { key: "legal", href: "/admin/legal", label: "Rule review", group: "Governance", icon: Scale, adminOnly: true, adminOnlyBadge: true },
   { key: "privacy", href: "/admin/privacy", label: "Privacy", group: "Governance", icon: ShieldCheck },
   { key: "reports", href: "/admin/reports", label: "Reports", group: "Governance", icon: BarChart3 },
+  { key: "seo", href: "/admin/seo", label: "SEO desk", group: "Governance", icon: BookOpenText, adminOnly: true },
 ]
 
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = ["Work", "Cases", "Operations", "Governance"]
