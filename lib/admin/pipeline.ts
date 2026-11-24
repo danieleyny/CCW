@@ -16,6 +16,12 @@ import { paidCaseIds } from "@/lib/packages"
 import { deriveCaseOwnership, type CaseMoveOwner } from "@/lib/admin/ownership"
 import { duplicateCaseMetadata } from "@/lib/admin/case-visibility"
 import { accessCodeLabel } from "@/lib/admin/payments"
+import {
+  interestedUnconvertedLead,
+  INTERESTED_LEAD_LAST_STEP,
+  INTERESTED_LEAD_NEXT_STEP,
+  LEAD_CALL_OUTCOME_ACTION,
+} from "@/lib/admin/lead-status"
 
 type DB = SupabaseClient<Database>
 
@@ -344,6 +350,7 @@ export async function loadPipeline(
     bookingsResult,
     appointmentsResult,
     introsResult,
+    leadOutcomesResult,
     requirementsResult,
     intakesResult,
     agreementsResult,
@@ -360,6 +367,12 @@ export async function loadPipeline(
     db.from("bookings").select("case_id, status, starts_at, type").in("case_id", ids).neq("status", "cancelled"),
     db.from("appointments").select("case_id, type, scheduled_at").in("case_id", ids).gte("scheduled_at", now.toISOString()).order("scheduled_at"),
     db.from("intro_calls").select("case_id, status, scheduled_at").in("case_id", ids),
+    db
+      .from("activity_log")
+      .select("case_id, detail, created_at")
+      .eq("action", LEAD_CALL_OUTCOME_ACTION)
+      .in("case_id", ids)
+      .order("created_at", { ascending: false }),
     db.from("case_requirements").select("case_id, status").in("case_id", ids).in("status", ["pending", "rejected"]),
     db.from("intake_sessions").select("case_id, current_step, completed_at, updated_at").in("case_id", ids),
     db.from("case_agreements").select("case_id, kind, version").in("case_id", ids),
@@ -369,7 +382,7 @@ export async function loadPipeline(
     ["Comp payments", compPayments], ["Pending payments", pendingPayments], ["Staff", staffResult], ["Messages", messagesResult],
     ["Documents", documentsResult], ["Tasks", tasksResult], ["References", referencesResult],
     ["Cohabitants", cohabitantsResult], ["Bookings", bookingsResult], ["Appointments", appointmentsResult],
-    ["Intro calls", introsResult], ["Requirements", requirementsResult], ["Intake", intakesResult],
+    ["Intro calls", introsResult], ["Lead call outcomes", leadOutcomesResult], ["Requirements", requirementsResult], ["Intake", intakesResult],
     ["Agreements", agreementsResult],
   ] as const) responseError(result, label)
 
@@ -444,6 +457,14 @@ export async function loadPipeline(
     }
   }
   const intros = new Map((introsResult.data ?? []).map((intro) => [intro.case_id, intro]))
+  const interestedLeads = new Set<string>()
+  for (const outcome of leadOutcomesResult.data ?? []) {
+    if (!outcome.case_id || interestedLeads.has(outcome.case_id) || !interestedUnconvertedLead(outcome.detail)) continue
+    interestedLeads.add(outcome.case_id)
+    const rows = activity.get(outcome.case_id) ?? []
+    rows.push(outcome.created_at)
+    activity.set(outcome.case_id, rows)
+  }
 
   const requirementCount = new Map<string, number>()
   for (const requirement of requirementsResult.data ?? []) requirementCount.set(requirement.case_id, (requirementCount.get(requirement.case_id) ?? 0) + 1)
@@ -470,6 +491,7 @@ export async function loadPipeline(
     const cohabitantCount = pendingCohabitants.get(c.id) ?? 0
     const booking = requestedBooking.get(c.id)
     const intro = intros.get(c.id)
+    const interestedAfterCall = interestedLeads.has(c.id) && !paid
     const agreementsComplete = agreementsCurrentFor(agreementRows.get(c.id) ?? []).complete
     const intake = intakes.get(c.id)
 
@@ -488,6 +510,7 @@ export async function loadPipeline(
 
     let applicantNextStep = defaultApplicantStep(c, openRequirements, intake?.current_step ?? null, !!intake?.completed_at)
     if (c.serviceMode === "concierge" && !agreementsComplete) applicantNextStep = "Sign service agreements"
+    if (interestedAfterCall) applicantNextStep = INTERESTED_LEAD_NEXT_STEP
     const ownership = deriveCaseOwnership(
       { stage: c.stage, licenseIssuedOn: c.licenseIssuedOn, licenseExpiresOn: c.licenseExpiresOn },
       { nextAppointment: nextAppointment.get(c.id), staffNextStep, thirdPartyNextStep, applicantNextStep }
@@ -501,12 +524,13 @@ export async function loadPipeline(
     const pendingAmount = pending
       ? new Intl.NumberFormat("en-US", { style: "currency", currency: pending.currency.toUpperCase(), maximumFractionDigits: 0 }).format(pending.amount_cents / 100)
       : null
-    const lastStep: Record<LeadGroupKey, string> = {
+    const lastStepByGroup: Record<LeadGroupKey, string> = {
       new: c.stage === "lead" ? "Signed up" : stageMeta(c.stage).short,
       screened: "Eligibility checked",
       package: serviceInfo.key ? `${serviceInfo.label} selected` : "Payment started",
       quiet: "No recent activity",
     }
+    const lastStep = interestedAfterCall ? INTERESTED_LEAD_LAST_STEP : lastStepByGroup[group]
     const firstProgressStage = stageIndex("signed_up_paid")
     const progressStep = Math.max(1, Math.min(11, stageIndex(c.stage) - firstProgressStage + 1))
 
@@ -533,7 +557,7 @@ export async function loadPipeline(
       duplicateLabel: duplicate.label,
       pendingAmount,
       compLabel: compByCase.get(c.id) ?? null,
-      lastStep: lastStep[group],
+      lastStep,
       progressStep,
       classification: paid ? "active" : "leads",
       phase: activePhase(c.stage),
