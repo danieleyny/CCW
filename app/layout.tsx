@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Hanken_Grotesk, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import "../styles/themes.css";
 import { brand } from "@/config/brand";
@@ -119,7 +120,9 @@ export default function RootLayout({
           <>
             <GoogleAnalytics />
             <WebVitals />
-            <FunnelSignals />
+            <Suspense fallback={null}>
+              <FunnelSignals />
+            </Suspense>
           </>
         )}
       </body>
