@@ -462,11 +462,12 @@ export const QUESTIONNAIRES: Record<string, Questionnaire> = {
           (ctx.intake.cohabitants ?? []).map((c) => ({
             name: c.name ?? "",
             relationship: c.relationship ?? "",
+            email: c.email ?? "",
           })),
         fields: [
           { name: "name", label: "Full name", type: "text", required: true },
           { name: "relationship", label: "Relationship to you", type: "text", required: true },
-          { name: "email", label: "Email (for their private link)", type: "text" },
+          { name: "email", label: "Email (we send their private link automatically)", type: "text", required: true },
         ],
       },
     ],

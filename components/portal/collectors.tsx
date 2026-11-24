@@ -31,6 +31,7 @@ export interface CohabitantRow {
   id: string
   name: string
   relationship: string | null
+  contact_email: string | null
   affidavit_status: string
 }
 
@@ -45,6 +46,52 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
       disabled={pending}
       onClick={() => start(onDelete)}
       aria-label={messages.ui.remove}
+    >
+      <Trash2 className="size-4" />
+    </Button>
+  )
+}
+
+function RemoveCohabitantButton({
+  cohabitant,
+  caseId,
+}: {
+  cohabitant: Pick<CohabitantRow, "id" | "name">
+  caseId: string
+}) {
+  const [pending, start] = useTransition()
+  const { locale } = usePortalI18n()
+
+  function remove() {
+    const prompt = locale === "es"
+      ? `¿Eliminar a ${cohabitant.name} de su hogar? Su enlace seguro dejará de funcionar.`
+      : `Remove ${cohabitant.name} from your household? Their secure affidavit link will stop working.`
+    if (!window.confirm(prompt)) return
+
+    start(async () => {
+      const result = await deleteCohabitant(cohabitant.id, caseId)
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      if (result.warning) toast.warning(result.warning)
+      else {
+        toast.success(locale === "es"
+          ? `${cohabitant.name} fue eliminado y se actualizaron los requisitos del hogar.`
+          : `${cohabitant.name} removed and your household requirements were updated.`)
+      }
+    })
+  }
+
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      className="size-8 text-muted-foreground hover:text-destructive"
+      disabled={pending}
+      onClick={remove}
+      aria-label={locale === "es" ? `Eliminar a ${cohabitant.name} del hogar` : `Remove ${cohabitant.name} from household`}
     >
       <Trash2 className="size-4" />
     </Button>
@@ -263,7 +310,8 @@ export function CohabitantCollector({
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset()
-      toast.success(t.cohabitantAdded)
+      if (state.warning) toast.warning(state.warning)
+      else toast.success(t.cohabitantAdded)
     }
   }, [state, t.cohabitantAdded])
 
@@ -280,9 +328,11 @@ export function CohabitantCollector({
           <li key={c.id} className="flex items-center justify-between rounded-lg border bg-card p-3">
             <div className="min-w-0">
               <div className="text-sm font-medium">{c.name}</div>
-              <div className="text-xs text-muted-foreground">{c.relationship ?? "—"}</div>
+              <div className="text-xs text-muted-foreground">
+                {c.relationship ?? "—"}{c.contact_email ? ` · ${c.contact_email}` : ""}
+              </div>
             </div>
-            <DeleteButton onDelete={() => deleteCohabitant(c.id, caseId)} />
+            <RemoveCohabitantButton cohabitant={c} caseId={caseId} />
           </li>
         ))}
         {cohabitants.length === 0 && (
@@ -300,11 +350,11 @@ export function CohabitantCollector({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cohab-rel">{t.relationship}</Label>
-            <Input id="cohab-rel" name="relationship" placeholder={t.cohabitantExample} />
+            <Input id="cohab-rel" name="relationship" placeholder={t.cohabitantExample} required />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="cohab-email">{t.cohabitantEmail}</Label>
-            <Input id="cohab-email" name="contactEmail" type="email" placeholder={t.cohabitantEmailPlaceholder} />
+            <Input id="cohab-email" name="contactEmail" type="email" placeholder={t.cohabitantEmailPlaceholder} required />
           </div>
         </div>
         {state.error && <p className="text-sm text-destructive">{state.error}</p>}

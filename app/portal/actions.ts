@@ -19,6 +19,7 @@ import { requiredReferences } from "@/lib/intake/schema"
 import { referenceComposition, familyCapMessage } from "@/lib/references/composition"
 import type { WizardAnswers } from "@/lib/intake/answers"
 import { notifyTeamOfPortalMessage } from "@/lib/messages/team-notification"
+import { synchronizeHouseholdCaseState } from "@/lib/cohabitants/synchronize"
 
 /** Verify the signed-in client owns this case and return its client_id. */
 async function ownedCase(caseId: string) {
@@ -254,7 +255,7 @@ const referenceSchema = z.object({
   knownDuration: z.string().max(120).optional(),
 })
 
-export type CollectorState = { error?: string; ok?: boolean }
+export type CollectorState = { error?: string; ok?: boolean; warning?: string; invited?: boolean }
 
 export async function addReference(_prev: CollectorState, formData: FormData): Promise<CollectorState> {
   await requireRole(["client"])
@@ -340,8 +341,8 @@ export async function deleteReference(id: string, caseId: string) {
 const cohabitantSchema = z.object({
   caseId: z.string().uuid(),
   name: z.string().min(2, "Enter a name"),
-  relationship: z.string().optional(),
-  contactEmail: z.string().email("Enter a valid email").or(z.literal("")).optional(),
+  relationship: z.string().trim().min(2, "Enter their relationship to you").max(100),
+  contactEmail: z.string().trim().email("Enter a valid email so we can send their affidavit"),
 })
 
 export async function addCohabitant(_prev: CollectorState, formData: FormData): Promise<CollectorState> {
@@ -355,39 +356,138 @@ export async function addCohabitant(_prev: CollectorState, formData: FormData): 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
   const v = parsed.data
   const supabase = await createClient()
+  const kase = await ownedCase(v.caseId)
+  if (!kase) return { error: "Case not found." }
+
   const { data: created, error } = await supabase
     .from("cohabitants")
     .insert({
       case_id: v.caseId,
       name: v.name,
-      relationship: v.relationship || null,
-      contact_email: v.contactEmail || null,
+      relationship: v.relationship,
+      contact_email: v.contactEmail,
       affidavit_status: "not_started",
     })
     .select("id")
     .single()
-  if (error) return { error: error.message }
-  await logActivity({ action: "cohabitant.added", caseId: v.caseId, entity: "cohabitant", entityId: created.id })
+  if (error) return { error: "We couldn't add that household member. Please check the details and try again." }
+
+  const admin = createAdminClient()
+  try {
+    await synchronizeHouseholdCaseState(admin, v.caseId)
+  } catch (syncError) {
+    // Compensate before outreach: if the mutually-exclusive requirement switch
+    // did not complete, do not leave a half-added person or send a confusing link.
+    await admin.from("cohabitants").delete().eq("id", created.id)
+    try {
+      await synchronizeHouseholdCaseState(admin, v.caseId)
+    } catch (recoveryError) {
+      console.error("[cohabitant.add] compensation synchronization failed", recoveryError)
+    }
+    console.error("[cohabitant.add] household synchronization failed", syncError)
+    return { error: "We couldn't update your household requirements. Nothing was sent; please try again." }
+  }
 
   // Auto-invite the cohabitant to complete + notarize their affidavit in-system.
   // Through the ONE outreach helper — an inline copy of it here minted the token
   // without stamping sent_at, so the link-journey tracker and the 3/7-day
   // reminder rule never saw this invite. (Service role: client-initiated write
   // of a token the client must never read back.)
-  if (v.contactEmail) {
-    await inviteCohabitant(createAdminClient(), created.id)
+  let invited = false
+  let warning: string | undefined
+  try {
+    const invite = await inviteCohabitant(admin, created.id)
+    invited = invite?.emailed === true
+    if (!invited) {
+      warning = invite?.reason === "rejected"
+        ? "Household updated, but that email address rejected the invitation. Check it or copy the secure link below."
+        : "Household updated and the secure link is ready, but we couldn't email it just now. Copy the link below to send it yourself."
+    }
+  } catch (inviteError) {
+    console.error("[cohabitant.add] invitation failed after household synchronization", inviteError)
+    warning = "Household updated, but we couldn't email the affidavit link just now. Copy the secure link below to send it yourself."
   }
 
+  await logActivity({
+    action: "cohabitant.added",
+    caseId: v.caseId,
+    entity: "cohabitant",
+    entityId: created.id,
+    detail: { relationship: v.relationship, invitation_emailed: invited },
+  })
+
   revalidatePath("/portal/people")
-  return { ok: true }
+  revalidatePath("/portal/checklist")
+  revalidatePath("/portal/forms")
+  revalidatePath("/portal/documents")
+  revalidatePath("/portal/intake")
+  revalidatePath("/portal")
+  revalidatePath("/admin/cases", "layout")
+  return { ok: true, invited, warning }
 }
 
-export async function deleteCohabitant(id: string, caseId: string) {
+const deleteCohabitantSchema = z.object({ id: z.string().uuid(), caseId: z.string().uuid() })
+
+export async function deleteCohabitant(id: string, caseId: string): Promise<CollectorState> {
   await requireRole(["client"])
+  const parsed = deleteCohabitantSchema.safeParse({ id, caseId })
+  if (!parsed.success) return { error: "That household member could not be found." }
+
   const supabase = await createClient()
-  await supabase.from("cohabitants").delete().eq("id", id)
+  const { data: cohabitant, error: findError } = await supabase
+    .from("cohabitants")
+    .select("id, case_id, name, affidavit_status")
+    .eq("id", parsed.data.id)
+    .eq("case_id", parsed.data.caseId)
+    .maybeSingle()
+  if (findError || !cohabitant) return { error: "That household member could not be found. Refresh and try again." }
+  if (cohabitant.affidavit_status !== "not_started") {
+    return { error: "This affidavit already contains a response. Contact your case team if the household member must be corrected." }
+  }
+
+  const admin = createAdminClient()
+  // Revoke the public capability before deletion. The caller's RLS-scoped read
+  // above proved ownership; service role is limited to the system token field.
+  const { error: revokeError } = await admin
+    .from("cohabitants")
+    .update({ token_revoked_at: new Date().toISOString() })
+    .eq("id", cohabitant.id)
+  if (revokeError) return { error: "We couldn't revoke that affidavit link. Please try again." }
+
+  const { data: removed, error: deleteError } = await supabase
+    .from("cohabitants")
+    .delete()
+    .eq("id", cohabitant.id)
+    .eq("case_id", cohabitant.case_id)
+    .eq("affidavit_status", "not_started")
+    .select("id")
+    .maybeSingle()
+  if (deleteError || !removed) return { error: "We couldn't remove that household member. Refresh and try again." }
+
+  let warning: string | undefined
+  try {
+    await synchronizeHouseholdCaseState(admin, cohabitant.case_id)
+  } catch (syncError) {
+    console.error("[cohabitant.remove] household synchronization failed after removal", syncError)
+    warning = "The household member was removed, but the checklist may take a moment to refresh. Your case team has been notified."
+  }
+
+  await logActivity({
+    action: "cohabitant.removed",
+    caseId: cohabitant.case_id,
+    entity: "cohabitant",
+    entityId: cohabitant.id,
+    detail: { invitation_revoked: true },
+  })
+
   revalidatePath("/portal/people")
-  void caseId
+  revalidatePath("/portal/checklist")
+  revalidatePath("/portal/forms")
+  revalidatePath("/portal/documents")
+  revalidatePath("/portal/intake")
+  revalidatePath("/portal")
+  revalidatePath("/admin/cases", "layout")
+  return { ok: true, warning }
 }
 
 // ── Messaging ─────────────────────────────────────────────────────────────────

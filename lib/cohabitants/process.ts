@@ -51,7 +51,54 @@ export async function recomputeCohabitantRequirement(admin: DB, caseId: string) 
     .update({ status, notes: `${notarized}/${total} cohabitant affidavits notarized` })
     .eq("case_id", caseId)
     .eq("req_code", "COH-01")
-    .in("status", ["pending", "satisfied"])
+    // Adding the first household member must reactivate a requirement that was
+    // previously N/A while the applicant reported living alone.
+    .in("status", ["na", "pending", "satisfied"])
 
   return { total, notarized, status }
+}
+
+/**
+ * COH-01 (adult household affidavits) and COH-02 (sole occupancy) are mutually
+ * exclusive. Reconcile them after every roster change, including a completed
+ * intake that changes a previously satisfied answer.
+ */
+export async function reconcileCohabitantRequirements(admin: DB, caseId: string) {
+  const { data: household, error: householdError } = await admin
+    .from("cohabitants")
+    .select("affidavit_status")
+    .eq("case_id", caseId)
+  if (householdError) throw householdError
+
+  const count = household?.length ?? 0
+  if (count > 0) {
+    const { error } = await admin
+      .from("case_requirements")
+      .update({ status: "na", notes: "Not applicable — an adult household member is listed." })
+      .eq("case_id", caseId)
+      .eq("req_code", "COH-02")
+    if (error) throw error
+    const progress = await recomputeCohabitantRequirement(admin, caseId)
+    return { hasCohabitants: true, count, ...progress }
+  }
+
+  const { error: rosterRequirementError } = await admin
+    .from("case_requirements")
+    .update({ status: "na", notes: "Not applicable — no adult household members are listed." })
+    .eq("case_id", caseId)
+    .eq("req_code", "COH-01")
+  if (rosterRequirementError) throw rosterRequirementError
+
+  // If a previously satisfied solo statement predates a household change, it
+  // must be completed again. Preserve a reviewer rejection, which still needs
+  // applicant attention, but reset N/A/pending/satisfied to pending.
+  const { error: soloRequirementError } = await admin
+    .from("case_requirements")
+    .update({ status: "pending", notes: "Applicant reports living alone; sole-occupancy attestation required." })
+    .eq("case_id", caseId)
+    .eq("req_code", "COH-02")
+    .in("status", ["na", "pending", "satisfied"])
+  if (soloRequirementError) throw soloRequirementError
+
+  return { hasCohabitants: false, count: 0, total: 0, notarized: 0 }
 }

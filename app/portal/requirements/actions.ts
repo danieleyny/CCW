@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { requireRole } from "@/lib/auth"
 import { authorizeCaseActor } from "@/lib/case-actor"
 import { fillTemplate, signTemplate, rawTemplate } from "@/lib/forms/fill"
@@ -25,7 +26,7 @@ import { safeguardInviteConflict } from "@/lib/safeguard/self-designation"
 import { toUserFacingError } from "@/lib/schema-health"
 import { peopleFromAnswers, livesAlone, syncReferences, syncCohabitants } from "@/lib/requirements/roster"
 import { recomputeReferenceRequirement } from "@/lib/references/process"
-import { recomputeCohabitantRequirement } from "@/lib/cohabitants/process"
+import { synchronizeHouseholdCaseState } from "@/lib/cohabitants/synchronize"
 import { computeFeeSummary } from "@/lib/fees"
 import { renderFeeSheet } from "@/lib/pdf/fee-sheet"
 import {
@@ -212,16 +213,22 @@ export async function generateRequirementDocument(
   if (!actor) return { error: "No case found" }
 
   const action = actionFor(reqCode)
-  // A cohabitants roster reaches here only for the sole-occupancy statement —
-  // the one document in that flow the applicant signs themselves.
-  const generates = action?.mode === "generate" || (action?.mode === "roster" && action.roster === "cohabitants")
-  if (!action || !generates) return { error: "That requirement isn't generated on-platform." }
+  if (!action || action.mode !== "generate") return { error: "That requirement isn't generated on-platform." }
   const signable = isSignable(action)
 
   // Admin for the answers read + generated-document provenance (works for both
   // the owner and a full-scope sponsor, who has no direct table grants). The
   // ACTOR was authorized above.
   const admin = createAdminClient()
+  if (reqCode === "COH-02") {
+    const { count } = await admin
+      .from("cohabitants")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", actor.caseId)
+    if ((count ?? 0) > 0) {
+      return { error: "Sole occupancy does not apply while an adult household member is listed." }
+    }
+  }
   const { data: saved } = await admin
     .from("requirement_answers")
     .select("answers")
@@ -453,9 +460,8 @@ export async function generateRequirementDocument(
  * each of them their own private link — not producing a PDF. Routing these
  * through the generator is what produced "No generator for COH-01".
  *
- * The one exception is living alone: then COH-01 becomes the applicant's own
- * sole-occupancy statement, which follows the normal generate → sign → notarize
- * path.
+ * Living alone is the mutually exclusive COH-02 path: the applicant's own
+ * sole-occupancy statement follows the normal generate → sign → notarize path.
  *
  * Submitting the list NEVER satisfies the requirement. Only notarized copies
  * coming back do.
@@ -497,7 +503,8 @@ export async function submitRequirementRoster(
       // rows from a previous answer that carry no evidence are cleared, so the
       // case doesn't claim both "I live alone" and a roster of housemates.
       await syncCohabitants(admin, actor.caseId, [])
-      const gen = await generateRequirementDocument(reqCode, actor.caseId)
+      await synchronizeHouseholdCaseState(admin, actor.caseId)
+      const gen = await generateRequirementDocument("COH-02", actor.caseId)
       if (gen.error) return gen
       return {
         ok: true,
@@ -510,6 +517,13 @@ export async function submitRequirementRoster(
     const people = peopleFromAnswers(answers, action.roster)
     if (people.length === 0) {
       return { error: "Add at least one person, or tell us you live alone." }
+    }
+
+    if (action.roster === "cohabitants") {
+      const invalid = people.find((person) => !person.email || !z.string().email().safeParse(person.email).success)
+      if (invalid) {
+        return { error: `Add a valid email for ${invalid.name} so we can send their secure affidavit link automatically.` }
+      }
     }
 
     // NYPD rule: at least TWO character references must not be related to you.
@@ -536,7 +550,7 @@ export async function submitRequirementRoster(
 
     // Recompute from evidence — never from the fact that a list was submitted.
     if (action.roster === "references") await recomputeReferenceRequirement(admin, actor.caseId)
-    else await recomputeCohabitantRequirement(admin, actor.caseId)
+    else await synchronizeHouseholdCaseState(admin, actor.caseId)
 
     await logActivity({
       action: "requirement.roster_submitted",

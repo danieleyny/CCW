@@ -14,6 +14,7 @@ import { materializeCaseRequirements, materializeSponsorPacket } from "@/lib/req
 import { resolveArmedTrack, type ArmedTrackResult } from "@/lib/requirements/track"
 import { backfillCaseFacts } from "@/lib/facts/resolve"
 import { syncCohabitants, syncReferences } from "@/lib/requirements/roster"
+import { reconcileCohabitantRequirements } from "@/lib/cohabitants/process"
 import { applicablePortalDisclosures } from "./schema"
 import { toGeneratorAnswers, type WizardAnswers } from "./answers"
 import {
@@ -65,6 +66,7 @@ export async function processIntake(
     .map((c) => ({
       name: c.name.trim(),
       relationship: c.relationship?.trim() || undefined,
+      email: c.email?.trim() || undefined,
     }))
   await syncCohabitants(admin, caseId, cohabPeople)
 
@@ -330,6 +332,12 @@ export async function processIntake(
   // "confirm" them again on the checklist is busywork. Satisfied ONLY where
   // their own answers support it (see lib/requirements/system-checks).
   await runIntakeSystemChecks(admin, caseId, answers)
+
+  // A household edit must also retire the mutually-exclusive old path even if
+  // it had previously been satisfied. The generic materializer deliberately
+  // preserves satisfied evidence, so this domain-specific reconciliation owns
+  // the COH-01/COH-02 switch.
+  await reconcileCohabitantRequirements(admin, caseId)
 
   return {
     cohabitants: cohabPeople.length,

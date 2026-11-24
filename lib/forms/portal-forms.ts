@@ -24,7 +24,13 @@ export function buildPortalForms(
   statusByRequirement: ReadonlyMap<string, string>
 ): PortalFormDoc[] {
   const hasArrests = (answers.arrests?.length ?? 0) > 0
-  const hasCohabitants = (answers.cohabitants?.length ?? 0) > 0
+  const cohabitantRequirement = statusByRequirement.get("COH-01")
+  const soloRequirement = statusByRequirement.get("COH-02")
+  const hasCohabitants = cohabitantRequirement && cohabitantRequirement !== "na"
+    ? true
+    : soloRequirement && soloRequirement !== "na"
+      ? false
+      : (answers.cohabitants?.length ?? 0) > 0
   const hasSafeguard = !!answers.safeguardName?.trim()
   const filed = (reqCode: string) => statusByRequirement.get(reqCode) === "satisfied"
 

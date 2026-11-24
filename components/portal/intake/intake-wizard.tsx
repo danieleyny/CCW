@@ -1071,7 +1071,7 @@ function StepHousehold({ a, patch, applicant }: StepProps & { applicant: Applica
       </p>
       <div className="space-y-2">
         {cohabs.map((c, i) => (
-          <div key={i} className="flex gap-2">
+          <div key={i} className="grid gap-2 rounded-lg border border-hairline bg-surface-2/30 p-3 sm:grid-cols-2">
             <Input
               aria-label={`Household member ${i + 1} full name`}
               placeholder="Full name"
@@ -1092,9 +1092,23 @@ function StepHousehold({ a, patch, applicant }: StepProps & { applicant: Applica
                 patch({ cohabitants: copy })
               }}
             />
-            <Button variant="ghost" size="icon" onClick={() => patch({ cohabitants: cohabs.filter((_, j) => j !== i) })}>
-              <Trash2 className="size-4" />
-            </Button>
+            <Input
+              className="sm:col-span-2"
+              type="email"
+              aria-label={`Household member ${i + 1} email`}
+              placeholder="Email — we'll send their secure affidavit link"
+              value={c.email ?? ""}
+              onChange={(e) => {
+                const copy = [...cohabs]
+                copy[i] = { ...copy[i], email: e.target.value }
+                patch({ cohabitants: copy })
+              }}
+            />
+            <div className="flex justify-end sm:col-span-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => patch({ cohabitants: cohabs.filter((_, j) => j !== i) })}>
+                <Trash2 className="size-4" /> Remove
+              </Button>
+            </div>
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={() => patch({ cohabitants: [...cohabs, { name: "" }] })}>

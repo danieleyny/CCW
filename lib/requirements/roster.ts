@@ -150,7 +150,7 @@ export async function syncCohabitants(
 ): Promise<RosterSyncResult> {
   const { data: existing } = await admin
     .from("cohabitants")
-    .select("id, name, contact_email, affidavit_status")
+    .select("id, name, contact_email, affidavit_status, sent_at")
     .eq("case_id", caseId)
 
   const byName = new Map((existing ?? []).map((r) => [key(r.name), r]))
@@ -161,6 +161,8 @@ export async function syncCohabitants(
   for (const person of people) {
     const match = byName.get(key(person.name))
     let id: string
+    let isNew = false
+    const emailChanged = !!match && !!person.email && person.email.toLowerCase() !== (match.contact_email ?? "").toLowerCase()
 
     if (match) {
       await admin
@@ -185,10 +187,15 @@ export async function syncCohabitants(
         .single()
       if (error || !created) throw new Error(error?.message ?? "Could not add a household member")
       id = created.id
+      isNew = true
       result.added++
     }
 
     if (done(match?.affidavit_status)) continue
+    // Completing or re-saving intake must not spam the same person. Invite on
+    // first creation, when an email is newly added/changed, or when no invite
+    // has ever been sent. Explicit resend remains available on the People page.
+    if (!isNew && match?.sent_at && !emailChanged) continue
     const invite = await inviteCohabitant(admin, id)
     if (invite?.emailed) result.invited++
     else if (invite?.hadEmail) { result.sendFailed.push(person.name); if (invite.reason) result.sendReason = invite.reason }

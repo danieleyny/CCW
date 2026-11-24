@@ -35,6 +35,7 @@ const isoDay = z
 const cohabitantSchema = z.object({
   name: short,
   relationship: z.string().max(100).optional(),
+  email: z.string().max(320).optional(),
 })
 const arrestSchema = z.object({
   occurredOn: isoDay.optional(),
@@ -315,7 +316,23 @@ export function eligibilityStepIssues(a: WizardAnswers, opts: CompletionOpts = {
 export function completionIssues(a: WizardAnswers, opts: CompletionOpts = {}): string[] {
   return [
     ...eligibilityStepIssues(a, opts).map((m) => `${m} (step 1)`),
+    ...householdStepIssues(a).map((m) => `${m} (step 3)`),
     ...disclosureStepIssues(a).map((m) => `${m} (step 4)`),
     ...historyStepIssues(a, opts).map((m) => `${m} (step 5)`),
   ]
+}
+
+/** A listed adult needs enough information for the automatic affidavit invite. */
+export function householdStepIssues(a: WizardAnswers): string[] {
+  const rows = a.cohabitants ?? []
+  const incomplete = rows.findIndex((person) => !person.name?.trim() || !person.relationship?.trim())
+  if (incomplete !== -1) {
+    return [`Household member #${incomplete + 1} needs a full name and relationship.`]
+  }
+  const missingEmail = rows.findIndex((person) => !person.email?.trim())
+  if (missingEmail !== -1) {
+    return [`Household member #${missingEmail + 1} needs an email so we can send their affidavit securely.`]
+  }
+  const invalidEmail = rows.findIndex((person) => !z.string().email().safeParse(person.email?.trim()).success)
+  return invalidEmail === -1 ? [] : [`Household member #${invalidEmail + 1} needs a valid email address.`]
 }

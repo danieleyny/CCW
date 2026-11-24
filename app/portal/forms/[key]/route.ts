@@ -31,6 +31,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
     .eq("case_id", myCase.id)
     .maybeSingle()
   const answers = (session?.answers ?? {}) as WizardAnswers
+  if (key === "sole-occupancy") {
+    const { count } = await supabase
+      .from("cohabitants")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", myCase.id)
+    if ((count ?? 0) > 0) {
+      return new Response("Sole-occupancy does not apply while an adult household member is listed.", { status: 409 })
+    }
+  }
   const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
   const sig = await getSignaturePng(supabase, myCase.id, "applicant")
 

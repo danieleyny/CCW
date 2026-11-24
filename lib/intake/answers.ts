@@ -14,6 +14,8 @@ import {
 export interface CohabitantEntry {
   name: string
   relationship?: string
+  /** Used only for secure affidavit outreach; never printed on the NYPD form. */
+  email?: string
 }
 export interface ArrestEntry {
   occurredOn?: string

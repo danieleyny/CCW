@@ -5,6 +5,7 @@ import {
   requiredReferences,
   historyStepIssues,
   eligibilityStepIssues,
+  householdStepIssues,
 } from "@/lib/intake/schema"
 
 const fourRefs = [
@@ -55,6 +56,16 @@ describe("wizardAnswersSchema — the jsonb boundary", () => {
 })
 
 describe("track-aware reference counts (38 RCNY §5-03/§5-05)", () => {
+  it("requires an email for every listed adult so the affidavit can be sent", () => {
+    expect(householdStepIssues({ cohabitants: [{ name: "Avery Chen", relationship: "Spouse" }] })).toEqual([
+      "Household member #1 needs an email so we can send their affidavit securely.",
+    ])
+    expect(householdStepIssues({ cohabitants: [{ name: "Avery Chen", relationship: "Spouse", email: "not-an-email" }] })).toEqual([
+      "Household member #1 needs a valid email address.",
+    ])
+    expect(householdStepIssues({ cohabitants: [{ name: "Avery Chen", relationship: "Spouse", email: "avery@example.com" }] })).toEqual([])
+  })
+
   it("4 carry / 2 premises / 0 renewal", () => {
     expect(requiredReferences({}, {})).toBe(4)
     expect(requiredReferences({ licenseType: "premises" }, {})).toBe(2)
