@@ -4,19 +4,20 @@ import Link from "next/link"
 import { Suspense, useActionState } from "react"
 import { useSearchParams } from "next/navigation"
 import { login, type AuthFormState } from "@/app/auth/actions"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { PasswordField } from "@/components/auth/password-field"
-import { useBrand } from "@/components/brand/brand-provider"
+import {
+  AuthAccountPrompt,
+  AuthAlert,
+  AuthHeading,
+  AuthPrivateLine,
+  AuthSubmitButton,
+  authInputClass,
+  authInvalidInputClass,
+  authLabelClass,
+} from "@/components/auth/auth-form-ui"
+import { cn } from "@/lib/utils"
 
 export default function LoginPage() {
   return (
@@ -27,7 +28,6 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const { brand } = useBrand()
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
     login,
     {}
@@ -38,26 +38,33 @@ function LoginForm() {
   const switching = params.get("switch") === "1"
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Sign in</CardTitle>
-        <CardDescription>Access your {brand.name} dashboard.</CardDescription>
-      </CardHeader>
-      <form action={formAction}>
-        <CardContent className="space-y-4">
+    <div>
+      <AuthHeading
+        title="Welcome back"
+        description="Sign in to see your next step, documents and messages."
+      />
+      <form action={formAction} className="mt-7 space-y-5">
           <input type="hidden" name="redirect" value={redirect} />
           {loggedOut && (
-            <p className="rounded-md border border-ok/30 bg-ok/8 px-3 py-2 text-sm text-ok" role="status">
+            <AuthAlert tone="ok">
               You&apos;ve been signed out.
-            </p>
+            </AuthAlert>
           )}
           {switching && (
-            <p className="rounded-md border border-hairline bg-muted/40 px-3 py-2 text-sm text-muted-foreground" role="status">
+            <AuthAlert tone="neutral">
               Sign in with a different account.
-            </p>
+            </AuthAlert>
+          )}
+          {state.error && (
+            <AuthAlert>
+              {state.error} Try again, or{" "}
+              <Link href="/auth/forgot-password" className="font-bold underline underline-offset-2">
+                reset your password
+              </Link>.
+            </AuthAlert>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-[13px]">Email</Label>
+            <Label htmlFor="email" className={authLabelClass}>Email</Label>
             <Input
               id="email"
               name="email"
@@ -67,33 +74,28 @@ function LoginForm() {
               autoComplete="email"
               placeholder="you@example.com"
               required
-              className="h-12"
+              aria-invalid={Boolean(state.error)}
+              className={cn(authInputClass, state.error && authInvalidInputClass)}
             />
           </div>
-          <PasswordField name="password" autoComplete="current-password" required />
-          {state.error && (
-            <p className="text-sm text-destructive" role="alert">
-              {state.error}
-            </p>
-          )}
-        </CardContent>
-        <CardFooter className="mt-2 flex-col gap-3">
-          <Button type="submit" className="h-[52px] w-full" disabled={pending}>
-            {pending ? "Signing in…" : "Sign in"}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
+          <PasswordField
+            name="password"
+            autoComplete="current-password"
+            required
+            invalid={Boolean(state.error)}
+            variant="auth"
+            labelAction={(
             <Link href="/auth/forgot-password" className="font-medium text-primary underline-offset-4 hover:underline">
-              Forgot your password?
+              Forgot password?
             </Link>
-          </p>
-          <p className="text-center text-sm text-muted-foreground">
-            New here?{" "}
-            <Link href="/auth/sign-up" className="font-medium text-primary underline-offset-4 hover:underline">
-              Create an account
-            </Link>
-          </p>
-        </CardFooter>
+            )}
+          />
+          <div className="space-y-[18px] pt-1">
+            <AuthSubmitButton pending={pending} pendingText="Signing in…">Sign in</AuthSubmitButton>
+            <AuthAccountPrompt />
+            <AuthPrivateLine />
+          </div>
       </form>
-    </Card>
+    </div>
   )
 }
