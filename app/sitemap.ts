@@ -48,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }))
     : []
 
-  const posts = getAllPosts().map((p) => ({
+  const posts = (await getAllPosts()).map((p) => ({
     url: `${CANONICAL_ORIGIN}/blog/${p.slug}`,
     lastModified: new Date(p.updated ?? p.date),
     changeFrequency: "monthly" as const,

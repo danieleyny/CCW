@@ -4,9 +4,8 @@ import { CANONICAL_ORIGIN } from "@/lib/seo"
 
 /**
  * /feed.xml — RSS 2.0 of the blog, against the CANONICAL origin (never the deploy
- * host). force-static: it rebuilds with the site, and the blog is file-based, so
- * there's nothing per-request. Linked from root metadata (alternates.types) and
- * the blog index.
+ * host). The feed combines repository guides with human-approved articles from
+ * the admin studio; publishing revalidates this route immediately.
  */
 export const dynamic = "force-static"
 
@@ -14,7 +13,7 @@ const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 
 export async function GET() {
-  const posts = getAllPosts()
+  const posts = await getAllPosts()
   const self = `${CANONICAL_ORIGIN}/feed.xml`
   const items = posts
     .map((p) => {

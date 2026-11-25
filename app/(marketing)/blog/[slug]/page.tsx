@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { MDXRemote } from "next-mdx-remote/rsc"
 import type { Metadata } from "next"
 import { getAllPosts, getPost } from "@/lib/blog"
 import { formatDate } from "@/lib/format"
@@ -10,9 +9,10 @@ import { Button } from "@/components/ui/button"
 import { TechGrid } from "@/components/shared/tech-grid"
 import { JsonLd, ID, breadcrumbSchema } from "@/components/marketing/json-ld"
 import { buildMetadata, canonical, ogImage } from "@/lib/seo"
+import { ArticleBody } from "@/components/blog/article-body"
 
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }))
+export async function generateStaticParams() {
+  return (await getAllPosts()).map((p) => ({ slug: p.slug }))
 }
 
 export async function generateMetadata({
@@ -21,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = await getPost(slug)
   if (!post) return {}
   return buildMetadata({
     title: post.meta.title,
@@ -32,44 +32,13 @@ export async function generateMetadata({
   })
 }
 
-// Styled MDX element map (no typography plugin — explicit tokens).
-const mdxComponents = {
-  h2: (p: React.ComponentProps<"h2">) => (
-    <h2 className="mt-10 font-display text-2xl font-semibold tracking-tight" {...p} />
-  ),
-  h3: (p: React.ComponentProps<"h3">) => (
-    <h3 className="mt-8 font-display text-lg font-semibold" {...p} />
-  ),
-  p: (p: React.ComponentProps<"p">) => (
-    <p className="mt-4 leading-relaxed text-text-mid" {...p} />
-  ),
-  ul: (p: React.ComponentProps<"ul">) => (
-    <ul className="mt-4 space-y-2 text-text-mid [&>li]:relative [&>li]:pl-5" {...p} />
-  ),
-  ol: (p: React.ComponentProps<"ol">) => (
-    <ol className="mt-4 list-decimal space-y-2 pl-5 text-text-mid" {...p} />
-  ),
-  li: (p: React.ComponentProps<"li">) => (
-    <li
-      className="before:absolute before:left-0 before:top-2.5 before:size-1.5 before:rounded-full before:bg-signal marker:text-text-low"
-      {...p}
-    />
-  ),
-  a: ({ href = "", ...rest }: React.ComponentProps<"a">) => (
-    <Link href={href} className="text-signal underline-offset-4 hover:underline" {...rest} />
-  ),
-  strong: (p: React.ComponentProps<"strong">) => (
-    <strong className="font-semibold text-foreground" {...p} />
-  ),
-}
-
 export default async function Article({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = await getPost(slug)
   if (!post) notFound()
 
   // Author/publisher reference the Organization by @id rather than re-declaring
@@ -128,7 +97,7 @@ export default async function Article({
       </section>
 
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
-        <MDXRemote source={post.content} components={mdxComponents} />
+        <ArticleBody source={post.content} />
 
         <div className="mt-12 rounded-lg border bg-card p-6 brass-edge">
           <h2 className="font-display text-lg font-semibold">Ready to begin?</h2>

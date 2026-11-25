@@ -14,8 +14,8 @@ export const metadata = buildMetadata({
   path: "/blog",
 })
 
-export default function Blog() {
-  const posts = getAllPosts()
+export default async function Blog() {
+  const posts = await getAllPosts()
   const [featured, ...rest] = posts
   const collectionSchema = {
     "@context": "https://schema.org",

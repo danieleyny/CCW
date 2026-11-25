@@ -20,6 +20,7 @@ import {
   SEO_STATUS_LABELS,
   SEO_STATUSES,
   type SeoDeskData,
+  type BlogArticleSummary,
   type SeoItem,
   type SeoStatus,
 } from "@/lib/admin/seo"
@@ -95,7 +96,7 @@ function StatusFilters({ view, counts }: { view: View; counts: SeoDeskData["coun
   )
 }
 
-function QueueItem({ item }: { item: SeoItem }) {
+function QueueItem({ item, article }: { item: SeoItem; article?: BlogArticleSummary }) {
   const sources = safeSources(item)
   const reviewed = !item.needs_legal_review || Boolean(item.legal_reviewed_at)
   return (
@@ -126,6 +127,10 @@ function QueueItem({ item }: { item: SeoItem }) {
         </div>
 
         <div className="w-full rounded-xl border border-[var(--hairline)] bg-[var(--surface-2)] p-3 xl:w-[310px] xl:shrink-0">
+          <Link href={article ? `/admin/seo/articles/${article.id}` : `/admin/seo/new?item=${item.id}`} className="mb-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#D9B25F] px-4 text-sm font-semibold text-[#0F1E3A] hover:bg-[#E4C473]">
+            {article ? <FilePenLine className="size-4" aria-hidden /> : <Plus className="size-4" aria-hidden />}
+            {article ? `Open ${article.status === "published" ? "published article" : "article draft"}` : "Create article draft"}
+          </Link>
           <form action={updateSeoItemStatus} className="space-y-3">
             <input type="hidden" name="id" value={item.id} />
             <label className="block text-[11px] font-semibold text-[var(--text-mid)]" htmlFor={`status-${item.id}`}>Workflow status</label>
@@ -204,7 +209,7 @@ export function SeoWorkspace({ data, view, notice, error }: { data: SeoDeskData;
     <div className="mx-auto max-w-[1520px] pb-16 md:pb-0">
       <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div><p className="font-mono text-[10px] font-semibold uppercase tracking-[.18em] text-[var(--signal)]">Growth · Editorial</p><h1 className="mt-2 font-[family-name:var(--font-title)] text-[34px] font-semibold leading-none tracking-[-.03em] text-[var(--text-hi)] sm:text-[40px]">SEO desk</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-mid)]">Turn real applicant questions and verified updates into original, useful articles. Automation organizes the work; a person approves every public claim.</p></div>
-        <div className="flex flex-wrap gap-2"><Link href="/admin/reports" className="inline-flex min-h-11 items-center rounded-lg border border-[var(--hairline)] bg-white px-4 text-sm font-semibold text-[var(--text-hi)] hover:bg-[var(--surface-2)]">Business reports</Link><Link href="/blog" target="_blank" className="inline-flex min-h-11 items-center rounded-lg bg-[#14254A] px-4 text-sm font-semibold text-white hover:bg-[#203763]">Open public blog</Link></div>
+        <div className="flex flex-wrap gap-2"><Link href="/admin/seo/new" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#D9B25F] px-4 text-sm font-semibold text-[#0F1E3A] hover:bg-[#E4C473]"><Plus className="size-4" aria-hidden />New article</Link><Link href="/admin/reports" className="inline-flex min-h-11 items-center rounded-lg border border-[var(--hairline)] bg-white px-4 text-sm font-semibold text-[var(--text-hi)] hover:bg-[var(--surface-2)]">Business reports</Link><Link href="/blog" target="_blank" className="inline-flex min-h-11 items-center rounded-lg bg-[#14254A] px-4 text-sm font-semibold text-white hover:bg-[#203763]">Open public blog</Link></div>
       </header>
 
       {notice ? <div className="mb-4 flex items-start gap-2 rounded-xl border border-[#74C69D]/35 bg-[#EAF8F0] px-4 py-3 text-sm text-[#18794E]"><CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden />{notice}</div> : null}
@@ -218,7 +223,7 @@ export function SeoWorkspace({ data, view, notice, error }: { data: SeoDeskData;
         <section className="overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--surface-1)] shadow-sm" aria-labelledby="queue-title">
           <div className="flex items-start justify-between gap-4 p-4 pb-3 sm:p-5 sm:pb-3"><div><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[var(--text-low)]">Human-controlled workflow</p><h2 id="queue-title" className="mt-1 font-[family-name:var(--font-title)] text-2xl font-semibold">Editorial queue</h2></div><Sparkles className="size-5 text-[var(--brass)]" aria-hidden /></div>
           <StatusFilters view={view} counts={data.counts} />
-          {visibleItems.length ? visibleItems.map((item) => <QueueItem key={item.id} item={item} />) : <div className="px-5 py-14 text-center"><BookOpenText className="mx-auto size-7 text-[var(--text-low)]" aria-hidden /><p className="mt-3 text-sm font-semibold text-[var(--text-hi)]">Nothing in this view</p><p className="mt-1 text-xs text-[var(--text-low)]">Add an opportunity or choose another filter.</p></div>}
+          {visibleItems.length ? visibleItems.map((item) => <QueueItem key={item.id} item={item} article={data.articles.find((article) => article.seo_content_item_id === item.id)} />) : <div className="px-5 py-14 text-center"><BookOpenText className="mx-auto size-7 text-[var(--text-low)]" aria-hidden /><p className="mt-3 text-sm font-semibold text-[var(--text-hi)]">Nothing in this view</p><p className="mt-1 text-xs text-[var(--text-low)]">Add an opportunity or choose another filter.</p></div>}
         </section>
 
         <aside className="space-y-5">

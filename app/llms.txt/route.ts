@@ -15,7 +15,7 @@ import { partnerPath, partnershipStatement, publishedPartners } from "@/config/p
 export const dynamic = "force-static"
 
 export async function GET() {
-  const posts = getAllPosts()
+  const posts = await getAllPosts()
   const partners = publishedPartners()
   const u = (p: string) => `${CANONICAL_ORIGIN}${p}`
   const partnerSection = partners.length

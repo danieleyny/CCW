@@ -1,6444 +1,6975 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
       graphql: {
-        Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json };
-        Returns: Json;
-      };
-    };
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activity_log: {
         Row: {
-          action: string;
-          actor: string | null;
-          case_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          detail: NonNullable<Json>;
-          entity: string | null;
-          entity_id: string | null;
-          id: string;
-        };
+          action: string
+          actor: string | null
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          detail: Json
+          entity: string | null
+          entity_id: string | null
+          id: string
+        }
         Insert: {
-          action: string;
-          actor?: string | null;
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          detail?: NonNullable<Json>;
-          entity?: string | null;
-          entity_id?: string | null;
-          id?: string;
-        };
+          action: string
+          actor?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+        }
         Update: {
-          action?: string;
-          actor?: string | null;
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          detail?: NonNullable<Json>;
-          entity?: string | null;
-          entity_id?: string | null;
-          id?: string;
-        };
+          action?: string
+          actor?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "activity_log_actor_fkey";
-            columns: ["actor"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "activity_log_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "activity_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "activity_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "activity_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "activity_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "activity_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "activity_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "activity_log_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "activity_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       appointments: {
         Row: {
-          case_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          id: string;
-          location: string | null;
-          notes: string | null;
-          scheduled_at: string;
-          type: Database["public"]["Enums"]["appointment_type"];
-          updated_at: string;
-        };
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          location: string | null
+          notes: string | null
+          scheduled_at: string
+          type: Database["public"]["Enums"]["appointment_type"]
+          updated_at: string
+        }
         Insert: {
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          id?: string;
-          location?: string | null;
-          notes?: string | null;
-          scheduled_at: string;
-          type: Database["public"]["Enums"]["appointment_type"];
-          updated_at?: string;
-        };
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          scheduled_at: string
+          type: Database["public"]["Enums"]["appointment_type"]
+          updated_at?: string
+        }
         Update: {
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          id?: string;
-          location?: string | null;
-          notes?: string | null;
-          scheduled_at?: string;
-          type?: Database["public"]["Enums"]["appointment_type"];
-          updated_at?: string;
-        };
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          scheduled_at?: string
+          type?: Database["public"]["Enums"]["appointment_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "appointments_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "appointments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "appointments_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "appointments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "appointments_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "appointments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "appointments_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       availability_slots: {
         Row: {
-          booked_count: number;
-          capacity: number;
-          created_at: string;
-          ends_at: string;
-          id: string;
-          instructor_id: string;
-          location_id: string | null;
-          starts_at: string;
-          type: Database["public"]["Enums"]["slot_type"];
-          updated_at: string;
-        };
+          booked_count: number
+          capacity: number
+          created_at: string
+          ends_at: string
+          id: string
+          instructor_id: string
+          location_id: string | null
+          starts_at: string
+          type: Database["public"]["Enums"]["slot_type"]
+          updated_at: string
+        }
         Insert: {
-          booked_count?: number;
-          capacity?: number;
-          created_at?: string;
-          ends_at: string;
-          id?: string;
-          instructor_id: string;
-          location_id?: string | null;
-          starts_at: string;
-          type: Database["public"]["Enums"]["slot_type"];
-          updated_at?: string;
-        };
+          booked_count?: number
+          capacity?: number
+          created_at?: string
+          ends_at: string
+          id?: string
+          instructor_id: string
+          location_id?: string | null
+          starts_at: string
+          type: Database["public"]["Enums"]["slot_type"]
+          updated_at?: string
+        }
         Update: {
-          booked_count?: number;
-          capacity?: number;
-          created_at?: string;
-          ends_at?: string;
-          id?: string;
-          instructor_id?: string;
-          location_id?: string | null;
-          starts_at?: string;
-          type?: Database["public"]["Enums"]["slot_type"];
-          updated_at?: string;
-        };
+          booked_count?: number
+          capacity?: number
+          created_at?: string
+          ends_at?: string
+          id?: string
+          instructor_id?: string
+          location_id?: string | null
+          starts_at?: string
+          type?: Database["public"]["Enums"]["slot_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "availability_slots_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "availability_slots_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "availability_slots_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "availability_slots_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
-            foreignKeyName: "availability_slots_location_id_fkey";
-            columns: ["location_id"];
-            isOneToOne: false;
-            referencedRelation: "training_locations";
-            referencedColumns: ["id"];
+            foreignKeyName: "availability_slots_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "training_locations"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
+      blog_posts: {
+        Row: {
+          automation_assisted: boolean
+          content_markdown: string
+          created_at: string
+          created_by: string | null
+          description: string
+          fact_checked_at: string | null
+          fact_checked_by: string | null
+          id: string
+          legal_reviewed_at: string | null
+          legal_reviewed_by: string | null
+          needs_legal_review: boolean
+          published_at: string | null
+          seo_content_item_id: string | null
+          slug: string
+          source_notes: string | null
+          source_urls: Json
+          status: string
+          tag: string
+          target_query: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          automation_assisted?: boolean
+          content_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          fact_checked_at?: string | null
+          fact_checked_by?: string | null
+          id?: string
+          legal_reviewed_at?: string | null
+          legal_reviewed_by?: string | null
+          needs_legal_review?: boolean
+          published_at?: string | null
+          seo_content_item_id?: string | null
+          slug: string
+          source_notes?: string | null
+          source_urls?: Json
+          status?: string
+          tag?: string
+          target_query?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          automation_assisted?: boolean
+          content_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          fact_checked_at?: string | null
+          fact_checked_by?: string | null
+          id?: string
+          legal_reviewed_at?: string | null
+          legal_reviewed_by?: string | null
+          needs_legal_review?: boolean
+          published_at?: string | null
+          seo_content_item_id?: string | null
+          slug?: string
+          source_notes?: string | null
+          source_urls?: Json
+          status?: string
+          tag?: string
+          target_query?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_fact_checked_by_fkey"
+            columns: ["fact_checked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_legal_reviewed_by_fkey"
+            columns: ["legal_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_seo_content_item_id_fkey"
+            columns: ["seo_content_item_id"]
+            isOneToOne: true
+            referencedRelation: "seo_content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
-          case_id: string;
-          client_id: string;
-          created_at: string;
-          ends_at: string;
-          engagement_id: string | null;
-          ics_uid: string | null;
-          id: string;
-          instructor_id: string;
-          location_id: string | null;
-          slot_id: string | null;
-          starts_at: string;
-          status: Database["public"]["Enums"]["booking_status"];
-          type: Database["public"]["Enums"]["slot_type"];
-          updated_at: string;
-        };
+          case_id: string
+          client_id: string
+          created_at: string
+          ends_at: string
+          engagement_id: string | null
+          ics_uid: string | null
+          id: string
+          instructor_id: string
+          location_id: string | null
+          slot_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          type: Database["public"]["Enums"]["slot_type"]
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          client_id: string;
-          created_at?: string;
-          ends_at: string;
-          engagement_id?: string | null;
-          ics_uid?: string | null;
-          id?: string;
-          instructor_id: string;
-          location_id?: string | null;
-          slot_id?: string | null;
-          starts_at: string;
-          status?: Database["public"]["Enums"]["booking_status"];
-          type: Database["public"]["Enums"]["slot_type"];
-          updated_at?: string;
-        };
+          case_id: string
+          client_id: string
+          created_at?: string
+          ends_at: string
+          engagement_id?: string | null
+          ics_uid?: string | null
+          id?: string
+          instructor_id: string
+          location_id?: string | null
+          slot_id?: string | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          type: Database["public"]["Enums"]["slot_type"]
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          client_id?: string;
-          created_at?: string;
-          ends_at?: string;
-          engagement_id?: string | null;
-          ics_uid?: string | null;
-          id?: string;
-          instructor_id?: string;
-          location_id?: string | null;
-          slot_id?: string | null;
-          starts_at?: string;
-          status?: Database["public"]["Enums"]["booking_status"];
-          type?: Database["public"]["Enums"]["slot_type"];
-          updated_at?: string;
-        };
+          case_id?: string
+          client_id?: string
+          created_at?: string
+          ends_at?: string
+          engagement_id?: string | null
+          ics_uid?: string | null
+          id?: string
+          instructor_id?: string
+          location_id?: string | null
+          slot_id?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          type?: Database["public"]["Enums"]["slot_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "bookings_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "bookings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bookings_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "bookings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "bookings_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "bookings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "bookings_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bookings_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "engagements";
-            referencedColumns: ["id"];
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bookings_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "bookings_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "bookings_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_requirement_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "bookings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "bookings_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "bookings_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bookings_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "bookings_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
-            foreignKeyName: "bookings_location_id_fkey";
-            columns: ["location_id"];
-            isOneToOne: false;
-            referencedRelation: "training_locations";
-            referencedColumns: ["id"];
+            foreignKeyName: "bookings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "training_locations"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bookings_slot_id_fkey";
-            columns: ["slot_id"];
-            isOneToOne: false;
-            referencedRelation: "availability_slots";
-            referencedColumns: ["id"];
+            foreignKeyName: "bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "availability_slots"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       brand_transfers: {
         Row: {
-          actor_profile_id: string | null;
-          case_id: string;
-          consent_text: string | null;
-          consented_at: string | null;
-          created_at: string;
-          from_brand: Database["public"]["Enums"]["brand_key"];
-          id: string;
-          payment_id: string | null;
-          reason: string;
-          to_brand: Database["public"]["Enums"]["brand_key"];
-        };
+          actor_profile_id: string | null
+          case_id: string
+          consent_text: string | null
+          consented_at: string | null
+          created_at: string
+          from_brand: Database["public"]["Enums"]["brand_key"]
+          id: string
+          payment_id: string | null
+          reason: string
+          to_brand: Database["public"]["Enums"]["brand_key"]
+        }
         Insert: {
-          actor_profile_id?: string | null;
-          case_id: string;
-          consent_text?: string | null;
-          consented_at?: string | null;
-          created_at?: string;
-          from_brand: Database["public"]["Enums"]["brand_key"];
-          id?: string;
-          payment_id?: string | null;
-          reason: string;
-          to_brand: Database["public"]["Enums"]["brand_key"];
-        };
+          actor_profile_id?: string | null
+          case_id: string
+          consent_text?: string | null
+          consented_at?: string | null
+          created_at?: string
+          from_brand: Database["public"]["Enums"]["brand_key"]
+          id?: string
+          payment_id?: string | null
+          reason: string
+          to_brand: Database["public"]["Enums"]["brand_key"]
+        }
         Update: {
-          actor_profile_id?: string | null;
-          case_id?: string;
-          consent_text?: string | null;
-          consented_at?: string | null;
-          created_at?: string;
-          from_brand?: Database["public"]["Enums"]["brand_key"];
-          id?: string;
-          payment_id?: string | null;
-          reason?: string;
-          to_brand?: Database["public"]["Enums"]["brand_key"];
-        };
+          actor_profile_id?: string | null
+          case_id?: string
+          consent_text?: string | null
+          consented_at?: string | null
+          created_at?: string
+          from_brand?: Database["public"]["Enums"]["brand_key"]
+          id?: string
+          payment_id?: string | null
+          reason?: string
+          to_brand?: Database["public"]["Enums"]["brand_key"]
+        }
         Relationships: [
           {
-            foreignKeyName: "brand_transfers_actor_profile_id_fkey";
-            columns: ["actor_profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "brand_transfers_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "brand_transfers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "brand_transfers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "brand_transfers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "brand_transfers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "brand_transfers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "brand_transfers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "brand_transfers_payment_id_fkey";
-            columns: ["payment_id"];
-            isOneToOne: false;
-            referencedRelation: "payments";
-            referencedColumns: ["id"];
+            foreignKeyName: "brand_transfers_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       calendar_connections: {
         Row: {
-          access_token: string | null;
-          calendar_id: string | null;
-          created_at: string;
-          expires_at: string | null;
-          id: string;
-          profile_id: string;
-          provider: Database["public"]["Enums"]["calendar_provider"];
-          refresh_token: string | null;
-          updated_at: string;
-        };
+          access_token: string | null
+          calendar_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          profile_id: string
+          provider: Database["public"]["Enums"]["calendar_provider"]
+          refresh_token: string | null
+          updated_at: string
+        }
         Insert: {
-          access_token?: string | null;
-          calendar_id?: string | null;
-          created_at?: string;
-          expires_at?: string | null;
-          id?: string;
-          profile_id: string;
-          provider?: Database["public"]["Enums"]["calendar_provider"];
-          refresh_token?: string | null;
-          updated_at?: string;
-        };
+          access_token?: string | null
+          calendar_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          profile_id: string
+          provider?: Database["public"]["Enums"]["calendar_provider"]
+          refresh_token?: string | null
+          updated_at?: string
+        }
         Update: {
-          access_token?: string | null;
-          calendar_id?: string | null;
-          created_at?: string;
-          expires_at?: string | null;
-          id?: string;
-          profile_id?: string;
-          provider?: Database["public"]["Enums"]["calendar_provider"];
-          refresh_token?: string | null;
-          updated_at?: string;
-        };
+          access_token?: string | null
+          calendar_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          profile_id?: string
+          provider?: Database["public"]["Enums"]["calendar_provider"]
+          refresh_token?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "calendar_connections_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "calendar_connections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       case_agreements: {
         Row: {
-          case_id: string;
-          created_at: string;
-          document_id: string | null;
-          id: string;
-          kind: string;
-          signed_at: string;
-          signed_ip: string | null;
-          signer_name: string;
-          version: number;
-        };
+          case_id: string
+          created_at: string
+          document_id: string | null
+          id: string
+          kind: string
+          signed_at: string
+          signed_ip: string | null
+          signer_name: string
+          version: number
+        }
         Insert: {
-          case_id: string;
-          created_at?: string;
-          document_id?: string | null;
-          id?: string;
-          kind: string;
-          signed_at?: string;
-          signed_ip?: string | null;
-          signer_name: string;
-          version: number;
-        };
+          case_id: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          kind: string
+          signed_at?: string
+          signed_ip?: string | null
+          signer_name: string
+          version: number
+        }
         Update: {
-          case_id?: string;
-          created_at?: string;
-          document_id?: string | null;
-          id?: string;
-          kind?: string;
-          signed_at?: string;
-          signed_ip?: string | null;
-          signer_name?: string;
-          version?: number;
-        };
+          case_id?: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          kind?: string
+          signed_at?: string
+          signed_ip?: string | null
+          signer_name?: string
+          version?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "case_agreements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_agreements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_agreements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_agreements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_agreements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_agreements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_agreements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_agreements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_agreements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_agreements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "case_agreements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_agreements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
-        ];
-      };
+        ]
+      }
       case_facts: {
         Row: {
-          case_id: string;
-          id: string;
-          key: string;
-          override_req_code: string;
-          sensitive: boolean;
-          source: string;
-          updated_at: string;
-          updated_by: string | null;
-          value: string | null;
-        };
+          case_id: string
+          id: string
+          key: string
+          override_req_code: string
+          sensitive: boolean
+          source: string
+          updated_at: string
+          updated_by: string | null
+          value: string | null
+        }
         Insert: {
-          case_id: string;
-          id?: string;
-          key: string;
-          override_req_code?: string;
-          sensitive?: boolean;
-          source?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          value?: string | null;
-        };
+          case_id: string
+          id?: string
+          key: string
+          override_req_code?: string
+          sensitive?: boolean
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
         Update: {
-          case_id?: string;
-          id?: string;
-          key?: string;
-          override_req_code?: string;
-          sensitive?: boolean;
-          source?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          value?: string | null;
-        };
+          case_id?: string
+          id?: string
+          key?: string
+          override_req_code?: string
+          sensitive?: boolean
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_facts_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_facts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_facts_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_facts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_facts_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_facts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_facts_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_facts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       case_intent_log: {
         Row: {
-          case_id: string;
-          id: string;
-          intent: string;
-          note: string | null;
-          recorded_at: string;
-          recorded_by: string | null;
-        };
+          case_id: string
+          id: string
+          intent: string
+          note: string | null
+          recorded_at: string
+          recorded_by: string | null
+        }
         Insert: {
-          case_id: string;
-          id?: string;
-          intent: string;
-          note?: string | null;
-          recorded_at?: string;
-          recorded_by?: string | null;
-        };
+          case_id: string
+          id?: string
+          intent: string
+          note?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+        }
         Update: {
-          case_id?: string;
-          id?: string;
-          intent?: string;
-          note?: string | null;
-          recorded_at?: string;
-          recorded_by?: string | null;
-        };
+          case_id?: string
+          id?: string
+          intent?: string
+          note?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_intent_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_intent_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_intent_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_intent_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_intent_log_recorded_by_fkey";
-            columns: ["recorded_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_intent_log_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       case_notes: {
         Row: {
-          author: string | null;
-          body: string;
-          case_id: string;
-          created_at: string;
-          id: string;
-          pinned: boolean;
-          updated_at: string;
-        };
+          author: string | null
+          body: string
+          case_id: string
+          created_at: string
+          id: string
+          pinned: boolean
+          updated_at: string
+        }
         Insert: {
-          author?: string | null;
-          body: string;
-          case_id: string;
-          created_at?: string;
-          id?: string;
-          pinned?: boolean;
-          updated_at?: string;
-        };
+          author?: string | null
+          body: string
+          case_id: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
         Update: {
-          author?: string | null;
-          body?: string;
-          case_id?: string;
-          created_at?: string;
-          id?: string;
-          pinned?: boolean;
-          updated_at?: string;
-        };
+          author?: string | null
+          body?: string
+          case_id?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "case_notes_author_fkey";
-            columns: ["author"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_notes_author_fkey"
+            columns: ["author"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_notes_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_notes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_notes_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_notes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_notes_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_notes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       case_offers: {
         Row: {
-          accepted_engagement_id: string | null;
-          area_label: string | null;
-          case_id: string;
-          client_geog: unknown;
-          created_at: string;
-          expires_at: string | null;
-          id: string;
-          jurisdiction: Database["public"]["Enums"]["jurisdiction_key"];
-          lat: number | null;
-          lng: number | null;
-          needs_note: string | null;
-          radius_mi: number;
-          status: Database["public"]["Enums"]["offer_status"];
-          type: Database["public"]["Enums"]["offer_type"];
-          updated_at: string;
-        };
+          accepted_engagement_id: string | null
+          area_label: string | null
+          case_id: string
+          client_geog: unknown
+          created_at: string
+          expires_at: string | null
+          id: string
+          jurisdiction: Database["public"]["Enums"]["jurisdiction_key"]
+          lat: number | null
+          lng: number | null
+          needs_note: string | null
+          radius_mi: number
+          status: Database["public"]["Enums"]["offer_status"]
+          type: Database["public"]["Enums"]["offer_type"]
+          updated_at: string
+        }
         Insert: {
-          accepted_engagement_id?: string | null;
-          area_label?: string | null;
-          case_id: string;
-          client_geog?: unknown;
-          created_at?: string;
-          expires_at?: string | null;
-          id?: string;
-          jurisdiction: Database["public"]["Enums"]["jurisdiction_key"];
-          lat?: number | null;
-          lng?: number | null;
-          needs_note?: string | null;
-          radius_mi?: number;
-          status?: Database["public"]["Enums"]["offer_status"];
-          type: Database["public"]["Enums"]["offer_type"];
-          updated_at?: string;
-        };
+          accepted_engagement_id?: string | null
+          area_label?: string | null
+          case_id: string
+          client_geog?: unknown
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          jurisdiction: Database["public"]["Enums"]["jurisdiction_key"]
+          lat?: number | null
+          lng?: number | null
+          needs_note?: string | null
+          radius_mi?: number
+          status?: Database["public"]["Enums"]["offer_status"]
+          type: Database["public"]["Enums"]["offer_type"]
+          updated_at?: string
+        }
         Update: {
-          accepted_engagement_id?: string | null;
-          area_label?: string | null;
-          case_id?: string;
-          client_geog?: unknown;
-          created_at?: string;
-          expires_at?: string | null;
-          id?: string;
-          jurisdiction?: Database["public"]["Enums"]["jurisdiction_key"];
-          lat?: number | null;
-          lng?: number | null;
-          needs_note?: string | null;
-          radius_mi?: number;
-          status?: Database["public"]["Enums"]["offer_status"];
-          type?: Database["public"]["Enums"]["offer_type"];
-          updated_at?: string;
-        };
+          accepted_engagement_id?: string | null
+          area_label?: string | null
+          case_id?: string
+          client_geog?: unknown
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          jurisdiction?: Database["public"]["Enums"]["jurisdiction_key"]
+          lat?: number | null
+          lng?: number | null
+          needs_note?: string | null
+          radius_mi?: number
+          status?: Database["public"]["Enums"]["offer_status"]
+          type?: Database["public"]["Enums"]["offer_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "case_offers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_offers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_offers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       case_requirements: {
         Row: {
-          case_id: string;
-          cohabitant_id: string | null;
-          created_at: string;
-          disclosure_id: string | null;
-          document_id: string | null;
-          id: string;
-          notes: string | null;
-          reference_id: string | null;
-          req_code: string;
-          requirement_id: string;
-          reviewer: string | null;
-          status: Database["public"]["Enums"]["case_req_status"];
-          updated_at: string;
-        };
+          case_id: string
+          cohabitant_id: string | null
+          created_at: string
+          disclosure_id: string | null
+          document_id: string | null
+          id: string
+          notes: string | null
+          reference_id: string | null
+          req_code: string
+          requirement_id: string
+          reviewer: string | null
+          status: Database["public"]["Enums"]["case_req_status"]
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          cohabitant_id?: string | null;
-          created_at?: string;
-          disclosure_id?: string | null;
-          document_id?: string | null;
-          id?: string;
-          notes?: string | null;
-          reference_id?: string | null;
-          req_code: string;
-          requirement_id: string;
-          reviewer?: string | null;
-          status?: Database["public"]["Enums"]["case_req_status"];
-          updated_at?: string;
-        };
+          case_id: string
+          cohabitant_id?: string | null
+          created_at?: string
+          disclosure_id?: string | null
+          document_id?: string | null
+          id?: string
+          notes?: string | null
+          reference_id?: string | null
+          req_code: string
+          requirement_id: string
+          reviewer?: string | null
+          status?: Database["public"]["Enums"]["case_req_status"]
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          cohabitant_id?: string | null;
-          created_at?: string;
-          disclosure_id?: string | null;
-          document_id?: string | null;
-          id?: string;
-          notes?: string | null;
-          reference_id?: string | null;
-          req_code?: string;
-          requirement_id?: string;
-          reviewer?: string | null;
-          status?: Database["public"]["Enums"]["case_req_status"];
-          updated_at?: string;
-        };
+          case_id?: string
+          cohabitant_id?: string | null
+          created_at?: string
+          disclosure_id?: string | null
+          document_id?: string | null
+          id?: string
+          notes?: string | null
+          reference_id?: string | null
+          req_code?: string
+          requirement_id?: string
+          reviewer?: string | null
+          status?: Database["public"]["Enums"]["case_req_status"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_cohabitant_id_fkey";
-            columns: ["cohabitant_id"];
-            isOneToOne: false;
-            referencedRelation: "cohabitants";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_cohabitant_id_fkey"
+            columns: ["cohabitant_id"]
+            isOneToOne: false
+            referencedRelation: "cohabitants"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "case_requirements_reference_id_fkey";
-            columns: ["reference_id"];
-            isOneToOne: false;
-            referencedRelation: "character_references";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_reference_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: false
+            referencedRelation: "character_references"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_requirement_id_fkey";
-            columns: ["requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "requirements";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "requirements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_reviewer_fkey";
-            columns: ["reviewer"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_reviewer_fkey"
+            columns: ["reviewer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_case_req_disclosure";
-            columns: ["disclosure_id"];
-            isOneToOne: false;
-            referencedRelation: "disclosures";
-            referencedColumns: ["id"];
+            foreignKeyName: "fk_case_req_disclosure"
+            columns: ["disclosure_id"]
+            isOneToOne: false
+            referencedRelation: "disclosures"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       case_sponsorships: {
         Row: {
-          applicant_consent_version: string | null;
-          applicant_consented_at: string | null;
-          case_id: string;
-          created_at: string;
-          id: string;
-          invite_token: string | null;
-          invited_email: string;
-          invited_name: string | null;
-          rep_profile_id: string | null;
-          revoked_at: string | null;
-          scope: Database["public"]["Enums"]["sponsorship_scope"];
-          sponsor_id: string;
-          status: string;
-        };
+          applicant_consent_version: string | null
+          applicant_consented_at: string | null
+          case_id: string
+          created_at: string
+          id: string
+          invite_token: string | null
+          invited_email: string
+          invited_name: string | null
+          rep_profile_id: string | null
+          revoked_at: string | null
+          scope: Database["public"]["Enums"]["sponsorship_scope"]
+          sponsor_id: string
+          status: string
+        }
         Insert: {
-          applicant_consent_version?: string | null;
-          applicant_consented_at?: string | null;
-          case_id: string;
-          created_at?: string;
-          id?: string;
-          invite_token?: string | null;
-          invited_email: string;
-          invited_name?: string | null;
-          rep_profile_id?: string | null;
-          revoked_at?: string | null;
-          scope?: Database["public"]["Enums"]["sponsorship_scope"];
-          sponsor_id: string;
-          status?: string;
-        };
+          applicant_consent_version?: string | null
+          applicant_consented_at?: string | null
+          case_id: string
+          created_at?: string
+          id?: string
+          invite_token?: string | null
+          invited_email: string
+          invited_name?: string | null
+          rep_profile_id?: string | null
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          sponsor_id: string
+          status?: string
+        }
         Update: {
-          applicant_consent_version?: string | null;
-          applicant_consented_at?: string | null;
-          case_id?: string;
-          created_at?: string;
-          id?: string;
-          invite_token?: string | null;
-          invited_email?: string;
-          invited_name?: string | null;
-          rep_profile_id?: string | null;
-          revoked_at?: string | null;
-          scope?: Database["public"]["Enums"]["sponsorship_scope"];
-          sponsor_id?: string;
-          status?: string;
-        };
+          applicant_consent_version?: string | null
+          applicant_consented_at?: string | null
+          case_id?: string
+          created_at?: string
+          id?: string
+          invite_token?: string | null
+          invited_email?: string
+          invited_name?: string | null
+          rep_profile_id?: string | null
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          sponsor_id?: string
+          status?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "case_sponsorships_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_sponsorships_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_sponsorships_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_sponsorships_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_sponsorships_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_sponsorships_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_sponsorships_rep_profile_id_fkey";
-            columns: ["rep_profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_sponsorships_rep_profile_id_fkey"
+            columns: ["rep_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_sponsorships_sponsor_id_fkey";
-            columns: ["sponsor_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsors";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_sponsorships_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       case_ssn: {
         Row: {
-          auth_tag: string;
-          case_id: string;
-          ciphertext: string;
-          iv: string;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          auth_tag: string
+          case_id: string
+          ciphertext: string
+          iv: string
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          auth_tag: string;
-          case_id: string;
-          ciphertext: string;
-          iv: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          auth_tag: string
+          case_id: string
+          ciphertext: string
+          iv: string
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          auth_tag?: string;
-          case_id?: string;
-          ciphertext?: string;
-          iv?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          auth_tag?: string
+          case_id?: string
+          ciphertext?: string
+          iv?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_ssn_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_ssn_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_ssn_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_ssn_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_ssn_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_ssn_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_ssn_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_ssn_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       case_stages: {
         Row: {
-          case_id: string;
-          completed_at: string | null;
-          created_at: string;
-          entered_at: string | null;
-          id: string;
-          stage: Database["public"]["Enums"]["case_stage"];
-          status: Database["public"]["Enums"]["stage_status"];
-          updated_at: string;
-        };
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          entered_at: string | null
+          id: string
+          stage: Database["public"]["Enums"]["case_stage"]
+          status: Database["public"]["Enums"]["stage_status"]
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          completed_at?: string | null;
-          created_at?: string;
-          entered_at?: string | null;
-          id?: string;
-          stage: Database["public"]["Enums"]["case_stage"];
-          status?: Database["public"]["Enums"]["stage_status"];
-          updated_at?: string;
-        };
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          entered_at?: string | null
+          id?: string
+          stage: Database["public"]["Enums"]["case_stage"]
+          status?: Database["public"]["Enums"]["stage_status"]
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          completed_at?: string | null;
-          created_at?: string;
-          entered_at?: string | null;
-          id?: string;
-          stage?: Database["public"]["Enums"]["case_stage"];
-          status?: Database["public"]["Enums"]["stage_status"];
-          updated_at?: string;
-        };
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          entered_at?: string | null
+          id?: string
+          stage?: Database["public"]["Enums"]["case_stage"]
+          status?: Database["public"]["Enums"]["stage_status"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "case_stages_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_stages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_stages_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_stages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_stages_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_stages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       cases: {
         Row: {
-          application_type: Database["public"]["Enums"]["application_type"] | null;
-          application_type_selected_at: string | null;
-          application_type_selected_by: string | null;
-          brand: Database["public"]["Enums"]["brand_key"];
-          brand_origin: Database["public"]["Enums"]["brand_key"];
-          calendly_token: string;
-          client_id: string;
-          closed_at: string | null;
-          county_license_expires_on: string | null;
-          created_at: string;
-          id: string;
-          is_demo: boolean;
-          is_renewal: boolean;
-          license_expires_on: string | null;
-          license_issued_on: string | null;
-          license_track: Database["public"]["Enums"]["license_track"];
-          nypd_app_ref: string | null;
-          opened_at: string;
-          qa_signed_off_at: string | null;
-          qa_signed_off_by: string | null;
-          referred_by_sponsor_id: string | null;
-          service_mode: Database["public"]["Enums"]["service_mode"] | null;
-          stage: Database["public"]["Enums"]["case_stage"];
-          stage_entered_at: string;
-          status: Database["public"]["Enums"]["case_status"];
-          target_file_date: string | null;
-          training_completed_on: string | null;
-          training_expires_on: string | null;
-          updated_at: string;
-        };
+          application_type:
+            | Database["public"]["Enums"]["application_type"]
+            | null
+          application_type_selected_at: string | null
+          application_type_selected_by: string | null
+          brand: Database["public"]["Enums"]["brand_key"]
+          brand_origin: Database["public"]["Enums"]["brand_key"]
+          calendly_token: string
+          client_id: string
+          closed_at: string | null
+          county_license_expires_on: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          is_renewal: boolean
+          license_expires_on: string | null
+          license_issued_on: string | null
+          license_track: Database["public"]["Enums"]["license_track"]
+          nypd_app_ref: string | null
+          opened_at: string
+          qa_signed_off_at: string | null
+          qa_signed_off_by: string | null
+          referred_by_sponsor_id: string | null
+          service_mode: Database["public"]["Enums"]["service_mode"] | null
+          stage: Database["public"]["Enums"]["case_stage"]
+          stage_entered_at: string
+          status: Database["public"]["Enums"]["case_status"]
+          target_file_date: string | null
+          training_completed_on: string | null
+          training_expires_on: string | null
+          updated_at: string
+        }
         Insert: {
-          application_type?: Database["public"]["Enums"]["application_type"] | null;
-          application_type_selected_at?: string | null;
-          application_type_selected_by?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          brand_origin?: Database["public"]["Enums"]["brand_key"];
-          calendly_token?: string;
-          client_id: string;
-          closed_at?: string | null;
-          county_license_expires_on?: string | null;
-          created_at?: string;
-          id?: string;
-          is_demo?: boolean;
-          is_renewal?: boolean;
-          license_expires_on?: string | null;
-          license_issued_on?: string | null;
-          license_track?: Database["public"]["Enums"]["license_track"];
-          nypd_app_ref?: string | null;
-          opened_at?: string;
-          qa_signed_off_at?: string | null;
-          qa_signed_off_by?: string | null;
-          referred_by_sponsor_id?: string | null;
-          service_mode?: Database["public"]["Enums"]["service_mode"] | null;
-          stage?: Database["public"]["Enums"]["case_stage"];
-          stage_entered_at?: string;
-          status?: Database["public"]["Enums"]["case_status"];
-          target_file_date?: string | null;
-          training_completed_on?: string | null;
-          training_expires_on?: string | null;
-          updated_at?: string;
-        };
+          application_type?:
+            | Database["public"]["Enums"]["application_type"]
+            | null
+          application_type_selected_at?: string | null
+          application_type_selected_by?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          brand_origin?: Database["public"]["Enums"]["brand_key"]
+          calendly_token?: string
+          client_id: string
+          closed_at?: string | null
+          county_license_expires_on?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          is_renewal?: boolean
+          license_expires_on?: string | null
+          license_issued_on?: string | null
+          license_track?: Database["public"]["Enums"]["license_track"]
+          nypd_app_ref?: string | null
+          opened_at?: string
+          qa_signed_off_at?: string | null
+          qa_signed_off_by?: string | null
+          referred_by_sponsor_id?: string | null
+          service_mode?: Database["public"]["Enums"]["service_mode"] | null
+          stage?: Database["public"]["Enums"]["case_stage"]
+          stage_entered_at?: string
+          status?: Database["public"]["Enums"]["case_status"]
+          target_file_date?: string | null
+          training_completed_on?: string | null
+          training_expires_on?: string | null
+          updated_at?: string
+        }
         Update: {
-          application_type?: Database["public"]["Enums"]["application_type"] | null;
-          application_type_selected_at?: string | null;
-          application_type_selected_by?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          brand_origin?: Database["public"]["Enums"]["brand_key"];
-          calendly_token?: string;
-          client_id?: string;
-          closed_at?: string | null;
-          county_license_expires_on?: string | null;
-          created_at?: string;
-          id?: string;
-          is_demo?: boolean;
-          is_renewal?: boolean;
-          license_expires_on?: string | null;
-          license_issued_on?: string | null;
-          license_track?: Database["public"]["Enums"]["license_track"];
-          nypd_app_ref?: string | null;
-          opened_at?: string;
-          qa_signed_off_at?: string | null;
-          qa_signed_off_by?: string | null;
-          referred_by_sponsor_id?: string | null;
-          service_mode?: Database["public"]["Enums"]["service_mode"] | null;
-          stage?: Database["public"]["Enums"]["case_stage"];
-          stage_entered_at?: string;
-          status?: Database["public"]["Enums"]["case_status"];
-          target_file_date?: string | null;
-          training_completed_on?: string | null;
-          training_expires_on?: string | null;
-          updated_at?: string;
-        };
+          application_type?:
+            | Database["public"]["Enums"]["application_type"]
+            | null
+          application_type_selected_at?: string | null
+          application_type_selected_by?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          brand_origin?: Database["public"]["Enums"]["brand_key"]
+          calendly_token?: string
+          client_id?: string
+          closed_at?: string | null
+          county_license_expires_on?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          is_renewal?: boolean
+          license_expires_on?: string | null
+          license_issued_on?: string | null
+          license_track?: Database["public"]["Enums"]["license_track"]
+          nypd_app_ref?: string | null
+          opened_at?: string
+          qa_signed_off_at?: string | null
+          qa_signed_off_by?: string | null
+          referred_by_sponsor_id?: string | null
+          service_mode?: Database["public"]["Enums"]["service_mode"] | null
+          stage?: Database["public"]["Enums"]["case_stage"]
+          stage_entered_at?: string
+          status?: Database["public"]["Enums"]["case_status"]
+          target_file_date?: string | null
+          training_completed_on?: string | null
+          training_expires_on?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "cases_application_type_selected_by_fkey";
-            columns: ["application_type_selected_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "cases_application_type_selected_by_fkey"
+            columns: ["application_type_selected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cases_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "cases_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cases_qa_signed_off_by_fkey";
-            columns: ["qa_signed_off_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "cases_qa_signed_off_by_fkey"
+            columns: ["qa_signed_off_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cases_referred_by_sponsor_id_fkey";
-            columns: ["referred_by_sponsor_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsors";
-            referencedColumns: ["id"];
+            foreignKeyName: "cases_referred_by_sponsor_id_fkey"
+            columns: ["referred_by_sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       character_references: {
         Row: {
-          case_id: string;
-          contact_email: string | null;
-          contact_phone: string | null;
-          created_at: string;
-          id: string;
-          is_family: boolean;
-          known_duration: string | null;
-          name: string;
-          notarized: boolean;
-          received: boolean;
-          relationship: string | null;
-          updated_at: string;
-        };
+          case_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          is_family: boolean
+          known_duration: string | null
+          name: string
+          notarized: boolean
+          received: boolean
+          relationship: string | null
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          contact_email?: string | null;
-          contact_phone?: string | null;
-          created_at?: string;
-          id?: string;
-          is_family?: boolean;
-          known_duration?: string | null;
-          name: string;
-          notarized?: boolean;
-          received?: boolean;
-          relationship?: string | null;
-          updated_at?: string;
-        };
+          case_id: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          is_family?: boolean
+          known_duration?: string | null
+          name: string
+          notarized?: boolean
+          received?: boolean
+          relationship?: string | null
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          contact_email?: string | null;
-          contact_phone?: string | null;
-          created_at?: string;
-          id?: string;
-          is_family?: boolean;
-          known_duration?: string | null;
-          name?: string;
-          notarized?: boolean;
-          received?: boolean;
-          relationship?: string | null;
-          updated_at?: string;
-        };
+          case_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          is_family?: boolean
+          known_duration?: string | null
+          name?: string
+          notarized?: boolean
+          received?: boolean
+          relationship?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "character_references_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "character_references_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "character_references_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "character_references_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "character_references_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "character_references_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       checklist_items: {
         Row: {
-          case_id: string;
-          created_at: string;
-          description: string | null;
-          document_type: Database["public"]["Enums"]["document_type"] | null;
-          due_date: string | null;
-          id: string;
-          notes: string | null;
-          owner: Database["public"]["Enums"]["checklist_owner"];
-          required: boolean;
-          stage: Database["public"]["Enums"]["case_stage"];
-          status: Database["public"]["Enums"]["checklist_status"];
-          template_key: string | null;
-          title: string;
-          updated_at: string;
-        };
+          case_id: string
+          created_at: string
+          description: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          owner: Database["public"]["Enums"]["checklist_owner"]
+          required: boolean
+          stage: Database["public"]["Enums"]["case_stage"]
+          status: Database["public"]["Enums"]["checklist_status"]
+          template_key: string | null
+          title: string
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          created_at?: string;
-          description?: string | null;
-          document_type?: Database["public"]["Enums"]["document_type"] | null;
-          due_date?: string | null;
-          id?: string;
-          notes?: string | null;
-          owner?: Database["public"]["Enums"]["checklist_owner"];
-          required?: boolean;
-          stage: Database["public"]["Enums"]["case_stage"];
-          status?: Database["public"]["Enums"]["checklist_status"];
-          template_key?: string | null;
-          title: string;
-          updated_at?: string;
-        };
+          case_id: string
+          created_at?: string
+          description?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          owner?: Database["public"]["Enums"]["checklist_owner"]
+          required?: boolean
+          stage: Database["public"]["Enums"]["case_stage"]
+          status?: Database["public"]["Enums"]["checklist_status"]
+          template_key?: string | null
+          title: string
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          created_at?: string;
-          description?: string | null;
-          document_type?: Database["public"]["Enums"]["document_type"] | null;
-          due_date?: string | null;
-          id?: string;
-          notes?: string | null;
-          owner?: Database["public"]["Enums"]["checklist_owner"];
-          required?: boolean;
-          stage?: Database["public"]["Enums"]["case_stage"];
-          status?: Database["public"]["Enums"]["checklist_status"];
-          template_key?: string | null;
-          title?: string;
-          updated_at?: string;
-        };
+          case_id?: string
+          created_at?: string
+          description?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          owner?: Database["public"]["Enums"]["checklist_owner"]
+          required?: boolean
+          stage?: Database["public"]["Enums"]["case_stage"]
+          status?: Database["public"]["Enums"]["checklist_status"]
+          template_key?: string | null
+          title?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "checklist_items_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "checklist_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "checklist_items_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "checklist_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "checklist_items_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "checklist_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       client_notification_preferences: {
         Row: {
-          cadence: Database["public"]["Enums"]["follow_up_cadence"];
-          client_id: string;
-          created_at: string;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          cadence: Database["public"]["Enums"]["follow_up_cadence"]
+          client_id: string
+          created_at: string
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          cadence?: Database["public"]["Enums"]["follow_up_cadence"];
-          client_id: string;
-          created_at?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          cadence?: Database["public"]["Enums"]["follow_up_cadence"]
+          client_id: string
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          cadence?: Database["public"]["Enums"]["follow_up_cadence"];
-          client_id?: string;
-          created_at?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          cadence?: Database["public"]["Enums"]["follow_up_cadence"]
+          client_id?: string
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "client_notification_preferences_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: true;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "client_notification_preferences_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "client_notification_preferences_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "client_notification_preferences_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       clients: {
         Row: {
-          assigned_staff: string | null;
-          borough: string | null;
-          created_at: string;
-          current_stage: Database["public"]["Enums"]["case_stage"];
-          eligibility: NonNullable<Json>;
-          email: string | null;
-          full_name: string;
-          home_geog: unknown;
-          id: string;
-          lat: number | null;
-          lead_source: string | null;
-          license_type: string | null;
-          lng: number | null;
-          phone: string | null;
-          profile_id: string | null;
-          signup_brand: Database["public"]["Enums"]["brand_key"];
-          stripe_customer_id: string | null;
-          track: Database["public"]["Enums"]["client_track"];
-          updated_at: string;
-          zip: string | null;
-        };
+          assigned_staff: string | null
+          borough: string | null
+          created_at: string
+          current_stage: Database["public"]["Enums"]["case_stage"]
+          eligibility: Json
+          email: string | null
+          full_name: string
+          home_geog: unknown
+          id: string
+          lat: number | null
+          lead_source: string | null
+          license_type: string | null
+          lng: number | null
+          phone: string | null
+          profile_id: string | null
+          signup_brand: Database["public"]["Enums"]["brand_key"]
+          stripe_customer_id: string | null
+          track: Database["public"]["Enums"]["client_track"]
+          updated_at: string
+          zip: string | null
+        }
         Insert: {
-          assigned_staff?: string | null;
-          borough?: string | null;
-          created_at?: string;
-          current_stage?: Database["public"]["Enums"]["case_stage"];
-          eligibility?: NonNullable<Json>;
-          email?: string | null;
-          full_name: string;
-          home_geog?: unknown;
-          id?: string;
-          lat?: number | null;
-          lead_source?: string | null;
-          license_type?: string | null;
-          lng?: number | null;
-          phone?: string | null;
-          profile_id?: string | null;
-          signup_brand?: Database["public"]["Enums"]["brand_key"];
-          stripe_customer_id?: string | null;
-          track?: Database["public"]["Enums"]["client_track"];
-          updated_at?: string;
-          zip?: string | null;
-        };
+          assigned_staff?: string | null
+          borough?: string | null
+          created_at?: string
+          current_stage?: Database["public"]["Enums"]["case_stage"]
+          eligibility?: Json
+          email?: string | null
+          full_name: string
+          home_geog?: unknown
+          id?: string
+          lat?: number | null
+          lead_source?: string | null
+          license_type?: string | null
+          lng?: number | null
+          phone?: string | null
+          profile_id?: string | null
+          signup_brand?: Database["public"]["Enums"]["brand_key"]
+          stripe_customer_id?: string | null
+          track?: Database["public"]["Enums"]["client_track"]
+          updated_at?: string
+          zip?: string | null
+        }
         Update: {
-          assigned_staff?: string | null;
-          borough?: string | null;
-          created_at?: string;
-          current_stage?: Database["public"]["Enums"]["case_stage"];
-          eligibility?: NonNullable<Json>;
-          email?: string | null;
-          full_name?: string;
-          home_geog?: unknown;
-          id?: string;
-          lat?: number | null;
-          lead_source?: string | null;
-          license_type?: string | null;
-          lng?: number | null;
-          phone?: string | null;
-          profile_id?: string | null;
-          signup_brand?: Database["public"]["Enums"]["brand_key"];
-          stripe_customer_id?: string | null;
-          track?: Database["public"]["Enums"]["client_track"];
-          updated_at?: string;
-          zip?: string | null;
-        };
+          assigned_staff?: string | null
+          borough?: string | null
+          created_at?: string
+          current_stage?: Database["public"]["Enums"]["case_stage"]
+          eligibility?: Json
+          email?: string | null
+          full_name?: string
+          home_geog?: unknown
+          id?: string
+          lat?: number | null
+          lead_source?: string | null
+          license_type?: string | null
+          lng?: number | null
+          phone?: string | null
+          profile_id?: string | null
+          signup_brand?: Database["public"]["Enums"]["brand_key"]
+          stripe_customer_id?: string | null
+          track?: Database["public"]["Enums"]["client_track"]
+          updated_at?: string
+          zip?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "clients_assigned_staff_fkey";
-            columns: ["assigned_staff"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "clients_assigned_staff_fkey"
+            columns: ["assigned_staff"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "clients_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "clients_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       cohabitants: {
         Row: {
-          affidavit_status: Database["public"]["Enums"]["cohabitant_status"];
-          answered_at: string | null;
-          answers: NonNullable<Json>;
-          case_id: string;
-          confirmed_email: string | null;
-          contact_email: string | null;
-          created_at: string;
-          document_id: string | null;
-          id: string;
-          name: string;
-          notarized_at: string | null;
-          notary_area: string | null;
-          opened_at: string | null;
-          relationship: string | null;
-          sent_at: string | null;
-          token: string | null;
-          token_expires_at: string | null;
-          token_revoked_at: string | null;
-          updated_at: string;
-        };
+          affidavit_status: Database["public"]["Enums"]["cohabitant_status"]
+          answered_at: string | null
+          answers: Json
+          case_id: string
+          confirmed_email: string | null
+          contact_email: string | null
+          created_at: string
+          document_id: string | null
+          id: string
+          name: string
+          notarized_at: string | null
+          notary_area: string | null
+          opened_at: string | null
+          relationship: string | null
+          sent_at: string | null
+          token: string | null
+          token_expires_at: string | null
+          token_revoked_at: string | null
+          updated_at: string
+        }
         Insert: {
-          affidavit_status?: Database["public"]["Enums"]["cohabitant_status"];
-          answered_at?: string | null;
-          answers?: NonNullable<Json>;
-          case_id: string;
-          confirmed_email?: string | null;
-          contact_email?: string | null;
-          created_at?: string;
-          document_id?: string | null;
-          id?: string;
-          name: string;
-          notarized_at?: string | null;
-          notary_area?: string | null;
-          opened_at?: string | null;
-          relationship?: string | null;
-          sent_at?: string | null;
-          token?: string | null;
-          token_expires_at?: string | null;
-          token_revoked_at?: string | null;
-          updated_at?: string;
-        };
+          affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
+          answered_at?: string | null
+          answers?: Json
+          case_id: string
+          confirmed_email?: string | null
+          contact_email?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          name: string
+          notarized_at?: string | null
+          notary_area?: string | null
+          opened_at?: string | null
+          relationship?: string | null
+          sent_at?: string | null
+          token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
+          updated_at?: string
+        }
         Update: {
-          affidavit_status?: Database["public"]["Enums"]["cohabitant_status"];
-          answered_at?: string | null;
-          answers?: NonNullable<Json>;
-          case_id?: string;
-          confirmed_email?: string | null;
-          contact_email?: string | null;
-          created_at?: string;
-          document_id?: string | null;
-          id?: string;
-          name?: string;
-          notarized_at?: string | null;
-          notary_area?: string | null;
-          opened_at?: string | null;
-          relationship?: string | null;
-          sent_at?: string | null;
-          token?: string | null;
-          token_expires_at?: string | null;
-          token_revoked_at?: string | null;
-          updated_at?: string;
-        };
+          affidavit_status?: Database["public"]["Enums"]["cohabitant_status"]
+          answered_at?: string | null
+          answers?: Json
+          case_id?: string
+          confirmed_email?: string | null
+          contact_email?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          name?: string
+          notarized_at?: string | null
+          notary_area?: string | null
+          opened_at?: string | null
+          relationship?: string | null
+          sent_at?: string | null
+          token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "cohabitants_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "cohabitants_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cohabitants_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "cohabitants_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "cohabitants_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "cohabitants_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "cohabitants_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "cohabitants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cohabitants_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "cohabitants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "cohabitants_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "cohabitants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
-        ];
-      };
+        ]
+      }
       data_erasure_log: {
         Row: {
-          actor: string | null;
-          case_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          data_request_id: string | null;
-          id: string;
-          note: string | null;
-          surfaces: NonNullable<Json>;
-        };
+          actor: string | null
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          data_request_id: string | null
+          id: string
+          note: string | null
+          surfaces: Json
+        }
         Insert: {
-          actor?: string | null;
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          data_request_id?: string | null;
-          id?: string;
-          note?: string | null;
-          surfaces?: NonNullable<Json>;
-        };
+          actor?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          data_request_id?: string | null
+          id?: string
+          note?: string | null
+          surfaces?: Json
+        }
         Update: {
-          actor?: string | null;
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          data_request_id?: string | null;
-          id?: string;
-          note?: string | null;
-          surfaces?: NonNullable<Json>;
-        };
+          actor?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          data_request_id?: string | null
+          id?: string
+          note?: string | null
+          surfaces?: Json
+        }
         Relationships: [
           {
-            foreignKeyName: "data_erasure_log_actor_fkey";
-            columns: ["actor"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "data_erasure_log_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "data_erasure_log_data_request_id_fkey";
-            columns: ["data_request_id"];
-            isOneToOne: false;
-            referencedRelation: "data_requests";
-            referencedColumns: ["id"];
+            foreignKeyName: "data_erasure_log_data_request_id_fkey"
+            columns: ["data_request_id"]
+            isOneToOne: false
+            referencedRelation: "data_requests"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       data_requests: {
         Row: {
-          acknowledged_at: string | null;
-          acknowledged_by: string | null;
-          case_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          detail: string | null;
-          fulfilled_at: string | null;
-          id: string;
-          kind: string;
-          requested_at: string;
-          requester_email: string;
-          resolution_note: string | null;
-          status: string;
-        };
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          detail: string | null
+          fulfilled_at: string | null
+          id: string
+          kind: string
+          requested_at: string
+          requester_email: string
+          resolution_note: string | null
+          status: string
+        }
         Insert: {
-          acknowledged_at?: string | null;
-          acknowledged_by?: string | null;
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          detail?: string | null;
-          fulfilled_at?: string | null;
-          id?: string;
-          kind: string;
-          requested_at?: string;
-          requester_email: string;
-          resolution_note?: string | null;
-          status?: string;
-        };
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          detail?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          kind: string
+          requested_at?: string
+          requester_email: string
+          resolution_note?: string | null
+          status?: string
+        }
         Update: {
-          acknowledged_at?: string | null;
-          acknowledged_by?: string | null;
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          detail?: string | null;
-          fulfilled_at?: string | null;
-          id?: string;
-          kind?: string;
-          requested_at?: string;
-          requester_email?: string;
-          resolution_note?: string | null;
-          status?: string;
-        };
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          detail?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          kind?: string
+          requested_at?: string
+          requester_email?: string
+          resolution_note?: string | null
+          status?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "data_requests_acknowledged_by_fkey";
-            columns: ["acknowledged_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "data_requests_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "data_requests_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "data_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "data_requests_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "data_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "data_requests_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "data_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "data_requests_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "data_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       disclosures: {
         Row: {
-          case_id: string;
-          created_at: string;
-          disposition: string | null;
-          id: string;
-          jurisdiction_text: string | null;
-          narrative: string;
-          occurred_on: string | null;
-          parties: string | null;
-          question_no: number | null;
-          spawned_req_code: string | null;
-          type: Database["public"]["Enums"]["disclosure_type"];
-          updated_at: string;
-        };
+          case_id: string
+          created_at: string
+          disposition: string | null
+          id: string
+          jurisdiction_text: string | null
+          narrative: string
+          occurred_on: string | null
+          parties: string | null
+          question_no: number | null
+          spawned_req_code: string | null
+          type: Database["public"]["Enums"]["disclosure_type"]
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          created_at?: string;
-          disposition?: string | null;
-          id?: string;
-          jurisdiction_text?: string | null;
-          narrative?: string;
-          occurred_on?: string | null;
-          parties?: string | null;
-          question_no?: number | null;
-          spawned_req_code?: string | null;
-          type: Database["public"]["Enums"]["disclosure_type"];
-          updated_at?: string;
-        };
+          case_id: string
+          created_at?: string
+          disposition?: string | null
+          id?: string
+          jurisdiction_text?: string | null
+          narrative?: string
+          occurred_on?: string | null
+          parties?: string | null
+          question_no?: number | null
+          spawned_req_code?: string | null
+          type: Database["public"]["Enums"]["disclosure_type"]
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          created_at?: string;
-          disposition?: string | null;
-          id?: string;
-          jurisdiction_text?: string | null;
-          narrative?: string;
-          occurred_on?: string | null;
-          parties?: string | null;
-          question_no?: number | null;
-          spawned_req_code?: string | null;
-          type?: Database["public"]["Enums"]["disclosure_type"];
-          updated_at?: string;
-        };
+          case_id?: string
+          created_at?: string
+          disposition?: string | null
+          id?: string
+          jurisdiction_text?: string | null
+          narrative?: string
+          occurred_on?: string | null
+          parties?: string | null
+          question_no?: number | null
+          spawned_req_code?: string | null
+          type?: Database["public"]["Enums"]["disclosure_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "disclosures_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "disclosures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "disclosures_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "disclosures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "disclosures_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "disclosures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       document_access_log: {
         Row: {
-          action: string;
-          case_id: string;
-          created_at: string;
-          document_id: string | null;
-          id: string;
-          req_code: string | null;
-          viewer_profile_id: string | null;
-          viewer_role: Database["public"]["Enums"]["user_role"] | null;
-        };
+          action: string
+          case_id: string
+          created_at: string
+          document_id: string | null
+          id: string
+          req_code: string | null
+          viewer_profile_id: string | null
+          viewer_role: Database["public"]["Enums"]["user_role"] | null
+        }
         Insert: {
-          action: string;
-          case_id: string;
-          created_at?: string;
-          document_id?: string | null;
-          id?: string;
-          req_code?: string | null;
-          viewer_profile_id?: string | null;
-          viewer_role?: Database["public"]["Enums"]["user_role"] | null;
-        };
+          action: string
+          case_id: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          req_code?: string | null
+          viewer_profile_id?: string | null
+          viewer_role?: Database["public"]["Enums"]["user_role"] | null
+        }
         Update: {
-          action?: string;
-          case_id?: string;
-          created_at?: string;
-          document_id?: string | null;
-          id?: string;
-          req_code?: string | null;
-          viewer_profile_id?: string | null;
-          viewer_role?: Database["public"]["Enums"]["user_role"] | null;
-        };
+          action?: string
+          case_id?: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          req_code?: string | null
+          viewer_profile_id?: string | null
+          viewer_role?: Database["public"]["Enums"]["user_role"] | null
+        }
         Relationships: [
           {
-            foreignKeyName: "document_access_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "document_access_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "document_access_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "document_access_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "document_access_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "document_access_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "document_access_log_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "document_access_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "document_access_log_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "document_access_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "document_access_log_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "document_access_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "document_access_log_viewer_profile_id_fkey";
-            columns: ["viewer_profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "document_access_log_viewer_profile_id_fkey"
+            columns: ["viewer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       documents: {
         Row: {
-          case_id: string;
-          checklist_item_id: string | null;
-          client_id: string;
-          conversion_note: string | null;
-          conversion_pending: boolean;
-          created_at: string;
-          file_name: string | null;
-          file_path: string | null;
-          generated: boolean;
-          id: string;
-          notarized: boolean;
-          original_file_path: string | null;
-          req_code: string | null;
-          review_notes: string | null;
-          reviewer: string | null;
-          signed_at: string | null;
-          stale: boolean;
-          status: Database["public"]["Enums"]["document_status"];
-          template_key: string | null;
-          template_sha256: string | null;
-          type: Database["public"]["Enums"]["document_type"];
-          updated_at: string;
-          version: number;
-        };
+          case_id: string
+          checklist_item_id: string | null
+          client_id: string
+          conversion_note: string | null
+          conversion_pending: boolean
+          created_at: string
+          file_name: string | null
+          file_path: string | null
+          generated: boolean
+          id: string
+          notarized: boolean
+          original_file_path: string | null
+          req_code: string | null
+          review_notes: string | null
+          reviewer: string | null
+          signed_at: string | null
+          stale: boolean
+          status: Database["public"]["Enums"]["document_status"]
+          template_key: string | null
+          template_sha256: string | null
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at: string
+          version: number
+        }
         Insert: {
-          case_id: string;
-          checklist_item_id?: string | null;
-          client_id: string;
-          conversion_note?: string | null;
-          conversion_pending?: boolean;
-          created_at?: string;
-          file_name?: string | null;
-          file_path?: string | null;
-          generated?: boolean;
-          id?: string;
-          notarized?: boolean;
-          original_file_path?: string | null;
-          req_code?: string | null;
-          review_notes?: string | null;
-          reviewer?: string | null;
-          signed_at?: string | null;
-          stale?: boolean;
-          status?: Database["public"]["Enums"]["document_status"];
-          template_key?: string | null;
-          template_sha256?: string | null;
-          type: Database["public"]["Enums"]["document_type"];
-          updated_at?: string;
-          version?: number;
-        };
+          case_id: string
+          checklist_item_id?: string | null
+          client_id: string
+          conversion_note?: string | null
+          conversion_pending?: boolean
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          generated?: boolean
+          id?: string
+          notarized?: boolean
+          original_file_path?: string | null
+          req_code?: string | null
+          review_notes?: string | null
+          reviewer?: string | null
+          signed_at?: string | null
+          stale?: boolean
+          status?: Database["public"]["Enums"]["document_status"]
+          template_key?: string | null
+          template_sha256?: string | null
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+          version?: number
+        }
         Update: {
-          case_id?: string;
-          checklist_item_id?: string | null;
-          client_id?: string;
-          conversion_note?: string | null;
-          conversion_pending?: boolean;
-          created_at?: string;
-          file_name?: string | null;
-          file_path?: string | null;
-          generated?: boolean;
-          id?: string;
-          notarized?: boolean;
-          original_file_path?: string | null;
-          req_code?: string | null;
-          review_notes?: string | null;
-          reviewer?: string | null;
-          signed_at?: string | null;
-          stale?: boolean;
-          status?: Database["public"]["Enums"]["document_status"];
-          template_key?: string | null;
-          template_sha256?: string | null;
-          type?: Database["public"]["Enums"]["document_type"];
-          updated_at?: string;
-          version?: number;
-        };
+          case_id?: string
+          checklist_item_id?: string | null
+          client_id?: string
+          conversion_note?: string | null
+          conversion_pending?: boolean
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          generated?: boolean
+          id?: string
+          notarized?: boolean
+          original_file_path?: string | null
+          req_code?: string | null
+          review_notes?: string | null
+          reviewer?: string | null
+          signed_at?: string | null
+          stale?: boolean
+          status?: Database["public"]["Enums"]["document_status"]
+          template_key?: string | null
+          template_sha256?: string | null
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+          version?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "documents_checklist_item_id_fkey";
-            columns: ["checklist_item_id"];
-            isOneToOne: false;
-            referencedRelation: "checklist_items";
-            referencedColumns: ["id"];
+            foreignKeyName: "documents_checklist_item_id_fkey"
+            columns: ["checklist_item_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_items"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "documents_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "documents_reviewer_fkey";
-            columns: ["reviewer"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "documents_reviewer_fkey"
+            columns: ["reviewer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       dos_armed_upgrade: {
         Row: {
-          case_id: string;
-          dos_1619f_status: string;
-          dos_fee_paid: boolean;
-          firearms_47hr_status: string;
-          firearms_annual_due_on: string | null;
-          guard_card_returned: boolean;
-          inservice_due_on: string | null;
-          opened_at: string;
-          registration_expires_on: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          case_id: string
+          dos_1619f_status: string
+          dos_fee_paid: boolean
+          firearms_47hr_status: string
+          firearms_annual_due_on: string | null
+          guard_card_returned: boolean
+          inservice_due_on: string | null
+          opened_at: string
+          registration_expires_on: string | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          case_id: string;
-          dos_1619f_status?: string;
-          dos_fee_paid?: boolean;
-          firearms_47hr_status?: string;
-          firearms_annual_due_on?: string | null;
-          guard_card_returned?: boolean;
-          inservice_due_on?: string | null;
-          opened_at?: string;
-          registration_expires_on?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          case_id: string
+          dos_1619f_status?: string
+          dos_fee_paid?: boolean
+          firearms_47hr_status?: string
+          firearms_annual_due_on?: string | null
+          guard_card_returned?: boolean
+          inservice_due_on?: string | null
+          opened_at?: string
+          registration_expires_on?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          case_id?: string;
-          dos_1619f_status?: string;
-          dos_fee_paid?: boolean;
-          firearms_47hr_status?: string;
-          firearms_annual_due_on?: string | null;
-          guard_card_returned?: boolean;
-          inservice_due_on?: string | null;
-          opened_at?: string;
-          registration_expires_on?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          case_id?: string
+          dos_1619f_status?: string
+          dos_fee_paid?: boolean
+          firearms_47hr_status?: string
+          firearms_annual_due_on?: string | null
+          guard_card_returned?: boolean
+          inservice_due_on?: string | null
+          opened_at?: string
+          registration_expires_on?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "dos_armed_upgrade_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "dos_armed_upgrade_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "dos_armed_upgrade_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "dos_armed_upgrade_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "dos_armed_upgrade_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "dos_armed_upgrade_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "dos_armed_upgrade_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "dos_armed_upgrade_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       engagements: {
         Row: {
-          case_id: string;
-          client_consented_at: string | null;
-          created_at: string;
-          id: string;
-          instructor_id: string;
-          offer_id: string | null;
-          scope_full_assist: boolean;
-          status: Database["public"]["Enums"]["engagement_status"];
-          type: Database["public"]["Enums"]["offer_type"];
-          updated_at: string;
-        };
+          case_id: string
+          client_consented_at: string | null
+          created_at: string
+          id: string
+          instructor_id: string
+          offer_id: string | null
+          scope_full_assist: boolean
+          status: Database["public"]["Enums"]["engagement_status"]
+          type: Database["public"]["Enums"]["offer_type"]
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          client_consented_at?: string | null;
-          created_at?: string;
-          id?: string;
-          instructor_id: string;
-          offer_id?: string | null;
-          scope_full_assist?: boolean;
-          status?: Database["public"]["Enums"]["engagement_status"];
-          type: Database["public"]["Enums"]["offer_type"];
-          updated_at?: string;
-        };
+          case_id: string
+          client_consented_at?: string | null
+          created_at?: string
+          id?: string
+          instructor_id: string
+          offer_id?: string | null
+          scope_full_assist?: boolean
+          status?: Database["public"]["Enums"]["engagement_status"]
+          type: Database["public"]["Enums"]["offer_type"]
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          client_consented_at?: string | null;
-          created_at?: string;
-          id?: string;
-          instructor_id?: string;
-          offer_id?: string | null;
-          scope_full_assist?: boolean;
-          status?: Database["public"]["Enums"]["engagement_status"];
-          type?: Database["public"]["Enums"]["offer_type"];
-          updated_at?: string;
-        };
+          case_id?: string
+          client_consented_at?: string | null
+          created_at?: string
+          id?: string
+          instructor_id?: string
+          offer_id?: string | null
+          scope_full_assist?: boolean
+          status?: Database["public"]["Enums"]["engagement_status"]
+          type?: Database["public"]["Enums"]["offer_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "engagements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "engagements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "engagements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "engagements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "engagements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "engagements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "engagements_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "engagements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "engagements_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "engagements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
-            foreignKeyName: "engagements_offer_id_fkey";
-            columns: ["offer_id"];
-            isOneToOne: false;
-            referencedRelation: "applicant_interest_feed";
-            referencedColumns: ["offer_id"];
+            foreignKeyName: "engagements_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "applicant_interest_feed"
+            referencedColumns: ["offer_id"]
           },
           {
-            foreignKeyName: "engagements_offer_id_fkey";
-            columns: ["offer_id"];
-            isOneToOne: false;
-            referencedRelation: "case_offers";
-            referencedColumns: ["id"];
+            foreignKeyName: "engagements_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "case_offers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "engagements_offer_id_fkey";
-            columns: ["offer_id"];
-            isOneToOne: false;
-            referencedRelation: "instructor_offer_feed";
-            referencedColumns: ["offer_id"];
+            foreignKeyName: "engagements_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_offer_feed"
+            referencedColumns: ["offer_id"]
           },
-        ];
-      };
+        ]
+      }
       fees: {
         Row: {
-          active: boolean;
-          amount_cents: number;
-          authority: string | null;
-          created_at: string;
-          id: string;
-          key: string;
-          label: string;
-          notes: string | null;
-          payee: string;
-          updated_at: string;
-        };
+          active: boolean
+          amount_cents: number
+          authority: string | null
+          created_at: string
+          id: string
+          key: string
+          label: string
+          notes: string | null
+          payee: string
+          updated_at: string
+        }
         Insert: {
-          active?: boolean;
-          amount_cents: number;
-          authority?: string | null;
-          created_at?: string;
-          id?: string;
-          key: string;
-          label: string;
-          notes?: string | null;
-          payee: string;
-          updated_at?: string;
-        };
+          active?: boolean
+          amount_cents: number
+          authority?: string | null
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          notes?: string | null
+          payee: string
+          updated_at?: string
+        }
         Update: {
-          active?: boolean;
-          amount_cents?: number;
-          authority?: string | null;
-          created_at?: string;
-          id?: string;
-          key?: string;
-          label?: string;
-          notes?: string | null;
-          payee?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          active?: boolean
+          amount_cents?: number
+          authority?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          notes?: string | null
+          payee?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_template_checks: {
         Row: {
-          checked_at: string;
-          fetched_sha256: string | null;
-          id: string;
-          matched: boolean;
-          note: string | null;
-          template_key: string;
-        };
+          checked_at: string
+          fetched_sha256: string | null
+          id: string
+          matched: boolean
+          note: string | null
+          template_key: string
+        }
         Insert: {
-          checked_at?: string;
-          fetched_sha256?: string | null;
-          id?: string;
-          matched: boolean;
-          note?: string | null;
-          template_key: string;
-        };
+          checked_at?: string
+          fetched_sha256?: string | null
+          id?: string
+          matched: boolean
+          note?: string | null
+          template_key: string
+        }
         Update: {
-          checked_at?: string;
-          fetched_sha256?: string | null;
-          id?: string;
-          matched?: boolean;
-          note?: string | null;
-          template_key?: string;
-        };
-        Relationships: [];
-      };
+          checked_at?: string
+          fetched_sha256?: string | null
+          id?: string
+          matched?: boolean
+          note?: string | null
+          template_key?: string
+        }
+        Relationships: []
+      }
       form_templates: {
         Row: {
-          active: boolean;
-          created_at: string;
-          form_number: string | null;
-          id: string;
-          is_fillable: boolean;
-          issuing_authority: string;
-          key: string;
-          official_title: string;
-          revision: string | null;
-          sha256: string;
-          source_url: string;
-          storage_path: string;
-          superseded_by: string | null;
-          verified_at: string;
-        };
+          active: boolean
+          created_at: string
+          form_number: string | null
+          id: string
+          is_fillable: boolean
+          issuing_authority: string
+          key: string
+          official_title: string
+          revision: string | null
+          sha256: string
+          source_url: string
+          storage_path: string
+          superseded_by: string | null
+          verified_at: string
+        }
         Insert: {
-          active?: boolean;
-          created_at?: string;
-          form_number?: string | null;
-          id?: string;
-          is_fillable?: boolean;
-          issuing_authority: string;
-          key: string;
-          official_title: string;
-          revision?: string | null;
-          sha256: string;
-          source_url: string;
-          storage_path: string;
-          superseded_by?: string | null;
-          verified_at?: string;
-        };
+          active?: boolean
+          created_at?: string
+          form_number?: string | null
+          id?: string
+          is_fillable?: boolean
+          issuing_authority: string
+          key: string
+          official_title: string
+          revision?: string | null
+          sha256: string
+          source_url: string
+          storage_path: string
+          superseded_by?: string | null
+          verified_at?: string
+        }
         Update: {
-          active?: boolean;
-          created_at?: string;
-          form_number?: string | null;
-          id?: string;
-          is_fillable?: boolean;
-          issuing_authority?: string;
-          key?: string;
-          official_title?: string;
-          revision?: string | null;
-          sha256?: string;
-          source_url?: string;
-          storage_path?: string;
-          superseded_by?: string | null;
-          verified_at?: string;
-        };
+          active?: boolean
+          created_at?: string
+          form_number?: string | null
+          id?: string
+          is_fillable?: boolean
+          issuing_authority?: string
+          key?: string
+          official_title?: string
+          revision?: string | null
+          sha256?: string
+          source_url?: string
+          storage_path?: string
+          superseded_by?: string | null
+          verified_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "form_templates_superseded_by_fkey";
-            columns: ["superseded_by"];
-            isOneToOne: false;
-            referencedRelation: "form_templates";
-            referencedColumns: ["id"];
+            foreignKeyName: "form_templates_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       instructors: {
         Row: {
-          active: boolean;
-          ammo_included: boolean | null;
-          auto_offer_enabled: boolean;
-          auto_offer_note: string | null;
-          auto_offer_price_cents: number | null;
-          availability: NonNullable<Json>;
-          avatar_path: string | null;
-          background: string | null;
-          base_geog: unknown;
-          bio: string | null;
-          class_format: string | null;
-          class_frequency: string | null;
-          consult_days: string[];
-          consult_hours_end: number | null;
-          consult_hours_start: number | null;
-          created_at: string;
-          dcjs_id: string | null;
-          email: string | null;
-          facebook_url: string | null;
-          facility_photo_paths: string[] | null;
-          feed_seen_at: string | null;
-          id: string;
-          instagram_handle: string | null;
-          intro_call_note: string | null;
-          jurisdictions: Database["public"]["Enums"]["jurisdiction_key"][];
-          languages: string[] | null;
-          lat: number | null;
-          lng: number | null;
-          materials_included: boolean | null;
-          name: string;
-          offers_intro_call: boolean;
-          onboarding_completed_at: string | null;
-          open_to_more_classes: boolean;
-          payouts_enabled: boolean;
-          phone: string | null;
-          price_18h_cents: number | null;
-          profile_id: string | null;
-          provides_range: boolean | null;
-          public_boroughs: string[];
-          public_profile: boolean;
-          range_fee_included: boolean | null;
-          rating_avg: number | null;
-          rating_count: number;
-          response_time_note: string | null;
-          scheduling_notes: string | null;
-          separate_range_note: string | null;
-          service_radius_mi: number;
-          stripe_connect_account_id: string | null;
-          trust_tier: string;
-          typical_class_size: number | null;
-          updated_at: string;
-          verified: boolean;
-          verified_at: string | null;
-          website_url: string | null;
-          whats_to_bring: string | null;
-          x_handle: string | null;
-          years_experience: number | null;
-        };
+          active: boolean
+          ammo_included: boolean | null
+          auto_offer_enabled: boolean
+          auto_offer_note: string | null
+          auto_offer_price_cents: number | null
+          availability: Json
+          avatar_path: string | null
+          background: string | null
+          base_geog: unknown
+          bio: string | null
+          class_format: string | null
+          class_frequency: string | null
+          consult_days: string[]
+          consult_hours_end: number | null
+          consult_hours_start: number | null
+          created_at: string
+          dcjs_id: string | null
+          email: string | null
+          facebook_url: string | null
+          facility_photo_paths: string[] | null
+          feed_seen_at: string | null
+          id: string
+          instagram_handle: string | null
+          intro_call_note: string | null
+          jurisdictions: Database["public"]["Enums"]["jurisdiction_key"][]
+          languages: string[] | null
+          lat: number | null
+          lng: number | null
+          materials_included: boolean | null
+          name: string
+          offers_intro_call: boolean
+          onboarding_completed_at: string | null
+          open_to_more_classes: boolean
+          payouts_enabled: boolean
+          phone: string | null
+          price_18h_cents: number | null
+          profile_id: string | null
+          provides_range: boolean | null
+          public_boroughs: string[]
+          public_profile: boolean
+          range_fee_included: boolean | null
+          rating_avg: number | null
+          rating_count: number
+          response_time_note: string | null
+          scheduling_notes: string | null
+          separate_range_note: string | null
+          service_radius_mi: number
+          stripe_connect_account_id: string | null
+          trust_tier: string
+          typical_class_size: number | null
+          updated_at: string
+          verified: boolean
+          verified_at: string | null
+          website_url: string | null
+          whats_to_bring: string | null
+          x_handle: string | null
+          years_experience: number | null
+        }
         Insert: {
-          active?: boolean;
-          ammo_included?: boolean | null;
-          auto_offer_enabled?: boolean;
-          auto_offer_note?: string | null;
-          auto_offer_price_cents?: number | null;
-          availability?: NonNullable<Json>;
-          avatar_path?: string | null;
-          background?: string | null;
-          base_geog?: unknown;
-          bio?: string | null;
-          class_format?: string | null;
-          class_frequency?: string | null;
-          consult_days?: string[];
-          consult_hours_end?: number | null;
-          consult_hours_start?: number | null;
-          created_at?: string;
-          dcjs_id?: string | null;
-          email?: string | null;
-          facebook_url?: string | null;
-          facility_photo_paths?: string[] | null;
-          feed_seen_at?: string | null;
-          id?: string;
-          instagram_handle?: string | null;
-          intro_call_note?: string | null;
-          jurisdictions?: Database["public"]["Enums"]["jurisdiction_key"][];
-          languages?: string[] | null;
-          lat?: number | null;
-          lng?: number | null;
-          materials_included?: boolean | null;
-          name: string;
-          offers_intro_call?: boolean;
-          onboarding_completed_at?: string | null;
-          open_to_more_classes?: boolean;
-          payouts_enabled?: boolean;
-          phone?: string | null;
-          price_18h_cents?: number | null;
-          profile_id?: string | null;
-          provides_range?: boolean | null;
-          public_boroughs?: string[];
-          public_profile?: boolean;
-          range_fee_included?: boolean | null;
-          rating_avg?: number | null;
-          rating_count?: number;
-          response_time_note?: string | null;
-          scheduling_notes?: string | null;
-          separate_range_note?: string | null;
-          service_radius_mi?: number;
-          stripe_connect_account_id?: string | null;
-          trust_tier?: string;
-          typical_class_size?: number | null;
-          updated_at?: string;
-          verified?: boolean;
-          verified_at?: string | null;
-          website_url?: string | null;
-          whats_to_bring?: string | null;
-          x_handle?: string | null;
-          years_experience?: number | null;
-        };
+          active?: boolean
+          ammo_included?: boolean | null
+          auto_offer_enabled?: boolean
+          auto_offer_note?: string | null
+          auto_offer_price_cents?: number | null
+          availability?: Json
+          avatar_path?: string | null
+          background?: string | null
+          base_geog?: unknown
+          bio?: string | null
+          class_format?: string | null
+          class_frequency?: string | null
+          consult_days?: string[]
+          consult_hours_end?: number | null
+          consult_hours_start?: number | null
+          created_at?: string
+          dcjs_id?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          facility_photo_paths?: string[] | null
+          feed_seen_at?: string | null
+          id?: string
+          instagram_handle?: string | null
+          intro_call_note?: string | null
+          jurisdictions?: Database["public"]["Enums"]["jurisdiction_key"][]
+          languages?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          materials_included?: boolean | null
+          name: string
+          offers_intro_call?: boolean
+          onboarding_completed_at?: string | null
+          open_to_more_classes?: boolean
+          payouts_enabled?: boolean
+          phone?: string | null
+          price_18h_cents?: number | null
+          profile_id?: string | null
+          provides_range?: boolean | null
+          public_boroughs?: string[]
+          public_profile?: boolean
+          range_fee_included?: boolean | null
+          rating_avg?: number | null
+          rating_count?: number
+          response_time_note?: string | null
+          scheduling_notes?: string | null
+          separate_range_note?: string | null
+          service_radius_mi?: number
+          stripe_connect_account_id?: string | null
+          trust_tier?: string
+          typical_class_size?: number | null
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+          website_url?: string | null
+          whats_to_bring?: string | null
+          x_handle?: string | null
+          years_experience?: number | null
+        }
         Update: {
-          active?: boolean;
-          ammo_included?: boolean | null;
-          auto_offer_enabled?: boolean;
-          auto_offer_note?: string | null;
-          auto_offer_price_cents?: number | null;
-          availability?: NonNullable<Json>;
-          avatar_path?: string | null;
-          background?: string | null;
-          base_geog?: unknown;
-          bio?: string | null;
-          class_format?: string | null;
-          class_frequency?: string | null;
-          consult_days?: string[];
-          consult_hours_end?: number | null;
-          consult_hours_start?: number | null;
-          created_at?: string;
-          dcjs_id?: string | null;
-          email?: string | null;
-          facebook_url?: string | null;
-          facility_photo_paths?: string[] | null;
-          feed_seen_at?: string | null;
-          id?: string;
-          instagram_handle?: string | null;
-          intro_call_note?: string | null;
-          jurisdictions?: Database["public"]["Enums"]["jurisdiction_key"][];
-          languages?: string[] | null;
-          lat?: number | null;
-          lng?: number | null;
-          materials_included?: boolean | null;
-          name?: string;
-          offers_intro_call?: boolean;
-          onboarding_completed_at?: string | null;
-          open_to_more_classes?: boolean;
-          payouts_enabled?: boolean;
-          phone?: string | null;
-          price_18h_cents?: number | null;
-          profile_id?: string | null;
-          provides_range?: boolean | null;
-          public_boroughs?: string[];
-          public_profile?: boolean;
-          range_fee_included?: boolean | null;
-          rating_avg?: number | null;
-          rating_count?: number;
-          response_time_note?: string | null;
-          scheduling_notes?: string | null;
-          separate_range_note?: string | null;
-          service_radius_mi?: number;
-          stripe_connect_account_id?: string | null;
-          trust_tier?: string;
-          typical_class_size?: number | null;
-          updated_at?: string;
-          verified?: boolean;
-          verified_at?: string | null;
-          website_url?: string | null;
-          whats_to_bring?: string | null;
-          x_handle?: string | null;
-          years_experience?: number | null;
-        };
+          active?: boolean
+          ammo_included?: boolean | null
+          auto_offer_enabled?: boolean
+          auto_offer_note?: string | null
+          auto_offer_price_cents?: number | null
+          availability?: Json
+          avatar_path?: string | null
+          background?: string | null
+          base_geog?: unknown
+          bio?: string | null
+          class_format?: string | null
+          class_frequency?: string | null
+          consult_days?: string[]
+          consult_hours_end?: number | null
+          consult_hours_start?: number | null
+          created_at?: string
+          dcjs_id?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          facility_photo_paths?: string[] | null
+          feed_seen_at?: string | null
+          id?: string
+          instagram_handle?: string | null
+          intro_call_note?: string | null
+          jurisdictions?: Database["public"]["Enums"]["jurisdiction_key"][]
+          languages?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          materials_included?: boolean | null
+          name?: string
+          offers_intro_call?: boolean
+          onboarding_completed_at?: string | null
+          open_to_more_classes?: boolean
+          payouts_enabled?: boolean
+          phone?: string | null
+          price_18h_cents?: number | null
+          profile_id?: string | null
+          provides_range?: boolean | null
+          public_boroughs?: string[]
+          public_profile?: boolean
+          range_fee_included?: boolean | null
+          rating_avg?: number | null
+          rating_count?: number
+          response_time_note?: string | null
+          scheduling_notes?: string | null
+          separate_range_note?: string | null
+          service_radius_mi?: number
+          stripe_connect_account_id?: string | null
+          trust_tier?: string
+          typical_class_size?: number | null
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+          website_url?: string | null
+          whats_to_bring?: string | null
+          x_handle?: string | null
+          years_experience?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "instructors_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "instructors_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       intake_sessions: {
         Row: {
-          answers: NonNullable<Json>;
-          case_id: string;
-          completed_at: string | null;
-          created_at: string;
-          current_step: number;
-          id: string;
-          updated_at: string;
-        };
+          answers: Json
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          id: string
+          updated_at: string
+        }
         Insert: {
-          answers?: NonNullable<Json>;
-          case_id: string;
-          completed_at?: string | null;
-          created_at?: string;
-          current_step?: number;
-          id?: string;
-          updated_at?: string;
-        };
+          answers?: Json
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          id?: string
+          updated_at?: string
+        }
         Update: {
-          answers?: NonNullable<Json>;
-          case_id?: string;
-          completed_at?: string | null;
-          created_at?: string;
-          current_step?: number;
-          id?: string;
-          updated_at?: string;
-        };
+          answers?: Json
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          id?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "intake_sessions_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "intake_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "intake_sessions_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "intake_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "intake_sessions_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "intake_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       intro_calls: {
         Row: {
-          case_id: string;
-          created_at: string;
-          external_event_id: string | null;
-          id: string;
-          join_url: string | null;
-          provider: string;
-          rep_id: string | null;
-          scheduled_at: string | null;
-          status: string;
-          updated_at: string;
-        };
+          case_id: string
+          created_at: string
+          external_event_id: string | null
+          id: string
+          join_url: string | null
+          provider: string
+          rep_id: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          created_at?: string;
-          external_event_id?: string | null;
-          id?: string;
-          join_url?: string | null;
-          provider?: string;
-          rep_id?: string | null;
-          scheduled_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
+          case_id: string
+          created_at?: string
+          external_event_id?: string | null
+          id?: string
+          join_url?: string | null
+          provider?: string
+          rep_id?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          created_at?: string;
-          external_event_id?: string | null;
-          id?: string;
-          join_url?: string | null;
-          provider?: string;
-          rep_id?: string | null;
-          scheduled_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
+          case_id?: string
+          created_at?: string
+          external_event_id?: string | null
+          id?: string
+          join_url?: string | null
+          provider?: string
+          rep_id?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "intro_calls_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "intro_calls_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "intro_calls_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "intro_calls_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "intro_calls_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "intro_calls_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "intro_calls_rep_id_fkey";
-            columns: ["rep_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "intro_calls_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       jurisdiction_profiles: {
         Row: {
-          active: boolean;
-          created_at: string;
-          id: string;
-          issuing_authority: string | null;
-          key: Database["public"]["Enums"]["jurisdiction_key"];
-          label: string;
-          updated_at: string;
-        };
+          active: boolean
+          created_at: string
+          id: string
+          issuing_authority: string | null
+          key: Database["public"]["Enums"]["jurisdiction_key"]
+          label: string
+          updated_at: string
+        }
         Insert: {
-          active?: boolean;
-          created_at?: string;
-          id?: string;
-          issuing_authority?: string | null;
-          key: Database["public"]["Enums"]["jurisdiction_key"];
-          label: string;
-          updated_at?: string;
-        };
+          active?: boolean
+          created_at?: string
+          id?: string
+          issuing_authority?: string | null
+          key: Database["public"]["Enums"]["jurisdiction_key"]
+          label: string
+          updated_at?: string
+        }
         Update: {
-          active?: boolean;
-          created_at?: string;
-          id?: string;
-          issuing_authority?: string | null;
-          key?: Database["public"]["Enums"]["jurisdiction_key"];
-          label?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          active?: boolean
+          created_at?: string
+          id?: string
+          issuing_authority?: string | null
+          key?: Database["public"]["Enums"]["jurisdiction_key"]
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       legacy_lead_outreach: {
         Row: {
-          campaign_key: string;
-          client_id: string;
-          created_at: string;
-          email: string;
-          failure_reason: string | null;
-          id: string;
-          resend_email_id: string | null;
-          sent_at: string | null;
-          source: string;
-          status: string;
-          updated_at: string;
-        };
+          campaign_key: string
+          client_id: string
+          created_at: string
+          email: string
+          failure_reason: string | null
+          id: string
+          resend_email_id: string | null
+          sent_at: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
         Insert: {
-          campaign_key: string;
-          client_id: string;
-          created_at?: string;
-          email: string;
-          failure_reason?: string | null;
-          id?: string;
-          resend_email_id?: string | null;
-          sent_at?: string | null;
-          source: string;
-          status?: string;
-          updated_at?: string;
-        };
+          campaign_key: string
+          client_id: string
+          created_at?: string
+          email: string
+          failure_reason?: string | null
+          id?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          source: string
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          campaign_key?: string;
-          client_id?: string;
-          created_at?: string;
-          email?: string;
-          failure_reason?: string | null;
-          id?: string;
-          resend_email_id?: string | null;
-          sent_at?: string | null;
-          source?: string;
-          status?: string;
-          updated_at?: string;
-        };
+          campaign_key?: string
+          client_id?: string
+          created_at?: string
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "legacy_lead_outreach_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "legacy_lead_outreach_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       license_reports: {
         Row: {
-          acknowledged_at: string | null;
-          acknowledged_by: string | null;
-          case_id: string;
-          client_id: string;
-          created_at: string;
-          details: string;
-          id: string;
-          kind: string;
-          reported_at: string;
-        };
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          case_id: string
+          client_id: string
+          created_at: string
+          details: string
+          id: string
+          kind: string
+          reported_at: string
+        }
         Insert: {
-          acknowledged_at?: string | null;
-          acknowledged_by?: string | null;
-          case_id: string;
-          client_id: string;
-          created_at?: string;
-          details: string;
-          id?: string;
-          kind: string;
-          reported_at?: string;
-        };
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id: string
+          client_id: string
+          created_at?: string
+          details: string
+          id?: string
+          kind: string
+          reported_at?: string
+        }
         Update: {
-          acknowledged_at?: string | null;
-          acknowledged_by?: string | null;
-          case_id?: string;
-          client_id?: string;
-          created_at?: string;
-          details?: string;
-          id?: string;
-          kind?: string;
-          reported_at?: string;
-        };
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          case_id?: string
+          client_id?: string
+          created_at?: string
+          details?: string
+          id?: string
+          kind?: string
+          reported_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "license_reports_acknowledged_by_fkey";
-            columns: ["acknowledged_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "license_reports_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "license_reports_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "license_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "license_reports_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "license_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "license_reports_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "license_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "license_reports_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "license_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       marketing_contacts: {
         Row: {
-          account_created_at: string | null;
-          brand: Database["public"]["Enums"]["brand_key"];
-          client_id: string | null;
-          consent_version: string;
-          consented_at: string;
-          created_at: string;
-          email: string;
-          first_name: string;
-          id: string;
-          source: string;
-          suppressed_at: string | null;
-          suppression_reason: string | null;
-          track: Database["public"]["Enums"]["client_track"] | null;
-          unsubscribed_at: string | null;
-          updated_at: string;
-        };
+          account_created_at: string | null
+          brand: Database["public"]["Enums"]["brand_key"]
+          client_id: string | null
+          consent_version: string
+          consented_at: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          source: string
+          suppressed_at: string | null
+          suppression_reason: string | null
+          track: Database["public"]["Enums"]["client_track"] | null
+          unsubscribed_at: string | null
+          updated_at: string
+        }
         Insert: {
-          account_created_at?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          client_id?: string | null;
-          consent_version: string;
-          consented_at: string;
-          created_at?: string;
-          email: string;
-          first_name: string;
-          id?: string;
-          source: string;
-          suppressed_at?: string | null;
-          suppression_reason?: string | null;
-          track?: Database["public"]["Enums"]["client_track"] | null;
-          unsubscribed_at?: string | null;
-          updated_at?: string;
-        };
+          account_created_at?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          client_id?: string | null
+          consent_version: string
+          consented_at: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          source: string
+          suppressed_at?: string | null
+          suppression_reason?: string | null
+          track?: Database["public"]["Enums"]["client_track"] | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
         Update: {
-          account_created_at?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          client_id?: string | null;
-          consent_version?: string;
-          consented_at?: string;
-          created_at?: string;
-          email?: string;
-          first_name?: string;
-          id?: string;
-          source?: string;
-          suppressed_at?: string | null;
-          suppression_reason?: string | null;
-          track?: Database["public"]["Enums"]["client_track"] | null;
-          unsubscribed_at?: string | null;
-          updated_at?: string;
-        };
+          account_created_at?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          client_id?: string | null
+          consent_version?: string
+          consented_at?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          source?: string
+          suppressed_at?: string | null
+          suppression_reason?: string | null
+          track?: Database["public"]["Enums"]["client_track"] | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "marketing_contacts_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "marketing_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       marketing_email_log: {
         Row: {
-          campaign_key: string;
-          created_at: string;
-          failure_reason: string | null;
-          id: string;
-          marketing_contact_id: string;
-          resend_email_id: string | null;
-          sent_at: string | null;
-          status: string;
-          updated_at: string;
-        };
+          campaign_key: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          marketing_contact_id: string
+          resend_email_id: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
         Insert: {
-          campaign_key: string;
-          created_at?: string;
-          failure_reason?: string | null;
-          id?: string;
-          marketing_contact_id: string;
-          resend_email_id?: string | null;
-          sent_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
+          campaign_key: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          marketing_contact_id: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          campaign_key?: string;
-          created_at?: string;
-          failure_reason?: string | null;
-          id?: string;
-          marketing_contact_id?: string;
-          resend_email_id?: string | null;
-          sent_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
+          campaign_key?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          marketing_contact_id?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "marketing_email_log_marketing_contact_id_fkey";
-            columns: ["marketing_contact_id"];
-            isOneToOne: false;
-            referencedRelation: "marketing_contacts";
-            referencedColumns: ["id"];
+            foreignKeyName: "marketing_email_log_marketing_contact_id_fkey"
+            columns: ["marketing_contact_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_contacts"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       messages: {
         Row: {
-          body: string;
-          brand: Database["public"]["Enums"]["brand_key"];
-          case_id: string;
-          created_at: string;
-          engagement_id: string | null;
-          id: string;
-          read: boolean;
-          sender_id: string | null;
-          staff_only: boolean;
-        };
+          body: string
+          brand: Database["public"]["Enums"]["brand_key"]
+          case_id: string
+          created_at: string
+          engagement_id: string | null
+          id: string
+          read: boolean
+          sender_id: string | null
+          staff_only: boolean
+        }
         Insert: {
-          body: string;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          case_id: string;
-          created_at?: string;
-          engagement_id?: string | null;
-          id?: string;
-          read?: boolean;
-          sender_id?: string | null;
-          staff_only?: boolean;
-        };
+          body: string
+          brand?: Database["public"]["Enums"]["brand_key"]
+          case_id: string
+          created_at?: string
+          engagement_id?: string | null
+          id?: string
+          read?: boolean
+          sender_id?: string | null
+          staff_only?: boolean
+        }
         Update: {
-          body?: string;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          case_id?: string;
-          created_at?: string;
-          engagement_id?: string | null;
-          id?: string;
-          read?: boolean;
-          sender_id?: string | null;
-          staff_only?: boolean;
-        };
+          body?: string
+          brand?: Database["public"]["Enums"]["brand_key"]
+          case_id?: string
+          created_at?: string
+          engagement_id?: string | null
+          id?: string
+          read?: boolean
+          sender_id?: string | null
+          staff_only?: boolean
+        }
         Relationships: [
           {
-            foreignKeyName: "messages_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "messages_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "messages_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "messages_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "engagements";
-            referencedColumns: ["id"];
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "messages_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "messages_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "messages_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_requirement_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "messages_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "messages_sender_id_fkey";
-            columns: ["sender_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       notifications: {
         Row: {
-          body: string | null;
-          brand: Database["public"]["Enums"]["brand_key"];
-          case_id: string | null;
-          created_at: string;
-          id: string;
-          kind: Database["public"]["Enums"]["notification_kind"];
-          link: string | null;
-          read: boolean;
-          recipient: string;
-          title: string;
-        };
+          body: string | null
+          brand: Database["public"]["Enums"]["brand_key"]
+          case_id: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          link: string | null
+          read: boolean
+          recipient: string
+          title: string
+        }
         Insert: {
-          body?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          case_id?: string | null;
-          created_at?: string;
-          id?: string;
-          kind?: Database["public"]["Enums"]["notification_kind"];
-          link?: string | null;
-          read?: boolean;
-          recipient: string;
-          title: string;
-        };
+          body?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          case_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          link?: string | null
+          read?: boolean
+          recipient: string
+          title: string
+        }
         Update: {
-          body?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          case_id?: string | null;
-          created_at?: string;
-          id?: string;
-          kind?: Database["public"]["Enums"]["notification_kind"];
-          link?: string | null;
-          read?: boolean;
-          recipient?: string;
-          title?: string;
-        };
+          body?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          case_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          link?: string | null
+          read?: boolean
+          recipient?: string
+          title?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "notifications_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "notifications_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notifications_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "notifications_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "notifications_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "notifications_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "notifications_recipient_fkey";
-            columns: ["recipient"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "notifications_recipient_fkey"
+            columns: ["recipient"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       offer_matches: {
         Row: {
-          created_at: string;
-          distance_mi: number | null;
-          id: string;
-          instructor_id: string;
-          note: string | null;
-          offer_id: string;
-          quoted_price_cents: number | null;
-          responded: string | null;
-          responded_at: string | null;
-        };
+          created_at: string
+          distance_mi: number | null
+          id: string
+          instructor_id: string
+          note: string | null
+          offer_id: string
+          quoted_price_cents: number | null
+          responded: string | null
+          responded_at: string | null
+        }
         Insert: {
-          created_at?: string;
-          distance_mi?: number | null;
-          id?: string;
-          instructor_id: string;
-          note?: string | null;
-          offer_id: string;
-          quoted_price_cents?: number | null;
-          responded?: string | null;
-          responded_at?: string | null;
-        };
+          created_at?: string
+          distance_mi?: number | null
+          id?: string
+          instructor_id: string
+          note?: string | null
+          offer_id: string
+          quoted_price_cents?: number | null
+          responded?: string | null
+          responded_at?: string | null
+        }
         Update: {
-          created_at?: string;
-          distance_mi?: number | null;
-          id?: string;
-          instructor_id?: string;
-          note?: string | null;
-          offer_id?: string;
-          quoted_price_cents?: number | null;
-          responded?: string | null;
-          responded_at?: string | null;
-        };
+          created_at?: string
+          distance_mi?: number | null
+          id?: string
+          instructor_id?: string
+          note?: string | null
+          offer_id?: string
+          quoted_price_cents?: number | null
+          responded?: string | null
+          responded_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "offer_matches_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "offer_matches_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
-            foreignKeyName: "offer_matches_offer_id_fkey";
-            columns: ["offer_id"];
-            isOneToOne: false;
-            referencedRelation: "applicant_interest_feed";
-            referencedColumns: ["offer_id"];
+            foreignKeyName: "offer_matches_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "applicant_interest_feed"
+            referencedColumns: ["offer_id"]
           },
           {
-            foreignKeyName: "offer_matches_offer_id_fkey";
-            columns: ["offer_id"];
-            isOneToOne: false;
-            referencedRelation: "case_offers";
-            referencedColumns: ["id"];
+            foreignKeyName: "offer_matches_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "case_offers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "offer_matches_offer_id_fkey";
-            columns: ["offer_id"];
-            isOneToOne: false;
-            referencedRelation: "instructor_offer_feed";
-            referencedColumns: ["offer_id"];
+            foreignKeyName: "offer_matches_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_offer_feed"
+            referencedColumns: ["offer_id"]
           },
-        ];
-      };
+        ]
+      }
       payments: {
         Row: {
-          amount_cents: number;
-          application_fee_cents: number | null;
-          booking_id: string | null;
-          brand: Database["public"]["Enums"]["brand_key"];
-          case_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          currency: string;
-          description: string | null;
-          engagement_id: string | null;
-          hosted_invoice_url: string | null;
-          id: string;
-          invoice_url: string | null;
-          package_key: string | null;
-          paid_at: string | null;
-          status: Database["public"]["Enums"]["payment_status"];
-          stripe_connect_account: string | null;
-          stripe_invoice_id: string | null;
-          stripe_payment_intent: string | null;
-          stripe_session_id: string | null;
-          type: Database["public"]["Enums"]["payment_type"];
-          updated_at: string;
-        };
+          amount_cents: number
+          application_fee_cents: number | null
+          booking_id: string | null
+          brand: Database["public"]["Enums"]["brand_key"]
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          engagement_id: string | null
+          hosted_invoice_url: string | null
+          id: string
+          invoice_url: string | null
+          package_key: string | null
+          paid_at: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          stripe_connect_account: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent: string | null
+          stripe_session_id: string | null
+          type: Database["public"]["Enums"]["payment_type"]
+          updated_at: string
+        }
         Insert: {
-          amount_cents: number;
-          application_fee_cents?: number | null;
-          booking_id?: string | null;
-          brand: Database["public"]["Enums"]["brand_key"];
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          currency?: string;
-          description?: string | null;
-          engagement_id?: string | null;
-          hosted_invoice_url?: string | null;
-          id?: string;
-          invoice_url?: string | null;
-          package_key?: string | null;
-          paid_at?: string | null;
-          status?: Database["public"]["Enums"]["payment_status"];
-          stripe_connect_account?: string | null;
-          stripe_invoice_id?: string | null;
-          stripe_payment_intent?: string | null;
-          stripe_session_id?: string | null;
-          type?: Database["public"]["Enums"]["payment_type"];
-          updated_at?: string;
-        };
+          amount_cents: number
+          application_fee_cents?: number | null
+          booking_id?: string | null
+          brand: Database["public"]["Enums"]["brand_key"]
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          engagement_id?: string | null
+          hosted_invoice_url?: string | null
+          id?: string
+          invoice_url?: string | null
+          package_key?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_connect_account?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          type?: Database["public"]["Enums"]["payment_type"]
+          updated_at?: string
+        }
         Update: {
-          amount_cents?: number;
-          application_fee_cents?: number | null;
-          booking_id?: string | null;
-          brand?: Database["public"]["Enums"]["brand_key"];
-          case_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          currency?: string;
-          description?: string | null;
-          engagement_id?: string | null;
-          hosted_invoice_url?: string | null;
-          id?: string;
-          invoice_url?: string | null;
-          package_key?: string | null;
-          paid_at?: string | null;
-          status?: Database["public"]["Enums"]["payment_status"];
-          stripe_connect_account?: string | null;
-          stripe_invoice_id?: string | null;
-          stripe_payment_intent?: string | null;
-          stripe_session_id?: string | null;
-          type?: Database["public"]["Enums"]["payment_type"];
-          updated_at?: string;
-        };
+          amount_cents?: number
+          application_fee_cents?: number | null
+          booking_id?: string | null
+          brand?: Database["public"]["Enums"]["brand_key"]
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          engagement_id?: string | null
+          hosted_invoice_url?: string | null
+          id?: string
+          invoice_url?: string | null
+          package_key?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_connect_account?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          type?: Database["public"]["Enums"]["payment_type"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "payments_booking_id_fkey";
-            columns: ["booking_id"];
-            isOneToOne: false;
-            referencedRelation: "bookings";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "payments_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "payments_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "engagements";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "payments_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "payments_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_requirement_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
           },
-        ];
-      };
+        ]
+      }
       portal_entry_progress: {
         Row: {
-          case_id: string;
-          entered_at: string;
-          entered_by: string | null;
-          step_no: number;
-        };
+          case_id: string
+          entered_at: string
+          entered_by: string | null
+          step_no: number
+        }
         Insert: {
-          case_id: string;
-          entered_at?: string;
-          entered_by?: string | null;
-          step_no: number;
-        };
+          case_id: string
+          entered_at?: string
+          entered_by?: string | null
+          step_no: number
+        }
         Update: {
-          case_id?: string;
-          entered_at?: string;
-          entered_by?: string | null;
-          step_no?: number;
-        };
+          case_id?: string
+          entered_at?: string
+          entered_by?: string | null
+          step_no?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "portal_entry_progress_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "portal_entry_progress_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "portal_entry_progress_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "portal_entry_progress_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "portal_entry_progress_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "portal_entry_progress_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "portal_entry_progress_entered_by_fkey";
-            columns: ["entered_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "portal_entry_progress_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       prelicense_instructor_statements: {
         Row: {
-          case_id: string;
-          credentials: string | null;
-          instructor_address: string | null;
-          instructor_id: string | null;
-          instructor_name: string | null;
-          instructor_phone: string | null;
-          met_applicant: boolean;
-          no_danger: boolean;
-          notes: string | null;
-          range_name: string | null;
-          submitted_at: string | null;
-          training_location: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          case_id: string
+          credentials: string | null
+          instructor_address: string | null
+          instructor_id: string | null
+          instructor_name: string | null
+          instructor_phone: string | null
+          met_applicant: boolean
+          no_danger: boolean
+          notes: string | null
+          range_name: string | null
+          submitted_at: string | null
+          training_location: string | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          case_id: string;
-          credentials?: string | null;
-          instructor_address?: string | null;
-          instructor_id?: string | null;
-          instructor_name?: string | null;
-          instructor_phone?: string | null;
-          met_applicant?: boolean;
-          no_danger?: boolean;
-          notes?: string | null;
-          range_name?: string | null;
-          submitted_at?: string | null;
-          training_location?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          case_id: string
+          credentials?: string | null
+          instructor_address?: string | null
+          instructor_id?: string | null
+          instructor_name?: string | null
+          instructor_phone?: string | null
+          met_applicant?: boolean
+          no_danger?: boolean
+          notes?: string | null
+          range_name?: string | null
+          submitted_at?: string | null
+          training_location?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          case_id?: string;
-          credentials?: string | null;
-          instructor_address?: string | null;
-          instructor_id?: string | null;
-          instructor_name?: string | null;
-          instructor_phone?: string | null;
-          met_applicant?: boolean;
-          no_danger?: boolean;
-          notes?: string | null;
-          range_name?: string | null;
-          submitted_at?: string | null;
-          training_location?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          case_id?: string
+          credentials?: string | null
+          instructor_address?: string | null
+          instructor_id?: string | null
+          instructor_name?: string | null
+          instructor_phone?: string | null
+          met_applicant?: boolean
+          no_danger?: boolean
+          notes?: string | null
+          range_name?: string | null
+          submitted_at?: string | null
+          training_location?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "prelicense_instructor_statements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "prelicense_instructor_statements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "prelicense_instructor_statements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "prelicense_instructor_statements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "prelicense_instructor_statements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "prelicense_instructor_statements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "prelicense_instructor_statements_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "prelicense_instructor_statements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "prelicense_instructor_statements_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "prelicense_instructor_statements_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
           {
-            foreignKeyName: "prelicense_instructor_statements_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "prelicense_instructor_statements_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       profiles: {
         Row: {
-          avatar_key: string | null;
-          avatar_kind: string | null;
-          avatar_path: string | null;
-          contact_pref: string;
-          created_at: string;
-          full_name: string;
-          id: string;
-          is_concierge_agent: boolean;
-          phone: string | null;
-          role: Database["public"]["Enums"]["user_role"];
-          sponsor_id: string | null;
-          updated_at: string;
-        };
+          avatar_key: string | null
+          avatar_kind: string | null
+          avatar_path: string | null
+          contact_pref: string
+          created_at: string
+          full_name: string
+          id: string
+          is_concierge_agent: boolean
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          sponsor_id: string | null
+          updated_at: string
+        }
         Insert: {
-          avatar_key?: string | null;
-          avatar_kind?: string | null;
-          avatar_path?: string | null;
-          contact_pref?: string;
-          created_at?: string;
-          full_name?: string;
-          id: string;
-          is_concierge_agent?: boolean;
-          phone?: string | null;
-          role?: Database["public"]["Enums"]["user_role"];
-          sponsor_id?: string | null;
-          updated_at?: string;
-        };
+          avatar_key?: string | null
+          avatar_kind?: string | null
+          avatar_path?: string | null
+          contact_pref?: string
+          created_at?: string
+          full_name?: string
+          id: string
+          is_concierge_agent?: boolean
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          sponsor_id?: string | null
+          updated_at?: string
+        }
         Update: {
-          avatar_key?: string | null;
-          avatar_kind?: string | null;
-          avatar_path?: string | null;
-          contact_pref?: string;
-          created_at?: string;
-          full_name?: string;
-          id?: string;
-          is_concierge_agent?: boolean;
-          phone?: string | null;
-          role?: Database["public"]["Enums"]["user_role"];
-          sponsor_id?: string | null;
-          updated_at?: string;
-        };
+          avatar_key?: string | null
+          avatar_kind?: string | null
+          avatar_path?: string | null
+          contact_pref?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_concierge_agent?: boolean
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          sponsor_id?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "profiles_sponsor_id_fkey";
-            columns: ["sponsor_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsors";
-            referencedColumns: ["id"];
+            foreignKeyName: "profiles_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       promo_code_claims: {
         Row: {
-          case_id: string;
-          claimed_at: string;
-          client_id: string;
-          code_fingerprint: string;
-          code_label: string;
-        };
+          case_id: string
+          claimed_at: string
+          client_id: string
+          code_fingerprint: string
+          code_label: string
+        }
         Insert: {
-          case_id: string;
-          claimed_at?: string;
-          client_id: string;
-          code_fingerprint: string;
-          code_label: string;
-        };
+          case_id: string
+          claimed_at?: string
+          client_id: string
+          code_fingerprint: string
+          code_label: string
+        }
         Update: {
-          case_id?: string;
-          claimed_at?: string;
-          client_id?: string;
-          code_fingerprint?: string;
-          code_label?: string;
-        };
+          case_id?: string
+          claimed_at?: string
+          client_id?: string
+          code_fingerprint?: string
+          code_label?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "promo_code_claims_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "promo_code_claims_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "promo_code_claims_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "promo_code_claims_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "promo_code_claims_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "promo_code_claims_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "promo_code_claims_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "promo_code_claims_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       purchase_authorizations: {
         Row: {
-          acquired_on: string | null;
-          authorized_on: string;
-          case_id: string;
-          client_id: string;
-          created_at: string;
-          expires_on: string;
-          handgun_desc: string | null;
-          id: string;
-          inspected_on: string | null;
-          inspection_due: string | null;
-          updated_at: string;
-        };
+          acquired_on: string | null
+          authorized_on: string
+          case_id: string
+          client_id: string
+          created_at: string
+          expires_on: string
+          handgun_desc: string | null
+          id: string
+          inspected_on: string | null
+          inspection_due: string | null
+          updated_at: string
+        }
         Insert: {
-          acquired_on?: string | null;
-          authorized_on: string;
-          case_id: string;
-          client_id: string;
-          created_at?: string;
-          expires_on: string;
-          handgun_desc?: string | null;
-          id?: string;
-          inspected_on?: string | null;
-          inspection_due?: string | null;
-          updated_at?: string;
-        };
+          acquired_on?: string | null
+          authorized_on: string
+          case_id: string
+          client_id: string
+          created_at?: string
+          expires_on: string
+          handgun_desc?: string | null
+          id?: string
+          inspected_on?: string | null
+          inspection_due?: string | null
+          updated_at?: string
+        }
         Update: {
-          acquired_on?: string | null;
-          authorized_on?: string;
-          case_id?: string;
-          client_id?: string;
-          created_at?: string;
-          expires_on?: string;
-          handgun_desc?: string | null;
-          id?: string;
-          inspected_on?: string | null;
-          inspection_due?: string | null;
-          updated_at?: string;
-        };
+          acquired_on?: string | null
+          authorized_on?: string
+          case_id?: string
+          client_id?: string
+          created_at?: string
+          expires_on?: string
+          handgun_desc?: string | null
+          id?: string
+          inspected_on?: string | null
+          inspection_due?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "purchase_authorizations_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "purchase_authorizations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "purchase_authorizations_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "purchase_authorizations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "purchase_authorizations_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "purchase_authorizations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "purchase_authorizations_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "purchase_authorizations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       reference_request_documents: {
         Row: {
-          created_at: string;
-          document_id: string;
-          id: string;
-          position: number;
-          reference_request_id: string;
-        };
+          created_at: string
+          document_id: string
+          id: string
+          position: number
+          reference_request_id: string
+        }
         Insert: {
-          created_at?: string;
-          document_id: string;
-          id?: string;
-          position: number;
-          reference_request_id: string;
-        };
+          created_at?: string
+          document_id: string
+          id?: string
+          position: number
+          reference_request_id: string
+        }
         Update: {
-          created_at?: string;
-          document_id?: string;
-          id?: string;
-          position?: number;
-          reference_request_id?: string;
-        };
+          created_at?: string
+          document_id?: string
+          id?: string
+          position?: number
+          reference_request_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "reference_request_documents_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: true;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "reference_request_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reference_request_documents_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "reference_request_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "reference_request_documents_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "reference_request_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "reference_request_documents_reference_request_id_fkey";
-            columns: ["reference_request_id"];
-            isOneToOne: false;
-            referencedRelation: "reference_requests";
-            referencedColumns: ["id"];
+            foreignKeyName: "reference_request_documents_reference_request_id_fkey"
+            columns: ["reference_request_id"]
+            isOneToOne: false
+            referencedRelation: "reference_requests"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       reference_requests: {
         Row: {
-          answered_at: string | null;
-          answers: NonNullable<Json>;
-          case_id: string;
-          confirmed_email: string | null;
-          created_at: string;
-          document_id: string | null;
-          emailed: boolean;
-          expires_at: string;
-          id: string;
-          notarized_at: string | null;
-          notary_area: string | null;
-          nudge_token: string | null;
-          opened_at: string | null;
-          reference_id: string;
-          revoked_at: string | null;
-          sent_at: string | null;
-          status: Database["public"]["Enums"]["reference_req_status"];
-          submitted_at: string | null;
-          token: string;
-          updated_at: string;
-        };
+          answered_at: string | null
+          answers: Json
+          case_id: string
+          confirmed_email: string | null
+          created_at: string
+          document_id: string | null
+          emailed: boolean
+          expires_at: string
+          id: string
+          notarized_at: string | null
+          notary_area: string | null
+          nudge_token: string | null
+          opened_at: string | null
+          reference_id: string
+          revoked_at: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reference_req_status"]
+          submitted_at: string | null
+          token: string
+          updated_at: string
+        }
         Insert: {
-          answered_at?: string | null;
-          answers?: NonNullable<Json>;
-          case_id: string;
-          confirmed_email?: string | null;
-          created_at?: string;
-          document_id?: string | null;
-          emailed?: boolean;
-          expires_at?: string;
-          id?: string;
-          notarized_at?: string | null;
-          notary_area?: string | null;
-          nudge_token?: string | null;
-          opened_at?: string | null;
-          reference_id: string;
-          revoked_at?: string | null;
-          sent_at?: string | null;
-          status?: Database["public"]["Enums"]["reference_req_status"];
-          submitted_at?: string | null;
-          token: string;
-          updated_at?: string;
-        };
+          answered_at?: string | null
+          answers?: Json
+          case_id: string
+          confirmed_email?: string | null
+          created_at?: string
+          document_id?: string | null
+          emailed?: boolean
+          expires_at?: string
+          id?: string
+          notarized_at?: string | null
+          notary_area?: string | null
+          nudge_token?: string | null
+          opened_at?: string | null
+          reference_id: string
+          revoked_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["reference_req_status"]
+          submitted_at?: string | null
+          token: string
+          updated_at?: string
+        }
         Update: {
-          answered_at?: string | null;
-          answers?: NonNullable<Json>;
-          case_id?: string;
-          confirmed_email?: string | null;
-          created_at?: string;
-          document_id?: string | null;
-          emailed?: boolean;
-          expires_at?: string;
-          id?: string;
-          notarized_at?: string | null;
-          notary_area?: string | null;
-          nudge_token?: string | null;
-          opened_at?: string | null;
-          reference_id?: string;
-          revoked_at?: string | null;
-          sent_at?: string | null;
-          status?: Database["public"]["Enums"]["reference_req_status"];
-          submitted_at?: string | null;
-          token?: string;
-          updated_at?: string;
-        };
+          answered_at?: string | null
+          answers?: Json
+          case_id?: string
+          confirmed_email?: string | null
+          created_at?: string
+          document_id?: string | null
+          emailed?: boolean
+          expires_at?: string
+          id?: string
+          notarized_at?: string | null
+          notary_area?: string | null
+          nudge_token?: string | null
+          opened_at?: string | null
+          reference_id?: string
+          revoked_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["reference_req_status"]
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "reference_requests_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "reference_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reference_requests_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "reference_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "reference_requests_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "reference_requests_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "reference_requests_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "reference_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reference_requests_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "reference_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "reference_requests_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "reference_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "reference_requests_reference_id_fkey";
-            columns: ["reference_id"];
-            isOneToOne: false;
-            referencedRelation: "character_references";
-            referencedColumns: ["id"];
+            foreignKeyName: "reference_requests_reference_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: false
+            referencedRelation: "character_references"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       referral_consent: {
         Row: {
-          case_id: string;
-          consent_version: string | null;
-          consented_at: string | null;
-          created_at: string;
-          revoked_at: string | null;
-          sponsor_id: string;
-        };
+          case_id: string
+          consent_version: string | null
+          consented_at: string | null
+          created_at: string
+          revoked_at: string | null
+          sponsor_id: string
+        }
         Insert: {
-          case_id: string;
-          consent_version?: string | null;
-          consented_at?: string | null;
-          created_at?: string;
-          revoked_at?: string | null;
-          sponsor_id: string;
-        };
+          case_id: string
+          consent_version?: string | null
+          consented_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+          sponsor_id: string
+        }
         Update: {
-          case_id?: string;
-          consent_version?: string | null;
-          consented_at?: string | null;
-          created_at?: string;
-          revoked_at?: string | null;
-          sponsor_id?: string;
-        };
+          case_id?: string
+          consent_version?: string | null
+          consented_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+          sponsor_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "referral_consent_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "referral_consent_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "referral_consent_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: true;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "referral_consent_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "referral_consent_sponsor_id_fkey";
-            columns: ["sponsor_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsors";
-            referencedColumns: ["id"];
+            foreignKeyName: "referral_consent_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       reminder_log: {
         Row: {
-          case_id: string | null;
-          id: string;
-          rule_key: string;
-          sent_at: string;
-          target: string;
-          window_key: string;
-        };
+          case_id: string | null
+          id: string
+          rule_key: string
+          sent_at: string
+          target: string
+          window_key: string
+        }
         Insert: {
-          case_id?: string | null;
-          id?: string;
-          rule_key: string;
-          sent_at?: string;
-          target: string;
-          window_key: string;
-        };
+          case_id?: string | null
+          id?: string
+          rule_key: string
+          sent_at?: string
+          target: string
+          window_key: string
+        }
         Update: {
-          case_id?: string | null;
-          id?: string;
-          rule_key?: string;
-          sent_at?: string;
-          target?: string;
-          window_key?: string;
-        };
+          case_id?: string | null
+          id?: string
+          rule_key?: string
+          sent_at?: string
+          target?: string
+          window_key?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "reminder_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "reminder_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reminder_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "reminder_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "reminder_log_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "reminder_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       requirement_answers: {
         Row: {
-          answers: NonNullable<Json>;
-          case_id: string;
-          completed_at: string | null;
-          created_at: string;
-          drafted_by: string | null;
-          id: string;
-          req_code: string;
-          updated_at: string;
-        };
+          answers: Json
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          drafted_by: string | null
+          id: string
+          req_code: string
+          updated_at: string
+        }
         Insert: {
-          answers?: NonNullable<Json>;
-          case_id: string;
-          completed_at?: string | null;
-          created_at?: string;
-          drafted_by?: string | null;
-          id?: string;
-          req_code: string;
-          updated_at?: string;
-        };
+          answers?: Json
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          drafted_by?: string | null
+          id?: string
+          req_code: string
+          updated_at?: string
+        }
         Update: {
-          answers?: NonNullable<Json>;
-          case_id?: string;
-          completed_at?: string | null;
-          created_at?: string;
-          drafted_by?: string | null;
-          id?: string;
-          req_code?: string;
-          updated_at?: string;
-        };
+          answers?: Json
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          drafted_by?: string | null
+          id?: string
+          req_code?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "requirement_answers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_answers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_answers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "requirement_answers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "requirement_answers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "requirement_answers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "requirement_answers_drafted_by_fkey";
-            columns: ["drafted_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_answers_drafted_by_fkey"
+            columns: ["drafted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       requirement_reviews: {
         Row: {
-          case_id: string;
-          case_requirement_id: string;
-          created_at: string;
-          decision: Database["public"]["Enums"]["review_decision"];
-          document_id: string | null;
-          engagement_id: string | null;
-          id: string;
-          note: string | null;
-          reviewer: string | null;
-          reviewer_kind: string;
-        };
+          case_id: string
+          case_requirement_id: string
+          created_at: string
+          decision: Database["public"]["Enums"]["review_decision"]
+          document_id: string | null
+          engagement_id: string | null
+          id: string
+          note: string | null
+          reviewer: string | null
+          reviewer_kind: string
+        }
         Insert: {
-          case_id: string;
-          case_requirement_id: string;
-          created_at?: string;
-          decision: Database["public"]["Enums"]["review_decision"];
-          document_id?: string | null;
-          engagement_id?: string | null;
-          id?: string;
-          note?: string | null;
-          reviewer?: string | null;
-          reviewer_kind: string;
-        };
+          case_id: string
+          case_requirement_id: string
+          created_at?: string
+          decision: Database["public"]["Enums"]["review_decision"]
+          document_id?: string | null
+          engagement_id?: string | null
+          id?: string
+          note?: string | null
+          reviewer?: string | null
+          reviewer_kind: string
+        }
         Update: {
-          case_id?: string;
-          case_requirement_id?: string;
-          created_at?: string;
-          decision?: Database["public"]["Enums"]["review_decision"];
-          document_id?: string | null;
-          engagement_id?: string | null;
-          id?: string;
-          note?: string | null;
-          reviewer?: string | null;
-          reviewer_kind?: string;
-        };
+          case_id?: string
+          case_requirement_id?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["review_decision"]
+          document_id?: string | null
+          engagement_id?: string | null
+          id?: string
+          note?: string | null
+          reviewer?: string | null
+          reviewer_kind?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "requirement_reviews_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "case_requirements";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "case_requirements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_requirement_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_requirement_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_reviews_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "requirement_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "requirement_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "engagements";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_reviews_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_requirement_feed";
-            referencedColumns: ["engagement_id"];
+            foreignKeyName: "requirement_reviews_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["engagement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_reviewer_fkey";
-            columns: ["reviewer"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_reviewer_fkey"
+            columns: ["reviewer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       requirements: {
         Row: {
-          applicant_scope: Database["public"]["Enums"]["concierge_scope"];
-          authority: string | null;
-          blocking: boolean;
-          concierge_scope: Database["public"]["Enums"]["concierge_scope"];
-          created_at: string;
-          description: string | null;
-          destination: Database["public"]["Enums"]["requirement_destination"];
-          document_type: Database["public"]["Enums"]["document_type"] | null;
-          effective_from: string;
-          effective_to: string | null;
-          id: string;
-          jurisdiction_id: string;
-          legal_citation: string | null;
-          legal_status: Database["public"]["Enums"]["legal_status"];
-          legal_status_note: string | null;
-          needs_legal_review: boolean;
-          party: Database["public"]["Enums"]["req_party"];
-          req_code: string;
-          severity: Database["public"]["Enums"]["requirement_sev"];
-          source_url: string | null;
-          title: string;
-          trigger_cond: string;
-          updated_at: string;
-          validation_rule: NonNullable<Json>;
-          verified_by: string | null;
-          verified_on: string | null;
-        };
+          applicant_scope: Database["public"]["Enums"]["concierge_scope"]
+          authority: string | null
+          blocking: boolean
+          concierge_scope: Database["public"]["Enums"]["concierge_scope"]
+          created_at: string
+          description: string | null
+          destination: Database["public"]["Enums"]["requirement_destination"]
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          jurisdiction_id: string
+          legal_citation: string | null
+          legal_status: Database["public"]["Enums"]["legal_status"]
+          legal_status_note: string | null
+          needs_legal_review: boolean
+          party: Database["public"]["Enums"]["req_party"]
+          req_code: string
+          severity: Database["public"]["Enums"]["requirement_sev"]
+          source_url: string | null
+          title: string
+          trigger_cond: string
+          updated_at: string
+          validation_rule: Json
+          verified_by: string | null
+          verified_on: string | null
+        }
         Insert: {
-          applicant_scope?: Database["public"]["Enums"]["concierge_scope"];
-          authority?: string | null;
-          blocking?: boolean;
-          concierge_scope?: Database["public"]["Enums"]["concierge_scope"];
-          created_at?: string;
-          description?: string | null;
-          destination?: Database["public"]["Enums"]["requirement_destination"];
-          document_type?: Database["public"]["Enums"]["document_type"] | null;
-          effective_from?: string;
-          effective_to?: string | null;
-          id?: string;
-          jurisdiction_id: string;
-          legal_citation?: string | null;
-          legal_status?: Database["public"]["Enums"]["legal_status"];
-          legal_status_note?: string | null;
-          needs_legal_review?: boolean;
-          party?: Database["public"]["Enums"]["req_party"];
-          req_code: string;
-          severity?: Database["public"]["Enums"]["requirement_sev"];
-          source_url?: string | null;
-          title: string;
-          trigger_cond?: string;
-          updated_at?: string;
-          validation_rule?: NonNullable<Json>;
-          verified_by?: string | null;
-          verified_on?: string | null;
-        };
+          applicant_scope?: Database["public"]["Enums"]["concierge_scope"]
+          authority?: string | null
+          blocking?: boolean
+          concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
+          created_at?: string
+          description?: string | null
+          destination?: Database["public"]["Enums"]["requirement_destination"]
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          jurisdiction_id: string
+          legal_citation?: string | null
+          legal_status?: Database["public"]["Enums"]["legal_status"]
+          legal_status_note?: string | null
+          needs_legal_review?: boolean
+          party?: Database["public"]["Enums"]["req_party"]
+          req_code: string
+          severity?: Database["public"]["Enums"]["requirement_sev"]
+          source_url?: string | null
+          title: string
+          trigger_cond?: string
+          updated_at?: string
+          validation_rule?: Json
+          verified_by?: string | null
+          verified_on?: string | null
+        }
         Update: {
-          applicant_scope?: Database["public"]["Enums"]["concierge_scope"];
-          authority?: string | null;
-          blocking?: boolean;
-          concierge_scope?: Database["public"]["Enums"]["concierge_scope"];
-          created_at?: string;
-          description?: string | null;
-          destination?: Database["public"]["Enums"]["requirement_destination"];
-          document_type?: Database["public"]["Enums"]["document_type"] | null;
-          effective_from?: string;
-          effective_to?: string | null;
-          id?: string;
-          jurisdiction_id?: string;
-          legal_citation?: string | null;
-          legal_status?: Database["public"]["Enums"]["legal_status"];
-          legal_status_note?: string | null;
-          needs_legal_review?: boolean;
-          party?: Database["public"]["Enums"]["req_party"];
-          req_code?: string;
-          severity?: Database["public"]["Enums"]["requirement_sev"];
-          source_url?: string | null;
-          title?: string;
-          trigger_cond?: string;
-          updated_at?: string;
-          validation_rule?: NonNullable<Json>;
-          verified_by?: string | null;
-          verified_on?: string | null;
-        };
+          applicant_scope?: Database["public"]["Enums"]["concierge_scope"]
+          authority?: string | null
+          blocking?: boolean
+          concierge_scope?: Database["public"]["Enums"]["concierge_scope"]
+          created_at?: string
+          description?: string | null
+          destination?: Database["public"]["Enums"]["requirement_destination"]
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          jurisdiction_id?: string
+          legal_citation?: string | null
+          legal_status?: Database["public"]["Enums"]["legal_status"]
+          legal_status_note?: string | null
+          needs_legal_review?: boolean
+          party?: Database["public"]["Enums"]["req_party"]
+          req_code?: string
+          severity?: Database["public"]["Enums"]["requirement_sev"]
+          source_url?: string | null
+          title?: string
+          trigger_cond?: string
+          updated_at?: string
+          validation_rule?: Json
+          verified_by?: string | null
+          verified_on?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "requirements_jurisdiction_id_fkey";
-            columns: ["jurisdiction_id"];
-            isOneToOne: false;
-            referencedRelation: "jurisdiction_profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirements_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction_profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirements_verified_by_fkey";
-            columns: ["verified_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirements_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       retention_policies: {
         Row: {
-          action: string;
-          authority: string | null;
-          created_at: string;
-          description: string | null;
-          enabled: boolean;
-          id: string;
-          key: string;
-          label: string;
-          notes: string | null;
-          retain_days: number | null;
-          updated_at: string;
-        };
+          action: string
+          authority: string | null
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          label: string
+          notes: string | null
+          retain_days: number | null
+          updated_at: string
+        }
         Insert: {
-          action: string;
-          authority?: string | null;
-          created_at?: string;
-          description?: string | null;
-          enabled?: boolean;
-          id?: string;
-          key: string;
-          label: string;
-          notes?: string | null;
-          retain_days?: number | null;
-          updated_at?: string;
-        };
+          action: string
+          authority?: string | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          label: string
+          notes?: string | null
+          retain_days?: number | null
+          updated_at?: string
+        }
         Update: {
-          action?: string;
-          authority?: string | null;
-          created_at?: string;
-          description?: string | null;
-          enabled?: boolean;
-          id?: string;
-          key?: string;
-          label?: string;
-          notes?: string | null;
-          retain_days?: number | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          action?: string
+          authority?: string | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          label?: string
+          notes?: string | null
+          retain_days?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       safeguard_invites: {
         Row: {
-          case_id: string;
-          completed_at: string | null;
-          created_at: string;
-          document_id: string | null;
-          email: string;
-          id: string;
-          opened_at: string | null;
-          sent_at: string | null;
-          status: string;
-          token: string | null;
-          token_expires_at: string | null;
-          token_revoked_at: string | null;
-          updated_at: string;
-        };
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          document_id: string | null
+          email: string
+          id: string
+          opened_at: string | null
+          sent_at: string | null
+          status: string
+          token: string | null
+          token_expires_at: string | null
+          token_revoked_at: string | null
+          updated_at: string
+        }
         Insert: {
-          case_id: string;
-          completed_at?: string | null;
-          created_at?: string;
-          document_id?: string | null;
-          email: string;
-          id?: string;
-          opened_at?: string | null;
-          sent_at?: string | null;
-          status?: string;
-          token?: string | null;
-          token_expires_at?: string | null;
-          token_revoked_at?: string | null;
-          updated_at?: string;
-        };
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          document_id?: string | null
+          email: string
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
+          updated_at?: string
+        }
         Update: {
-          case_id?: string;
-          completed_at?: string | null;
-          created_at?: string;
-          document_id?: string | null;
-          email?: string;
-          id?: string;
-          opened_at?: string | null;
-          sent_at?: string | null;
-          status?: string;
-          token?: string | null;
-          token_expires_at?: string | null;
-          token_revoked_at?: string | null;
-          updated_at?: string;
-        };
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          document_id?: string | null
+          email?: string
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          token?: string | null
+          token_expires_at?: string | null
+          token_revoked_at?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "safeguard_invites_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "safeguard_invites_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "safeguard_invites_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "safeguard_invites_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "safeguard_invites_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "safeguard_invites_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "safeguard_invites_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "safeguard_invites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "safeguard_invites_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "safeguard_invites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "safeguard_invites_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "safeguard_invites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
-        ];
-      };
+        ]
+      }
       seo_content_items: {
         Row: {
-          created_at: string;
-          created_by: string | null;
-          due_on: string | null;
-          id: string;
-          kind: string;
-          legal_reviewed_at: string | null;
-          legal_reviewed_by: string | null;
-          needs_legal_review: boolean;
-          priority: number;
-          published_url: string | null;
-          slug: string;
-          source_urls: NonNullable<Json>;
-          status: string;
-          summary: string | null;
-          target_query: string | null;
-          title: string;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          created_at: string
+          created_by: string | null
+          due_on: string | null
+          id: string
+          kind: string
+          legal_reviewed_at: string | null
+          legal_reviewed_by: string | null
+          needs_legal_review: boolean
+          priority: number
+          published_url: string | null
+          slug: string
+          source_urls: Json
+          status: string
+          summary: string | null
+          target_query: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          created_at?: string;
-          created_by?: string | null;
-          due_on?: string | null;
-          id?: string;
-          kind?: string;
-          legal_reviewed_at?: string | null;
-          legal_reviewed_by?: string | null;
-          needs_legal_review?: boolean;
-          priority?: number;
-          published_url?: string | null;
-          slug: string;
-          source_urls?: NonNullable<Json>;
-          status?: string;
-          summary?: string | null;
-          target_query?: string | null;
-          title: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string
+          created_by?: string | null
+          due_on?: string | null
+          id?: string
+          kind?: string
+          legal_reviewed_at?: string | null
+          legal_reviewed_by?: string | null
+          needs_legal_review?: boolean
+          priority?: number
+          published_url?: string | null
+          slug: string
+          source_urls?: Json
+          status?: string
+          summary?: string | null
+          target_query?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          created_at?: string;
-          created_by?: string | null;
-          due_on?: string | null;
-          id?: string;
-          kind?: string;
-          legal_reviewed_at?: string | null;
-          legal_reviewed_by?: string | null;
-          needs_legal_review?: boolean;
-          priority?: number;
-          published_url?: string | null;
-          slug?: string;
-          source_urls?: NonNullable<Json>;
-          status?: string;
-          summary?: string | null;
-          target_query?: string | null;
-          title?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string
+          created_by?: string | null
+          due_on?: string | null
+          id?: string
+          kind?: string
+          legal_reviewed_at?: string | null
+          legal_reviewed_by?: string | null
+          needs_legal_review?: boolean
+          priority?: number
+          published_url?: string | null
+          slug?: string
+          source_urls?: Json
+          status?: string
+          summary?: string | null
+          target_query?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "seo_content_items_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "seo_content_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "seo_content_items_legal_reviewed_by_fkey";
-            columns: ["legal_reviewed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "seo_content_items_legal_reviewed_by_fkey"
+            columns: ["legal_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "seo_content_items_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "seo_content_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       service_packages: {
         Row: {
-          active: boolean;
-          blurb: string;
-          created_at: string;
-          deposit_cents: number;
-          featured: boolean;
-          id: string;
-          key: string;
-          name: string;
-          price_cents: number;
-          price_label: string | null;
-          refile_promise: boolean;
-          sold_by: Database["public"]["Enums"]["brand_key"][];
-          sort: number;
-          updated_at: string;
-        };
+          active: boolean
+          blurb: string
+          created_at: string
+          deposit_cents: number
+          featured: boolean
+          id: string
+          key: string
+          name: string
+          price_cents: number
+          price_label: string | null
+          refile_promise: boolean
+          sold_by: Database["public"]["Enums"]["brand_key"][]
+          sort: number
+          updated_at: string
+        }
         Insert: {
-          active?: boolean;
-          blurb: string;
-          created_at?: string;
-          deposit_cents?: number;
-          featured?: boolean;
-          id?: string;
-          key: string;
-          name: string;
-          price_cents?: number;
-          price_label?: string | null;
-          refile_promise?: boolean;
-          sold_by?: Database["public"]["Enums"]["brand_key"][];
-          sort?: number;
-          updated_at?: string;
-        };
+          active?: boolean
+          blurb: string
+          created_at?: string
+          deposit_cents?: number
+          featured?: boolean
+          id?: string
+          key: string
+          name: string
+          price_cents?: number
+          price_label?: string | null
+          refile_promise?: boolean
+          sold_by?: Database["public"]["Enums"]["brand_key"][]
+          sort?: number
+          updated_at?: string
+        }
         Update: {
-          active?: boolean;
-          blurb?: string;
-          created_at?: string;
-          deposit_cents?: number;
-          featured?: boolean;
-          id?: string;
-          key?: string;
-          name?: string;
-          price_cents?: number;
-          price_label?: string | null;
-          refile_promise?: boolean;
-          sold_by?: Database["public"]["Enums"]["brand_key"][];
-          sort?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          active?: boolean
+          blurb?: string
+          created_at?: string
+          deposit_cents?: number
+          featured?: boolean
+          id?: string
+          key?: string
+          name?: string
+          price_cents?: number
+          price_label?: string | null
+          refile_promise?: boolean
+          sold_by?: Database["public"]["Enums"]["brand_key"][]
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       signature_events: {
         Row: {
-          case_id: string;
-          consent_text: string;
-          created_at: string;
-          document_id: string | null;
-          document_sha256: string;
-          id: string;
-          ip: string | null;
-          req_code: string | null;
-          signed_at: string;
-          signer_key: string;
-          user_agent: string | null;
-        };
+          case_id: string
+          consent_text: string
+          created_at: string
+          document_id: string | null
+          document_sha256: string
+          id: string
+          ip: string | null
+          req_code: string | null
+          signed_at: string
+          signer_key: string
+          user_agent: string | null
+        }
         Insert: {
-          case_id: string;
-          consent_text: string;
-          created_at?: string;
-          document_id?: string | null;
-          document_sha256: string;
-          id?: string;
-          ip?: string | null;
-          req_code?: string | null;
-          signed_at?: string;
-          signer_key: string;
-          user_agent?: string | null;
-        };
+          case_id: string
+          consent_text: string
+          created_at?: string
+          document_id?: string | null
+          document_sha256: string
+          id?: string
+          ip?: string | null
+          req_code?: string | null
+          signed_at?: string
+          signer_key: string
+          user_agent?: string | null
+        }
         Update: {
-          case_id?: string;
-          consent_text?: string;
-          created_at?: string;
-          document_id?: string | null;
-          document_sha256?: string;
-          id?: string;
-          ip?: string | null;
-          req_code?: string | null;
-          signed_at?: string;
-          signer_key?: string;
-          user_agent?: string | null;
-        };
+          case_id?: string
+          consent_text?: string
+          created_at?: string
+          document_id?: string | null
+          document_sha256?: string
+          id?: string
+          ip?: string | null
+          req_code?: string | null
+          signed_at?: string
+          signer_key?: string
+          user_agent?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "signature_events_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "signature_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "signature_events_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "signature_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "signature_events_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "signature_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "signature_events_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "signature_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "signature_events_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "signature_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "signature_events_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "signature_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
-        ];
-      };
+        ]
+      }
       signatures: {
         Row: {
-          case_id: string;
-          consent_text: string | null;
-          created_at: string;
-          id: string;
-          ip: string | null;
-          png_base64: string;
-          signer_key: string;
-          updated_at: string;
-          user_agent: string | null;
-        };
+          case_id: string
+          consent_text: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          png_base64: string
+          signer_key: string
+          updated_at: string
+          user_agent: string | null
+        }
         Insert: {
-          case_id: string;
-          consent_text?: string | null;
-          created_at?: string;
-          id?: string;
-          ip?: string | null;
-          png_base64: string;
-          signer_key: string;
-          updated_at?: string;
-          user_agent?: string | null;
-        };
+          case_id: string
+          consent_text?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          png_base64: string
+          signer_key: string
+          updated_at?: string
+          user_agent?: string | null
+        }
         Update: {
-          case_id?: string;
-          consent_text?: string | null;
-          created_at?: string;
-          id?: string;
-          ip?: string | null;
-          png_base64?: string;
-          signer_key?: string;
-          updated_at?: string;
-          user_agent?: string | null;
-        };
+          case_id?: string
+          consent_text?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          png_base64?: string
+          signer_key?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "signatures_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "signatures_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "signatures_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       spatial_ref_sys: {
         Row: {
-          auth_name: string | null;
-          auth_srid: number | null;
-          proj4text: string | null;
-          srid: number;
-          srtext: string | null;
-        };
+          auth_name: string | null
+          auth_srid: number | null
+          proj4text: string | null
+          srid: number
+          srtext: string | null
+        }
         Insert: {
-          auth_name?: string | null;
-          auth_srid?: number | null;
-          proj4text?: string | null;
-          srid: number;
-          srtext?: string | null;
-        };
+          auth_name?: string | null
+          auth_srid?: number | null
+          proj4text?: string | null
+          srid: number
+          srtext?: string | null
+        }
         Update: {
-          auth_name?: string | null;
-          auth_srid?: number | null;
-          proj4text?: string | null;
-          srid?: number;
-          srtext?: string | null;
-        };
-        Relationships: [];
-      };
+          auth_name?: string | null
+          auth_srid?: number | null
+          proj4text?: string | null
+          srid?: number
+          srtext?: string | null
+        }
+        Relationships: []
+      }
       sponsor_worker_requests: {
         Row: {
-          applicant_email: string;
-          applicant_name: string;
-          assignment_role: string | null;
-          created_at: string;
-          decline_reason: string | null;
-          id: string;
-          requested_by: string;
-          requested_scope: Database["public"]["Enums"]["sponsorship_scope"];
-          resolved_at: string | null;
-          resolved_by: string | null;
-          sponsor_id: string;
-          status: string;
-        };
+          applicant_email: string
+          applicant_name: string
+          assignment_role: string | null
+          created_at: string
+          decline_reason: string | null
+          id: string
+          requested_by: string
+          requested_scope: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at: string | null
+          resolved_by: string | null
+          sponsor_id: string
+          status: string
+        }
         Insert: {
-          applicant_email: string;
-          applicant_name: string;
-          assignment_role?: string | null;
-          created_at?: string;
-          decline_reason?: string | null;
-          id?: string;
-          requested_by: string;
-          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"];
-          resolved_at?: string | null;
-          resolved_by?: string | null;
-          sponsor_id: string;
-          status?: string;
-        };
+          applicant_email: string
+          applicant_name: string
+          assignment_role?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          requested_by: string
+          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sponsor_id: string
+          status?: string
+        }
         Update: {
-          applicant_email?: string;
-          applicant_name?: string;
-          assignment_role?: string | null;
-          created_at?: string;
-          decline_reason?: string | null;
-          id?: string;
-          requested_by?: string;
-          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"];
-          resolved_at?: string | null;
-          resolved_by?: string | null;
-          sponsor_id?: string;
-          status?: string;
-        };
+          applicant_email?: string
+          applicant_name?: string
+          assignment_role?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          requested_by?: string
+          requested_scope?: Database["public"]["Enums"]["sponsorship_scope"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sponsor_id?: string
+          status?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "sponsor_worker_requests_requested_by_fkey";
-            columns: ["requested_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "sponsor_worker_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sponsor_worker_requests_resolved_by_fkey";
-            columns: ["resolved_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "sponsor_worker_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sponsor_worker_requests_sponsor_id_fkey";
-            columns: ["sponsor_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsors";
-            referencedColumns: ["id"];
+            foreignKeyName: "sponsor_worker_requests_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       sponsors: {
         Row: {
-          agency_license_expires: string | null;
-          agency_license_number: string | null;
-          business_city: string | null;
-          business_phone: string | null;
-          business_state: string | null;
-          business_street: string | null;
-          business_type: string | null;
-          business_zip: string | null;
-          carry_business_expires: string | null;
-          carry_business_number: string | null;
-          carry_business_status: string | null;
-          created_at: string;
-          custodian_email: string | null;
-          custodian_license_number: string | null;
-          custodian_name: string | null;
-          custodian_phone: string | null;
-          dba_name: string | null;
-          id: string;
-          legal_name: string;
-          president_owner: string | null;
-          qualifying_officer: string | null;
-        };
+          agency_license_expires: string | null
+          agency_license_number: string | null
+          business_city: string | null
+          business_phone: string | null
+          business_state: string | null
+          business_street: string | null
+          business_type: string | null
+          business_zip: string | null
+          carry_business_expires: string | null
+          carry_business_number: string | null
+          carry_business_status: string | null
+          created_at: string
+          custodian_email: string | null
+          custodian_license_number: string | null
+          custodian_name: string | null
+          custodian_phone: string | null
+          dba_name: string | null
+          id: string
+          legal_name: string
+          president_owner: string | null
+          qualifying_officer: string | null
+        }
         Insert: {
-          agency_license_expires?: string | null;
-          agency_license_number?: string | null;
-          business_city?: string | null;
-          business_phone?: string | null;
-          business_state?: string | null;
-          business_street?: string | null;
-          business_type?: string | null;
-          business_zip?: string | null;
-          carry_business_expires?: string | null;
-          carry_business_number?: string | null;
-          carry_business_status?: string | null;
-          created_at?: string;
-          custodian_email?: string | null;
-          custodian_license_number?: string | null;
-          custodian_name?: string | null;
-          custodian_phone?: string | null;
-          dba_name?: string | null;
-          id?: string;
-          legal_name: string;
-          president_owner?: string | null;
-          qualifying_officer?: string | null;
-        };
+          agency_license_expires?: string | null
+          agency_license_number?: string | null
+          business_city?: string | null
+          business_phone?: string | null
+          business_state?: string | null
+          business_street?: string | null
+          business_type?: string | null
+          business_zip?: string | null
+          carry_business_expires?: string | null
+          carry_business_number?: string | null
+          carry_business_status?: string | null
+          created_at?: string
+          custodian_email?: string | null
+          custodian_license_number?: string | null
+          custodian_name?: string | null
+          custodian_phone?: string | null
+          dba_name?: string | null
+          id?: string
+          legal_name: string
+          president_owner?: string | null
+          qualifying_officer?: string | null
+        }
         Update: {
-          agency_license_expires?: string | null;
-          agency_license_number?: string | null;
-          business_city?: string | null;
-          business_phone?: string | null;
-          business_state?: string | null;
-          business_street?: string | null;
-          business_type?: string | null;
-          business_zip?: string | null;
-          carry_business_expires?: string | null;
-          carry_business_number?: string | null;
-          carry_business_status?: string | null;
-          created_at?: string;
-          custodian_email?: string | null;
-          custodian_license_number?: string | null;
-          custodian_name?: string | null;
-          custodian_phone?: string | null;
-          dba_name?: string | null;
-          id?: string;
-          legal_name?: string;
-          president_owner?: string | null;
-          qualifying_officer?: string | null;
-        };
-        Relationships: [];
-      };
+          agency_license_expires?: string | null
+          agency_license_number?: string | null
+          business_city?: string | null
+          business_phone?: string | null
+          business_state?: string | null
+          business_street?: string | null
+          business_type?: string | null
+          business_zip?: string | null
+          carry_business_expires?: string | null
+          carry_business_number?: string | null
+          carry_business_status?: string | null
+          created_at?: string
+          custodian_email?: string | null
+          custodian_license_number?: string | null
+          custodian_name?: string | null
+          custodian_phone?: string | null
+          dba_name?: string | null
+          id?: string
+          legal_name?: string
+          president_owner?: string | null
+          qualifying_officer?: string | null
+        }
+        Relationships: []
+      }
       stripe_events: {
         Row: {
-          id: string;
-          received_at: string;
-          type: string | null;
-        };
+          id: string
+          received_at: string
+          type: string | null
+        }
         Insert: {
-          id: string;
-          received_at?: string;
-          type?: string | null;
-        };
+          id: string
+          received_at?: string
+          type?: string | null
+        }
         Update: {
-          id?: string;
-          received_at?: string;
-          type?: string | null;
-        };
-        Relationships: [];
-      };
+          id?: string
+          received_at?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
-          confirmed_at: string | null;
-          created_at: string;
-          email: string;
-          id: string;
-          jurisdiction: string | null;
-          offer: string;
-          payload: NonNullable<Json>;
-          source: string;
-          unsubscribed_at: string | null;
-        };
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          jurisdiction: string | null
+          offer: string
+          payload: Json
+          source: string
+          unsubscribed_at: string | null
+        }
         Insert: {
-          confirmed_at?: string | null;
-          created_at?: string;
-          email: string;
-          id?: string;
-          jurisdiction?: string | null;
-          offer: string;
-          payload?: NonNullable<Json>;
-          source: string;
-          unsubscribed_at?: string | null;
-        };
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          jurisdiction?: string | null
+          offer: string
+          payload?: Json
+          source: string
+          unsubscribed_at?: string | null
+        }
         Update: {
-          confirmed_at?: string | null;
-          created_at?: string;
-          email?: string;
-          id?: string;
-          jurisdiction?: string | null;
-          offer?: string;
-          payload?: NonNullable<Json>;
-          source?: string;
-          unsubscribed_at?: string | null;
-        };
-        Relationships: [];
-      };
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          jurisdiction?: string | null
+          offer?: string
+          payload?: Json
+          source?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
-          assignee: string | null;
-          case_id: string | null;
-          created_at: string;
-          description: string | null;
-          due_date: string | null;
-          id: string;
-          priority: number;
-          status: Database["public"]["Enums"]["task_status"];
-          title: string;
-          updated_at: string;
-        };
+          assignee: string | null
+          case_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: number
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+        }
         Insert: {
-          assignee?: string | null;
-          case_id?: string | null;
-          created_at?: string;
-          description?: string | null;
-          due_date?: string | null;
-          id?: string;
-          priority?: number;
-          status?: Database["public"]["Enums"]["task_status"];
-          title: string;
-          updated_at?: string;
-        };
+          assignee?: string | null
+          case_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string
+        }
         Update: {
-          assignee?: string | null;
-          case_id?: string | null;
-          created_at?: string;
-          description?: string | null;
-          due_date?: string | null;
-          id?: string;
-          priority?: number;
-          status?: Database["public"]["Enums"]["task_status"];
-          title?: string;
-          updated_at?: string;
-        };
+          assignee?: string | null
+          case_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "tasks_assignee_fkey";
-            columns: ["assignee"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "tasks_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tasks_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tasks_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "tasks_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       training_classes: {
         Row: {
-          capacity: number | null;
-          created_at: string;
-          hours_copy: string | null;
-          id: string;
-          instructor_name: string;
-          location_private: string | null;
-          location_public: string;
-          price_cents: number;
-          registration_closes_at: string | null;
-          sessions: NonNullable<Json>;
-          slug: string;
-          status: string;
-          title: string;
-          updated_at: string;
-          vendor_access_code: string | null;
-          vendor_class_urls: NonNullable<Json>;
-          vendor_company: string;
-        };
+          capacity: number | null
+          created_at: string
+          hours_copy: string | null
+          id: string
+          instructor_name: string
+          location_private: string | null
+          location_public: string
+          price_cents: number
+          registration_closes_at: string | null
+          sessions: Json
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          vendor_access_code: string | null
+          vendor_class_urls: Json
+          vendor_company: string
+        }
         Insert: {
-          capacity?: number | null;
-          created_at?: string;
-          hours_copy?: string | null;
-          id?: string;
-          instructor_name: string;
-          location_private?: string | null;
-          location_public: string;
-          price_cents: number;
-          registration_closes_at?: string | null;
-          sessions: NonNullable<Json>;
-          slug: string;
-          status?: string;
-          title: string;
-          updated_at?: string;
-          vendor_access_code?: string | null;
-          vendor_class_urls?: NonNullable<Json>;
-          vendor_company: string;
-        };
+          capacity?: number | null
+          created_at?: string
+          hours_copy?: string | null
+          id?: string
+          instructor_name: string
+          location_private?: string | null
+          location_public: string
+          price_cents: number
+          registration_closes_at?: string | null
+          sessions: Json
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          vendor_access_code?: string | null
+          vendor_class_urls?: Json
+          vendor_company: string
+        }
         Update: {
-          capacity?: number | null;
-          created_at?: string;
-          hours_copy?: string | null;
-          id?: string;
-          instructor_name?: string;
-          location_private?: string | null;
-          location_public?: string;
-          price_cents?: number;
-          registration_closes_at?: string | null;
-          sessions?: NonNullable<Json>;
-          slug?: string;
-          status?: string;
-          title?: string;
-          updated_at?: string;
-          vendor_access_code?: string | null;
-          vendor_class_urls?: NonNullable<Json>;
-          vendor_company?: string;
-        };
-        Relationships: [];
-      };
+          capacity?: number | null
+          created_at?: string
+          hours_copy?: string | null
+          id?: string
+          instructor_name?: string
+          location_private?: string | null
+          location_public?: string
+          price_cents?: number
+          registration_closes_at?: string | null
+          sessions?: Json
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          vendor_access_code?: string | null
+          vendor_class_urls?: Json
+          vendor_company?: string
+        }
+        Relationships: []
+      }
       training_interest: {
         Row: {
-          created_at: string;
-          email: string;
-          id: string;
-          ip_hash: string;
-          name: string;
-          phone_e164: string;
-          source: string;
-          status: string;
-          timeframe: string;
-          user_agent: string | null;
-        };
+          created_at: string
+          email: string
+          id: string
+          ip_hash: string
+          name: string
+          phone_e164: string
+          source: string
+          status: string
+          timeframe: string
+          user_agent: string | null
+        }
         Insert: {
-          created_at?: string;
-          email: string;
-          id?: string;
-          ip_hash: string;
-          name: string;
-          phone_e164: string;
-          source: string;
-          status?: string;
-          timeframe: string;
-          user_agent?: string | null;
-        };
+          created_at?: string
+          email: string
+          id?: string
+          ip_hash: string
+          name: string
+          phone_e164: string
+          source: string
+          status?: string
+          timeframe: string
+          user_agent?: string | null
+        }
         Update: {
-          created_at?: string;
-          email?: string;
-          id?: string;
-          ip_hash?: string;
-          name?: string;
-          phone_e164?: string;
-          source?: string;
-          status?: string;
-          timeframe?: string;
-          user_agent?: string | null;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          email?: string
+          id?: string
+          ip_hash?: string
+          name?: string
+          phone_e164?: string
+          source?: string
+          status?: string
+          timeframe?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       training_locations: {
         Row: {
-          address: string | null;
-          created_at: string;
-          geog: unknown;
-          id: string;
-          instructor_id: string;
-          is_range: boolean;
-          label: string;
-          lat: number | null;
-          lng: number | null;
-          notes: string | null;
-          updated_at: string;
-        };
+          address: string | null
+          created_at: string
+          geog: unknown
+          id: string
+          instructor_id: string
+          is_range: boolean
+          label: string
+          lat: number | null
+          lng: number | null
+          notes: string | null
+          updated_at: string
+        }
         Insert: {
-          address?: string | null;
-          created_at?: string;
-          geog?: unknown;
-          id?: string;
-          instructor_id: string;
-          is_range?: boolean;
-          label: string;
-          lat?: number | null;
-          lng?: number | null;
-          notes?: string | null;
-          updated_at?: string;
-        };
+          address?: string | null
+          created_at?: string
+          geog?: unknown
+          id?: string
+          instructor_id: string
+          is_range?: boolean
+          label: string
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          updated_at?: string
+        }
         Update: {
-          address?: string | null;
-          created_at?: string;
-          geog?: unknown;
-          id?: string;
-          instructor_id?: string;
-          is_range?: boolean;
-          label?: string;
-          lat?: number | null;
-          lng?: number | null;
-          notes?: string | null;
-          updated_at?: string;
-        };
+          address?: string | null
+          created_at?: string
+          geog?: unknown
+          id?: string
+          instructor_id?: string
+          is_range?: boolean
+          label?: string
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "training_locations_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "training_locations_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "training_locations_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "training_locations_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
-        ];
-      };
+        ]
+      }
       training_registrations: {
         Row: {
-          address1: string;
-          address2: string;
-          admin_notes: string | null;
-          agreed_terms_at: string;
-          agreed_terms_version: string;
-          amount_cents: number;
-          background: string;
-          city: string;
-          class_id: string;
-          created_at: string;
-          dob: string;
-          email: string;
-          emergency_name: string;
-          emergency_phone: string;
-          experience: string;
-          first_name: string;
-          gender: string;
-          home_phone: string;
-          id: string;
-          id_file_path: string | null;
-          last_name: string;
-          medical_notes: string | null;
-          middle_name: string;
-          mobile_phone: string;
-          paid_at: string | null;
-          sms_opt_in: boolean;
-          state: string;
-          status: string;
-          stripe_payment_intent_id: string | null;
-          updated_at: string;
-          us_citizen: string;
-          utm: NonNullable<Json>;
-          zip: string;
-        };
+          address1: string
+          address2: string
+          admin_notes: string | null
+          agreed_terms_at: string
+          agreed_terms_version: string
+          amount_cents: number
+          background: string
+          city: string
+          class_id: string
+          created_at: string
+          dob: string
+          email: string
+          emergency_name: string
+          emergency_phone: string
+          experience: string
+          first_name: string
+          gender: string
+          home_phone: string
+          id: string
+          id_file_path: string | null
+          last_name: string
+          medical_notes: string | null
+          middle_name: string
+          mobile_phone: string
+          paid_at: string | null
+          sms_opt_in: boolean
+          state: string
+          status: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          us_citizen: string
+          utm: Json
+          zip: string
+        }
         Insert: {
-          address1: string;
-          address2?: string;
-          admin_notes?: string | null;
-          agreed_terms_at: string;
-          agreed_terms_version: string;
-          amount_cents: number;
-          background: string;
-          city: string;
-          class_id: string;
-          created_at?: string;
-          dob: string;
-          email: string;
-          emergency_name: string;
-          emergency_phone: string;
-          experience: string;
-          first_name: string;
-          gender: string;
-          home_phone?: string;
-          id?: string;
-          id_file_path?: string | null;
-          last_name: string;
-          medical_notes?: string | null;
-          middle_name?: string;
-          mobile_phone: string;
-          paid_at?: string | null;
-          sms_opt_in?: boolean;
-          state: string;
-          status?: string;
-          stripe_payment_intent_id?: string | null;
-          updated_at?: string;
-          us_citizen: string;
-          utm?: NonNullable<Json>;
-          zip: string;
-        };
+          address1: string
+          address2?: string
+          admin_notes?: string | null
+          agreed_terms_at: string
+          agreed_terms_version: string
+          amount_cents: number
+          background: string
+          city: string
+          class_id: string
+          created_at?: string
+          dob: string
+          email: string
+          emergency_name: string
+          emergency_phone: string
+          experience: string
+          first_name: string
+          gender: string
+          home_phone?: string
+          id?: string
+          id_file_path?: string | null
+          last_name: string
+          medical_notes?: string | null
+          middle_name?: string
+          mobile_phone: string
+          paid_at?: string | null
+          sms_opt_in?: boolean
+          state: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          us_citizen: string
+          utm?: Json
+          zip: string
+        }
         Update: {
-          address1?: string;
-          address2?: string;
-          admin_notes?: string | null;
-          agreed_terms_at?: string;
-          agreed_terms_version?: string;
-          amount_cents?: number;
-          background?: string;
-          city?: string;
-          class_id?: string;
-          created_at?: string;
-          dob?: string;
-          email?: string;
-          emergency_name?: string;
-          emergency_phone?: string;
-          experience?: string;
-          first_name?: string;
-          gender?: string;
-          home_phone?: string;
-          id?: string;
-          id_file_path?: string | null;
-          last_name?: string;
-          medical_notes?: string | null;
-          middle_name?: string;
-          mobile_phone?: string;
-          paid_at?: string | null;
-          sms_opt_in?: boolean;
-          state?: string;
-          status?: string;
-          stripe_payment_intent_id?: string | null;
-          updated_at?: string;
-          us_citizen?: string;
-          utm?: NonNullable<Json>;
-          zip?: string;
-        };
+          address1?: string
+          address2?: string
+          admin_notes?: string | null
+          agreed_terms_at?: string
+          agreed_terms_version?: string
+          amount_cents?: number
+          background?: string
+          city?: string
+          class_id?: string
+          created_at?: string
+          dob?: string
+          email?: string
+          emergency_name?: string
+          emergency_phone?: string
+          experience?: string
+          first_name?: string
+          gender?: string
+          home_phone?: string
+          id?: string
+          id_file_path?: string | null
+          last_name?: string
+          medical_notes?: string | null
+          middle_name?: string
+          mobile_phone?: string
+          paid_at?: string | null
+          sms_opt_in?: boolean
+          state?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          us_citizen?: string
+          utm?: Json
+          zip?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "training_registrations_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "training_classes";
-            referencedColumns: ["id"];
+            foreignKeyName: "training_registrations_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "training_classes"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       training_sessions: {
         Row: {
-          attended: boolean;
-          case_id: string;
-          class_date: string | null;
-          created_at: string;
-          id: string;
-          instructor_id: string | null;
-          location: string | null;
-          passed: boolean | null;
-          range_date: string | null;
-          test_score: number | null;
-          updated_at: string;
-        };
+          attended: boolean
+          case_id: string
+          class_date: string | null
+          created_at: string
+          id: string
+          instructor_id: string | null
+          location: string | null
+          passed: boolean | null
+          range_date: string | null
+          test_score: number | null
+          updated_at: string
+        }
         Insert: {
-          attended?: boolean;
-          case_id: string;
-          class_date?: string | null;
-          created_at?: string;
-          id?: string;
-          instructor_id?: string | null;
-          location?: string | null;
-          passed?: boolean | null;
-          range_date?: string | null;
-          test_score?: number | null;
-          updated_at?: string;
-        };
+          attended?: boolean
+          case_id: string
+          class_date?: string | null
+          created_at?: string
+          id?: string
+          instructor_id?: string | null
+          location?: string | null
+          passed?: boolean | null
+          range_date?: string | null
+          test_score?: number | null
+          updated_at?: string
+        }
         Update: {
-          attended?: boolean;
-          case_id?: string;
-          class_date?: string | null;
-          created_at?: string;
-          id?: string;
-          instructor_id?: string | null;
-          location?: string | null;
-          passed?: boolean | null;
-          range_date?: string | null;
-          test_score?: number | null;
-          updated_at?: string;
-        };
+          attended?: boolean
+          case_id?: string
+          class_date?: string | null
+          created_at?: string
+          id?: string
+          instructor_id?: string | null
+          location?: string | null
+          passed?: boolean | null
+          range_date?: string | null
+          test_score?: number | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "training_sessions_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "training_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "training_sessions_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "training_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "training_sessions_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "training_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "training_sessions_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "training_sessions_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "training_sessions_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "training_sessions_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
-        ];
-      };
+        ]
+      }
       training_waitlist: {
         Row: {
-          class_id: string | null;
-          created_at: string;
-          email: string;
-          id: string;
-        };
+          class_id: string | null
+          created_at: string
+          email: string
+          id: string
+        }
         Insert: {
-          class_id?: string | null;
-          created_at?: string;
-          email: string;
-          id?: string;
-        };
+          class_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+        }
         Update: {
-          class_id?: string | null;
-          created_at?: string;
-          email?: string;
-          id?: string;
-        };
+          class_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "training_waitlist_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "training_classes";
-            referencedColumns: ["id"];
+            foreignKeyName: "training_waitlist_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "training_classes"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Views: {
       applicant_interest_feed: {
         Row: {
-          ammo_included: boolean | null;
-          avatar_path: string | null;
-          background: string | null;
-          bio: string | null;
-          case_id: string | null;
-          class_format: string | null;
-          dcjs_id: string | null;
-          distance_mi: number | null;
-          instagram_handle: string | null;
-          instructor_id: string | null;
-          intro_call_note: string | null;
-          languages: string[] | null;
-          materials_included: boolean | null;
-          name: string | null;
-          note: string | null;
-          offer_id: string | null;
-          offers_intro_call: boolean | null;
-          price_18h_cents: number | null;
-          provides_range: boolean | null;
-          quoted_price_cents: number | null;
-          range_fee_included: boolean | null;
-          rating_avg: number | null;
-          rating_count: number | null;
-          responded_at: string | null;
-          response_time_note: string | null;
-          scheduling_notes: string | null;
-          separate_range_note: string | null;
-          service_radius_mi: number | null;
-          type: Database["public"]["Enums"]["offer_type"] | null;
-          typical_class_size: number | null;
-          verified: boolean | null;
-          website_url: string | null;
-          whats_to_bring: string | null;
-          years_experience: number | null;
-        };
+          ammo_included: boolean | null
+          avatar_path: string | null
+          background: string | null
+          bio: string | null
+          case_id: string | null
+          class_format: string | null
+          dcjs_id: string | null
+          distance_mi: number | null
+          instagram_handle: string | null
+          instructor_id: string | null
+          intro_call_note: string | null
+          languages: string[] | null
+          materials_included: boolean | null
+          name: string | null
+          note: string | null
+          offer_id: string | null
+          offers_intro_call: boolean | null
+          price_18h_cents: number | null
+          provides_range: boolean | null
+          quoted_price_cents: number | null
+          range_fee_included: boolean | null
+          rating_avg: number | null
+          rating_count: number | null
+          responded_at: string | null
+          response_time_note: string | null
+          scheduling_notes: string | null
+          separate_range_note: string | null
+          service_radius_mi: number | null
+          type: Database["public"]["Enums"]["offer_type"] | null
+          typical_class_size: number | null
+          verified: boolean | null
+          website_url: string | null
+          whats_to_bring: string | null
+          years_experience: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_offers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_offers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_offers_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_offers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "offer_matches_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "instructors";
-            referencedColumns: ["id"];
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "offer_matches_instructor_id_fkey";
-            columns: ["instructor_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["instructor_id"];
+            foreignKeyName: "offer_matches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["instructor_id"]
           },
-        ];
-      };
+        ]
+      }
       geography_columns: {
         Row: {
-          coord_dimension: number | null;
-          f_geography_column: unknown;
-          f_table_catalog: unknown;
-          f_table_name: unknown;
-          f_table_schema: unknown;
-          srid: number | null;
-          type: string | null;
-        };
-        Relationships: [];
-      };
+          coord_dimension: number | null
+          f_geography_column: unknown
+          f_table_catalog: unknown
+          f_table_name: unknown
+          f_table_schema: unknown
+          srid: number | null
+          type: string | null
+        }
+        Relationships: []
+      }
       geometry_columns: {
         Row: {
-          coord_dimension: number | null;
-          f_geometry_column: unknown;
-          f_table_catalog: string | null;
-          f_table_name: unknown;
-          f_table_schema: unknown;
-          srid: number | null;
-          type: string | null;
-        };
+          coord_dimension: number | null
+          f_geometry_column: unknown
+          f_table_catalog: string | null
+          f_table_name: unknown
+          f_table_schema: unknown
+          srid: number | null
+          type: string | null
+        }
         Insert: {
-          coord_dimension?: number | null;
-          f_geometry_column?: unknown;
-          f_table_catalog?: string | null;
-          f_table_name?: unknown;
-          f_table_schema?: unknown;
-          srid?: number | null;
-          type?: string | null;
-        };
+          coord_dimension?: number | null
+          f_geometry_column?: unknown
+          f_table_catalog?: string | null
+          f_table_name?: unknown
+          f_table_schema?: unknown
+          srid?: number | null
+          type?: string | null
+        }
         Update: {
-          coord_dimension?: number | null;
-          f_geometry_column?: unknown;
-          f_table_catalog?: string | null;
-          f_table_name?: unknown;
-          f_table_schema?: unknown;
-          srid?: number | null;
-          type?: string | null;
-        };
-        Relationships: [];
-      };
+          coord_dimension?: number | null
+          f_geometry_column?: unknown
+          f_table_catalog?: string | null
+          f_table_name?: unknown
+          f_table_schema?: unknown
+          srid?: number | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       instructor_offer_feed: {
         Row: {
-          area_label: string | null;
-          created_at: string | null;
-          distance_mi: number | null;
-          expires_at: string | null;
-          jurisdiction: Database["public"]["Enums"]["jurisdiction_key"] | null;
-          matched_at: string | null;
-          needs_note: string | null;
-          offer_id: string | null;
-          responded: string | null;
-          stage: Database["public"]["Enums"]["case_stage"] | null;
-          type: Database["public"]["Enums"]["offer_type"] | null;
-        };
-        Relationships: [];
-      };
+          area_label: string | null
+          created_at: string | null
+          distance_mi: number | null
+          expires_at: string | null
+          jurisdiction: Database["public"]["Enums"]["jurisdiction_key"] | null
+          matched_at: string | null
+          needs_note: string | null
+          offer_id: string | null
+          responded: string | null
+          stage: Database["public"]["Enums"]["case_stage"] | null
+          type: Database["public"]["Enums"]["offer_type"] | null
+        }
+        Relationships: []
+      }
+      public_blog_posts: {
+        Row: {
+          automation_assisted: boolean | null
+          content_markdown: string | null
+          description: string | null
+          id: string | null
+          published_at: string | null
+          slug: string | null
+          tag: string | null
+          target_query: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          automation_assisted?: boolean | null
+          content_markdown?: string | null
+          description?: string | null
+          id?: string | null
+          published_at?: string | null
+          slug?: string | null
+          tag?: string | null
+          target_query?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          automation_assisted?: boolean | null
+          content_markdown?: string | null
+          description?: string | null
+          id?: string | null
+          published_at?: string | null
+          slug?: string | null
+          tag?: string | null
+          target_query?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       public_instructor_directory: {
         Row: {
-          bio: string | null;
-          boroughs: string[] | null;
-          class_format: string | null;
-          languages: string[] | null;
-          name: string | null;
-          slug: string | null;
-        };
+          bio: string | null
+          boroughs: string[] | null
+          class_format: string | null
+          languages: string[] | null
+          name: string | null
+          slug: string | null
+        }
         Insert: {
-          bio?: string | null;
-          boroughs?: string[] | null;
-          class_format?: string | null;
-          languages?: string[] | null;
-          name?: string | null;
-          slug?: never;
-        };
+          bio?: string | null
+          boroughs?: string[] | null
+          class_format?: string | null
+          languages?: string[] | null
+          name?: string | null
+          slug?: never
+        }
         Update: {
-          bio?: string | null;
-          boroughs?: string[] | null;
-          class_format?: string | null;
-          languages?: string[] | null;
-          name?: string | null;
-          slug?: never;
-        };
-        Relationships: [];
-      };
+          bio?: string | null
+          boroughs?: string[] | null
+          class_format?: string | null
+          languages?: string[] | null
+          name?: string | null
+          slug?: never
+        }
+        Relationships: []
+      }
       requirement_review_latest: {
         Row: {
-          case_id: string | null;
-          case_requirement_id: string | null;
-          created_at: string | null;
-          decision: Database["public"]["Enums"]["review_decision"] | null;
-          note: string | null;
-          reviewer_kind: string | null;
-        };
+          case_id: string | null
+          case_requirement_id: string | null
+          created_at: string | null
+          decision: Database["public"]["Enums"]["review_decision"] | null
+          note: string | null
+          reviewer_kind: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "requirement_reviews_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "requirement_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "case_requirements";
-            referencedColumns: ["id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "case_requirements"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_requirement_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["case_requirement_id"]
           },
           {
-            foreignKeyName: "requirement_reviews_case_requirement_id_fkey";
-            columns: ["case_requirement_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_requirement_feed";
-            referencedColumns: ["case_requirement_id"];
+            foreignKeyName: "requirement_reviews_case_requirement_id_fkey"
+            columns: ["case_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_requirement_feed"
+            referencedColumns: ["case_requirement_id"]
           },
-        ];
-      };
+        ]
+      }
       sponsor_case_scope: {
         Row: {
-          applicant_name: string | null;
-          case_id: string | null;
-          county_license_expires_on: string | null;
-          license_track: Database["public"]["Enums"]["license_track"] | null;
-          scope: Database["public"]["Enums"]["sponsorship_scope"] | null;
-          sponsor_id: string | null;
-          sponsorship_id: string | null;
-          stage: Database["public"]["Enums"]["case_stage"] | null;
-          updated_at: string | null;
-        };
+          applicant_name: string | null
+          case_id: string | null
+          county_license_expires_on: string | null
+          license_track: Database["public"]["Enums"]["license_track"] | null
+          scope: Database["public"]["Enums"]["sponsorship_scope"] | null
+          sponsor_id: string | null
+          sponsorship_id: string | null
+          stage: Database["public"]["Enums"]["case_stage"] | null
+          updated_at: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_sponsorships_sponsor_id_fkey";
-            columns: ["sponsor_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsors";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_sponsorships_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       sponsor_document_feed: {
         Row: {
-          case_id: string | null;
-          case_requirement_id: string | null;
-          created_at: string | null;
-          document_id: string | null;
-          file_name: string | null;
-          generated: boolean | null;
-          notarized: boolean | null;
-          party: Database["public"]["Enums"]["req_party"] | null;
-          req_code: string | null;
-          review_notes: string | null;
-          signed_at: string | null;
-          sponsorship_id: string | null;
-          status: Database["public"]["Enums"]["document_status"] | null;
-          type: Database["public"]["Enums"]["document_type"] | null;
-          version: number | null;
-        };
+          case_id: string | null
+          case_requirement_id: string | null
+          created_at: string | null
+          document_id: string | null
+          file_name: string | null
+          generated: boolean | null
+          notarized: boolean | null
+          party: Database["public"]["Enums"]["req_party"] | null
+          req_code: string | null
+          review_notes: string | null
+          signed_at: string | null
+          sponsorship_id: string | null
+          status: Database["public"]["Enums"]["document_status"] | null
+          type: Database["public"]["Enums"]["document_type"] | null
+          version: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       sponsor_requirement_feed: {
         Row: {
-          authority: string | null;
-          blocking: boolean | null;
-          case_id: string | null;
-          case_requirement_id: string | null;
-          description: string | null;
-          document_id: string | null;
-          document_type: Database["public"]["Enums"]["document_type"] | null;
-          party: Database["public"]["Enums"]["req_party"] | null;
-          req_code: string | null;
-          scope: Database["public"]["Enums"]["concierge_scope"] | null;
-          severity: Database["public"]["Enums"]["requirement_sev"] | null;
-          sponsorship_id: string | null;
-          status: Database["public"]["Enums"]["case_req_status"] | null;
-          title: string | null;
-        };
+          authority: string | null
+          blocking: boolean | null
+          case_id: string | null
+          case_requirement_id: string | null
+          description: string | null
+          document_id: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          party: Database["public"]["Enums"]["req_party"] | null
+          req_code: string | null
+          scope: Database["public"]["Enums"]["concierge_scope"] | null
+          severity: Database["public"]["Enums"]["requirement_sev"] | null
+          sponsorship_id: string | null
+          status: Database["public"]["Enums"]["case_req_status"] | null
+          title: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
-        ];
-      };
+        ]
+      }
       sponsor_roster_progress: {
         Row: {
-          case_id: string | null;
-          done_count: number | null;
-          invited_count: number | null;
-          req_code: string | null;
-          required_count: number | null;
-          sponsorship_id: string | null;
-        };
+          case_id: string | null
+          done_count: number | null
+          invited_count: number | null
+          req_code: string | null
+          required_count: number | null
+          sponsorship_id: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       trainer_case_scope: {
         Row: {
-          applicant_email: string | null;
-          applicant_name: string | null;
-          applicant_phone: string | null;
-          case_id: string | null;
-          engagement_id: string | null;
-          instructor_id: string | null;
-          is_renewal: boolean | null;
-          stage: Database["public"]["Enums"]["case_stage"] | null;
-          training_expires_on: string | null;
-          trust_tier: string | null;
-        };
-        Relationships: [];
-      };
+          applicant_email: string | null
+          applicant_name: string | null
+          applicant_phone: string | null
+          case_id: string | null
+          engagement_id: string | null
+          instructor_id: string | null
+          is_renewal: boolean | null
+          stage: Database["public"]["Enums"]["case_stage"] | null
+          training_expires_on: string | null
+          trust_tier: string | null
+        }
+        Relationships: []
+      }
       trainer_document_feed: {
         Row: {
-          case_id: string | null;
-          case_requirement_id: string | null;
-          created_at: string | null;
-          document_id: string | null;
-          engagement_id: string | null;
-          file_name: string | null;
-          generated: boolean | null;
-          notarized: boolean | null;
-          req_code: string | null;
-          signed_at: string | null;
-          status: Database["public"]["Enums"]["document_status"] | null;
-          type: Database["public"]["Enums"]["document_type"] | null;
-          version: number | null;
-        };
+          case_id: string | null
+          case_requirement_id: string | null
+          created_at: string | null
+          document_id: string | null
+          engagement_id: string | null
+          file_name: string | null
+          generated: boolean | null
+          notarized: boolean | null
+          req_code: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["document_status"] | null
+          type: Database["public"]["Enums"]["document_type"] | null
+          version: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "documents_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
-        ];
-      };
+        ]
+      }
       trainer_requirement_feed: {
         Row: {
-          authority: string | null;
-          blocking: boolean | null;
-          case_id: string | null;
-          case_requirement_id: string | null;
-          description: string | null;
-          document_id: string | null;
-          document_type: Database["public"]["Enums"]["document_type"] | null;
-          engagement_id: string | null;
-          req_code: string | null;
-          scope: Database["public"]["Enums"]["concierge_scope"] | null;
-          severity: Database["public"]["Enums"]["requirement_sev"] | null;
-          status: Database["public"]["Enums"]["case_req_status"] | null;
-          title: string | null;
-        };
+          authority: string | null
+          blocking: boolean | null
+          case_id: string | null
+          case_requirement_id: string | null
+          description: string | null
+          document_id: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          engagement_id: string | null
+          req_code: string | null
+          scope: Database["public"]["Enums"]["concierge_scope"] | null
+          severity: Database["public"]["Enums"]["requirement_sev"] | null
+          status: Database["public"]["Enums"]["case_req_status"] | null
+          title: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "cases";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_case_id_fkey";
-            columns: ["case_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_case_scope";
-            referencedColumns: ["case_id"];
+            foreignKeyName: "case_requirements_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_case_scope"
+            referencedColumns: ["case_id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "sponsor_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_document_feed"
+            referencedColumns: ["document_id"]
           },
           {
-            foreignKeyName: "case_requirements_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "trainer_document_feed";
-            referencedColumns: ["document_id"];
+            foreignKeyName: "case_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_document_feed"
+            referencedColumns: ["document_id"]
           },
-        ];
-      };
+        ]
+      }
       trainer_roster_progress: {
         Row: {
-          case_id: string | null;
-          done_count: number | null;
-          engagement_id: string | null;
-          invited_count: number | null;
-          req_code: string | null;
-          required_count: number | null;
-        };
-        Relationships: [];
-      };
-    };
+          case_id: string | null
+          done_count: number | null
+          engagement_id: string | null
+          invited_count: number | null
+          req_code: string | null
+          required_count: number | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       _postgis_deprecate: {
-        Args: { newname: string; oldname: string; version: string };
-        Returns: undefined;
-      };
-      _postgis_index_extent: { Args: { col: string; tbl: unknown }; Returns: unknown };
-      _postgis_pgsql_version: { Args: Record<PropertyKey, never>; Returns: string };
-      _postgis_scripts_pgsql_version: { Args: Record<PropertyKey, never>; Returns: string };
+        Args: { newname: string; oldname: string; version: string }
+        Returns: undefined
+      }
+      _postgis_index_extent: {
+        Args: { col: string; tbl: unknown }
+        Returns: unknown
+      }
+      _postgis_pgsql_version: { Args: never; Returns: string }
+      _postgis_scripts_pgsql_version: { Args: never; Returns: string }
       _postgis_selectivity: {
-        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown };
-        Returns: number;
-      };
-      _postgis_stats: { Args: { ""?: string; att_name: string; tbl: unknown }; Returns: string };
-      _st_3dintersects: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_contains: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_containsproperly: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }
+        Returns: number
+      }
+      _postgis_stats: {
+        Args: { ""?: string; att_name: string; tbl: unknown }
+        Returns: string
+      }
+      _st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
       _st_coveredby:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       _st_covers:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_crosses: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
       _st_dwithin: {
-        Args: { geog1: unknown; geog2: unknown; tolerance: number; use_spheroid?: boolean };
-        Returns: boolean;
-      };
-      _st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_intersects: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_linecrossingdirection: { Args: { line1: unknown; line2: unknown }; Returns: number };
-      _st_longestline: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      _st_maxdistance: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      _st_orderingequals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_overlaps: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      _st_sortablehash: { Args: { geom: unknown }; Returns: number };
-      _st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      _st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_intersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
+      _st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      _st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      _st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_sortablehash: { Args: { geom: unknown }; Returns: number }
+      _st_touches: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
       _st_voronoi: {
-        Args: { clip?: unknown; g1: unknown; return_polygons?: boolean; tolerance?: number };
-        Returns: unknown;
-      };
-      _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      accept_offer: { Args: { p_offer_id: string }; Returns: string };
-      addauth: { Args: { "": string }; Returns: boolean };
+        Args: {
+          clip?: unknown
+          g1: unknown
+          return_polygons?: boolean
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      accept_offer: { Args: { p_offer_id: string }; Returns: string }
+      addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
             Args: {
-              catalog_name: string;
-              column_name: string;
-              new_dim: number;
-              new_srid_in: number;
-              new_type: string;
-              schema_name: string;
-              table_name: string;
-              use_typmod?: boolean;
-            };
-            Returns: string;
+              catalog_name: string
+              column_name: string
+              new_dim: number
+              new_srid_in: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
           }
         | {
             Args: {
-              column_name: string;
-              new_dim: number;
-              new_srid: number;
-              new_type: string;
-              schema_name: string;
-              table_name: string;
-              use_typmod?: boolean;
-            };
-            Returns: string;
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
           }
         | {
             Args: {
-              column_name: string;
-              new_dim: number;
-              new_srid: number;
-              new_type: string;
-              table_name: string;
-              use_typmod?: boolean;
-            };
-            Returns: string;
-          };
-      case_client_is_me: { Args: { p_case_id: string }; Returns: boolean };
-      case_visible: { Args: { p_case_id: string }; Returns: boolean };
-      choose_instructor: { Args: { p_instructor_id: string; p_offer_id: string }; Returns: string };
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+      case_client_is_me: { Args: { p_case_id: string }; Returns: boolean }
+      case_visible: { Args: { p_case_id: string }; Returns: boolean }
+      choose_instructor: {
+        Args: { p_instructor_id: string; p_offer_id: string }
+        Returns: string
+      }
       claim_promo_code: {
         Args: {
-          p_case_id: string;
-          p_client_id: string;
-          p_code_fingerprint: string;
-          p_code_label: string;
-          p_max_uses: number;
-        };
-        Returns: string;
-      };
-      client_visible: { Args: { p_client_id: string }; Returns: boolean };
+          p_case_id: string
+          p_client_id: string
+          p_code_fingerprint: string
+          p_code_label: string
+          p_max_uses: number
+        }
+        Returns: string
+      }
+      client_visible: { Args: { p_client_id: string }; Returns: boolean }
       current_user_role: {
-        Args: Record<PropertyKey, never>;
-        Returns: Database["public"]["Enums"]["user_role"];
-      };
-      disablelongtransactions: { Args: Record<PropertyKey, never>; Returns: string };
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
             Args: {
-              catalog_name: string;
-              column_name: string;
-              schema_name: string;
-              table_name: string;
-            };
-            Returns: string;
+              catalog_name: string
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
           }
-        | {
-            Args: { column_name: string; schema_name: string; table_name: string };
-            Returns: string;
-          }
-        | { Args: { column_name: string; table_name: string }; Returns: string };
-      dropgeometrytable:
-        | {
-            Args: { catalog_name: string; schema_name: string; table_name: string };
-            Returns: string;
-          }
-        | { Args: { schema_name: string; table_name: string }; Returns: string }
-        | { Args: { table_name: string }; Returns: string };
-      enablelongtransactions: { Args: Record<PropertyKey, never>; Returns: string };
-      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      express_interest: {
-        Args: { p_note?: string; p_offer_id: string; p_price_cents?: number };
-        Returns: undefined;
-      };
-      geometry: { Args: { "": string }; Returns: unknown };
-      geometry_above: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_below: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_cmp: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      geometry_contained_3d: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_contains: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_contains_3d: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_distance_box: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      geometry_distance_centroid: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      geometry_eq: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_ge: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_gt: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_le: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_left: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_lt: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_overabove: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_overbelow: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_overlaps: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_overlaps_3d: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_overleft: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_overright: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_right: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_same: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_same_3d: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geometry_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      geomfromewkt: { Args: { "": string }; Returns: unknown };
-      gettransactionid: { Args: Record<PropertyKey, never>; Returns: unknown };
-      instructor_engaged: { Args: { p_case_id: string }; Returns: boolean };
-      instructor_engagement_writable: { Args: { p_engagement_id: string }; Returns: boolean };
-      instructor_owns_engagement: { Args: { p_engagement_id: string }; Returns: boolean };
-      instructors_within_radius: {
-        Args: {
-          p_jurisdiction?: Database["public"]["Enums"]["jurisdiction_key"];
-          p_lat: number;
-          p_lng: number;
-          p_radius_mi?: number;
-        };
-        Returns: {
-          bio: string;
-          dcjs_id: string;
-          distance_mi: number;
-          id: string;
-          jurisdictions: Database["public"]["Enums"]["jurisdiction_key"][];
-          name: string;
-          price_18h_cents: number;
-          rating_avg: number;
-          rating_count: number;
-          service_radius_mi: number;
-        }[];
-      };
-      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
-      is_instructor: { Args: Record<PropertyKey, never>; Returns: boolean };
-      is_privileged_writer: { Args: Record<PropertyKey, never>; Returns: boolean };
-      is_staff_or_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
-      longtransactionsenabled: { Args: Record<PropertyKey, never>; Returns: boolean };
-      mark_instructor_feed_seen: { Args: Record<PropertyKey, never>; Returns: string };
-      party_scope: {
-        Args: {
-          p_requirement_id: string;
-          p_scope: Database["public"]["Enums"]["sponsorship_scope"];
-          p_viewer: Database["public"]["Enums"]["req_party"];
-        };
-        Returns: Database["public"]["Enums"]["concierge_scope"];
-      };
-      populate_geometry_columns:
-        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
-        | { Args: { use_typmod?: boolean }; Returns: string };
-      postgis_constraint_dims: {
-        Args: { geomcolumn: string; geomschema: string; geomtable: string };
-        Returns: number;
-      };
-      postgis_constraint_srid: {
-        Args: { geomcolumn: string; geomschema: string; geomtable: string };
-        Returns: number;
-      };
-      postgis_constraint_type: {
-        Args: { geomcolumn: string; geomschema: string; geomtable: string };
-        Returns: string;
-      };
-      postgis_extensions_upgrade: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_full_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_geos_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_lib_build_date: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_lib_revision: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_lib_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_libjson_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_liblwgeom_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_libprotobuf_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_libxml_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_proj_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_scripts_build_date: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_scripts_installed: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_scripts_released: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_svn_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_type_name: {
-        Args: { coord_dimension: number; geomname: string; use_new_name?: boolean };
-        Returns: string;
-      };
-      postgis_version: { Args: Record<PropertyKey, never>; Returns: string };
-      postgis_wagyu_version: { Args: Record<PropertyKey, never>; Returns: string };
-      referral_channel_stats: {
-        Args: Record<PropertyKey, never>;
-        Returns: {
-          completed: number;
-          introduced: number;
-          signed_up: number;
-        }[];
-      };
-      referral_consented_stages: {
-        Args: Record<PropertyKey, never>;
-        Returns: {
-          case_id: string;
-          stage: string;
-        }[];
-      };
-      referral_record_consent: {
-        Args: { p_case_id: string; p_version: string };
-        Returns: undefined;
-      };
-      referral_revoke: { Args: { p_case_id: string }; Returns: undefined };
-      sponsor_accept_invite: { Args: { p_token: string }; Returns: string };
-      sponsor_active_scope: {
-        Args: { p_case_id: string };
-        Returns: Database["public"]["Enums"]["sponsorship_scope"];
-      };
-      sponsor_open_document: { Args: { p_document_id: string }; Returns: boolean };
-      sponsor_record_consent: {
-        Args: { p_sponsorship_id: string; p_version: string };
-        Returns: undefined;
-      };
-      sponsor_revoke: { Args: { p_sponsorship_id: string }; Returns: undefined };
-      st_3dclosestpoint: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_3ddistance: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      st_3dintersects: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_3dlongestline: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_3dmakebox: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_3dmaxdistance: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      st_3dshortestline: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_addpoint: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_angle:
-        | { Args: { line1: unknown; line2: unknown }; Returns: number }
-        | { Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }; Returns: number };
-      st_area:
-        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
-        | { Args: { "": string }; Returns: number };
-      st_asencodedpolyline: { Args: { geom: unknown; nprecision?: number }; Returns: string };
-      st_asewkt: { Args: { "": string }; Returns: string };
-      st_asgeojson:
-        | { Args: { geog: unknown; maxdecimaldigits?: number; options?: number }; Returns: string }
-        | { Args: { geom: unknown; maxdecimaldigits?: number; options?: number }; Returns: string }
         | {
             Args: {
-              geom_column?: string;
-              maxdecimaldigits?: number;
-              pretty_bool?: boolean;
-              r: Record<string, unknown>;
-            };
-            Returns: string;
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
           }
-        | { Args: { "": string }; Returns: string };
+        | { Args: { column_name: string; table_name: string }; Returns: string }
+      dropgeometrytable:
+        | {
+            Args: {
+              catalog_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { schema_name: string; table_name: string }; Returns: string }
+        | { Args: { table_name: string }; Returns: string }
+      enablelongtransactions: { Args: never; Returns: string }
+      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      express_interest: {
+        Args: { p_note?: string; p_offer_id: string; p_price_cents?: number }
+        Returns: undefined
+      }
+      geometry: { Args: { "": string }; Returns: unknown }
+      geometry_above: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_below: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_cmp: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_contained_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_distance_box: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_distance_centroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_eq: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_ge: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_gt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_le: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_left: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_lt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overabove: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overbelow: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overleft: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overright: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_right: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_within: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geomfromewkt: { Args: { "": string }; Returns: unknown }
+      gettransactionid: { Args: never; Returns: unknown }
+      instructor_engaged: { Args: { p_case_id: string }; Returns: boolean }
+      instructor_engagement_writable: {
+        Args: { p_engagement_id: string }
+        Returns: boolean
+      }
+      instructor_owns_engagement: {
+        Args: { p_engagement_id: string }
+        Returns: boolean
+      }
+      instructors_within_radius: {
+        Args: {
+          p_jurisdiction?: Database["public"]["Enums"]["jurisdiction_key"]
+          p_lat: number
+          p_lng: number
+          p_radius_mi?: number
+        }
+        Returns: {
+          bio: string
+          dcjs_id: string
+          distance_mi: number
+          id: string
+          jurisdictions: Database["public"]["Enums"]["jurisdiction_key"][]
+          name: string
+          price_18h_cents: number
+          rating_avg: number
+          rating_count: number
+          service_radius_mi: number
+        }[]
+      }
+      is_admin: { Args: never; Returns: boolean }
+      is_instructor: { Args: never; Returns: boolean }
+      is_privileged_writer: { Args: never; Returns: boolean }
+      is_staff_or_admin: { Args: never; Returns: boolean }
+      longtransactionsenabled: { Args: never; Returns: boolean }
+      mark_instructor_feed_seen: { Args: never; Returns: string }
+      party_scope: {
+        Args: {
+          p_requirement_id: string
+          p_scope: Database["public"]["Enums"]["sponsorship_scope"]
+          p_viewer: Database["public"]["Enums"]["req_party"]
+        }
+        Returns: Database["public"]["Enums"]["concierge_scope"]
+      }
+      populate_geometry_columns:
+        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
+        | { Args: { use_typmod?: boolean }; Returns: string }
+      postgis_constraint_dims: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_srid: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_type: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: string
+      }
+      postgis_extensions_upgrade: { Args: never; Returns: string }
+      postgis_full_version: { Args: never; Returns: string }
+      postgis_geos_version: { Args: never; Returns: string }
+      postgis_lib_build_date: { Args: never; Returns: string }
+      postgis_lib_revision: { Args: never; Returns: string }
+      postgis_lib_version: { Args: never; Returns: string }
+      postgis_libjson_version: { Args: never; Returns: string }
+      postgis_liblwgeom_version: { Args: never; Returns: string }
+      postgis_libprotobuf_version: { Args: never; Returns: string }
+      postgis_libxml_version: { Args: never; Returns: string }
+      postgis_proj_version: { Args: never; Returns: string }
+      postgis_scripts_build_date: { Args: never; Returns: string }
+      postgis_scripts_installed: { Args: never; Returns: string }
+      postgis_scripts_released: { Args: never; Returns: string }
+      postgis_svn_version: { Args: never; Returns: string }
+      postgis_type_name: {
+        Args: {
+          coord_dimension: number
+          geomname: string
+          use_new_name?: boolean
+        }
+        Returns: string
+      }
+      postgis_version: { Args: never; Returns: string }
+      postgis_wagyu_version: { Args: never; Returns: string }
+      referral_channel_stats: {
+        Args: never
+        Returns: {
+          completed: number
+          introduced: number
+          signed_up: number
+        }[]
+      }
+      referral_consented_stages: {
+        Args: never
+        Returns: {
+          case_id: string
+          stage: string
+        }[]
+      }
+      referral_record_consent: {
+        Args: { p_case_id: string; p_version: string }
+        Returns: undefined
+      }
+      referral_revoke: { Args: { p_case_id: string }; Returns: undefined }
+      sponsor_accept_invite: { Args: { p_token: string }; Returns: string }
+      sponsor_active_scope: {
+        Args: { p_case_id: string }
+        Returns: Database["public"]["Enums"]["sponsorship_scope"]
+      }
+      sponsor_open_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
+      }
+      sponsor_record_consent: {
+        Args: { p_sponsorship_id: string; p_version: string }
+        Returns: undefined
+      }
+      sponsor_revoke: { Args: { p_sponsorship_id: string }; Returns: undefined }
+      st_3dclosestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3ddistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_3dlongestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmakebox: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmaxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dshortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_addpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_angle:
+        | { Args: { line1: unknown; line2: unknown }; Returns: number }
+        | {
+            Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }
+            Returns: number
+          }
+      st_area:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_asencodedpolyline: {
+        Args: { geom: unknown; nprecision?: number }
+        Returns: string
+      }
+      st_asewkt: { Args: { "": string }; Returns: string }
+      st_asgeojson:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom_column?: string
+              maxdecimaldigits?: number
+              pretty_bool?: boolean
+              r: Record<string, unknown>
+            }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
       st_asgml:
         | {
             Args: {
-              geog: unknown;
-              id?: string;
-              maxdecimaldigits?: number;
-              nprefix?: string;
-              options?: number;
-            };
-            Returns: string;
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+            }
+            Returns: string
           }
-        | { Args: { geom: unknown; maxdecimaldigits?: number; options?: number }; Returns: string }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
         | { Args: { "": string }; Returns: string }
         | {
             Args: {
-              geog: unknown;
-              id?: string;
-              maxdecimaldigits?: number;
-              nprefix?: string;
-              options?: number;
-              version: number;
-            };
-            Returns: string;
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
           }
         | {
             Args: {
-              geom: unknown;
-              id?: string;
-              maxdecimaldigits?: number;
-              nprefix?: string;
-              options?: number;
-              version: number;
-            };
-            Returns: string;
-          };
+              geom: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
       st_askml:
-        | { Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }; Returns: string }
-        | { Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }; Returns: string }
-        | { Args: { "": string }; Returns: string };
-      st_aslatlontext: { Args: { geom: unknown; tmpl?: string }; Returns: string };
-      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string };
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_aslatlontext: {
+        Args: { geom: unknown; tmpl?: string }
+        Returns: string
+      }
+      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string }
       st_asmvtgeom: {
         Args: {
-          bounds: unknown;
-          buffer?: number;
-          clip_geom?: boolean;
-          extent?: number;
-          geom: unknown;
-        };
-        Returns: unknown;
-      };
+          bounds: unknown
+          buffer?: number
+          clip_geom?: boolean
+          extent?: number
+          geom: unknown
+        }
+        Returns: unknown
+      }
       st_assvg:
-        | { Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }; Returns: string }
-        | { Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }; Returns: string }
-        | { Args: { "": string }; Returns: string };
-      st_astext: { Args: { "": string }; Returns: string };
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_astext: { Args: { "": string }; Returns: string }
       st_astwkb:
         | {
             Args: {
-              geom: unknown;
-              prec?: number;
-              prec_m?: number;
-              prec_z?: number;
-              with_boxes?: boolean;
-              with_sizes?: boolean;
-            };
-            Returns: string;
+              geom: unknown
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
           }
         | {
             Args: {
-              geom: unknown[];
-              ids: number[];
-              prec?: number;
-              prec_m?: number;
-              prec_z?: number;
-              with_boxes?: boolean;
-              with_sizes?: boolean;
-            };
-            Returns: string;
-          };
+              geom: unknown[]
+              ids: number[]
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
       st_asx3d: {
-        Args: { geom: unknown; maxdecimaldigits?: number; options?: number };
-        Returns: string;
-      };
+        Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+        Returns: string
+      }
       st_azimuth:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: number }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      st_boundingdiagonal: { Args: { fits?: boolean; geom: unknown }; Returns: unknown };
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_boundingdiagonal: {
+        Args: { fits?: boolean; geom: unknown }
+        Returns: unknown
+      }
       st_buffer:
-        | { Args: { geom: unknown; options?: string; radius: number }; Returns: unknown }
-        | { Args: { geom: unknown; quadsegs: number; radius: number }; Returns: unknown };
-      st_centroid: { Args: { "": string }; Returns: unknown };
-      st_clipbybox2d: { Args: { box: unknown; geom: unknown }; Returns: unknown };
-      st_closestpoint: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
+        | {
+            Args: { geom: unknown; options?: string; radius: number }
+            Returns: unknown
+          }
+        | {
+            Args: { geom: unknown; quadsegs: number; radius: number }
+            Returns: unknown
+          }
+      st_centroid: { Args: { "": string }; Returns: unknown }
+      st_clipbybox2d: {
+        Args: { box: unknown; geom: unknown }
+        Returns: unknown
+      }
+      st_closestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
       st_concavehull: {
-        Args: { param_allow_holes?: boolean; param_geom: unknown; param_pctconvex: number };
-        Returns: unknown;
-      };
-      st_contains: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_containsproperly: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_coorddim: { Args: { geometry: unknown }; Returns: number };
+        Args: {
+          param_allow_holes?: boolean
+          param_geom: unknown
+          param_pctconvex: number
+        }
+        Returns: unknown
+      }
+      st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_coorddim: { Args: { geometry: unknown }; Returns: number }
       st_coveredby:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_covers:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_curvetoline: {
-        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number };
-        Returns: unknown;
-      };
+        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }
+        Returns: unknown
+      }
       st_delaunaytriangles: {
-        Args: { flags?: number; g1: unknown; tolerance?: number };
-        Returns: unknown;
-      };
+        Args: { flags?: number; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
       st_difference: {
-        Args: { geom1: unknown; geom2: unknown; gridsize?: number };
-        Returns: unknown;
-      };
-      st_disjoint: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_disjoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
       st_distance:
-        | { Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }; Returns: number }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: number };
+        | {
+            Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }
+            Returns: number
+          }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
       st_distancesphere:
         | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
-        | { Args: { geom1: unknown; geom2: unknown; radius: number }; Returns: number };
-      st_distancespheroid: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
+        | {
+            Args: { geom1: unknown; geom2: unknown; radius: number }
+            Returns: number
+          }
+      st_distancespheroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
       st_dwithin: {
-        Args: { geog1: unknown; geog2: unknown; tolerance: number; use_spheroid?: boolean };
-        Returns: boolean;
-      };
-      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_expand:
         | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }
-        | { Args: { box: unknown; dx: number; dy: number; dz?: number }; Returns: unknown }
         | {
-            Args: { dm?: number; dx: number; dy: number; dz?: number; geom: unknown };
-            Returns: unknown;
-          };
-      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown };
-      st_force3dm: { Args: { geom: unknown; mvalue?: number }; Returns: unknown };
-      st_force3dz: { Args: { geom: unknown; zvalue?: number }; Returns: unknown };
-      st_force4d: { Args: { geom: unknown; mvalue?: number; zvalue?: number }; Returns: unknown };
+            Args: { box: unknown; dx: number; dy: number; dz?: number }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              dm?: number
+              dx: number
+              dy: number
+              dz?: number
+              geom: unknown
+            }
+            Returns: unknown
+          }
+      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }
+      st_force3dm: {
+        Args: { geom: unknown; mvalue?: number }
+        Returns: unknown
+      }
+      st_force3dz: {
+        Args: { geom: unknown; zvalue?: number }
+        Returns: unknown
+      }
+      st_force4d: {
+        Args: { geom: unknown; mvalue?: number; zvalue?: number }
+        Returns: unknown
+      }
       st_generatepoints:
         | { Args: { area: unknown; npoints: number }; Returns: unknown }
-        | { Args: { area: unknown; npoints: number; seed: number }; Returns: unknown };
-      st_geogfromtext: { Args: { "": string }; Returns: unknown };
-      st_geographyfromtext: { Args: { "": string }; Returns: unknown };
+        | {
+            Args: { area: unknown; npoints: number; seed: number }
+            Returns: unknown
+          }
+      st_geogfromtext: { Args: { "": string }; Returns: unknown }
+      st_geographyfromtext: { Args: { "": string }; Returns: unknown }
       st_geohash:
         | { Args: { geog: unknown; maxchars?: number }; Returns: string }
-        | { Args: { geom: unknown; maxchars?: number }; Returns: string };
-      st_geomcollfromtext: { Args: { "": string }; Returns: unknown };
+        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
+      st_geomcollfromtext: { Args: { "": string }; Returns: unknown }
       st_geometricmedian: {
         Args: {
-          fail_if_not_converged?: boolean;
-          g: unknown;
-          max_iter?: number;
-          tolerance?: number;
-        };
-        Returns: unknown;
-      };
-      st_geometryfromtext: { Args: { "": string }; Returns: unknown };
-      st_geomfromewkt: { Args: { "": string }; Returns: unknown };
+          fail_if_not_converged?: boolean
+          g: unknown
+          max_iter?: number
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      st_geometryfromtext: { Args: { "": string }; Returns: unknown }
+      st_geomfromewkt: { Args: { "": string }; Returns: unknown }
       st_geomfromgeojson:
         | { Args: { "": Json }; Returns: unknown }
         | { Args: { "": Json }; Returns: unknown }
-        | { Args: { "": string }; Returns: unknown };
-      st_geomfromgml: { Args: { "": string }; Returns: unknown };
-      st_geomfromkml: { Args: { "": string }; Returns: unknown };
-      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown };
-      st_geomfromtext: { Args: { "": string }; Returns: unknown };
-      st_gmltosql: { Args: { "": string }; Returns: unknown };
-      st_hasarc: { Args: { geometry: unknown }; Returns: boolean };
-      st_hausdorffdistance: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
+        | { Args: { "": string }; Returns: unknown }
+      st_geomfromgml: { Args: { "": string }; Returns: unknown }
+      st_geomfromkml: { Args: { "": string }; Returns: unknown }
+      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown }
+      st_geomfromtext: { Args: { "": string }; Returns: unknown }
+      st_gmltosql: { Args: { "": string }; Returns: unknown }
+      st_hasarc: { Args: { geometry: unknown }; Returns: boolean }
+      st_hausdorffdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
       st_hexagon: {
-        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number };
-        Returns: unknown;
-      };
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
       st_hexagongrid: {
-        Args: { bounds: unknown; size: number };
-        Returns: Record<string, unknown>[];
-      };
-      st_interpolatepoint: { Args: { line: unknown; point: unknown }; Returns: number };
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_interpolatepoint: {
+        Args: { line: unknown; point: unknown }
+        Returns: number
+      }
       st_intersection: {
-        Args: { geom1: unknown; geom2: unknown; gridsize?: number };
-        Returns: unknown;
-      };
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
       st_intersects:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_isvaliddetail: {
-        Args: { flags?: number; geom: unknown };
-        Returns: Database["public"]["CompositeTypes"]["valid_detail"];
+        Args: { flags?: number; geom: unknown }
+        Returns: Database["public"]["CompositeTypes"]["valid_detail"]
         SetofOptions: {
-          from: "*";
-          to: "valid_detail";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
+          from: "*"
+          to: "valid_detail"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       st_length:
         | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
-        | { Args: { "": string }; Returns: number };
-      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown };
-      st_linecrossingdirection: { Args: { line1: unknown; line2: unknown }; Returns: number };
+        | { Args: { "": string }; Returns: number }
+      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown }
+      st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
       st_linefromencodedpolyline: {
-        Args: { nprecision?: number; txtin: string };
-        Returns: unknown;
-      };
-      st_linefromtext: { Args: { "": string }; Returns: unknown };
-      st_linelocatepoint: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
-      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown };
+        Args: { nprecision?: number; txtin: string }
+        Returns: unknown
+      }
+      st_linefromtext: { Args: { "": string }; Returns: unknown }
+      st_linelocatepoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown }
       st_locatealong: {
-        Args: { geometry: unknown; leftrightoffset?: number; measure: number };
-        Returns: unknown;
-      };
+        Args: { geometry: unknown; leftrightoffset?: number; measure: number }
+        Returns: unknown
+      }
       st_locatebetween: {
         Args: {
-          frommeasure: number;
-          geometry: unknown;
-          leftrightoffset?: number;
-          tomeasure: number;
-        };
-        Returns: unknown;
-      };
+          frommeasure: number
+          geometry: unknown
+          leftrightoffset?: number
+          tomeasure: number
+        }
+        Returns: unknown
+      }
       st_locatebetweenelevations: {
-        Args: { fromelevation: number; geometry: unknown; toelevation: number };
-        Returns: unknown;
-      };
-      st_longestline: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_makebox2d: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_makeline: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_makevalid: { Args: { geom: unknown; params: string }; Returns: unknown };
-      st_maxdistance: { Args: { geom1: unknown; geom2: unknown }; Returns: number };
+        Args: { fromelevation: number; geometry: unknown; toelevation: number }
+        Returns: unknown
+      }
+      st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makebox2d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makeline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makevalid: {
+        Args: { geom: unknown; params: string }
+        Returns: unknown
+      }
+      st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
       st_minimumboundingcircle: {
-        Args: { inputgeom: unknown; segs_per_quarter?: number };
-        Returns: unknown;
-      };
-      st_mlinefromtext: { Args: { "": string }; Returns: unknown };
-      st_mpointfromtext: { Args: { "": string }; Returns: unknown };
-      st_mpolyfromtext: { Args: { "": string }; Returns: unknown };
-      st_multilinestringfromtext: { Args: { "": string }; Returns: unknown };
-      st_multipointfromtext: { Args: { "": string }; Returns: unknown };
-      st_multipolygonfromtext: { Args: { "": string }; Returns: unknown };
-      st_node: { Args: { g: unknown }; Returns: unknown };
-      st_normalize: { Args: { geom: unknown }; Returns: unknown };
+        Args: { inputgeom: unknown; segs_per_quarter?: number }
+        Returns: unknown
+      }
+      st_mlinefromtext: { Args: { "": string }; Returns: unknown }
+      st_mpointfromtext: { Args: { "": string }; Returns: unknown }
+      st_mpolyfromtext: { Args: { "": string }; Returns: unknown }
+      st_multilinestringfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipointfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipolygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_node: { Args: { g: unknown }; Returns: unknown }
+      st_normalize: { Args: { geom: unknown }; Returns: unknown }
       st_offsetcurve: {
-        Args: { distance: number; line: unknown; params?: string };
-        Returns: unknown;
-      };
-      st_orderingequals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_overlaps: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_perimeter: { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number };
-      st_pointfromtext: { Args: { "": string }; Returns: unknown };
+        Args: { distance: number; line: unknown; params?: string }
+        Returns: unknown
+      }
+      st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_perimeter: {
+        Args: { geog: unknown; use_spheroid?: boolean }
+        Returns: number
+      }
+      st_pointfromtext: { Args: { "": string }; Returns: unknown }
       st_pointm: {
-        Args: { mcoordinate: number; srid?: number; xcoordinate: number; ycoordinate: number };
-        Returns: unknown;
-      };
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+        }
+        Returns: unknown
+      }
       st_pointz: {
-        Args: { srid?: number; xcoordinate: number; ycoordinate: number; zcoordinate: number };
-        Returns: unknown;
-      };
+        Args: {
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
       st_pointzm: {
         Args: {
-          mcoordinate: number;
-          srid?: number;
-          xcoordinate: number;
-          ycoordinate: number;
-          zcoordinate: number;
-        };
-        Returns: unknown;
-      };
-      st_polyfromtext: { Args: { "": string }; Returns: unknown };
-      st_polygonfromtext: { Args: { "": string }; Returns: unknown };
-      st_project: { Args: { azimuth: number; distance: number; geog: unknown }; Returns: unknown };
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_polyfromtext: { Args: { "": string }; Returns: unknown }
+      st_polygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_project: {
+        Args: { azimuth: number; distance: number; geog: unknown }
+        Returns: unknown
+      }
       st_quantizecoordinates: {
-        Args: { g: unknown; prec_m?: number; prec_x: number; prec_y?: number; prec_z?: number };
-        Returns: unknown;
-      };
-      st_reduceprecision: { Args: { geom: unknown; gridsize: number }; Returns: unknown };
-      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string };
-      st_removerepeatedpoints: { Args: { geom: unknown; tolerance?: number }; Returns: unknown };
-      st_segmentize: { Args: { geog: unknown; max_segment_length: number }; Returns: unknown };
+        Args: {
+          g: unknown
+          prec_m?: number
+          prec_x: number
+          prec_y?: number
+          prec_z?: number
+        }
+        Returns: unknown
+      }
+      st_reduceprecision: {
+        Args: { geom: unknown; gridsize: number }
+        Returns: unknown
+      }
+      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string }
+      st_removerepeatedpoints: {
+        Args: { geom: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_segmentize: {
+        Args: { geog: unknown; max_segment_length: number }
+        Returns: unknown
+      }
       st_setsrid:
         | { Args: { geog: unknown; srid: number }; Returns: unknown }
-        | { Args: { geom: unknown; srid: number }; Returns: unknown };
-      st_sharedpaths: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
-      st_shortestline: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
+        | { Args: { geom: unknown; srid: number }; Returns: unknown }
+      st_sharedpaths: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_shortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
       st_simplifypolygonhull: {
-        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number };
-        Returns: unknown;
-      };
-      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
+        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }
+        Returns: unknown
+      }
+      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
       st_square: {
-        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number };
-        Returns: unknown;
-      };
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
       st_squaregrid: {
-        Args: { bounds: unknown; size: number };
-        Returns: Record<string, unknown>[];
-      };
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
       st_srid:
         | { Args: { geog: unknown }; Returns: number }
-        | { Args: { geom: unknown }; Returns: number };
+        | { Args: { geom: unknown }; Returns: number }
       st_subdivide: {
-        Args: { geom: unknown; gridsize?: number; maxvertices?: number };
-        Returns: unknown[];
-      };
-      st_swapordinates: { Args: { geom: unknown; ords: unknown }; Returns: unknown };
+        Args: { geom: unknown; gridsize?: number; maxvertices?: number }
+        Returns: unknown[]
+      }
+      st_swapordinates: {
+        Args: { geom: unknown; ords: unknown }
+        Returns: unknown
+      }
       st_symdifference: {
-        Args: { geom1: unknown; geom2: unknown; gridsize?: number };
-        Returns: unknown;
-      };
-      st_symmetricdifference: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown };
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_symmetricdifference: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
       st_tileenvelope: {
-        Args: { bounds?: unknown; margin?: number; x: number; y: number; zoom: number };
-        Returns: unknown;
-      };
-      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
+        Args: {
+          bounds?: unknown
+          margin?: number
+          x: number
+          y: number
+          zoom: number
+        }
+        Returns: unknown
+      }
+      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_transform:
-        | { Args: { from_proj: string; geom: unknown; to_proj: string }; Returns: unknown }
-        | { Args: { from_proj: string; geom: unknown; to_srid: number }; Returns: unknown }
-        | { Args: { geom: unknown; to_proj: string }; Returns: unknown };
-      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown };
+        | {
+            Args: { from_proj: string; geom: unknown; to_proj: string }
+            Returns: unknown
+          }
+        | {
+            Args: { from_proj: string; geom: unknown; to_srid: number }
+            Returns: unknown
+          }
+        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
+      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }
       st_union:
         | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
-        | { Args: { geom1: unknown; geom2: unknown; gridsize: number }; Returns: unknown };
+        | {
+            Args: { geom1: unknown; geom2: unknown; gridsize: number }
+            Returns: unknown
+          }
       st_voronoilines: {
-        Args: { extend_to?: unknown; g1: unknown; tolerance?: number };
-        Returns: unknown;
-      };
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
       st_voronoipolygons: {
-        Args: { extend_to?: unknown; g1: unknown; tolerance?: number };
-        Returns: unknown;
-      };
-      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
-      st_wkbtosql: { Args: { wkb: string }; Returns: unknown };
-      st_wkttosql: { Args: { "": string }; Returns: unknown };
-      st_wrapx: { Args: { geom: unknown; move: number; wrap: number }; Returns: unknown };
-      storage_doc_client_id: { Args: { path: string }; Returns: string };
-      trainer_may_read_document: { Args: { p_document_id: string }; Returns: boolean };
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_wkbtosql: { Args: { wkb: string }; Returns: unknown }
+      st_wkttosql: { Args: { "": string }; Returns: unknown }
+      st_wrapx: {
+        Args: { geom: unknown; move: number; wrap: number }
+        Returns: unknown
+      }
+      storage_doc_client_id: { Args: { path: string }; Returns: string }
+      trainer_may_read_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
+      }
       trainer_review_requirement: {
         Args: {
-          p_case_requirement_id: string;
-          p_decision: Database["public"]["Enums"]["review_decision"];
-          p_note?: string;
-        };
-        Returns: string;
-      };
+          p_case_requirement_id: string
+          p_decision: Database["public"]["Enums"]["review_decision"]
+          p_note?: string
+        }
+        Returns: string
+      }
       trainer_scope: {
-        Args: { p_requirement_id: string; p_tier: string };
-        Returns: Database["public"]["Enums"]["concierge_scope"];
-      };
+        Args: { p_requirement_id: string; p_tier: string }
+        Returns: Database["public"]["Enums"]["concierge_scope"]
+      }
       transfer_case_brand: {
         Args: {
-          p_actor: string;
-          p_case_id: string;
-          p_consent_text: string;
-          p_consented_at: string;
-          p_payment_id: string;
-          p_reason: string;
-          p_to: Database["public"]["Enums"]["brand_key"];
-        };
-        Returns: string;
-      };
-      unlockrows: { Args: { "": string }; Returns: number };
+          p_actor: string
+          p_case_id: string
+          p_consent_text: string
+          p_consented_at: string
+          p_payment_id: string
+          p_reason: string
+          p_to: Database["public"]["Enums"]["brand_key"]
+        }
+        Returns: string
+      }
+      unlockrows: { Args: { "": string }; Returns: number }
       update_own_profile_avatar: {
-        Args: { p_key?: string; p_kind: string; p_path?: string };
-        Returns: string;
-      };
+        Args: { p_key?: string; p_kind: string; p_path?: string }
+        Returns: string
+      }
       updategeometrysrid: {
         Args: {
-          catalogn_name: string;
-          column_name: string;
-          new_srid_in: number;
-          schema_name: string;
-          table_name: string;
-        };
-        Returns: string;
-      };
-    };
+          catalogn_name: string
+          column_name: string
+          new_srid_in: number
+          schema_name: string
+          table_name: string
+        }
+        Returns: string
+      }
+    }
     Enums: {
       application_type:
         | "concealed_carry"
@@ -6447,12 +6978,21 @@ export type Database = {
         | "special_carry"
         | "carry_guard"
         | "special_carry_guard"
-        | "retired_leo";
-      appointment_type: "consult" | "training" | "fingerprinting" | "nypd_interview";
-      booking_status: "requested" | "confirmed" | "cancelled" | "completed" | "no_show";
-      brand_key: "gln" | "fl";
-      calendar_provider: "google";
-      case_req_status: "na" | "pending" | "satisfied" | "rejected";
+        | "retired_leo"
+      appointment_type:
+        | "consult"
+        | "training"
+        | "fingerprinting"
+        | "nypd_interview"
+      booking_status:
+        | "requested"
+        | "confirmed"
+        | "cancelled"
+        | "completed"
+        | "no_show"
+      brand_key: "gln" | "fl"
+      calendar_provider: "google"
+      case_req_status: "na" | "pending" | "satisfied" | "rejected"
       case_stage:
         | "lead"
         | "eligibility_screened"
@@ -6466,20 +7006,36 @@ export type Database = {
         | "fingerprinting_booked"
         | "under_investigation"
         | "decision"
-        | "licensed";
-      case_status: "active" | "blocked" | "on_hold" | "closed" | "approved" | "denied";
-      checklist_owner: "client" | "staff";
-      checklist_status: "not_started" | "in_progress" | "submitted" | "approved" | "rejected";
-      client_track: "resident" | "business" | "non_resident" | "retired_leo" | "premises_business";
-      cohabitant_status: "not_started" | "received" | "notarized";
-      concierge_scope: "hidden" | "progress" | "full";
+        | "licensed"
+      case_status:
+        | "active"
+        | "blocked"
+        | "on_hold"
+        | "closed"
+        | "approved"
+        | "denied"
+      checklist_owner: "client" | "staff"
+      checklist_status:
+        | "not_started"
+        | "in_progress"
+        | "submitted"
+        | "approved"
+        | "rejected"
+      client_track:
+        | "resident"
+        | "business"
+        | "non_resident"
+        | "retired_leo"
+        | "premises_business"
+      cohabitant_status: "not_started" | "received" | "notarized"
+      concierge_scope: "hidden" | "progress" | "full"
       disclosure_type:
         | "arrest"
         | "summons"
         | "order_of_protection"
         | "domestic_incident"
-        | "question_yes";
-      document_status: "pending" | "approved" | "rejected";
+        | "question_yes"
+      document_status: "pending" | "approved" | "rejected"
       document_type:
         | "id"
         | "reference_letter"
@@ -6538,151 +7094,183 @@ export type Database = {
         | "public_records_exemption"
         | "safeguard_id"
         | "notarized_release"
-        | "filed_application_copy";
-      engagement_status: "active" | "completed" | "cancelled" | "declined";
-      follow_up_cadence: "standard" | "proactive" | "essential_only";
-      jurisdiction_key: "nyc" | "nassau" | "suffolk" | "westchester" | "special_carry";
-      legal_status: "enforced" | "enjoined_not_enforced" | "contested" | "repealed";
+        | "filed_application_copy"
+      engagement_status: "active" | "completed" | "cancelled" | "declined"
+      follow_up_cadence: "standard" | "proactive" | "essential_only"
+      jurisdiction_key:
+        | "nyc"
+        | "nassau"
+        | "suffolk"
+        | "westchester"
+        | "special_carry"
+      legal_status:
+        | "enforced"
+        | "enjoined_not_enforced"
+        | "contested"
+        | "repealed"
       license_track:
         | "concealed_carry"
         | "carry_guard"
         | "special_carry_guard"
-        | "sponsored_unresolved";
-      notification_kind: "info" | "action_required" | "reminder" | "offer" | "booking" | "payment";
-      offer_status: "open" | "matched" | "accepted" | "expired" | "cancelled";
-      offer_type: "training" | "full_assist";
-      payment_status: "pending" | "paid" | "failed" | "refunded";
-      payment_type: "deposit" | "full" | "installment";
-      reference_req_status: "pending" | "sent" | "opened" | "submitted" | "notarized";
-      req_party: "applicant" | "sponsor";
-      requirement_destination: "portal_upload" | "interview" | "internal";
-      requirement_sev: "critical" | "high" | "watch" | "long_lead";
-      review_decision: "approved" | "changes_requested";
-      service_mode: "self_guided" | "concierge";
-      slot_type: "classroom_16h" | "live_fire_2h" | "combined_18h" | "consult";
-      sponsorship_scope: "packet_only" | "assist" | "full";
-      stage_status: "not_started" | "in_progress" | "complete";
-      task_status: "open" | "in_progress" | "done";
-      user_role: "client" | "staff" | "admin" | "instructor" | "sponsor";
-    };
+        | "sponsored_unresolved"
+      notification_kind:
+        | "info"
+        | "action_required"
+        | "reminder"
+        | "offer"
+        | "booking"
+        | "payment"
+      offer_status: "open" | "matched" | "accepted" | "expired" | "cancelled"
+      offer_type: "training" | "full_assist"
+      payment_status: "pending" | "paid" | "failed" | "refunded"
+      payment_type: "deposit" | "full" | "installment"
+      reference_req_status:
+        | "pending"
+        | "sent"
+        | "opened"
+        | "submitted"
+        | "notarized"
+      req_party: "applicant" | "sponsor"
+      requirement_destination: "portal_upload" | "interview" | "internal"
+      requirement_sev: "critical" | "high" | "watch" | "long_lead"
+      review_decision: "approved" | "changes_requested"
+      service_mode: "self_guided" | "concierge"
+      slot_type: "classroom_16h" | "live_fire_2h" | "combined_18h" | "consult"
+      sponsorship_scope: "packet_only" | "assist" | "full"
+      stage_status: "not_started" | "in_progress" | "complete"
+      task_status: "open" | "in_progress" | "done"
+      user_role: "client" | "staff" | "admin" | "instructor" | "sponsor"
+    }
     CompositeTypes: {
       geometry_dump: {
-        path: number[] | null;
-        geom: unknown;
-      };
+        path: number[] | null
+        geom: unknown
+      }
       valid_detail: {
-        valid: boolean | null;
-        reason: string | null;
-        location: unknown;
-      };
-    };
-  };
-};
+        valid: boolean | null
+        reason: string | null
+        location: unknown
+      }
+    }
+  }
+}
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
+      Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
       }
       ? R
       : never
-    : never;
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+      Insert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
+        Insert: infer I
       }
       ? I
       : never
-    : never;
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+      Update: infer U
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
+        Update: infer U
       }
       ? U
       : never
-    : never;
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never
 
 export const Constants = {
   graphql_public: {
@@ -6699,8 +7287,19 @@ export const Constants = {
         "special_carry_guard",
         "retired_leo",
       ],
-      appointment_type: ["consult", "training", "fingerprinting", "nypd_interview"],
-      booking_status: ["requested", "confirmed", "cancelled", "completed", "no_show"],
+      appointment_type: [
+        "consult",
+        "training",
+        "fingerprinting",
+        "nypd_interview",
+      ],
+      booking_status: [
+        "requested",
+        "confirmed",
+        "cancelled",
+        "completed",
+        "no_show",
+      ],
       brand_key: ["gln", "fl"],
       calendar_provider: ["google"],
       case_req_status: ["na", "pending", "satisfied", "rejected"],
@@ -6719,10 +7318,29 @@ export const Constants = {
         "decision",
         "licensed",
       ],
-      case_status: ["active", "blocked", "on_hold", "closed", "approved", "denied"],
+      case_status: [
+        "active",
+        "blocked",
+        "on_hold",
+        "closed",
+        "approved",
+        "denied",
+      ],
       checklist_owner: ["client", "staff"],
-      checklist_status: ["not_started", "in_progress", "submitted", "approved", "rejected"],
-      client_track: ["resident", "business", "non_resident", "retired_leo", "premises_business"],
+      checklist_status: [
+        "not_started",
+        "in_progress",
+        "submitted",
+        "approved",
+        "rejected",
+      ],
+      client_track: [
+        "resident",
+        "business",
+        "non_resident",
+        "retired_leo",
+        "premises_business",
+      ],
       cohabitant_status: ["not_started", "received", "notarized"],
       concierge_scope: ["hidden", "progress", "full"],
       disclosure_type: [
@@ -6795,20 +7413,44 @@ export const Constants = {
       ],
       engagement_status: ["active", "completed", "cancelled", "declined"],
       follow_up_cadence: ["standard", "proactive", "essential_only"],
-      jurisdiction_key: ["nyc", "nassau", "suffolk", "westchester", "special_carry"],
-      legal_status: ["enforced", "enjoined_not_enforced", "contested", "repealed"],
+      jurisdiction_key: [
+        "nyc",
+        "nassau",
+        "suffolk",
+        "westchester",
+        "special_carry",
+      ],
+      legal_status: [
+        "enforced",
+        "enjoined_not_enforced",
+        "contested",
+        "repealed",
+      ],
       license_track: [
         "concealed_carry",
         "carry_guard",
         "special_carry_guard",
         "sponsored_unresolved",
       ],
-      notification_kind: ["info", "action_required", "reminder", "offer", "booking", "payment"],
+      notification_kind: [
+        "info",
+        "action_required",
+        "reminder",
+        "offer",
+        "booking",
+        "payment",
+      ],
       offer_status: ["open", "matched", "accepted", "expired", "cancelled"],
       offer_type: ["training", "full_assist"],
       payment_status: ["pending", "paid", "failed", "refunded"],
       payment_type: ["deposit", "full", "installment"],
-      reference_req_status: ["pending", "sent", "opened", "submitted", "notarized"],
+      reference_req_status: [
+        "pending",
+        "sent",
+        "opened",
+        "submitted",
+        "notarized",
+      ],
       req_party: ["applicant", "sponsor"],
       requirement_destination: ["portal_upload", "interview", "internal"],
       requirement_sev: ["critical", "high", "watch", "long_lead"],
@@ -6821,4 +7463,4 @@ export const Constants = {
       user_role: ["client", "staff", "admin", "instructor", "sponsor"],
     },
   },
-} as const;
+} as const

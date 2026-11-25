@@ -25,6 +25,7 @@ export const SEO_STATUSES = [
 export type SeoKind = (typeof SEO_KINDS)[number]
 export type SeoStatus = (typeof SEO_STATUSES)[number]
 export type SeoItem = Database["public"]["Tables"]["seo_content_items"]["Row"]
+export type BlogArticleSummary = Pick<Database["public"]["Tables"]["blog_posts"]["Row"], "id" | "seo_content_item_id" | "status" | "title" | "slug" | "updated_at">
 
 export const SEO_KIND_LABELS: Record<SeoKind, string> = {
   applicant_question: "Applicant question",
@@ -53,6 +54,7 @@ export const SEO_PRIORITY_LABELS: Record<number, string> = {
 
 export interface SeoDeskData {
   items: SeoItem[]
+  articles: BlogArticleSummary[]
   publishedPosts: PostMeta[]
   stalePosts: PostMeta[]
   counts: Record<SeoStatus, number>
@@ -66,13 +68,11 @@ function isOlderThan(post: PostMeta, days: number, now: Date) {
 
 export async function loadSeoDesk(): Promise<SeoDeskData> {
   const db = await createClient()
-  const posts = getAllPosts()
-  const { data, error } = await db
-    .from("seo_content_items")
-    .select("*")
-    .order("priority", { ascending: true })
-    .order("due_on", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: false })
+  const posts = await getAllPosts()
+  const [{ data, error }, { data: articles, error: articleError }] = await Promise.all([
+    db.from("seo_content_items").select("*").order("priority", { ascending: true }).order("due_on", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false }),
+    db.from("blog_posts").select("id,seo_content_item_id,status,title,slug,updated_at").order("updated_at", { ascending: false }),
+  ])
 
   const items = data ?? []
   const counts = Object.fromEntries(
@@ -81,9 +81,10 @@ export async function loadSeoDesk(): Promise<SeoDeskData> {
 
   return {
     items,
+    articles: articles ?? [],
     publishedPosts: posts,
     stalePosts: posts.filter((post) => isOlderThan(post, 150, new Date())),
     counts,
-    error: error ? "The editorial queue could not be loaded." : null,
+    error: error || articleError ? "The editorial workspace could not be loaded completely." : null,
   }
 }
