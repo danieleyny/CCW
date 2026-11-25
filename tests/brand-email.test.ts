@@ -28,6 +28,8 @@ describe("brand email rendering", () => {
     expect(result.html).toContain(BRANDS.fl.legalName)
     expect(result.html).toContain(BRANDS.fl.legalLinks.privacy)
     expect(result.html).toContain(BRANDS.fl.disclaimer)
+    expect(result.html).toContain(`${BRANDS.fl.marketingOrigin}/logo-mark.png`)
+    expect(result.html).not.toContain("&#10022;")
     expect(result.html).toContain("Firearm License NYC")
     expect(result.html).toContain("Gun License NYC LLC")
     expect(result.html).not.toContain("gunlicensenyc.com")

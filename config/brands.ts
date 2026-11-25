@@ -121,7 +121,7 @@ export const BRANDS: Record<BrandKey, BrandConfig> = {
     },
     logo: {
       wordmark: "Firearm License NYC",
-      mark: "✦",
+      mark: "/brand/firearm-license-nyc-mark-192.png",
     },
     email: { fromEnv: "EMAIL_FROM_FL", replyTo: flSupportEmail },
     packages: ["self_guided"],

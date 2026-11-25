@@ -72,15 +72,22 @@ export async function generateMetadata(): Promise<Metadata> {
     types: { "application/rss+xml": [{ url: "/feed.xml", title: `${requestBrand.name} — Guides` }] },
   } : undefined,
   icons: {
-    icon: [
-      // Google recommends a stable, square favicon larger than 48x48. Lead
-      // with the new navy/gold 512px mark; the ICO/SVG fallbacks use the same
-      // artwork so browsers and crawlers never receive conflicting logos.
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
-      { url: "/favicon.ico", type: "image/x-icon" },
-      { url: "/favicon.svg", sizes: "any", type: "image/svg+xml" },
-    ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: requestBrand.key === "fl"
+      ? [
+          { url: "/brand/firearm-license-nyc-mark-512.png", sizes: "512x512", type: "image/png" },
+          { url: "/brand/firearm-license-nyc-mark.svg", sizes: "any", type: "image/svg+xml" },
+        ]
+      : [
+          // Google recommends a stable, square favicon larger than 48x48. Lead
+          // with the new navy/gold 512px mark; the ICO/SVG fallbacks use the same
+          // artwork so browsers and crawlers never receive conflicting logos.
+          { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { url: "/favicon.ico", type: "image/x-icon" },
+          { url: "/favicon.svg", sizes: "any", type: "image/svg+xml" },
+        ],
+    apple: requestBrand.key === "fl"
+      ? [{ url: "/brand/firearm-license-nyc-mark-180.png", sizes: "180x180", type: "image/png" }]
+      : [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   creator: requestBrand.name,
   publisher: requestBrand.name,

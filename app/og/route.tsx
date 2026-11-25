@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og"
-import { brand } from "@/config/brand"
+import { getRequestBrand } from "@/lib/brand/server"
 import { rateLimit, clientIpFrom } from "@/lib/rate-limit"
 
 /**
@@ -31,11 +31,19 @@ export async function GET(request: Request) {
     return new Response("Too many requests", { status: 429 })
   }
 
+  const requestBrand = await getRequestBrand()
   const { searchParams } = new URL(request.url)
-  const title = (searchParams.get("title") ?? brand.tagline).slice(0, 110)
-  const eyebrow = (searchParams.get("eyebrow") ?? "NYC · gun license, handled").slice(0, 60)
-  // The new light medallion scope reads crisply on the obsidian card.
-  const logoUrl = new URL("/brand/logo-mark-light-512.png?v=frame1", request.url).href
+  const title = (searchParams.get("title") ?? requestBrand.tagline).slice(0, 110)
+  const eyebrow = (
+    searchParams.get("eyebrow") ??
+    (requestBrand.key === "fl" ? "NYC · self-guided application" : "NYC · gun license, handled")
+  ).slice(0, 60)
+  const logoUrl = new URL(
+    requestBrand.key === "fl"
+      ? "/brand/firearm-license-nyc-mark-512.png?v=route-grid-1"
+      : "/brand/logo-mark-light-512.png?v=frame1",
+    request.url
+  ).href
 
   return new ImageResponse(
     (
@@ -95,11 +103,11 @@ export async function GET(request: Request) {
                 color: TEXT_HI,
               }}
             >
-              Gun License
+              {requestBrand.key === "fl" ? "Firearm License" : "Gun License"}
             </div>
             <div style={{ display: "flex", marginLeft: 12, fontSize: 20, fontWeight: 600, letterSpacing: 4, color: "#D3B36B" }}>NYC</div>
           </div>
-          <div style={{ display: "flex", fontSize: 22, color: TEXT_MID }}>{brand.domain}</div>
+          <div style={{ display: "flex", fontSize: 22, color: TEXT_MID }}>{requestBrand.domain}</div>
         </div>
       </div>
     ),

@@ -149,11 +149,11 @@ export function renderEmail(opts: RenderEmailOpts): { html: string; text: string
   const headerMark =
     opts.brand === "gln"
       ? `<img src="${brand.url}/brand/logo-mark-light-512.png?v=frame1" width="36" height="36" alt="${escAttr(brand.name)}" style="vertical-align:middle;display:inline-block;border:0;" />`
-      : `<span role="img" aria-label="" style="display:inline-block;font-family:${FONT};font-size:27px;line-height:36px;color:${C.brass};vertical-align:middle;">&#10022;</span>`
+      : `<img src="${brand.marketingOrigin}/logo-mark.png?v=route-grid-1" width="36" height="36" alt="${escAttr(brand.name)}" style="vertical-align:middle;display:inline-block;border:0;" />`
   const footerMark =
     opts.brand === "gln"
       ? `<img src="${brand.url}/brand/logo-mark-ink-512.png?v=frame1" width="18" height="18" alt="${escAttr(brand.name)}" style="vertical-align:middle;display:inline-block;border:0;" />`
-      : `<span aria-hidden="true" style="color:${C.brassDeep};">&#10022;</span>`
+      : `<img src="${brand.marketingOrigin}/logo-mark.png?v=route-grid-1" width="18" height="18" alt="" style="vertical-align:middle;display:inline-block;border:0;" />`
   const legalLinks = `<a href="${escAttr(brand.legalLinks.privacy)}" style="color:${C.link};text-decoration:underline;">Privacy</a> &nbsp;·&nbsp; <a href="${escAttr(brand.legalLinks.terms)}" style="color:${C.link};text-decoration:underline;">Terms</a>`
 
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>

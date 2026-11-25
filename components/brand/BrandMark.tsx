@@ -1,4 +1,7 @@
+"use client"
+
 import s from "./BrandLogo.module.css"
+import { useBrand } from "@/components/brand/brand-provider"
 
 type Props = { size?: number; className?: string; title?: string }
 
@@ -10,6 +13,25 @@ type Props = { size?: number; className?: string; title?: string }
  * dotHover, dot. Do not rename them.
  */
 export default function BrandMark({ size = 32, className, title }: Props) {
+  const { key } = useBrand()
+
+  if (key === "fl") {
+    return (
+      // The Firearm mark is a generated production asset shared with the
+      // standalone marketing site. A plain image avoids route-dependent image
+      // optimization URLs in email previews and public token flows.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/brand/firearm-license-nyc-mark-192.png"
+        width={size}
+        height={size}
+        className={`${s.mark} ${s.firearmMark} ${className ?? ""}`}
+        alt={title ?? ""}
+        aria-hidden={title ? undefined : true}
+      />
+    )
+  }
+
   return (
     <svg
       viewBox="0 0 48 48"

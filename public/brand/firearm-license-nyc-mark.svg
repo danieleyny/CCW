@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Firearm License NYC">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#0B1B3A"/>
+  <g fill="none" stroke="#D3B36B" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M4 32h22V5"/>
+    <path d="M39 5v25"/>
+    <path d="M40 32h20"/>
+    <path d="M34 59V40"/>
+    <path d="M4 45h13l32-31"/>
+  </g>
+  <path d="M43 13l12-4-4 12-3-5z" fill="#D3B36B"/>
+</svg>

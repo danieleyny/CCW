@@ -10,6 +10,7 @@
 .sm .wordMain { font-size: 17px; } .sm .wordNyc { font-size: 12px; }
 .sm { gap: 10px; }
 .mark { display: block; flex: none; overflow: visible; }
+.firearmMark { object-fit: contain; }
 .edge, .arcs, .ticks, .ticksHover, .dot, .dotHover, .ring, .sight, .ping { transform-box: view-box; transform-origin: 24px 24px; }
 .ping { opacity: 0; }
 .ticksHover, .dotHover { transition: transform .35s cubic-bezier(.2,.8,.2,1); }

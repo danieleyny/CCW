@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import BrandMark from "@/components/brand/BrandMark"
+import { useBrand } from "@/components/brand/brand-provider"
 import { PayButton } from "@/components/portal/pay-button"
 import { Button } from "@/components/ui/button"
 import type { Fees } from "@/lib/fees"
@@ -381,6 +382,7 @@ function MobilePayments({
   caseNumber: string | null
 }) {
   const { locale, messages } = usePortalI18n()
+  const { brand } = useBrand()
   const t = messages.payments
   const pending = rows.filter((payment) => payment.status === "pending")
   const oldestPending = pending.at(-1) ?? null
@@ -406,8 +408,8 @@ function MobilePayments({
       <section className="payments-statement" aria-labelledby="payments-statement-title">
         <header className="payments-statement-header">
           <div className="payments-statement-brand">
-            <BrandMark size={40} title="Gun License NYC" />
-            <strong>Gun License NYC</strong>
+            <BrandMark size={40} title={brand.name} />
+            <strong>{brand.name}</strong>
           </div>
           <p className="payments-statement-meta">
             {t.statement} · {clientName}
