@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { BRANDS } from "@/config/brands"
+import { BRANDS, STRIPE_ACCOUNT_DESCRIPTOR_PREFIX } from "@/config/brands"
 import { renderEmail } from "@/lib/email/template"
 
 describe("brand email rendering", () => {
@@ -10,6 +10,9 @@ describe("brand email rendering", () => {
       "214 West 102nd Street, Apt 4B, New York, NY"
     )
     expect(BRANDS.fl.stripeDescriptorSuffix).toBe("GUN APPLICATION")
+    expect(
+      `${STRIPE_ACCOUNT_DESCRIPTOR_PREFIX}* ${BRANDS.fl.stripeDescriptorSuffix}`
+    ).toBe("NYGUN* GUN APPLICATION")
     expect(BRANDS.fl.upgradeCreditMode).toBe("credit_paid")
   })
 

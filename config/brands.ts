@@ -57,6 +57,12 @@ const flSupportEmail = process.env.FL_SUPPORT_EMAIL?.trim() || "gunlicensenyc@gm
 const glnLegalName = process.env.GLN_LEGAL_NAME?.trim() || gunLicenseNycBrand.legalName
 const flLegalName = process.env.FL_LEGAL_NAME?.trim() || "Firearm Licensing NYC LLC"
 
+// Stripe combines this account-wide prefix, "* ", and the per-payment suffix.
+// NYGUN keeps the shared account neutral and lets the full FL suffix fit within
+// Stripe's 22-character statement-descriptor limit.
+export const STRIPE_ACCOUNT_DESCRIPTOR_PREFIX =
+  process.env.STRIPE_ACCOUNT_DESCRIPTOR_PREFIX?.trim() || "NYGUN"
+
 const noFlFeatures: BrandFeatures = {
   instructorMarketplace: false,
   attorneyPartner: false,
@@ -168,6 +174,7 @@ export function assertBrandConfig(): void {
     throw new Error("EMAIL_FROM_FL must use the firearmlicensenyc.com domain")
   }
   const descriptor = BRANDS.fl.stripeDescriptorSuffix ?? ""
+  const prefix = STRIPE_ACCOUNT_DESCRIPTOR_PREFIX
   if (
     descriptor.length < 5 ||
     descriptor.length > 22 ||
@@ -175,6 +182,17 @@ export function assertBrandConfig(): void {
     /[<>\\'"*]/.test(descriptor)
   ) {
     throw new Error("FL_STRIPE_DESCRIPTOR_SUFFIX does not meet Stripe descriptor rules")
+  }
+  if (
+    prefix.length < 2 ||
+    prefix.length > 10 ||
+    !/[A-Za-z]/.test(prefix) ||
+    /[<>\\'"*]/.test(prefix)
+  ) {
+    throw new Error("STRIPE_ACCOUNT_DESCRIPTOR_PREFIX does not meet Stripe prefix rules")
+  }
+  if (`${prefix}* ${descriptor}`.length > 22) {
+    throw new Error("Stripe prefix and FL suffix exceed the 22-character statement limit")
   }
 }
 
