@@ -34,6 +34,10 @@ const SECTIONS = [
     p: "Access is least-privilege and enforced by the database, not just the interface: you see only your own case, and our staff see only what their role permits. Instructors you work with can see the paperwork they are helping you with — never your disclosures, never the details of any arrest, order of protection, domestic incident or health question. Those are handled by our staff alone.",
   },
   {
+    h: "Our shared platform and Firearm License NYC",
+    p: "Gun License NYC LLC also provides the application infrastructure and operational support used by Firearm License NYC, a self-guided service operated by Firearm Licensing NYC LLC. Authorized personnel and service providers may access Firearm License NYC information only as needed to host, secure, support and administer that service. Using shared technology does not enroll a Firearm License NYC customer in Gun License NYC's concierge service. If that customer later chooses to upgrade, we first present the transfer and credit terms and obtain their affirmative permission before moving the case into the concierge workflow.",
+  },
+  {
     h: "How we protect it",
     p: "Documents are held in private, access-controlled storage. Data is encrypted in transit and at rest, and links to your documents are short-lived. Actions on your case are written to an audit log. We test these controls with an automated suite that tries to read your records as another applicant and as an instructor, and fails the build if it ever succeeds.",
   },
@@ -53,6 +57,9 @@ export default function Privacy() {
       <PageHero eyebrow="Legal" title="Privacy Policy" />
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="space-y-8">
+          <p className="text-sm leading-relaxed text-text-mid">
+            This policy applies to services operated by {brand.legalName}.
+          </p>
           {SECTIONS.map((s) => (
             <div key={s.h}>
               <h2 className="font-display text-xl font-semibold">{s.h}</h2>

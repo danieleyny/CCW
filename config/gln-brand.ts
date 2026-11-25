@@ -5,9 +5,7 @@
  */
 export const gunLicenseNycBrand = {
   name: "Gun License NYC",
-  // NOTE: default entity name — the launch guard requires GLN_LEGAL_NAME when
-  // the second brand is enabled so this placeholder cannot silently ship then.
-  legalName: "Gun License NYC",
+  legalName: "Gun License NYC LLC",
   tagline: "NYC gun licensing, handled with precision.",
   description:
     "Gun License NYC is a private licensing concierge that helps applicants organize the NYC handgun-license process — from the right application path through documents, review, and applicant-controlled submission.",

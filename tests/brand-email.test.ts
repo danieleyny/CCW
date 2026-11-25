@@ -3,6 +3,16 @@ import { BRANDS } from "@/config/brands"
 import { renderEmail } from "@/lib/email/template"
 
 describe("brand email rendering", () => {
+  it("uses the owner-approved launch identity and commercial defaults", () => {
+    expect(BRANDS.gln.legalName).toBe("Gun License NYC LLC")
+    expect(BRANDS.fl.supportEmail).toBe("gunlicensenyc@gmail.com")
+    expect(BRANDS.fl.contact.address).toBe(
+      "214 West 102nd Street, Apt 4B, New York, NY"
+    )
+    expect(BRANDS.fl.stripeDescriptorSuffix).toBe("GUN APPLICATION")
+    expect(BRANDS.fl.upgradeCreditMode).toBe("credit_paid")
+  })
+
   it("renders Firearm License NYC without Gun License NYC leakage", () => {
     const result = renderEmail({
       brand: "fl",

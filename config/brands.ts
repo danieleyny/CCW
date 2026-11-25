@@ -53,7 +53,7 @@ const flMarketingOrigin = trimOrigin(
 const flAppOrigin = trimOrigin(
   process.env.FL_APP_ORIGIN?.trim() || "https://app.firearmlicensenyc.com"
 )
-const flSupportEmail = process.env.FL_SUPPORT_EMAIL?.trim() || ""
+const flSupportEmail = process.env.FL_SUPPORT_EMAIL?.trim() || "gunlicensenyc@gmail.com"
 const glnLegalName = process.env.GLN_LEGAL_NAME?.trim() || gunLicenseNycBrand.legalName
 const flLegalName = process.env.FL_LEGAL_NAME?.trim() || "Firearm Licensing NYC LLC"
 
@@ -111,7 +111,7 @@ export const BRANDS: Record<BrandKey, BrandConfig> = {
     contact: {
       email: flSupportEmail,
       phone: "",
-      address: "",
+      address: "214 West 102nd Street, Apt 4B, New York, NY",
     },
     logo: {
       wordmark: "Firearm License NYC",
@@ -120,7 +120,8 @@ export const BRANDS: Record<BrandKey, BrandConfig> = {
     email: { fromEnv: "EMAIL_FROM_FL", replyTo: flSupportEmail },
     packages: ["self_guided"],
     payInFull: true,
-    stripeDescriptorSuffix: process.env.FL_STRIPE_DESCRIPTOR_SUFFIX?.trim() || undefined,
+    stripeDescriptorSuffix:
+      process.env.FL_STRIPE_DESCRIPTOR_SUFFIX?.trim() || "GUN APPLICATION",
     upgradeCreditMode:
       process.env.FL_UPGRADE_CREDIT_MODE === "none" ? "none" : "credit_paid",
     features: noFlFeatures,
@@ -152,22 +153,28 @@ export function assertBrandConfig(): void {
   if (!flBrandEnabled()) return
 
   const missing: string[] = []
-  if (!process.env.GLN_LEGAL_NAME?.trim()) missing.push("GLN_LEGAL_NAME")
-  if (!flSupportEmail) missing.push("FL_SUPPORT_EMAIL")
-  if (!process.env.FL_STRIPE_DESCRIPTOR_SUFFIX?.trim()) missing.push("FL_STRIPE_DESCRIPTOR_SUFFIX")
   if (process.env.RESEND_API_KEY && !process.env.EMAIL_FROM_FL?.trim()) missing.push("EMAIL_FROM_FL")
 
   if (missing.length) {
     throw new Error(`FL_BRAND_ENABLED requires: ${missing.join(", ")}`)
   }
-  if (!BRANDS.fl.email.replyTo.endsWith("@firearmlicensenyc.com")) {
-    throw new Error("FL_SUPPORT_EMAIL must use the firearmlicensenyc.com domain")
+  if (!/^\S+@\S+\.\S+$/.test(BRANDS.fl.email.replyTo)) {
+    throw new Error("FL_SUPPORT_EMAIL must be a valid email address")
   }
   if (
     process.env.EMAIL_FROM_FL &&
     !process.env.EMAIL_FROM_FL.toLowerCase().includes("@firearmlicensenyc.com")
   ) {
     throw new Error("EMAIL_FROM_FL must use the firearmlicensenyc.com domain")
+  }
+  const descriptor = BRANDS.fl.stripeDescriptorSuffix ?? ""
+  if (
+    descriptor.length < 5 ||
+    descriptor.length > 22 ||
+    !/[A-Za-z]/.test(descriptor) ||
+    /[<>\\'"*]/.test(descriptor)
+  ) {
+    throw new Error("FL_STRIPE_DESCRIPTOR_SUFFIX does not meet Stripe descriptor rules")
   }
 }
 
