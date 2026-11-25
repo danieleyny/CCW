@@ -98,6 +98,7 @@ export async function proxy(request: NextRequest) {
 
     const allowed =
       path === "/" || path === "/eligibility" ||
+      path === "/og" ||
       path.startsWith("/auth/") || path.startsWith("/portal") ||
       path.startsWith("/api/") || path.startsWith("/r/") ||
       path.startsWith("/g/") || path.startsWith("/c/") ||
