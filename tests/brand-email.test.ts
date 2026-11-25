@@ -9,10 +9,10 @@ describe("brand email rendering", () => {
     expect(BRANDS.fl.contact.address).toBe(
       "214 West 102nd Street, Apt 4B, New York, NY"
     )
-    expect(BRANDS.fl.stripeDescriptorSuffix).toBe("GUN APPLICATION")
+    expect(BRANDS.fl.stripeDescriptorSuffix).toBe("APPLICATION")
     expect(
       `${STRIPE_ACCOUNT_DESCRIPTOR_PREFIX}* ${BRANDS.fl.stripeDescriptorSuffix}`
-    ).toBe("NYGUN* GUN APPLICATION")
+    ).toBe("GUNLICNYC* APPLICATION")
     expect(BRANDS.fl.upgradeCreditMode).toBe("credit_paid")
   })
 

@@ -58,10 +58,10 @@ const glnLegalName = process.env.GLN_LEGAL_NAME?.trim() || gunLicenseNycBrand.le
 const flLegalName = process.env.FL_LEGAL_NAME?.trim() || "Firearm Licensing NYC LLC"
 
 // Stripe combines this account-wide prefix, "* ", and the per-payment suffix.
-// NYGUN keeps the shared account neutral and lets the full FL suffix fit within
-// Stripe's 22-character statement-descriptor limit.
+// GUNLICNYC is the Stripe-approved shortened descriptor for the shared account.
+// Combined with the FL suffix, the customer-facing value is exactly 22 chars.
 export const STRIPE_ACCOUNT_DESCRIPTOR_PREFIX =
-  process.env.STRIPE_ACCOUNT_DESCRIPTOR_PREFIX?.trim() || "NYGUN"
+  process.env.STRIPE_ACCOUNT_DESCRIPTOR_PREFIX?.trim() || "GUNLICNYC"
 
 const noFlFeatures: BrandFeatures = {
   instructorMarketplace: false,
@@ -127,7 +127,7 @@ export const BRANDS: Record<BrandKey, BrandConfig> = {
     packages: ["self_guided"],
     payInFull: true,
     stripeDescriptorSuffix:
-      process.env.FL_STRIPE_DESCRIPTOR_SUFFIX?.trim() || "GUN APPLICATION",
+      process.env.FL_STRIPE_DESCRIPTOR_SUFFIX?.trim() || "APPLICATION",
     upgradeCreditMode:
       process.env.FL_UPGRADE_CREDIT_MODE === "none" ? "none" : "credit_paid",
     features: noFlFeatures,
