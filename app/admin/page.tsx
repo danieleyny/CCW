@@ -6,7 +6,7 @@ import { TodayDashboard } from "@/components/admin/today-dashboard"
 export const metadata = { title: { absolute: "Today · Staff" } }
 
 const SCOPES = new Set<TodayScope>(["mine", "team", "unassigned"])
-const TYPES = new Set<TodayItemType | "all">(["all", "message", "document", "qa", "concierge", "people", "payment", "stalled", "task", "privacy"])
+const TYPES = new Set<TodayItemType | "all">(["all", "message", "document", "qa", "concierge", "people", "lead", "payment", "stalled", "task", "privacy"])
 
 export default async function TodayPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { userId, profile } = await requireStaff()

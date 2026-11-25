@@ -22,6 +22,7 @@ import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BrandChip } from "@/components/admin/brand-chip";
 import { persistAdminBrandFilter } from "@/lib/admin/brand-filter-client";
+import { toast } from "sonner";
 
 const TABS: Array<{ key: InboxTab; label: string; count: keyof InboxCounts }> = [
   { key: "needs", label: "Needs reply", count: "needs" },
@@ -377,10 +378,8 @@ export function AdminInboxWorkspace(props: Props) {
       } else {
         const remaining = updated.filter((thread) => inboxThreadMatchesTab(thread, props.tab));
         if (!remaining.some((thread) => thread.caseId === activeId)) {
-          const next = remaining[0]?.caseId ?? null;
-          setSelectedId(next);
-          setThreadInUrl(next);
-          if (next) void ensureConversation(next);
+          navigate({ tab: "all", thread: activeId });
+          toast.success(`Reply sent. The conversation with ${activeThread.clientFirstName} is saved in All.`);
         }
       }
       router.refresh();

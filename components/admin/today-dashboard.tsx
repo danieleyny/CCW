@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   AlertTriangle, CalendarDays, Check, ChevronRight, CircleDollarSign, Clock3,
   ConciergeBell, FileText, Hourglass, MessageCircle, RefreshCw,
-  ShieldCheck, ListTodo, UserRoundCheck,
+  ShieldCheck, ListTodo, Megaphone, UserRoundCheck,
 } from "lucide-react"
 import type { TodayData, TodayItem, TodayItemType, TodayScope, TodaySection, TodayOwner } from "@/lib/admin/today"
 import { cn } from "@/lib/utils"
@@ -14,7 +14,7 @@ import { BrandChip } from "@/components/admin/brand-chip"
 const FILTERS: Array<{ key: TodayItemType | "all"; label: string }> = [
   { key: "all", label: "All" }, { key: "message", label: "Messages" }, { key: "document", label: "Documents" },
   { key: "qa", label: "Final QA" }, { key: "concierge", label: "Concierge" }, { key: "people", label: "People" },
-  { key: "payment", label: "Payments" }, { key: "stalled", label: "Stalled" }, { key: "task", label: "Tasks" },
+  { key: "lead", label: "Leads" }, { key: "payment", label: "Payments" }, { key: "stalled", label: "Stalled" }, { key: "task", label: "Tasks" },
   { key: "privacy", label: "Privacy" },
 ]
 const TYPE_META = {
@@ -23,6 +23,7 @@ const TYPE_META = {
   qa: { icon: ShieldCheck, cls: "bg-[#E8F5EE] text-[#067647]" },
   concierge: { icon: ConciergeBell, cls: "bg-[#FBF4E4] text-[#9A6B10]" },
   people: { icon: UserRoundCheck, cls: "bg-[#F2EAFE] text-[#6D28D9]" },
+  lead: { icon: Megaphone, cls: "bg-[#FFF3E8] text-[#B54708]" },
   payment: { icon: CircleDollarSign, cls: "bg-[#EAF0FF] text-[#1D4ED8]" },
   stalled: { icon: Hourglass, cls: "bg-[#FDECEC] text-[#B42318]" },
   task: { icon: ListTodo, cls: "bg-[#EEF1F4] text-[#475467]" },

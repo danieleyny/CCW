@@ -119,7 +119,9 @@ function nextDestination(caseId: string, whoseMove: CaseMoveOwner, nextStep: str
   const value = nextStep.toLowerCase();
   if (value.includes("reply") || value.includes("message"))
     return { href: `${base}?tab=messages`, action: "Reply" };
-  if (value.includes("document") || value.includes("upload") || value.includes("review"))
+  if (value.includes("document") || value.includes("upload"))
+    return { href: `${base}?tab=documents`, action: "Review documents" };
+  if (value.includes("review"))
     return { href: `${base}?tab=checklist`, action: "Start review" };
   if (value.includes("qa") || value.includes("sign-off") || value.includes("sign off"))
     return { href: "/admin/queue?bucket=ready", action: "Review & sign" };

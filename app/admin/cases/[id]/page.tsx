@@ -661,7 +661,7 @@ export default async function CaseFilePage({
       />
 
       {/* Tabs */}
-      <Tabs defaultValue={activeTab}>
+      <Tabs value={activeTab}>
         <TabsContent value="overview" className="mt-0">
           <CaseOverview
             caseId={id}

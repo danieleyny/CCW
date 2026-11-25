@@ -24,6 +24,8 @@ import {
 } from "@/config/service-targets"
 import { instructorCounts } from "@/lib/admin/instructors"
 import type { BrandKey } from "@/config/brands"
+import { paidCaseIds } from "@/lib/packages"
+import { duplicateCaseMetadata } from "@/lib/admin/case-visibility"
 
 type DB = SupabaseClient<Database>
 
@@ -35,7 +37,7 @@ type DB = SupabaseClient<Database>
  */
 
 export type TodayScope = "mine" | "team" | "unassigned"
-export type TodayItemType = "message" | "document" | "qa" | "concierge" | "people" | "payment" | "stalled" | "task" | "privacy"
+export type TodayItemType = "message" | "document" | "qa" | "concierge" | "people" | "lead" | "payment" | "stalled" | "task" | "privacy"
 export type TodaySection = "overdue" | "today" | "week"
 export type TodayOwner = "You" | "Team" | "Applicant" | "Third party" | "NYPD"
 
@@ -107,6 +109,9 @@ interface CaseContext {
   clientName: string
   track: string
   assignedStaff: string | null
+  paid: boolean
+  isDemo: boolean
+  hiddenDuplicate: boolean
   brand: BrandKey
   brandOrigin: BrandKey
 }
@@ -164,13 +169,21 @@ function ownerFor(c: CaseContext, userId: string): TodayOwner {
   return c.assignedStaff === userId ? "You" : "Team"
 }
 
+export function isVisibleCase(c: Pick<CaseContext, "isDemo" | "hiddenDuplicate">) {
+  return !c.isDemo && !c.hiddenDuplicate
+}
+
+export function isOperationalCase(c: Pick<CaseContext, "isDemo" | "hiddenDuplicate" | "paid">) {
+  return isVisibleCase(c) && c.paid
+}
+
 function caseItem(input: Omit<TodayItem, "clientName" | "track" | "assignedStaff" | "unassigned" | "brand" | "brandOrigin">, c: CaseContext): TodayItem {
   return { ...input, clientName: c.clientName, track: c.track, assignedStaff: c.assignedStaff, unassigned: !c.assignedStaff, brand: c.brand, brandOrigin: c.brandOrigin }
 }
 
 function sortItems(items: TodayItem[]) {
   const sectionOrder: Record<TodaySection, number> = { overdue: 0, today: 1, week: 2 }
-  const tieOrder: Record<TodayItemType, number> = { qa: 0, message: 1, document: 2, concierge: 3, people: 4, payment: 5, stalled: 6, task: 7, privacy: 8 }
+  const tieOrder: Record<TodayItemType, number> = { qa: 0, message: 1, document: 2, concierge: 3, people: 4, lead: 5, payment: 6, stalled: 7, task: 8, privacy: 9 }
   return items.sort((a, b) => sectionOrder[a.section] - sectionOrder[b.section] || a.triggerAt.localeCompare(b.triggerAt) || tieOrder[a.type] - tieOrder[b.type])
 }
 
@@ -180,13 +193,20 @@ export async function loadToday(
 ): Promise<TodayData> {
   const casesResult = await db
     .from("cases")
-    .select("id, client_id, stage, status, stage_entered_at, updated_at, license_track, brand, brand_origin, clients!inner(full_name, assigned_staff, track)")
+    .select("id, client_id, stage, status, stage_entered_at, updated_at, license_track, brand, brand_origin, is_demo, clients!inner(full_name, email, assigned_staff, track)")
 
   if (casesResult.error) throw casesResult.error
 
+  const rawCases = casesResult.data ?? []
+  const paidIds = await paidCaseIds(db, rawCases.map((row) => row.id))
+  const duplicateMeta = duplicateCaseMetadata(rawCases.map((raw) => {
+    const client = raw.clients as unknown as { email: string | null }
+    return { id: raw.id, clientId: raw.client_id, clientEmail: client.email, updatedAt: raw.updated_at }
+  }))
+
   const cases = new Map<string, CaseContext>()
-  for (const raw of casesResult.data ?? []) {
-    const client = raw.clients as unknown as { full_name: string; assigned_staff: string | null; track: string }
+  for (const raw of rawCases) {
+    const client = raw.clients as unknown as { full_name: string; email: string | null; assigned_staff: string | null; track: string }
     cases.set(raw.id, {
       id: raw.id,
       stage: raw.stage as CaseStageKey,
@@ -197,6 +217,9 @@ export async function loadToday(
       clientName: client.full_name,
       track: trackLabel(raw.license_track ?? client.track),
       assignedStaff: client.assigned_staff,
+      paid: paidIds.has(raw.id),
+      isDemo: raw.is_demo,
+      hiddenDuplicate: duplicateMeta.get(raw.id)?.hidden ?? false,
       brand: raw.brand,
       brandOrigin: raw.brand_origin,
     })
@@ -272,7 +295,7 @@ export async function loadToday(
   }
   for (const [caseId, rows] of docsByCase) {
     const c = cases.get(caseId)
-    if (!c) continue
+    if (!c || !isOperationalCase(c)) continue
     const due = addBusinessDays(new Date(rows[0].created_at), DOCUMENT_REVIEW_BUSINESS_DAYS)
     const section = sectionFor(due, now)
     if (!section) continue
@@ -288,7 +311,7 @@ export async function loadToday(
   const qaRows = ok<Awaited<ReturnType<typeof buildQaQueue>>>(2) ?? []
   for (const row of qaRows.filter((entry) => entry.bucket === "ready" || entry.bucket === "signed")) {
     const c = cases.get(row.caseId)
-    if (!c) continue
+    if (!c || !isOperationalCase(c)) continue
     allItems.push(caseItem({
       id: `qa-${row.caseId}`, caseId: row.caseId, type: "qa", section: "today",
       title: row.bucket === "ready" ? `Final QA — ${c.clientName}` : `Open signed case — ${c.clientName}`,
@@ -302,7 +325,7 @@ export async function loadToday(
   const staffConcierge = new Set(["Invite them", "Intro call requested — schedule it", "Book the intro call", "All documents in — review for QA", "Ready for their review & filing"])
   for (const row of conciergeRows.filter((entry) => entry.tone === "attention")) {
     const c = cases.get(row.caseId)
-    if (!c) continue
+    if (!c || !isOperationalCase(c)) continue
     const staffOwned = staffConcierge.has(row.label)
     allItems.push(caseItem({
       id: `concierge-${row.caseId}`, caseId: row.caseId, type: "concierge", section: staffOwned ? "today" : "week",
@@ -314,7 +337,7 @@ export async function loadToday(
   }
 
   for (const c of cases.values()) {
-    if (c.status !== "active" || isNypdControlled(c.stage)) continue
+    if (!isOperationalCase(c) || c.status !== "active" || isNypdControlled(c.stage)) continue
     const ageDays = daysBetween(c.stageEnteredAt, now)
     if (ageDays <= STALLED_DAYS) continue
     allItems.push(caseItem({
@@ -358,7 +381,7 @@ export async function loadToday(
     rows.sort((a, b) => a.expiresAt.localeCompare(b.expiresAt))
     const row = rows[0]
     const c = cases.get(caseId)
-    if (!c) continue
+    if (!c || !isOperationalCase(c)) continue
     const expires = new Date(row.expiresAt)
     if (expires.getTime() > now.getTime() + 7 * DAY) continue
     const due = new Date(expires.getTime() - REFERENCE_EXPIRY_WARN_DAYS * DAY)
@@ -393,16 +416,23 @@ export async function loadToday(
   }
 
   const payments = ok<{ data: Array<{ id: string; case_id: string | null; client_id: string | null; created_at: string }> }>(6)?.data ?? []
-  for (const payment of payments) {
-    const ageDays = daysBetween(payment.created_at, now)
-    if (ageDays <= PAYMENT_FOLLOWUP_DAYS || !payment.case_id) continue
-    const c = cases.get(payment.case_id)
-    if (!c) continue
+  const pendingPaymentCaseIds = new Set(payments.map((payment) => payment.case_id).filter((caseId): caseId is string => !!caseId))
+  const replyCaseIds = new Set(messageThreads.map((thread) => thread.caseId))
+  for (const c of cases.values()) {
+    if (!isVisibleCase(c) || c.paid || c.status !== "active" || replyCaseIds.has(c.id)) continue
+    const due = new Date(new Date(c.updatedAt).getTime() + PAYMENT_FOLLOWUP_DAYS * DAY)
+    const section = sectionFor(due, now)
+    if (!section) continue
+    const hasPendingPayment = pendingPaymentCaseIds.has(c.id)
+    const ageDays = daysBetween(c.updatedAt, now)
     allItems.push(caseItem({
-      id: `payment-${payment.id}`, caseId: payment.case_id, type: "payment", section: "week",
-      title: `Follow up on payment — ${c.clientName}`, reason: "A pending service payment is ready for applicant follow-up.", owner: "Applicant",
-      age: `Ready ${ageDays} days`, ageDays, triggerAt: payment.created_at, dueAt: new Date(now.getTime() + 7 * DAY).toISOString(),
-      href: `/admin/payments?client=${encodeURIComponent(c.clientId)}`, action: "View payment",
+      id: `lead-${c.id}`, caseId: c.id, type: "lead", section,
+      title: `${hasPendingPayment ? "Follow up on enrollment" : "Send lead follow-up"} — ${c.clientName}`,
+      reason: hasPendingPayment
+        ? "They have not completed payment. Follow up by email, text, or call."
+        : "They have not enrolled yet. Send the next marketing email or follow up by text or call.",
+      owner: ownerFor(c, userId), age: ageDays === 0 ? "New lead" : `${ageDays} days since activity`, ageDays,
+      triggerAt: c.updatedAt, dueAt: due.toISOString(), href: "/admin/pipeline?view=leads", action: "Open leads",
     }, c))
   }
 
@@ -430,6 +460,10 @@ export async function loadToday(
   if (calendar?.errors.length) errors.push(...calendar.errors.map((source) => `Schedule: ${source}`))
   const schedule: TodayScheduleItem[] = (calendar?.events ?? [])
     .filter((event): event is typeof event & { caseId: string } => !!event.caseId)
+    .filter((event) => {
+      const c = cases.get(event.caseId)
+      return !!c && isVisibleCase(c)
+    })
     .map((event) => ({
       id: event.id,
       caseId: event.caseId,
@@ -447,7 +481,7 @@ export async function loadToday(
   const thirdPartyCases: CaseContext[] = []
   const applicantCases: CaseContext[] = []
   for (const c of cases.values()) {
-    if (c.status !== "active" || staffCaseIds.has(c.id)) continue
+    if (!isOperationalCase(c) || c.status !== "active" || staffCaseIds.has(c.id)) continue
     if (scope === "mine" && c.assignedStaff !== userId) continue
     if (scope === "unassigned" && c.assignedStaff) continue
     const ownership = deriveCaseOwnership(
@@ -469,8 +503,12 @@ export async function loadToday(
   }
 
   const oldestMessage = messageThreads.map((thread) => thread.waitingSince).filter((value): value is string => !!value).sort()[0]
-  const oldestDocument = documents[0]?.created_at
-  const stalledCases = [...cases.values()].filter((c) => c.status === "active" && !isNypdControlled(c.stage) && daysBetween(c.stageEnteredAt, now) > STALLED_DAYS)
+  const operationalDocuments = documents.filter((document) => {
+    const c = cases.get(document.case_id)
+    return !!c && isOperationalCase(c)
+  })
+  const oldestDocument = operationalDocuments[0]?.created_at
+  const stalledCases = [...cases.values()].filter((c) => isOperationalCase(c) && c.status === "active" && !isNypdControlled(c.stage) && daysBetween(c.stageEnteredAt, now) > STALLED_DAYS)
   const legalResult = ok<RuleReviewCounts>(9)
   const health: TodayHealthItem[] = [
     { key: "message", label: "Oldest unanswered client message", value: oldestMessage ? ageText(oldestMessage, now) : "None", pastTarget: messageThreads.some((thread) => thread.overdue), available: !errors.includes("Messages") },
