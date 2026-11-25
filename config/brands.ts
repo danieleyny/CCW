@@ -55,7 +55,7 @@ const flAppOrigin = trimOrigin(
 )
 const flSupportEmail = process.env.FL_SUPPORT_EMAIL?.trim() || "gunlicensenyc@gmail.com"
 const glnLegalName = process.env.GLN_LEGAL_NAME?.trim() || gunLicenseNycBrand.legalName
-const flLegalName = process.env.FL_LEGAL_NAME?.trim() || "Firearm Licensing NYC LLC"
+const flLegalName = process.env.FL_LEGAL_NAME?.trim() || "Gun License NYC LLC"
 
 // Stripe combines this account-wide prefix, "* ", and the per-payment suffix.
 // GUNLICNYC is the Stripe-approved shortened descriptor for the shared account.
@@ -138,7 +138,7 @@ export const BRANDS: Record<BrandKey, BrandConfig> = {
       disclaimer: `${flMarketingOrigin}/disclaimer`,
     },
     disclaimer:
-      "Firearm License NYC is self-guided software operated by Firearm Licensing NYC LLC. It is not a law firm and is not affiliated with or endorsed by the NYPD or any government agency. It does not represent applicants and cannot control NYPD timing or promise any outcome. You prepare and submit your own application.",
+      "Firearm License NYC is self-guided software operated by Gun License NYC LLC. It is not a law firm and is not affiliated with or endorsed by the NYPD or any government agency. It does not represent applicants and cannot control NYPD timing or promise any outcome. You prepare and submit your own application.",
   },
 }
 
@@ -159,7 +159,13 @@ export function assertBrandConfig(): void {
   if (!flBrandEnabled()) return
 
   const missing: string[] = []
-  if (process.env.RESEND_API_KEY && !process.env.EMAIL_FROM_FL?.trim()) missing.push("EMAIL_FROM_FL")
+  if (
+    process.env.RESEND_API_KEY &&
+    !process.env.EMAIL_FROM_FL?.trim() &&
+    !process.env.EMAIL_FROM?.trim()
+  ) {
+    missing.push("EMAIL_FROM_FL or EMAIL_FROM")
+  }
 
   if (missing.length) {
     throw new Error(`FL_BRAND_ENABLED requires: ${missing.join(", ")}`)

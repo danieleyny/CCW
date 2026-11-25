@@ -41,7 +41,12 @@ export async function sendEmail(input: SendEmailInput) {
     )
     return { skipped: true as const }
   }
-  const from = process.env[brand.email.fromEnv] || `${brand.name} <onboarding@resend.dev>`
+  // Firearm License NYC intentionally shares the existing verified sender until
+  // its own sending domain is configured. Reply-to remains brand-configured.
+  const from =
+    process.env[brand.email.fromEnv] ||
+    (input.brand === "fl" ? process.env.EMAIL_FROM : undefined) ||
+    `${brand.name} <onboarding@resend.dev>`
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { data, error } = await resend.emails.send({
     from,

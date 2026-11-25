@@ -35,7 +35,7 @@ const SECTIONS = [
   },
   {
     h: "Our shared platform and Firearm License NYC",
-    p: "Gun License NYC LLC also provides the application infrastructure and operational support used by Firearm License NYC, a self-guided service operated by Firearm Licensing NYC LLC. Authorized personnel and service providers may access Firearm License NYC information only as needed to host, secure, support and administer that service. Using shared technology does not enroll a Firearm License NYC customer in Gun License NYC's concierge service. If that customer later chooses to upgrade, we first present the transfer and credit terms and obtain their affirmative permission before moving the case into the concierge workflow.",
+    p: "Gun License NYC LLC also operates Firearm License NYC and provides its application infrastructure and operational support. Authorized personnel and service providers may access Firearm License NYC information only as needed to host, secure, support and administer that service. Using shared technology does not enroll a Firearm License NYC customer in Gun License NYC's concierge service. If that customer later chooses to upgrade, we first present the transfer and credit terms and obtain their affirmative permission before moving the case into the concierge workflow.",
   },
   {
     h: "How we protect it",

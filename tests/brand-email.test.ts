@@ -28,8 +28,12 @@ describe("brand email rendering", () => {
     expect(result.html).toContain(BRANDS.fl.legalName)
     expect(result.html).toContain(BRANDS.fl.legalLinks.privacy)
     expect(result.html).toContain(BRANDS.fl.disclaimer)
-    expect(result.html).not.toContain("Gun License NYC")
-    expect(result.text).not.toContain("Gun License NYC")
+    expect(result.html).toContain("Firearm License NYC")
+    expect(result.html).toContain("Gun License NYC LLC")
+    expect(result.html).not.toContain("gunlicensenyc.com")
+    expect(result.text).toContain("Firearm License NYC")
+    expect(result.text).toContain("Gun License NYC LLC")
+    expect(result.text).not.toContain("gunlicensenyc.com")
   })
 
   it("keeps Gun License NYC identity on GLN mail", () => {
