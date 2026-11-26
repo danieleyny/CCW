@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Circle,
   CircleAlert,
+  ClipboardCopy,
   ExternalLink,
   Eye,
   FileCheck2,
@@ -50,6 +51,35 @@ function sourceText(value: unknown) {
 function timestamp(value: string | null) {
   if (!value) return "Not completed"
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }).format(new Date(value))
+}
+
+function CopyValueButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copyValue() {
+    if (!value.trim()) return
+
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copyValue}
+      disabled={!value.trim()}
+      className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--hairline)] bg-white px-2.5 text-[11px] font-semibold text-[var(--text-mid)] transition hover:bg-[var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+      aria-label={`Copy ${label}`}
+    >
+      {copied ? <Check className="size-3.5 text-[#18794E]" aria-hidden /> : <ClipboardCopy className="size-3.5" aria-hidden />}
+      <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
+    </button>
+  )
 }
 
 export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { article: BlogPostRow; seoItem: SeoContentRow | null; notice?: string; error?: string; aiEnabled: boolean }) {
@@ -117,18 +147,30 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
             <div className="flex flex-col gap-4 border-b border-[var(--hairline)] pb-6 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[var(--signal)]">Article studio</p><h1 className="mt-2 font-[family-name:var(--font-title)] text-3xl font-semibold tracking-[-.025em]">Write for one real question.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-mid)]">Save freely. Reviews reset only when the article actually changes.</p></div><div className="rounded-xl bg-[var(--surface-2)] px-4 py-3 text-right"><p className="font-[family-name:var(--font-title)] text-2xl font-semibold">{words.toLocaleString()}</p><p className="text-[10px] uppercase tracking-[.12em] text-[var(--text-low)]">words</p></div></div>
 
             <div className="mt-6 space-y-5">
-              <label className="block text-sm font-semibold text-[var(--text-hi)]">Article title<input name="title" required minLength={5} maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-lg disabled:bg-[var(--surface-2)]" /></label>
+              <div>
+                <div className="flex items-center justify-between gap-3"><label htmlFor="article-title" className="text-sm font-semibold text-[var(--text-hi)]">Article title</label><CopyValueButton value={title} label="article title" /></div>
+                <input id="article-title" name="title" required minLength={5} maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-lg disabled:bg-[var(--surface-2)]" />
+              </div>
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
-                <label className="block text-sm font-semibold text-[var(--text-hi)]">Article URL<input name="slug" required maxLength={120} value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 font-mono text-sm disabled:bg-[var(--surface-2)]" /></label>
+                <div>
+                  <div className="flex items-center justify-between gap-3"><label htmlFor="article-slug" className="text-sm font-semibold text-[var(--text-hi)]">Article URL</label><CopyValueButton value={slug} label="article URL" /></div>
+                  <input id="article-slug" name="slug" required maxLength={120} value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 font-mono text-sm disabled:bg-[var(--surface-2)]" />
+                </div>
                 <label className="block text-sm font-semibold text-[var(--text-hi)]">Category<select name="tag" value={tag} onChange={(event) => setTag(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-sm disabled:bg-[var(--surface-2)]"><option>Guide</option><option>Requirements</option><option>Documents</option><option>Process update</option><option>News analysis</option><option>FAQ</option></select></label>
               </div>
-              <label className="block text-sm font-semibold text-[var(--text-hi)]">Search description <span className={cn("float-right text-xs font-normal", description.length >= 50 && description.length <= 160 ? "text-[#18794E]" : "text-[var(--text-low)]")}>{description.length}/180</span><textarea name="description" maxLength={180} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6 disabled:bg-[var(--surface-2)]" placeholder="A concise, factual description for search results." /></label>
-              <label className="block text-sm font-semibold text-[var(--text-hi)]">Target search question<input name="targetQuery" maxLength={180} value={targetQuery} onChange={(event) => setTargetQuery(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-sm disabled:bg-[var(--surface-2)]" /></label>
+              <div>
+                <div className="flex items-center justify-between gap-3"><label htmlFor="article-description" className="text-sm font-semibold text-[var(--text-hi)]">Search description <span className={cn("ml-2 text-xs font-normal", description.length >= 50 && description.length <= 160 ? "text-[#18794E]" : "text-[var(--text-low)]")}>{description.length}/180</span></label><CopyValueButton value={description} label="search description" /></div>
+                <textarea id="article-description" name="description" maxLength={180} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6 disabled:bg-[var(--surface-2)]" placeholder="A concise, factual description for search results." />
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-3"><label htmlFor="article-target-query" className="text-sm font-semibold text-[var(--text-hi)]">Target search question</label><CopyValueButton value={targetQuery} label="target search question" /></div>
+                <input id="article-target-query" name="targetQuery" maxLength={180} value={targetQuery} onChange={(event) => setTargetQuery(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-sm disabled:bg-[var(--surface-2)]" />
+              </div>
             </div>
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-[var(--hairline)] bg-white shadow-sm" aria-labelledby="article-body-title">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hairline)] px-4 py-3 sm:px-5"><div><p className="font-mono text-[9px] uppercase tracking-[.15em] text-[var(--text-low)]">Markdown editor</p><h2 id="article-body-title" className="text-sm font-semibold">Article body</h2></div>{!published ? <div className="flex flex-wrap gap-1" aria-label="Formatting tools"><button type="button" onClick={() => insertMarkdown("## ", "", "Section heading")} aria-label="Insert heading" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Heading2 className="size-4" /></button><button type="button" onClick={() => insertMarkdown("### ", "", "Subheading")} aria-label="Insert subheading" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Heading3 className="size-4" /></button><button type="button" onClick={() => insertMarkdown("**", "**", "important text")} aria-label="Format bold text" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Bold className="size-4" /></button><button type="button" onClick={() => insertMarkdown("- ", "", "List item")} aria-label="Insert list item" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><List className="size-4" /></button><button type="button" onClick={() => insertMarkdown("[", "](https://)", "link text")} aria-label="Insert link" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Link2 className="size-4" /></button></div> : null}</div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hairline)] px-4 py-3 sm:px-5"><div><p className="font-mono text-[9px] uppercase tracking-[.15em] text-[var(--text-low)]">Markdown editor</p><h2 id="article-body-title" className="text-sm font-semibold">Article body</h2></div><div className="flex flex-wrap items-center gap-1">{!published ? <div className="flex flex-wrap gap-1" aria-label="Formatting tools"><button type="button" onClick={() => insertMarkdown("## ", "", "Section heading")} aria-label="Insert heading" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Heading2 className="size-4" /></button><button type="button" onClick={() => insertMarkdown("### ", "", "Subheading")} aria-label="Insert subheading" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Heading3 className="size-4" /></button><button type="button" onClick={() => insertMarkdown("**", "**", "important text")} aria-label="Format bold text" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Bold className="size-4" /></button><button type="button" onClick={() => insertMarkdown("- ", "", "List item")} aria-label="Insert list item" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><List className="size-4" /></button><button type="button" onClick={() => insertMarkdown("[", "](https://)", "link text")} aria-label="Insert link" className="grid size-10 place-items-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--surface-2)]"><Link2 className="size-4" /></button></div> : null}<CopyValueButton value={content} label="article body" /></div></div>
             <textarea ref={bodyRef} name="content" value={content} onChange={(event) => setContent(event.target.value)} disabled={published} spellCheck className="min-h-[720px] w-full resize-y bg-white px-5 py-5 font-mono text-[14px] leading-7 text-[var(--text-hi)] outline-none disabled:bg-[var(--surface-2)] sm:px-7" aria-label="Article body in Markdown" />
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--hairline)] bg-[var(--surface-2)] px-4 py-3 text-xs text-[var(--text-low)] sm:px-5"><span>Use headings, short paragraphs and source links. HTML and executable MDX are blocked.</span>{!published ? <button type="submit" formAction={generateArticle} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#D9B25F]/45 bg-[#FFF8E7] px-3 font-semibold text-[#6D4C00] hover:bg-[#FFF1C8]"><Sparkles className="size-4" aria-hidden />{aiEnabled ? "Regenerate with AI" : "Reset guided outline"}</button> : null}</div>
           </section>
@@ -154,8 +196,8 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
 
           <section className="rounded-2xl border border-[var(--hairline)] bg-white p-5 shadow-sm" aria-labelledby="source-evidence-title">
             <div className="flex items-center gap-2"><BookOpenText className="size-5 text-[var(--signal)]" aria-hidden /><h2 id="source-evidence-title" className="font-semibold">Source evidence</h2></div>
-            <label className="mt-4 block text-xs font-semibold text-[var(--text-mid)]">Secure URLs, one per line<textarea form="article-editor" name="sourceUrls" rows={6} value={sources} onChange={(event) => setSources(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-3 py-3 font-mono text-[11px] leading-5 disabled:bg-[var(--surface-2)]" /></label>
-            <label className="mt-4 block text-xs font-semibold text-[var(--text-mid)]">Private research notes<textarea form="article-editor" name="sourceNotes" rows={7} value={sourceNotes} onChange={(event) => setSourceNotes(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-3 py-3 text-xs leading-5 disabled:bg-[var(--surface-2)]" placeholder="What each source establishes. These notes are never public." /></label>
+            <div className="mt-4"><div className="flex items-center justify-between gap-3"><label htmlFor="article-source-urls" className="text-xs font-semibold text-[var(--text-mid)]">Secure URLs, one per line</label><CopyValueButton value={sources} label="source URLs" /></div><textarea id="article-source-urls" form="article-editor" name="sourceUrls" rows={6} value={sources} onChange={(event) => setSources(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-3 py-3 font-mono text-[11px] leading-5 disabled:bg-[var(--surface-2)]" /></div>
+            <div className="mt-4"><div className="flex items-center justify-between gap-3"><label htmlFor="article-source-notes" className="text-xs font-semibold text-[var(--text-mid)]">Private research notes</label><CopyValueButton value={sourceNotes} label="research notes" /></div><textarea id="article-source-notes" form="article-editor" name="sourceNotes" rows={7} value={sourceNotes} onChange={(event) => setSourceNotes(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-3 py-3 text-xs leading-5 disabled:bg-[var(--surface-2)]" placeholder="What each source establishes. These notes are never public." /></div>
             <label className="mt-4 flex items-start gap-3 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-5 text-[#5D430B]"><input form="article-editor" name="needsLegalReview" type="checkbox" checked={needsLegalReview} onChange={(event) => setNeedsLegalReview(event.target.checked)} disabled={published} className="mt-0.5 size-4 accent-[#14254A]" /><span><strong className="block">Require legal-boundary review</strong>Recommended for licensing rules, disclosures and news analysis.</span></label>
           </section>
 
