@@ -18,9 +18,15 @@ const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
 export const DEMO_PASSWORD = "Passw0rd!"
 
 const hasEnv = Boolean(SUPABASE_URL && SERVICE && ANON)
+const isLocalSupabase = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(?:\/|$)/i.test(
+  SUPABASE_URL
+)
+const remoteDbTestsExplicitlyAllowed = process.env.DB_TEST_ALLOW_REMOTE === "1"
+const inertLocalUrl = "http://127.0.0.1:54321"
+const inertTestKey = "db-tests-skipped-no-local-supabase"
 
 export function adminClient(): SupabaseClient<Database> {
-  return createClient(SUPABASE_URL, SERVICE, {
+  return createClient(SUPABASE_URL || inertLocalUrl, SERVICE || inertTestKey, {
     auth: { persistSession: false },
   }) as unknown as SupabaseClient<Database>
 }
@@ -29,7 +35,9 @@ export async function anonClientFor(
   email: string,
   password: string = DEMO_PASSWORD
 ): Promise<SupabaseClient<Database>> {
-  const c = createClient(SUPABASE_URL, ANON, { auth: { persistSession: false } })
+  const c = createClient(SUPABASE_URL || inertLocalUrl, ANON || inertTestKey, {
+    auth: { persistSession: false },
+  })
   // A swallowed sign-in failure here was the root of the flaky suite: when the
   // parallel test files stormed GoTrue and a sign-in got rate-limited, the
   // error was DISCARDED and the caller got an ANONYMOUS client. Every
@@ -49,14 +57,22 @@ export async function anonClientFor(
 }
 
 export function anonClient(): SupabaseClient<Database> {
-  return createClient(SUPABASE_URL, ANON, {
+  return createClient(SUPABASE_URL || inertLocalUrl, ANON || inertTestKey, {
     auth: { persistSession: false },
   }) as unknown as SupabaseClient<Database>
 }
 
-/** True only when a local Supabase actually answers. */
+/**
+ * True only when a local Supabase actually answers.
+ *
+ * The DB suites create and delete test users, clients, cases, and documents.
+ * A reachable hosted project is therefore not a valid test target by default:
+ * `.env.local` is also used by preview/production debugging and previously let
+ * `pnpm test` leave QA clients in the live user base. Remote execution now
+ * requires the deliberately noisy `DB_TEST_ALLOW_REMOTE=1` escape hatch.
+ */
 export async function supabaseReachable(): Promise<boolean> {
-  if (!hasEnv) return false
+  if (!hasEnv || (!isLocalSupabase && !remoteDbTestsExplicitlyAllowed)) return false
   try {
     const { error } = await adminClient().from("jurisdiction_profiles").select("key").limit(1)
     return !error

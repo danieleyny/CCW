@@ -45,7 +45,8 @@ describe("resolveReviewTargets", () => {
 
 describe.skipIf(!reachable)("document review fan-out (end-to-end)", () => {
   const admin = adminClient()
-  const cleanup: string[] = []
+  const cleanupCases: string[] = []
+  const cleanupClients: string[] = []
 
   async function makeCase(): Promise<string> {
     const { data: client } = await admin
@@ -58,7 +59,8 @@ describe.skipIf(!reachable)("document review fan-out (end-to-end)", () => {
       .insert({ client_id: client!.id, stage: "document_collection", status: "active" })
       .select("id")
       .single()
-    cleanup.push(kase!.id)
+    cleanupCases.push(kase!.id)
+    cleanupClients.push(client!.id)
     await materializeCaseRequirements(admin, kase!.id, "nyc", { isCarry: true })
     return kase!.id
   }
@@ -91,7 +93,8 @@ describe.skipIf(!reachable)("document review fan-out (end-to-end)", () => {
   }
 
   afterAll(async () => {
-    for (const id of cleanup) await admin.from("cases").delete().eq("id", id)
+    for (const id of cleanupCases) await admin.from("cases").delete().eq("id", id)
+    for (const id of cleanupClients) await admin.from("clients").delete().eq("id", id)
   })
 
   it("approving a passport satisfies IDN-01, IDN-02, AND IDN-03 — all bound to it", async () => {

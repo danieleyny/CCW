@@ -32,6 +32,7 @@ describe.skipIf(!reachable)("hasPaidPackage / paidPackageCaseIds", () => {
 
   afterAll(async () => {
     if (caseId) await admin.from("cases").delete().eq("id", caseId)
+    if (clientId) await admin.from("clients").delete().eq("id", clientId)
   })
 
   async function pay(status: string, packageKey: string | null) {
