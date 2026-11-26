@@ -8,7 +8,9 @@ import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database, Json } from "@/lib/supabase/types"
 
-const DEFAULT_MODEL = "openai/gpt-5.4-mini"
+// This model is present in the live AI Gateway catalog, supports structured
+// output, and is free-tier eligible. An explicit environment value still wins.
+const DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-free"
 const MAX_PENDING_DRAFTS = 6
 const MAX_SOURCE_BYTES = 1_500_000
 const MAX_SOURCE_CHARS = 18_000

@@ -8,7 +8,10 @@ import {
 
 export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
 
-const BLOG_MODEL = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-5.4-mini"
+// Default to a current AI Gateway free-tier model so supervised drafting works
+// before the project enables paid Gateway credits. Article inputs contain only
+// editorial research, never applicant case data.
+const BLOG_MODEL = process.env.AI_GATEWAY_MODEL?.trim() || "nvidia/nemotron-3.5-lightning-free"
 
 export interface ArticleGenerationInput {
   title: string
