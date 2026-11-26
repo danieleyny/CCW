@@ -240,6 +240,8 @@ export type Database = {
       blog_posts: {
         Row: {
           automation_assisted: boolean
+          automation_context: Json
+          automation_run_id: string | null
           content_markdown: string
           created_at: string
           created_by: string | null
@@ -264,6 +266,8 @@ export type Database = {
         }
         Insert: {
           automation_assisted?: boolean
+          automation_context?: Json
+          automation_run_id?: string | null
           content_markdown?: string
           created_at?: string
           created_by?: string | null
@@ -288,6 +292,8 @@ export type Database = {
         }
         Update: {
           automation_assisted?: boolean
+          automation_context?: Json
+          automation_run_id?: string | null
           content_markdown?: string
           created_at?: string
           created_by?: string | null
@@ -311,6 +317,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "blog_posts_automation_run_id_fkey"
+            columns: ["automation_run_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "blog_posts_created_by_fkey"
             columns: ["created_by"]
@@ -2229,6 +2242,141 @@ export type Database = {
           },
           {
             foreignKeyName: "dos_armed_upgrade_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_runs: {
+        Row: {
+          article_id: string | null
+          completed_at: string | null
+          created_by: string | null
+          draft_count: number
+          error_message: string | null
+          id: string
+          model: string
+          skip_reason: string | null
+          source_count: number
+          started_at: string
+          status: string
+          trigger: string
+        }
+        Insert: {
+          article_id?: string | null
+          completed_at?: string | null
+          created_by?: string | null
+          draft_count?: number
+          error_message?: string | null
+          id?: string
+          model: string
+          skip_reason?: string | null
+          source_count?: number
+          started_at?: string
+          status?: string
+          trigger: string
+        }
+        Update: {
+          article_id?: string | null
+          completed_at?: string | null
+          created_by?: string | null
+          draft_count?: number
+          error_message?: string | null
+          id?: string
+          model?: string
+          skip_reason?: string | null
+          source_count?: number
+          started_at?: string
+          status?: string
+          trigger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_runs_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_runs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_sources: {
+        Row: {
+          active: boolean
+          content_excerpt: string | null
+          content_hash: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_error: string | null
+          last_fetched_at: string | null
+          last_http_status: number | null
+          last_success_at: string | null
+          name: string
+          organization: string
+          priority: number
+          source_type: string
+          updated_at: string
+          updated_by: string | null
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          content_excerpt?: string | null
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_error?: string | null
+          last_fetched_at?: string | null
+          last_http_status?: number | null
+          last_success_at?: string | null
+          name: string
+          organization: string
+          priority?: number
+          source_type?: string
+          updated_at?: string
+          updated_by?: string | null
+          url: string
+        }
+        Update: {
+          active?: boolean
+          content_excerpt?: string | null
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_error?: string | null
+          last_fetched_at?: string | null
+          last_http_status?: number | null
+          last_success_at?: string | null
+          name?: string
+          organization?: string
+          priority?: number
+          source_type?: string
+          updated_at?: string
+          updated_by?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_sources_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_sources_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"

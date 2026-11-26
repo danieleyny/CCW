@@ -1,7 +1,7 @@
 import Link from "next/link"
 import {
+  Bot,
   BookOpenText,
-  CalendarClock,
   CheckCircle2,
   CircleAlert,
   Clock3,
@@ -14,6 +14,8 @@ import {
   Sparkles,
 } from "lucide-react"
 import { createSeoItem, recordSeoLegalReview, updateSeoItemStatus } from "@/app/admin/seo/actions"
+import { runEditorialAutomationNow } from "@/app/admin/seo/automation-actions"
+import { AutomationRunButton } from "@/components/admin/automation-run-button"
 import {
   SEO_KIND_LABELS,
   SEO_PRIORITY_LABELS,
@@ -54,6 +56,17 @@ function formatDate(value: string | null | undefined) {
     year: "numeric",
     timeZone: "America/New_York",
   }).format(new Date(`${value.length === 10 ? `${value}T12:00:00Z` : value}`))
+}
+
+function formatTimestamp(value: string | null | undefined) {
+  if (!value) return "Not run yet"
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+  }).format(new Date(value))
 }
 
 function metricCards(data: SeoDeskData) {
@@ -177,15 +190,37 @@ function AddOpportunity() {
   )
 }
 
-function RhythmCard() {
+function AutomationCard({ data }: { data: SeoDeskData }) {
+  const lastRun = data.runs[0]
+  const activeSources = data.sources.filter((source) => source.active)
+  const sourceProblems = activeSources.filter((source) => source.last_error && !source.last_success_at)
+  const statusLabel = lastRun?.status === "completed"
+    ? "Draft created"
+    : lastRun?.status === "failed"
+      ? "Needs attention"
+      : lastRun?.status === "skipped"
+        ? "Paused safely"
+        : lastRun?.status === "running"
+          ? "Running now"
+          : "Ready"
   return (
-    <section className="rounded-2xl border border-[var(--hairline)] bg-[#14254A] p-5 text-white shadow-sm" aria-labelledby="rhythm-title">
-      <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-white/10 text-[#E4C473]"><CalendarClock className="size-5" aria-hidden /></span><div><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[#AAB6CD]">Weekly rhythm</p><h2 id="rhythm-title" className="font-[family-name:var(--font-title)] text-xl font-semibold">Two focused sessions</h2></div></div>
-      <div className="mt-4 space-y-3 text-sm">
-        <div className="rounded-xl bg-white/[.07] p-3"><strong className="block text-[#F5D98E]">Monday · Create</strong><p className="mt-1 leading-5 text-[#D0D8E7]">Choose one real applicant question or official update. Write from primary sources.</p></div>
-        <div className="rounded-xl bg-white/[.07] p-3"><strong className="block text-[#F5D98E]">Thursday · Review</strong><p className="mt-1 leading-5 text-[#D0D8E7]">Fact-check, add NYC value, review legal boundaries and publish only when ready.</p></div>
+    <section className="rounded-2xl border border-[var(--hairline)] bg-[#14254A] p-5 text-white shadow-sm" aria-labelledby="automation-title">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/10 text-[#E4C473]"><Bot className="size-5" aria-hidden /></span>
+        <div className="min-w-0"><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[#AAB6CD]">Supervised automation</p><h2 id="automation-title" className="font-[family-name:var(--font-title)] text-xl font-semibold">Research-to-draft engine</h2></div>
       </div>
-      <p className="mt-4 text-xs leading-5 text-[#AAB6CD]">Reminder email: Monday and Thursday mornings to gunlicensenyc@gmail.com.</p>
+      <p className="mt-3 text-xs leading-5 text-[#D0D8E7]">Twice a week the system reads approved government sources, chooses a useful non-duplicate topic, writes the article, fills its SEO fields and sends it here for your approval.</p>
+      <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-white/[.07] p-3"><dt className="text-[#AAB6CD]">Current status</dt><dd className="mt-1 font-semibold text-[#F5D98E]">{statusLabel}</dd></div>
+        <div className="rounded-xl bg-white/[.07] p-3"><dt className="text-[#AAB6CD]">Approved sources</dt><dd className="mt-1 font-semibold text-white">{activeSources.length}</dd></div>
+        <div className="rounded-xl bg-white/[.07] p-3"><dt className="text-[#AAB6CD]">Waiting on you</dt><dd className="mt-1 font-semibold text-white">{`${data.pendingDrafts} ${data.pendingDrafts === 1 ? "draft" : "drafts"}`}</dd></div>
+        <div className="rounded-xl bg-white/[.07] p-3"><dt className="text-[#AAB6CD]">Last run</dt><dd className="mt-1 font-semibold text-white">{formatTimestamp(lastRun?.started_at)}</dd></div>
+      </dl>
+      {lastRun?.skip_reason || lastRun?.error_message ? <p className="mt-3 rounded-lg bg-white/[.08] px-3 py-2 text-[11px] leading-5 text-[#F5D98E]">{lastRun.skip_reason || lastRun.error_message}</p> : null}
+      {sourceProblems.length ? <p className="mt-3 text-[11px] leading-5 text-[#FFCFCC]">{sourceProblems.length} source{sourceProblems.length === 1 ? "" : "s"} could not be read yet. The other approved sources remain available.</p> : null}
+      <form action={runEditorialAutomationNow} className="mt-4"><AutomationRunButton /></form>
+      <Link href="/admin/seo/automation" className="mt-3 inline-flex min-h-10 w-full items-center justify-center text-xs font-semibold text-[#F5D98E] underline underline-offset-4">View sources and run history</Link>
+      <p className="mt-3 text-[11px] leading-5 text-[#AAB6CD]">Nothing publishes automatically. The engine pauses at six pending drafts so quality never turns into volume for volume&apos;s sake.</p>
     </section>
   )
 }
@@ -228,7 +263,7 @@ export function SeoWorkspace({ data, view, notice, error }: { data: SeoDeskData;
 
         <aside className="space-y-5">
           <AddOpportunity />
-          <RhythmCard />
+          <AutomationCard data={data} />
           <LibraryCard data={data} />
           <section className="rounded-2xl border border-[#D9B25F]/35 bg-[#FFF8E7] p-5 text-[#5D430B]" aria-labelledby="guardrail-title"><div className="flex items-center gap-2"><ShieldCheck className="size-5" aria-hidden /><h2 id="guardrail-title" className="font-semibold">Publication guardrail</h2></div><ul className="mt-3 space-y-2 text-xs leading-5"><li>Use primary government sources for licensing rules.</li><li>Never copy or lightly rewrite a news article.</li><li>No legal advice, invented citations or outcome promises.</li><li>The applicant always controls and submits the NYPD application.</li></ul></section>
         </aside>

@@ -26,6 +26,14 @@ export type SeoKind = (typeof SEO_KINDS)[number]
 export type SeoStatus = (typeof SEO_STATUSES)[number]
 export type SeoItem = Database["public"]["Tables"]["seo_content_items"]["Row"]
 export type BlogArticleSummary = Pick<Database["public"]["Tables"]["blog_posts"]["Row"], "id" | "seo_content_item_id" | "status" | "title" | "slug" | "updated_at">
+export type EditorialSourceSummary = Pick<
+  Database["public"]["Tables"]["editorial_sources"]["Row"],
+  "id" | "name" | "organization" | "url" | "source_type" | "active" | "priority" | "last_success_at" | "last_error"
+>
+export type EditorialRunSummary = Pick<
+  Database["public"]["Tables"]["editorial_runs"]["Row"],
+  "id" | "trigger" | "status" | "model" | "source_count" | "draft_count" | "article_id" | "skip_reason" | "error_message" | "started_at" | "completed_at"
+>
 
 export const SEO_KIND_LABELS: Record<SeoKind, string> = {
   applicant_question: "Applicant question",
@@ -57,6 +65,9 @@ export interface SeoDeskData {
   articles: BlogArticleSummary[]
   publishedPosts: PostMeta[]
   stalePosts: PostMeta[]
+  sources: EditorialSourceSummary[]
+  runs: EditorialRunSummary[]
+  pendingDrafts: number
   counts: Record<SeoStatus, number>
   error: string | null
 }
@@ -69,9 +80,16 @@ function isOlderThan(post: PostMeta, days: number, now: Date) {
 export async function loadSeoDesk(): Promise<SeoDeskData> {
   const db = await createClient()
   const posts = await getAllPosts()
-  const [{ data, error }, { data: articles, error: articleError }] = await Promise.all([
+  const [
+    { data, error },
+    { data: articles, error: articleError },
+    { data: sources, error: sourceError },
+    { data: runs, error: runError },
+  ] = await Promise.all([
     db.from("seo_content_items").select("*").order("priority", { ascending: true }).order("due_on", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false }),
     db.from("blog_posts").select("id,seo_content_item_id,status,title,slug,updated_at").order("updated_at", { ascending: false }),
+    db.from("editorial_sources").select("id,name,organization,url,source_type,active,priority,last_success_at,last_error").order("priority", { ascending: true }).order("name", { ascending: true }),
+    db.from("editorial_runs").select("id,trigger,status,model,source_count,draft_count,article_id,skip_reason,error_message,started_at,completed_at").order("started_at", { ascending: false }).limit(12),
   ])
 
   const items = data ?? []
@@ -84,7 +102,10 @@ export async function loadSeoDesk(): Promise<SeoDeskData> {
     articles: articles ?? [],
     publishedPosts: posts,
     stalePosts: posts.filter((post) => isOlderThan(post, 150, new Date())),
+    sources: sources ?? [],
+    runs: runs ?? [],
+    pendingDrafts: (articles ?? []).filter((article) => article.status === "draft" || article.status === "review").length,
     counts,
-    error: error || articleError ? "The editorial workspace could not be loaded completely." : null,
+    error: error || articleError || sourceError || runError ? "The editorial workspace could not be loaded completely." : null,
   }
 }

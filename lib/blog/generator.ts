@@ -1,10 +1,11 @@
 import "server-only"
 
-import Anthropic from "@anthropic-ai/sdk"
-import { AI_MODEL } from "@/lib/ai"
+import { generateText } from "ai"
 import { markdownSafetyIssues } from "@/lib/blog/validation"
 
-export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED === "true" && Boolean(process.env.ANTHROPIC_API_KEY)
+export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
+
+const BLOG_MODEL = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-5.4-mini"
 
 export interface ArticleGenerationInput {
   title: string
@@ -90,29 +91,22 @@ export async function generateArticleDraft(input: ArticleGenerationInput) {
     return { content: createGuidedStarter(input), usedAi: false as const }
   }
 
-  const client = new Anthropic()
-  const message = await client.messages.create({
-    model: AI_MODEL,
-    max_tokens: 4500,
-    thinking: { type: "adaptive" },
-    system: SYSTEM_PROMPT,
-    messages: [{
-      role: "user",
-      content: [
+  const result = await generateText({
+    model: BLOG_MODEL,
+    maxOutputTokens: 4500,
+    temperature: 0,
+    instructions: SYSTEM_PROMPT,
+    prompt: [
         `Working title: ${input.title}`,
         `Article type: ${input.kind}`,
         `Target search question: ${input.targetQuery || "Not provided"}`,
         `Editorial brief:\n${input.brief || "Not provided"}`,
         `Editor-provided source notes:\n${input.sourceNotes || "No source notes provided. Use TODO: verify for unsupported claims."}`,
         `Allowed source URLs:\n${input.sourceUrls.join("\n") || "None supplied"}`,
-      ].join("\n\n"),
-    }],
+    ].join("\n\n"),
   })
 
-  const content = message.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
+  const content = result.text
     .replace(/^```(?:markdown|md)?\s*/i, "")
     .replace(/\s*```$/, "")
     .trim()

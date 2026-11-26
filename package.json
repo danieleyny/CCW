@@ -22,6 +22,7 @@
     "@stripe/stripe-js": "^10.2.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.108.0",
+    "ai": "7.0.183",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
