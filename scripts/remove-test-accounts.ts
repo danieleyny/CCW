@@ -114,11 +114,44 @@ async function main() {
     : { data: [], error: null }
   if (casesError) throw casesError
 
+  const caseIds = (cases ?? []).map((kase) => kase.id)
+  const { data: paidRows, error: paidError } = caseIds.length
+    ? await admin
+        .from("payments")
+        .select(
+          "case_id, amount_cents, status, stripe_payment_intent, stripe_invoice_id, stripe_session_id",
+        )
+        .in("case_id", caseIds)
+        .eq("status", "paid")
+        .gt("amount_cents", 0)
+    : { data: [], error: null }
+  if (paidError) throw paidError
+  const protectedPayments = (paidRows ?? []).filter(
+    (row) => row.stripe_payment_intent || row.stripe_invoice_id || row.stripe_session_id,
+  )
+  if (protectedPayments.length) {
+    throw new Error(
+      `Refusing to remove ${protectedPayments.length} case(s) tied to real Stripe money`,
+    )
+  }
+
+  const { data: promoClaims, error: promoError } = clientIds.length
+    ? await admin.from("promo_code_claims").select("*").in("client_id", clientIds)
+    : { data: [], error: null }
+  if (promoError) throw promoError
+  const { data: marketingContacts, error: marketingError } = await admin
+    .from("marketing_contacts")
+    .select("*")
+    .in("email", emails)
+  if (marketingError) throw marketingError
+
   const backup: Record<string, unknown> = {
     created_at: new Date().toISOString(),
     target_emails: emails,
     auth_users: users.map((user) => ({ id: user.id, email: user.email, created_at: user.created_at, user_metadata: user.user_metadata })),
     clients,
+    promo_code_claims: promoClaims ?? [],
+    marketing_contacts: marketingContacts ?? [],
     cases: [],
   }
   for (const kase of cases ?? []) {
@@ -142,6 +175,24 @@ async function main() {
       const { error } = await admin.storage.from("documents").remove(storagePaths)
       if (error) throw error
     }
+  }
+
+  // Promo claims intentionally restrict case/client deletion. They and the
+  // opted-in marketing row are part of the explicitly confirmed test identity,
+  // so back them up above and remove them before the client cascade.
+  if (clientIds.length) {
+    const { error } = await admin.from("promo_code_claims").delete().in("client_id", clientIds)
+    if (error) throw error
+  }
+  if (marketingContacts?.length) {
+    const { error } = await admin
+      .from("marketing_contacts")
+      .delete()
+      .in(
+        "id",
+        marketingContacts.map((contact) => contact.id),
+      )
+    if (error) throw error
   }
 
   if (clientIds.length) {
