@@ -6,6 +6,11 @@ import { getPublicInstructors } from "@/lib/public-data"
 import { publishedPartners } from "@/config/partners"
 import { I18N_ES_ENABLED, TRANSLATED_PATHS } from "@/config/i18n"
 
+// Database-authored articles can be published between deployments. Next.js
+// caches sitemap.ts by default, so force request-time generation to keep every
+// newly published article discoverable without waiting for another build.
+export const dynamic = "force-dynamic"
+
 /**
  * Sitemap. Always emitted against the CANONICAL origin (never the deploy host),
  * and derived entirely from the route registry (lib/marketing-routes) plus the

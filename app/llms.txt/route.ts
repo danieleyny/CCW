@@ -12,7 +12,7 @@ import { partnerPath, partnershipStatement, publishedPartners } from "@/config/p
  * definition, the NAP, and the disclaimer are pulled from config/brand.ts rather
  * than retyped, because an inconsistent entity is a weaker entity.
  */
-export const dynamic = "force-static"
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   const posts = await getAllPosts()
@@ -68,7 +68,7 @@ ${brand.disclaimer}
   return new Response(body, {
     headers: {
       "content-type": "text/plain; charset=utf-8",
-      "cache-control": "public, max-age=3600",
+      "cache-control": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600",
     },
   })
 }

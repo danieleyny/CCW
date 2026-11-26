@@ -8,7 +8,7 @@ import { requireAdmin } from "@/lib/auth"
 import { getRepositoryPostSlugs } from "@/lib/blog"
 import { generateArticleDraft } from "@/lib/blog/generator"
 import {
-  articleWordCount,
+  ARTICLE_QUALITY_MIN_SCORE,
   markdownSafetyIssues,
   parseSourceUrls,
   publicationReadiness,
@@ -28,8 +28,8 @@ const nullableText = (max: number) => z.preprocess(
 
 const createSchema = z.object({
   seoItemId: z.preprocess((value) => typeof value === "string" && value ? value : null, uuid.nullable()),
-  title: z.string().trim().min(5).max(180),
-  description: z.string().trim().max(180),
+  title: z.string().trim().min(25).max(75),
+  description: z.string().trim().min(70).max(160),
   kind: z.enum(["applicant_question", "official_update", "guide", "article_refresh", "news_analysis"]),
   targetQuery: nullableText(180),
   summary: nullableText(4000),
@@ -68,6 +68,45 @@ function sourceArray(value: Json): string[] {
 
 function sameStrings(left: string[], right: string[]) {
   return JSON.stringify([...left].sort()) === JSON.stringify([...right].sort())
+}
+
+function automationSourceHashes(post: BlogPost) {
+  const context = post.automation_context
+  if (!context || Array.isArray(context) || typeof context !== "object") return []
+  const values = context.source_hashes
+  if (!Array.isArray(values)) return []
+  return values.flatMap((entry) => {
+    if (!entry || Array.isArray(entry) || typeof entry !== "object") return []
+    const url = entry.url
+    const sha256 = entry.sha256
+    return typeof url === "string" && typeof sha256 === "string" ? [{ url, sha256 }] : []
+  })
+}
+
+async function evidenceFreshnessProblems(post: BlogPost) {
+  const expected = automationSourceHashes(post)
+  if (!expected.length) return []
+  const db = await createClient()
+  const { data, error } = await db
+    .from("editorial_sources")
+    .select("url,content_hash,last_success_at")
+    .in("url", expected.map((source) => source.url))
+  if (error) return ["The official-source freshness check could not be completed."]
+  const current = new Map((data ?? []).map((source) => [source.url, source]))
+  const problems: string[] = []
+  const staleBefore = Date.now() - 14 * 86_400_000
+  for (const source of expected) {
+    const live = current.get(source.url)
+    if (!live?.content_hash || live.content_hash !== source.sha256) {
+      problems.push("An official source changed after this draft was generated. Regenerate the article before review.")
+      break
+    }
+    if (!live.last_success_at || new Date(live.last_success_at).getTime() < staleBefore) {
+      problems.push("The official evidence snapshot is more than 14 days old. Run editorial automation again before review.")
+      break
+    }
+  }
+  return problems
 }
 
 function parseEditor(formData: FormData) {
@@ -169,6 +208,12 @@ export async function createArticle(formData: FormData) {
     sources = parseSourceUrls(parsed.data.sourceUrls)
   } catch (error) {
     redirect(`/admin/seo/new?error=${encodeURIComponent(error instanceof Error ? error.message : "Check the source URLs.")}`)
+  }
+  if (!sources.length) {
+    redirect(`/admin/seo/new?error=${encodeURIComponent("Add at least one primary official source before generating the article.")}`)
+  }
+  if ((parsed.data.sourceNotes?.length ?? 0) < 80) {
+    redirect(`/admin/seo/new?error=${encodeURIComponent("Add source notes explaining what the official sources establish.")}`)
   }
 
   const db = await createClient()
@@ -353,14 +398,22 @@ export async function generateArticle(formData: FormData) {
 }
 
 function reviewProblems(post: BlogPost) {
-  const issues = markdownSafetyIssues(post.content_markdown)
-  if (articleWordCount(post.content_markdown) < 500) issues.push("Write at least 500 words before review.")
-  if (post.description.trim().length < 50) issues.push("Add a search description of at least 50 characters.")
-  if (!sourceArray(post.source_urls).length) issues.push("Add at least one secure source URL.")
-  if (/\b(?:TODO|TBD)\b|\[(?:add|insert|complete|verify)[^\]]*\]/i.test(post.content_markdown)) {
-    issues.push("Resolve every draft placeholder before review.")
+  const readiness = publicationReadiness({
+    title: post.title,
+    slug: post.slug,
+    description: post.description,
+    content: post.content_markdown,
+    sourceUrls: sourceArray(post.source_urls),
+    sourceNotes: post.source_notes,
+    factCheckedAt: "draft-check-only",
+    needsLegalReview: false,
+  })
+  const failedBlocking = readiness.checks.find((check) => check.blocking && !check.passed)
+  if (failedBlocking) return [failedBlocking.label]
+  if (readiness.score < ARTICLE_QUALITY_MIN_SCORE) {
+    return [`Raise the automated article quality score to at least ${ARTICLE_QUALITY_MIN_SCORE}.`]
   }
-  return issues
+  return []
 }
 
 export async function submitArticleForReview(formData: FormData) {
@@ -369,7 +422,7 @@ export async function submitArticleForReview(formData: FormData) {
   if (!parsed.success) redirect("/admin/seo?error=Invalid%20article")
   const current = await getArticle(parsed.data)
   if (!current) redirect("/admin/seo?error=Article%20not%20found")
-  const problems = reviewProblems(current)
+  const problems = [...reviewProblems(current), ...await evidenceFreshnessProblems(current)]
   if (problems.length) redirect(articleUrl(current.id, "error", problems[0]))
   const db = await createClient()
   const { data: saved, error } = await db.from("blog_posts").update({ status: "review", updated_by: auth.userId }).eq("id", current.id).select("*").single()
@@ -380,12 +433,12 @@ export async function submitArticleForReview(formData: FormData) {
   redirect(articleUrl(current.id, "notice", "Article submitted for human review."))
 }
 
-async function recordReview(id: string, kind: "fact" | "legal", userId: string) {
+async function recordReview(id: string, kind: "fact" | "legal", userId: string, certifications: string[]) {
   const current = await getArticle(id)
   if (!current) redirect("/admin/seo?error=Article%20not%20found")
   if (current.status === "draft") redirect(articleUrl(current.id, "error", "Submit the saved draft for review first."))
   if (kind === "legal" && !current.needs_legal_review) redirect(articleUrl(current.id, "error", "This article is not marked for legal-boundary review."))
-  const problems = reviewProblems(current)
+  const problems = [...reviewProblems(current), ...await evidenceFreshnessProblems(current)]
   if (problems.length) redirect(articleUrl(current.id, "error", problems[0]))
   const now = new Date().toISOString()
   const update = kind === "fact"
@@ -398,7 +451,7 @@ async function recordReview(id: string, kind: "fact" | "legal", userId: string) 
   const { data: saved, error } = await db.from("blog_posts").update({ ...update, status: willBeApproved ? "approved" : "review", updated_by: userId }).eq("id", current.id).select("*").single()
   if (error || !saved) redirect(articleUrl(current.id, "error", "The review could not be recorded."))
   await syncSeoItem(saved, willBeApproved ? "approved" : "review")
-  await logActivity({ action: `blog.${kind}_review_recorded`, entity: "blog_post", entityId: current.id, detail: { reviewed_at: now } })
+  await logActivity({ action: `blog.${kind}_review_recorded`, entity: "blog_post", entityId: current.id, detail: { reviewed_at: now, certifications } })
   revalidatePath(`/admin/seo/articles/${current.id}`)
   redirect(articleUrl(current.id, "notice", kind === "fact" ? "Human fact-check recorded." : "Legal-boundary review recorded."))
 }
@@ -407,14 +460,34 @@ export async function recordArticleFactCheck(formData: FormData) {
   const auth = await requireAdmin()
   const parsed = uuid.safeParse(value(formData, "id"))
   if (!parsed.success) redirect("/admin/seo?error=Invalid%20article")
-  return recordReview(parsed.data, "fact", auth.userId)
+  const certifications = z.object({
+    factSources: z.literal("on"),
+    factLinks: z.literal("on"),
+    factClaims: z.literal("on"),
+  }).safeParse({
+    factSources: value(formData, "factSources"),
+    factLinks: value(formData, "factLinks"),
+    factClaims: value(formData, "factClaims"),
+  })
+  if (!certifications.success) redirect(articleUrl(parsed.data, "error", "Complete all three fact-check confirmations."))
+  return recordReview(parsed.data, "fact", auth.userId, ["sources_compared", "links_opened", "claims_supported"])
 }
 
 export async function recordArticleLegalReview(formData: FormData) {
   const auth = await requireAdmin()
   const parsed = uuid.safeParse(value(formData, "id"))
   if (!parsed.success) redirect("/admin/seo?error=Invalid%20article")
-  return recordReview(parsed.data, "legal", auth.userId)
+  const certifications = z.object({
+    legalAdvice: z.literal("on"),
+    legalPromises: z.literal("on"),
+    legalCandor: z.literal("on"),
+  }).safeParse({
+    legalAdvice: value(formData, "legalAdvice"),
+    legalPromises: value(formData, "legalPromises"),
+    legalCandor: value(formData, "legalCandor"),
+  })
+  if (!certifications.success) redirect(articleUrl(parsed.data, "error", "Complete all three legal-boundary confirmations."))
+  return recordReview(parsed.data, "legal", auth.userId, ["no_legal_advice", "no_promises_or_representation", "candor_preserved"])
 }
 
 export async function publishArticle(formData: FormData) {
@@ -423,12 +496,15 @@ export async function publishArticle(formData: FormData) {
   if (!parsed.success) redirect("/admin/seo?error=Invalid%20article")
   const current = await getArticle(parsed.data)
   if (!current) redirect("/admin/seo?error=Article%20not%20found")
+  const freshnessProblems = await evidenceFreshnessProblems(current)
+  if (freshnessProblems.length) redirect(articleUrl(current.id, "error", freshnessProblems[0]))
   const readiness = publicationReadiness({
     title: current.title,
     slug: current.slug,
     description: current.description,
     content: current.content_markdown,
     sourceUrls: sourceArray(current.source_urls),
+    sourceNotes: current.source_notes,
     factCheckedAt: current.fact_checked_at,
     needsLegalReview: current.needs_legal_review,
     legalReviewedAt: current.legal_reviewed_at,

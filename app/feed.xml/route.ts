@@ -7,7 +7,7 @@ import { CANONICAL_ORIGIN } from "@/lib/seo"
  * host). The feed combines repository guides with human-approved articles from
  * the admin studio; publishing revalidates this route immediately.
  */
-export const dynamic = "force-static"
+export const dynamic = "force-dynamic"
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
@@ -45,7 +45,7 @@ ${items}
   return new Response(xml, {
     headers: {
       "content-type": "application/rss+xml; charset=utf-8",
-      "cache-control": "public, max-age=3600",
+      "cache-control": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600",
     },
   })
 }

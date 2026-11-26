@@ -37,7 +37,7 @@ describe("article studio guardrails", () => {
       expect.stringMatching(/placeholders/),
     ]))
 
-    const complete = Array.from({ length: 710 }, (_, index) => `supported${index}`).join(" ")
+    const complete = `## Direct answer\n\n${Array.from({ length: 710 }, (_, index) => `supported${index}`).join(" ")}\n\n## What to prepare\n\nUse the official instructions.\n\n## Sources\n\n- [Official source](https://www.nyc.gov/example)`
     expect(generatedDraftIssues(complete)).toEqual([])
   })
 
@@ -47,19 +47,53 @@ describe("article studio guardrails", () => {
   })
 
   it("requires both human checkpoints before publication", () => {
-    const content = Array.from({ length: 510 }, (_, index) => `word${index}`).join(" ")
+    const content = [
+      "A direct, useful answer for an NYC applicant.",
+      "",
+      "## What the official instructions say",
+      "",
+      `${Array.from({ length: 710 }, (_, index) => `word${index}`).join(" ")} [NYPD guidance](https://www.nyc.gov/example).`,
+      "",
+      "## What to prepare",
+      "",
+      "Use the [requirements guide](https://gunlicensenyc.com/requirements) and [document checklist](https://gunlicensenyc.com/checklist) to organize the records.",
+      "",
+      "## Sources",
+      "",
+      "- [NYPD guidance](https://www.nyc.gov/example)",
+    ].join("\n")
     const base = {
       title: "A specific NYC licensing guide",
       slug: "specific-nyc-licensing-guide",
       description: "A clear and properly sized search description for this verified licensing guide.",
       content,
       sourceUrls: ["https://www.nyc.gov/example"],
+      sourceNotes: "https://www.nyc.gov/example\n- This official page supports the application-process statements used in the draft.",
       needsLegalReview: true,
     }
     expect(publicationReadiness(base).ready).toBe(false)
     expect(publicationReadiness({ ...base, content: `${base.content} TODO: finish` }).checks.find((check) => check.key === "placeholders")?.passed).toBe(false)
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25" }).ready).toBe(false)
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25", legalReviewedAt: "2026-11-25" }).ready).toBe(true)
+    expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25", legalReviewedAt: "2026-11-25" }).score).toBeGreaterThanOrEqual(90)
+  })
+
+  it("blocks structurally weak copy even when it is long enough", () => {
+    const content = Array.from({ length: 750 }, (_, index) => `word${index}`).join(" ")
+    const report = publicationReadiness({
+      title: "A specific NYC licensing guide",
+      slug: "specific-nyc-licensing-guide",
+      description: "A clear and properly sized search description for this verified licensing guide.",
+      content,
+      sourceUrls: ["https://www.nyc.gov/example"],
+      sourceNotes: "https://www.nyc.gov/example\n- This official page supports the statements used in the draft.",
+      factCheckedAt: "2026-11-25",
+      needsLegalReview: true,
+      legalReviewedAt: "2026-11-25",
+    })
+    expect(report.ready).toBe(false)
+    expect(report.checks.find((check) => check.key === "h2_structure")?.passed).toBe(false)
+    expect(report.checks.find((check) => check.key === "sources_cited")?.passed).toBe(false)
   })
 })
 

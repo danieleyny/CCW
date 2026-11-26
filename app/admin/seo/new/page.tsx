@@ -49,10 +49,10 @@ export default async function NewArticlePage({ searchParams }: { searchParams: S
           <div className="flex items-center gap-3 border-b border-[var(--hairline)] pb-5"><span className="grid size-10 place-items-center rounded-xl bg-[var(--signal-dim)] text-[var(--signal)]"><FileText className="size-5" aria-hidden /></span><div><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[var(--text-low)]">Step one</p><h2 id="article-brief-title" className="font-[family-name:var(--font-title)] text-2xl font-semibold">Describe the article</h2></div></div>
 
           <label className="block text-sm font-semibold text-[var(--text-hi)]">Working title
-            <input name="title" required minLength={5} maxLength={180} defaultValue={item?.title ?? ""} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-base" placeholder="How to show proof of residence for an NYC handgun license" />
+            <input name="title" required minLength={25} maxLength={75} defaultValue={item?.title ?? ""} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-base" placeholder="How to show proof of residence for an NYC handgun license" />
           </label>
           <label className="block text-sm font-semibold text-[var(--text-hi)]">Search description <span className="font-normal text-[var(--text-low)]">(you can refine it later)</span>
-            <textarea name="description" maxLength={180} rows={2} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm" placeholder="A factual 50–160 character summary shown in search results." />
+            <textarea name="description" required minLength={70} maxLength={160} rows={2} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm" placeholder="A factual 70–160 character summary shown in search results." />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-semibold text-[var(--text-hi)]">Article type
@@ -69,7 +69,7 @@ export default async function NewArticlePage({ searchParams }: { searchParams: S
             <textarea name="summary" maxLength={4000} rows={6} defaultValue={item?.summary ?? ""} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6" placeholder="What should the reader understand? What practical, original NYC value should this article add?" />
           </label>
           <label className="block text-sm font-semibold text-[var(--text-hi)]">Source notes <span className="font-normal text-[var(--text-low)]">(facts the draft may use)</span>
-            <textarea name="sourceNotes" maxLength={20000} rows={7} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6" placeholder="Paste your verified notes here. Include the rule, date, agency and which source supports it. Do not paste a copyrighted article." />
+            <textarea name="sourceNotes" required minLength={80} maxLength={20000} rows={7} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6" placeholder="Paste your verified notes here. Include each exact source URL followed by the facts it supports. Do not paste a copyrighted article." />
           </label>
         </section>
 
@@ -77,7 +77,7 @@ export default async function NewArticlePage({ searchParams }: { searchParams: S
           <section className="rounded-2xl border border-[var(--hairline)] bg-white p-5 shadow-sm" aria-labelledby="sources-title">
             <div className="flex items-center gap-3"><BookOpenText className="size-5 text-[var(--signal)]" aria-hidden /><h2 id="sources-title" className="font-semibold">Sources</h2></div>
             <p className="mt-2 text-xs leading-5 text-[var(--text-low)]">One secure URL per line. Use a primary government source for rules; a news link may provide context but is not legal authority.</p>
-            <textarea name="sourceUrls" rows={7} defaultValue={sourceText(item?.source_urls)} className="mt-3 w-full rounded-xl border border-[var(--hairline)] bg-white px-3 py-3 font-mono text-xs leading-5" placeholder={"https://licensing.nypdonline.org/...\nhttps://www.nyc.gov/..."} />
+            <textarea name="sourceUrls" required rows={7} defaultValue={sourceText(item?.source_urls)} className="mt-3 w-full rounded-xl border border-[var(--hairline)] bg-white px-3 py-3 font-mono text-xs leading-5" placeholder={"https://licensing.nypdonline.org/...\nhttps://www.nyc.gov/..."} />
           </section>
 
           <label className="flex items-start gap-3 rounded-2xl border border-[#D9B25F]/35 bg-[#FFF8E7] p-4 text-sm leading-6 text-[#5D430B]"><input name="needsLegalReview" type="checkbox" defaultChecked={item?.needs_legal_review ?? true} className="mt-1 size-4 accent-[#14254A]" /><span><strong className="flex items-center gap-2"><ShieldCheck className="size-4" aria-hidden />Require legal-boundary review</strong><span className="mt-1 block text-xs leading-5">Keep this on for licensing rules, legal claims, disclosures and news analysis.</span></span></label>

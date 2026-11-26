@@ -20,7 +20,6 @@ import {
   RotateCcw,
   Save,
   Send,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react"
 import {
@@ -33,7 +32,7 @@ import {
   unpublishArticle,
 } from "@/app/admin/seo/articles/actions"
 import type { BlogPostRow, SeoContentRow } from "@/lib/admin/articles"
-import { articleWordCount, publicationReadiness } from "@/lib/blog/validation"
+import { ARTICLE_QUALITY_MIN_SCORE, articleWordCount, publicationReadiness } from "@/lib/blog/validation"
 import { cn } from "@/lib/utils"
 
 const STATUS_LABEL: Record<string, string> = {
@@ -96,9 +95,9 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
   const published = article.status === "published"
   const words = articleWordCount(content)
   const sourceUrls = useMemo(() => sources.split(/[\n,]/).map((value) => value.trim()).filter((value) => value.startsWith("https://")), [sources])
-  const readiness = publicationReadiness({ title, slug, description, content, sourceUrls, factCheckedAt: article.fact_checked_at, needsLegalReview, legalReviewedAt: article.legal_reviewed_at })
+  const readiness = publicationReadiness({ title, slug, description, content, sourceUrls, sourceNotes, factCheckedAt: article.fact_checked_at, needsLegalReview, legalReviewedAt: article.legal_reviewed_at })
   const draftChecks = readiness.checks.filter((check) => !["fact_check", "legal_review"].includes(check.key))
-  const draftReady = draftChecks.every((check) => check.passed)
+  const draftReady = draftChecks.filter((check) => check.blocking).every((check) => check.passed) && readiness.score >= ARTICLE_QUALITY_MIN_SCORE
   const dirty = title !== article.title || slug !== article.slug || description !== article.description || tag !== article.tag || targetQuery !== (article.target_query ?? "") || content !== article.content_markdown || sources !== sourceText(article.source_urls) || sourceNotes !== (article.source_notes ?? "") || needsLegalReview !== article.needs_legal_review
 
   useEffect(() => {
@@ -151,7 +150,7 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
             <div className="mt-6 space-y-5">
               <div>
                 <div className="flex items-center justify-between gap-3"><label htmlFor="article-title" className="text-sm font-semibold text-[var(--text-hi)]">Article title</label><CopyValueButton value={title} label="article title" /></div>
-                <input id="article-title" name="title" required minLength={5} maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-lg disabled:bg-[var(--surface-2)]" />
+                <input id="article-title" name="title" required minLength={10} maxLength={75} value={title} onChange={(event) => setTitle(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-lg disabled:bg-[var(--surface-2)]" />
               </div>
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
                 <div>
@@ -161,8 +160,8 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
                 <label className="block text-sm font-semibold text-[var(--text-hi)]">Category<select name="tag" value={tag} onChange={(event) => setTag(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-sm disabled:bg-[var(--surface-2)]"><option>Guide</option><option>Requirements</option><option>Documents</option><option>Process update</option><option>News analysis</option><option>FAQ</option></select></label>
               </div>
               <div>
-                <div className="flex items-center justify-between gap-3"><label htmlFor="article-description" className="text-sm font-semibold text-[var(--text-hi)]">Search description <span className={cn("ml-2 text-xs font-normal", description.length >= 50 && description.length <= 160 ? "text-[#18794E]" : "text-[var(--text-low)]")}>{description.length}/180</span></label><CopyValueButton value={description} label="search description" /></div>
-                <textarea id="article-description" name="description" maxLength={180} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6 disabled:bg-[var(--surface-2)]" placeholder="A concise, factual description for search results." />
+                <div className="flex items-center justify-between gap-3"><label htmlFor="article-description" className="text-sm font-semibold text-[var(--text-hi)]">Search description <span className={cn("ml-2 text-xs font-normal", description.length >= 70 && description.length <= 160 ? "text-[#18794E]" : "text-[var(--text-low)]")}>{description.length}/160</span></label><CopyValueButton value={description} label="search description" /></div>
+                <textarea id="article-description" name="description" maxLength={160} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} disabled={published} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm leading-6 disabled:bg-[var(--surface-2)]" placeholder="A concise, factual description for search results." />
               </div>
               <div>
                 <div className="flex items-center justify-between gap-3"><label htmlFor="article-target-query" className="text-sm font-semibold text-[var(--text-hi)]">Target search question</label><CopyValueButton value={targetQuery} label="target search question" /></div>
@@ -180,9 +179,9 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
 
         <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
           <section className="rounded-2xl border border-[var(--hairline)] bg-white p-5 shadow-sm" aria-labelledby="publish-checks-title">
-            <div className="flex items-center justify-between gap-3"><div><p className="font-mono text-[9px] uppercase tracking-[.15em] text-[var(--text-low)]">Automatic quality gate</p><h2 id="publish-checks-title" className="mt-1 font-[family-name:var(--font-title)] text-xl font-semibold">Draft quality</h2></div><span className={cn("grid size-10 place-items-center rounded-xl", draftReady ? "bg-[#EAF8F0] text-[#18794E]" : "bg-[#FFF4D8] text-[#8A5B00]")}>{draftReady ? <Check className="size-5" /> : <ShieldCheck className="size-5" />}</span></div>
-            <p className="mt-2 text-[11px] leading-5 text-[var(--text-low)]">The generator must complete every item here. Human approval is recorded separately below.</p>
-            <ul className="mt-4 space-y-2.5">{draftChecks.map((check) => <li key={check.key} className="flex items-start gap-2 text-xs leading-5 text-[var(--text-mid)]">{check.passed ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden /> : <Circle className="mt-0.5 size-4 shrink-0 text-[var(--text-low)]" aria-hidden />}<span>{check.label}</span></li>)}</ul>
+            <div className="flex items-center justify-between gap-3"><div><p className="font-mono text-[9px] uppercase tracking-[.15em] text-[var(--text-low)]">Automatic quality gate</p><h2 id="publish-checks-title" className="mt-1 font-[family-name:var(--font-title)] text-xl font-semibold">Draft quality</h2></div><span className={cn("grid min-w-14 place-items-center rounded-xl px-2 py-2 text-sm font-semibold", draftReady ? "bg-[#EAF8F0] text-[#18794E]" : "bg-[#FFF4D8] text-[#8A5B00]")}>{readiness.score}/100</span></div>
+            <p className="mt-2 text-[11px] leading-5 text-[var(--text-low)]">Publishing requires every essential check and a score of at least {ARTICLE_QUALITY_MIN_SCORE}. Human approval is recorded separately below.</p>
+            <ul className="mt-4 space-y-2.5">{draftChecks.map((check) => <li key={check.key} className="flex items-start gap-2 text-xs leading-5 text-[var(--text-mid)]">{check.passed ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden /> : <Circle className="mt-0.5 size-4 shrink-0 text-[var(--text-low)]" aria-hidden />}<span>{check.label}{!check.blocking ? <span className="ml-1 text-[10px] text-[var(--text-low)]">Recommended</span> : null}</span></li>)}</ul>
             {dirty ? <p className="mt-4 rounded-lg bg-[#FFF4D8] px-3 py-2 text-xs leading-5 text-[#7B5200]">Save your latest changes before using the review or publish controls.</p> : null}
           </section>
 
@@ -190,8 +189,28 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
             <div className="flex items-center gap-2"><FileCheck2 className="size-5 text-[var(--signal)]" aria-hidden /><h2 id="workflow-title" className="font-semibold">Required human approval</h2></div>
             <p className="mt-2 text-[11px] leading-5 text-[var(--text-low)]">Automation cannot truthfully certify its own facts or legal boundaries. A person records these final checks.</p>
             <div className="mt-4 space-y-3">
-              <div className="rounded-xl bg-[var(--surface-2)] p-3"><p className="text-xs font-semibold text-[var(--text-hi)]">Human fact-check</p><p className="mt-1 text-[11px] text-[var(--text-low)]">{timestamp(article.fact_checked_at)}</p>{!article.fact_checked_at && !published ? <form action={recordArticleFactCheck} className="mt-3"><input type="hidden" name="id" value={article.id} /><button disabled={dirty || article.status === "draft"} className="min-h-10 w-full rounded-lg border border-[var(--hairline)] bg-white px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-45">Record fact-check</button></form> : null}</div>
-              {needsLegalReview ? <div className="rounded-xl bg-[#FFF8E7] p-3 text-[#5D430B]"><p className="text-xs font-semibold">Legal-boundary review</p><p className="mt-1 text-[11px] opacity-75">{timestamp(article.legal_reviewed_at)}</p>{!article.legal_reviewed_at && !published ? <form action={recordArticleLegalReview} className="mt-3"><input type="hidden" name="id" value={article.id} /><button disabled={dirty || article.status === "draft"} className="min-h-10 w-full rounded-lg border border-[#D9B25F]/40 bg-white px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-45">Record legal review</button></form> : null}</div> : null}
+              <div className="rounded-xl bg-[var(--surface-2)] p-3">
+                <p className="text-xs font-semibold text-[var(--text-hi)]">Human fact-check</p>
+                <p className="mt-1 text-[11px] text-[var(--text-low)]">{timestamp(article.fact_checked_at)}</p>
+                {!article.fact_checked_at && !published ? <form action={recordArticleFactCheck} className="mt-3 space-y-2.5">
+                  <input type="hidden" name="id" value={article.id} />
+                  <label className="flex items-start gap-2 text-[11px] leading-4 text-[var(--text-mid)]"><input required type="checkbox" name="factSources" className="mt-0.5 size-3.5 accent-[#14254A]" />I compared each factual claim with the evidence notes.</label>
+                  <label className="flex items-start gap-2 text-[11px] leading-4 text-[var(--text-mid)]"><input required type="checkbox" name="factLinks" className="mt-0.5 size-3.5 accent-[#14254A]" />I opened every official citation and confirmed it works.</label>
+                  <label className="flex items-start gap-2 text-[11px] leading-4 text-[var(--text-mid)]"><input required type="checkbox" name="factClaims" className="mt-0.5 size-3.5 accent-[#14254A]" />I removed or corrected every unsupported statement.</label>
+                  <button disabled={dirty || article.status === "draft"} className="min-h-10 w-full rounded-lg border border-[var(--hairline)] bg-white px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-45">Record fact-check</button>
+                </form> : null}
+              </div>
+              {needsLegalReview ? <div className="rounded-xl bg-[#FFF8E7] p-3 text-[#5D430B]">
+                <p className="text-xs font-semibold">Legal-boundary review</p>
+                <p className="mt-1 text-[11px] opacity-75">{timestamp(article.legal_reviewed_at)}</p>
+                {!article.legal_reviewed_at && !published ? <form action={recordArticleLegalReview} className="mt-3 space-y-2.5">
+                  <input type="hidden" name="id" value={article.id} />
+                  <label className="flex items-start gap-2 text-[11px] leading-4"><input required type="checkbox" name="legalAdvice" className="mt-0.5 size-3.5 accent-[#14254A]" />No individualized legal advice or outcome prediction appears.</label>
+                  <label className="flex items-start gap-2 text-[11px] leading-4"><input required type="checkbox" name="legalPromises" className="mt-0.5 size-3.5 accent-[#14254A]" />No representation, filing, timing or endorsement claim appears.</label>
+                  <label className="flex items-start gap-2 text-[11px] leading-4"><input required type="checkbox" name="legalCandor" className="mt-0.5 size-3.5 accent-[#14254A]" />Nothing suggests omitting or minimizing a required disclosure.</label>
+                  <button disabled={dirty || article.status === "draft"} className="min-h-10 w-full rounded-lg border border-[#D9B25F]/40 bg-white px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-45">Record legal review</button>
+                </form> : null}
+              </div> : null}
             </div>
             {!published && article.status === "draft" ? <form action={submitArticleForReview} className="mt-4"><input type="hidden" name="id" value={article.id} /><button disabled={dirty} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#14254A] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"><Send className="size-4" aria-hidden />Submit for review</button></form> : null}
             {!published && readiness.ready && !dirty ? <form action={publishArticle} className="mt-3"><input type="hidden" name="id" value={article.id} /><button className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#D9B25F] px-4 text-sm font-semibold text-[#0F1E3A] hover:bg-[#E4C473]"><BookOpenText className="size-4" aria-hidden />Publish article</button></form> : null}

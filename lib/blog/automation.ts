@@ -22,6 +22,11 @@ const TRUSTED_SOURCE_HOSTS = new Set([
   "portal.311.nyc.gov",
   "gunsafety.ny.gov",
   "ag.ny.gov",
+  "licensing.nypdonline.org",
+  "rules.cityofnewyork.us",
+  "codelibrary.amlegal.com",
+  "www.nysenate.gov",
+  "nysenate.gov",
 ])
 
 const INTERNAL_LINKS = [
@@ -36,8 +41,8 @@ const INTERNAL_LINKS = [
 ]
 
 const articleSchema = z.object({
-  title: z.string().min(5).max(140),
-  description: z.string().min(50).max(160),
+  title: z.string().min(25).max(75),
+  description: z.string().min(70).max(160),
   targetQuery: z.string().min(5).max(160),
   kind: z.enum(["applicant_question", "official_update", "guide", "article_refresh"]),
   tag: z.enum(["Guide", "Requirements", "Documents", "Process update", "FAQ"]),
@@ -188,7 +193,15 @@ export function validateAutomatedArticle(
   allowedSources: Set<string>,
   trustedEvidence?: string
 ) {
-  const issues = generatedDraftIssues(output.contentMarkdown)
+  const used = new Set(output.usedSourceUrls.map((url) => new URL(url).toString()))
+  if ([...used].some((url) => !allowedSources.has(url))) {
+    throw new Error("Generated draft referenced an unapproved source.")
+  }
+  const issues = generatedDraftIssues(output.contentMarkdown, {
+    title: output.title,
+    sourceUrls: output.usedSourceUrls,
+    requireInternalLinks: true,
+  })
   if (issues.length) throw new Error(issues[0])
   if (trustedEvidence) {
     const unsupportedNumbers = unsupportedNumericClaims(output.contentMarkdown, trustedEvidence)
@@ -199,14 +212,14 @@ export function validateAutomatedArticle(
   if (/\b(guarantee|expedite|fast[- ]track|approval rate|insider)\b/i.test(output.contentMarkdown)) {
     throw new Error("Generated draft contains prohibited marketing language.")
   }
-  const used = new Set(output.usedSourceUrls.map((url) => new URL(url).toString()))
-  if ([...used].some((url) => !allowedSources.has(url))) {
-    throw new Error("Generated draft referenced an unapproved source.")
-  }
+  const evidenced = new Set(output.sourceEvidence.map((item) => new URL(item.url).toString()))
   for (const item of output.sourceEvidence) {
     if (!used.has(new URL(item.url).toString())) {
       throw new Error("Generated evidence does not match the selected sources.")
     }
+  }
+  if ([...used].some((url) => !evidenced.has(url))) {
+    throw new Error("Every selected source needs a supported-facts evidence entry.")
   }
   for (const link of markdownLinks(output.contentMarkdown)) {
     const normalized = new URL(link).toString()
@@ -263,8 +276,10 @@ Non-negotiable rules:
 - When relevant, say the applicant controls and submits their own application.
 - Do not add facts from memory. If the supplied evidence is insufficient, choose a narrower topic.
 - Use ordinary Markdown only: no HTML, JSX, MDX, images, code fences or tables.
-- Write 900–1,300 words with a direct opening answer, descriptive headings, short paragraphs, useful bullets, and a Sources section.
-- Cite supported rule statements with inline Markdown links to the exact supplied official URL.
+- Write 900–1,300 words. Begin with a direct answer and do not repeat the article title in the body.
+- Use at least three level-two headings written exactly as ## Heading. Never add a level-one # heading or use bold paragraphs as headings.
+- Include an exact ## Sources section. Every used official source must appear there as a clickable Markdown link.
+- Cite supported rule statements in context, before the Sources section, with Markdown links to the exact supplied official URL.
 - Add two or three genuinely relevant internal links from the allowed internal-link list. Do not keyword-stuff.
 - End with a concise reminder to confirm current requirements with the issuing authority and seek a New York-licensed attorney for case-specific legal advice.
 - Do not include an AI disclosure in the article body; the website handles authorship and process disclosure separately.`
@@ -322,6 +337,58 @@ async function updateSourceFailure(
   }).eq("id", source.id)
 }
 
+function jsonStringArray(value: Json) {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : []
+}
+
+function normalizedUrl(value: string) {
+  try { return new URL(value).toString() }
+  catch { return null }
+}
+
+async function notifyPublishedSourceChanges(
+  db: ReturnType<typeof createAdminClient>,
+  snapshots: SourceSnapshot[]
+) {
+  const changed = snapshots.filter((snapshot) => (
+    Boolean(snapshot.source.content_hash) && snapshot.source.content_hash !== snapshot.hash
+  ))
+  if (!changed.length) return
+
+  const [{ data: posts }, { data: admins }] = await Promise.all([
+    db.from("blog_posts").select("id,title,slug,source_urls").eq("status", "published"),
+    db.from("profiles").select("id").eq("role", "admin"),
+  ])
+  if (!posts?.length || !admins?.length) return
+
+  for (const snapshot of changed) {
+    const sourceUrl = new URL(snapshot.source.url).toString()
+    const affected = posts.filter((post) => (
+      jsonStringArray(post.source_urls).some((url) => normalizedUrl(url) === sourceUrl)
+    ))
+    for (const post of affected) {
+      const { data: inserted } = await db.from("reminder_log").upsert({
+        rule_key: "editorial_source_changed",
+        target: post.id,
+        window_key: snapshot.hash,
+      }, {
+        onConflict: "rule_key,target,window_key",
+        ignoreDuplicates: true,
+      }).select("id")
+      if (!inserted?.length) continue
+      await db.from("notifications").insert(admins.map((admin) => ({
+        recipient: admin.id,
+        kind: "action_required" as const,
+        title: "Published article needs a source review",
+        body: `${snapshot.source.name} changed after “${post.title}” was reviewed. Recheck the article before relying on it.`,
+        link: `/admin/seo/articles/${post.id}`,
+      })))
+    }
+  }
+}
+
 export async function runEditorialAutomation({
   trigger,
   actorId = null,
@@ -359,17 +426,6 @@ export async function runEditorialAutomation({
   }
 
   try {
-    const { count: pendingCount, error: pendingError } = await db
-      .from("blog_posts")
-      .select("id", { count: "exact", head: true })
-      .in("status", ["draft", "review"])
-    if (pendingError) throw new Error("The pending article queue could not be checked.")
-    if ((pendingCount ?? 0) >= pendingLimit()) {
-      const reason = `Paused because ${pendingCount} drafts are already waiting for human review.`
-      await finish("skipped", { skip_reason: reason })
-      return { status: "skipped", runId: run.id, message: reason }
-    }
-
     const { data: sources, error: sourceError } = await db
       .from("editorial_sources")
       .select("*")
@@ -396,6 +452,18 @@ export async function runEditorialAutomation({
     }))
     snapshots.sort((left, right) => left.source.priority - right.source.priority)
     if (!snapshots.length) throw new Error("None of the approved sources could be read during this run.")
+    await notifyPublishedSourceChanges(db, snapshots)
+
+    const { count: pendingCount, error: pendingError } = await db
+      .from("blog_posts")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["draft", "review"])
+    if (pendingError) throw new Error("The pending article queue could not be checked.")
+    if ((pendingCount ?? 0) >= pendingLimit()) {
+      const reason = `Sources were refreshed, but drafting paused because ${pendingCount} drafts are already waiting for human review.`
+      await finish("skipped", { skip_reason: reason, source_count: snapshots.length })
+      return { status: "skipped", runId: run.id, message: reason }
+    }
 
     const [{ data: existingPosts, error: postsError }, { data: ideas, error: ideasError }] = await Promise.all([
       db.from("blog_posts").select("title").neq("status", "archived").order("created_at", { ascending: false }).limit(80),

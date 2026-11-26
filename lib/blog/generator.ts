@@ -6,6 +6,7 @@ import {
   generatedDraftIssues,
   unsupportedNumericClaims,
 } from "@/lib/blog/validation"
+import { CANONICAL_ORIGIN } from "@/lib/seo"
 
 export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
 
@@ -13,6 +14,17 @@ export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
 // before the project enables paid Gateway credits. Article inputs contain only
 // editorial research, never applicant case data.
 const BLOG_MODEL = process.env.AI_GATEWAY_MODEL?.trim() || "nvidia/nemotron-3.5-lightning-free"
+
+const INTERNAL_LINKS = [
+  `${CANONICAL_ORIGIN}/requirements`,
+  `${CANONICAL_ORIGIN}/premises-vs-carry`,
+  `${CANONICAL_ORIGIN}/timeline`,
+  `${CANONICAL_ORIGIN}/fees`,
+  `${CANONICAL_ORIGIN}/faq`,
+  `${CANONICAL_ORIGIN}/checklist`,
+  `${CANONICAL_ORIGIN}/eligibility`,
+  `${CANONICAL_ORIGIN}/how-it-works`,
+]
 
 export interface ArticleGenerationInput {
   title: string
@@ -92,12 +104,22 @@ Hard rules:
 - Never say the service represents applicants, submits for them, expedites, guarantees or is endorsed by the NYPD.
 - State accurately when relevant: the applicant controls the NYPD portal account and submits their own application.
 - Use a calm, precise professional voice. Write 900–1,300 words, never fewer than ${GENERATED_ARTICLE_MIN_WORDS}, with descriptive headings, short paragraphs, useful bullets and a Sources section.
-- Link only the source URLs supplied by the editor. Do not add another URL.
+- Begin with the direct answer. Do not repeat the article title in the body.
+- Use at least three real level-two Markdown headings written exactly as ## Heading. Never use a level-one # heading or bold text as a heading.
+- Cite official evidence in context with clickable Markdown links, and include every supplied source again as a clickable link under an exact ## Sources heading.
+- Add two or three genuinely useful internal links chosen only from the supplied internal-link list.
+- Link only the supplied source URLs and internal-link URLs. Do not add another URL.
 - End with a concise reminder to confirm current requirements with the NYPD and seek a New York-licensed attorney for case-specific legal advice.`
 
 export async function generateArticleDraft(input: ArticleGenerationInput) {
   if (!BLOG_AI_ENABLED) {
     return { content: createGuidedStarter(input), usedAi: false as const }
+  }
+  if (!input.sourceUrls.length) {
+    throw new Error("Add at least one primary official source before generating the article.")
+  }
+  if ((input.sourceNotes?.trim().length ?? 0) < 80) {
+    throw new Error("Add source notes explaining what the official sources establish before generating the article.")
   }
 
   const basePrompt = [
@@ -107,6 +129,7 @@ export async function generateArticleDraft(input: ArticleGenerationInput) {
     `Editorial brief:\n${input.brief || "Not provided"}`,
     `Editor-provided source notes:\n${input.sourceNotes || "No additional source notes were provided. Use only supported, non-case-specific statements and omit unsupported points."}`,
     `Allowed source URLs:\n${input.sourceUrls.join("\n") || "None supplied"}`,
+    `Allowed internal links (choose two or three):\n${INTERNAL_LINKS.join("\n")}`,
   ].join("\n\n")
 
   let previousDraft = ""
@@ -132,7 +155,13 @@ export async function generateArticleDraft(input: ArticleGenerationInput) {
       .replace(/^```(?:markdown|md)?\s*/i, "")
       .replace(/\s*```$/, "")
       .trim()
-    const issues = content ? generatedDraftIssues(content) : ["The generator returned an empty draft."]
+    const issues = content
+      ? generatedDraftIssues(content, {
+          title: input.title,
+          sourceUrls: input.sourceUrls,
+          requireInternalLinks: true,
+        })
+      : ["The generator returned an empty draft."]
     const unsupportedNumbers = content
       ? unsupportedNumericClaims(content, [input.title, input.targetQuery, input.brief, input.sourceNotes].filter(Boolean).join("\n"))
       : []

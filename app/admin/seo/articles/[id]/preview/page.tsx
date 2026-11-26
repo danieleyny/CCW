@@ -4,7 +4,7 @@ import { ArrowLeft, CircleAlert, Eye } from "lucide-react"
 import { ArticlePresentation } from "@/components/blog/article-presentation"
 import { loadArticle } from "@/lib/admin/articles"
 import { requireAdmin } from "@/lib/auth"
-import { articleWordCount, publicationReadiness } from "@/lib/blog/validation"
+import { ARTICLE_QUALITY_MIN_SCORE, articleWordCount, publicationReadiness } from "@/lib/blog/validation"
 
 export const metadata = { title: { absolute: "Article preview · Staff" } }
 
@@ -24,18 +24,20 @@ export default async function ArticlePreviewPage({ params }: { params: Promise<{
     description: article.description,
     content: article.content_markdown,
     sourceUrls,
+    sourceNotes: article.source_notes,
     factCheckedAt: article.fact_checked_at,
     needsLegalReview: article.needs_legal_review,
     legalReviewedAt: article.legal_reviewed_at,
   })
-  const draftProblems = readiness.checks.filter((check) => !check.passed && !["fact_check", "legal_review"].includes(check.key))
+  const draftProblems = readiness.checks.filter((check) => check.blocking && !check.passed && !["fact_check", "legal_review"].includes(check.key))
+  const scoreProblem = readiness.score < ARTICLE_QUALITY_MIN_SCORE
   return (
     <div className="-mx-3 -my-5 bg-background pb-20 sm:-mx-5 lg:-mx-7">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6">
         <Link href={`/admin/seo/articles/${article.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--hairline)] bg-white px-4 text-sm font-semibold text-[var(--text-hi)] hover:bg-[var(--surface-2)]"><ArrowLeft className="size-4" aria-hidden />Back to editor</Link>
         <span className="inline-flex items-center gap-2 rounded-full bg-[#EEF2F7] px-3 py-1.5 text-xs font-semibold text-[#475467]"><Eye className="size-4" aria-hidden />Private preview · {words} words</span>
       </div>
-      {draftProblems.length ? (
+      {draftProblems.length || scoreProblem ? (
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950">
             <div className="flex items-start gap-3">
@@ -45,6 +47,7 @@ export default async function ArticlePreviewPage({ params }: { params: Promise<{
                 <p className="mt-2 text-sm leading-6">Preview mirrors the live article, so unfinished outlines and placeholders are kept out of it. Return to the editor and regenerate the article.</p>
                 <ul className="mt-4 list-disc space-y-1 pl-5 text-sm">
                   {draftProblems.map((problem) => <li key={problem.key}>{problem.label}</li>)}
+                  {scoreProblem ? <li>Raise the automated quality score to at least {ARTICLE_QUALITY_MIN_SCORE} (currently {readiness.score}).</li> : null}
                 </ul>
               </div>
             </div>
