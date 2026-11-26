@@ -1,3 +1,5 @@
+import { analyticsContext } from "@/lib/analytics-config"
+
 /**
  * SEO V2 Phase 6 — conversion-event tracking.
  *
@@ -59,5 +61,7 @@ export function trackEvent(event: ConversionEvent, params?: Record<string, unkno
   if (typeof window === "undefined") return
   const gtag = window.gtag
   if (typeof gtag !== "function") return // GA only loads in production → silent elsewhere
-  gtag("event", event, params ?? {})
+  const context = analyticsContext(window.location.hostname, window.location.pathname)
+  if (!context) return
+  gtag("event", event, { ...(params ?? {}), ...context })
 }

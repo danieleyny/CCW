@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
 import {
   analyticsLocation,
+  analyticsPageGroup,
+  analyticsBrandForHost,
   isCanonicalAnalyticsHost,
   isStripeReferrer,
   shouldLoadAnalytics,
@@ -10,9 +12,19 @@ import {
 describe("analytics collection policy", () => {
   it("collects only on the canonical host", () => {
     expect(isCanonicalAnalyticsHost("gunlicensenyc.com")).toBe(true)
-    expect(isCanonicalAnalyticsHost("www.gunlicensenyc.com")).toBe(false)
+    expect(isCanonicalAnalyticsHost("www.gunlicensenyc.com")).toBe(true)
+    expect(isCanonicalAnalyticsHost("app.firearmlicensenyc.com", "fl")).toBe(true)
+    expect(isCanonicalAnalyticsHost("app.firearmlicensenyc.com", "gln")).toBe(false)
     expect(isCanonicalAnalyticsHost("ccw-redesign-preview.vercel.app")).toBe(false)
     expect(shouldLoadAnalytics("localhost", "/pricing")).toBe(false)
+    expect(analyticsBrandForHost("app.firearmlicensenyc.com")).toBe("fl")
+  })
+
+  it("uses stable, low-cardinality page groups", () => {
+    expect(analyticsPageGroup("/")).toBe("home")
+    expect(analyticsPageGroup("/eligibility")).toBe("eligibility")
+    expect(analyticsPageGroup("/portal/enroll")).toBe("portal_onboarding")
+    expect(analyticsPageGroup("/guides/nyc-carry")).toBe("content")
   })
 
   it("keeps public acquisition steps and excludes private product traffic", () => {

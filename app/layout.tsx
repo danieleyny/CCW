@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { WebVitals } from "@/components/analytics/web-vitals";
 import { FunnelSignals } from "@/components/analytics/funnel-signals";
+import { analyticsMeasurementId } from "@/lib/analytics-config";
 
 // The marketing and app surfaces share one deliberately small type system.
 // next/font self-hosts these files in the deployment, avoiding browser requests
@@ -105,6 +106,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const brandKey = await getRequestBrandKey()
+  const measurementId = analyticsMeasurementId(brandKey)
   return (
     <html
       lang="en"
@@ -132,9 +134,9 @@ export default async function RootLayout({
         <Toaster richColors closeButton theme="dark" />
         {/* GA4 — only on the real production deployment, so localhost + preview
             traffic never pollutes the analytics. */}
-        {brandKey === "gln" && process.env.VERCEL_ENV === "production" && (
+        {measurementId && process.env.VERCEL_ENV === "production" && (
           <>
-            <GoogleAnalytics />
+            <GoogleAnalytics brand={brandKey} measurementId={measurementId} />
             <WebVitals />
             <Suspense fallback={null}>
               <FunnelSignals />

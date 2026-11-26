@@ -7,8 +7,19 @@
  * Analytics while preserving the conversion steps that matter commercially.
  */
 
-export const GA_MEASUREMENT_ID = "G-VXS177VWT2"
-export const ANALYTICS_HOST = "gunlicensenyc.com"
+export type AnalyticsBrand = "gln" | "fl"
+
+export const GLN_GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GLN_GA_MEASUREMENT_ID?.trim() || "G-VXS177VWT2"
+export const FL_GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_FL_GA_MEASUREMENT_ID?.trim() || GLN_GA_MEASUREMENT_ID
+
+const ANALYTICS_HOSTS: Record<AnalyticsBrand, ReadonlySet<string>> = {
+  gln: new Set(["gunlicensenyc.com", "www.gunlicensenyc.com"]),
+  // The Firearm License NYC marketing site is an independent deployment. This
+  // project owns only the application subdomain.
+  fl: new Set(["app.firearmlicensenyc.com"]),
+}
 
 const PRIVATE_PREFIXES = [
   "/admin",
@@ -45,8 +56,27 @@ const SAFE_CAMPAIGN_PARAMS = new Set([
   "wbraid",
 ])
 
-export function isCanonicalAnalyticsHost(hostname: string): boolean {
-  return hostname.toLowerCase().replace(/\.$/, "") === ANALYTICS_HOST
+function normalizedHost(hostname: string): string {
+  return hostname.toLowerCase().replace(/\.$/, "")
+}
+
+export function analyticsBrandForHost(hostname: string): AnalyticsBrand | null {
+  const host = normalizedHost(hostname)
+  if (ANALYTICS_HOSTS.gln.has(host)) return "gln"
+  if (ANALYTICS_HOSTS.fl.has(host)) return "fl"
+  return null
+}
+
+export function isCanonicalAnalyticsHost(
+  hostname: string,
+  brand?: AnalyticsBrand
+): boolean {
+  const resolved = analyticsBrandForHost(hostname)
+  return resolved !== null && (brand === undefined || resolved === brand)
+}
+
+export function analyticsMeasurementId(brand: AnalyticsBrand): string {
+  return brand === "gln" ? GLN_GA_MEASUREMENT_ID : FL_GA_MEASUREMENT_ID
 }
 
 export function shouldTrackPath(pathname: string): boolean {
@@ -60,8 +90,43 @@ export function shouldTrackPath(pathname: string): boolean {
   return true
 }
 
-export function shouldLoadAnalytics(hostname: string, pathname: string): boolean {
-  return isCanonicalAnalyticsHost(hostname) && shouldTrackPath(pathname)
+export function shouldLoadAnalytics(
+  hostname: string,
+  pathname: string,
+  brand?: AnalyticsBrand
+): boolean {
+  return isCanonicalAnalyticsHost(hostname, brand) && shouldTrackPath(pathname)
+}
+
+/** Low-cardinality grouping used by reports and explorations. */
+export function analyticsPageGroup(pathname: string): string {
+  if (pathname === "/") return "home"
+  if (pathname === "/eligibility") return "eligibility"
+  if (pathname === "/pricing") return "pricing"
+  if (pathname === "/checklist") return "checklist"
+  if (pathname === "/contact") return "contact"
+  if (pathname.startsWith("/guides") || pathname.startsWith("/blog")) return "content"
+  if (pathname.startsWith("/training")) return "training"
+  if (pathname === "/auth/sign-up") return "sign_up"
+  if (pathname.startsWith("/portal")) return "portal_onboarding"
+  if (
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/refunds" ||
+    pathname === "/disclaimer"
+  ) {
+    return "legal"
+  }
+  return "marketing"
+}
+
+export function analyticsContext(
+  hostname: string,
+  pathname: string
+): { brand: AnalyticsBrand; page_group: string } | null {
+  const brand = analyticsBrandForHost(hostname)
+  if (!brand || !shouldTrackPath(pathname)) return null
+  return { brand, page_group: analyticsPageGroup(pathname) }
 }
 
 /**

@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { trackEvent } from "@/lib/analytics"
-import { isCanonicalAnalyticsHost } from "@/lib/analytics-config"
+import { analyticsContext } from "@/lib/analytics-config"
 
 type VerifiedPurchase = {
   transactionId: string
@@ -22,7 +22,7 @@ export function FunnelSignals() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (!isCanonicalAnalyticsHost(window.location.hostname)) return
+    if (!analyticsContext(window.location.hostname, window.location.pathname)) return
 
     let cancelled = false
     const whenAnalyticsReady = (send: () => void, attempts = 0) => {

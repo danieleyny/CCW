@@ -1,7 +1,7 @@
 "use client"
 
 import { useReportWebVitals } from "next/web-vitals"
-import { isCanonicalAnalyticsHost, shouldTrackPath } from "@/lib/analytics-config"
+import { analyticsContext } from "@/lib/analytics-config"
 
 /**
  * SEO/CWV monitoring — reports Core Web Vitals (LCP, CLS, INP, FCP, TTFB) to
@@ -11,7 +11,8 @@ import { isCanonicalAnalyticsHost, shouldTrackPath } from "@/lib/analytics-confi
  */
 export function WebVitals() {
   useReportWebVitals((metric) => {
-    if (!isCanonicalAnalyticsHost(window.location.hostname) || !shouldTrackPath(window.location.pathname)) return
+    const context = analyticsContext(window.location.hostname, window.location.pathname)
+    if (!context) return
     const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
     if (typeof gtag !== "function") return
     gtag("event", metric.name, {
@@ -20,6 +21,7 @@ export function WebVitals() {
       value: Math.round(metric.name === "CLS" ? metric.value * 1000 : metric.value),
       event_label: metric.id,
       non_interaction: true,
+      ...context,
     })
   })
   return null
