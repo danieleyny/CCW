@@ -70,6 +70,19 @@ export function generatedDraftIssues(content: string) {
   return issues
 }
 
+function numericTokens(value: string) {
+  return new Set(
+    (value.replace(/https?:\/\/\S+/g, " ").match(/\b\d+(?:[.,]\d+)?\b/g) ?? [])
+      .map((token) => token.replace(/,/g, ""))
+  )
+}
+
+/** Numeric requirements and timelines are high-risk; never let the model add one from memory. */
+export function unsupportedNumericClaims(content: string, evidence: string) {
+  const supported = numericTokens(evidence)
+  return [...numericTokens(content)].filter((token) => !supported.has(token))
+}
+
 export interface PublicationInput {
   title: string
   slug: string

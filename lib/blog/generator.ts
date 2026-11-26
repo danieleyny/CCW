@@ -4,6 +4,7 @@ import { generateText } from "ai"
 import {
   GENERATED_ARTICLE_MIN_WORDS,
   generatedDraftIssues,
+  unsupportedNumericClaims,
 } from "@/lib/blog/validation"
 
 export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
@@ -132,6 +133,12 @@ export async function generateArticleDraft(input: ArticleGenerationInput) {
       .replace(/\s*```$/, "")
       .trim()
     const issues = content ? generatedDraftIssues(content) : ["The generator returned an empty draft."]
+    const unsupportedNumbers = content
+      ? unsupportedNumericClaims(content, [input.title, input.targetQuery, input.brief, input.sourceNotes].filter(Boolean).join("\n"))
+      : []
+    if (unsupportedNumbers.length) {
+      issues.push(`The generated article introduced unsupported numeric claims: ${unsupportedNumbers.join(", ")}.`)
+    }
     if (!issues.length) return { content, usedAi: true as const }
     previousDraft = content
     previousIssues = issues

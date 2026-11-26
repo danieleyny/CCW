@@ -3,7 +3,7 @@ import "server-only"
 import { createHash } from "node:crypto"
 import { generateText, Output } from "ai"
 import { z } from "zod"
-import { generatedDraftIssues, slugifyArticle } from "@/lib/blog/validation"
+import { generatedDraftIssues, slugifyArticle, unsupportedNumericClaims } from "@/lib/blog/validation"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database, Json } from "@/lib/supabase/types"
@@ -185,10 +185,17 @@ function markdownLinks(content: string) {
 
 export function validateAutomatedArticle(
   output: z.infer<typeof articleSchema>,
-  allowedSources: Set<string>
+  allowedSources: Set<string>,
+  trustedEvidence?: string
 ) {
   const issues = generatedDraftIssues(output.contentMarkdown)
   if (issues.length) throw new Error(issues[0])
+  if (trustedEvidence) {
+    const unsupportedNumbers = unsupportedNumericClaims(output.contentMarkdown, trustedEvidence)
+    if (unsupportedNumbers.length) {
+      throw new Error(`Generated draft introduced unsupported numeric claims: ${unsupportedNumbers.join(", ")}.`)
+    }
+  }
   if (/\b(guarantee|expedite|fast[- ]track|approval rate|insider)\b/i.test(output.contentMarkdown)) {
     throw new Error("Generated draft contains prohibited marketing language.")
   }
@@ -408,7 +415,7 @@ export async function runEditorialAutomation({
       preferredIdea,
     })
     const allowedSources = new Set(snapshots.map((snapshot) => new URL(snapshot.source.url).toString()))
-    validateAutomatedArticle(output, allowedSources)
+    validateAutomatedArticle(output, allowedSources, snapshots.map((snapshot) => snapshot.text).join("\n"))
     const normalizedSources = [...new Set(output.usedSourceUrls.map((url) => new URL(url).toString()))]
     const slug = await availableSlug(db, output.title)
 

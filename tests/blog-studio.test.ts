@@ -6,6 +6,7 @@ import {
   parseSourceUrls,
   publicationReadiness,
   slugifyArticle,
+  unsupportedNumericClaims,
 } from "@/lib/blog/validation"
 
 describe("article studio guardrails", () => {
@@ -38,6 +39,11 @@ describe("article studio guardrails", () => {
 
     const complete = Array.from({ length: 710 }, (_, index) => `supported${index}`).join(" ")
     expect(generatedDraftIssues(complete)).toEqual([])
+  })
+
+  it("detects numeric claims that are absent from the supplied evidence", () => {
+    expect(unsupportedNumericClaims("Documents are usually valid for 60 to 90 days.", "Use a current document.")).toEqual(["60", "90"])
+    expect(unsupportedNumericClaims("Complete the 16-hour course.", "The official source requires 16 hours.")).toEqual([])
   })
 
   it("requires both human checkpoints before publication", () => {
