@@ -37,7 +37,7 @@ export default async function NewArticlePage({ searchParams }: { searchParams: S
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[.07] p-4">
           <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-[#E4C473]/15 text-[#F5D98E]"><Sparkles className="size-5" aria-hidden /></span><div><p className="text-xs text-[#AAB6CD]">Draft mode</p><p className="text-sm font-semibold">{BLOG_AI_ENABLED ? "AI-assisted writing" : "Guided outline"}</p></div></div>
-          <p className="mt-3 text-xs leading-5 text-[#AAB6CD]">{BLOG_AI_ENABLED ? "Uses only the brief and notes you provide; unsupported claims are marked for verification." : "Creates a safe structure with verification prompts. The full editor works without an AI key."}</p>
+          <p className="mt-3 text-xs leading-5 text-[#AAB6CD]">{BLOG_AI_ENABLED ? "Creates a complete 700+ word draft from your verified brief and notes. Unsupported points are omitted instead of becoming TODOs." : "Creates a safe structure with verification prompts. The full editor works without an AI key."}</p>
         </div>
       </header>
 
@@ -84,8 +84,8 @@ export default async function NewArticlePage({ searchParams }: { searchParams: S
 
           <section className="rounded-2xl border border-[var(--hairline)] bg-[var(--surface-1)] p-5 shadow-sm">
             <p className="font-semibold text-[var(--text-hi)]">What happens next</p>
-            <ol className="mt-3 space-y-3 text-xs leading-5 text-[var(--text-mid)]"><li className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden />A private draft is created.</li><li className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden />You edit and preview it.</li><li className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden />Fact and legal checks unlock publishing.</li></ol>
-            <button type="submit" className="mt-5 min-h-12 w-full rounded-xl bg-[#D9B25F] px-4 text-sm font-semibold text-[#0F1E3A] shadow-sm hover:bg-[#E4C473]">Create private draft</button>
+            <ol className="mt-3 space-y-3 text-xs leading-5 text-[var(--text-mid)]"><li className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden />A complete 700+ word private draft is generated.</li><li className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden />Preview mirrors the final live article layout.</li><li className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#18794E]" aria-hidden />Fact and legal checks unlock publishing.</li></ol>
+            <button type="submit" className="mt-5 min-h-12 w-full rounded-xl bg-[#D9B25F] px-4 text-sm font-semibold text-[#0F1E3A] shadow-sm hover:bg-[#E4C473]">Generate complete draft</button>
           </section>
         </aside>
       </form>

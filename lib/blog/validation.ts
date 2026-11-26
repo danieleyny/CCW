@@ -50,6 +50,26 @@ export function markdownSafetyIssues(content: string) {
   return issues
 }
 
+export const GENERATED_ARTICLE_MIN_WORDS = 700
+
+/**
+ * A generated draft should arrive as publication-quality copy, not as an
+ * outline for the operator to finish. Keep this separate from the human
+ * fact/legal review gates: automation can complete the writing, but it cannot
+ * attest that a person reviewed the result.
+ */
+export function generatedDraftIssues(content: string) {
+  const issues = markdownSafetyIssues(content)
+  const words = articleWordCount(content)
+  if (words < GENERATED_ARTICLE_MIN_WORDS) {
+    issues.push(`The generated article is ${words} words; it must be at least ${GENERATED_ARTICLE_MIN_WORDS} words.`)
+  }
+  if (/\b(?:TODO|TBD)\b|\[(?:add|insert|complete|verify)[^\]]*\]/i.test(content)) {
+    issues.push("The generated article contains unresolved editorial placeholders.")
+  }
+  return issues
+}
+
 export interface PublicationInput {
   title: string
   slug: string
@@ -71,6 +91,11 @@ export function publicationReadiness(input: PublicationInput) {
       passed: input.description.trim().length >= 50 && input.description.trim().length <= 180,
     },
     { key: "body", label: "Article has at least 500 words", passed: articleWordCount(input.content) >= 500 },
+    {
+      key: "placeholders",
+      label: "No unresolved draft placeholders",
+      passed: !/\b(?:TODO|TBD)\b|\[(?:add|insert|complete|verify)[^\]]*\]/i.test(input.content),
+    },
     { key: "sources", label: "At least one secure source is linked", passed: input.sourceUrls.length > 0 },
     { key: "safe_markdown", label: "Article contains safe Markdown only", passed: markdownSafetyIssues(input.content).length === 0 },
     { key: "fact_check", label: "Human fact-check recorded", passed: Boolean(input.factCheckedAt) },

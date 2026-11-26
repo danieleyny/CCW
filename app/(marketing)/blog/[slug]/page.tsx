@@ -1,15 +1,9 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
 import type { Metadata } from "next"
 import { getAllPosts, getPost } from "@/lib/blog"
-import { formatDate } from "@/lib/format"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { TechGrid } from "@/components/shared/tech-grid"
+import { ArticlePresentation } from "@/components/blog/article-presentation"
 import { JsonLd, ID, breadcrumbSchema } from "@/components/marketing/json-ld"
 import { buildMetadata, canonical, ogImage } from "@/lib/seo"
-import { ArticleBody } from "@/components/blog/article-body"
 
 export async function generateStaticParams() {
   return (await getAllPosts()).map((p) => ({ slug: p.slug }))
@@ -66,49 +60,18 @@ export default async function Article({
   ])
 
   return (
-    <article>
+    <>
       <JsonLd data={{ "@context": "https://schema.org", "@graph": [articleSchema, crumbs] }} />
-      <section className="relative overflow-hidden border-b border-hairline">
-        <TechGrid glow="brass" />
-        <div className="relative mx-auto max-w-3xl px-4 py-16 sm:px-6">
-          <Button asChild variant="link" className="mb-6 px-0">
-            <Link href="/blog">
-              <ArrowLeft className="size-4" /> All guides
-            </Link>
-          </Button>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline">{post.meta.tag}</Badge>
-            <span className="font-mono text-xs text-text-low">
-              {post.meta.updated ? `Updated ${formatDate(post.meta.updated)}` : formatDate(post.meta.date)} · {post.meta.readingMinutes} min read
-            </span>
-          </div>
-          <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {post.meta.title}
-          </h1>
-          <p className="mt-4 text-sm text-text-mid">
-            By {post.meta.author} · Reviewed against cited primary sources before publication
-          </p>
-          {post.meta.automationAssisted && (
-            <p className="mt-2 text-xs text-text-low">
-              Automation assisted with research organization; a person reviewed the facts, sources and final wording.
-            </p>
-          )}
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
-        <ArticleBody source={post.content} />
-
-        <div className="mt-12 rounded-lg border bg-card p-6 brass-edge">
-          <h2 className="font-display text-lg font-semibold">Ready to begin?</h2>
-          <p className="mt-1 text-sm text-text-mid">
-            Check your eligibility in two minutes — no payment, no commitment.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/eligibility">Check your eligibility</Link>
-          </Button>
-        </div>
-      </div>
-    </article>
+      <ArticlePresentation
+        title={post.meta.title}
+        tag={post.meta.tag}
+        date={post.meta.date}
+        updated={post.meta.updated}
+        readingMinutes={post.meta.readingMinutes}
+        content={post.content}
+        automationAssisted={post.meta.automationAssisted}
+        author={post.meta.author}
+      />
+    </>
   )
 }

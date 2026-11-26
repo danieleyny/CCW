@@ -3,7 +3,7 @@ import "server-only"
 import { createHash } from "node:crypto"
 import { generateText, Output } from "ai"
 import { z } from "zod"
-import { markdownSafetyIssues, slugifyArticle } from "@/lib/blog/validation"
+import { generatedDraftIssues, slugifyArticle } from "@/lib/blog/validation"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database, Json } from "@/lib/supabase/types"
@@ -185,11 +185,8 @@ export function validateAutomatedArticle(
   output: z.infer<typeof articleSchema>,
   allowedSources: Set<string>
 ) {
-  const issues = markdownSafetyIssues(output.contentMarkdown)
+  const issues = generatedDraftIssues(output.contentMarkdown)
   if (issues.length) throw new Error(issues[0])
-  if (/\bTODO\b|\bverify this\b/i.test(output.contentMarkdown)) {
-    throw new Error("Generated draft contains unresolved placeholders.")
-  }
   if (/\b(guarantee|expedite|fast[- ]track|approval rate|insider)\b/i.test(output.contentMarkdown)) {
     throw new Error("Generated draft contains prohibited marketing language.")
   }

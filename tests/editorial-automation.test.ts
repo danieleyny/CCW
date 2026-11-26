@@ -12,7 +12,7 @@ function validDraft() {
     kind: "guide" as const,
     tag: "Documents" as const,
     summary: "An original applicant-focused guide grounded in the current official instructions and designed for human review.",
-    contentMarkdown: `${"A supported applicant-focused sentence. ".repeat(90)}\n\n[Official source](https://www.nyc.gov/example)`,
+    contentMarkdown: `${"A supported applicant-focused sentence. ".repeat(150)}\n\n[Official source](https://www.nyc.gov/example)`,
     usedSourceUrls: ["https://www.nyc.gov/example"],
     sourceEvidence: [{
       url: "https://www.nyc.gov/example",

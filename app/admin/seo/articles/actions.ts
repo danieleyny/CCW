@@ -6,7 +6,7 @@ import { z } from "zod"
 import { logActivity } from "@/lib/activity"
 import { requireAdmin } from "@/lib/auth"
 import { getRepositoryPostSlugs } from "@/lib/blog"
-import { createGuidedStarter, generateArticleDraft } from "@/lib/blog/generator"
+import { generateArticleDraft } from "@/lib/blog/generator"
 import {
   articleWordCount,
   markdownSafetyIssues,
@@ -185,6 +185,21 @@ export async function createArticle(formData: FormData) {
     redirect(`/admin/seo/new?error=${encodeURIComponent(error instanceof Error ? error.message : "The article URL could not be created.")}`)
   }
 
+  let generated: Awaited<ReturnType<typeof generateArticleDraft>>
+  try {
+    generated = await generateArticleDraft({
+      title: parsed.data.title,
+      kind: parsed.data.kind,
+      targetQuery: parsed.data.targetQuery,
+      brief: parsed.data.summary,
+      sourceUrls: sources,
+      sourceNotes: parsed.data.sourceNotes,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The complete article draft could not be generated."
+    redirect(`/admin/seo/new?error=${encodeURIComponent(message)}`)
+  }
+
   if (!seoItemId) {
     const { data: item, error } = await db.from("seo_content_items").insert({
       title: parsed.data.title,
@@ -201,23 +216,6 @@ export async function createArticle(formData: FormData) {
     }).select("id").single()
     if (error || !item) redirect(`/admin/seo/new?error=${encodeURIComponent("The editorial record could not be created.")}`)
     seoItemId = item.id
-  }
-
-  let generated: Awaited<ReturnType<typeof generateArticleDraft>>
-  try {
-    generated = await generateArticleDraft({
-      title: parsed.data.title,
-      kind: parsed.data.kind,
-      targetQuery: parsed.data.targetQuery,
-      brief: parsed.data.summary,
-      sourceUrls: sources,
-      sourceNotes: parsed.data.sourceNotes,
-    })
-  } catch {
-    generated = {
-      content: createGuidedStarter({ title: parsed.data.title, kind: parsed.data.kind, targetQuery: parsed.data.targetQuery, brief: parsed.data.summary, sourceUrls: sources, sourceNotes: parsed.data.sourceNotes }),
-      usedAi: false,
-    }
   }
   const { data: article, error } = await db.from("blog_posts").insert({
     seo_content_item_id: seoItemId,
@@ -238,7 +236,7 @@ export async function createArticle(formData: FormData) {
 
   await logActivity({ action: "blog.article_created", entity: "blog_post", entityId: article.id, detail: { title: parsed.data.title, ai: generated.usedAi } })
   revalidateArticle()
-  redirect(articleUrl(article.id, "notice", generated.usedAi ? "AI-assisted draft created. Review every claim before publishing." : "Guided draft created. Fill in the verified facts and sources."))
+  redirect(articleUrl(article.id, "notice", generated.usedAi ? "Complete AI-assisted draft created. Review every claim before publishing." : "Guided draft created. Fill in the verified facts and sources."))
 }
 
 export async function saveArticle(formData: FormData) {
@@ -359,7 +357,9 @@ function reviewProblems(post: BlogPost) {
   if (articleWordCount(post.content_markdown) < 500) issues.push("Write at least 500 words before review.")
   if (post.description.trim().length < 50) issues.push("Add a search description of at least 50 characters.")
   if (!sourceArray(post.source_urls).length) issues.push("Add at least one secure source URL.")
-  if (/\bTODO\b/i.test(post.content_markdown)) issues.push("Resolve every TODO before review.")
+  if (/\b(?:TODO|TBD)\b|\[(?:add|insert|complete|verify)[^\]]*\]/i.test(post.content_markdown)) {
+    issues.push("Resolve every draft placeholder before review.")
+  }
   return issues
 }
 
@@ -433,8 +433,8 @@ export async function publishArticle(formData: FormData) {
     needsLegalReview: current.needs_legal_review,
     legalReviewedAt: current.legal_reviewed_at,
   })
-  if (!readiness.ready || /\bTODO\b/i.test(current.content_markdown)) {
-    const first = readiness.checks.find((check) => !check.passed)?.label || "Resolve every TODO before publishing."
+  if (!readiness.ready) {
+    const first = readiness.checks.find((check) => !check.passed)?.label || "Resolve every draft placeholder before publishing."
     redirect(articleUrl(current.id, "error", `Not ready: ${first}`))
   }
   const db = await createClient()

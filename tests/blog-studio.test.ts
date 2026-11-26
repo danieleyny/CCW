@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   articleWordCount,
+  generatedDraftIssues,
   markdownSafetyIssues,
   parseSourceUrls,
   publicationReadiness,
@@ -29,6 +30,16 @@ describe("article studio guardrails", () => {
     expect(articleWordCount("## A title\n\nThis is a short paragraph.")).toBe(7)
   })
 
+  it("rejects short generated drafts and unresolved placeholders", () => {
+    expect(generatedDraftIssues("A short draft with TODO: finish this.")).toEqual(expect.arrayContaining([
+      expect.stringMatching(/at least 700 words/),
+      expect.stringMatching(/placeholders/),
+    ]))
+
+    const complete = Array.from({ length: 710 }, (_, index) => `supported${index}`).join(" ")
+    expect(generatedDraftIssues(complete)).toEqual([])
+  })
+
   it("requires both human checkpoints before publication", () => {
     const content = Array.from({ length: 510 }, (_, index) => `word${index}`).join(" ")
     const base = {
@@ -40,6 +51,7 @@ describe("article studio guardrails", () => {
       needsLegalReview: true,
     }
     expect(publicationReadiness(base).ready).toBe(false)
+    expect(publicationReadiness({ ...base, content: `${base.content} TODO: finish` }).checks.find((check) => check.key === "placeholders")?.passed).toBe(false)
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25" }).ready).toBe(false)
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25", legalReviewedAt: "2026-11-25" }).ready).toBe(true)
   })

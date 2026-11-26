@@ -1,7 +1,10 @@
 import "server-only"
 
 import { generateText } from "ai"
-import { markdownSafetyIssues } from "@/lib/blog/validation"
+import {
+  GENERATED_ARTICLE_MIN_WORDS,
+  generatedDraftIssues,
+} from "@/lib/blog/validation"
 
 export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
 
@@ -77,12 +80,14 @@ const SYSTEM_PROMPT = `You draft original educational articles for Gun License N
 Hard rules:
 - Return ordinary Markdown only. Never use HTML, JSX, MDX expressions, imports, images or code fences.
 - Use only the facts supplied in the editorial brief and source notes. A URL alone is not evidence of what its page says.
-- Never invent a fact, quotation, citation, law, fee, timeline, statistic or government requirement. Mark missing support as "TODO: verify".
+- Never invent a fact, quotation, citation, law, fee, timeline, statistic or government requirement.
+- Return a complete final draft. Never include TODO, TBD, bracketed instructions, editorial prompts, missing-section notes or requests for the editor to finish the writing.
+- If the supplied evidence does not support a point, omit that point or narrow the article. Do not expose the missing research as a placeholder in the article.
 - Never copy or closely paraphrase a news report. Add original, practical NYC application context.
 - Never provide legal advice, tactical firearm advice, outcome predictions, or advice to omit/minimize a disclosure.
 - Never say the service represents applicants, submits for them, expedites, guarantees or is endorsed by the NYPD.
 - State accurately when relevant: the applicant controls the NYPD portal account and submits their own application.
-- Use a calm, precise professional voice. Aim for 900–1,300 words with descriptive headings, short paragraphs, useful bullets and a Sources section.
+- Use a calm, precise professional voice. Write 900–1,300 words, never fewer than ${GENERATED_ARTICLE_MIN_WORDS}, with descriptive headings, short paragraphs, useful bullets and a Sources section.
 - Link only the source URLs supplied by the editor. Do not add another URL.
 - End with a concise reminder to confirm current requirements with the NYPD and seek a New York-licensed attorney for case-specific legal advice.`
 
@@ -91,27 +96,47 @@ export async function generateArticleDraft(input: ArticleGenerationInput) {
     return { content: createGuidedStarter(input), usedAi: false as const }
   }
 
-  const result = await generateText({
-    model: BLOG_MODEL,
-    maxOutputTokens: 4500,
-    temperature: 0,
-    instructions: SYSTEM_PROMPT,
-    prompt: [
-        `Working title: ${input.title}`,
-        `Article type: ${input.kind}`,
-        `Target search question: ${input.targetQuery || "Not provided"}`,
-        `Editorial brief:\n${input.brief || "Not provided"}`,
-        `Editor-provided source notes:\n${input.sourceNotes || "No source notes provided. Use TODO: verify for unsupported claims."}`,
-        `Allowed source URLs:\n${input.sourceUrls.join("\n") || "None supplied"}`,
-    ].join("\n\n"),
-  })
+  const basePrompt = [
+    `Working title: ${input.title}`,
+    `Article type: ${input.kind}`,
+    `Target search question: ${input.targetQuery || "Not provided"}`,
+    `Editorial brief:\n${input.brief || "Not provided"}`,
+    `Editor-provided source notes:\n${input.sourceNotes || "No additional source notes were provided. Use only supported, non-case-specific statements and omit unsupported points."}`,
+    `Allowed source URLs:\n${input.sourceUrls.join("\n") || "None supplied"}`,
+  ].join("\n\n")
 
-  const content = result.text
-    .replace(/^```(?:markdown|md)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim()
-  const issues = markdownSafetyIssues(content)
-  if (!content || issues.length) throw new Error(issues[0] || "The generator returned an empty draft.")
-  return { content, usedAi: true as const }
+  let previousDraft = ""
+  let previousIssues: string[] = []
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const repairContext = attempt === 0
+      ? ""
+      : [
+          "The prior attempt was rejected by automatic quality checks.",
+          `Problems to correct:\n${previousIssues.map((issue) => `- ${issue}`).join("\n")}`,
+          "Rewrite the entire article as a complete final draft. Expand useful supported explanation, remove every placeholder, and keep every factual claim within the supplied evidence.",
+          `Rejected draft:\n${previousDraft}`,
+        ].join("\n\n")
+    const result = await generateText({
+      model: BLOG_MODEL,
+      maxOutputTokens: 5000,
+      temperature: 0,
+      instructions: SYSTEM_PROMPT,
+      prompt: [basePrompt, repairContext].filter(Boolean).join("\n\n"),
+    })
+
+    const content = result.text
+      .replace(/^```(?:markdown|md)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim()
+    const issues = content ? generatedDraftIssues(content) : ["The generator returned an empty draft."]
+    if (!issues.length) return { content, usedAi: true as const }
+    previousDraft = content
+    previousIssues = issues
+  }
+
+  throw new Error(
+    `The generator could not create a complete ${GENERATED_ARTICLE_MIN_WORDS}-word article without placeholders. `
+      + "Check that the research notes contain enough verified source material, then try again."
+  )
 }
 
