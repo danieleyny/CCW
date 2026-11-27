@@ -103,5 +103,32 @@ describe("article studio guardrails", () => {
     expect(report.checks.find((check) => check.key === "h2_structure")?.passed).toBe(false)
     expect(report.checks.find((check) => check.key === "sources_cited")?.passed).toBe(false)
   })
+
+  it("blocks bold-only section labels from the publishing workflow", () => {
+    const content = [
+      "**The short answer**",
+      "",
+      Array.from({ length: 710 }, (_, index) => `word${index}`).join(" "),
+      "",
+      "## Details",
+      "",
+      "## Sources",
+      "",
+      "- [NYPD guidance](https://www.nyc.gov/example)",
+    ].join("\n")
+    const report = publicationReadiness({
+      title: "A specific NYC licensing guide",
+      slug: "specific-nyc-licensing-guide",
+      description: "A clear and properly sized search description for this verified licensing guide.",
+      content,
+      sourceUrls: ["https://www.nyc.gov/example"],
+      sourceNotes: "https://www.nyc.gov/example\n- This official page supports the statements used in the draft.",
+      factCheckedAt: "2026-11-25",
+      needsLegalReview: true,
+      legalReviewedAt: "2026-11-25",
+    })
+    expect(report.ready).toBe(false)
+    expect(report.checks.find((check) => check.key === "no_bold_headings")?.passed).toBe(false)
+  })
 })
 

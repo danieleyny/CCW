@@ -4,6 +4,8 @@ import { ArrowLeft, CircleAlert, Eye } from "lucide-react"
 import { ArticlePresentation } from "@/components/blog/article-presentation"
 import { loadArticle } from "@/lib/admin/articles"
 import { requireAdmin } from "@/lib/auth"
+import { normalizeArticleMarkdown } from "@/lib/blog/normalize"
+import { parseArticle } from "@/lib/blog/structure"
 import { ARTICLE_QUALITY_MIN_SCORE, articleWordCount, publicationReadiness } from "@/lib/blog/validation"
 
 export const metadata = { title: { absolute: "Article preview · Staff" } }
@@ -15,6 +17,8 @@ export default async function ArticlePreviewPage({ params }: { params: Promise<{
   if (!data) notFound()
   const { article } = data
   const words = articleWordCount(article.content_markdown)
+  const content = normalizeArticleMarkdown(article.content_markdown, { title: article.title })
+  const structure = parseArticle(content)
   const sourceUrls = Array.isArray(article.source_urls)
     ? article.source_urls.filter((entry): entry is string => typeof entry === "string" && entry.startsWith("https://"))
     : []
@@ -56,12 +60,15 @@ export default async function ArticlePreviewPage({ params }: { params: Promise<{
       ) : (
         <ArticlePresentation
           title={article.title}
+          description={article.description}
           tag={article.tag}
           date={article.created_at.slice(0, 10)}
           updated={article.updated_at.slice(0, 10)}
           readingMinutes={Math.max(1, Math.ceil(words / 200))}
-          content={article.content_markdown}
+          content={content}
+          structure={structure}
           automationAssisted={article.automation_assisted}
+          showGuidesLink={false}
           reviewed={Boolean(article.fact_checked_at) && (!article.needs_legal_review || Boolean(article.legal_reviewed_at))}
         />
       )}

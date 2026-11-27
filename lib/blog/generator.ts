@@ -6,6 +6,7 @@ import {
   generatedDraftIssues,
   unsupportedNumericClaims,
 } from "@/lib/blog/validation"
+import { normalizeArticleMarkdown } from "@/lib/blog/normalize"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 
 export const BLOG_AI_ENABLED = process.env.BLOG_AI_ENABLED !== "false"
@@ -104,8 +105,14 @@ Hard rules:
 - Never say the service represents applicants, submits for them, expedites, guarantees or is endorsed by the NYPD.
 - State accurately when relevant: the applicant controls the NYPD portal account and submits their own application.
 - Use a calm, precise professional voice. Write 900–1,300 words, never fewer than ${GENERATED_ARTICLE_MIN_WORDS}, with descriptive headings, short paragraphs, useful bullets and a Sources section.
-- Begin with the direct answer. Do not repeat the article title in the body.
+- Start with an exact level-two heading, ## The short answer, followed by one 2–3 sentence paragraph that directly answers the title question using only the supplied evidence. Do not repeat the article title in the body.
 - Use at least three real level-two Markdown headings written exactly as ## Heading. Never use a level-one # heading or bold text as a heading.
+- Write every section title as ## Title on its own line. Never write a bold line as a heading.
+- For document or item lists, use - **Item** — short description.
+- For steps, use 1. **Step** — short description.
+- Put callouts in > **Label:** text.
+- Under ## Sources, write one supplied source per line as - [Exact page title](https://url).
+- If the article explains who submits the application, include ## Your role in the application and state accurately that the applicant submits their own application.
 - Cite official evidence in context with clickable Markdown links, and include every supplied source again as a clickable link under an exact ## Sources heading.
 - Add two or three genuinely useful internal links chosen only from the supplied internal-link list.
 - Link only the supplied source URLs and internal-link URLs. Do not add another URL.
@@ -151,10 +158,11 @@ export async function generateArticleDraft(input: ArticleGenerationInput) {
       prompt: [basePrompt, repairContext].filter(Boolean).join("\n\n"),
     })
 
-    const content = result.text
+    const stripped = result.text
       .replace(/^```(?:markdown|md)?\s*/i, "")
       .replace(/\s*```$/, "")
       .trim()
+    const content = normalizeArticleMarkdown(stripped, { title: input.title })
     const issues = content
       ? generatedDraftIssues(content, {
           title: input.title,

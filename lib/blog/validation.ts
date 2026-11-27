@@ -1,3 +1,7 @@
+import { boldHeadingLines } from "@/lib/blog/normalize"
+
+export { boldHeadingLines } from "@/lib/blog/normalize"
+
 export const BLOG_POST_STATUSES = ["draft", "review", "approved", "published", "archived"] as const
 export type BlogPostStatus = (typeof BLOG_POST_STATUSES)[number]
 
@@ -137,6 +141,9 @@ export function generatedDraftIssues(
   if ((content.match(/^##\s+.+$/gm) ?? []).length < 3) {
     issues.push("The generated article needs at least three real level-two Markdown headings.")
   }
+  if (boldHeadingLines(content).length) {
+    issues.push("Section titles must use real level-two Markdown headings instead of bold-only lines.")
+  }
   if (/^#\s+.+$/m.test(content)) {
     issues.push("The generated article must not repeat the page title as a level-one heading.")
   }
@@ -231,6 +238,8 @@ export function publicationReadiness(input: PublicationInput) {
       weight: 7,
     },
     { key: "h2_structure", label: "At least three real section headings", passed: (input.content.match(/^##\s+.+$/gm) ?? []).length >= 3, blocking: true, weight: 8 },
+    { key: "no_bold_headings", label: "Section titles use real headings", passed: boldHeadingLines(input.content).length === 0, blocking: true, weight: 6 },
+    { key: "short_answer", label: "Starts with a short answer", passed: /^##\s+(?:(?:the\s+)?(?:short|quick)\s+answer|in\s+(?:short|brief))\s*$/im.test(input.content), blocking: false, weight: 3 },
     { key: "body_title", label: "Body does not duplicate the page title", passed: !/^#\s+.+$/m.test(input.content) && comparableText(firstMeaningfulLine(input.content)) !== comparableText(title), blocking: true, weight: 4 },
     { key: "source_section", label: "Level-two Sources section included", passed: /^##\s+sources\s*$/im.test(input.content), blocking: true, weight: 5 },
     { key: "sources", label: "At least one secure primary source added", passed: sourceUrls.length > 0, blocking: true, weight: 5 },

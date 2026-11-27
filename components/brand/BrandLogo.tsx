@@ -32,5 +32,5 @@ export default function BrandLogo({ tone = "ink", size = "md", href = "/", motio
   const cls = `${s.logo} ${s[tone]} ${s[size]} ${motionClass} ${responsiveHeader ? s.responsiveHeader : ""} ${className ?? ""}`
   return href === null
     ? <span className={cls}>{inner}</span>
-    : <Link href={href} className={cls} aria-label={accessibleLabel === null ? undefined : accessibleLabel ?? `${brand.name} home`}>{inner}</Link>
+    : <Link href={href} className={cls} aria-label={accessibleLabel ?? undefined}>{inner}</Link>
 }

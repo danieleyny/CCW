@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity"
 import { requireAdmin } from "@/lib/auth"
 import { getRepositoryPostSlugs } from "@/lib/blog"
 import { generateArticleDraft } from "@/lib/blog/generator"
+import { boldHeadingLines, normalizeArticleMarkdown } from "@/lib/blog/normalize"
 import {
   ARTICLE_QUALITY_MIN_SCORE,
   ARTICLE_TITLE_MAX_LENGTH,
@@ -292,7 +293,9 @@ export async function saveArticle(formData: FormData) {
   const current = await getArticle(result.data.id)
   if (!current) redirect("/admin/seo?error=Article%20not%20found")
   if (current.status === "published") redirect(articleUrl(current.id, "error", "Unpublish the article before editing it."))
-  const safeIssues = markdownSafetyIssues(result.data.content)
+  const convertedHeadingCount = boldHeadingLines(result.data.content).length
+  const normalizedContent = normalizeArticleMarkdown(result.data.content, { title: result.data.title })
+  const safeIssues = markdownSafetyIssues(normalizedContent)
   if (safeIssues.length) redirect(articleUrl(current.id, "error", safeIssues[0]))
 
   let slug = result.data.slug
@@ -305,7 +308,7 @@ export async function saveArticle(formData: FormData) {
     || current.description !== result.data.description
     || current.tag !== result.data.tag
     || current.target_query !== result.data.targetQuery
-    || current.content_markdown !== result.data.content
+    || current.content_markdown !== normalizedContent
     || current.source_notes !== result.data.sourceNotes
     || current.needs_legal_review !== result.data.needsLegalReview
     || !sameStrings(sourceArray(current.source_urls), result.data.sourceUrls)
@@ -316,7 +319,7 @@ export async function saveArticle(formData: FormData) {
     description: result.data.description,
     tag: result.data.tag,
     target_query: result.data.targetQuery,
-    content_markdown: result.data.content,
+    content_markdown: normalizedContent,
     source_urls: result.data.sourceUrls,
     source_notes: result.data.sourceNotes,
     needs_legal_review: result.data.needsLegalReview,
@@ -336,7 +339,12 @@ export async function saveArticle(formData: FormData) {
   await logActivity({ action: "blog.article_saved", entity: "blog_post", entityId: current.id, detail: { changed, slug } })
   revalidateArticle(current.slug)
   if (slug !== current.slug) revalidateArticle(slug)
-  redirect(articleUrl(current.id, "notice", changed ? "Draft saved. Reviews were reset because the article changed." : "Draft is already up to date."))
+  const notice = convertedHeadingCount
+    ? `Draft saved. Converted ${convertedHeadingCount} bold ${convertedHeadingCount === 1 ? "line" : "lines"} into section headings; reviews were reset.`
+    : changed
+      ? "Draft saved. Reviews were reset because the article changed."
+      : "Draft is already up to date."
+  redirect(articleUrl(current.id, "notice", notice))
 }
 
 export async function generateArticle(formData: FormData) {

@@ -9,6 +9,7 @@ import {
   slugifyArticle,
   unsupportedNumericClaims,
 } from "@/lib/blog/validation"
+import { normalizeArticleMarkdown } from "@/lib/blog/normalize"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database, Json } from "@/lib/supabase/types"
@@ -198,23 +199,24 @@ export function validateAutomatedArticle(
   allowedSources: Set<string>,
   trustedEvidence?: string
 ) {
+  const content = normalizeArticleMarkdown(output.contentMarkdown, { title: output.title })
   const used = new Set(output.usedSourceUrls.map((url) => new URL(url).toString()))
   if ([...used].some((url) => !allowedSources.has(url))) {
     throw new Error("Generated draft referenced an unapproved source.")
   }
-  const issues = generatedDraftIssues(output.contentMarkdown, {
+  const issues = generatedDraftIssues(content, {
     title: output.title,
     sourceUrls: output.usedSourceUrls,
     requireInternalLinks: true,
   })
   if (issues.length) throw new Error(issues[0])
   if (trustedEvidence) {
-    const unsupportedNumbers = unsupportedNumericClaims(output.contentMarkdown, trustedEvidence)
+    const unsupportedNumbers = unsupportedNumericClaims(content, trustedEvidence)
     if (unsupportedNumbers.length) {
       throw new Error(`Generated draft introduced unsupported numeric claims: ${unsupportedNumbers.join(", ")}.`)
     }
   }
-  if (/\b(guarantee|expedite|fast[- ]track|approval rate|insider)\b/i.test(output.contentMarkdown)) {
+  if (/\b(guarantee|expedite|fast[- ]track|approval rate|insider)\b/i.test(content)) {
     throw new Error("Generated draft contains prohibited marketing language.")
   }
   const evidenced = new Set(output.sourceEvidence.map((item) => new URL(item.url).toString()))
@@ -226,7 +228,7 @@ export function validateAutomatedArticle(
   if ([...used].some((url) => !evidenced.has(url))) {
     throw new Error("Every selected source needs a supported-facts evidence entry.")
   }
-  for (const link of markdownLinks(output.contentMarkdown)) {
+  for (const link of markdownLinks(content)) {
     const normalized = new URL(link).toString()
     const isInternal = new URL(normalized).origin === CANONICAL_ORIGIN
     if (!isInternal && !used.has(normalized)) {
@@ -281,10 +283,12 @@ Non-negotiable rules:
 - When relevant, say the applicant controls and submits their own application.
 - Do not add facts from memory. If the supplied evidence is insufficient, choose a narrower topic.
 - Use ordinary Markdown only: no HTML, JSX, MDX, images, code fences or tables.
-- Write 900–1,300 words. Begin with a direct answer and do not repeat the article title in the body.
+- Write 900–1,300 words. Start with an exact ## The short answer heading followed by one 2–3 sentence paragraph that directly answers the title question from the supplied evidence. Do not repeat the article title in the body.
 - Write a specific article title between 25 and ${ARTICLE_TITLE_MAX_LENGTH} characters. This limit includes room for the site-name suffix in search results.
 - Use at least three level-two headings written exactly as ## Heading. Never add a level-one # heading or use bold paragraphs as headings.
-- Include an exact ## Sources section. Every used official source must appear there as a clickable Markdown link.
+- Write every section title as ## Title on its own line. For document lists use - **Item** — short description; for steps use 1. **Step** — short description; for callouts use > **Label:** text.
+- If the article explains who submits the application, include ## Your role in the application and state that the applicant submits their own application.
+- Include an exact ## Sources section. Write every used official source on its own line as - [Exact page title](https://url).
 - Cite supported rule statements in context, before the Sources section, with Markdown links to the exact supplied official URL.
 - Add two or three genuinely relevant internal links from the allowed internal-link list. Do not keyword-stuff.
 - End with a concise reminder to confirm current requirements with the issuing authority and seek a New York-licensed attorney for case-specific legal advice.
@@ -483,11 +487,15 @@ export async function runEditorialAutomation({
       for (const post of linked ?? []) if (post.seo_content_item_id) linkedIdeaIds.add(post.seo_content_item_id)
     }
     const preferredIdea = ideas?.find((idea) => !linkedIdeaIds.has(idea.id)) ?? null
-    const output = await createAutomatedDraft({
+    const generatedOutput = await createAutomatedDraft({
       snapshots,
       existingTitles: (existingPosts ?? []).map((post) => post.title),
       preferredIdea,
     })
+    const output = {
+      ...generatedOutput,
+      contentMarkdown: normalizeArticleMarkdown(generatedOutput.contentMarkdown, { title: generatedOutput.title }),
+    }
     const allowedSources = new Set(snapshots.map((snapshot) => new URL(snapshot.source.url).toString()))
     validateAutomatedArticle(output, allowedSources, snapshots.map((snapshot) => snapshot.text).join("\n"))
     const normalizedSources = [...new Set(output.usedSourceUrls.map((url) => new URL(url).toString()))]
