@@ -54,8 +54,8 @@ export default function Hero() {
           ))}
         </ul>
       </div>
-      <div className={`${styles.visual} ${styles.introMap}`} style={{ "--map-src": "url(/images/marketing/hero-nyc-guided-path-v2.png)" } as CSSProperties}>
-        <HeroMap intro={playIntro} mapSrc="/images/marketing/hero-nyc-guided-path-v2.png" />
+      <div className={`${styles.visual} ${styles.introMap}`} style={{ "--map-src": "url(/images/marketing/hero-nyc-guided-path-v2.webp)" } as CSSProperties}>
+        <HeroMap intro={playIntro} mapSrc="/images/marketing/hero-nyc-guided-path-v2.webp" />
         <span className={styles.introSheen} aria-hidden="true" />
       </div>
     </section>
