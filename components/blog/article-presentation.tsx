@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArticleBody } from "@/components/blog/article-body"
 import { ArticleToc } from "@/components/blog/article-toc"
 import { getRequestBrand } from "@/lib/brand/server"
+import { selectJourneyLinks } from "@/lib/blog/journey-links"
 import type { ParsedArticle, ArticleSection } from "@/lib/blog/structure"
 import { formatDate } from "@/lib/format"
 
@@ -119,6 +120,11 @@ export async function ArticlePresentation({
   const shortAnswer = structure.shortAnswer || description
   const shortAnswerLabel = structure.shortAnswerLabel || "In brief"
   const readingId = `article-reading-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
+  const journeyLinks = selectJourneyLinks({
+    title,
+    description,
+    sectionTitles: structure.sections.map((section) => section.title),
+  })
 
   return (
     <article className="overflow-x-clip bg-white text-[#14254A]">
@@ -207,6 +213,20 @@ export async function ArticlePresentation({
         </section>
 
         <EligibilityCard className="mt-4 min-[1024px]:hidden" />
+
+        {showGuidesLink && journeyLinks.length ? (
+          <section className="mt-11" aria-labelledby="next-steps-title">
+            <h2 id="next-steps-title" className="mb-3.5 font-mono text-[11.5px] font-semibold uppercase tracking-[.12em] text-[#5F687B]">Useful next steps</h2>
+            <div className="grid gap-3.5 min-[760px]:grid-cols-3">
+              {journeyLinks.map((item) => (
+                <Link key={item.href} href={item.href} className="rounded-[14px] border border-[rgba(20,37,74,.13)] bg-[#F7F4EE] p-5 transition-colors hover:border-[#D3B36B] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14254A]/35">
+                  <strong className="block font-[family-name:var(--font-title)] text-[19px] font-medium not-italic leading-[1.25] text-[#14254A]">{item.title}</strong>
+                  <span className="mt-2 block text-[14px] leading-[1.55] text-[#5F687B]">{item.description}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {showGuidesLink && relatedPosts.length ? (
           <section className="mt-11" aria-labelledby="keep-reading-title">
