@@ -19,6 +19,8 @@ import "./portal-v2.css"
 import { getRequestBrandKey } from "@/lib/brand/server"
 import { OtherBrandGate } from "@/components/portal/other-brand-gate"
 import type { BrandKey } from "@/config/brands"
+import { hasPaidPackage } from "@/lib/packages"
+import { isFirearmAppHost } from "@/lib/firearm-site"
 
 export default async function PortalLayout({
   children,
@@ -30,7 +32,8 @@ export default async function PortalLayout({
   // Soft intake gate — carry a brand-new applicant into intake before they can
   // wander a half-empty portal. Gentle: only early-stage + intake-incomplete
   // cases, and intake/profile/privacy + attorney-review cases are exempt.
-  const pathname = (await headers()).get("x-pathname") ?? ""
+  const requestHeaders = await headers()
+  const pathname = requestHeaders.get("x-pathname") ?? ""
   const [myCase, requestBrand] = await Promise.all([getMyCase(), getRequestBrandKey()])
   if (myCase && (myCase.brand as BrandKey) !== requestBrand) {
     return <OtherBrandGate caseBrand={myCase.brand as BrandKey} />
@@ -43,6 +46,12 @@ export default async function PortalLayout({
   // Unread count for the bottom-nav "More" pill (Messages lives there on mobile).
   // RLS-scoped to this user, same source the NotificationBell reads.
   const supabase = await createClient()
+  const assistantAvailable = Boolean(
+    myCase &&
+    isFirearmAppHost(requestHeaders.get("host")) &&
+    ((await hasPaidPackage(supabase, myCase.id, "self_guided")) ||
+      (await hasPaidPackage(supabase, myCase.id, "full_concierge")))
+  )
   const { count: unread } = await supabase
     .from("notifications")
     .select("id", { count: "exact", head: true })
@@ -102,7 +111,11 @@ export default async function PortalLayout({
             </div>
           </div>
         </div>
-            <PortalTopNav concierge={isConcierge} brand={(myCase?.brand as BrandKey | undefined) ?? requestBrand} />
+            <PortalTopNav
+              concierge={isConcierge}
+              brand={(myCase?.brand as BrandKey | undefined) ?? requestBrand}
+              assistantAvailable={assistantAvailable}
+            />
       </header>
 
       {/* Single bottom pad: clear the tab bar (var --shell-bottom) plus breathing
@@ -131,7 +144,12 @@ export default async function PortalLayout({
           stacked bottom bars is one too many. The soft intake gate already keeps
           a new applicant here, and the wizard has a "Save & exit" out. */}
       {!pathname.startsWith("/portal/intake") && (
-        <PortalBottomNav unread={unread ?? 0} concierge={isConcierge} brand={(myCase?.brand as BrandKey | undefined) ?? requestBrand} />
+        <PortalBottomNav
+          unread={unread ?? 0}
+          concierge={isConcierge}
+          brand={(myCase?.brand as BrandKey | undefined) ?? requestBrand}
+          assistantAvailable={assistantAvailable}
+        />
       )}
     </div>
     </PortalUserAvatarProvider>

@@ -20,6 +20,7 @@ import {
   FolderOpen,
   IdCard,
   ArrowUpRight,
+  Bot,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -132,6 +133,13 @@ const UPGRADE_ITEM: MoreItem = {
   status: "Move your case to Gun License NYC",
 }
 
+const ASSISTANT_ITEM: MoreItem = {
+  href: "/portal/assistant",
+  label: "AI assistant",
+  icon: Bot,
+  status: "Paid Claude-powered licensing guide",
+}
+
 function useActive() {
   const pathname = usePathname()
   return (href: string, exact?: boolean) =>
@@ -139,14 +147,24 @@ function useActive() {
 }
 
 /** Desktop: a horizontal tab row under the header. */
-export function PortalTopNav({ concierge = false, brand = "gln" }: { concierge?: boolean; brand?: BrandKey }) {
+export function PortalTopNav({
+  concierge = false,
+  brand = "gln",
+  assistantAvailable = false,
+}: {
+  concierge?: boolean
+  brand?: BrandKey
+  assistantAvailable?: boolean
+}) {
   const isActive = useActive()
   const { messages } = usePortalI18n()
   const shell = messages.shell
+  const baseItems = concierge ? DESKTOP_CONCIERGE : brand === "fl" ? [...DESKTOP, UPGRADE_ITEM] : DESKTOP
+  const items = assistantAvailable ? [...baseItems, ASSISTANT_ITEM] : baseItems
   return (
     <nav aria-label={shell.primary} className="portal-v2-top-nav hidden border-t border-hairline md:block">
       <div className="portal-v2-top-nav-wrap mx-auto flex max-w-[1120px] flex-nowrap gap-1 overflow-x-auto px-6 lg:px-8">
-        {(concierge ? DESKTOP_CONCIERGE : brand === "fl" ? [...DESKTOP, UPGRADE_ITEM] : DESKTOP).map(({ href, label, icon: Icon, exact }) => {
+        {items.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           return (
             <Link
@@ -171,13 +189,24 @@ export function PortalTopNav({ concierge = false, brand = "gln" }: { concierge?:
  * tab that opens a bottom sheet with everything else. Brass is the "you are here"
  * color (signal is reserved for "needs your attention"). Safe-area aware.
  */
-export function PortalBottomNav({ unread = 0, concierge = false, brand = "gln" }: { unread?: number; concierge?: boolean; brand?: BrandKey }) {
+export function PortalBottomNav({
+  unread = 0,
+  concierge = false,
+  brand = "gln",
+  assistantAvailable = false,
+}: {
+  unread?: number
+  concierge?: boolean
+  brand?: BrandKey
+  assistantAvailable?: boolean
+}) {
   const isActive = useActive()
   const [moreOpen, setMoreOpen] = useState(false)
   const { messages } = usePortalI18n()
   const shell = messages.shell
   const primary = concierge ? PRIMARY_CONCIERGE : PRIMARY
-  const more = concierge ? MORE_CONCIERGE : brand === "fl" ? [...MORE, UPGRADE_ITEM] : MORE
+  const baseMore = concierge ? MORE_CONCIERGE : brand === "fl" ? [...MORE, UPGRADE_ITEM] : MORE
+  const more = assistantAvailable ? [ASSISTANT_ITEM, ...baseMore] : baseMore
   const moreActive = more.some((m) => isActive(m.href, m.exact))
 
   return (
