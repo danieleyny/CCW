@@ -32,7 +32,12 @@ import {
   unpublishArticle,
 } from "@/app/admin/seo/articles/actions"
 import type { BlogPostRow, SeoContentRow } from "@/lib/admin/articles"
-import { ARTICLE_QUALITY_MIN_SCORE, articleWordCount, publicationReadiness } from "@/lib/blog/validation"
+import {
+  ARTICLE_QUALITY_MIN_SCORE,
+  ARTICLE_TITLE_MAX_LENGTH,
+  articleWordCount,
+  publicationReadiness,
+} from "@/lib/blog/validation"
 import { cn } from "@/lib/utils"
 
 const STATUS_LABEL: Record<string, string> = {
@@ -149,8 +154,8 @@ export function ArticleStudio({ article, seoItem, notice, error, aiEnabled }: { 
 
             <div className="mt-6 space-y-5">
               <div>
-                <div className="flex items-center justify-between gap-3"><label htmlFor="article-title" className="text-sm font-semibold text-[var(--text-hi)]">Article title</label><CopyValueButton value={title} label="article title" /></div>
-                <input id="article-title" name="title" required minLength={10} maxLength={75} value={title} onChange={(event) => setTitle(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-lg disabled:bg-[var(--surface-2)]" />
+                <div className="flex items-center justify-between gap-3"><label htmlFor="article-title" className="text-sm font-semibold text-[var(--text-hi)]">Article title <span className={cn("ml-2 text-xs font-normal", title.length >= 25 && title.length <= ARTICLE_TITLE_MAX_LENGTH ? "text-[#18794E]" : "text-[var(--text-low)]")}>{title.length}/{ARTICLE_TITLE_MAX_LENGTH}</span></label><CopyValueButton value={title} label="article title" /></div>
+                <input id="article-title" name="title" required minLength={25} maxLength={ARTICLE_TITLE_MAX_LENGTH} value={title} onChange={(event) => setTitle(event.target.value)} disabled={published} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-lg disabled:bg-[var(--surface-2)]" />
               </div>
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
                 <div>

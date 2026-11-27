@@ -3,7 +3,12 @@ import "server-only"
 import { createHash } from "node:crypto"
 import { generateText, Output } from "ai"
 import { z } from "zod"
-import { generatedDraftIssues, slugifyArticle, unsupportedNumericClaims } from "@/lib/blog/validation"
+import {
+  ARTICLE_TITLE_MAX_LENGTH,
+  generatedDraftIssues,
+  slugifyArticle,
+  unsupportedNumericClaims,
+} from "@/lib/blog/validation"
 import { CANONICAL_ORIGIN } from "@/lib/seo"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database, Json } from "@/lib/supabase/types"
@@ -41,7 +46,7 @@ const INTERNAL_LINKS = [
 ]
 
 const articleSchema = z.object({
-  title: z.string().min(25).max(75),
+  title: z.string().min(25).max(ARTICLE_TITLE_MAX_LENGTH),
   description: z.string().min(70).max(160),
   targetQuery: z.string().min(5).max(160),
   kind: z.enum(["applicant_question", "official_update", "guide", "article_refresh"]),
@@ -277,6 +282,7 @@ Non-negotiable rules:
 - Do not add facts from memory. If the supplied evidence is insufficient, choose a narrower topic.
 - Use ordinary Markdown only: no HTML, JSX, MDX, images, code fences or tables.
 - Write 900–1,300 words. Begin with a direct answer and do not repeat the article title in the body.
+- Write a specific article title between 25 and ${ARTICLE_TITLE_MAX_LENGTH} characters. This limit includes room for the site-name suffix in search results.
 - Use at least three level-two headings written exactly as ## Heading. Never add a level-one # heading or use bold paragraphs as headings.
 - Include an exact ## Sources section. Every used official source must appear there as a clickable Markdown link.
 - Cite supported rule statements in context, before the Sources section, with Markdown links to the exact supplied official URL.

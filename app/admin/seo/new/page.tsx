@@ -3,6 +3,7 @@ import { ArrowLeft, BookOpenText, CheckCircle2, CircleAlert, FileText, ShieldChe
 import { createArticle } from "@/app/admin/seo/articles/actions"
 import { loadArticleSetup } from "@/lib/admin/articles"
 import { BLOG_AI_ENABLED } from "@/lib/blog/generator"
+import { ARTICLE_TITLE_MAX_LENGTH } from "@/lib/blog/validation"
 import { requireAdmin } from "@/lib/auth"
 
 export const metadata = { title: { absolute: "New article · Staff" } }
@@ -49,7 +50,7 @@ export default async function NewArticlePage({ searchParams }: { searchParams: S
           <div className="flex items-center gap-3 border-b border-[var(--hairline)] pb-5"><span className="grid size-10 place-items-center rounded-xl bg-[var(--signal-dim)] text-[var(--signal)]"><FileText className="size-5" aria-hidden /></span><div><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[var(--text-low)]">Step one</p><h2 id="article-brief-title" className="font-[family-name:var(--font-title)] text-2xl font-semibold">Describe the article</h2></div></div>
 
           <label className="block text-sm font-semibold text-[var(--text-hi)]">Working title
-            <input name="title" required minLength={25} maxLength={75} defaultValue={item?.title ?? ""} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-base" placeholder="How to show proof of residence for an NYC handgun license" />
+            <input name="title" required minLength={25} maxLength={ARTICLE_TITLE_MAX_LENGTH} defaultValue={item?.title ?? ""} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 text-base" placeholder="NYC gun license proof of residence" />
           </label>
           <label className="block text-sm font-semibold text-[var(--text-hi)]">Search description <span className="font-normal text-[var(--text-low)]">(you can refine it later)</span>
             <textarea name="description" required minLength={70} maxLength={160} rows={2} className="mt-2 w-full rounded-xl border border-[var(--hairline)] bg-white px-4 py-3 text-sm" placeholder="A factual 70–160 character summary shown in search results." />

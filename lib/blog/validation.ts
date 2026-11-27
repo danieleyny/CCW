@@ -52,6 +52,13 @@ export function markdownSafetyIssues(content: string) {
 
 export const GENERATED_ARTICLE_MIN_WORDS = 700
 export const ARTICLE_QUALITY_MIN_SCORE = 90
+/**
+ * The root layout appends ` · Gun License NYC` (18 characters) to public
+ * page titles. Keeping the article portion at 52 characters or fewer prevents
+ * the rendered browser/search title from exceeding the 70-character audit
+ * ceiling.
+ */
+export const ARTICLE_TITLE_MAX_LENGTH = 52
 
 const CANONICAL_ORIGIN = "https://gunlicensenyc.com"
 const PROHIBITED_MARKETING_LANGUAGE = /\b(?:guarantee|expedite|fast[- ]track|approval rate|insider)\b/i
@@ -116,6 +123,10 @@ export function generatedDraftIssues(
   options: { title?: string; sourceUrls?: string[]; requireInternalLinks?: boolean } = {}
 ) {
   const issues = markdownSafetyIssues(content)
+  const title = options.title?.trim() ?? ""
+  if (title && (title.length < 25 || title.length > ARTICLE_TITLE_MAX_LENGTH)) {
+    issues.push(`The article title must be 25–${ARTICLE_TITLE_MAX_LENGTH} characters so the full search title is not truncated.`)
+  }
   const words = articleWordCount(content)
   if (words < GENERATED_ARTICLE_MIN_WORDS) {
     issues.push(`The generated article is ${words} words; it must be at least ${GENERATED_ARTICLE_MIN_WORDS} words.`)
@@ -194,8 +205,13 @@ export function publicationReadiness(input: PublicationInput) {
   const linkSet = new Set(links)
   const inlineLinkSet = new Set(normalizedMarkdownLinkUrls(contentBeforeSources(input.content)))
   const checks: ArticleQualityCheck[] = [
-    { key: "title", label: "Specific article title added", passed: title.length >= 10, blocking: true, weight: 5 },
-    { key: "title_focus", label: "Title is focused (25–75 characters)", passed: title.length >= 25 && title.length <= 75, blocking: false, weight: 4 },
+    {
+      key: "title",
+      label: `Search-safe article title (25–${ARTICLE_TITLE_MAX_LENGTH} characters)`,
+      passed: title.length >= 25 && title.length <= ARTICLE_TITLE_MAX_LENGTH,
+      blocking: true,
+      weight: 9,
+    },
     { key: "slug", label: "Clean article URL", passed: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(input.slug), blocking: true, weight: 4 },
     { key: "slug_focus", label: "Article URL is concise (75 characters or fewer)", passed: input.slug.length <= 75, blocking: false, weight: 2 },
     {

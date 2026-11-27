@@ -9,6 +9,7 @@ import { getRepositoryPostSlugs } from "@/lib/blog"
 import { generateArticleDraft } from "@/lib/blog/generator"
 import {
   ARTICLE_QUALITY_MIN_SCORE,
+  ARTICLE_TITLE_MAX_LENGTH,
   markdownSafetyIssues,
   parseSourceUrls,
   publicationReadiness,
@@ -28,7 +29,7 @@ const nullableText = (max: number) => z.preprocess(
 
 const createSchema = z.object({
   seoItemId: z.preprocess((value) => typeof value === "string" && value ? value : null, uuid.nullable()),
-  title: z.string().trim().min(25).max(75),
+  title: z.string().trim().min(25).max(ARTICLE_TITLE_MAX_LENGTH),
   description: z.string().trim().min(70).max(160),
   kind: z.enum(["applicant_question", "official_update", "guide", "article_refresh", "news_analysis"]),
   targetQuery: nullableText(180),
@@ -41,7 +42,7 @@ const createSchema = z.object({
 
 const editorSchema = z.object({
   id: uuid,
-  title: z.string().trim().min(5).max(180),
+  title: z.string().trim().min(25).max(ARTICLE_TITLE_MAX_LENGTH),
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120),
   description: z.string().trim().max(180),
   tag: z.string().trim().min(2).max(50),

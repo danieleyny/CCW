@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  ARTICLE_TITLE_MAX_LENGTH,
   articleWordCount,
   generatedDraftIssues,
   markdownSafetyIssues,
@@ -76,6 +77,13 @@ describe("article studio guardrails", () => {
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25" }).ready).toBe(false)
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25", legalReviewedAt: "2026-11-25" }).ready).toBe(true)
     expect(publicationReadiness({ ...base, factCheckedAt: "2026-11-25", legalReviewedAt: "2026-11-25" }).score).toBeGreaterThanOrEqual(90)
+  })
+
+  it("blocks article titles that would make the rendered search title too long", () => {
+    const title = "X".repeat(ARTICLE_TITLE_MAX_LENGTH + 1)
+    expect(generatedDraftIssues("## One\n\n## Two\n\n## Sources", { title })).toEqual(expect.arrayContaining([
+      expect.stringMatching(/full search title/),
+    ]))
   })
 
   it("blocks structurally weak copy even when it is long enough", () => {
