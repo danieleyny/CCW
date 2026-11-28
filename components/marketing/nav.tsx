@@ -15,8 +15,11 @@ import {
 } from "@/components/ui/sheet"
 import { NAV_ROUTES } from "@/lib/marketing-routes"
 
-// Top-nav links come from the single route registry (nav: true entries).
-const LINKS = NAV_ROUTES
+// Keep the header focused on the primary decision path. The checklist and
+// official-source library remain available through the footer and sitemap.
+const LINKS = NAV_ROUTES.filter(
+  ({ href }) => href !== "/checklist" && href !== "/resources"
+)
 
 export function MarketingNav() {
   const [open, setOpen] = useState(false)
