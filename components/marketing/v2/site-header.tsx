@@ -16,7 +16,9 @@ import { useEffect, useRef, useState } from "react"
  * the persistent header only.
  */
 export function SiteHeader() {
-  const links = NAV_ROUTES // [{ href, label }] — nav:true routes
+  const links = NAV_ROUTES.filter(
+    ({ href }) => href !== "/checklist" && href !== "/resources"
+  )
   const playIntro = usePlayOncePerLoad("header")
   const headerRef = useRef<HTMLElement>(null)
   const menuRef = useRef<HTMLDetailsElement>(null)
@@ -54,7 +56,7 @@ export function SiteHeader() {
         <BrandLogo tone="ink" size="md" motion="live" responsiveHeader className="brand" />
 
         <nav className="desktop-nav" aria-label="Primary navigation">
-          {links.flatMap((l) => l.label === "How it works" ? [l, { href: "/#training", label: "Training" }] : [l]).map((l, index) => (
+          {links.map((l, index) => (
             <Link key={l.href} href={l.href} className="navItem" style={{ "--i": index } as CSSProperties}>{l.label}</Link>
           ))}
         </nav>
@@ -91,7 +93,6 @@ export function SiteHeader() {
                   {l.label} <span aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
                 </Link>
               ))}
-              <Link href="/#training">Training <span aria-hidden="true">07</span></Link>
               <Link href="/auth/login" className="inline-flex items-center gap-1.5">
                 Client sign in <ExternalLink className="size-3.5" aria-hidden />
               </Link>
